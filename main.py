@@ -810,6 +810,167 @@ def refine_logo_text_alignment(
             "logo_lock_translation_px": 0.0,
         }
 
+def detect_dial_ellipse(
+    image: np.ndarray,
+    circle: tuple[float, float, float],
+) -> tuple[float, float, float, float, float] | None:
+    """Fit an ellipse to the watch crystal edge by sampling radial edge strength.
+
+    A tilted camera makes the circular dial appear as an ellipse. We sample at
+    72 angles around the expected circumference, record the radius of the
+    strongest edge at each angle, then fit an ellipse to those points.
+
+    Returns (cx, cy, semi_major, semi_minor, angle_deg) — the inclination of
+    the major axis measured clockwise from horizontal — or None if detection
+    fails or the fit looks implausible.
+    """
+    cx, cy, r = circle
+    h, w = image.shape[:2]
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.GaussianBlur(gray, (7, 7), 2.0)
+    gx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
+    gy = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
+    mag = cv2.magnitude(gx, gy)
+    edge_threshold = float(np.percentile(mag, 70))
+
+    n_angles = 72
+    edge_pts: list[tuple[float, float]] = []
+    radii = np.arange(r * 0.75, r * 1.35, 0.5)
+
+    for i in range(n_angles):
+        a = 2.0 * math.pi * i / n_angles
+        cos_a, sin_a = math.cos(a), math.sin(a)
+        best_v, best_px, best_py = 0.0, cx + cos_a * r, cy + sin_a * r
+        for radius in radii:
+            px = cx + cos_a * radius
+            py = cy + sin_a * radius
+            ix, iy = int(px), int(py)
+            if not (0 <= ix < w - 1 and 0 <= iy < h - 1):
+                continue
+            dx, dy = px - ix, py - iy
+            v = (mag[iy,   ix  ] * (1 - dx) * (1 - dy)
+               + mag[iy,   ix+1] * dx        * (1 - dy)
+               + mag[iy+1, ix  ] * (1 - dx) * dy
+               + mag[iy+1, ix+1] * dx        * dy)
+            if v > best_v:
+                best_v, best_px, best_py = v, px, py
+        if best_v > edge_threshold:
+            edge_pts.append((best_px, best_py))
+
+    if len(edge_pts) < 24:
+        return None
+
+    pts = np.array(edge_pts, dtype=np.float32).reshape(-1, 1, 2)
+    try:
+        (ex, ey), (ew, eh), angle = cv2.fitEllipse(pts)
+    except cv2.error:
+        return None
+
+    semi_major = max(ew, eh) / 2.0
+    semi_minor = min(ew, eh) / 2.0
+
+    if not (r * 0.70 < semi_major < r * 1.30):
+        return None
+    if semi_minor < r * 0.40:
+        return None
+
+    # OpenCV fitEllipse returns the angle of the *first* axis (ew direction).
+    # Normalise so angle always refers to the major axis.
+    if ew < eh:
+        angle = (angle + 90.0) % 180.0
+
+    return float(ex), float(ey), float(semi_major), float(semi_minor), float(angle)
+
+
+def ellipse_to_circle_affine(
+    ellipse: tuple[float, float, float, float, float],
+    target_center: tuple[float, float],
+    target_radius: float,
+) -> np.ndarray:
+    """Return a 2×3 affine matrix that maps the ellipse to a circle.
+
+    Steps (all composed as 3×3 then truncated to 2×3):
+      1. Translate ellipse centre to origin
+      2. Rotate so the major axis aligns with the x-axis
+      3. Scale x by target_radius/semi_major, y by target_radius/semi_minor
+         — this turns the ellipse into a circle of radius target_radius
+      4. Rotate back
+      5. Translate to target_center
+    """
+    cx, cy, semi_major, semi_minor, angle_deg = ellipse
+    theta = math.radians(angle_deg)
+    cos_t, sin_t = math.cos(theta), math.sin(theta)
+
+    T1 = np.array([[1, 0, -cx], [0, 1, -cy], [0, 0, 1]], dtype=np.float64)
+    R1 = np.array([[ cos_t, sin_t, 0], [-sin_t, cos_t, 0], [0, 0, 1]], dtype=np.float64)
+    sx = target_radius / max(semi_major, 1.0)
+    sy = target_radius / max(semi_minor, 1.0)
+    S  = np.array([[sx, 0, 0], [0, sy, 0], [0, 0, 1]], dtype=np.float64)
+    R2 = np.array([[cos_t, -sin_t, 0], [sin_t, cos_t, 0], [0, 0, 1]], dtype=np.float64)
+    T2 = np.array([[1, 0, target_center[0]], [0, 1, target_center[1]], [0, 0, 1]], dtype=np.float64)
+
+    M3 = T2 @ R2 @ S @ R1 @ T1
+    return M3[:2, :]
+
+
+def perspective_dewarp_candidate(
+    candidate: np.ndarray,
+    circle: tuple[float, float, float],
+) -> tuple[np.ndarray, np.ndarray, dict]:
+    """Detect any perspective tilt in the candidate and apply an affine de-warp.
+
+    A camera that isn't perfectly square-on to the watch face makes the circular
+    dial appear elliptical. We detect the ellipse, compute an affine squeeze that
+    restores it to circular, and apply it to the candidate image.
+
+    The returned 2×3 matrix maps original-candidate coordinates to dewarped
+    coordinates; compose it with the alignment matrix to get a single transform
+    from the original candidate to the reference frame.
+
+    Only applies when the axis ratio (minor/major) is between 0.78 and 0.95
+    — roughly 18–39° of tilt. Milder tilt doesn't need correction; more extreme
+    tilt suggests detection has gone wrong, so we skip it.
+    """
+    identity = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float64)
+    no_op_metrics: dict = {"perspective_dewarp_applied": False, "perspective_axis_ratio": 1.0}
+
+    ellipse = detect_dial_ellipse(candidate, circle)
+    if ellipse is None:
+        return candidate, identity, {**no_op_metrics, "perspective_dewarp_reason": "ellipse not detected"}
+
+    _, _, semi_major, semi_minor, angle_deg = ellipse
+    axis_ratio = semi_minor / max(semi_major, 1.0)
+
+    if axis_ratio >= 0.95:
+        return candidate, identity, {**no_op_metrics, "perspective_dewarp_reason": "tilt negligible"}
+    if axis_ratio < 0.78:
+        return candidate, identity, {**no_op_metrics, "perspective_dewarp_reason": "tilt too extreme for reliable correction"}
+
+    dewarp = ellipse_to_circle_affine(
+        ellipse,
+        target_center=(circle[0], circle[1]),
+        target_radius=circle[2],
+    )
+    h, w = candidate.shape[:2]
+    dewarped = cv2.warpAffine(
+        candidate, dewarp, (w, h),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(18, 18, 18),
+    )
+    squeeze = semi_major / max(semi_minor, 1.0)
+    metrics: dict = {
+        "perspective_dewarp_applied": True,
+        "perspective_axis_ratio": round(axis_ratio, 4),
+        "perspective_squeeze_factor": round(squeeze, 4),
+        "perspective_tilt_angle_deg": round(angle_deg, 1),
+        "perspective_semi_major_px": round(semi_major, 1),
+        "perspective_semi_minor_px": round(semi_minor, 1),
+    }
+    return dewarped, dewarp, metrics
+
+
 def orb_auto_align(reference: np.ndarray, candidate: np.ndarray) -> tuple[np.ndarray, dict]:
     """Legacy feature-matching fallback used when a watch circle is unavailable."""
     ref_gray = cv2.cvtColor(reference, cv2.COLOR_BGR2GRAY)
@@ -897,6 +1058,19 @@ def auto_align(reference: np.ndarray, candidate: np.ndarray) -> tuple[np.ndarray
     if reference_circle_initial is None or candidate_circle_initial is None:
         return orb_auto_align(reference, candidate)
 
+    # Perspective pre-correction: if the candidate was shot at a slight angle the
+    # circular dial appears elliptical. Squeezing it back to circular before the
+    # rest of the pipeline improves every subsequent alignment step.
+    candidate, dewarp_matrix, dewarp_metrics = perspective_dewarp_candidate(
+        candidate, candidate_circle_initial
+    )
+    # Re-detect the circle on the dewarped candidate so the rest of the pipeline
+    # works with the corrected geometry. Fall back to the original if it fails.
+    if dewarp_metrics["perspective_dewarp_applied"]:
+        redetected = detect_watch_circle(candidate)
+        if redetected is not None:
+            candidate_circle_initial = redetected
+
     reference_crop, reference_offset = auto_crop_around_watch(reference, reference_circle_initial)
     candidate_crop, candidate_offset = auto_crop_around_watch(candidate, candidate_circle_initial)
 
@@ -967,7 +1141,11 @@ def auto_align(reference: np.ndarray, candidate: np.ndarray) -> tuple[np.ndarray
 
     to_candidate_crop = translate_affine(-candidate_offset[0], -candidate_offset[1])
     from_reference_crop = translate_affine(reference_offset[0], reference_offset[1])
-    matrix = combine_affine(from_reference_crop, combine_affine(refined_matrix_crop, to_candidate_crop))
+    # Compose: original candidate → dewarp → crop → align → uncrop → reference
+    matrix = combine_affine(
+        from_reference_crop,
+        combine_affine(refined_matrix_crop, combine_affine(to_candidate_crop, dewarp_matrix)),
+    )
 
     a, b = float(matrix[0, 0]), float(matrix[0, 1])
     scale = math.sqrt(a * a + b * b)
@@ -1000,6 +1178,7 @@ def auto_align(reference: np.ndarray, candidate: np.ndarray) -> tuple[np.ndarray
         "candidate_crop_offset": [int(candidate_offset[0]), int(candidate_offset[1])],
         **ecc_metrics,
         **logo_metrics,
+        **dewarp_metrics,
     }
     return matrix.astype(np.float64), metrics
 
