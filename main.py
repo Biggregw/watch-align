@@ -880,6 +880,25 @@ def detect_dial_ellipse(
     if ew < eh:
         angle = (angle + 90.0) % 180.0
 
+    # Validate fit quality: count edge points that actually lie close to the
+    # fitted ellipse. A genuine camera tilt produces a clean, consistent ellipse
+    # so most sampled points agree with the fit. A false positive (e.g. from
+    # asymmetric bezel or case edges) produces scattered points that coincidentally
+    # fit a slightly elliptical shape — inlier ratio will be much lower.
+    theta = math.radians(angle)
+    cos_t, sin_t = math.cos(theta), math.sin(theta)
+    tolerance = semi_major * 0.09
+    inliers = 0
+    for px, py in edge_pts:
+        dx, dy = px - ex, py - ey
+        u =  dx * cos_t + dy * sin_t
+        v = -dx * sin_t + dy * cos_t
+        ellipse_val = (u / max(semi_major, 1.0)) ** 2 + (v / max(semi_minor, 1.0)) ** 2
+        if abs(math.sqrt(max(0.0, ellipse_val)) - 1.0) * semi_major < tolerance:
+            inliers += 1
+    if inliers / max(len(edge_pts), 1) < 0.65:
+        return None
+
     return float(ex), float(ey), float(semi_major), float(semi_minor), float(angle)
 
 
@@ -942,7 +961,7 @@ def perspective_dewarp_candidate(
     _, _, semi_major, semi_minor, angle_deg = ellipse
     axis_ratio = semi_minor / max(semi_major, 1.0)
 
-    if axis_ratio >= 0.95:
+    if axis_ratio >= 0.90:
         return candidate, identity, {**no_op_metrics, "perspective_dewarp_reason": "tilt negligible"}
     if axis_ratio < 0.78:
         return candidate, identity, {**no_op_metrics, "perspective_dewarp_reason": "tilt too extreme for reliable correction"}
