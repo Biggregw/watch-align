@@ -207,6 +207,7 @@ function renderPayload() {
     appearance_match: $("appearanceMatch").checked,
     match_strength: Number($("matchStrength").value),
     logo_lock: $("logoLock").checked,
+    perspective_correction: $("perspectiveCorrection").checked,
   };
 }
 
@@ -253,6 +254,7 @@ $("resetButton").addEventListener("click", () => {
   $("opacity").value = .5;
   $("appearanceMatch").checked = true;
   $("logoLock").checked = true;
+  $("perspectiveCorrection").checked = true;
   $("matchStrength").value = .85;
   $("matchStrengthRow").classList.remove("disabled");
   Object.entries(controlsMap).forEach(([id, [outputId, formatter]]) => $(outputId).textContent = formatter($(id).value));
@@ -260,6 +262,11 @@ $("resetButton").addEventListener("click", () => {
 });
 
 $("logoLock").addEventListener("change", () => {
+  clearTimeout(state.renderTimer);
+  state.renderTimer = setTimeout(renderAdjustments, 100);
+});
+
+$("perspectiveCorrection").addEventListener("change", () => {
   clearTimeout(state.renderTimer);
   state.renderTimer = setTimeout(renderAdjustments, 100);
 });
