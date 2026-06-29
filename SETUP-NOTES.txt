@@ -1,0 +1,107 @@
+WATCH ALIGN - SETUP NOTES
+===========================
+
+THERE ARE TWO WAYS TO BUILD THIS, DEPENDING WHAT YOU WANT
+-------------------------------------------------------------
+A) Just dist\WatchAlign.exe
+   - A single portable file. Double-click to run it, double-click again
+     any time. No install wizard, nothing in Settings > Apps, nothing to
+     uninstall - just delete the file when you're done with it.
+   - This is what you get automatically every time, with no extra setup.
+
+B) installer_output\WatchAlignSetup.exe  (recommended if sharing with others)
+   - A proper installer. Double-click it, follow a normal install wizard
+     (Next, Next, Install), and the app appears in the Start Menu (and
+     optionally on the Desktop). It also shows up in Windows Settings >
+     Apps, so it can be uninstalled the normal way later.
+   - This is what to share with anyone else who wants to use the app -
+     they don't need Python, build.bat, or anything else. Just the one
+     WatchAlignSetup.exe file.
+   - To get this built, install Inno Setup once (free):
+         https://jrsoftware.org/isdl.php
+     Just download and install it with default options, then run
+     build.bat again - it's detected automatically and the installer
+     gets built right after the app itself.
+
+ONE-TIME SETUP
+---------------
+1. Unzip this folder anywhere on your PC (Desktop is fine).
+2. (Optional, but recommended) Install Inno Setup from the link above if
+   you want the proper installer (option B). Skip this if you only want
+   option A for yourself.
+3. Double-click  build.bat
+   - Installs Python packages, builds WatchAlign.exe, and (if Inno Setup
+     is installed) also builds WatchAlignSetup.exe.
+   - Takes a few minutes - lots of text will scroll by, that's normal.
+     Wait for "Build complete!".
+   - You need Python 3.11+ installed first. If build.bat says it can't
+     find Python, get it from https://www.python.org/downloads/ and tick
+     "Add python.exe to PATH" during install, then run build.bat again.
+4. Use whichever file build.bat tells you to, per the two options above.
+
+FIRST TIME RUNNING IT (either version)
+------------------------------------------
+Windows will likely show a SmartScreen warning ("Windows protected your
+PC") because the app isn't digitally signed - that applies to the
+installer too, not just the plain exe. This is expected for a small
+personal tool like this - click "More info" then "Run anyway".
+
+After that, a small watch icon will appear in your system tray
+(bottom-right near the clock - click the little "^" arrow there if you
+don't see it straight away), and your browser will open automatically.
+
+SHARING WITH SOMEONE ELSE
+----------------------------
+Send them WatchAlignSetup.exe (option B above), plus a quick heads-up
+that Windows will show a SmartScreen warning the first time and that's
+normal for an unsigned personal tool - click "More info" then "Run
+anyway". They double-click it, install it like any other program, and
+it's there in their Start Menu afterward.
+
+Don't send them WatchAlign.exe on its own unless they're comfortable with
+a plain portable file and no install wizard.
+
+USING IT DAY TO DAY
+----------------------
+- Open it from the Start Menu (if installed via B) or by double-clicking
+  the exe directly (if using A).
+- Your browser opens automatically at http://127.0.0.1:8000 after a
+  couple of seconds.
+- Right-click the tray icon any time to reopen the app in your browser,
+  or Quit.
+- This only works on the PC it's running on - there's no public link,
+  nothing reachable from outside that machine.
+
+YOUR DATA
+-----------
+Uploaded photos and exported comparisons are stored in a "runtime" folder
+next to wherever the app is installed, and persist between runs. If you
+uninstall the WatchAlignSetup.exe version through Windows Settings, that
+runtime folder is removed too - back up anything you want to keep first.
+
+TROUBLESHOOTING
+------------------
+Browser doesn't open automatically:
+   Right-click the tray icon and choose "Open Watch Align", or just go to
+   http://127.0.0.1:8000 in any browser on this PC yourself.
+
+"127.0.0.1 refused to connect" right after opening:
+   The app can take a few seconds to start up the first time (it unpacks
+   itself and loads the image libraries before the page is ready). The
+   app now waits for the server to be ready before opening your browser,
+   so this should be rare - but if you ever see it, just click Refresh on
+   that page after a few seconds and it will load.
+
+   If a "refused to connect" tab is still showing but a SECOND browser
+   tab opened that DOES work, that's expected if the app was launched
+   twice close together (e.g. the installer's "launch now" tick plus you
+   opening it yourself). Just use the working tab and close the other.
+
+   If it still won't load after refreshing, run "tasklist | findstr
+   WatchAlign" in Command Prompt. If you see more than two WatchAlign.exe
+   lines, close them all with "taskkill /F /IM WatchAlign.exe" and start
+   the app once.
+
+Nothing happens when you double-click the exe:
+   Check the system tray (bottom-right, click "^" if needed) - it may
+   already be running there.

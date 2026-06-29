@@ -1,0 +1,8 @@
+fastapi==0.128.2
+uvicorn[standard]==0.48.0
+python-multipart>=0.0.20
+numpy>=2.0
+opencv-python-headless>=4.10
+Pillow>=11.0
+imageio>=2.36
+imageio-ffmpeg>=0.5

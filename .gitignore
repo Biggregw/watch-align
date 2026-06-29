@@ -1,0 +1,26 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# PyInstaller build artifacts
+build/
+dist/
+*.spec.bak
+
+# Inno Setup output
+installer_output/
+
+# Runtime uploads/exports
+runtime/
+
+# Debug artifacts
+*-debug.log
+WatchAlignDebug.spec
+WatchAlignDebug2.spec
+debug_runner.py
+
+# OS
+.DS_Store
+Thumbs.db

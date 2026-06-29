@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Watch Align</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">IMAGE COMPARISON</div>
+      <h1>Watch Align</h1>
+      <p>Automatically align two watch photos, match colour and lighting, inspect differences, and export a blink comparison.</p>
+    </div>
+    <div class="privacy">Processed on your server</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel upload-panel">
+      <h2>1. Choose images</h2>
+      <div class="upload-grid">
+        <label class="dropzone">
+          <span class="drop-title">Reference image</span>
+          <span class="drop-subtitle">For example, a genuine watch photo</span>
+          <input id="referenceInput" type="file" accept="image/*" />
+          <span id="referenceName" class="file-name">No file selected</span>
+        </label>
+        <label class="dropzone">
+          <span class="drop-title">Candidate image</span>
+          <span class="drop-subtitle">For example, your QC photo</span>
+          <input id="candidateInput" type="file" accept="image/*" />
+          <span id="candidateName" class="file-name">No file selected</span>
+        </label>
+      </div>
+      <button id="alignButton" class="primary" disabled>Auto-align images</button>
+      <p id="status" class="status">Choose both images to begin.</p>
+    </section>
+
+    <section id="workspace" class="panel workspace hidden">
+      <div class="workspace-header">
+        <div>
+          <h2>2. Inspect the result</h2>
+          <p id="confidenceText" class="muted"></p>
+        </div>
+        <div class="tabs" role="tablist">
+          <button data-mode="blink" class="tab active">Blink</button>
+          <button data-mode="overlay" class="tab">Overlay</button>
+          <button data-mode="slider" class="tab">Slider</button>
+          <button data-mode="edges" class="tab">Edges</button>
+          <button data-mode="heatmap" class="tab">Heatmap</button>
+          <button data-mode="matchcheck" class="tab">Raw vs matched</button>
+        </div>
+      </div>
+
+      <div id="viewer" class="viewer">
+        <img id="referenceImage" alt="Reference" />
+        <img id="alignedImage" alt="Aligned candidate" class="layer" />
+        <img id="singleImage" alt="Comparison view" class="single hidden" />
+        <div id="sliderHandle" class="slider-handle hidden"></div>
+      </div>
+
+      <div class="legend">
+        <span id="legendText">Blinking between reference and aligned candidate</span>
+      </div>
+    </section>
+
+    <aside id="controls" class="panel controls hidden">
+      <h2>3. Fine-tune</h2>
+      <div class="control-row">
+        <label for="rotation">Rotation <output id="rotationOut">0.00°</output></label>
+        <input id="rotation" type="range" min="-5" max="5" step="0.05" value="0" />
+      </div>
+      <div class="control-row">
+        <label for="scale">Scale <output id="scaleOut">1.000×</output></label>
+        <input id="scale" type="range" min="0.70" max="1.50" step="0.001" value="1" />
+      </div>
+      <div class="control-row">
+        <label for="xOffset">Horizontal <output id="xOut">0 px</output></label>
+        <input id="xOffset" type="range" min="-120" max="120" step="1" value="0" />
+      </div>
+      <div class="control-row">
+        <label for="yOffset">Vertical <output id="yOut">0 px</output></label>
+        <input id="yOffset" type="range" min="-120" max="120" step="1" value="0" />
+      </div>
+      <div class="control-row">
+        <label for="opacity">Overlay opacity <output id="opacityOut">50%</output></label>
+        <input id="opacity" type="range" min="0" max="1" step="0.01" value="0.5" />
+      </div>
+
+      <div class="appearance-card">
+        <label class="toggle-row" for="logoLock">
+          <span>
+            <strong>Lock dial size, logo and text</strong>
+            <small>Matches the hour-marker ring first, then locks the crown and ROLEX printing</small>
+          </span>
+          <input id="logoLock" type="checkbox" checked />
+        </label>
+        <p class="appearance-note">Leave this on for automatic size and text alignment. Turn it off before deliberately changing scale or position with the manual controls.</p>
+      </div>
+
+      <div class="appearance-card">
+        <label class="toggle-row" for="appearanceMatch">
+          <span>
+            <strong>Match appearance</strong>
+            <small>Normalise candidate colour, exposure and contrast to the reference</small>
+          </span>
+          <input id="appearanceMatch" type="checkbox" checked />
+        </label>
+        <div id="matchStrengthRow" class="control-row compact">
+          <label for="matchStrength">Match strength <output id="matchStrengthOut">85%</output></label>
+          <input id="matchStrength" type="range" min="0" max="1" step="0.01" value="0.85" />
+        </div>
+        <p class="appearance-note">The originals remain available. Matching changes presentation only and does not alter geometry.</p>
+      </div>
+
+      <div class="button-row">
+        <button id="resetButton" class="secondary">Reset</button>
+        <button id="applyButton" class="primary">Apply</button>
+      </div>
+
+      <div class="metrics" id="metrics"></div>
+
+      <h2 class="export-title">4. Export</h2>
+      <div class="export-grid">
+        <button data-export="gif" class="secondary">Download GIF</button>
+        <button data-export="mp4" class="secondary">Download MP4</button>
+        <button data-export="png" class="secondary">Download overlay PNG</button>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <p>Automatic alignment is an aid, not proof of authenticity. Perspective, lighting, crystal distortion, and different hand positions can create false differences.</p>
+    <div class="support-block">
+      <span>Enjoying Watch Align? Help support its hosting and development.</span>
+      <a
+        class="coffee-button"
+        href="https://buymeacoffee.com/biggregw"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Support Watch Align on Buy Me a Coffee"
+      >☕ Buy me a coffee</a>
+    </div>
+  </footer>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
