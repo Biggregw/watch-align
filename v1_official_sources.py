@@ -61,7 +61,6 @@ def _candidate_urls(page_html: str, model_code: str) -> list[str]:
         if url not in seen:
             seen.add(url)
             out.append(url)
-    # Prefer Rolex media/CDN and larger-looking assets first.
     out.sort(key=lambda u: (("rolex" not in u.lower()), ("media" not in u.lower()), -len(u)))
     return out
 
@@ -75,8 +74,7 @@ def sync_official_references(backend, model_ref: str, max_images: int = 12) -> d
     errors = []
     for source in sources:
         try:
-            page_bytes = _fetch(source["page"])
-            page_text = page_bytes.decode("utf-8", "ignore")
+            page_text = _fetch(source["page"]).decode("utf-8", "ignore")
             urls = _candidate_urls(page_text, source["model_code"])
             count = 0
             for url in urls:
@@ -84,8 +82,7 @@ def sync_official_references(backend, model_ref: str, max_images: int = 12) -> d
                     break
                 try:
                     raw = _fetch(url)
-                    arr = np.frombuffer(raw, dtype=np.uint8)
-                    image = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                    image = cv2.imdecode(np.frombuffer(raw, dtype=np.uint8), cv2.IMREAD_COLOR)
                     if image is None or min(image.shape[:2]) < 450:
                         continue
                     digest = hashlib.sha256(raw).hexdigest()
@@ -119,6 +116,27 @@ def sync_official_references(backend, model_ref: str, max_images: int = 12) -> d
     return {"model_ref": model_ref, "saved": saved, "count": len(saved), "errors": errors, "sources": sources}
 
 
+def _choose_cached_official(backend, model_ref: str):
+    root = _root(backend, model_ref)
+    for path in sorted(root.iterdir()):
+        if path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp"}:
+            continue
+        meta_path = path.with_suffix(path.suffix + ".json")
+        if not meta_path.exists():
+            continue
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if meta.get("verification") != "official-manufacturer-source":
+            continue
+        image = cv2.imread(str(path))
+        if image is not None:
+            variant = meta.get("variant", "official")
+            return backend.resize_max(image), f"{path.name} [official Rolex source · {variant}]"
+    return None, None
+
+
 def install(backend, v1_full_module, reference_library_module) -> None:
     if getattr(backend, "_watch_align_official_sources_installed", False):
         return
@@ -127,18 +145,18 @@ def install(backend, v1_full_module, reference_library_module) -> None:
     original_choose = reference_library_module.choose_reference
 
     def choose_reference_with_official(backend_arg, model_ref: str):
-        image, name = original_choose(backend_arg, model_ref)
+        image, name = _choose_cached_official(backend_arg, model_ref)
         if image is not None:
             return image, name
         if model_ref in OFFICIAL_SOURCES:
             try:
                 sync_official_references(backend_arg, model_ref)
-                image, name = original_choose(backend_arg, model_ref)
+                image, name = _choose_cached_official(backend_arg, model_ref)
                 if image is not None:
-                    return image, name.replace("[user-trusted stored reference]", "[official Rolex source]")
+                    return image, name
             except Exception:
                 pass
-        return None, None
+        return original_choose(backend_arg, model_ref)
 
     reference_library_module.choose_reference = choose_reference_with_official
     v1_full_module._built_in_reference = choose_reference_with_official
