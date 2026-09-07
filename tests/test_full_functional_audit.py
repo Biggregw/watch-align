@@ -1,10 +1,7 @@
-import io
-
 import cv2
 import numpy as np
 from fastapi.testclient import TestClient
 
-import main_v1
 import v1_full
 import v1_official_sources
 
@@ -18,8 +15,13 @@ def _png(width=900, height=900):
     return encoded.tobytes()
 
 
+def _runtime():
+    import main_v1
+    return main_v1
+
+
 def _client():
-    return TestClient(main_v1.app)
+    return TestClient(_runtime().app)
 
 
 def test_runtime_version_and_core_pages_are_consistent():
@@ -70,8 +72,6 @@ def test_reference_library_validates_models_and_uploads():
 
 
 def test_every_supported_model_has_official_source_manifest():
-    # Compare-with-genuine presents automatic official reference handling for
-    # every model in the supported-model selector.
     assert set(v1_full.MODEL_GEOMETRY).issubset(set(v1_official_sources.OFFICIAL_SOURCES))
     for ref in v1_full.MODEL_GEOMETRY:
         sources = v1_official_sources.OFFICIAL_SOURCES[ref]
@@ -81,10 +81,7 @@ def test_every_supported_model_has_official_source_manifest():
 
 
 def test_reference_selector_is_actually_bound_to_analyse_endpoint():
-    # V1.2 exposes a selector and submits preferred_reference. FastAPI must
-    # include that field in the route dependency schema or the browser field is
-    # silently discarded before the wrapper sees it.
-    route = next(r for r in main_v1.app.routes if getattr(r, 'path', None) == '/api/v1/analyse')
+    route = next(r for r in _runtime().app.routes if getattr(r, 'path', None) == '/api/v1/analyse')
     names = {p.name for p in route.dependant.body_params}
     assert 'preferred_reference' in names
 
