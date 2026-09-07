@@ -44,7 +44,7 @@ def _root(backend, model_ref: str) -> Path:
     return p
 
 
-def _fetch(url: str, timeout: int = 20) -> bytes:
+def _fetch(url: str, timeout: int = 12) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 WatchAlign/1.1.1"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read()
@@ -69,12 +69,6 @@ def _candidate_urls(page_html: str, model_code: str) -> list[str]:
 
 
 def _pdf_product_image(pdf_bytes: bytes) -> bytes:
-    """Extract the largest raster from an official Rolex brochure.
-
-    Rolex brochure PDFs provide a stable official fallback even when the
-    JavaScript product page does not expose direct stock-image URLs to a
-    simple HTTP client.
-    """
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     try:
         best: tuple[int, bytes] | None = None
@@ -99,10 +93,7 @@ def _pdf_product_image(pdf_bytes: bytes) -> bytes:
         page = doc[0]
         pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0), alpha=False)
         arr = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
-        if pix.n == 4:
-            arr = cv2.cvtColor(arr, cv2.COLOR_RGBA2BGR)
-        else:
-            arr = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+        arr = cv2.cvtColor(arr, cv2.COLOR_RGBA2BGR if pix.n == 4 else cv2.COLOR_RGB2BGR)
         ok, encoded = cv2.imencode(".jpg", arr, [int(cv2.IMWRITE_JPEG_QUALITY), 94])
         if not ok:
             raise ValueError("Could not render official Rolex brochure")
@@ -168,9 +159,6 @@ def sync_official_references(backend, model_ref: str, max_images: int = 12) -> d
         except Exception as exc:
             errors.append(f"{source['variant']} page: {exc}")
 
-        # Deterministic fallback: Rolex publishes a brochure PDF for each exact
-        # model code. This avoids relying on JavaScript page markup exposing an
-        # image URL and fixes the V1.1.0 failure seen on Windows installs.
         if count == 0 and len(saved) < max_images:
             try:
                 pdf = _fetch(source["brochure"])
@@ -214,21 +202,41 @@ def install(backend, v1_full_module, reference_library_module) -> None:
 
     original_choose = reference_library_module.choose_reference
 
-    def choose_reference_with_official(backend_arg, model_ref: str):
+    # Cached official images are eligible everywhere, but ordinary page/model
+    # rendering must never trigger a network fetch. This keeps startup and the
+    # smoke test instant. Network sync is initiated only by a Gen Compare
+    # analysis that actually needs a reference.
+    def choose_cached_or_original(backend_arg, model_ref: str):
         image, name = _choose_cached_official(backend_arg, model_ref)
         if image is not None:
             return image, name
-        if model_ref in OFFICIAL_SOURCES:
-            result = sync_official_references(backend_arg, model_ref)
-            image, name = _choose_cached_official(backend_arg, model_ref)
-            if image is not None:
-                return image, name
-            detail = "; ".join(result.get("errors", [])[-3:]) or "official Rolex source returned no usable image"
-            raise HTTPException(status_code=502, detail=f"Automatic official Rolex reference lookup failed: {detail}")
         return original_choose(backend_arg, model_ref)
 
-    reference_library_module.choose_reference = choose_reference_with_official
-    v1_full_module._built_in_reference = choose_reference_with_official
+    reference_library_module.choose_reference = choose_cached_or_original
+    v1_full_module._built_in_reference = choose_cached_or_original
+
+    for route in getattr(backend.app, "routes", []):
+        if getattr(route, "path", None) == "/api/v1/analyse" and hasattr(route, "dependant"):
+            original_analyse = route.dependant.call
+
+            def analyse_with_official_sync(*args, __original=original_analyse, **kwargs):
+                mode = kwargs.get("mode")
+                model_ref = kwargs.get("model_ref")
+                reference = kwargs.get("reference")
+                has_uploaded_ref = reference is not None and bool(getattr(reference, "filename", ""))
+                if mode == "gen" and model_ref in OFFICIAL_SOURCES and not has_uploaded_ref:
+                    cached, _ = _choose_cached_official(backend, model_ref)
+                    if cached is None:
+                        result = sync_official_references(backend, model_ref)
+                        cached, _ = _choose_cached_official(backend, model_ref)
+                        if cached is None:
+                            detail = "; ".join(result.get("errors", [])[-3:]) or "official Rolex source returned no usable image"
+                            raise HTTPException(status_code=502, detail=f"Automatic official Rolex reference lookup failed: {detail}")
+                return __original(*args, **kwargs)
+
+            route.dependant.call = analyse_with_official_sync
+            route.endpoint = analyse_with_official_sync
+            break
 
     @backend.app.get("/api/v1/official-sources/{model_ref}")
     def official_sources(model_ref: str):
