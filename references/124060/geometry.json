@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "brand": "Rolex",
+  "reference": "124060",
+  "family": "Submariner",
+  "profile": "rolex-sports-no-date",
+  "coordinate_system": "normalised to detected crystal radius",
+  "regions": {
+    "dial_markers": {"inner_radius": 0.55, "outer_radius": 0.86},
+    "bezel": {"inner_radius": 0.98, "outer_radius": 1.25},
+    "exclude_angle_ranges_deg": []
+  },
+  "measurement_policy": "Use for relative image geometry and QC comparison only. Do not present normalised image coordinates as physical millimetre tolerances.",
+  "reference_images": []
+}
