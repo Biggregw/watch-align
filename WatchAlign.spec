@@ -15,15 +15,12 @@ from PyInstaller.utils.hooks import copy_metadata
 
 block_cipher = None
 
-# imageio looks up its own package metadata at runtime to find its plugins;
-# under PyInstaller that metadata isn't there by default, so we copy it in
-# explicitly. Without this, exporting GIF/MP4 from the frozen exe fails.
 datas = []
 datas += copy_metadata("imageio")
 datas += copy_metadata("imageio-ffmpeg")
 
 a = Analysis(
-    ["app.py"],
+    ["app_v1.py"],
     pathex=[],
     binaries=[],
     datas=datas,
@@ -53,7 +50,6 @@ a = Analysis(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
-# ONEDIR: EXE() gets only the scripts; binaries/data go into COLLECT below.
 exe = EXE(
     pyz,
     a.scripts,
