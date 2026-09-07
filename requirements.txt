@@ -6,3 +6,4 @@ opencv-python-headless>=4.10
 Pillow>=11.0
 imageio>=2.36
 imageio-ffmpeg>=0.5
+PyMuPDF>=1.24
