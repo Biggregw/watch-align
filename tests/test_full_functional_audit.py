@@ -29,17 +29,18 @@ def test_runtime_version_and_core_pages_are_consistent():
     with _client() as c:
         home = c.get('/v1')
         assert home.status_code == 200
-        assert 'V1 1.2.1' in home.text
+        assert 'V1 1.2.2' in home.text
         assert 'dashed oval' not in home.text.lower()
         js = c.get('/static/v1-full.js')
         assert js.status_code == 200
         assert 'waSyncOverlayLayer' in js.text
         assert "result:r" not in js.text
+        assert "reference-image/" in js.text
         assert c.get('/v1/references').status_code == 200
         models = c.get('/api/v1/models/full')
         assert models.status_code == 200
         body = models.json()
-        assert body['version'] == v1_full.V1_FULL_VERSION == '1.2.1'
+        assert body['version'] == v1_full.V1_FULL_VERSION == '1.2.2'
         assert {m['reference'] for m in body['models']} == {'126710BLNR', '124060'}
 
 
@@ -73,6 +74,7 @@ def test_reference_library_validates_models_and_uploads():
 
 
 def test_every_supported_model_has_official_source_manifest():
+    _runtime()
     assert set(v1_full.MODEL_GEOMETRY).issubset(set(v1_official_sources.OFFICIAL_SOURCES))
     for ref in v1_full.MODEL_GEOMETRY:
         sources = v1_official_sources.OFFICIAL_SOURCES[ref]
@@ -81,10 +83,12 @@ def test_every_supported_model_has_official_source_manifest():
         assert all(s.get('brochure', '').startswith('https://assets.rolex.com/') for s in sources)
 
 
-def test_reference_selector_is_actually_bound_to_analyse_endpoint():
-    route = next(r for r in _runtime().app.routes if getattr(r, 'path', None) == '/api/v1/analyse')
-    names = {p.name for p in route.dependant.body_params}
-    assert 'preferred_reference' in names
+def test_reference_selector_submits_selected_cached_file():
+    with _client() as c:
+        js = c.get('/static/v1-full.js').text
+        assert "decodeURIComponent($('refSelector').value)" in js
+        assert "/api/v1/ux/reference-image/" in js
+        assert "new File([blob],fn" in js
 
 
 def test_reference_status_and_official_source_endpoints_cover_all_models():
@@ -100,6 +104,7 @@ def test_reference_status_and_official_source_endpoints_cover_all_models():
 
 
 def test_reference_matching_accounts_for_perspective_not_just_framing():
+    _runtime()
     class Backend:
         @staticmethod
         def detect_watch_circle(_img):
@@ -115,10 +120,13 @@ def test_reference_matching_accounts_for_perspective_not_just_framing():
 
 
 def test_marker_disagreement_prevents_strong_consensus_claim():
-    a = {'metrics': {'visual_alignment_confidence': 'high', 'markers': [{'hour': 12, 'reliable': True, 'angular_error_deg': 2.0}]}}
-    b = {'metrics': {'visual_alignment_confidence': 'high', 'markers': [{'hour': 12, 'reliable': True, 'angular_error_deg': -2.0}]}}
+    _runtime()
+    a = {'metrics': {'visual_alignment_confidence': 'high', 'markers': [{'hour': 12, 'reliable': True, 'available': True, 'angular_error_deg': 2.0}]}}
+    b = {'metrics': {'visual_alignment_confidence': 'high', 'markers': [{'hour': 12, 'reliable': True, 'available': True, 'angular_error_deg': -2.0}]}}
     result = ux._consensus([a, b])
-    assert result['level'] != 'high' or 'Strong match' not in result['summary']
+    assert result['level'] != 'high'
+    assert result['marker_disagreement'] is True
+    assert 'Do not treat' in result['summary']
 
 
 def test_analyse_rejects_unknown_model_and_missing_candidate():
