@@ -77,4 +77,17 @@ def install(backend, v1_full_module, official_sources_module) -> None:
     new_preview = "let previewUrl=null;$('candidate').onchange=()=>{$('result').classList.add('hidden');$('side').classList.add('hidden');state.result=null;const f=$('candidate').files[0];if(f){if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=URL.createObjectURL(f);$('photoPreviewImg').src=previewUrl;$('photoPreview').classList.remove('hidden');preflight(f)}};"
     js = js.replace(old_preview, new_preview)
     js = js.replace("function setTask(t){state.task=t;", "function setTask(t){state.task=t;$('result').classList.add('hidden');$('side').classList.add('hidden');state.result=null;")
+
+    # Keep overlay layers locked to the exact rendered reference image box.
+    # The previous independent max-size rules could leave the aligned layer a
+    # few pixels off when the two generated images had different dimensions.
+    js += "\nfunction waSyncOverlayLayer(){if(state.view!=='overlay'||$('layer').classList.contains('hidden'))return;const r=$('view').getBoundingClientRect();$('layer').style.width=r.width+'px';$('layer').style.height=r.height+'px';$('layer').style.objectFit='contain';}$('view').addEventListener('load',()=>requestAnimationFrame(waSyncOverlayLayer));window.addEventListener('resize',waSyncOverlayLayer);document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTimeout(waSyncOverlayLayer,0)));\n"
+
+    # Do not put image data URLs into localStorage. A couple of comparisons can
+    # otherwise exceed browser quota and silently break history/settings.
+    old_history = "h.unshift({when:new Date().toISOString(),model:r.model.reference,mode:r.mode,session_id:r.session_id,visual:r.metrics.visual_alignment_confidence||r.metrics.overall_confidence,reliability:r.metrics.measurement_reliability,summary:plainFinding(r),result:r});h=h.slice(0,10);"
+    new_history = "h.unshift({when:new Date().toISOString(),model:r.model.reference,mode:r.mode,session_id:r.session_id,visual:r.metrics.visual_alignment_confidence||r.metrics.overall_confidence,reliability:r.metrics.measurement_reliability,summary:plainFinding(r)});h=h.slice(0,10);"
+    js = js.replace(old_history, new_history)
+    js = js.replace("document.querySelectorAll('.historyItem').forEach(el=>el.onclick=()=>{const x=h[Number(el.dataset.i)];if(x?.result)show(x.result)})", "document.querySelectorAll('.historyItem').forEach(el=>el.onclick=()=>{const x=h[Number(el.dataset.i)];$('status').textContent=x?`${x.model} · ${x.summary}`:'History item unavailable.'})")
+
     js_path.write_text(js, encoding="utf-8")
