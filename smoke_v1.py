@@ -9,11 +9,12 @@ def run(backend):
     from v1_full import gate_measurements, V1_FULL_VERSION
     with TestClient(backend.app) as client:
         home = client.get('/v1')
-        assert home.status_code == 200 and 'What do you want to check?' in home.text and 'V1 1.2.0' in home.text
+        assert home.status_code == 200 and 'What do you want to check?' in home.text and 'V1 1.2.1' in home.text
         script=client.get('/static/v1-full.js')
         assert script.status_code == 200 and 'reference_consensus' in script.text and 'Recent comparisons' in home.text
+        assert 'dashed oval' not in home.text
         models = client.get('/api/v1/models/full').json()
-        assert models['version']==V1_FULL_VERSION == '1.2.0'
+        assert models['version']==V1_FULL_VERSION == '1.2.1'
         assert client.get('/v1/references').status_code==200
         status = client.get('/api/v1/ux/reference-status/126710BLNR')
         assert status.status_code == 200 and 'references' in status.json()
