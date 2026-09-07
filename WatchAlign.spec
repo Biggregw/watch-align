@@ -23,7 +23,7 @@ datas += copy_metadata("imageio")
 datas += copy_metadata("imageio-ffmpeg")
 
 a = Analysis(
-    ["app.py"],
+    ["app_v1.py"],
     pathex=[],
     binaries=[],
     datas=datas,
