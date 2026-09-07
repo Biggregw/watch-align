@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - feature/v1-reference-aware-alignment-main
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
