@@ -63,28 +63,30 @@ def _marker_disagreement(results: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _consensus(results: list[dict[str, Any]]) -> dict[str, Any]:
     if len(results) < 2:
-        return {"level": "n/a", "summary": "Single-reference comparison; multi-reference consensus is not available yet.", "detail": "1 suitable reference", "marker_disagreement": False, "bezel_disagreement": False, "date_disagreement": False}
+        return {"level": "n/a", "summary": "Single-reference comparison; multi-reference consensus is not available yet.", "detail": "1 suitable reference", "marker_disagreement": False, "bezel_disagreement": False, "date_disagreement": False, "bezel_stable": True, "date_stable": True}
     ranks = {"low": 0, "medium": 1, "high": 2}
     visuals = [str(r.get("metrics", {}).get("visual_alignment_confidence") or r.get("metrics", {}).get("overall_confidence") or "low") for r in results]
     avg = sum(ranks.get(v, 0) for v in visuals) / len(visuals)
     marker_check = _marker_disagreement(results)
 
     bezel_vals = []
-    date_vals = []
+    date_x = []
+    date_y = []
     for r in results:
         m = r.get("metrics", {})
         b = m.get("bezel") or {}
         if b.get("reliable") is not False and b.get("offset_deg") is not None:
             bezel_vals.append(float(b["offset_deg"]))
         d = m.get("date_window") or {}
-        if d.get("reliable") is not False and d.get("x_offset_percent") is not None and d.get("y_offset_percent") is not None:
-            date_vals.append((float(d["x_offset_percent"]), float(d["y_offset_percent"])))
+        if d.get("reliable") is not False and d.get("x_offset_percent") is not None:
+            date_x.append(float(d["x_offset_percent"]))
+        if d.get("reliable") is not False and d.get("y_offset_percent") is not None:
+            date_y.append(float(d["y_offset_percent"]))
 
     bezel_disagreement = len(bezel_vals) >= 2 and max(bezel_vals)-min(bezel_vals) >= 1.5
-    date_disagreement = False
-    if len(date_vals) >= 2:
-        xs = [v[0] for v in date_vals]; ys = [v[1] for v in date_vals]
-        date_disagreement = max(xs)-min(xs) >= 2.5 or max(ys)-min(ys) >= 2.5
+    date_disagreement = (len(date_x) >= 2 and max(date_x)-min(date_x) >= 2.5) or (len(date_y) >= 2 and max(date_y)-min(date_y) >= 2.5)
+    bezel_stable = not bezel_disagreement
+    date_stable = not date_disagreement
     inconsistent = marker_check["present"] or bezel_disagreement or date_disagreement
 
     if avg >= 1.5 and not inconsistent:
@@ -95,16 +97,16 @@ def _consensus(results: list[dict[str, Any]]) -> dict[str, Any]:
         summary = f"Mixed result across {len(results)} references. Treat small differences as inconclusive and inspect the individual views."
     else:
         level = "low"
-        summary = f"Reference agreement is weak across {len(results)} comparisons; this image is not suitable for a confident conclusion."
+        summary = f"Reference agreement is weak across {len(results)} comparisons; this image is inconclusive."
     if marker_check["present"]:
         hours = ", ".join(str(x["hour"]) for x in marker_check["items"])
         summary = f"Reference disagreement at hour marker(s) {hours}. Do not treat those marker differences as a watch defect."
         level = "medium" if level == "high" else level
     elif bezel_disagreement:
-        summary = "Official references disagree on the bezel estimate. Treat the bezel measurement as inconclusive rather than a defect."
+        summary = "Official references disagree on the bezel estimate. The bezel result is inconclusive rather than evidence of a defect."
         level = "medium" if level == "high" else level
     elif date_disagreement:
-        summary = "Official references disagree on the date/cyclops position. Treat the date measurement as inconclusive rather than a defect."
+        summary = "Official references disagree on the date/cyclops position. The date result is inconclusive rather than evidence of a defect."
         level = "medium" if level == "high" else level
     return {
         "level": level,
@@ -114,6 +116,8 @@ def _consensus(results: list[dict[str, Any]]) -> dict[str, Any]:
         "marker_disagreement_detail": marker_check["items"],
         "bezel_disagreement": bezel_disagreement,
         "date_disagreement": date_disagreement,
+        "bezel_stable": bezel_stable,
+        "date_stable": date_stable,
     }
 
 
@@ -182,9 +186,6 @@ def install(backend, v1_full_module, ux_module, official_sources_module, perspec
     ux_module._reference_score = lambda b, c, r: _perspective_aware_score(b, perspective_diagnostics, c, r)
     ux_module._consensus = _consensus
 
-    # Selected cached references are uploaded by the browser so FastAPI cannot silently
-    # discard the selector value. Rebuild multi-reference consensus here and clean up
-    # secondary sessions so the consensus feature does not leak disk space.
     for route in getattr(backend.app, "routes", []):
         if getattr(route, "path", None) == "/api/v1/analyse" and hasattr(route, "dependant"):
             original = route.dependant.call
