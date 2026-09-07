@@ -8,11 +8,15 @@ def run(backend):
     from fastapi.testclient import TestClient
     from v1_full import gate_measurements, V1_FULL_VERSION
     with TestClient(backend.app) as client:
-        assert client.get('/v1').status_code == 200
+        home = client.get('/v1')
+        assert home.status_code == 200 and 'What do you want to check?' in home.text and 'V1 1.2.0' in home.text
         script=client.get('/static/v1-full.js')
-        assert script.status_code == 200 and 'measurementWarning' in script.text
-        assert client.get('/api/v1/models/full').json()['version']==V1_FULL_VERSION
+        assert script.status_code == 200 and 'reference_consensus' in script.text and 'Recent comparisons' in home.text
+        models = client.get('/api/v1/models/full').json()
+        assert models['version']==V1_FULL_VERSION == '1.2.0'
         assert client.get('/v1/references').status_code==200
+        status = client.get('/api/v1/ux/reference-status/126710BLNR')
+        assert status.status_code == 200 and 'references' in status.json()
     metrics=dict(overall_confidence='low',region_confidence={},perspective={},
                  bezel=dict(available=True,confidence='high',offset_deg=.948))
     gate_measurements(metrics,'gen')
