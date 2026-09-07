@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 import v1_full
 import v1_official_sources
+import v1_ux_v120 as ux
 
 
 def _png(width=900, height=900):
@@ -96,6 +97,28 @@ def test_reference_status_and_official_source_endpoints_cover_all_models():
             assert manifest.status_code == 200
             assert manifest.json()['sources']
         assert c.get('/api/v1/ux/reference-status/UNKNOWN').status_code == 404
+
+
+def test_reference_matching_accounts_for_perspective_not_just_framing():
+    class Backend:
+        @staticmethod
+        def detect_watch_circle(_img):
+            return (450.0, 450.0, 250.0)
+
+    candidate = np.zeros((900, 900, 3), dtype=np.uint8)
+    front = candidate.copy()
+    tilted = candidate.copy()
+    cv2.circle(candidate, (450, 450), 250, (255, 255, 255), 5)
+    cv2.circle(front, (450, 450), 250, (255, 255, 255), 5)
+    cv2.ellipse(tilted, (450, 450), (250, 190), 0, 0, 360, (255, 255, 255), 5)
+    assert ux._reference_score(Backend(), candidate, front) < ux._reference_score(Backend(), candidate, tilted)
+
+
+def test_marker_disagreement_prevents_strong_consensus_claim():
+    a = {'metrics': {'visual_alignment_confidence': 'high', 'markers': [{'hour': 12, 'reliable': True, 'angular_error_deg': 2.0}]}}
+    b = {'metrics': {'visual_alignment_confidence': 'high', 'markers': [{'hour': 12, 'reliable': True, 'angular_error_deg': -2.0}]}}
+    result = ux._consensus([a, b])
+    assert result['level'] != 'high' or 'Strong match' not in result['summary']
 
 
 def test_analyse_rejects_unknown_model_and_missing_candidate():
