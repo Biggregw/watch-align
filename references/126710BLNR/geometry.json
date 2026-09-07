@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "brand": "Rolex",
+  "reference": "126710BLNR",
+  "family": "GMT-Master II",
+  "official_source_page": "https://www.rolex.com/watches/gmt-master-ii/m126710blnr-0002",
+  "official_variant": "m126710blnr-0002",
+  "profile": "rolex-sports-date",
+  "coordinate_system": "normalised to detected crystal radius",
+  "regions": {
+    "dial_markers": {"inner_radius": 0.55, "outer_radius": 0.86},
+    "bezel": {"inner_radius": 0.98, "outer_radius": 1.25},
+    "date_window_roi": [0.48, -0.15, 0.83, 0.16],
+    "exclude_angle_ranges_deg": [[67, 113]]
+  },
+  "measurement_policy": "Use for relative image geometry and QC comparison only. Do not present normalised image coordinates as physical millimetre tolerances.",
+  "reference_images": []
+}
