@@ -18,6 +18,7 @@ block_cipher = None
 datas = []
 datas += copy_metadata("imageio")
 datas += copy_metadata("imageio-ffmpeg")
+datas += [("references", "references")]
 
 a = Analysis(
     ["app_v1.py"],
