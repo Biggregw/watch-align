@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: watch-align-v1-windows
+  cancel-in-progress: true
+
 jobs:
   test-and-build:
     runs-on: windows-latest
@@ -54,6 +58,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path artifact | Out-Null
           Copy-Item -Recurse dist/WatchAlign artifact/WatchAlign-V1
           Copy-Item SETUP-NOTES.txt artifact/SETUP-NOTES.txt
+          Copy-Item V1-README.md artifact/V1-README.md
           Compress-Archive -Path artifact/* -DestinationPath WatchAlign-V1-Windows.zip -Force
 
       - name: Upload Windows test artifact
