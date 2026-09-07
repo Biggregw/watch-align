@@ -20,4 +20,9 @@ install_reference_library(legacy_launcher.backend, v1_full)
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
-    legacy_launcher.main()
+    import sys
+    if "--smoke-test" in sys.argv:
+        from smoke_v1 import run
+        run(legacy_launcher.backend)
+    else:
+        legacy_launcher.main()

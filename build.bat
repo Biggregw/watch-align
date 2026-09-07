@@ -56,7 +56,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-pip install pyinstaller pystray
+pip install pyinstaller pystray httpx
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to install build-only packages.
     pause

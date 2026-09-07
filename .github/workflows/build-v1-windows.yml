@@ -4,13 +4,16 @@ on:
   push:
     branches:
       - feature/v1-reference-aware-alignment-main
+      - main
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: watch-align-v1-windows
+  group: watch-align-v1-windows-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -32,12 +35,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pyinstaller pystray pytest
+          pip install pyinstaller pystray pytest httpx
 
       - name: Run V1 regression tests
         shell: pwsh
         run: |
           python -m pytest -q tests
+          if ($LASTEXITCODE -ne 0) { throw 'Regression tests failed' }
+          python -c "from v1_full import V1_JS; from pathlib import Path; Path('ui-test.js').write_text(V1_JS, encoding='utf-8')"
+          node tests/ui_confidence.cjs ui-test.js
+          if ($LASTEXITCODE -ne 0) { throw 'UI regression tests failed' }
 
       - name: Build Windows app
         shell: pwsh
@@ -51,6 +58,17 @@ jobs:
             throw 'WatchAlign.exe was not produced.'
           }
           Get-ChildItem -Recurse dist/WatchAlign | Select-Object FullName,Length
+          $env:WATCH_ALIGN_SMOKE_RESULT = "$pwd/smoke-result.json"
+          $process = Start-Process -FilePath 'dist/WatchAlign/WatchAlign.exe' -ArgumentList '--smoke-test' -WindowStyle Hidden -PassThru
+          if (!$process.WaitForExit(60000)) { $process.Kill(); throw 'EXE smoke test timed out' }
+          if ($process.ExitCode -ne 0 -or !(Test-Path 'smoke-result.json')) { throw 'EXE smoke test failed' }
+          if (!(Get-Content smoke-result.json | ConvertFrom-Json).ok) { throw 'EXE smoke test did not pass' }
+
+      - name: Build production installer
+        shell: pwsh
+        run: |
+          & 'C:/Program Files (x86)/Inno Setup 6/ISCC.exe' WatchAlign.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer build failed' }
 
       - name: Package test build
         shell: pwsh
@@ -68,3 +86,18 @@ jobs:
           path: WatchAlign-V1-Windows.zip
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish tested production release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = 'v1.0.0'
+          git fetch --tags
+          if (git tag -l $tag) { throw 'Release tag already exists; never overwrite a release' }
+          Get-FileHash WatchAlign-V1-Windows.zip,installer_output/WatchAlignSetup.exe -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  $([System.IO.Path]::GetFileName($_.Path))" } | Set-Content SHA256SUMS.txt
+          gh release create $tag WatchAlign-V1-Windows.zip installer_output/WatchAlignSetup.exe SHA256SUMS.txt --target $env:GITHUB_SHA --title 'Watch Align V1 1.0.0' --notes-file RELEASE-V1.md --draft
+          if ($LASTEXITCODE -ne 0) { throw 'Draft release upload failed' }
+          gh release edit $tag --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }

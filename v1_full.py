@@ -14,7 +14,7 @@ from fastapi import File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from PIL import Image, ImageDraw, ImageFont
 
-V1_FULL_VERSION = "1.0-dev2"
+V1_FULL_VERSION = "1.0.0"
 
 MODEL_GEOMETRY: dict[str, dict[str, Any]] = {
     "126710BLNR": {
@@ -62,7 +62,7 @@ V1_HTML = r'''<!doctype html>
 </style>
 </head>
 <body><div class="wrap">
-<div class="top"><div><div class="eyebrow">MODEL-AWARE QC + GEN COMPARE</div><h1>Watch Align V1</h1><p>Analyse internal watch geometry or align a QC photo to an exact-model genuine/reference image.</p></div><div class="pill">V1 development build</div></div>
+<div class="top"><div><div class="eyebrow">MODEL-AWARE QC + GEN COMPARE</div><h1>Watch Align V1</h1><p>Analyse internal watch geometry or align a QC photo to an exact-model genuine/reference image.</p></div><div class="pill">V1 1.0.0</div></div>
 <div class="grid">
 <section class="card setup"><div class="row">
 <div class="field"><label>Mode</label><select id="mode"><option value="qc">QC Analysis</option><option value="gen">Gen Compare</option></select></div>
@@ -70,11 +70,11 @@ V1_HTML = r'''<!doctype html>
 <div class="field"><label>QC / candidate image</label><input id="candidate" type="file" accept="image/*" /></div>
 </div><div id="genRow" class="row hidden" style="margin-top:12px"><div class="field" style="grid-column:1/-1"><label>Genuine/reference image <span class="note">Required until a verified built-in reference is installed for this model</span></label><input id="reference" type="file" accept="image/*" /></div></div>
 <div class="actions"><button id="analyse" class="primary">Analyse watch</button><button id="legacy" class="secondary">Open Manual Compare</button></div><p id="status">Choose a model and QC image.</p></section>
-<section id="result" class="card hidden"><div class="tabs"><button class="tab active" data-view="annotated">QC analysis</button><button class="tab" data-view="reference">Reference</button><button class="tab" data-view="aligned">Aligned</button><button class="tab" data-view="overlay">Overlay</button><button class="tab" data-view="edges">Edges</button></div><div class="viewer"><img id="view" alt="Watch comparison" /></div><div class="actions"><button id="report" class="secondary">Download QC report PNG</button></div></section>
+<section id="result" class="card hidden"><div id="measurementWarning" role="alert" class="metric warn hidden" style="border:2px solid var(--amber);margin-bottom:16px;padding:16px"></div><div class="tabs"><button class="tab active" data-view="annotated">QC analysis</button><button class="tab" data-view="reference">Reference</button><button class="tab" data-view="aligned">Aligned</button><button class="tab" data-view="overlay">Overlay</button><button class="tab" data-view="edges">Edges</button></div><div class="viewer"><img id="view" alt="Watch comparison" /></div><div class="actions"><button id="report" class="secondary">Download QC report PNG</button></div></section>
 <aside id="side" class="card hidden"><h2 style="margin-top:0">Analysis</h2><div id="summary" class="metrics"></div><h3>Hour-marker geometry</h3><div style="overflow:auto"><table><thead><tr><th>Hour</th><th>Angular</th><th>Radial</th><th>Confidence</th></tr></thead><tbody id="markers"></tbody></table></div><p class="note">Angular and radial values are relative image-geometry measurements after removing overall dial rotation. They are intended for QC comparison, not physical millimetre measurement.</p></aside>
 </div></div><script src="/static/v1-full.js"></script></body></html>'''
 
-V1_JS = r'''const state={models:[],result:null,view:'annotated'};const $=id=>document.getElementById(id);async function api(url,opt={}){const r=await fetch(url,opt);const b=(r.headers.get('content-type')||'').includes('json')?await r.json():await r.text();if(!r.ok)throw new Error(b.detail||b||`Request failed ${r.status}`);return b}async function loadModels(){const d=await api('/api/v1/models/full');state.models=d.models;$('model').innerHTML=d.models.map(m=>`<option value="${m.reference}">${m.brand} ${m.name}</option>`).join('')}function updateMode(){$('genRow').classList.toggle('hidden',$('mode').value!=='gen')}function confClass(v){return v==='high'?'good':v==='medium'?'warn':'bad'}function metric(name,value,cls=''){return `<div class="metric"><strong>${name}</strong><span class="${cls}">${value}</span></div>`}function show(r){state.result=r;$('result').classList.remove('hidden');$('side').classList.remove('hidden');const p=r.metrics.perspective||{};const regions=r.metrics.region_confidence||{};let h='';h+=metric('Model',`${r.model.reference} · ${r.model.name}`);h+=metric('Mode',r.mode==='gen'?'Gen Compare':'QC Analysis');h+=metric('Overall confidence',r.metrics.overall_confidence,confClass(r.metrics.overall_confidence));if(p.candidate?.available)h+=metric('Apparent camera tilt',`${p.candidate.tilt_deg}°`,p.warning?'warn':'');if(p.mismatch_deg!=null)h+=metric('Perspective mismatch',`${p.mismatch_deg}°`,p.warning?'warn':'good');if(r.metrics.bezel)h+=metric('Bezel 12 estimate',`${r.metrics.bezel.offset_deg>=0?'+':''}${r.metrics.bezel.offset_deg}°`,confClass(r.metrics.bezel.confidence));if(r.metrics.date_window)h+=metric('Date-window position',`x ${r.metrics.date_window.x_offset_percent>=0?'+':''}${r.metrics.date_window.x_offset_percent}% · y ${r.metrics.date_window.y_offset_percent>=0?'+':''}${r.metrics.date_window.y_offset_percent}%`,confClass(r.metrics.date_window.confidence));h+=metric('Region confidence',Object.entries(regions).map(([k,v])=>`${k}: ${v}`).join(' · '));if(r.reference_status)h+=metric('Reference',r.reference_status,r.reference_status.includes('verified')?'good':'warn');$('summary').innerHTML=h;$('markers').innerHTML=(r.metrics.markers||[]).map(m=>`<tr><td>${m.hour}</td><td>${m.angular_error_deg>=0?'+':''}${m.angular_error_deg}°</td><td>${m.radial_error_percent>=0?'+':''}${m.radial_error_percent}%</td><td class="${confClass(m.confidence)}">${m.confidence}</td></tr>`).join('');switchView('annotated')}function switchView(v){state.view=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===v));const u=state.result?.images?.[v]||state.result?.images?.annotated;if(u)$('view').src=u}document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));$('mode').addEventListener('change',updateMode);$('legacy').addEventListener('click',()=>location.href='/');$('analyse').addEventListener('click',async()=>{const c=$('candidate').files[0];if(!c){$('status').textContent='Choose a QC image first.';return}const f=new FormData();f.append('mode',$('mode').value);f.append('model_ref',$('model').value);f.append('candidate',c);const ref=$('reference').files[0];if(ref)f.append('reference',ref);$('status').textContent='Analysing geometry…';$('analyse').disabled=true;try{const r=await api('/api/v1/analyse',{method:'POST',body:f});show(r);$('status').textContent='Analysis complete.'}catch(e){$('status').textContent=e.message}finally{$('analyse').disabled=false}});$('report').addEventListener('click',()=>{if(!state.result)return;const a=document.createElement('a');a.href=state.result.report_url;a.download=`WatchAlign-${state.result.model.reference}-QC-report.png`;a.click()});loadModels().then(updateMode).catch(e=>$('status').textContent=e.message);'''
+V1_JS = r'''const state={models:[],result:null,view:'annotated'};const $=id=>document.getElementById(id);async function api(url,opt={}){const r=await fetch(url,opt);const b=(r.headers.get('content-type')||'').includes('json')?await r.json():await r.text();if(!r.ok)throw new Error(b.detail||b||`Request failed ${r.status}`);return b}async function loadModels(){const d=await api('/api/v1/models/full');state.models=d.models;$('model').innerHTML=d.models.map(m=>`<option value="${m.reference}">${m.brand} ${m.name}</option>`).join('')}function updateMode(){$('genRow').classList.toggle('hidden',$('mode').value!=='gen')}function confClass(v){return v==='high'?'good':v==='medium'?'warn':'bad'}function metric(name,value,cls=''){return `<div class="metric"><strong>${name}</strong><span class="${cls}">${value}</span></div>`}function show(r){state.result=r;$('result').classList.remove('hidden');$('side').classList.remove('hidden');const warning=r.metrics.measurement_warning;$('measurementWarning').textContent=warning||'';$('measurementWarning').classList.toggle('hidden',!warning);const p=r.metrics.perspective||{};const regions=r.metrics.region_confidence||{};let h='';h+=metric('Model',`${r.model.reference} · ${r.model.name}`);h+=metric('Mode',r.mode==='gen'?'Gen Compare':'QC Analysis');h+=metric('Overall confidence',r.metrics.overall_confidence,confClass(r.metrics.overall_confidence));if(p.candidate?.available)h+=metric('Apparent camera tilt',`${p.candidate.tilt_deg}°`,p.warning?'warn':'');if(p.mismatch_deg!=null)h+=metric('Perspective mismatch',`${p.mismatch_deg}°`,p.warning?'warn':'good');if(r.metrics.bezel)h+=metric('Bezel 12 estimate',r.metrics.bezel.reliable===false?'Unreliable — measurement withheld':`${r.metrics.bezel.offset_deg>=0?'+':''}${r.metrics.bezel.offset_deg}°`,confClass(r.metrics.bezel.confidence));if(r.metrics.date_window)h+=metric('Date-window position',r.metrics.date_window.reliable===false?'Unreliable — measurement withheld':`x ${r.metrics.date_window.x_offset_percent>=0?'+':''}${r.metrics.date_window.x_offset_percent}% · y ${r.metrics.date_window.y_offset_percent>=0?'+':''}${r.metrics.date_window.y_offset_percent}%`,confClass(r.metrics.date_window.confidence));h+=metric('Region confidence',Object.entries(regions).map(([k,v])=>`${k==='perspective'?'Perspective estimate confidence (not perspective quality)':k}: ${v}`).join(' · '));if(r.reference_status)h+=metric('Reference',r.reference_status,r.reference_status.includes('verified')?'good':'warn');$('summary').innerHTML=h;$('markers').innerHTML=(r.metrics.markers||[]).map(m=>`<tr><td>${m.hour}</td><td>${m.reliable===false?'Unreliable':`${m.angular_error_deg>=0?'+':''}${m.angular_error_deg}°`}</td><td>${m.reliable===false?'Withheld':`${m.radial_error_percent>=0?'+':''}${m.radial_error_percent}%`}</td><td class="${confClass(m.confidence)}">${m.confidence}</td></tr>`).join('');switchView('annotated')}function switchView(v){state.view=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===v));const u=state.result?.images?.[v]||state.result?.images?.annotated;if(u)$('view').src=u}document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));$('mode').addEventListener('change',updateMode);$('legacy').addEventListener('click',()=>location.href='/');$('analyse').addEventListener('click',async()=>{const c=$('candidate').files[0];if(!c){$('status').textContent='Choose a QC image first.';return}const f=new FormData();f.append('mode',$('mode').value);f.append('model_ref',$('model').value);f.append('candidate',c);const ref=$('reference').files[0];if(ref)f.append('reference',ref);$('status').textContent='Analysing geometry…';$('analyse').disabled=true;try{const r=await api('/api/v1/analyse',{method:'POST',body:f});show(r);$('status').textContent='Analysis complete.'}catch(e){$('status').textContent=e.message}finally{$('analyse').disabled=false}});$('report').addEventListener('click',()=>{if(!state.result)return;const a=document.createElement('a');a.href=state.result.report_url;a.download=`WatchAlign-${state.result.model.reference}-QC-report.png`;a.click()});loadModels().then(updateMode).catch(e=>$('status').textContent=e.message);'''
 
 
 def model_info(reference: str) -> dict[str, Any]:
@@ -230,10 +230,59 @@ def region_confidence(markers: list[dict[str, Any]], marker_summary: dict[str, A
 
 
 def overall_confidence(regions: dict[str, str], perspective_warning: str | None) -> str:
-    score_map={"high":2,"medium":1,"low":0}; values=[score_map.get(v,0) for v in regions.values()]
+    score_map={"high":2,"medium":1,"low":0}; values=[score_map.get(v,0) for k,v in regions.items() if k != "perspective"]
     avg=sum(values)/max(len(values),1)
     if perspective_warning: avg-=0.35
     return "high" if avg>=1.55 else "medium" if avg>=0.75 else "low"
+
+
+def gate_measurements(metrics: dict[str, Any], mode: str) -> None:
+    """Withhold unsafe image measurements before JSON, annotation and report output."""
+    regions = metrics.get("region_confidence", {})
+    perspective = metrics.get("perspective", {})
+    perspective["confidence_meaning"] = "Confidence in the perspective estimate, not good perspective"
+    mismatch = perspective.get("mismatch_deg")
+    severe = mode == "gen" and (
+        (mismatch is not None and mismatch >= 6)
+        or any((perspective.get(k) or {}).get("tilt_deg", 0) >= 18 for k in ("candidate", "reference"))
+    )
+    alignment_low = mode == "gen" and metrics.get("base_alignment", {}).get("confidence", "high") not in {"high", "medium"}
+    if severe or alignment_low:
+        metrics["overall_confidence"] = "low"
+    blocked = metrics.get("overall_confidence") not in {"high", "medium"}
+    if blocked:
+        metrics["overall_confidence"] = "low"
+    withheld = []
+    def gate(item, region, fields):
+        if item is None:
+            return
+        reliable = (not blocked and regions.get(region) in {"high", "medium"}
+                    and item.get("confidence") in {"high", "medium"}
+                    and item.get("available", False))
+        item["reliable"] = bool(reliable)
+        if not reliable:
+            item["available"] = False
+            item["reason"] = "Measurement unreliable: low or unavailable confidence"
+            for field in fields:
+                item[field] = None
+            withheld.append(region)
+    for marker in metrics.get("markers", []):
+        gate(marker, "markers", ("angular_error_deg", "radial_error_percent"))
+    gate(metrics.get("bezel"), "bezel", ("offset_deg",))
+    gate(metrics.get("date_window"), "date/cyclops", ("x_offset_percent", "y_offset_percent", "bbox"))
+    if blocked or regions.get("markers") not in {"high", "medium"}:
+        summary = metrics.get("marker_summary", {})
+        for field in ("overall_rotation_deg", "median_abs_marker_error_deg", "ring_radius_ratio"):
+            summary[field] = None
+        summary["available"] = False
+    metrics["measurement_warning"] = (
+        "Measurement unreliable — reference and QC images have incompatible perspective or excessive camera tilt. Use straighter, similarly framed photos. Precise measurements are withheld."
+        if severe else "Measurement unreliable — overall confidence is low. Precise measurements are withheld. Use clearer, straighter photos."
+        if blocked else "Some measurements are unreliable and have been withheld because their region or feature confidence is low."
+        if withheld else None
+    )
+    if blocked:
+        metrics.setdefault("base_alignment", {})["measurements_reliable"] = False
 
 
 def _annotated_image(image: np.ndarray, circle: tuple[float,float,float], markers: list[dict[str,Any]], bezel: dict[str,Any], date: dict[str,Any] | None, model_ref: str, confidence: str) -> np.ndarray:
@@ -260,11 +309,17 @@ def _report_image(annotated: np.ndarray, metrics: dict[str,Any], model: dict[str
     x=w+22; y=34
     def text(s,size=.56,step=28,color=(235,240,245)):
         nonlocal y; cv2.putText(canvas,str(s),(x,y),cv2.FONT_HERSHEY_SIMPLEX,size,color,1,cv2.LINE_AA); y+=step
-    text("WATCH ALIGN V1 QC REPORT",.65,34); text(f"Model: {model['reference']}"); text(f"Confidence: {metrics['overall_confidence'].upper()}");
+    text("WATCH ALIGN V1 QC REPORT",.65,34);
+    if metrics.get("measurement_warning"):
+        text("UNRELIABLE measurements withheld",.46,28,(90,190,255))
+    text(f"Model: {model['reference']}"); text(f"Confidence: {metrics['overall_confidence'].upper()}");
     p=metrics.get('perspective',{}).get('candidate',{}); text(f"Camera tilt: {p.get('tilt_deg','n/a')} deg")
-    b=metrics.get('bezel',{}); text(f"Bezel top: {b.get('offset_deg','n/a')} deg ({b.get('confidence','low')})")
+    text(f"Tilt estimate confidence: {p.get('confidence','low')}",.46)
+    text("Confidence in estimate, not good perspective",.38)
+    b=metrics.get('bezel',{}); text("Bezel top: UNRELIABLE" if b.get("reliable") is False else f"Bezel top: {b.get('offset_deg','n/a')} deg")
     d=metrics.get('date_window');
-    if d: text(f"Date: x {d.get('x_offset_percent','n/a')}%, y {d.get('y_offset_percent','n/a')}%")
+    if d and d.get("reliable") is False: text("Date: UNRELIABLE")
+    elif d: text(f"Date: x {d.get('x_offset_percent','n/a')}%, y {d.get('y_offset_percent','n/a')}%")
     text("Marker errors:",.58,30)
     for m in metrics.get('markers',[]):
         if m.get('available'): text(f"{m['hour']:>2}: {m['angular_error_deg']:+.2f} deg  {m['radial_error_percent']:+.2f}%",.46,21)
@@ -335,5 +390,7 @@ def install_full(backend, perspective_diagnostics) -> None:
             session_id=str(uuid.uuid4());folder=backend.SESSIONS_DIR/session_id;folder.mkdir(parents=True);cv2.imwrite(str(folder/"candidate.png"),candidate_image)
         regions=region_confidence(markers,marker_summary,perspective,bezel,date);overall=overall_confidence(regions,perspective.get('warning'))
         metrics={"overall_confidence":overall,"region_confidence":regions,"perspective":perspective,"markers":markers,"marker_summary":marker_summary,"bezel":bezel,"date_window":date,"base_alignment":base_metrics,"model_geometry_version":1}
+        gate_measurements(metrics, mode)
+        overall=metrics["overall_confidence"]
         annotated=_annotated_image(candidate_image,circle,markers,bezel,date,model_ref,overall);report=_report_image(annotated,metrics,model);images=_save_result_assets(backend,folder,candidate_image,annotated,report,gen_render);(folder/"v1_metrics.json").write_text(json.dumps(metrics,indent=2))
         return {"version":V1_FULL_VERSION,"mode":mode,"model":model,"session_id":session_id,"reference_status":reference_status,"metrics":metrics,"images":images,"report_url":images['report']}

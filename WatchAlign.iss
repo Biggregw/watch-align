@@ -6,7 +6,7 @@
 ; automatically every time - you don't run Inno Setup by hand.
 
 #define MyAppName "Watch Align"
-#define MyAppVersion "0.9.4"
+#define MyAppVersion "1.0.0"
 #define MyAppPublisher "Watch Align"
 #define MyAppExeName "WatchAlign.exe"
 

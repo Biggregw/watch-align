@@ -1,0 +1,23 @@
+const fs = require('node:fs');
+const vm = require('node:vm');
+const assert = require('node:assert/strict');
+const elements = new Map();
+const element = id => {
+  if (!elements.has(id)) elements.set(id, {innerHTML:'',textContent:'',value:'qc',classList:{toggle(){},remove(){}},addEventListener(){}});
+  return elements.get(id);
+};
+const ctx = vm.createContext({document:{getElementById:element,querySelectorAll:()=>[]},fetch:async()=>({ok:true,headers:{get:()=> 'application/json'},json:async()=>({models:[]})})});
+vm.runInContext(fs.readFileSync(process.argv[2],'utf8'),ctx);
+const result={mode:'gen',model:{reference:'124060',name:'Submariner'},metrics:{overall_confidence:'low',measurement_warning:'Measurement unreliable',region_confidence:{perspective:'high'},bezel:{reliable:false,offset_deg:null},date_window:{reliable:false,x_offset_percent:null,y_offset_percent:null},markers:[{hour:12,reliable:false,angular_error_deg:null,radial_error_percent:null,confidence:'low'}]},images:{}};
+ctx.result=result;
+vm.runInContext('show(result)',ctx);
+assert.equal(element('measurementWarning').textContent,'Measurement unreliable');
+assert.match(element('summary').innerHTML,/Unreliable/);
+assert.match(element('summary').innerHTML,/Perspective estimate confidence \(not perspective quality\)/);
+assert.doesNotMatch(element('summary').innerHTML,/null|undefined|NaN/);
+assert.doesNotMatch(element('markers').innerHTML,/null|undefined|NaN/);
+result.metrics.measurement_warning=null;
+result.metrics.bezel={reliable:true,offset_deg:.948,confidence:'high'};
+vm.runInContext('show(result)',ctx);
+assert.equal(element('measurementWarning').textContent,'');
+assert.match(element('summary').innerHTML,/\+0.948°/);

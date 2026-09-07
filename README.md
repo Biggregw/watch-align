@@ -8,6 +8,8 @@ A local Windows tool for comparing two watch photos. You drop in a reference ima
 
 ## Download
 
+V1 opens at `http://127.0.0.1:8001/v1`, independently of legacy builds. Low-confidence measurements are withheld with a warning. Perspective estimate confidence describes certainty in the estimate, not good perspective. See [V1 release and rollback notes](RELEASE-V1.md). Server deployments use `main_v1:app`.
+
 **[WatchAlignSetup.exe — latest release](https://github.com/Biggregw/watch-align/releases/latest/download/WatchAlignSetup.exe)**
 
 Double-click the installer, follow the wizard (Next → Next → Install), and it appears in your Start Menu. No Python, no command line, nothing else needed.
@@ -34,6 +36,6 @@ build.bat
 
 ## Notes
 
-- v0.9, Windows only
+- V1 1.0.0, Windows only
 - Feedback welcome — issues or comments here on GitHub are fine
 - If you find it useful: [buymeacoffee.com/biggregw](https://buymeacoffee.com/biggregw)
