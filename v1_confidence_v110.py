@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-V110_VERSION = "1.1.0"
+V110_VERSION = "1.1.1"
 
 
 def _rank(value: str | None) -> int:
@@ -14,11 +14,6 @@ def _label(score: float) -> str:
 
 
 def perspective_suitability(perspective: dict[str, Any]) -> str:
-    """How suitable the photography is for tiny geometric measurements.
-
-    The ellipse-derived tilt is an apparent distortion equivalent, not a
-    calibrated physical camera angle, so it must not dominate visual alignment.
-    """
     mismatch = perspective.get("mismatch_deg")
     mismatch = float(mismatch) if mismatch is not None else 0.0
     tilts = []
@@ -35,7 +30,6 @@ def perspective_suitability(perspective: dict[str, Any]) -> str:
 
 
 def region_confidence(markers, marker_summary, perspective, bezel, date):
-    """Stable geometry confidence must not be downgraded by ellipse tilt alone."""
     marker_count = int(marker_summary.get("count", 0))
     dial = "high" if marker_count >= 10 else "medium" if marker_count >= 7 else "low"
     result = {
@@ -62,11 +56,6 @@ def visual_alignment_confidence(metrics: dict[str, Any], mode: str) -> str:
 
 
 def gate_measurements(metrics: dict[str, Any], mode: str) -> None:
-    """Separate visual alignment quality from measurement suitability.
-
-    Perspective can withhold bezel/date precision without changing a strong
-    visual registration into a misleading global LOW score.
-    """
     regions = metrics.get("region_confidence", {})
     perspective = metrics.get("perspective", {})
     perspective["confidence_meaning"] = "Confidence in the distortion estimate, not camera-angle quality"
@@ -75,7 +64,7 @@ def gate_measurements(metrics: dict[str, Any], mode: str) -> None:
     visual = visual_alignment_confidence(metrics, mode)
 
     metrics["visual_alignment_confidence"] = visual
-    metrics["overall_confidence"] = visual  # backwards-compatible API alias
+    metrics["overall_confidence"] = visual
     metrics["perspective_suitability"] = suitability
 
     withheld: list[str] = []
@@ -102,13 +91,8 @@ def gate_measurements(metrics: dict[str, Any], mode: str) -> None:
                 item[field] = None
             withheld.append(region)
 
-    # Dial marker geometry is judged from the dial itself. Do not hard-gate it
-    # merely because an ellipse fit suggests a large apparent tilt.
     for marker in metrics.get("markers", []):
         gate(marker, "markers", ("angular_error_deg", "radial_error_percent"), False)
-
-    # Bezel and cyclops/date live on different optical/physical planes and are
-    # much more sensitive to perspective mismatch.
     gate(metrics.get("bezel"), "bezel", ("offset_deg",), True)
     gate(metrics.get("date_window"), "date/cyclops", ("x_offset_percent", "y_offset_percent", "bbox"), True)
 
@@ -146,8 +130,11 @@ def install(v1_full_module) -> None:
     v1_full_module.region_confidence = region_confidence
     v1_full_module.gate_measurements = gate_measurements
 
-    # Keep the existing API/UI structure while making the meaning explicit.
-    v1_full_module.V1_HTML = v1_full_module.V1_HTML.replace("V1 1.0.0", "V1 1.1.0")
+    v1_full_module.V1_HTML = v1_full_module.V1_HTML.replace("V1 1.0.0", "V1 1.1.1")
+    v1_full_module.V1_HTML = v1_full_module.V1_HTML.replace(
+        "Required until a verified built-in reference is installed for this model",
+        "Optional — Watch Align automatically uses an official Rolex reference when available"
+    )
     js = v1_full_module.V1_JS
     js = js.replace("metric('Overall confidence',r.metrics.overall_confidence,confClass(r.metrics.overall_confidence))", "metric('Visual alignment confidence',r.metrics.visual_alignment_confidence||r.metrics.overall_confidence,confClass(r.metrics.visual_alignment_confidence||r.metrics.overall_confidence))+metric('Perspective suitability',r.metrics.perspective_suitability||'n/a',confClass(r.metrics.perspective_suitability||'low'))+metric('Measurement reliability',r.metrics.measurement_reliability||'n/a',confClass(r.metrics.measurement_reliability||'low'))")
     js = js.replace("metric('Apparent camera tilt',`${p.candidate.tilt_deg}°`,p.warning?'warn':'')", "metric('Perspective distortion estimate',`${p.candidate.tilt_deg}° equivalent`,p.warning?'warn':'')")
