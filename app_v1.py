@@ -12,6 +12,7 @@ import v1_official_sources
 from v1_official_sources import install as install_official_sources
 from v1_ux_v120 import install as install_v120
 from v1_ux_v120_patch import install as install_v120_patch
+from v1_bugfix_v121 import install as install_v121
 
 legacy_launcher.PORT = 8001
 legacy_launcher.LOCK_PORT = 8766
@@ -24,6 +25,7 @@ install_reference_library(legacy_launcher.backend, v1_full)
 install_official_sources(legacy_launcher.backend, v1_full, v1_reference_library)
 install_v120(legacy_launcher.backend, v1_full, v1_reference_library, v1_official_sources, perspective_diagnostics)
 install_v120_patch(legacy_launcher.backend)
+install_v121(legacy_launcher.backend, v1_full, v1_official_sources)
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
