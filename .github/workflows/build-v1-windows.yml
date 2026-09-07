@@ -36,7 +36,7 @@ jobs:
       - name: Run V1 regression tests
         shell: pwsh
         run: |
-          pytest -q tests
+          python -m pytest -q tests
 
       - name: Build Windows app
         shell: pwsh
