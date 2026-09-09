@@ -6,11 +6,12 @@ from pathlib import Path
 
 
 def run(backend):
+    from version import VERSION
     from fastapi.testclient import TestClient
     from v1_full import gate_measurements, V1_FULL_VERSION
     with TestClient(backend.app) as client:
         home = client.get('/v1')
-        assert home.status_code == 200 and 'What do you want to check?' in home.text and 'V1 1.2.3' in home.text
+        assert home.status_code == 200 and 'What do you want to check?' in home.text and 'V1 ' + VERSION in home.text
         script=client.get('/static/v1-full.js')
         assert script.status_code == 200 and 'reference_consensus' in script.text and 'Recent comparisons' in home.text
         assert 'dashed oval' not in home.text
@@ -31,7 +32,7 @@ def run(backend):
         assert 'stopped unexpectedly' not in job['message'], job
         assert 'timed out' not in job['message'], job
         models = client.get('/api/v1/models/full').json()
-        assert models['version']==V1_FULL_VERSION == '1.2.3'
+        assert models['version']==V1_FULL_VERSION == VERSION
         assert client.get('/v1/references').status_code==200
         for ref in ('126710BLNR','124060'):
             status = client.get('/api/v1/ux/reference-status/'+ref)

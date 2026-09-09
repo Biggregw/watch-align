@@ -44,6 +44,8 @@ def region_confidence(markers, marker_summary, perspective, bezel, date):
 
 
 def visual_alignment_confidence(metrics: dict[str, Any], mode: str) -> str:
+    if mode == 'gen' and (metrics.get('base_alignment', {}).get('rotation_alignment') or {}).get('confidence') == 'low':
+        return 'low'
     regions = metrics.get("region_confidence", {})
     dial = _rank(regions.get("dial"))
     markers = _rank(regions.get("markers"))

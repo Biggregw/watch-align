@@ -163,6 +163,7 @@ def install(backend):
     jobs = ComparisonJobs(backend.PERSIST_DIR / 'runtime' / 'comparison-jobs')
     backend.comparison_jobs = jobs
     atexit.register(jobs.close)
+    backend.app.add_event_handler('shutdown', jobs.close)
 
     @backend.app.post('/api/v1/comparison-jobs', status_code=202)
     def start(mode: str = Form(...), model_ref: str = Form(...), candidate: UploadFile = File(...),

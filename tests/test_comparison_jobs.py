@@ -73,6 +73,16 @@ def test_timeout_kills_native_worker(tmp_path, monkeypatch):
         jobs.close()
 
 
+def test_tray_quit_stops_comparisons_before_exiting(monkeypatch):
+    import app
+    from types import SimpleNamespace
+    events = []
+    monkeypatch.setattr(app.backend, 'comparison_jobs', SimpleNamespace(close=lambda: events.append('jobs')), raising=False)
+    monkeypatch.setattr(app.os, '_exit', lambda code: events.append('exit'))
+    app._quit(SimpleNamespace(stop=lambda: events.append('tray')), None)
+    assert events == ['jobs', 'tray', 'exit']
+
+
 def test_successful_result_and_stage_are_returned(tmp_path, monkeypatch):
     sleeping_worker(monkeypatch)
     jobs = ComparisonJobs(tmp_path)

@@ -14,6 +14,8 @@ Install `WatchAlignSetup.exe` and launch Watch Align from the Start menu. The tr
 
 Comparisons show their current stage and elapsed time. Cancel stops the comparison process; jobs that exceed three minutes stop with an error. Only one comparison runs at a time per app instance. The legacy `/api/v1/analyse` endpoint remains synchronous for existing clients; the desktop interface uses `/api/v1/comparison-jobs`.
 
+Automatic rotation searches a full 360° to match the candidate to the reference, including sideways and upside-down photos. It displays the applied angle and opens the aligned overlay. The annotated photo is rotated with an expanded canvas so its edges are preserved. If repeating markers or weak detail make the angle ambiguous, the app flags the result for manual review and withholds confident measurements.
+
 Photos and results stay on your PC. Fetching official references connects to the manufacturer; it does not upload your QC photos. Runtime data lives next to the installed executable in `runtime/`.
 
 Perspective correction and reliability checks help with angled photos, but straighter, sharper photographs work best. Measurements describe image geometry, not calibrated physical dimensions or proof of authenticity.
@@ -50,6 +52,7 @@ Pull requests and pushes to `main` run regression tests and build the Windows ar
 - `v1_full.py`, `v1_ux_v120.py`, `v1_bugfix_*.py`: analysis, UI, and compatibility layers.
 - `comparison_jobs.py`, `comparison_progress.py`: isolated workers, progress, cancellation, and timeout.
 - `alignment_performance.py`: bounded residual alignment search.
+- `rotation_alignment.py`: full-turn orientation matching and rigidly rotated analysis views.
 - `static/comparison-jobs.js`: comparison interaction; other V1 assets are generated at startup.
 - `tests/`, `benchmarks/`: regression tests and optional private-image benchmarking.
 - `docs/releases/`: historical release and rollback notes.

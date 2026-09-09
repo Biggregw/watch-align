@@ -1,5 +1,7 @@
 # Release history
 
+- [1.2.4: automatic full-turn rotation](RELEASE-V1.2.4.md)
+
 - [1.2.3: responsive comparisons](RELEASE-V1.2.3.md)
 - [1.2.2: functional audit fixes](RELEASE-V1.2.2.md)
 - [1.2: task-based interface](RELEASE-V1.2.md)

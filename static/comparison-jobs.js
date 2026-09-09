@@ -2,6 +2,20 @@
 (() => {
   let busy = false;
   let jobId = null;
+  const originalShow = show;
+  show = function(result) {
+    originalShow(result);
+    const rotation = result.metrics?.base_alignment?.rotation_alignment;
+    if (!rotation) return;
+    const note = document.createElement('div');
+    note.className = rotation.confidence === 'low' ? 'notice warn' : 'notice';
+    const angle = rotation.applied_correction_deg || 0;
+    note.textContent = rotation.confidence === 'low'
+      ? 'Automatic rotation is uncertain. Check the overlay in Manual overlay before judging differences.'
+      : 'Photo rotated ' + Math.abs(angle).toFixed(2) + '° ' + (angle < 0 ? 'clockwise' : 'anticlockwise') + ' to match the reference.';
+    $('plainFinding').prepend(note);
+    if (rotation.applied && result.images?.overlay) switchView('overlay');
+  };
   const cancel = document.createElement('button');
   cancel.textContent = 'Cancel comparison';
   cancel.hidden = true;
