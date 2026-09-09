@@ -19,6 +19,7 @@ datas = []
 datas += copy_metadata("imageio")
 datas += copy_metadata("imageio-ffmpeg")
 datas += [("references", "references")]
+datas += [("static/comparison-jobs.js", "static")]
 
 a = Analysis(
     ["app_v1.py"],

@@ -366,6 +366,8 @@ def install_full(backend, perspective_diagnostics) -> None:
     @backend.app.post("/api/v1/analyse")
     def analyse(mode: str=Form(...), model_ref: str=Form(...), candidate: UploadFile=File(...), reference: UploadFile|None=File(None)):
         if mode not in {"qc","gen"}: raise HTTPException(status_code=400,detail="mode must be qc or gen")
+        from comparison_progress import report
+        report('Checking watch geometry…')
         model=model_info(model_ref);candidate_image=_read_image(candidate,backend);circle=_full_circle(candidate_image,backend)
         if circle is None: raise HTTPException(status_code=422,detail="Watch Align could not reliably detect the watch/crystal boundary in the QC image.")
         cand_p=perspective_diagnostics(candidate_image,circle);perspective={"candidate":cand_p,"reference":None,"mismatch_deg":None,"warning":None}
@@ -380,11 +382,13 @@ def install_full(backend, perspective_diagnostics) -> None:
                 ref_image,ref_name=_built_in_reference(backend,model_ref)
                 if ref_image is not None: reference_status=f"verified built-in reference: {ref_name}"
             if ref_image is None: raise HTTPException(status_code=422,detail="Gen Compare needs a genuine/reference image for this model. Upload one, or install a verified reference pack.")
+            report('Aligning watch with the genuine reference…')
             matrix,base_metrics=backend.auto_align(ref_image,candidate_image);ref_circle=_full_circle(ref_image,backend);ref_p=perspective_diagnostics(ref_image,ref_circle);perspective["reference"]=ref_p
             if ref_p.get("available") and cand_p.get("available"):
                 mismatch=abs(float(ref_p['tilt_deg'])-float(cand_p['tilt_deg']));perspective['mismatch_deg']=round(mismatch,2)
                 if mismatch>=6: perspective['warning']="Large perspective mismatch between reference and QC image; precision comparison is limited."
                 elif mismatch>=3: perspective['warning']="Moderate perspective mismatch; inspect small differences cautiously."
+            report('Rendering comparison images…')
             session_id=str(uuid.uuid4());folder=backend.SESSIONS_DIR/session_id;folder.mkdir(parents=True);cv2.imwrite(str(folder/"reference.png"),ref_image);cv2.imwrite(str(folder/"candidate.png"),candidate_image);np.save(folder/"base_transform.npy",matrix);(folder/"metrics.json").write_text(json.dumps(base_metrics,indent=2));request=backend.RenderRequest(session_id=session_id);gen_render=backend.render_assets(folder,ref_image,candidate_image,matrix,request,base_metrics)
         else:
             session_id=str(uuid.uuid4());folder=backend.SESSIONS_DIR/session_id;folder.mkdir(parents=True);cv2.imwrite(str(folder/"candidate.png"),candidate_image)

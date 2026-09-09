@@ -194,9 +194,12 @@ def install(backend, v1_full_module, reference_library_module, official_sources_
                 chosen_meta = None
                 candidates = []
                 if auto and candidate is not None:
+                    from comparison_progress import report
+                    report('Selecting the closest genuine reference…')
                     candidate_raw, candidate_image = _decode_upload(candidate, backend)
                     rows = _cached_reference_rows(backend, reference_library_module, model_ref)
                     if not any(r.get("official") for r in rows):
+                        report('Downloading genuine reference images…')
                         official_sources_module.sync_official_references(backend, model_ref)
                         rows = _cached_reference_rows(backend, reference_library_module, model_ref)
                     root = reference_library_module._root(backend, model_ref)
@@ -228,6 +231,7 @@ def install(backend, v1_full_module, reference_library_module, official_sources_
                     # apparent issue is stable without making normal use too slow.
                     for _, meta, path in candidates[1:3]:
                         try:
+                            report('Checking agreement with another genuine reference…')
                             clone_candidate = _upload_from_bytes(getattr(candidate, "filename", "candidate.jpg") or "candidate.jpg", candidate_raw)
                             clone_reference = _upload_from_bytes(path.name, path.read_bytes())
                             rr = __previous(mode="gen", model_ref=model_ref, candidate=clone_candidate, reference=clone_reference)

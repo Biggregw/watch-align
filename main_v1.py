@@ -24,3 +24,5 @@ install_v120_patch(backend)
 install_v121(backend, v1_full, v1_official_sources)
 install_v122(backend, v1_full, v1_ux_v120, v1_official_sources, perspective_diagnostics)
 app = backend.app
+from comparison_jobs import install as install_comparison_jobs
+install_comparison_jobs(backend)

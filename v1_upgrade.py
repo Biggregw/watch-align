@@ -151,14 +151,9 @@ def stable_ecc_refinement(reference: np.ndarray, candidate: np.ndarray, base_mat
     ref_geom, cand_geom = _geometry_image(reference), _geometry_image(aligned)
     mask = _stable_mask((h, w), reference_circle)
     before = _masked_corr(ref_geom, cand_geom, mask)
-    warp = np.eye(2, 3, dtype=np.float32)
-    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 350, 1e-7)
-    dual_mask = getattr(cv2, "findTransformECCWithMask", None)
+    from alignment_performance import affine_ecc
     try:
-        if dual_mask is not None:
-            score, inverse = dual_mask(ref_geom, cand_geom, mask, mask, warp, cv2.MOTION_AFFINE, criteria, 5)
-        else:
-            score, inverse = cv2.findTransformECC(ref_geom, cand_geom, warp, cv2.MOTION_AFFINE, criteria, inputMask=mask, gaussFiltSize=5)
+        score, inverse = affine_ecc(ref_geom, cand_geom, mask)
     except cv2.error as exc:
         return base_matrix, {"attempted": True, "applied": False, "reason": "ECC failed", "error": str(exc).splitlines()[0][:180], "before_correlation": round(before, 4)}
     correction = cv2.invertAffineTransform(inverse).astype(np.float64)
@@ -170,7 +165,7 @@ def stable_ecc_refinement(reference: np.ndarray, candidate: np.ndarray, base_mat
     improvement = after - before
     plausible = float(score) >= 0.20 and improvement >= 0.003 and translation <= 0.025 * min(h, w) and abs(rotation) <= 0.65 and 0.992 <= average_scale <= 1.008 and anisotropy <= 1.012
     refined = _combine_affine(correction, base_matrix) if plausible else base_matrix
-    return refined, {"attempted": True, "applied": bool(plausible), "reason": "applied" if plausible else "correction rejected by geometry guard", "score": round(float(score), 4), "before_correlation": round(float(before), 4), "after_correlation": round(float(after), 4), "improvement": round(float(improvement), 4), "rotation_correction_deg": round(float(rotation), 4), "scale_correction": round(float(average_scale), 6), "anisotropy": round(float(anisotropy), 6), "translation_px": round(float(translation), 3), "dual_mask_api": bool(dual_mask is not None)}
+    return refined, {"attempted": True, "applied": bool(plausible), "reason": "applied" if plausible else "correction rejected by geometry guard", "score": round(float(score), 4), "before_correlation": round(float(before), 4), "after_correlation": round(float(after), 4), "improvement": round(float(improvement), 4), "rotation_correction_deg": round(float(rotation), 4), "scale_correction": round(float(average_scale), 6), "anisotropy": round(float(anisotropy), 6), "translation_px": round(float(translation), 3), "dual_mask_api": False}
 
 
 def _circle_from_metrics(metrics: dict[str, Any], key: str) -> tuple[float, float, float] | None:

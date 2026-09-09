@@ -29,7 +29,7 @@ def test_runtime_version_and_core_pages_are_consistent():
     with _client() as c:
         home = c.get('/v1')
         assert home.status_code == 200
-        assert 'V1 1.2.2' in home.text
+        assert 'V1 1.2.3' in home.text
         assert 'dashed oval' not in home.text.lower()
         js = c.get('/static/v1-full.js')
         assert js.status_code == 200
@@ -40,7 +40,7 @@ def test_runtime_version_and_core_pages_are_consistent():
         models = c.get('/api/v1/models/full')
         assert models.status_code == 200
         body = models.json()
-        assert body['version'] == v1_full.V1_FULL_VERSION == '1.2.2'
+        assert body['version'] == v1_full.V1_FULL_VERSION == '1.2.3'
         assert {m['reference'] for m in body['models']} == {'126710BLNR', '124060'}
 
 

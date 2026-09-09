@@ -646,22 +646,9 @@ def refine_watch_alignment_ecc(
         & (distance < radius * 1.12)
     ).astype(np.uint8) * 255
 
-    warp = np.eye(2, 3, dtype=np.float32)
-    criteria = (
-        cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
-        600,
-        1e-7,
-    )
     try:
-        score, inverse_warp = cv2.findTransformECC(
-            reference_geometry,
-            aligned_geometry,
-            warp,
-            cv2.MOTION_AFFINE,
-            criteria,
-            inputMask=annulus_mask,
-            gaussFiltSize=5,
-        )
+        from alignment_performance import affine_ecc
+        score, inverse_warp = affine_ecc(reference_geometry, aligned_geometry, annulus_mask)
         forward_correction = cv2.invertAffineTransform(inverse_warp).astype(np.float64)
         correction_rotation, sx, sy, anisotropy = affine_decomposition(forward_correction)
         correction_translation = math.hypot(
