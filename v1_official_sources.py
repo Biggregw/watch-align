@@ -230,8 +230,7 @@ def install(backend, v1_full_module, reference_library_module) -> None:
                         result = sync_official_references(backend, model_ref)
                         cached, _ = _choose_cached_official(backend, model_ref)
                         if cached is None:
-                            detail = "; ".join(result.get("errors", [])[-3:]) or "official Rolex source returned no usable image"
-                            raise HTTPException(status_code=502, detail=f"Automatic official Rolex reference lookup failed: {detail}")
+                            raise HTTPException(status_code=422, detail="Official Rolex reference lookup is blocked right now. Upload your own genuine/reference image in Advanced, or add a trusted reference in the Reference library.")
                 return __original(*args, **kwargs)
 
             route.dependant.call = analyse_with_official_sync

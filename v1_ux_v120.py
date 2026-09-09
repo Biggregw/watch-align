@@ -71,6 +71,12 @@ def _cached_reference_rows(backend, reference_library_module, model_ref: str) ->
     return rows
 
 
+def _reference_label(meta: dict[str, Any]) -> str:
+    if meta.get("official"):
+        return f"official Rolex reference: {meta.get('variant','official')} · {meta.get('model_code','')} · {meta.get('source_kind','manufacturer source')}"
+    return f"user-trusted reference: {meta.get('variant','stored')} · {meta.get('filename','reference')}"
+
+
 def _decode_upload(upload: UploadFile, backend) -> tuple[bytes, np.ndarray]:
     raw = upload.file.read(backend.MAX_UPLOAD_BYTES + 1)
     upload.file.seek(0)
@@ -193,6 +199,7 @@ def install(backend, v1_full_module, reference_library_module, official_sources_
                 candidate_image = None
                 chosen_meta = None
                 candidates = []
+                sync_error = None
                 if auto and candidate is not None:
                     from comparison_progress import report
                     report('Selecting the closest genuine reference…')
@@ -200,12 +207,13 @@ def install(backend, v1_full_module, reference_library_module, official_sources_
                     rows = _cached_reference_rows(backend, reference_library_module, model_ref)
                     if not any(r.get("official") for r in rows):
                         report('Downloading genuine reference images…')
-                        official_sources_module.sync_official_references(backend, model_ref)
+                        try:
+                            official_sources_module.sync_official_references(backend, model_ref)
+                        except Exception as exc:
+                            sync_error = exc
                         rows = _cached_reference_rows(backend, reference_library_module, model_ref)
                     root = reference_library_module._root(backend, model_ref)
                     for meta in rows:
-                        if not meta.get("official"):
-                            continue
                         path = root / meta["filename"]
                         ref_img = cv2.imread(str(path))
                         if ref_img is None:
@@ -219,12 +227,14 @@ def install(backend, v1_full_module, reference_library_module, official_sources_
                     if candidates:
                         _, chosen_meta, chosen_path = candidates[0]
                         kwargs["reference"] = _upload_from_bytes(chosen_path.name, chosen_path.read_bytes())
+                    elif sync_error is not None:
+                        raise HTTPException(status_code=422, detail="Official Rolex reference lookup is blocked right now. Upload your own genuine/reference image in Advanced, or add a trusted reference in the Reference library.")
                 else:
                     kwargs.pop("preferred_reference", None)
 
                 result = __previous(*args, **kwargs)
                 if auto and chosen_meta is not None and isinstance(result, dict):
-                    result["reference_status"] = f"official Rolex reference: {chosen_meta.get('variant','official')} · {chosen_meta.get('model_code','')} · {chosen_meta.get('source_kind','manufacturer source')}"
+                    result["reference_status"] = _reference_label(chosen_meta)
                     result.setdefault("metrics", {})["reference_selection"] = {"strategy": "closest photographic geometry", "selected": chosen_meta.get("filename"), "candidate_count": len(candidates)}
                     consensus_results = [result]
                     # Two additional references are enough to detect whether an

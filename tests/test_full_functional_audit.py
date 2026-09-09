@@ -104,6 +104,48 @@ def test_reference_status_and_official_source_endpoints_cover_all_models():
         assert c.get('/api/v1/ux/reference-status/UNKNOWN').status_code == 404
 
 
+def test_gen_compare_falls_back_to_trusted_reference_when_official_sources_are_blocked(monkeypatch):
+    runtime = _runtime()
+    monkeypatch.setattr(
+        runtime.v1_official_sources,
+        '_fetch',
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError('HTTP Error 403: Forbidden')),
+    )
+    with TestClient(runtime.app) as c:
+        saved = c.post(
+            '/api/v1/references/124060',
+            files={'image': ('trusted.png', _png(), 'image/png')},
+            data={'source': 'trusted test reference', 'trusted': 'true'},
+        )
+        assert saved.status_code == 200
+        result = c.post(
+            '/api/v1/analyse',
+            data={'mode': 'gen', 'model_ref': '124060'},
+            files={'candidate': ('qc.png', _png(), 'image/png')},
+        )
+        assert result.status_code == 200
+        assert 'user-trusted reference' in result.json()['reference_status']
+
+
+def test_gen_compare_reports_actionable_error_when_official_sources_are_blocked(monkeypatch, tmp_path):
+    runtime = _runtime()
+    monkeypatch.setattr(runtime.backend, 'PERSIST_DIR', tmp_path)
+    monkeypatch.setattr(
+        runtime.v1_official_sources,
+        '_fetch',
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError('HTTP Error 403: Forbidden')),
+    )
+    with TestClient(runtime.app) as c:
+        result = c.post(
+            '/api/v1/analyse',
+            data={'mode': 'gen', 'model_ref': '124060'},
+            files={'candidate': ('qc.png', _png(), 'image/png')},
+        )
+        assert result.status_code == 422
+        assert 'Upload your own genuine/reference image' in result.json()['detail']
+        assert 'HTTP Error 403' not in result.json()['detail']
+
+
 def test_reference_matching_accounts_for_perspective_not_just_framing():
     _runtime()
     class Backend:

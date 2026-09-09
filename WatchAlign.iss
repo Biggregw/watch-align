@@ -1,6 +1,6 @@
 ; Watch Align - Inno Setup installer script.
 #define MyAppName "Watch Align"
-#define MyAppVersion "1.2.4"
+#define MyAppVersion "1.2.5"
 #define MyAppPublisher "Watch Align"
 #define MyAppExeName "WatchAlign.exe"
 
