@@ -366,11 +366,13 @@ def install_full(backend, perspective_diagnostics) -> None:
     @backend.app.post("/api/v1/analyse")
     def analyse(mode: str=Form(...), model_ref: str=Form(...), candidate: UploadFile=File(...), reference: UploadFile|None=File(None)):
         if mode not in {"qc","gen"}: raise HTTPException(status_code=400,detail="mode must be qc or gen")
+        from comparison_progress import report
+        report('Checking watch geometry…')
         model=model_info(model_ref);candidate_image=_read_image(candidate,backend);circle=_full_circle(candidate_image,backend)
         if circle is None: raise HTTPException(status_code=422,detail="Watch Align could not reliably detect the watch/crystal boundary in the QC image.")
         cand_p=perspective_diagnostics(candidate_image,circle);perspective={"candidate":cand_p,"reference":None,"mismatch_deg":None,"warning":None}
         if cand_p.get("available") and float(cand_p.get("tilt_deg",0))>=18: perspective["warning"]="QC image is strongly off-axis; small alignment differences are unreliable."
-        markers,marker_summary=marker_measurements(candidate_image,circle,model);bezel=bezel_top_measurement(candidate_image,circle,model);date=date_window_measurement(candidate_image,circle,model)
+        analysis_image, analysis_circle = candidate_image, circle
         gen_render=None;reference_status=None;base_metrics={}
         if mode=="gen":
             ref_image=None;ref_name=None
@@ -380,17 +382,26 @@ def install_full(backend, perspective_diagnostics) -> None:
                 ref_image,ref_name=_built_in_reference(backend,model_ref)
                 if ref_image is not None: reference_status=f"verified built-in reference: {ref_name}"
             if ref_image is None: raise HTTPException(status_code=422,detail="Gen Compare needs a genuine/reference image for this model. Upload one, or install a verified reference pack.")
+            report('Aligning watch with the genuine reference…')
             matrix,base_metrics=backend.auto_align(ref_image,candidate_image);ref_circle=_full_circle(ref_image,backend);ref_p=perspective_diagnostics(ref_image,ref_circle);perspective["reference"]=ref_p
             if ref_p.get("available") and cand_p.get("available"):
                 mismatch=abs(float(ref_p['tilt_deg'])-float(cand_p['tilt_deg']));perspective['mismatch_deg']=round(mismatch,2)
                 if mismatch>=6: perspective['warning']="Large perspective mismatch between reference and QC image; precision comparison is limited."
                 elif mismatch>=3: perspective['warning']="Moderate perspective mismatch; inspect small differences cautiously."
+            report('Rendering comparison images…')
             session_id=str(uuid.uuid4());folder=backend.SESSIONS_DIR/session_id;folder.mkdir(parents=True);cv2.imwrite(str(folder/"reference.png"),ref_image);cv2.imwrite(str(folder/"candidate.png"),candidate_image);np.save(folder/"base_transform.npy",matrix);(folder/"metrics.json").write_text(json.dumps(base_metrics,indent=2));request=backend.RenderRequest(session_id=session_id);gen_render=backend.render_assets(folder,ref_image,candidate_image,matrix,request,base_metrics)
         else:
             session_id=str(uuid.uuid4());folder=backend.SESSIONS_DIR/session_id;folder.mkdir(parents=True);cv2.imwrite(str(folder/"candidate.png"),candidate_image)
+        rotation = base_metrics.get('rotation_alignment', {})
+        if mode == 'gen' and rotation.get('applied'):
+            from rotation_alignment import rotated_analysis_view
+            analysis_image, analysis_circle = rotated_analysis_view(candidate_image, circle, rotation['applied_correction_deg'])
+        # Measure the source photograph after a rigid orientation correction,
+        # never the perspective-warped or appearance-matched comparison layer.
+        markers,marker_summary=marker_measurements(analysis_image,analysis_circle,model);bezel=bezel_top_measurement(analysis_image,analysis_circle,model);date=date_window_measurement(analysis_image,analysis_circle,model)
         regions=region_confidence(markers,marker_summary,perspective,bezel,date);overall=overall_confidence(regions,perspective.get('warning'))
         metrics={"overall_confidence":overall,"region_confidence":regions,"perspective":perspective,"markers":markers,"marker_summary":marker_summary,"bezel":bezel,"date_window":date,"base_alignment":base_metrics,"model_geometry_version":1}
         gate_measurements(metrics, mode)
         overall=metrics["overall_confidence"]
-        annotated=_annotated_image(candidate_image,circle,markers,bezel,date,model_ref,overall);report=_report_image(annotated,metrics,model);images=_save_result_assets(backend,folder,candidate_image,annotated,report,gen_render);(folder/"v1_metrics.json").write_text(json.dumps(metrics,indent=2))
+        annotated=_annotated_image(analysis_image,analysis_circle,markers,bezel,date,model_ref,overall);report=_report_image(annotated,metrics,model);images=_save_result_assets(backend,folder,candidate_image,annotated,report,gen_render);(folder/"v1_metrics.json").write_text(json.dumps(metrics,indent=2))
         return {"version":V1_FULL_VERSION,"mode":mode,"model":model,"session_id":session_id,"reference_status":reference_status,"metrics":metrics,"images":images,"report_url":images['report']}

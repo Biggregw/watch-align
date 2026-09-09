@@ -202,6 +202,8 @@ def install(backend, v1_full_module, ux_module, official_sources_module, perspec
                     comparisons = [result]
                     for path, _other_meta in _other_cached_references(backend, model_ref, name, limit=2):
                         try:
+                            from comparison_progress import report
+                            report('Checking agreement with another genuine reference…')
                             if candidate is not None and hasattr(candidate, "file"):
                                 candidate.file.seek(0)
                             alt = UploadFile(filename=path.name, file=io.BytesIO(path.read_bytes()))

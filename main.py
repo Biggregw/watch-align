@@ -530,7 +530,7 @@ def annular_signature(
         (maximum_radius, angle_samples),
         (float(center_x), float(center_y)),
         float(maximum_radius),
-        cv2.WARP_POLAR_LINEAR,
+        cv2.WARP_POLAR_LINEAR | cv2.WARP_FILL_OUTLIERS,
     )
     start = max(0, int(radius * inner_ratio))
     stop = min(maximum_radius, int(radius * outer_ratio))
@@ -567,7 +567,8 @@ def estimate_polar_rotation(
         return None, 0.0
     valid_indices = np.where(valid)[0]
     best_index = valid_indices[int(np.argmax(correlation[valid]))]
-    return float(degrees[best_index]), float(correlation[best_index] / sample_count)
+    # Polar angles run clockwise; getRotationMatrix2D uses anticlockwise angles.
+    return -float(degrees[best_index]), float(correlation[best_index] / sample_count)
 
 
 def circle_similarity_matrix(
@@ -646,22 +647,9 @@ def refine_watch_alignment_ecc(
         & (distance < radius * 1.12)
     ).astype(np.uint8) * 255
 
-    warp = np.eye(2, 3, dtype=np.float32)
-    criteria = (
-        cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
-        600,
-        1e-7,
-    )
     try:
-        score, inverse_warp = cv2.findTransformECC(
-            reference_geometry,
-            aligned_geometry,
-            warp,
-            cv2.MOTION_AFFINE,
-            criteria,
-            inputMask=annulus_mask,
-            gaussFiltSize=5,
-        )
+        from alignment_performance import affine_ecc
+        score, inverse_warp = affine_ecc(reference_geometry, aligned_geometry, annulus_mask)
         forward_correction = cv2.invertAffineTransform(inverse_warp).astype(np.float64)
         correction_rotation, sx, sy, anisotropy = affine_decomposition(forward_correction)
         correction_translation = math.hypot(
@@ -1131,6 +1119,13 @@ def auto_align(reference: np.ndarray, candidate: np.ndarray) -> tuple[np.ndarray
         candidate_circle,
     )
 
+    from comparison_progress import report
+    from rotation_alignment import estimate_rotation
+    report('Matching the watch angle to the genuine reference…')
+    full_rotation, rotation_metrics = estimate_rotation(
+        reference_crop, candidate_crop, reference_circle, candidate_circle,
+    )
+
     if marker_rotation is not None and polar_rotation is not None:
         disagreement = abs(((marker_rotation - polar_rotation + 180.0) % 360.0) - 180.0)
         if disagreement <= 2.0:
@@ -1144,7 +1139,19 @@ def auto_align(reference: np.ndarray, candidate: np.ndarray) -> tuple[np.ndarray
     else:
         rotation = 0.0
 
-    rotation = float(np.clip(rotation, -15.0, 15.0))
+    if full_rotation is not None:
+        rotation = full_rotation
+        polar_rotation = full_rotation
+        polar_correlation = rotation_metrics['score']
+        # Hour markers repeat every 30 degrees. Compare the equivalent angle
+        # nearest the full-dial estimate, rather than treating 90 degrees as a
+        # disagreement with an otherwise identical marker layout.
+        if marker_rotation is not None:
+            marker_rotation += 30 * round((rotation - marker_rotation) / 30)
+            marker_rotation = (marker_rotation + 180) % 360 - 180
+    else:
+        rotation = float(np.clip(rotation, -15.0, 15.0))
+    rotation_metrics['applied_correction_deg'] = round(rotation, 3)
     initial_matrix_crop = circle_similarity_matrix(reference_circle, candidate_circle, rotation)
     refined_matrix_crop, ecc_metrics = refine_watch_alignment_ecc(
         reference_crop,
@@ -1175,10 +1182,13 @@ def auto_align(reference: np.ndarray, candidate: np.ndarray) -> tuple[np.ndarray
     polar_quality = max(0.0, min(1.0, polar_correlation / 0.55))
     ecc_quality = max(0.0, min(1.0, float(ecc_metrics["ecc_score"]) / 0.55))
     score = max(0.0, min(1.0, marker_quality * 0.40 + polar_quality * 0.20 + ecc_quality * 0.40))
+    if rotation_metrics['confidence'] == 'low':
+        score = min(score, .47)
     confidence = "high" if score >= 0.72 else "medium" if score >= 0.48 else "low"
 
     metrics = {
-        "alignment_method": "crystal circle + hour markers + polar rotation + affine ECC + ROLEX logo lock",
+        "alignment_method": "crystal circle + full-turn dial rotation + hour markers + affine ECC + ROLEX logo lock",
+        "rotation_alignment": rotation_metrics,
         "matches": min(reference_marker_count, candidate_marker_count),
         "inliers": min(reference_marker_count, candidate_marker_count),
         "inlier_ratio": round(marker_quality, 3),

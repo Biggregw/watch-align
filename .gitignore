@@ -24,3 +24,14 @@ debug_runner.py
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated frontend and test output
+static/v1.html
+static/v1.js
+static/v1-full.js
+.pytest_cache/
+ui-test.js
+smoke-result.json
+artifact/
+WatchAlign-V1-Windows.zip
+SHA256SUMS.txt

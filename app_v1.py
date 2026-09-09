@@ -1,6 +1,12 @@
 """Watch Align V1 Windows launcher."""
 from __future__ import annotations
 import multiprocessing
+import sys
+if __name__ == "__main__" and len(sys.argv) == 3 and sys.argv[1] == "--comparison-worker":
+    from pathlib import Path
+    from comparison_jobs import run_worker
+    run_worker(Path(sys.argv[2]).resolve())
+    raise SystemExit(0)
 import app as legacy_launcher
 from v1_upgrade import install, perspective_diagnostics
 import v1_full
@@ -29,6 +35,8 @@ install_v120(legacy_launcher.backend, v1_full, v1_reference_library, v1_official
 install_v120_patch(legacy_launcher.backend)
 install_v121(legacy_launcher.backend, v1_full, v1_official_sources)
 install_v122(legacy_launcher.backend, v1_full, v1_ux_v120, v1_official_sources, perspective_diagnostics)
+from comparison_jobs import install as install_comparison_jobs
+install_comparison_jobs(legacy_launcher.backend)
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()

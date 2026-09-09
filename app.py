@@ -103,6 +103,9 @@ def _open_app(icon, item) -> None:
 
 
 def _quit(icon, item) -> None:
+    jobs = getattr(backend, 'comparison_jobs', None)
+    if jobs is not None:
+        jobs.close()
     icon.stop()
     os._exit(0)
 
