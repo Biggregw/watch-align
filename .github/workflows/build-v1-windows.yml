@@ -76,7 +76,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: WatchAlign-V1-Windows
-          path: WatchAlign-V1-Windows.zip
+          path: |
+            WatchAlign-V1-Windows.zip
+            installer_output/WatchAlignSetup.exe
           if-no-files-found: error
           retention-days: 14
       - name: Publish tested production release
