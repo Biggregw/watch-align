@@ -91,7 +91,7 @@ def estimate_rotation(reference, candidate, reference_circle, candidate_circle):
     offset = float(np.clip(.5 * (previous - following) / curvature, -.5, .5)) if curvature < -1e-9 else 0.0
     # Polar rows increase clockwise; OpenCV's positive rotation is anticlockwise.
     angle = float((-(peak + offset) * 360 / ANGLE_SAMPLES + 180) % 360 - 180)
-    reliable = score >= .24 and margin >= .035
+    reliable = score >= .16 and margin >= .035
     confidence = 'high' if score >= .50 and margin >= .08 else 'medium' if reliable else 'low'
     diagnostics = {'applied': reliable, 'confidence': confidence, 'correction_deg': round(angle, 3),
                    'score': round(score, 4), 'alternative_score': round(other, 4), 'margin': round(margin, 4),
