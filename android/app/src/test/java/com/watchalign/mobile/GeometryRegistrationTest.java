@@ -18,9 +18,27 @@ public class GeometryRegistrationTest {
                 11, 0.45,
                 2.0);
         assertTrue(s.usable);
-        assertEquals(-4.5, s.rotationDeg, 0.05);
+        // OpenCV getRotationMatrix2D is visually counter-clockwise-positive.
+        // A source marker ring rolled +3.2° clockwise relative to a -1.3°
+        // reference therefore needs a +4.5° OpenCV rotation to line up.
+        assertEquals(4.5, s.rotationDeg, 0.05);
         assertEquals(1.5, s.scale, 0.02);
         assertTrue(s.confidence > 0.75);
+    }
+
+    @Test public void returnedRotationActuallyMapsSourceClockAngleToReferenceClockAngle() {
+        double srcClockwise = 7.0;
+        double refClockwise = 1.5;
+        GeometryRegistration.Solution s = GeometryRegistration.solve(
+                200, 200, 164, 164,
+                srcClockwise, refClockwise,
+                0.95, 0.95,
+                12, 0.2, 1.0);
+        assertTrue(s.usable);
+        // Under OpenCV's image-coordinate rotation convention, applying +theta
+        // subtracts theta from a clockwise-positive clock angle.
+        double mapped = GeometryRegistration.wrap180(srcClockwise - s.rotationDeg);
+        assertEquals(refClockwise, mapped, 1e-9);
     }
 
     @Test public void rejectsScaleDisagreement() {
@@ -44,6 +62,15 @@ public class GeometryRegistrationTest {
                 5, 0.2,
                 1.0);
         assertFalse(s.usable);
+    }
+
+    @Test public void rejectsExtremeRollDifference() {
+        GeometryRegistration.Solution s = GeometryRegistration.solve(
+                200, 200, 164, 164,
+                30.0, 0.0,
+                0.95, 0.95, 12, 0.3, 1.0);
+        assertFalse(s.usable);
+        assertTrue(s.reason.contains("roll differs too much"));
     }
 
     @Test public void perspectiveMismatchLowersConfidenceWithoutFakingFailure() {
