@@ -4,7 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
-/** Alpha9 facade: fixes alpha8's false post-warp centre validation failures. */
+/** Alpha9 facade: deterministic geometry transform is the only overlay path. */
 public final class WatchAlignCoreV9 {
     public static final String CORE_VERSION = "1.3.0-alpha9";
 
@@ -34,26 +34,28 @@ public final class WatchAlignCoreV9 {
 
     public static AnalysisResult analyse(Bitmap watch, Bitmap reference, String modelRef) {
         WatchAlignCoreV7.AnalysisResult base=WatchAlignCoreV7.analyse(watch,reference,modelRef);
-        Bitmap aligned=base.aligned;
-        double conf=base.registrationConfidence;
         String report=base.report.replace("1.3.0-alpha7",CORE_VERSION);
+        if(reference==null) return new AnalysisResult(base.annotated,null,null,report,base.registrationConfidence);
 
-        if(reference!=null && aligned==null && Double.isFinite(conf) && conf>=0.58) {
-            GeometryOverlayRepair.Result repaired=GeometryOverlayRepair.build(watch,reference);
-            conf=Math.max(conf,repaired.confidence);
-            if(repaired.aligned!=null) {
-                aligned=repaired.aligned;
-                int cut=report.lastIndexOf("\nGeometry alignment failed final validation");
-                if(cut<0) cut=report.lastIndexOf("\nAligned watch dial could not be re-detected");
-                if(cut>=0) report=report.substring(0,cut);
-                report += String.format(java.util.Locale.US,
-                        "\nReference comparison ready. Deterministic geometry transform passed analytic validation (centre %.2f%%, radius %.2f%%, marker RMS %.2f°).",
-                        repaired.centreError*100.0,repaired.radiusError*100.0,repaired.markerRms);
-            } else {
-                report += "\nDeterministic transform check also refused overlay: " + repaired.reason;
-            }
+        GeometryOverlayRepair.Result repaired=GeometryOverlayRepair.build(watch,reference);
+        Bitmap aligned=repaired.aligned;
+        double conf=Double.isFinite(repaired.confidence)?repaired.confidence:base.registrationConfidence;
+
+        int cut=lastComparisonParagraph(report);
+        if(cut>=0) report=report.substring(0,cut);
+        if(aligned!=null) {
+            report += String.format(java.util.Locale.US,
+                    "\nReference comparison ready. Deterministic geometry transform passed analytic validation (centre %.2f%%, radius %.2f%%, marker RMS %.2f°).",
+                    repaired.centreError*100.0,repaired.radiusError*100.0,repaired.markerRms);
+        } else {
+            report += "\nOverlay withheld: " + (repaired.reason!=null?repaired.reason:"deterministic geometry validation failed.");
         }
         return new AnalysisResult(base.annotated,base.reference,aligned,report,conf);
+    }
+
+    private static int lastComparisonParagraph(String report) {
+        String[] starts={"\nReference comparison ready.","\nGeometry alignment failed final validation","\nAligned watch dial could not be re-detected","\nGeometry registration confidence is too low","\nReference dial geometry could not be verified"};
+        int best=-1; for(String s:starts){int p=report.lastIndexOf(s);if(p>best)best=p;} return best;
     }
 
     private WatchAlignCoreV9() {}
