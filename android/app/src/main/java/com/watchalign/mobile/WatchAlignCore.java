@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Locale;
 
 public final class WatchAlignCore {
-    public static final String CORE_VERSION = "1.3.0-alpha4";
-    private static final double MIN_DIAL_QUALITY = 0.56;
+    public static final String CORE_VERSION = "1.3.0-alpha5";
+    private static final double MIN_DIAL_QUALITY = 0.54;
     private static final double MIN_OVERLAY_ECC = 0.60;
 
     public static final class AnalysisResult {
@@ -49,9 +49,7 @@ public final class WatchAlignCore {
 
     private static final class Circle {
         double x,y,r,quality,darkFraction,circularity;
-        Circle(double x,double y,double r,double quality,double darkFraction,double circularity){
-            this.x=x;this.y=y;this.r=r;this.quality=quality;this.darkFraction=darkFraction;this.circularity=circularity;
-        }
+        Circle(double x,double y,double r,double quality,double darkFraction,double circularity){this.x=x;this.y=y;this.r=r;this.quality=quality;this.darkFraction=darkFraction;this.circularity=circularity;}
     }
     private static final class Marker { int hour; double angular; double radial; double strength; Marker(int h,double a,double r,double s){hour=h;angular=a;radial=r;strength=s;} }
 
@@ -125,9 +123,8 @@ public final class WatchAlignCore {
                                 Mat refined=new Mat();
                                 Imgproc.warpAffine(pre,refined,warp,new Size(ref.cols(),ref.rows()),Imgproc.INTER_LINEAR+Imgproc.WARP_INVERSE_MAP,Core.BORDER_CONSTANT,new Scalar(0,0,0));
                                 Circle check=detectDial(refined);
-                                if(check!=null && Math.hypot(check.x-rd.x,check.y-rd.y)<=rd.r*0.08 && Math.abs(check.r-rd.r)<=rd.r*0.08){
-                                    alignedBitmap=toBitmap(refined);
-                                } else overlayReason="Aligned dial failed the final concentricity check; overlay withheld.";
+                                if(check!=null && Math.hypot(check.x-rd.x,check.y-rd.y)<=rd.r*0.08 && Math.abs(check.r-rd.r)<=rd.r*0.08) alignedBitmap=toBitmap(refined);
+                                else overlayReason="Aligned dial failed the final concentricity check; overlay withheld.";
                                 refined.release();
                             } else overlayReason=String.format(Locale.US,"Residual registration was implausible (%.1f° / %.0f%% dial radius); overlay withheld.",rot,shift*100.0);
                         } else overlayReason=Double.isFinite(ecc) ? String.format(Locale.US,"Registration confidence %.2f is below the %.2f safety threshold; overlay withheld.",ecc,MIN_OVERLAY_ECC) : "Registration could not be verified; overlay withheld.";
@@ -163,37 +160,92 @@ public final class WatchAlignCore {
 
     private static Circle detectDial(Mat bgr){
         Mat gray=new Mat(); Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY); Imgproc.GaussianBlur(gray,gray,new Size(7,7),0);
-        Mat dark=new Mat(); Imgproc.threshold(gray,dark,115,255,Imgproc.THRESH_BINARY_INV);
-        Mat kernel=Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE,new Size(9,9));
-        Imgproc.morphologyEx(dark,dark,Imgproc.MORPH_CLOSE,kernel); Imgproc.morphologyEx(dark,dark,Imgproc.MORPH_OPEN,kernel);
-        List<MatOfPoint> contours=new ArrayList<>(); Mat hierarchy=new Mat(); Imgproc.findContours(dark,contours,hierarchy,Imgproc.RETR_EXTERNAL,Imgproc.CHAIN_APPROX_SIMPLE);
-        int min=Math.min(bgr.cols(),bgr.rows()); Circle best=null; double bestQ=-1;
+        int min=Math.min(bgr.cols(),bgr.rows());
+        Circle best=null; double bestQ=-1;
+
+        // Candidate family 1: dark-region contours. Useful when the black dial is cleanly segmented.
+        Mat dark=new Mat(); Imgproc.threshold(gray,dark,145,255,Imgproc.THRESH_BINARY_INV);
+        Mat kernel=Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE,new Size(5,5));
+        Imgproc.morphologyEx(dark,dark,Imgproc.MORPH_CLOSE,kernel);
+        List<MatOfPoint> contours=new ArrayList<>(); Mat hierarchy=new Mat(); Imgproc.findContours(dark,contours,hierarchy,Imgproc.RETR_LIST,Imgproc.CHAIN_APPROX_SIMPLE);
         for(MatOfPoint contour:contours){
-            double area=Math.abs(Imgproc.contourArea(contour)); if(area < min*min*0.018 || area > min*min*0.30 || contour.rows()<20) continue;
+            double area=Math.abs(Imgproc.contourArea(contour)); if(area < min*min*0.012 || area > min*min*0.24 || contour.rows()<12) continue;
             MatOfPoint2f c2=new MatOfPoint2f(contour.toArray()); Point center=new Point(); float[] radius=new float[1]; Imgproc.minEnclosingCircle(c2,center,radius);
-            double r=radius[0], rn=r/min; if(rn<0.12||rn>0.31){c2.release();continue;}
-            double nx=center.x/bgr.cols(), ny=center.y/bgr.rows(); if(nx<0.12||nx>0.88||ny<0.12||ny>0.88){c2.release();continue;}
-            double perimeter=Imgproc.arcLength(c2,true); double circularity=perimeter>0?Math.max(0,Math.min(1,4*Math.PI*area/(perimeter*perimeter))):0;
-            Rect rect=Imgproc.boundingRect(contour); double aspect=rect.height>0?Math.min(rect.width,rect.height)/(double)Math.max(rect.width,rect.height):0;
-            double fill=Math.min(1.0,area/(Math.PI*r*r)); double darkFraction=sampleDarkFraction(gray,center.x,center.y,r*0.88); double ringEdge=sampleRingEdge(gray,center.x,center.y,r);
-            double centerDist=Math.hypot(nx-0.5,ny-0.5); double centerFit=1.0-Math.min(1.0,centerDist/0.42); double sizeFit=1.0-Math.min(1.0,Math.abs(rn-0.205)/0.105);
-            double q=0.25*darkFraction+0.20*circularity+0.16*aspect+0.13*fill+0.16*ringEdge+0.06*centerFit+0.04*sizeFit;
-            if(darkFraction<0.48||circularity<0.42||aspect<0.72||ringEdge<0.08)q*=0.45;
-            if(q>bestQ){bestQ=q;best=new Circle(center.x,center.y,r,q,darkFraction,circularity);} c2.release();
+            double r=radius[0]; Circle scored=scoreDialCandidate(gray,center.x,center.y,r,min,area,c2);
+            if(scored!=null && scored.quality>bestQ){bestQ=scored.quality;best=scored;} c2.release();
         }
-        for(MatOfPoint c:contours)c.release(); hierarchy.release(); kernel.release(); dark.release(); gray.release(); return best;
+
+        // Candidate family 2: Hough circles, but only accepted when the interior is dark and a marker-like ring is present.
+        // This rescues real QC photos where hands, text and indices break the dark contour into pieces.
+        Mat circles=new Mat();
+        Imgproc.HoughCircles(gray,circles,Imgproc.HOUGH_GRADIENT,1.15,min/10.0,120,28,(int)(min*0.12),(int)(min*0.30));
+        if(circles.cols()>0){
+            for(int i=0;i<circles.cols();i++){
+                double[] c=circles.get(0,i); if(c==null||c.length<3)continue;
+                Circle scored=scoreDialCandidate(gray,c[0],c[1],c[2],min,-1,null);
+                if(scored!=null && scored.quality>bestQ){bestQ=scored.quality;best=scored;}
+            }
+        }
+
+        circles.release(); for(MatOfPoint c:contours)c.release(); hierarchy.release(); kernel.release(); dark.release(); gray.release();
+        return best;
+    }
+
+    private static Circle scoreDialCandidate(Mat gray,double cx,double cy,double r,int min,double area,MatOfPoint2f contour){
+        double rn=r/min; if(rn<0.12||rn>0.30)return null;
+        double nx=cx/gray.cols(), ny=cy/gray.rows(); if(nx<0.12||nx>0.88||ny<0.10||ny>0.86)return null;
+        double centerDist=Math.hypot(nx-0.5,ny-0.48); if(centerDist>0.43)return null;
+
+        double darkCore=sampleDarkFraction(gray,cx,cy,r*0.62);
+        double darkWide=sampleDarkFraction(gray,cx,cy,r*0.90);
+        double ringEdge=sampleRingEdge(gray,cx,cy,r);
+        int markerHits=markerRingHits(gray,cx,cy,r);
+        if(darkCore<0.50 || darkWide<0.42 || markerHits<7 || ringEdge<0.055)return null;
+
+        double circularity=0.80, aspect=0.90, fill=0.80;
+        if(contour!=null && area>0){
+            double perimeter=Imgproc.arcLength(contour,true); circularity=perimeter>0?Math.max(0,Math.min(1,4*Math.PI*area/(perimeter*perimeter))):0;
+            MatOfPoint tmp=new MatOfPoint(contour.toArray()); Rect rect=Imgproc.boundingRect(tmp); tmp.release();
+            aspect=rect.height>0?Math.min(rect.width,rect.height)/(double)Math.max(rect.width,rect.height):0;
+            fill=Math.min(1.0,area/(Math.PI*r*r));
+        }
+        double centerFit=1.0-Math.min(1.0,centerDist/0.43);
+        double sizeFit=1.0-Math.min(1.0,Math.abs(rn-0.19)/0.11);
+        double markerFit=Math.min(1.0,markerHits/11.0);
+        double darkFit=Math.min(1.0,(0.55*darkCore+0.45*darkWide)/0.72);
+        double edgeFit=Math.min(1.0,ringEdge/0.18);
+        double q=0.28*darkFit+0.24*markerFit+0.17*edgeFit+0.10*centerFit+0.08*sizeFit+0.07*circularity+0.04*aspect+0.02*fill;
+        if(markerHits<9)q*=0.90;
+        return new Circle(cx,cy,r,q,darkWide,circularity);
+    }
+
+    private static int markerRingHits(Mat gray,double cx,double cy,double r){
+        int hits=0;
+        for(int h=1;h<=12;h++){
+            double a=Math.toRadians(h==12?0:h*30.0); double best=0;
+            for(double rf=0.68;rf<=0.88;rf+=0.03){
+                for(double da=-4;da<=4;da+=2){
+                    double aa=a+Math.toRadians(da);
+                    int x=(int)Math.round(cx+Math.sin(aa)*r*rf), y=(int)Math.round(cy-Math.cos(aa)*r*rf);
+                    if(x<0||x>=gray.cols()||y<0||y>=gray.rows())continue;
+                    double[]v=gray.get(y,x); if(v!=null)best=Math.max(best,v[0]);
+                }
+            }
+            if(best>=165)hits++;
+        }
+        return hits;
     }
 
     private static double sampleDarkFraction(Mat gray,double cx,double cy,double radius){
         int step=Math.max(2,(int)Math.round(radius/45.0)); double dark=0,total=0;
         int x0=Math.max(0,(int)(cx-radius)),x1=Math.min(gray.cols()-1,(int)(cx+radius)); int y0=Math.max(0,(int)(cy-radius)),y1=Math.min(gray.rows()-1,(int)(cy+radius));
-        for(int y=y0;y<=y1;y+=step)for(int x=x0;x<=x1;x+=step){if(Math.hypot(x-cx,y-cy)>radius)continue;double[]v=gray.get(y,x);if(v==null)continue;total++;if(v[0]<125)dark++;}
+        for(int y=y0;y<=y1;y+=step)for(int x=x0;x<=x1;x+=step){if(Math.hypot(x-cx,y-cy)>radius)continue;double[]v=gray.get(y,x);if(v==null)continue;total++;if(v[0]<135)dark++;}
         return total>0?dark/total:0;
     }
 
     private static double sampleRingEdge(Mat gray,double cx,double cy,double r){
         double sum=0;int n=0;
-        for(int deg=0;deg<360;deg+=3){double a=Math.toRadians(deg),best=0;for(double f=0.94;f<=1.08;f+=0.02){
+        for(int deg=0;deg<360;deg+=3){double a=Math.toRadians(deg),best=0;for(double f=0.92;f<=1.08;f+=0.02){
             int xi=(int)Math.round(cx+Math.cos(a)*r*(f-0.025)),yi=(int)Math.round(cy+Math.sin(a)*r*(f-0.025)),xo=(int)Math.round(cx+Math.cos(a)*r*(f+0.025)),yo=(int)Math.round(cy+Math.sin(a)*r*(f+0.025));
             if(xi<0||xi>=gray.cols()||yi<0||yi>=gray.rows()||xo<0||xo>=gray.cols()||yo<0||yo>=gray.rows())continue;double[]vi=gray.get(yi,xi),vo=gray.get(yo,xo);if(vi!=null&&vo!=null)best=Math.max(best,Math.abs(vo[0]-vi[0])/255.0);
         }sum+=best;n++;}return n>0?sum/n:0;
