@@ -34,37 +34,39 @@ jobs:
       - name: Static safety checks
         run: |
           grep -q 'android.permission.INTERNET' app/src/main/AndroidManifest.xml
-          grep -q 'exact-v3' app/src/main/java/com/watchalign/mobile/OnlineReferenceFinder.java
-          grep -q 'MIN_OVERLAY_ECC = 0.60' app/src/main/java/com/watchalign/mobile/WatchAlignCore.java
-          grep -q 'refineInnerDial' app/src/main/java/com/watchalign/mobile/WatchAlignCore.java
-          grep -q 'sampleBoundaryContrast' app/src/main/java/com/watchalign/mobile/WatchAlignCore.java
-          grep -q '1.3.0-alpha6' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q 'exact-v4' app/src/main/java/com/watchalign/mobile/OnlineReferenceFinder.java
+          grep -q 'WatchAlignCoreV7' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q 'GeometryRegistration.solve' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV7.java
+          grep -q "marker-ring consensus" app/src/main/java/com/watchalign/mobile/WatchAlignCoreV7.java
+          grep -q '1.3.0-alpha7' app/src/main/java/com/watchalign/mobile/MainActivity.java
+      - name: Run Android unit tests
+        run: gradle :app:testDebugUnitTest --stacktrace
       - name: Build standalone APK
         run: gradle :app:assembleDebug --stacktrace
       - name: Prepare release files
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha6.apk
-          sha256sum WatchAlign-Android-1.3.0-alpha6.apk > SHA256SUMS-Android.txt
+          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha7.apk
+          sha256sum WatchAlign-Android-1.3.0-alpha7.apk > SHA256SUMS-Android.txt
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: WatchAlign-Android-1.3.0-alpha6
-          path: android/WatchAlign-Android-1.3.0-alpha6.apk
+          name: WatchAlign-Android-1.3.0-alpha7
+          path: android/WatchAlign-Android-1.3.0-alpha7.apk
           if-no-files-found: error
           retention-days: 30
-      - name: Publish Android alpha6 release
+      - name: Publish Android alpha7 release
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag='android-v1.3.0-alpha6'
+          tag='android-v1.3.0-alpha7'
           git fetch --tags
           if git tag -l "$tag" | grep -q .; then
             echo "Release tag already exists; skipping publication"
             exit 0
           fi
-          gh release create "$tag" WatchAlign-Android-1.3.0-alpha6.apk SHA256SUMS-Android.txt \
+          gh release create "$tag" WatchAlign-Android-1.3.0-alpha7.apk SHA256SUMS-Android.txt \
             --target "$GITHUB_SHA" \
-            --title 'Watch Align Android 1.3.0-alpha6' \
+            --title 'Watch Align Android 1.3.0-alpha7' \
             --prerelease \
-            --notes 'Standalone Android alpha6. Refines the hybrid detector so a strong outer bezel candidate is searched concentrically inward for the true black-dial boundary. Candidate scoring now adds annulus darkness and signed inside-vs-outside boundary contrast, and marker evidence requires a bright marker with darker dial immediately inward. The inner boundary only replaces the outer candidate when it is materially stronger, substantially smaller, and nearly as confident. Overlay safety gates remain unchanged.'
+            --notes 'Android alpha7 replaces raw-pixel ECC gating with tested geometry-first registration based on dial centre/radius, marker-ring scale, robust photo-roll estimation and perspective agreement. Marker QC now removes global photo roll and reports radial deviations relative to the watch marker-ring consensus, eliminating the systematic radial bias seen in alpha6. Exact-model reference discovery is refreshed on each connected run with cache fallback only. Unit tests cover registration, outliers, scale disagreement, marker coverage and perspective confidence.'
