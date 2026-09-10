@@ -45,8 +45,10 @@ public final class GeometryRegistration {
 
     /**
      * Solve a similarity transform from model geometry, not raw pixels.
-     * Marker radii are absolute image radii. Marker angles are the global
-     * photo-roll estimates produced before per-marker QC normalization.
+     * Marker radii are absolute image radii. Marker angles are clockwise-positive
+     * image angles measured from 12 o'clock. OpenCV's getRotationMatrix2D uses a
+     * counter-clockwise-positive visual rotation, so the transform angle that
+     * removes source roll and matches reference roll is srcGlobal - refGlobal.
      */
     public static Solution solve(
             double srcDialRadius, double refDialRadius,
@@ -79,7 +81,7 @@ public final class GeometryRegistration {
 
         // Marker-ring scale is less sensitive to exactly which dial/rehaut edge was detected.
         double scale = markerScale * 0.75 + dialScale * 0.25;
-        double rotation = wrap180(refGlobalAngle - srcGlobalAngle);
+        double rotation = wrap180(srcGlobalAngle - refGlobalAngle);
         if (Math.abs(rotation) > 25.0) {
             return bad("Reference roll differs too much from the watch photo.");
         }
