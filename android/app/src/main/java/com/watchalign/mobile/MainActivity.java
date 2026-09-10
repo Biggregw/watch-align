@@ -55,8 +55,8 @@ public class MainActivity extends Activity {
 
         root.addView(text("WATCH ALIGN · STANDALONE", 12, Color.rgb(50,213,242)));
         TextView h1 = text("Watch Align Android", 28, Color.WHITE); h1.setPadding(0,dp(4),0,0); root.addView(h1);
-        root.addView(text("V1.3.0-alpha2 · analysis runs on this device", 14, Color.rgb(158,176,201)));
-        root.addView(text("If no reference is chosen, Watch Align searches official manufacturer sources directly and caches the best geometric match locally.", 13, Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha3 · analysis runs on this device", 14, Color.rgb(158,176,201)));
+        root.addView(text("No hosted backend. If no reference is chosen, Watch Align searches official manufacturer sources for the exact selected model and caches the best usable match.", 13, Color.rgb(158,176,201)));
 
         model = new Spinner(this);
         String[] models = {"126710BLNR · GMT-Master II", "124060 · Submariner No-Date"};
@@ -78,7 +78,7 @@ public class MainActivity extends Activity {
         root.addView(viewButtons, lp(-1,dp(48),8));
 
         opacity = new SeekBar(this); opacity.setMax(100); opacity.setProgress(50); opacity.setVisibility(View.GONE);
-        opacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){if(lastResult!=null) image.setImageBitmap(lastResult.overlay(p/100f));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}}); root.addView(opacity);
+        opacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){if(lastResult!=null&&lastResult.aligned!=null) image.setImageBitmap(lastResult.overlay(p/100f));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}}); root.addView(opacity);
         resultText = text("", 15, Color.WHITE); resultText.setPadding(0,dp(12),0,dp(32)); root.addView(resultText);
         return scroll;
     }
@@ -92,8 +92,13 @@ public class MainActivity extends Activity {
         if (result != RESULT_OK || data == null || data.getData() == null) return;
         try {
             Bitmap b = readBitmap(data.getData());
-            if (request == PICK_WATCH) { watchBitmap = b; lastResult=null; image.setImageBitmap(b); referenceButton.setEnabled(false); overlayButton.setEnabled(false); status.setText("Watch photo ready. Tap Analyse + find best reference."); }
-            else { referenceBitmap = b; status.setText("Your reference photo is ready and will be used instead of online discovery."); }
+            if (request == PICK_WATCH) {
+                watchBitmap = b; lastResult=null; image.setImageBitmap(b); referenceButton.setEnabled(false); overlayButton.setEnabled(false);
+                status.setText("Watch photo ready. Tap Analyse + find best reference.");
+            } else {
+                referenceBitmap = b; lastResult=null; referenceButton.setEnabled(false); overlayButton.setEnabled(false);
+                status.setText("Your reference photo is ready and will be used instead of online discovery.");
+            }
         } catch (Exception e) { status.setText("Could not read image: " + e.getMessage()); }
     }
 
@@ -107,7 +112,7 @@ public class MainActivity extends Activity {
 
     private void analyse() {
         if (watchBitmap == null) { status.setText("Choose your watch photo first."); return; }
-        status.setText(referenceBitmap == null ? "Analysing locally and searching official references…" : "Analysing locally with your chosen reference…");
+        status.setText(referenceBitmap == null ? "Analysing locally and searching exact-model official references…" : "Analysing locally with your chosen reference…");
         resultText.setText(""); opacity.setVisibility(View.GONE); referenceButton.setEnabled(false); overlayButton.setEnabled(false);
         Bitmap watch = watchBitmap; Bitmap manualRef = referenceBitmap; String refCode = model.getSelectedItemPosition()==0 ? "126710BLNR" : "124060";
         worker.submit(() -> {
@@ -115,13 +120,23 @@ public class MainActivity extends Activity {
                 Bitmap ref = manualRef; String sourceNote = "Manual reference selected on device.";
                 if (ref == null) {
                     OnlineReferenceFinder.Result found = OnlineReferenceFinder.find(this, watch, refCode);
-                    ref = found.bitmap; sourceNote = found.fromCache ? "Reference: cached official-source image." : "Reference: downloaded directly from official manufacturer source and cached locally.";
+                    ref = found.bitmap;
+                    sourceNote = (found.fromCache ? "Reference: cached exact-model official-source image.\n" : "Reference: downloaded from exact-model official manufacturer source and cached locally.\n") + "Source: " + found.source;
                 }
                 WatchAlignCore.AnalysisResult r = WatchAlignCore.analyse(watch, ref, refCode);
                 final String note = sourceNote;
-                runOnUiThread(() -> { lastResult=r; image.setImageBitmap(r.annotated); resultText.setText(r.report + "\n\n" + note); status.setText("Analysis complete."); referenceButton.setEnabled(r.reference!=null); overlayButton.setEnabled(r.aligned!=null); });
+                runOnUiThread(() -> {
+                    lastResult=r; image.setImageBitmap(r.annotated); resultText.setText(r.report + "\n\n" + note); status.setText("Analysis complete.");
+                    referenceButton.setEnabled(r.reference!=null);
+                    overlayButton.setEnabled(r.aligned!=null);
+                    if(r.aligned==null) opacity.setVisibility(View.GONE);
+                });
             } catch (Throwable t) {
-                runOnUiThread(() -> { status.setText("Reference/analysis error: " + t.getMessage()); resultText.setText("Your watch photo was not uploaded anywhere. The app could not complete automatic reference discovery. You can still choose a reference photo manually and retry."); });
+                runOnUiThread(() -> {
+                    lastResult=null; referenceButton.setEnabled(false); overlayButton.setEnabled(false); opacity.setVisibility(View.GONE);
+                    status.setText("Reference/analysis error: " + t.getMessage());
+                    resultText.setText("Watch Align refused to produce QC/overlay output because the watch or reference geometry could not be verified. Your watch photo was not uploaded anywhere. You can try a clearer photo or choose a reference manually.");
+                });
             }
         });
     }
