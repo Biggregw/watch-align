@@ -7,7 +7,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -44,44 +43,42 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        if (!OpenCVLoader.initLocal()) {
-            Toast.makeText(this, "OpenCV could not start", Toast.LENGTH_LONG).show();
-        }
+        if (!OpenCVLoader.initLocal()) Toast.makeText(this, "OpenCV could not start", Toast.LENGTH_LONG).show();
         setContentView(buildUi());
     }
 
     private View buildUi() {
         int pad = dp(16);
-        ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(Color.rgb(8,17,31));
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(pad,pad,pad,pad);
+        ScrollView scroll = new ScrollView(this); scroll.setBackgroundColor(Color.rgb(8,17,31));
+        LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(pad,pad,pad,pad);
         scroll.addView(root, new ViewGroup.LayoutParams(-1,-1));
 
-        TextView title = text("WATCH ALIGN · OFFLINE", 12, Color.rgb(50,213,242)); root.addView(title);
+        root.addView(text("WATCH ALIGN · STANDALONE", 12, Color.rgb(50,213,242)));
         TextView h1 = text("Watch Align Android", 28, Color.WHITE); h1.setPadding(0,dp(4),0,0); root.addView(h1);
-        TextView sub = text("V1.3.0-alpha1 · analysis stays on this device", 14, Color.rgb(158,176,201)); root.addView(sub);
+        root.addView(text("V1.3.0-alpha2 · analysis runs on this device", 14, Color.rgb(158,176,201)));
+        root.addView(text("If no reference is chosen, Watch Align searches official manufacturer sources directly and caches the best geometric match locally.", 13, Color.rgb(158,176,201)));
 
         model = new Spinner(this);
         String[] models = {"126710BLNR · GMT-Master II", "124060 · Submariner No-Date"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, models);
-        model.setAdapter(adapter); root.addView(model, lp(-1,dp(54),10));
+        model.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, models));
+        root.addView(model, lp(-1,dp(54),10));
 
         Button pick = button("Choose watch photo"); pick.setOnClickListener(v -> pickImage(PICK_WATCH)); root.addView(pick, lp(-1,dp(52),6));
-        Button pickRef = button("Choose genuine/reference photo (optional)"); pickRef.setOnClickListener(v -> pickImage(PICK_REFERENCE)); root.addView(pickRef, lp(-1,dp(52),6));
-        Button analyse = button("Analyse offline"); analyse.setBackgroundColor(Color.rgb(50,213,242)); analyse.setTextColor(Color.rgb(4,32,42)); analyse.setOnClickListener(v -> analyse()); root.addView(analyse, lp(-1,dp(54),12));
+        Button pickRef = button("Choose your own genuine/reference photo (optional)"); pickRef.setOnClickListener(v -> pickImage(PICK_REFERENCE)); root.addView(pickRef, lp(-1,dp(52),6));
+        Button analyse = button("Analyse + find best reference"); analyse.setBackgroundColor(Color.rgb(50,213,242)); analyse.setTextColor(Color.rgb(4,32,42)); analyse.setOnClickListener(v -> analyse()); root.addView(analyse, lp(-1,dp(54),12));
 
         status = text("Choose a watch photo to begin.", 14, Color.rgb(158,176,201)); root.addView(status);
         image = new ImageView(this); image.setAdjustViewBounds(true); image.setScaleType(ImageView.ScaleType.FIT_CENTER); root.addView(image, lp(-1,-2,12));
 
         LinearLayout viewButtons = new LinearLayout(this); viewButtons.setOrientation(LinearLayout.HORIZONTAL);
-        watchButton = smallButton("QC view"); referenceButton = smallButton("Genuine"); overlayButton = smallButton("Overlay");
+        watchButton = smallButton("QC view"); referenceButton = smallButton("Reference"); overlayButton = smallButton("Overlay");
+        referenceButton.setEnabled(false); overlayButton.setEnabled(false);
         watchButton.setOnClickListener(v -> showAnnotated()); referenceButton.setOnClickListener(v -> showReference()); overlayButton.setOnClickListener(v -> showOverlay());
         viewButtons.addView(watchButton,new LinearLayout.LayoutParams(0,dp(48),1)); viewButtons.addView(referenceButton,new LinearLayout.LayoutParams(0,dp(48),1)); viewButtons.addView(overlayButton,new LinearLayout.LayoutParams(0,dp(48),1));
         root.addView(viewButtons, lp(-1,dp(48),8));
 
-        opacity = new SeekBar(this); opacity.setMax(100); opacity.setProgress(50); opacity.setVisibility(View.GONE); opacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){if(lastResult!=null) image.setImageBitmap(lastResult.overlay(p/100f));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}}); root.addView(opacity);
+        opacity = new SeekBar(this); opacity.setMax(100); opacity.setProgress(50); opacity.setVisibility(View.GONE);
+        opacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){if(lastResult!=null) image.setImageBitmap(lastResult.overlay(p/100f));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}}); root.addView(opacity);
         resultText = text("", 15, Color.WHITE); resultText.setPadding(0,dp(12),0,dp(32)); root.addView(resultText);
         return scroll;
     }
@@ -95,31 +92,37 @@ public class MainActivity extends Activity {
         if (result != RESULT_OK || data == null || data.getData() == null) return;
         try {
             Bitmap b = readBitmap(data.getData());
-            if (request == PICK_WATCH) { watchBitmap = b; image.setImageBitmap(b); status.setText("Watch photo ready. Tap Analyse offline."); }
-            else { referenceBitmap = b; status.setText("Reference photo ready."); }
+            if (request == PICK_WATCH) { watchBitmap = b; lastResult=null; image.setImageBitmap(b); referenceButton.setEnabled(false); overlayButton.setEnabled(false); status.setText("Watch photo ready. Tap Analyse + find best reference."); }
+            else { referenceBitmap = b; status.setText("Your reference photo is ready and will be used instead of online discovery."); }
         } catch (Exception e) { status.setText("Could not read image: " + e.getMessage()); }
     }
 
     private Bitmap readBitmap(Uri uri) throws Exception {
         try (InputStream in = getContentResolver().openInputStream(uri)) {
-            Bitmap b = BitmapFactory.decodeStream(in);
-            if (b == null) throw new IllegalArgumentException("Not a readable image");
-            int max = Math.max(b.getWidth(), b.getHeight());
-            if (max <= 1400) return b.copy(Bitmap.Config.ARGB_8888, false);
-            float s = 1400f / max;
-            return Bitmap.createScaledBitmap(b, Math.round(b.getWidth()*s), Math.round(b.getHeight()*s), true).copy(Bitmap.Config.ARGB_8888,false);
+            Bitmap b = BitmapFactory.decodeStream(in); if (b == null) throw new IllegalArgumentException("Not a readable image");
+            int max = Math.max(b.getWidth(), b.getHeight()); if (max <= 1600) return b.copy(Bitmap.Config.ARGB_8888, false);
+            float s = 1600f / max; return Bitmap.createScaledBitmap(b, Math.round(b.getWidth()*s), Math.round(b.getHeight()*s), true).copy(Bitmap.Config.ARGB_8888,false);
         }
     }
 
     private void analyse() {
         if (watchBitmap == null) { status.setText("Choose your watch photo first."); return; }
-        status.setText("Analysing locally…"); resultText.setText(""); opacity.setVisibility(View.GONE);
-        Bitmap watch = watchBitmap; Bitmap ref = referenceBitmap; String refCode = model.getSelectedItemPosition()==0 ? "126710BLNR" : "124060";
+        status.setText(referenceBitmap == null ? "Analysing locally and searching official references…" : "Analysing locally with your chosen reference…");
+        resultText.setText(""); opacity.setVisibility(View.GONE); referenceButton.setEnabled(false); overlayButton.setEnabled(false);
+        Bitmap watch = watchBitmap; Bitmap manualRef = referenceBitmap; String refCode = model.getSelectedItemPosition()==0 ? "126710BLNR" : "124060";
         worker.submit(() -> {
             try {
+                Bitmap ref = manualRef; String sourceNote = "Manual reference selected on device.";
+                if (ref == null) {
+                    OnlineReferenceFinder.Result found = OnlineReferenceFinder.find(this, watch, refCode);
+                    ref = found.bitmap; sourceNote = found.fromCache ? "Reference: cached official-source image." : "Reference: downloaded directly from official manufacturer source and cached locally.";
+                }
                 WatchAlignCore.AnalysisResult r = WatchAlignCore.analyse(watch, ref, refCode);
-                runOnUiThread(() -> { lastResult=r; image.setImageBitmap(r.annotated); resultText.setText(r.report); status.setText("Offline analysis complete."); referenceButton.setEnabled(r.reference!=null); overlayButton.setEnabled(r.aligned!=null); });
-            } catch (Throwable t) { runOnUiThread(() -> status.setText("Analysis error: " + t.getMessage())); }
+                final String note = sourceNote;
+                runOnUiThread(() -> { lastResult=r; image.setImageBitmap(r.annotated); resultText.setText(r.report + "\n\n" + note); status.setText("Analysis complete."); referenceButton.setEnabled(r.reference!=null); overlayButton.setEnabled(r.aligned!=null); });
+            } catch (Throwable t) {
+                runOnUiThread(() -> { status.setText("Reference/analysis error: " + t.getMessage()); resultText.setText("Your watch photo was not uploaded anywhere. The app could not complete automatic reference discovery. You can still choose a reference photo manually and retry."); });
+            }
         });
     }
 
@@ -132,6 +135,5 @@ public class MainActivity extends Activity {
     private Button smallButton(String s){Button b=button(s);b.setTextSize(12);return b;}
     private LinearLayout.LayoutParams lp(int w,int h,int top){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(w,h);p.topMargin=dp(top);return p;}
     private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
-
     @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
 }
