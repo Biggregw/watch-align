@@ -1,5 +1,6 @@
 # Release history
 
+- [1.2.6: reference image suitability filter](RELEASE-V1.2.6.md)
 - [1.2.5: official-reference fallback](RELEASE-V1.2.5.md)
 - [1.2.4: automatic full-turn rotation](RELEASE-V1.2.4.md)
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import html
 import json
+import math
 import re
 import time
 import urllib.request
@@ -36,6 +37,10 @@ OFFICIAL_SOURCES = {
 }
 
 IMG_RE = re.compile(r'https?://[^\"\'<>\\ ]+', re.I)
+MIN_REFERENCE_SIZE = 450
+MIN_WATCH_HEAD_RATIO = 0.32
+MAX_WATCH_HEAD_RATIO = 0.92
+MIN_CIRCLE_EDGE_SUPPORT = 0.42
 
 
 def _root(backend, model_ref: str) -> Path:
@@ -85,7 +90,7 @@ def _pdf_product_image(pdf_bytes: bytes) -> bytes:
                     continue
                 h, w = arr.shape[:2]
                 area = int(h * w)
-                if min(h, w) >= 450 and (best is None or area > best[0]):
+                if _is_usable_watch_reference(arr) and (best is None or area > best[0]):
                     best = (area, raw)
         if best is not None:
             return best[1]
@@ -102,9 +107,73 @@ def _pdf_product_image(pdf_bytes: bytes) -> bytes:
         doc.close()
 
 
+def _is_usable_watch_reference(image: np.ndarray) -> bool:
+    if image is None or min(image.shape[:2]) < MIN_REFERENCE_SIZE:
+        return False
+
+    h, w = image.shape[:2]
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.GaussianBlur(gray, (9, 9), 1.8)
+    min_dim = min(h, w)
+    min_radius = max(80, int(min_dim * 0.16))
+    max_radius = int(min_dim * 0.46)
+    if max_radius <= min_radius:
+        return False
+
+    circles = cv2.HoughCircles(
+        gray,
+        cv2.HOUGH_GRADIENT,
+        dp=1.2,
+        minDist=max(120, min_dim // 3),
+        param1=90,
+        param2=28,
+        minRadius=min_radius,
+        maxRadius=max_radius,
+    )
+    if circles is None:
+        return False
+
+    edges = cv2.Canny(gray, 50, 130)
+    center = np.array([w / 2.0, h / 2.0], dtype=np.float32)
+    margin = min_dim * 0.08
+    for x, y, r in np.round(circles[0]).astype(int):
+        diameter_ratio = (2.0 * float(r)) / float(min_dim)
+        if not (MIN_WATCH_HEAD_RATIO <= diameter_ratio <= MAX_WATCH_HEAD_RATIO):
+            continue
+        if x - r < -margin or y - r < -margin or x + r > w + margin or y + r > h + margin:
+            continue
+        if np.linalg.norm(np.array([x, y], dtype=np.float32) - center) > min_dim * 0.28:
+            continue
+        if _circle_edge_support(edges, x, y, r) < MIN_CIRCLE_EDGE_SUPPORT:
+            continue
+        return True
+    return False
+
+
+def _circle_edge_support(edges: np.ndarray, x: int, y: int, r: int) -> float:
+    if r <= 0:
+        return 0.0
+    h, w = edges.shape[:2]
+    hits = 0
+    total = 0
+    for angle in np.linspace(0.0, 2.0 * math.pi, 144, endpoint=False):
+        px = int(round(x + math.cos(angle) * r))
+        py = int(round(y + math.sin(angle) * r))
+        if px < 0 or py < 0 or px >= w or py >= h:
+            continue
+        total += 1
+        y0 = max(0, py - 2)
+        y1 = min(h, py + 3)
+        x0 = max(0, px - 2)
+        x1 = min(w, px + 3)
+        if np.any(edges[y0:y1, x0:x1] > 0):
+            hits += 1
+    return hits / total if total else 0.0
+
+
 def _save_official_raw(root: Path, source: dict[str, Any], raw: bytes, asset_url: str, source_kind: str) -> dict[str, Any] | None:
     image = cv2.imdecode(np.frombuffer(raw, dtype=np.uint8), cv2.IMREAD_COLOR)
-    if image is None or min(image.shape[:2]) < 450:
+    if not _is_usable_watch_reference(image):
         return None
     digest = hashlib.sha256(raw).hexdigest()
     name = f"official-{source['model_code']}-{digest[:12]}.jpg"
