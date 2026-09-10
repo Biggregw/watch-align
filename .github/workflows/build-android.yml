@@ -35,39 +35,38 @@ jobs:
         run: |
           grep -q 'android.permission.INTERNET' app/src/main/AndroidManifest.xml
           grep -q 'exact-v4' app/src/main/java/com/watchalign/mobile/OnlineReferenceFinder.java
-          grep -q 'WatchAlignCoreV8' app/src/main/java/com/watchalign/mobile/MainActivity.java
-          grep -q 'GeometryRegistration.solve' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV7.java
+          grep -q 'WatchAlignCoreV9' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q 'SimilarityTransform.between' app/src/main/java/com/watchalign/mobile/GeometryOverlayRepair.java
           grep -q 'srcGlobalAngle - refGlobalAngle' app/src/main/java/com/watchalign/mobile/GeometryRegistration.java
-          grep -q "marker-ring consensus" app/src/main/java/com/watchalign/mobile/WatchAlignCoreV7.java
-          grep -q '1.3.0-alpha8' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q '1.3.0-alpha9' app/src/main/java/com/watchalign/mobile/MainActivity.java
       - name: Run Android unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
       - name: Build standalone APK
         run: gradle :app:assembleDebug --stacktrace
       - name: Prepare release files
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha8.apk
-          sha256sum WatchAlign-Android-1.3.0-alpha8.apk > SHA256SUMS-Android.txt
+          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha9.apk
+          sha256sum WatchAlign-Android-1.3.0-alpha9.apk > SHA256SUMS-Android.txt
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: WatchAlign-Android-1.3.0-alpha8
-          path: android/WatchAlign-Android-1.3.0-alpha8.apk
+          name: WatchAlign-Android-1.3.0-alpha9
+          path: android/WatchAlign-Android-1.3.0-alpha9.apk
           if-no-files-found: error
           retention-days: 30
-      - name: Publish Android alpha8 release
+      - name: Publish Android alpha9 release
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag='android-v1.3.0-alpha8'
+          tag='android-v1.3.0-alpha9'
           git fetch --tags
           if git tag -l "$tag" | grep -q .; then
             echo "Release tag already exists; skipping publication"
             exit 0
           fi
-          gh release create "$tag" WatchAlign-Android-1.3.0-alpha8.apk SHA256SUMS-Android.txt \
+          gh release create "$tag" WatchAlign-Android-1.3.0-alpha9.apk SHA256SUMS-Android.txt \
             --target "$GITHUB_SHA" \
-            --title 'Watch Align Android 1.3.0-alpha8' \
+            --title 'Watch Align Android 1.3.0-alpha9' \
             --prerelease \
-            --notes 'Android alpha8 is the tested follow-up to alpha7. Geometry-first registration remains in place, but the OpenCV rotation direction has been corrected and covered by a transform-direction regression test. Marker QC removes global photo roll, radial values are relative to marker-ring consensus rather than a hard-coded radius, exact-model online reference parsing has dedicated wrong-model rejection tests, and connected runs refresh reference selection with cache fallback. Unit tests run before every APK build and release.'
+            --notes 'Android alpha9 fixes alpha8 post-transform false centre failures. Overlay generation now uses an explicit tested similarity transform that maps the source dial centre exactly to the reference centre and validates centre/radius geometry analytically rather than re-detecting a warped raster. Added transform centre, radius, distance, matrix and invalid-input regression tests. Existing geometry-registration and exact-model reference tests remain mandatory before APK publication.'
