@@ -111,12 +111,10 @@ public final class WatchAlignCore {
                     try {
                         ecc=Video.findTransformECC(refGray,preGray,warp,Video.MOTION_EUCLIDEAN,new TermCriteria(TermCriteria.COUNT+TermCriteria.EPS,100,1e-6));
                         if(Double.isFinite(ecc) && ecc>=MIN_OVERLAY_ECC){
-                            // Reject implausibly large residual rotation/translation even if ECC happens to be high.
-                            double[] row0=warp.get(0,0), row1=warp.get(1,0);
-                            double a=row0!=null&&row0.length>0?row0[0]:1.0;
-                            double b=row0!=null&&row0.length>1?row0[1]:0.0;
-                            double tx=row0!=null&&row0.length>2?row0[2]:0.0;
-                            double ty=row1!=null&&row1.length>2?row1[2]:0.0;
+                            double a=value(warp,0,0,1.0);
+                            double b=value(warp,0,1,0.0);
+                            double tx=value(warp,0,2,0.0);
+                            double ty=value(warp,1,2,0.0);
                             double rot=Math.abs(Math.toDegrees(Math.atan2(b,a)));
                             double shift=Math.hypot(tx,ty)/Math.max(1.0,rc.r);
                             if(rot<=8.0 && shift<=0.30){
@@ -167,6 +165,10 @@ public final class WatchAlignCore {
         return new AnalysisResult(ann,refBitmap,alignedBitmap,report.toString(),ecc);
     }
 
+    private static double value(Mat m,int row,int col,double fallback){
+        double[] v=m.get(row,col); return v!=null&&v.length>0?v[0]:fallback;
+    }
+
     private static Circle detectCircle(Mat bgr){
         Mat gray=new Mat(); Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY); Imgproc.medianBlur(gray,gray,7);
         Mat edges=new Mat(); Imgproc.Canny(gray,edges,55,150);
@@ -202,7 +204,6 @@ public final class WatchAlignCore {
                 if(total<30||edgeTotal<30) continue;
                 double darkFraction=dark/total;
                 double edgeDensity=edgeHits/edgeTotal;
-                // Both currently supported watches have black dials. This rejects glove/background circles.
                 if(darkFraction<0.18 || edgeDensity<0.035) continue;
 
                 double sizeFit=1.0-Math.min(1.0,Math.abs(rn-0.27)/0.18);
