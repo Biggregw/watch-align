@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
 
         root.addView(text("WATCH ALIGN · STANDALONE", 12, Color.rgb(50,213,242)));
         TextView h1 = text("Watch Align Android", 28, Color.WHITE); h1.setPadding(0,dp(4),0,0); root.addView(h1);
-        root.addView(text("V1.3.0-alpha5 · analysis runs on this device", 14, Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha6 · analysis runs on this device", 14, Color.rgb(158,176,201)));
         root.addView(text("No hosted backend. Exact-model reference discovery is online; watch analysis and registration run locally.", 13, Color.rgb(158,176,201)));
 
         model = new Spinner(this);
