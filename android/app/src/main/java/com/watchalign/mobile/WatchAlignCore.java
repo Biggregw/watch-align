@@ -3,7 +3,6 @@ package com.watchalign.mobile;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Color;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -12,14 +11,16 @@ import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.core.TermCriteria;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.video.Video;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public final class WatchAlignCore {
-    public static final String CORE_VERSION = "1.3.0-alpha1";
+    public static final String CORE_VERSION = "1.3.0-alpha2";
 
     public static final class AnalysisResult {
         public final Bitmap annotated;
@@ -35,8 +36,22 @@ public final class WatchAlignCore {
     }
 
     private static final class Circle { double x,y,r; Circle(double x,double y,double r){this.x=x;this.y=y;this.r=r;} }
-
     private static final class Marker { int hour; double angular; double radial; double strength; Marker(int h,double a,double r,double s){hour=h;angular=a;radial=r;strength=s;} }
+
+    public static double referenceScore(Bitmap watch, Bitmap reference) {
+        Mat a=new Mat(), b=new Mat();
+        try {
+            Utils.bitmapToMat(watch,a); Imgproc.cvtColor(a,a,Imgproc.COLOR_RGBA2BGR);
+            Utils.bitmapToMat(reference,b); Imgproc.cvtColor(b,b,Imgproc.COLOR_RGBA2BGR);
+            Circle ca=detectCircle(a), cb=detectCircle(b); if(ca==null||cb==null) return Double.POSITIVE_INFINITY;
+            double ax=ca.x/a.cols(), ay=ca.y/a.rows(), bx=cb.x/b.cols(), by=cb.y/b.rows();
+            double ar=ca.r/Math.min(a.cols(),a.rows()), br=cb.r/Math.min(b.cols(),b.rows());
+            double center=Math.hypot(ax-bx,ay-by); double scale=Math.abs(ar-br);
+            double persp=Math.abs(perspectiveEquivalent(a,ca)-perspectiveEquivalent(b,cb))/30.0;
+            double aspect=Math.abs(((double)a.cols()/a.rows())-((double)b.cols()/b.rows()));
+            return center*1.7 + scale*2.6 + persp*2.2 + aspect*0.2;
+        } finally { a.release(); b.release(); }
+    }
 
     public static AnalysisResult analyse(Bitmap watch, Bitmap reference, String modelRef) {
         Mat src = new Mat(); Utils.bitmapToMat(watch, src); Imgproc.cvtColor(src, src, Imgproc.COLOR_RGBA2BGR);
@@ -54,19 +69,31 @@ public final class WatchAlignCore {
         Bitmap ann=toBitmap(annotated);
 
         Bitmap alignedBitmap=null; Bitmap refBitmap=null;
-        double perspectiveMismatch=Double.NaN;
+        double perspectiveMismatch=Double.NaN; double ecc=Double.NaN;
         if(reference!=null){
             refBitmap=reference.copy(Bitmap.Config.ARGB_8888,false);
             Mat ref=new Mat(); Utils.bitmapToMat(refBitmap,ref); Imgproc.cvtColor(ref,ref,Imgproc.COLOR_RGBA2BGR);
             Circle rc=detectCircle(ref);
             if(rc!=null){
                 double s=rc.r/circle.r;
-                Mat M=new Mat(2,3,CvType.CV_64F);
-                M.put(0,0,s,0,rc.x-s*circle.x,0,s,rc.y-s*circle.y);
-                Mat warped=new Mat(); Imgproc.warpAffine(src,warped,M,new Size(ref.cols(),ref.rows()),Imgproc.INTER_LINEAR,Core.BORDER_CONSTANT,new Scalar(0,0,0));
-                alignedBitmap=toBitmap(warped);
+                Mat initial=new Mat(2,3,CvType.CV_64F);
+                initial.put(0,0,s,0,rc.x-s*circle.x,0,s,rc.y-s*circle.y);
+                Mat pre=new Mat(); Imgproc.warpAffine(src,pre,initial,new Size(ref.cols(),ref.rows()),Imgproc.INTER_LINEAR,Core.BORDER_CONSTANT,new Scalar(0,0,0));
+
+                Mat refGray=new Mat(), preGray=new Mat();
+                Imgproc.cvtColor(ref,refGray,Imgproc.COLOR_BGR2GRAY); Imgproc.cvtColor(pre,preGray,Imgproc.COLOR_BGR2GRAY);
+                Imgproc.GaussianBlur(refGray,refGray,new Size(5,5),0); Imgproc.GaussianBlur(preGray,preGray,new Size(5,5),0);
+                Mat warp=Mat.eye(2,3,CvType.CV_32F);
+                Mat refined=pre;
+                try {
+                    ecc=Video.findTransformECC(refGray,preGray,warp,Video.MOTION_EUCLIDEAN,new TermCriteria(TermCriteria.COUNT+TermCriteria.EPS,80,1e-6));
+                    if(Double.isFinite(ecc) && ecc>=0.35){
+                        refined=new Mat(); Imgproc.warpAffine(pre,refined,warp,new Size(ref.cols(),ref.rows()),Imgproc.INTER_LINEAR+Imgproc.WARP_INVERSE_MAP,Core.BORDER_CONSTANT,new Scalar(0,0,0));
+                    }
+                } catch(Exception ignored) { ecc=Double.NaN; }
+                alignedBitmap=toBitmap(refined);
                 perspectiveMismatch=Math.abs(tilt-perspectiveEquivalent(ref,rc));
-                M.release(); warped.release(); ref.release();
+                if(refined!=pre) refined.release(); warp.release(); refGray.release(); preGray.release(); initial.release(); pre.release(); ref.release();
             }
         }
 
@@ -75,12 +102,13 @@ public final class WatchAlignCore {
         report.append("Photo suitability: ").append(tilt<14?"GOOD":tilt<28?"PARTIAL":"POOR").append("\n");
         report.append(String.format(Locale.US,"Perspective distortion estimate: %.1f° equivalent\n",tilt));
         if(!Double.isNaN(perspectiveMismatch)) report.append(String.format(Locale.US,"Reference perspective mismatch: %.1f°\n",perspectiveMismatch));
+        if(!Double.isNaN(ecc)) report.append(String.format(Locale.US,"Overlay registration confidence: %.2f\n",ecc));
         report.append("\nHour-marker geometry\n");
         double maxAbs=0;
         for(Marker m:markers){maxAbs=Math.max(maxAbs,Math.abs(m.angular)); report.append(String.format(Locale.US,"%2d o'clock  angular %+5.2f°   radial %+5.2f%%\n",m.hour,m.angular,m.radial));}
         report.append("\nMarker assessment: ").append(maxAbs<1.0?"LOOKS GOOD":maxAbs<2.0?"CHECK VISUALLY":"POSSIBLE ISSUE").append("\n");
-        if(reference==null) report.append("\nNo genuine/reference photo selected. Analysis is QC-only and fully offline.");
-        else if(alignedBitmap!=null) report.append("\nReference comparison ready. Use Genuine / Overlay to inspect the circle-aligned result.");
+        if(reference==null) report.append("\nNo reference selected.");
+        else if(alignedBitmap!=null) report.append("\nReference comparison ready. Overlay uses circle pre-alignment plus constrained rotation/translation refinement.");
         else report.append("\nReference image was loaded but its watch face could not be detected, so overlay was withheld.");
 
         src.release(); annotated.release();
@@ -93,7 +121,7 @@ public final class WatchAlignCore {
         Imgproc.HoughCircles(gray,circles,Imgproc.HOUGH_GRADIENT,1.2,min/6.0,130,45,(int)(min*0.18),(int)(min*0.48));
         Circle best=null; double bestScore=Double.MAX_VALUE;
         if(circles.cols()>0){
-            for(int i=0;i<circles.cols();i++){double[] c=circles.get(0,i); if(c==null||c.length<3)continue; double dx=c[0]-bgr.cols()/2.0,dy=c[1]-bgr.rows()/2.0; double score=Math.hypot(dx,dy)-c[2]*0.05; if(score<bestScore){bestScore=score;best=new Circle(c[0],c[1],c[2]);}}
+            for(int i=0;i<circles.cols();i++){double[] c=circles.get(0,i); if(c==null||c.length<3)continue; double dx=c[0]-bgr.cols()/2.0,dy=c[1]-bgr.rows()/2.0; double rn=c[2]/min; if(rn<0.22||rn>0.46)continue; double score=Math.hypot(dx,dy)/min + Math.abs(rn-0.34)*0.8; if(score<bestScore){bestScore=score;best=new Circle(c[0],c[1],c[2]);}}
         }
         circles.release();gray.release();return best;
     }
@@ -109,7 +137,7 @@ public final class WatchAlignCore {
             for(int y=y0;y<=y1;y++) for(int x=x0;x<=x1;x++){
                 if((data[y*w+x]&0xff)==0)continue; double dx=x-c.x,dy=y-c.y,r=Math.hypot(dx,dy); if(r<inner||r>outer)continue;
                 double a=Math.toDegrees(Math.atan2(dx,-dy)); if(a<0)a+=360; double d=((a-target+540)%360)-180; if(Math.abs(d)>8.5)continue;
-                double wt=1.0; sw+=wt; sd+=d*wt; sr+=r*wt; count++;
+                sw+=1.0; sd+=d; sr+=r; count++;
             }
             if(sw>0){double angular=sd/sw;double radial=((sr/sw)/(c.r*0.705)-1.0)*100.0;out.add(new Marker(hour,angular,radial,count));}
         }
@@ -126,6 +154,5 @@ public final class WatchAlignCore {
     }
 
     private static Bitmap toBitmap(Mat bgr){Mat rgba=new Mat();Imgproc.cvtColor(bgr,rgba,Imgproc.COLOR_BGR2RGBA);Bitmap out=Bitmap.createBitmap(rgba.cols(),rgba.rows(),Bitmap.Config.ARGB_8888);Utils.matToBitmap(rgba,out);rgba.release();return out;}
-
     private WatchAlignCore(){}
 }
