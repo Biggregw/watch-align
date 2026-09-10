@@ -1,4 +1,4 @@
-name: Build Watch Align Android Offline
+name: Build Watch Align Android Standalone
 
 on:
   push:
@@ -31,37 +31,34 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-      - name: Build offline APK
+      - name: Build standalone APK
         run: gradle :app:assembleDebug --stacktrace
-      - name: Verify no INTERNET permission is declared
-        run: |
-          if grep -R "android.permission.INTERNET" app/src/main/AndroidManifest.xml; then
-            echo "Offline APK must not request INTERNET"; exit 1
-          fi
+      - name: Verify INTERNET permission for direct reference discovery
+        run: grep -q "android.permission.INTERNET" app/src/main/AndroidManifest.xml
       - name: Prepare release files
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha1.apk
-          sha256sum WatchAlign-Android-1.3.0-alpha1.apk > SHA256SUMS-Android.txt
+          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha2.apk
+          sha256sum WatchAlign-Android-1.3.0-alpha2.apk > SHA256SUMS-Android.txt
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: WatchAlign-Android-1.3.0-alpha1
-          path: android/WatchAlign-Android-1.3.0-alpha1.apk
+          name: WatchAlign-Android-1.3.0-alpha2
+          path: android/WatchAlign-Android-1.3.0-alpha2.apk
           if-no-files-found: error
           retention-days: 30
-      - name: Publish Android alpha release
+      - name: Publish Android alpha2 release
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag='android-v1.3.0-alpha1'
+          tag='android-v1.3.0-alpha2'
           git fetch --tags
           if git tag -l "$tag" | grep -q .; then
             echo "Release tag already exists; skipping publication"
             exit 0
           fi
-          gh release create "$tag" WatchAlign-Android-1.3.0-alpha1.apk SHA256SUMS-Android.txt \
+          gh release create "$tag" WatchAlign-Android-1.3.0-alpha2.apk SHA256SUMS-Android.txt \
             --target "$GITHUB_SHA" \
-            --title 'Watch Align Android 1.3.0-alpha1' \
+            --title 'Watch Align Android 1.3.0-alpha2' \
             --prerelease \
-            --notes 'First true-offline Android alpha. Performs watch-circle detection, perspective diagnostics, hour-marker geometry and local genuine/reference overlay without requesting INTERNET permission. Supports 126710BLNR and 124060. This alpha is an Android-native port and is not yet claimed to be numerically identical to the Windows engine on every metric.'
+            --notes 'Standalone Android alpha with no hosted backend. Analysis remains on-device. When no manual reference is supplied, the app connects directly to official manufacturer pages, downloads candidate references, scores them for geometric similarity, selects the best usable match, and caches it locally. Overlay registration now adds constrained rotation/translation refinement after circle pre-alignment.'
