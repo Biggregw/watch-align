@@ -55,8 +55,8 @@ public class MainActivity extends Activity {
 
         root.addView(text("WATCH ALIGN · STANDALONE", 12, Color.rgb(50,213,242)));
         TextView h1 = text("Watch Align Android", 28, Color.WHITE); h1.setPadding(0,dp(4),0,0); root.addView(h1);
-        root.addView(text("V1.3.0-alpha3 · analysis runs on this device", 14, Color.rgb(158,176,201)));
-        root.addView(text("No hosted backend. If no reference is chosen, Watch Align searches official manufacturer sources for the exact selected model and caches the best usable match.", 13, Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha4 · analysis runs on this device", 14, Color.rgb(158,176,201)));
+        root.addView(text("No hosted backend. Exact-model reference discovery is online; watch analysis and registration run locally.", 13, Color.rgb(158,176,201)));
 
         model = new Spinner(this);
         String[] models = {"126710BLNR · GMT-Master II", "124060 · Submariner No-Date"};
@@ -112,7 +112,7 @@ public class MainActivity extends Activity {
 
     private void analyse() {
         if (watchBitmap == null) { status.setText("Choose your watch photo first."); return; }
-        status.setText(referenceBitmap == null ? "Analysing locally and searching exact-model official references…" : "Analysing locally with your chosen reference…");
+        status.setText(referenceBitmap == null ? "Detecting dial locally and searching exact-model references…" : "Detecting dial locally with your chosen reference…");
         resultText.setText(""); opacity.setVisibility(View.GONE); referenceButton.setEnabled(false); overlayButton.setEnabled(false);
         Bitmap watch = watchBitmap; Bitmap manualRef = referenceBitmap; String refCode = model.getSelectedItemPosition()==0 ? "126710BLNR" : "124060";
         worker.submit(() -> {
@@ -127,15 +127,14 @@ public class MainActivity extends Activity {
                 final String note = sourceNote;
                 runOnUiThread(() -> {
                     lastResult=r; image.setImageBitmap(r.annotated); resultText.setText(r.report + "\n\n" + note); status.setText("Analysis complete.");
-                    referenceButton.setEnabled(r.reference!=null);
-                    overlayButton.setEnabled(r.aligned!=null);
+                    referenceButton.setEnabled(r.reference!=null); overlayButton.setEnabled(r.aligned!=null);
                     if(r.aligned==null) opacity.setVisibility(View.GONE);
                 });
             } catch (Throwable t) {
                 runOnUiThread(() -> {
                     lastResult=null; referenceButton.setEnabled(false); overlayButton.setEnabled(false); opacity.setVisibility(View.GONE);
                     status.setText("Reference/analysis error: " + t.getMessage());
-                    resultText.setText("Watch Align refused to produce QC/overlay output because the watch or reference geometry could not be verified. Your watch photo was not uploaded anywhere. You can try a clearer photo or choose a reference manually.");
+                    resultText.setText("Watch Align refused to produce QC/overlay output because the dial or reference geometry could not be verified. Try a clearer photo with the full dial visible.");
                 });
             }
         });
