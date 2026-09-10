@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private Bitmap watchBitmap;
     private Bitmap referenceBitmap;
-    private WatchAlignCore.AnalysisResult lastResult;
+    private WatchAlignCoreV7.AnalysisResult lastResult;
     private ImageView image;
     private TextView status;
     private TextView resultText;
@@ -55,8 +55,8 @@ public class MainActivity extends Activity {
 
         root.addView(text("WATCH ALIGN · STANDALONE", 12, Color.rgb(50,213,242)));
         TextView h1 = text("Watch Align Android", 28, Color.WHITE); h1.setPadding(0,dp(4),0,0); root.addView(h1);
-        root.addView(text("V1.3.0-alpha6 · analysis runs on this device", 14, Color.rgb(158,176,201)));
-        root.addView(text("No hosted backend. Exact-model reference discovery is online; watch analysis and registration run locally.", 13, Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha7 · analysis runs on this device", 14, Color.rgb(158,176,201)));
+        root.addView(text("No hosted backend. Exact-model reference discovery is online; watch analysis and geometry registration run locally.", 13, Color.rgb(158,176,201)));
 
         model = new Spinner(this);
         String[] models = {"126710BLNR · GMT-Master II", "124060 · Submariner No-Date"};
@@ -123,7 +123,7 @@ public class MainActivity extends Activity {
                     ref = found.bitmap;
                     sourceNote = (found.fromCache ? "Reference: cached exact-model official-source image.\n" : "Reference: downloaded from exact-model official manufacturer source and cached locally.\n") + "Source: " + found.source;
                 }
-                WatchAlignCore.AnalysisResult r = WatchAlignCore.analyse(watch, ref, refCode);
+                WatchAlignCoreV7.AnalysisResult r = WatchAlignCoreV7.analyse(watch, ref, refCode);
                 final String note = sourceNote;
                 runOnUiThread(() -> {
                     lastResult=r; image.setImageBitmap(r.annotated); resultText.setText(r.report + "\n\n" + note); status.setText("Analysis complete.");
@@ -134,7 +134,7 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     lastResult=null; referenceButton.setEnabled(false); overlayButton.setEnabled(false); opacity.setVisibility(View.GONE);
                     status.setText("Reference/analysis error: " + t.getMessage());
-                    resultText.setText("Watch Align refused to produce QC/overlay output because the dial or reference geometry could not be verified. Try a clearer photo with the full dial visible.");
+                    resultText.setText("Watch Align refused to produce QC/overlay output because the watch or reference geometry could not be verified. No QC verdict has been produced from an unreliable detection.");
                 });
             }
         });
