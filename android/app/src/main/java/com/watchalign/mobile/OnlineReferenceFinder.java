@@ -29,48 +29,56 @@ public final class OnlineReferenceFinder {
     }
 
     public static Result find(Context context, Bitmap watch, String modelRef) throws Exception {
-        // alpha3 deliberately uses a new cache generation so an incorrectly cached
-        // alpha2 image (for example a Daytona returned on a GMT page) can never survive.
-        File cache = new File(context.getFilesDir(), "reference-cache/" + modelRef + "-exact-v3.jpg");
+        File cache = new File(context.getFilesDir(), "reference-cache/" + modelRef + "-exact-v4.jpg");
+        Bitmap cached = null;
+        double cachedScore = Double.POSITIVE_INFINITY;
         if (cache.isFile()) {
             try (InputStream in = new FileInputStream(cache)) {
                 Bitmap b = BitmapFactory.decodeStream(in);
-                if (b != null && WatchAlignCore.referenceScore(watch, b) < 4.0) {
-                    return new Result(b, "Cached exact-model official reference for " + modelRef, true);
+                if (b != null) {
+                    double s = WatchAlignCoreV7.referenceScore(watch, b);
+                    if (Double.isFinite(s)) { cached=b; cachedScore=s; }
                 }
             } catch (Exception ignored) {}
         }
 
         String page = pageFor(modelRef);
-        String html = getText(page);
-        List<String> urls = extractImageUrls(html, modelRef);
-        if (urls.isEmpty()) throw new IllegalStateException("Official page did not expose an exact-model image for " + modelRef + ".");
+        try {
+            String html = getText(page);
+            List<String> urls = extractImageUrls(html, modelRef);
+            if (urls.isEmpty() && cached != null) return new Result(cached, "Cached exact-model official reference for " + modelRef, true);
+            if (urls.isEmpty()) throw new IllegalStateException("Official page did not expose an exact-model image for " + modelRef + ".");
 
-        Bitmap best = null;
-        String bestUrl = null;
-        double bestScore = Double.POSITIVE_INFINITY;
-        int checked = 0;
-        for (String u : urls) {
-            if (checked >= 24) break;
-            checked++;
-            try {
-                Bitmap b = getBitmap(u);
-                if (b == null || Math.min(b.getWidth(), b.getHeight()) < 450) continue;
-                double score = WatchAlignCore.referenceScore(watch, b);
-                if (Double.isFinite(score) && score < bestScore) {
-                    bestScore = score; best = b; bestUrl = u;
-                }
-            } catch (Exception ignored) {}
-        }
-        if (best == null || !Double.isFinite(bestScore) || bestScore >= 4.0) {
-            throw new IllegalStateException("No geometrically usable exact-model official reference was found for " + modelRef + ".");
-        }
+            Bitmap best = cached;
+            String bestUrl = cached != null ? "Cached exact-model official reference for " + modelRef : null;
+            double bestScore = cachedScore;
+            int checked = 0;
+            for (String u : urls) {
+                if (checked >= 32) break;
+                checked++;
+                try {
+                    Bitmap b = getBitmap(u);
+                    if (b == null || Math.min(b.getWidth(), b.getHeight()) < 450) continue;
+                    double score = WatchAlignCoreV7.referenceScore(watch, b);
+                    if (Double.isFinite(score) && score < bestScore) {
+                        bestScore = score; best = b; bestUrl = u;
+                    }
+                } catch (Exception ignored) {}
+            }
+            if (best == null || !Double.isFinite(bestScore) || bestScore >= 3.2) {
+                throw new IllegalStateException("No geometrically usable exact-model official reference was found for " + modelRef + ".");
+            }
 
-        cache.getParentFile().mkdirs();
-        try (FileOutputStream out = new FileOutputStream(cache)) {
-            best.compress(Bitmap.CompressFormat.JPEG, 94, out);
+            cache.getParentFile().mkdirs();
+            try (FileOutputStream out = new FileOutputStream(cache)) { best.compress(Bitmap.CompressFormat.JPEG, 94, out); }
+            boolean fromCache = bestUrl != null && bestUrl.startsWith("Cached exact-model");
+            return new Result(best, bestUrl != null ? bestUrl : page, fromCache);
+        } catch (Exception onlineFailure) {
+            if (cached != null && Double.isFinite(cachedScore) && cachedScore < 3.2) {
+                return new Result(cached, "Cached exact-model official reference for " + modelRef + " (online refresh unavailable)", true);
+            }
+            throw onlineFailure;
         }
-        return new Result(best, bestUrl != null ? bestUrl : page, false);
     }
 
     private static String pageFor(String modelRef) {
@@ -90,9 +98,8 @@ public final class OnlineReferenceFinder {
 
     private static Bitmap getBitmap(String url) throws Exception {
         HttpURLConnection c = open(url);
-        try (InputStream in = new BufferedInputStream(c.getInputStream())) {
-            return BitmapFactory.decodeStream(in);
-        } finally { c.disconnect(); }
+        try (InputStream in = new BufferedInputStream(c.getInputStream())) { return BitmapFactory.decodeStream(in); }
+        finally { c.disconnect(); }
     }
 
     private static HttpURLConnection open(String url) throws Exception {
@@ -111,24 +118,16 @@ public final class OnlineReferenceFinder {
         Pattern p = Pattern.compile("https://[^\\\"'<>\\s]+?(?:\\.jpg|\\.jpeg|\\.png|\\.webp)(?:\\?[^\\\"'<>\\s]*)?", Pattern.CASE_INSENSITIVE);
         Matcher m = p.matcher(unescaped);
         while (m.find()) {
-            String u = m.group();
-            String l = u.toLowerCase();
-            // Never accept a generic Rolex asset just because it came from a Rolex page.
-            // The URL itself or its immediate metadata context must name the exact reference.
-            int lo = Math.max(0, m.start() - 320);
-            int hi = Math.min(unescaped.length(), m.end() + 320);
+            String u = m.group(); String l = u.toLowerCase();
+            int lo = Math.max(0, m.start() - 320), hi = Math.min(unescaped.length(), m.end() + 320);
             String context = unescaped.substring(lo, hi).toLowerCase();
-            if (l.contains(token) || l.contains("m" + token) || context.contains(token) || context.contains("m" + token)) {
-                found.add(u);
-            }
+            if (l.contains(token) || l.contains("m" + token) || context.contains(token) || context.contains("m" + token)) found.add(u);
         }
         Pattern og = Pattern.compile("property=[\\\"']og:image[\\\"'][^>]*content=[\\\"']([^\\\"']+)", Pattern.CASE_INSENSITIVE);
         Matcher om = og.matcher(unescaped);
         while (om.find()) {
-            String u = om.group(1);
-            String l = u.toLowerCase();
-            int lo = Math.max(0, om.start() - 320);
-            int hi = Math.min(unescaped.length(), om.end() + 320);
+            String u = om.group(1); String l = u.toLowerCase();
+            int lo = Math.max(0, om.start() - 320), hi = Math.min(unescaped.length(), om.end() + 320);
             String context = unescaped.substring(lo, hi).toLowerCase();
             if (l.contains(token) || l.contains("m" + token) || context.contains(token) || context.contains("m" + token)) found.add(u);
         }
