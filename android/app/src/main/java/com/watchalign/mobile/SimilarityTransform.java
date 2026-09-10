@@ -45,6 +45,4 @@ public final class SimilarityTransform {
     public double[][] matrix2x3() {
         return new double[][]{{a, b, tx}, {-b, a, ty}};
     }
-
-    private SimilarityTransform() {}
 }
