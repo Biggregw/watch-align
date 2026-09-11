@@ -40,8 +40,10 @@ jobs:
           grep -q 'android.permission.INTERNET' app/src/main/AndroidManifest.xml
           grep -q 'exact-v6' app/src/main/java/com/watchalign/mobile/OnlineReferenceFinder.java
           grep -q 'WatchAlignCoreV13' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q 'ZoomableImageView' app/src/main/java/com/watchalign/mobile/MainActivity.java
           grep -q 'QcGuideRenderer.render' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q 'QcExtendedAnalyzer.analyse(watch,reference,modelRef)' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
+          grep -q 'QcSummaryFormatter.prependSummary' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q 'marker vs minute track' app/src/main/java/com/watchalign/mobile/QcExtendedAnalyzer.java
           grep -q 'Top QC findings' app/src/main/java/com/watchalign/mobile/QcExtendedAnalyzer.java
           grep -q 'perspective could not be verified from this photo' app/src/main/java/com/watchalign/mobile/QcExtendedMath.java
@@ -53,7 +55,8 @@ jobs:
           grep -q 'CARTIER-SANTOS-M' app/src/main/java/com/watchalign/mobile/ModelCatalog.java
           grep -q 'SimilarityTransform.between' app/src/main/java/com/watchalign/mobile/GeometryOverlayRepair.java
           grep -q 'srcGlobalAngle - refGlobalAngle' app/src/main/java/com/watchalign/mobile/GeometryRegistration.java
-          grep -q '1.3.0-alpha17' app/build.gradle
+          grep -q '1.3.0-alpha17' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q '1.3.0-alpha17' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q "versionCode 13017" app/build.gradle
           grep -q "versionName '1.3.0-alpha17'" app/build.gradle
       - name: Run Android unit tests
