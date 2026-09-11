@@ -31,6 +31,28 @@ public class SimilarityTransformTest {
         assertEquals(220.0,t.mapY(20,20),1e-12);
     }
 
+    @Test public void positiveOpenCvRotationMovesTwelveTowardEleven() {
+        SimilarityTransform t=SimilarityTransform.between(100,100,100,100,1.0,30.0);
+        // A point at 12 o'clock (100,50) rotates visually counter-clockwise to 11 o'clock.
+        assertEquals(75.0,t.mapX(100,50),1e-9);
+        assertEquals(100.0-50.0*Math.cos(Math.toRadians(30)),t.mapY(100,50),1e-9);
+    }
+
+    @Test public void negativeOpenCvRotationMovesTwelveTowardOne() {
+        SimilarityTransform t=SimilarityTransform.between(100,100,100,100,1.0,-30.0);
+        assertEquals(125.0,t.mapX(100,50),1e-9);
+        assertEquals(100.0-50.0*Math.cos(Math.toRadians(30)),t.mapY(100,50),1e-9);
+    }
+
+    @Test public void scaleRotationAndTranslationTogetherRemainExact() {
+        SimilarityTransform t=SimilarityTransform.between(321.25,477.75,188.5,222.25,1.43,7.6);
+        assertEquals(188.5,t.mapX(321.25,477.75),1e-9);
+        assertEquals(222.25,t.mapY(321.25,477.75),1e-9);
+        double px=321.25+86.0, py=477.75-33.0;
+        double mappedDistance=Math.hypot(t.mapX(px,py)-188.5,t.mapY(px,py)-222.25);
+        assertEquals(Math.hypot(86.0,-33.0)*1.43,mappedDistance,1e-9);
+    }
+
     @Test public void matrixMatchesPointMethods() {
         SimilarityTransform t=SimilarityTransform.between(93,144,287,355,1.22,-4.7);
         double[][] m=t.matrix2x3(); double x=155,y=244;
@@ -41,5 +63,12 @@ public class SimilarityTransformTest {
     @Test public void rejectsInvalidScale() {
         assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(0,0,1,1,0,0));
         assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(0,0,1,1,Double.NaN,0));
+        assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(0,0,1,1,-1,0));
+    }
+
+    @Test public void rejectsNonFiniteCoordinatesAndRotation() {
+        assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(Double.NaN,0,1,1,1,0));
+        assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(0,0,Double.POSITIVE_INFINITY,1,1,0));
+        assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(0,0,1,1,1,Double.NaN));
     }
 }
