@@ -57,26 +57,22 @@ final class QcExtendedMath {
         return 100.0 * watchNumeralHeightOverDial / genuineNumeralHeightOverDial;
     }
 
+    /**
+     * Apparent numeral height varies with the displayed date glyph as well as perspective.
+     * Until the app can prove like-for-like date numerals or measure the optical lens scale
+     * directly, keep this as a diagnostic measurement only and never promote it to a defect.
+     */
     static int magnificationMatchSeverity(double percentOfGen) {
-        if (!Double.isFinite(percentOfGen)) return 0;
-        double d = Math.abs(percentOfGen - 100.0);
-        if (d > 12.0) return 2;
-        if (d > 7.0) return 1;
         return 0;
     }
 
     /**
-     * Marker/lens orientation is derived from a local PCA/contour axis. For triangular markers,
-     * cyclops reflections and hands crossing the sample window, a large angle is more commonly
-     * a segmentation failure than a real component rotation. Do not turn those outliers into a
-     * defect verdict. Small, stable deviations remain gradable.
+     * Local PCA/contour axes are contaminated by hands, lume reflections and cyclops edges.
+     * Genuine-image validation showed that even visually straight components can return several
+     * degrees or tens of degrees of apparent rotation. Preserve the number for diagnostics but
+     * do not create an automatic defect verdict until component-shape isolation is validated.
      */
     static int orientationSeverity(double deg) {
-        if (!Double.isFinite(deg)) return 0;
-        double a = Math.abs(deg);
-        if (a > 3.5) return 0;
-        if (a > 2.0) return 2;
-        if (a > 0.9) return 1;
         return 0;
     }
 
