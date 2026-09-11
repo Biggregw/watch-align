@@ -9,10 +9,12 @@ public class QcExtendedMathTest {
         assertEquals(-2.0,QcExtendedMath.smallestAxisError(-179,3),1e-9);
     }
 
-    @Test public void orientationSeverityThresholds() {
+    @Test public void orientationSeverityThresholdsAndRejectsUnstableOutliers() {
         assertEquals(0,QcExtendedMath.orientationSeverity(0.5));
         assertEquals(1,QcExtendedMath.orientationSeverity(1.2));
         assertEquals(2,QcExtendedMath.orientationSeverity(2.2));
+        assertEquals(0,QcExtendedMath.orientationSeverity(4.1));
+        assertEquals(0,QcExtendedMath.orientationSeverity(48.5));
     }
 
     @Test public void localTrackSeverityThresholds() {
@@ -21,16 +23,17 @@ public class QcExtendedMathTest {
         assertEquals(2,QcExtendedMath.localTrackSeverity(1.8));
     }
 
-    @Test public void dateCenterSeverityUsesWorstAxis() {
+    @Test public void dateCenterSeverityUsesHorizontalNumeralCenterOnly() {
         assertEquals(0,QcExtendedMath.dateCenterSeverity(3,4));
         assertEquals(1,QcExtendedMath.dateCenterSeverity(7,2));
-        assertEquals(2,QcExtendedMath.dateCenterSeverity(2,14));
+        assertEquals(0,QcExtendedMath.dateCenterSeverity(2,14));
+        assertEquals(2,QcExtendedMath.dateCenterSeverity(14,2));
     }
 
-    @Test public void dateAxisSeverityTreatsAlmostOneMinuteMarkerAsStrong() {
-        assertEquals(0,QcExtendedMath.dateAxisSeverity(1.5));
-        assertEquals(1,QcExtendedMath.dateAxisSeverity(3.0));
-        assertEquals(2,QcExtendedMath.dateAxisSeverity(5.5));
+    @Test public void dateAxisSeverityRequiresARepeatableLargeOffset() {
+        assertEquals(0,QcExtendedMath.dateAxisSeverity(3.0));
+        assertEquals(1,QcExtendedMath.dateAxisSeverity(5.5));
+        assertEquals(2,QcExtendedMath.dateAxisSeverity(8.0));
         assertEquals(5.5/6.0,QcExtendedMath.minuteTrackUnits(5.5),1e-9);
     }
 
