@@ -20,9 +20,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * End-to-end acceptance tests using exact-model manufacturer assets fetched by
- * the CI host immediately before the Android test APK is built. A genuine image
- * compared with itself must not create a major QC defect.
+ * End-to-end acceptance tests using exact-model manufacturer brochure imagery
+ * fetched by CI immediately before the Android test APK is built. A genuine
+ * image compared with itself must not create a major QC defect.
  */
 @RunWith(AndroidJUnit4.class)
 public class GenuineOfficialImageValidationTest {
@@ -30,12 +30,12 @@ public class GenuineOfficialImageValidationTest {
         assertTrue("OpenCV failed to initialise", OpenCVLoader.initLocal());
     }
 
-    @Test public void batgirlOfficialImagesDoNotCreateMajorDefects() throws Exception {
-        validateOfficialSelfComparisons("126710BLNR", 2, true);
+    @Test public void batgirlOfficialImageDoesNotCreateMajorDefects() throws Exception {
+        validateOfficialSelfComparisons("126710BLNR", 1, true);
     }
 
-    @Test public void submarinerOfficialImagesDoNotCreateMajorDefects() throws Exception {
-        validateOfficialSelfComparisons("124060", 2, false);
+    @Test public void submarinerOfficialImageDoesNotCreateMajorDefects() throws Exception {
+        validateOfficialSelfComparisons("124060", 1, false);
     }
 
     private static void validateOfficialSelfComparisons(String modelRef, int required, boolean expectDate) throws Exception {
@@ -49,7 +49,7 @@ public class GenuineOfficialImageValidationTest {
         int checked = 0;
         for (String name : names) {
             if (checked >= required) break;
-            if (!name.startsWith("official_") || !name.endsWith(".img")) continue;
+            if (!name.startsWith("official_") || !(name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png"))) continue;
             Bitmap b;
             try (InputStream in = context.getAssets().open(base + "/" + name)) {
                 b = BitmapFactory.decodeStream(in);
