@@ -37,5 +37,15 @@ final class QcExtendedMath {
         return Double.isFinite(equivalentDeg) && equivalentDeg < 14.0;
     }
 
+    static String fineQcReason(double equivalentDeg) {
+        if (!Double.isFinite(equivalentDeg)) return "perspective could not be verified from this photo";
+        if (equivalentDeg >= 14.0) return "perspective distortion is too high for fine grading";
+        return "";
+    }
+
+    static double findingPriority(int severity, double magnitude) {
+        return severity * 100.0 + Math.abs(magnitude);
+    }
+
     private QcExtendedMath() {}
 }
