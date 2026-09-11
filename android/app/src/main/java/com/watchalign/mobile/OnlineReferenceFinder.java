@@ -28,8 +28,10 @@ public final class OnlineReferenceFinder {
         Result(Bitmap bitmap, String source, boolean fromCache){this.bitmap=bitmap;this.source=source;this.fromCache=fromCache;}
     }
 
+    private static final Pattern ROLEX_REF = Pattern.compile("m?(\\d{6}[a-z]{0,6})(?:-\\d{4})?", Pattern.CASE_INSENSITIVE);
+
     public static Result find(Context context, Bitmap watch, String modelRef) throws Exception {
-        File cache = new File(context.getFilesDir(), "reference-cache/" + modelRef + "-exact-v4.jpg");
+        File cache = new File(context.getFilesDir(), "reference-cache/" + modelRef + "-exact-v5.jpg");
         Bitmap cached = null;
         double cachedScore = Double.POSITIVE_INFINITY;
         if (cache.isFile()) {
@@ -121,7 +123,7 @@ public final class OnlineReferenceFinder {
             String u = m.group(); String l = u.toLowerCase();
             int lo = Math.max(0, m.start() - 320), hi = Math.min(unescaped.length(), m.end() + 320);
             String context = unescaped.substring(lo, hi).toLowerCase();
-            if (l.contains(token) || l.contains("m" + token) || context.contains(token) || context.contains("m" + token)) found.add(u);
+            if (l.contains(token) || l.contains("m" + token) || contextIdentifiesOnlyTarget(context, token)) found.add(u);
         }
         Pattern og = Pattern.compile("property=[\\\"']og:image[\\\"'][^>]*content=[\\\"']([^\\\"']+)", Pattern.CASE_INSENSITIVE);
         Matcher om = og.matcher(unescaped);
@@ -129,9 +131,20 @@ public final class OnlineReferenceFinder {
             String u = om.group(1); String l = u.toLowerCase();
             int lo = Math.max(0, om.start() - 320), hi = Math.min(unescaped.length(), om.end() + 320);
             String context = unescaped.substring(lo, hi).toLowerCase();
-            if (l.contains(token) || l.contains("m" + token) || context.contains(token) || context.contains("m" + token)) found.add(u);
+            if (l.contains(token) || l.contains("m" + token) || contextIdentifiesOnlyTarget(context, token)) found.add(u);
         }
         return new ArrayList<>(found);
+    }
+
+    static boolean contextIdentifiesOnlyTarget(String context, String token) {
+        Matcher refs = ROLEX_REF.matcher(context.toLowerCase());
+        boolean targetSeen = false;
+        while (refs.find()) {
+            String ref = refs.group(1).toLowerCase();
+            if (ref.equals(token)) targetSeen = true;
+            else return false;
+        }
+        return targetSeen;
     }
 
     private OnlineReferenceFinder() {}
