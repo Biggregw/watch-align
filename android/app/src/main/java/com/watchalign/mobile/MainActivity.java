@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private Bitmap watchBitmap;
     private Bitmap referenceBitmap;
-    private WatchAlignCoreV12.AnalysisResult lastResult;
+    private WatchAlignCoreV13.AnalysisResult lastResult;
     private ImageView image;
     private TextView status;
     private TextView resultText;
@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
 
         root.addView(text("WATCH ALIGN · STANDALONE", 12, Color.rgb(50,213,242)));
         TextView h1 = text("Watch Align Android", 28, Color.WHITE); h1.setPadding(0,dp(4),0,0); root.addView(h1);
-        root.addView(text("V1.3.0-alpha12 · analysis runs on this device", 14, Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha13 · analysis runs on this device", 14, Color.rgb(158,176,201)));
         root.addView(text("No hosted backend. Exact-model reference discovery is online; watch analysis and geometry registration run locally.", 13, Color.rgb(158,176,201)));
 
         model = new Spinner(this);
@@ -112,7 +112,7 @@ public class MainActivity extends Activity {
 
     private void analyse() {
         if (watchBitmap == null) { status.setText("Choose your watch photo first."); return; }
-        status.setText(referenceBitmap == null ? "Detecting dial locally and searching exact-model references…" : "Detecting dial locally with your chosen reference…");
+        status.setText(referenceBitmap == null ? "Running QC checks and searching exact-model references…" : "Running QC checks with your chosen reference…");
         resultText.setText(""); opacity.setVisibility(View.GONE); referenceButton.setEnabled(false); overlayButton.setEnabled(false);
         Bitmap watch = watchBitmap; Bitmap manualRef = referenceBitmap; String refCode = model.getSelectedItemPosition()==0 ? "126710BLNR" : "124060";
         worker.submit(() -> {
@@ -123,7 +123,7 @@ public class MainActivity extends Activity {
                     ref = found.bitmap;
                     sourceNote = (found.fromCache ? "Reference: cached exact-model official-source image.\n" : "Reference: downloaded from exact-model official manufacturer source and cached locally.\n") + "Source: " + found.source;
                 }
-                WatchAlignCoreV12.AnalysisResult r = WatchAlignCoreV12.analyse(watch, ref, refCode);
+                WatchAlignCoreV13.AnalysisResult r = WatchAlignCoreV13.analyse(watch, ref, refCode);
                 final String note = sourceNote;
                 runOnUiThread(() -> {
                     lastResult=r; image.setImageBitmap(r.annotated); resultText.setText(r.report + "\n\n" + note); status.setText("Analysis complete.");
