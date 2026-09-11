@@ -9,12 +9,18 @@ public class QcExtendedMathTest {
         assertEquals(-2.0,QcExtendedMath.smallestAxisError(-179,3),1e-9);
     }
 
-    @Test public void orientationSeverityThresholdsAndRejectsUnstableOutliers() {
+    @Test public void orientationIsDiagnosticOnlyUntilComponentIsolationIsReliable() {
         assertEquals(0,QcExtendedMath.orientationSeverity(0.5));
-        assertEquals(1,QcExtendedMath.orientationSeverity(1.2));
-        assertEquals(2,QcExtendedMath.orientationSeverity(2.2));
+        assertEquals(0,QcExtendedMath.orientationSeverity(1.2));
         assertEquals(0,QcExtendedMath.orientationSeverity(4.1));
+        assertEquals(0,QcExtendedMath.orientationSeverity(22.63));
         assertEquals(0,QcExtendedMath.orientationSeverity(48.5));
+    }
+
+    @Test public void apparentDigitHeightMagnificationIsDiagnosticOnly() {
+        assertEquals(0,QcExtendedMath.magnificationMatchSeverity(90.0));
+        assertEquals(0,QcExtendedMath.magnificationMatchSeverity(109.7));
+        assertEquals(0,QcExtendedMath.magnificationMatchSeverity(130.0));
     }
 
     @Test public void localTrackSeverityThresholds() {
@@ -39,12 +45,11 @@ public class QcExtendedMathTest {
 
     @Test public void threeOClockHighDateProducesNegativeOffset() {
         double cx=100,cy=100,r=60;
-        double angle=Math.toRadians(84.0); // one minute-track division high of 3 o'clock
+        double angle=Math.toRadians(84.0);
         double x=cx+Math.sin(angle)*r;
         double y=cy-Math.cos(angle)*r;
         assertEquals(-6.0,QcExtendedMath.localDateAxisOffsetDeg(cx,cy,x,y,3,0),1e-6);
-        assertEquals(-1.0,QcExtendedMath.minuteTrackUnits(
-                QcExtendedMath.localDateAxisOffsetDeg(cx,cy,x,y,3,0)),1e-6);
+        assertEquals(-1.0,QcExtendedMath.minuteTrackUnits(QcExtendedMath.localDateAxisOffsetDeg(cx,cy,x,y,3,0)),1e-6);
     }
 
     @Test public void nineOClockProfileWorksForLeftHandedSprite() {
