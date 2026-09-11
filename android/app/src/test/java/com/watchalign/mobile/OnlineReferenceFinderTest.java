@@ -32,4 +32,22 @@ public class OnlineReferenceFinderTest {
         List<String> urls = OnlineReferenceFinder.extractImageUrls(html, "126710BLNR");
         assertTrue(urls.isEmpty());
     }
+
+    @Test public void targetTokenElsewhereDoesNotBlessWrongModelAsset() {
+        String html = "{\"pageReference\":\"126710BLNR\",\"cardReference\":\"126500LN\","
+                + "\"image\":\"https://assets.rolex.com/media/daytona.webp\"}";
+        List<String> urls = OnlineReferenceFinder.extractImageUrls(html, "126710BLNR");
+        assertTrue(urls.isEmpty());
+    }
+
+    @Test public void exactModelInUrlWinsEvenIfPageContainsOtherReferences() {
+        String html = "{\"other\":\"126500LN\",\"image\":\"https://assets.rolex.com/catalogue/m126710blnr-0002/upright.webp\"}";
+        List<String> urls = OnlineReferenceFinder.extractImageUrls(html, "126710BLNR");
+        assertEquals(1, urls.size());
+    }
+
+    @Test public void contextHelperRejectsAmbiguousModelMetadata() {
+        assertTrue(OnlineReferenceFinder.contextIdentifiesOnlyTarget("reference 126710blnr", "126710blnr"));
+        assertFalse(OnlineReferenceFinder.contextIdentifiesOnlyTarget("126710blnr related 126500ln", "126710blnr"));
+    }
 }
