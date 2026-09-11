@@ -32,11 +32,12 @@ public class DateMagnificationMathTest {
         assertEquals(90.0,QcExtendedMath.apparentMagnificationPercent(0.198,0.22),1e-9);
     }
 
-    @Test public void magnificationSeverityHasUsefulTolerance() {
-        assertEquals(0,QcExtendedMath.magnificationMatchSeverity(95.0));
-        assertEquals(1,QcExtendedMath.magnificationMatchSeverity(92.0));
-        assertEquals(2,QcExtendedMath.magnificationMatchSeverity(86.0));
-        assertEquals(2,QcExtendedMath.magnificationMatchSeverity(114.0));
+    @Test public void magnificationSeverityIsDiagnosticOnlyInAlpha19() {
+        assertEquals(0,QcExtendedMath.magnificationMatchSeverity(100.0));
+        assertEquals(0,QcExtendedMath.magnificationMatchSeverity(109.7));
+        assertEquals(0,QcExtendedMath.magnificationMatchSeverity(85.0));
+        assertEquals(0,QcExtendedMath.magnificationMatchSeverity(130.0));
+        assertEquals(0,QcExtendedMath.magnificationMatchSeverity(Double.NaN));
     }
 
     @Test public void invalidMagnificationInputsAreRejected() {
