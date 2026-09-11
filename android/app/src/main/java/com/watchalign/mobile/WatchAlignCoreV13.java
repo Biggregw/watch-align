@@ -4,9 +4,9 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
-/** Alpha18: conservative reliability gating backed by genuine-image regression cases. */
+/** Alpha19: genuine baseline validation removes unproven rotation and digit-height verdicts. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha18";
+    public static final String CORE_VERSION="1.3.0-alpha19";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned;
@@ -29,7 +29,7 @@ public final class WatchAlignCoreV13 {
         String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)
                 + "\n\nQC guide: cyan=dial boundary; yellow=marker-ring consensus; grey spokes=roll-corrected ideal hour axes; white x=ideal marker position; coloured circle=measured marker position."
                 + ext.report
-                + "\nInterpretation: green/amber/red are geometry cues only. Alpha18 suppresses unstable local-axis outliers rather than inventing marker or cyclops rotation defects. Date vertical ink position is diagnostic only because it depends on the displayed numeral; horizontal centring drives the automatic date-centre verdict. GMT bezel/pip alignment is visual-only until a shape-validated detector replaces the unreliable brightness scan. Date magnification remains a relative image measurement against the selected genuine reference, not a laboratory optical magnification value.";
+                + "\nInterpretation: green/amber/red are geometry cues only. Alpha19 keeps local marker-body and cyclops rotation values as diagnostics but does not convert them into defects until component-shape isolation is validated. Date vertical ink position is diagnostic only because it depends on the displayed numeral; horizontal centring drives the automatic date-centre verdict. Apparent date magnification from numeral ink height is also diagnostic only unless like-for-like numeral or direct optical-scale validation is available. GMT bezel/pip alignment remains visual-only until a shape-validated detector replaces the unreliable brightness scan.";
         String report=QcSummaryFormatter.prependSummary(detail);
         return new AnalysisResult(combined,base.reference,base.aligned,report,base.registrationConfidence);
     }
