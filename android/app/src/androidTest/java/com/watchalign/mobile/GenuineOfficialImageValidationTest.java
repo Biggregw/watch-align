@@ -2,30 +2,27 @@ package com.watchalign.mobile;
 
 import static org.junit.Assert.*;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.opencv.android.OpenCVLoader;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
- * Acceptance tests that source exact-model images from the manufacturer pages and
- * feed the genuine image back through Watch Align as both candidate and genuine
- * reference. These are intentionally end-to-end: a genuine image compared with
- * itself must not create a major QC defect.
+ * End-to-end acceptance tests using exact-model manufacturer assets fetched by
+ * the CI host immediately before the Android test APK is built. A genuine image
+ * compared with itself must not create a major QC defect.
  */
 @RunWith(AndroidJUnit4.class)
 public class GenuineOfficialImageValidationTest {
@@ -42,28 +39,32 @@ public class GenuineOfficialImageValidationTest {
     }
 
     private static void validateOfficialSelfComparisons(String modelRef, int required, boolean expectDate) throws Exception {
-        ModelCatalog.Profile profile = ModelCatalog.require(modelRef);
-        assertNotNull(profile.officialPage);
-        String html = getText(profile.officialPage);
-        List<String> urls = OnlineReferenceFinder.extractImageUrls(html, modelRef);
-        assertFalse("No exact-model official images discovered for " + modelRef, urls.isEmpty());
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        String base = "genuine/" + modelRef;
+        String[] names = context.getAssets().list(base);
+        assertNotNull(names);
+        Arrays.sort(names);
 
         List<String> failures = new ArrayList<>();
         int checked = 0;
-        for (String url : urls) {
+        for (String name : names) {
             if (checked >= required) break;
+            if (!name.startsWith("official_") || !name.endsWith(".img")) continue;
             Bitmap b;
-            try { b = getBitmap(url); } catch (Exception e) { continue; }
+            try (InputStream in = context.getAssets().open(base + "/" + name)) {
+                b = BitmapFactory.decodeStream(in);
+            }
             if (b == null || Math.min(b.getWidth(), b.getHeight()) < 450) continue;
             try {
                 WatchAlignCoreV13.AnalysisResult r = WatchAlignCoreV13.analyse(b, b, modelRef);
                 checked++;
                 String rep = r.report == null ? "" : r.report;
-                if (r.registrationConfidence < 0.90) failures.add("registration=" + r.registrationConfidence + " @ " + url);
-                if (rep.contains("strong detected deviation")) failures.add("strong marker defect @ " + url + "\n" + rep);
-                if (rep.contains("merits inspection")) failures.add("inspection defect @ " + url + "\n" + rep);
+                if (r.registrationConfidence < 0.90) failures.add("registration=" + r.registrationConfidence + " @ " + name);
+                if (!rep.startsWith("QC SUMMARY\nNo major defects detected.")) failures.add("summary flagged genuine image @ " + name + "\n" + rep);
+                if (rep.contains("strong detected deviation")) failures.add("strong marker defect @ " + name + "\n" + rep);
+                if (rep.contains("merits inspection")) failures.add("inspection defect @ " + name + "\n" + rep);
                 if (expectDate && !rep.contains("Apparent date numeral magnification vs genuine: 100.0%")) {
-                    failures.add("self magnification not 100% @ " + url + "\n" + rep);
+                    failures.add("self magnification not 100% @ " + name + "\n" + rep);
                 }
             } finally {
                 b.recycle();
@@ -71,31 +72,5 @@ public class GenuineOfficialImageValidationTest {
         }
         assertTrue("Only validated " + checked + " official images for " + modelRef, checked >= required);
         assertTrue("Genuine self-check failures for " + modelRef + ":\n" + String.join("\n\n", failures), failures.isEmpty());
-    }
-
-    private static String getText(String url) throws Exception {
-        HttpURLConnection c = open(url);
-        try (InputStream in = new BufferedInputStream(c.getInputStream())) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[16384]; int n;
-            while ((n = in.read(buf)) >= 0) out.write(buf, 0, n);
-            return out.toString(StandardCharsets.UTF_8.name());
-        } finally { c.disconnect(); }
-    }
-
-    private static Bitmap getBitmap(String url) throws Exception {
-        HttpURLConnection c = open(url);
-        try (InputStream in = new BufferedInputStream(c.getInputStream())) {
-            return BitmapFactory.decodeStream(in);
-        } finally { c.disconnect(); }
-    }
-
-    private static HttpURLConnection open(String url) throws Exception {
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(15000); c.setReadTimeout(25000); c.setInstanceFollowRedirects(true);
-        c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36");
-        c.setRequestProperty("Accept", "text/html,image/avif,image/webp,image/apng,image/*,*/*;q=0.8");
-        c.setRequestProperty("Accept-Language", "en-GB,en;q=0.9");
-        return c;
     }
 }
