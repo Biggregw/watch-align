@@ -30,6 +30,10 @@ final class QcExtendedMath {
         return (hour % 12) * 30.0;
     }
 
+    static int minuteIndexForHour(int hour) {
+        return (hour % 12) * 5;
+    }
+
     static double localDateAxisOffsetDeg(double cx, double cy, double x, double y,
                                          int dateHour, double globalRotationDeg) {
         double measured = clockAngleDeg(cx, cy, x, y);
@@ -37,8 +41,28 @@ final class QcExtendedMath {
         return wrap180(measured - expected);
     }
 
+    static double localDateAxisOffsetFromAnchorDeg(double cx, double cy, double x, double y,
+                                                   double localTrackAnchorDeg) {
+        return wrap180(clockAngleDeg(cx, cy, x, y) - localTrackAnchorDeg);
+    }
+
     static double minuteTrackUnits(double angularOffsetDeg) {
         return angularOffsetDeg / 6.0;
+    }
+
+    static double apparentMagnificationPercent(double watchNumeralHeightOverDial,
+                                               double genuineNumeralHeightOverDial) {
+        if (!Double.isFinite(watchNumeralHeightOverDial) || !Double.isFinite(genuineNumeralHeightOverDial)
+                || watchNumeralHeightOverDial <= 0.0 || genuineNumeralHeightOverDial <= 0.0) return Double.NaN;
+        return 100.0 * watchNumeralHeightOverDial / genuineNumeralHeightOverDial;
+    }
+
+    static int magnificationMatchSeverity(double percentOfGen) {
+        if (!Double.isFinite(percentOfGen)) return 0;
+        double d = Math.abs(percentOfGen - 100.0);
+        if (d > 12.0) return 2;
+        if (d > 7.0) return 1;
+        return 0;
     }
 
     static int orientationSeverity(double deg) {
@@ -57,7 +81,7 @@ final class QcExtendedMath {
 
     static int dateAxisSeverity(double deg) {
         double a = Math.abs(deg);
-        if (a > 4.5) return 2;  // roughly three quarters of one minute-track division
+        if (a > 4.5) return 2;
         if (a > 2.0) return 1;
         return 0;
     }
