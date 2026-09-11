@@ -53,10 +53,12 @@ final class ModelCatalog {
         List<Profile> p=new ArrayList<>();
 
         // Rolex sports / everyday models that dominate RepTimeQC traffic.
-        add(p,"126710BLNR","Rolex GMT-Master II 126710BLNR · Batman/Batgirl","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,true,true,true,"https://www.rolex.com/watches/gmt-master-ii/m126710blnr-0002");
-        add(p,"126710BLRO","Rolex GMT-Master II 126710BLRO · Pepsi","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,true,true,true,null);
-        add(p,"126710GRNR","Rolex GMT-Master II 126710GRNR · Bruce Wayne","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,true,true,true,null);
-        add(p,"126720VTNR","Rolex GMT-Master II 126720VTNR · Sprite","Rolex",GeometryMode.ROUND_INDEXED,9,true,0.69,true,true,true,null);
+        // GMT 24-hour bezel triangles are deliberately visual-only for now. The old brightness
+        // peak scan could lock onto bezel numerals/reflections and manufacture multi-degree errors.
+        add(p,"126710BLNR","Rolex GMT-Master II 126710BLNR · Batman/Batgirl","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,false,true,true,"https://www.rolex.com/watches/gmt-master-ii/m126710blnr-0002");
+        add(p,"126710BLRO","Rolex GMT-Master II 126710BLRO · Pepsi","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,false,true,true,null);
+        add(p,"126710GRNR","Rolex GMT-Master II 126710GRNR · Bruce Wayne","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,false,true,true,null);
+        add(p,"126720VTNR","Rolex GMT-Master II 126720VTNR · Sprite","Rolex",GeometryMode.ROUND_INDEXED,9,true,0.69,false,true,true,null);
         add(p,"124060","Rolex Submariner 124060 · No-Date","Rolex",GeometryMode.ROUND_INDEXED,0,false,0.0,true,true,true,"https://www.rolex.com/watches/submariner/m124060-0001");
         add(p,"126610LN","Rolex Submariner Date 126610LN","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,true,true,true,null);
         add(p,"126610LV","Rolex Submariner Date 126610LV · Starbucks","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,true,true,true,null);
