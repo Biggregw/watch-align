@@ -3,6 +3,7 @@ name: Build Watch Align Android Standalone
 on:
   push:
     branches:
+      - main
       - feature/android-offline-v1.3.0-alpha
   workflow_dispatch:
 
