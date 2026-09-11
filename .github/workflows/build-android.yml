@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-android:
@@ -35,40 +35,26 @@ jobs:
         run: |
           grep -q 'android.permission.INTERNET' app/src/main/AndroidManifest.xml
           grep -q 'exact-v5' app/src/main/java/com/watchalign/mobile/OnlineReferenceFinder.java
-          grep -q 'WatchAlignCoreV11' app/src/main/java/com/watchalign/mobile/MainActivity.java
-          grep -q 'WatchAlignCoreV7.analyse(watch,null,modelRef)' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV11.java
-          grep -q 'Core.insertChannel(alpha,rgbaSrc,3)' app/src/main/java/com/watchalign/mobile/GeometryOverlayRepair.java
+          grep -q 'WatchAlignCoreV12' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q 'QcGuideRenderer.render' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV12.java
+          grep -q 'ideal marker position' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV12.java
           grep -q 'SimilarityTransform.between' app/src/main/java/com/watchalign/mobile/GeometryOverlayRepair.java
           grep -q 'srcGlobalAngle - refGlobalAngle' app/src/main/java/com/watchalign/mobile/GeometryRegistration.java
-          grep -q '1.3.0-alpha11' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q '1.3.0-alpha12' app/src/main/java/com/watchalign/mobile/MainActivity.java
       - name: Run Android unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
       - name: Build standalone APK
         run: gradle :app:assembleDebug --stacktrace
-      - name: Prepare release files
+      - name: Prepare working APK
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha11.apk
-          sha256sum WatchAlign-Android-1.3.0-alpha11.apk > SHA256SUMS-Android.txt
-      - name: Upload APK
+          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha12.apk
+          sha256sum WatchAlign-Android-1.3.0-alpha12.apk > SHA256SUMS-Android.txt
+      - name: Upload working APK
         uses: actions/upload-artifact@v4
         with:
-          name: WatchAlign-Android-1.3.0-alpha11
-          path: android/WatchAlign-Android-1.3.0-alpha11.apk
+          name: WatchAlign-Android-1.3.0-alpha12
+          path: |
+            android/WatchAlign-Android-1.3.0-alpha12.apk
+            android/SHA256SUMS-Android.txt
           if-no-files-found: error
           retention-days: 30
-      - name: Publish Android alpha11 release
-        if: github.event_name == 'push'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          tag='android-v1.3.0-alpha11'
-          git fetch --tags
-          if git tag -l "$tag" | grep -q .; then
-            echo "Release tag already exists; skipping publication"
-            exit 0
-          fi
-          gh release create "$tag" WatchAlign-Android-1.3.0-alpha11.apk SHA256SUMS-Android.txt \
-            --target "$GITHUB_SHA" \
-            --title 'Watch Align Android 1.3.0-alpha11' \
-            --prerelease \
-            --notes 'Android alpha11 is the audit follow-up to alpha10. It hardens online reference parsing so a nearby target-model token cannot accidentally bless an image explicitly associated with another Rolex reference, invalidates the older reference cache, and makes the aligned overlay an RGBA watch-head layer with a transparent background instead of an opaque transformed photo rectangle. QC and overlay registration remain separated, and the deterministic transform is the only comparison path. Expanded exact-model and similarity-transform regression tests are mandatory before publication.'
