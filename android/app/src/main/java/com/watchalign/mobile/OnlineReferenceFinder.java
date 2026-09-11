@@ -31,7 +31,9 @@ public final class OnlineReferenceFinder {
     private static final Pattern ROLEX_REF = Pattern.compile("m?(\\d{6}[a-z]{0,6})(?:-\\d{4})?", Pattern.CASE_INSENSITIVE);
 
     public static Result find(Context context, Bitmap watch, String modelRef) throws Exception {
-        File cache = new File(context.getFilesDir(), "reference-cache/" + modelRef + "-exact-v5.jpg");
+        ModelCatalog.Profile profile=ModelCatalog.require(modelRef);
+        if(!profile.supportsAutoReference()) throw new IllegalArgumentException("Automatic official reference discovery is not configured for " + profile.label + ".");
+        File cache = new File(context.getFilesDir(), "reference-cache/" + modelRef + "-exact-v6.jpg");
         Bitmap cached = null;
         double cachedScore = Double.POSITIVE_INFINITY;
         if (cache.isFile()) {
@@ -44,7 +46,7 @@ public final class OnlineReferenceFinder {
             } catch (Exception ignored) {}
         }
 
-        String page = pageFor(modelRef);
+        String page = profile.officialPage;
         try {
             String html = getText(page);
             List<String> urls = extractImageUrls(html, modelRef);
@@ -81,12 +83,6 @@ public final class OnlineReferenceFinder {
             }
             throw onlineFailure;
         }
-    }
-
-    private static String pageFor(String modelRef) {
-        if ("124060".equals(modelRef)) return "https://www.rolex.com/watches/submariner/m124060-0001";
-        if ("126710BLNR".equals(modelRef)) return "https://www.rolex.com/watches/gmt-master-ii/m126710blnr-0002";
-        throw new IllegalArgumentException("Unsupported model: " + modelRef);
     }
 
     private static String getText(String url) throws Exception {
