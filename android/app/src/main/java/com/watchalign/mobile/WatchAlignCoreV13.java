@@ -4,9 +4,9 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
-/** Alpha15: geometry-first comparison, Reddit-informed QC guide, generic date/cyclops checks and model catalog. */
+/** Alpha16: geometry-first comparison, local minute-track date QC and gen-relative magnification. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha15";
+    public static final String CORE_VERSION="1.3.0-alpha16";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned;
@@ -24,12 +24,12 @@ public final class WatchAlignCoreV13 {
     public static AnalysisResult analyse(Bitmap watch,Bitmap reference,String modelRef){
         WatchAlignCoreV11.AnalysisResult base=WatchAlignCoreV11.analyse(watch,reference,modelRef);
         Bitmap guide=QcGuideRenderer.render(watch);
-        QcExtendedAnalyzer.Result ext=QcExtendedAnalyzer.analyse(watch,modelRef);
+        QcExtendedAnalyzer.Result ext=QcExtendedAnalyzer.analyse(watch,reference,modelRef);
         Bitmap combined=QcOverlayComposer.compose(watch,guide,ext.annotated);
         String report=base.report.replace("1.3.0-alpha11",CORE_VERSION)
                 + "\n\nQC guide: cyan=dial boundary; yellow=marker-ring consensus; grey spokes=roll-corrected ideal hour axes; white x=ideal marker position; coloured circle=measured marker position."
                 + ext.report
-                + "\nInterpretation: green/amber/red are geometry cues only. Date/cyclops, rehaut, SEL and dial-print checks are perspective/lighting sensitive and are explicitly advisory where automatic measurement is not robust.";
+                + "\nInterpretation: green/amber/red are geometry cues only. Date aperture is referenced to the local minute marker when detected. Cyclops position is perspective-sensitive. Apparent date magnification is a relative image measurement versus the selected genuine reference, not a laboratory optical magnification value.";
         return new AnalysisResult(combined,base.reference,base.aligned,report,base.registrationConfidence);
     }
 
