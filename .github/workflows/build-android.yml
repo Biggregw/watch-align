@@ -61,6 +61,8 @@ jobs:
           grep -q "versionName '1.3.0-alpha17'" app/build.gradle
       - name: Run Android unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
+      - name: Fetch exact-model official genuine fixtures
+        run: python3 fetch_genuine_fixtures.py
       - name: Run official genuine-image acceptance tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
