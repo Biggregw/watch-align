@@ -8,8 +8,8 @@ android {
         applicationId 'com.watchalign.mobile'
         minSdk 28
         targetSdk 35
-        versionCode 13017
-        versionName '1.3.0-alpha17'
+        versionCode 13018
+        versionName '1.3.0-alpha18'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
