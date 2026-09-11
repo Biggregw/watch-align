@@ -4,9 +4,13 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
-/** Alpha19: genuine baseline validation removes unproven rotation and digit-height verdicts. */
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/** Alpha20: robust genuine-reference distributions drive marker-position QC. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha19";
+    public static final String CORE_VERSION="1.3.0-alpha20";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned;
@@ -22,14 +26,23 @@ public final class WatchAlignCoreV13 {
     }
 
     public static AnalysisResult analyse(Bitmap watch,Bitmap reference,String modelRef){
-        WatchAlignCoreV11.AnalysisResult base=WatchAlignCoreV11.analyse(watch,reference,modelRef);
+        List<Bitmap> refs=reference==null?Collections.emptyList():Collections.singletonList(reference);
+        return analyse(watch,refs,modelRef);
+    }
+
+    public static AnalysisResult analyse(Bitmap watch,List<Bitmap> references,String modelRef){
+        List<Bitmap> refs=references==null?Collections.emptyList():new ArrayList<>(references);
+        Bitmap primary=refs.isEmpty()?null:refs.get(0);
+        WatchAlignCoreV11.AnalysisResult base=WatchAlignCoreV11.analyse(watch,primary,modelRef);
         Bitmap guide=QcGuideRenderer.render(watch);
-        QcExtendedAnalyzer.Result ext=QcExtendedAnalyzer.analyse(watch,reference,modelRef);
+        QcExtendedAnalyzer.Result ext=QcExtendedAnalyzer.analyse(watch,primary,modelRef);
+        ReferenceDistributionAnalyzer.Result dist=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef);
         Bitmap combined=QcOverlayComposer.compose(watch,guide,ext.annotated);
         String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)
                 + "\n\nQC guide: cyan=dial boundary; yellow=marker-ring consensus; grey spokes=roll-corrected ideal hour axes; white x=ideal marker position; coloured circle=measured marker position."
                 + ext.report
-                + "\nInterpretation: green/amber/red are geometry cues only. Alpha19 keeps local marker-body and cyclops rotation values as diagnostics but does not convert them into defects until component-shape isolation is validated. Date vertical ink position is diagnostic only because it depends on the displayed numeral; horizontal centring drives the automatic date-centre verdict. Apparent date magnification from numeral ink height is also diagnostic only unless like-for-like numeral or direct optical-scale validation is available. GMT bezel/pip alignment remains visual-only until a shape-validated detector replaces the unreliable brightness scan.";
+                + dist.report
+                + "\nInterpretation: alpha20 uses the genuine reference set as the baseline for marker angular/radial position. Each marker is compared with the median genuine measurement and robust MAD-derived spread, with minimum tolerance floors to avoid false precision. A single genuine image remains a fallback only. Marker-body rotation, cyclops rotation and apparent date magnification remain diagnostic until their component boundaries can be validated reliably.";
         String report=QcSummaryFormatter.prependSummary(detail);
         return new AnalysisResult(combined,base.reference,base.aligned,report,base.registrationConfidence);
     }
