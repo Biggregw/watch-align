@@ -39,27 +39,29 @@ jobs:
           grep -q 'QcGuideRenderer.render' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q 'QcExtendedAnalyzer.analyse' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q 'marker vs minute track' app/src/main/java/com/watchalign/mobile/QcExtendedAnalyzer.java
+          grep -q 'Top QC findings' app/src/main/java/com/watchalign/mobile/QcExtendedAnalyzer.java
+          grep -q 'perspective could not be verified from this photo' app/src/main/java/com/watchalign/mobile/QcExtendedMath.java
           grep -q 'Date numeral centring' app/src/main/java/com/watchalign/mobile/QcExtendedAnalyzer.java
           grep -q 'Bezel/pip 12 alignment' app/src/main/java/com/watchalign/mobile/QcExtendedAnalyzer.java
           grep -q 'SEL dark-gap evidence' app/src/main/java/com/watchalign/mobile/QcExtendedAnalyzer.java
           grep -q 'Lume consistency' app/src/main/java/com/watchalign/mobile/QcExtendedAnalyzer.java
           grep -q 'SimilarityTransform.between' app/src/main/java/com/watchalign/mobile/GeometryOverlayRepair.java
           grep -q 'srcGlobalAngle - refGlobalAngle' app/src/main/java/com/watchalign/mobile/GeometryRegistration.java
-          grep -q '1.3.0-alpha13' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q '1.3.0-alpha14' app/src/main/java/com/watchalign/mobile/MainActivity.java
       - name: Run Android unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
       - name: Build standalone APK
         run: gradle :app:assembleDebug --stacktrace
       - name: Prepare working APK
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha13.apk
-          sha256sum WatchAlign-Android-1.3.0-alpha13.apk > SHA256SUMS-Android.txt
+          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha14.apk
+          sha256sum WatchAlign-Android-1.3.0-alpha14.apk > SHA256SUMS-Android.txt
       - name: Upload working APK
         uses: actions/upload-artifact@v4
         with:
-          name: WatchAlign-Android-1.3.0-alpha13
+          name: WatchAlign-Android-1.3.0-alpha14
           path: |
-            android/WatchAlign-Android-1.3.0-alpha13.apk
+            android/WatchAlign-Android-1.3.0-alpha14.apk
             android/SHA256SUMS-Android.txt
           if-no-files-found: error
           retention-days: 30
