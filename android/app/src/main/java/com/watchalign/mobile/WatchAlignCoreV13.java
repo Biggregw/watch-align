@@ -4,9 +4,9 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
-/** Alpha16: geometry-first comparison, local minute-track date QC and gen-relative magnification. */
+/** Alpha17: geometry-first comparison, genuine-image validation and severity-aware summary. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha16";
+    public static final String CORE_VERSION="1.3.0-alpha17";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned;
@@ -26,10 +26,11 @@ public final class WatchAlignCoreV13 {
         Bitmap guide=QcGuideRenderer.render(watch);
         QcExtendedAnalyzer.Result ext=QcExtendedAnalyzer.analyse(watch,reference,modelRef);
         Bitmap combined=QcOverlayComposer.compose(watch,guide,ext.annotated);
-        String report=base.report.replace("1.3.0-alpha11",CORE_VERSION)
+        String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)
                 + "\n\nQC guide: cyan=dial boundary; yellow=marker-ring consensus; grey spokes=roll-corrected ideal hour axes; white x=ideal marker position; coloured circle=measured marker position."
                 + ext.report
                 + "\nInterpretation: green/amber/red are geometry cues only. Date aperture is referenced to the local minute marker when detected. Cyclops position is perspective-sensitive. Apparent date magnification is a relative image measurement versus the selected genuine reference, not a laboratory optical magnification value.";
+        String report=QcSummaryFormatter.prependSummary(detail);
         return new AnalysisResult(combined,base.reference,base.aligned,report,base.registrationConfidence);
     }
 
