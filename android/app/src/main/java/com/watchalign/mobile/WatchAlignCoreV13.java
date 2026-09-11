@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha20: robust genuine-reference distributions drive marker-position QC. */
+/** Alpha21: canonical GMT geometry plus genuine-calibrated radial tolerances. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha20";
+    public static final String CORE_VERSION="1.3.0-alpha21";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned;
@@ -36,13 +36,21 @@ public final class WatchAlignCoreV13 {
         WatchAlignCoreV11.AnalysisResult base=WatchAlignCoreV11.analyse(watch,primary,modelRef);
         Bitmap guide=QcGuideRenderer.render(watch);
         QcExtendedAnalyzer.Result ext=QcExtendedAnalyzer.analyse(watch,primary,modelRef);
-        ReferenceDistributionAnalyzer.Result dist=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef);
+        boolean canonicalGmt=CanonicalGmtGeometryAnalyzer.supports(modelRef);
+        String baselineReport;
+        if(canonicalGmt){
+            baselineReport=CanonicalGmtGeometryAnalyzer.analyse(watch,refs,modelRef).report;
+        } else {
+            baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;
+        }
         Bitmap combined=QcOverlayComposer.compose(watch,guide,ext.annotated);
         String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)
                 + "\n\nQC guide: cyan=dial boundary; yellow=marker-ring consensus; grey spokes=roll-corrected ideal hour axes; white x=ideal marker position; coloured circle=measured marker position."
                 + ext.report
-                + dist.report
-                + "\nInterpretation: alpha20 uses the genuine reference set as the baseline for marker angular/radial position. Each marker is compared with the median genuine measurement and robust MAD-derived spread, with minimum tolerance floors to avoid false precision. A single genuine image remains a fallback only. Marker-body rotation, cyclops rotation and apparent date magnification remain diagnostic until their component boundaries can be validated reliably.";
+                + baselineReport
+                + (canonicalGmt
+                ? "\nInterpretation: alpha21 treats the 126710 GMT hour layout as canonical geometry. Hour centres use the exact 30-degree grid after roll removal. Marker radial placement is measured independently as a percentage of detected dial radius so the marker ring cannot hide a high/low marker. Genuine references calibrate detector bias and normal radial spread. Fewer than three usable radial samples never produce a radial pass/fail. Marker-body rotation, cyclops rotation and apparent date magnification remain diagnostic until their component boundaries can be validated reliably."
+                : "\nInterpretation: non-GMT models continue to use the alpha20 genuine-reference distribution for marker position. Marker-body rotation, cyclops rotation and apparent date magnification remain diagnostic until their component boundaries can be validated reliably.");
         String report=QcSummaryFormatter.prependSummary(detail);
         return new AnalysisResult(combined,base.reference,base.aligned,report,base.registrationConfidence);
     }
