@@ -18,9 +18,10 @@ public class QcSummaryFormatterTest {
                 " 6 o'clock: angle +0.05° from canonical; radial Δ +0.12% of dial radius  [normal; radial n=5]\n"+
                 "\nInterpretation: canonical geometry test\n";
         String out=QcSummaryFormatter.prependSummary(report);
-        assertTrue(out.contains("No major defects detected. Minor observations"));
-        assertTrue(out.contains("12 o'clock: angle +0.10° from canonical; radial Δ +1.05%"));
-        assertFalse(out.contains("6 o'clock: angle +0.05°"));
+        String summary=out.substring(0,out.indexOf("\nFull QC detail\n"));
+        assertTrue(summary.contains("No major defects detected. Minor observations"));
+        assertTrue(summary.contains("12 o'clock: angle +0.10° from canonical; radial Δ +1.05%"));
+        assertFalse(summary.contains("6 o'clock: angle +0.05°"));
     }
 
     @Test public void severeForumStyleFindingsAreRankedAndSimplified() {
