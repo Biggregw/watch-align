@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
@@ -51,7 +52,6 @@ final class QcExtendedAnalyzer {
             Scalar neutral=new Scalar(180,180,180), magenta=new Scalar(220,80,220), cyan=new Scalar(220,210,70);
             StringBuilder r=new StringBuilder("\n\nExtended QC checks\n");
 
-            // Local marker-to-minute-track and marker body orientation checks.
             for(int h:new int[]{12,6,9}) {
                 Object m=findHour(markers,h);
                 if(m==null) continue;
@@ -77,23 +77,20 @@ final class QcExtendedAnalyzer {
                 r.append(fine?"\n":" (advisory: perspective too high for fine grading)\n");
             }
 
-            // Bezel/pip 12 alignment: brightest/strongest local feature in the 12 annulus.
             double pipOffset=bezelTwelveOffset(src,cx,cy,dr,global);
             if(Double.isFinite(pipOffset)) {
                 int ps=QcExtendedMath.localTrackSeverity(pipOffset);
                 Scalar s=!fine?neutral:ps==0?green:ps==1?amber:red;
-                double rr=dr*1.23, a=Math.toRadians(global+pipOffset);
-                Point pp=polar(cx,cy,rr,global+pipOffset);
+                Point pp=polar(cx,cy,dr*1.23,global+pipOffset);
                 Imgproc.circle(out,pp,8,s,2,Imgproc.LINE_AA,0);
                 r.append(String.format(Locale.US,"Bezel/pip 12 alignment: %+4.2f° relative to dial 12%s\n",pipOffset,fine?"":" (advisory)"));
             } else r.append("Bezel/pip 12 alignment: not confidently measurable in this photo.\n");
 
-            // Date / cyclops region for GMT only. We measure the date aperture and numeral ink centroid,
-            // not lens magnification, because reflections can make automatic cyclops edge detection unsafe.
             if("126710BLNR".equals(modelRef)) {
                 DateResult d=measureDate(src,cx,cy,dr);
                 if(d!=null) {
-                    Scalar s=!fine?neutral:QcExtendedMath.dateCenterSeverity(d.xPct,d.yPct)==0?green:QcExtendedMath.dateCenterSeverity(d.xPct,d.yPct)==1?amber:red;
+                    int ds=QcExtendedMath.dateCenterSeverity(d.xPct,d.yPct);
+                    Scalar s=!fine?neutral:ds==0?green:ds==1?amber:red;
                     Imgproc.rectangle(out,d.box.tl(),d.box.br(),s,2,Imgproc.LINE_AA,0);
                     Imgproc.drawMarker(out,new Point(d.inkX,d.inkY),s,Imgproc.MARKER_CROSS,12,2,Imgproc.LINE_AA);
                     r.append(String.format(Locale.US,"Date numeral centring in aperture: horizontal %+4.1f%%, vertical %+4.1f%%%s\n",d.xPct,d.yPct,fine?"":" (advisory)"));
@@ -101,7 +98,6 @@ final class QcExtendedAnalyzer {
                 } else r.append("Date/cyclops: aperture not confidently isolated; visual confirmation required.\n");
             }
 
-            // Rehaut and dial-print zones are shown as inspection bands rather than fabricated automatic verdicts.
             int x0=(int)Math.max(0,cx-dr*0.78), x1=(int)Math.min(src.cols()-1,cx+dr*0.78);
             int y0=(int)Math.max(0,cy-dr*0.93), y1=(int)Math.min(src.rows()-1,cy-dr*0.61);
             if(x1>x0&&y1>y0) Imgproc.rectangle(out,new Point(x0,y0),new Point(x1,y1),magenta,1,Imgproc.LINE_AA,0);
@@ -109,16 +105,17 @@ final class QcExtendedAnalyzer {
 
             Rect textZone=safeRect((int)(cx-dr*0.45),(int)(cy-dr*0.25),(int)(dr*0.90),(int)(dr*0.62),src.cols(),src.rows());
             if(textZone!=null) {
-                double sharp=textSharpness(src.submat(textZone));
+                Mat sub=src.submat(textZone);
+                double sharp=textSharpness(sub);
+                sub.release();
                 Imgproc.rectangle(out,textZone.tl(),textZone.br(),cyan,1,Imgproc.LINE_AA,0);
                 r.append(String.format(Locale.US,"Dial-print zone sharpness: %.1f (use as photo-quality aid only; typography/authenticity is not inferred).\n",sharp));
             }
 
-            // SEL inspection zones around lower lug/end-link interfaces. We mark both and quantify dark-gap evidence only.
             double leftGap=selGapEvidence(src,cx-dr*0.63,cy+dr*1.05,dr*0.17,dr*0.20);
             double rightGap=selGapEvidence(src,cx+dr*0.63,cy+dr*1.05,dr*0.17,dr*0.20);
-            drawSelBox(out,cx-dr*0.63,cy+dr*1.05,dr, leftGap);
-            drawSelBox(out,cx+dr*0.63,cy+dr*1.05,dr, rightGap);
+            drawSelBox(out,cx-dr*0.63,cy+dr*1.05,dr,leftGap);
+            drawSelBox(out,cx+dr*0.63,cy+dr*1.05,dr,rightGap);
             r.append(String.format(Locale.US,"SEL dark-gap evidence: left %.2f, right %.2f (lighting-sensitive; inspect highlighted zones visually).\n",leftGap,rightGap));
 
             r.append("Lume consistency: not graded from a normal-light QC photo. Use a dedicated lume shot before any lume verdict.\n");
@@ -142,15 +139,15 @@ final class QcExtendedAnalyzer {
         double cxx=0,cyy=0,cxy=0;
         for(int y=y0;y<=y1;y+=2) for(int x=x0;x<=x1;x+=2){double v=gray.get(y,x)[0];if(v<150)continue;double w=v-140,dx=x-mx,dy=y-my;cxx+=w*dx*dx;cyy+=w*dy*dy;cxy+=w*dx*dy;}
         gray.release();
-        double axis=Math.toDegrees(0.5*Math.atan2(2*cxy,cxx-cyy)); // image x-axis convention
-        double radialImage=expectedRadialDeg-90.0; // clockwise from 12 -> mathematical-ish image x convention
+        double axis=Math.toDegrees(0.5*Math.atan2(2*cxy,cxx-cyy));
+        double radialImage=expectedRadialDeg-90.0;
         return QcExtendedMath.smallestAxisError(axis,radialImage);
     }
 
     private static double bezelTwelveOffset(Mat bgr,double cx,double cy,double dr,double global) {
         Mat gray=new Mat();Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);Imgproc.GaussianBlur(gray,gray,new Size(5,5),0);
         double best=-1,bestOff=Double.NaN;
-        for(double off=-8;off<=8;off+=0.25){double a=global+off;Point p=polar(cx,cy,dr*1.23,a);double sum=0;int n=0;
+        for(double off=-8;off<=8;off+=0.25){Point p=polar(cx,cy,dr*1.23,global+off);double sum=0;int n=0;
             for(int yy=-4;yy<=4;yy+=2)for(int xx=-4;xx<=4;xx+=2){int x=(int)Math.round(p.x+xx),y=(int)Math.round(p.y+yy);if(x<0||x>=gray.cols()||y<0||y>=gray.rows())continue;sum+=gray.get(y,x)[0];n++;}
             if(n>0&&sum/n>best){best=sum/n;bestOff=off;}}
         gray.release();return best>=115?bestOff:Double.NaN;
@@ -159,7 +156,8 @@ final class QcExtendedAnalyzer {
     private static final class DateResult {Rect box;double inkX,inkY,xPct,yPct;DateResult(Rect b,double x,double y,double xp,double yp){box=b;inkX=x;inkY=y;xPct=xp;yPct=yp;}}
     private static DateResult measureDate(Mat bgr,double cx,double cy,double dr) {
         Rect roi=safeRect((int)(cx+dr*0.30),(int)(cy-dr*0.34),(int)(dr*0.75),(int)(dr*0.68),bgr.cols(),bgr.rows());if(roi==null)return null;
-        Mat gray=new Mat();Imgproc.cvtColor(bgr.submat(roi),gray,Imgproc.COLOR_BGR2GRAY);Mat bin=new Mat();Imgproc.threshold(gray,bin,145,255,Imgproc.THRESH_BINARY);
+        Mat roiMat=bgr.submat(roi),gray=new Mat();Imgproc.cvtColor(roiMat,gray,Imgproc.COLOR_BGR2GRAY);roiMat.release();
+        Mat bin=new Mat();Imgproc.threshold(gray,bin,145,255,Imgproc.THRESH_BINARY);
         List<MatOfPoint> cs=new ArrayList<>();Mat hier=new Mat();Imgproc.findContours(bin,cs,hier,Imgproc.RETR_EXTERNAL,Imgproc.CHAIN_APPROX_SIMPLE);
         Rect best=null;double bestScore=0;
         for(MatOfPoint c:cs){Rect q=Imgproc.boundingRect(c);double ar=q.width/(double)Math.max(1,q.height),area=q.area();if(ar<1.0||ar>2.8||area<dr*dr*0.015||area>dr*dr*0.18)continue;double sc=area*(1.0-Math.min(0.8,Math.abs(ar-1.55)/2.0));if(sc>bestScore){bestScore=sc;best=q;}}
@@ -175,8 +173,8 @@ final class QcExtendedAnalyzer {
         return new DateResult(abs,roi.x+ix,roi.y+iy,xp,yp);
     }
 
-    private static double textSharpness(Mat roi){Mat g=new Mat(),lap=new Mat();Imgproc.cvtColor(roi,g,Imgproc.COLOR_BGR2GRAY);Imgproc.Laplacian(g,lap,Core.CV_64F);org.opencv.core.MatOfDouble mean=new org.opencv.core.MatOfDouble(),sd=new org.opencv.core.MatOfDouble();Core.meanStdDev(lap,mean,sd);double v=sd.get(0,0)[0];g.release();lap.release();mean.release();sd.release();return v*v;}
-    private static double selGapEvidence(Mat bgr,double cx,double cy,double hw,double hh){Rect r=safeRect((int)(cx-hw),(int)(cy-hh),(int)(2*hw),(int)(2*hh),bgr.cols(),bgr.rows());if(r==null)return 0;Mat g=new Mat();Imgproc.cvtColor(bgr.submat(r),g,Imgproc.COLOR_BGR2GRAY);double dark=0,total=g.rows()*g.cols();for(int y=0;y<g.rows();y+=2)for(int x=0;x<g.cols();x+=2)if(g.get(y,x)[0]<45)dark++;double sampled=Math.ceil(g.rows()/2.0)*Math.ceil(g.cols()/2.0);g.release();return sampled>0?dark/sampled:0;}
+    private static double textSharpness(Mat roi){Mat g=new Mat(),lap=new Mat();Imgproc.cvtColor(roi,g,Imgproc.COLOR_BGR2GRAY);Imgproc.Laplacian(g,lap,CvType.CV_64F);org.opencv.core.MatOfDouble mean=new org.opencv.core.MatOfDouble(),sd=new org.opencv.core.MatOfDouble();Core.meanStdDev(lap,mean,sd);double v=sd.get(0,0)[0];g.release();lap.release();mean.release();sd.release();return v*v;}
+    private static double selGapEvidence(Mat bgr,double cx,double cy,double hw,double hh){Rect r=safeRect((int)(cx-hw),(int)(cy-hh),(int)(2*hw),(int)(2*hh),bgr.cols(),bgr.rows());if(r==null)return 0;Mat sub=bgr.submat(r),g=new Mat();Imgproc.cvtColor(sub,g,Imgproc.COLOR_BGR2GRAY);sub.release();double dark=0;for(int y=0;y<g.rows();y+=2)for(int x=0;x<g.cols();x+=2)if(g.get(y,x)[0]<45)dark++;double sampled=Math.ceil(g.rows()/2.0)*Math.ceil(g.cols()/2.0);g.release();return sampled>0?dark/sampled:0;}
     private static void drawSelBox(Mat out,double cx,double cy,double dr,double evidence){Scalar s=evidence>0.22?new Scalar(40,180,255):new Scalar(180,180,180);Point a=new Point(cx-dr*0.17,cy-dr*0.20),b=new Point(cx+dr*0.17,cy+dr*0.20);Imgproc.rectangle(out,a,b,s,1,Imgproc.LINE_AA,0);}
     private static Rect safeRect(int x,int y,int w,int h,int cols,int rows){x=Math.max(0,x);y=Math.max(0,y);if(x>=cols||y>=rows)return null;w=Math.min(w,cols-x);h=Math.min(h,rows-y);return w>2&&h>2?new Rect(x,y,w,h):null;}
     private static Point polar(double cx,double cy,double r,double deg){double a=Math.toRadians(deg);return new Point(cx+Math.sin(a)*r,cy-Math.cos(a)*r);}
