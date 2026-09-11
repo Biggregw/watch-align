@@ -55,17 +55,16 @@ public class MainActivity extends Activity {
 
         root.addView(text("WATCH ALIGN · STANDALONE", 12, Color.rgb(50,213,242)));
         TextView h1 = text("Watch Align Android", 28, Color.WHITE); h1.setPadding(0,dp(4),0,0); root.addView(h1);
-        root.addView(text("V1.3.0-alpha14 · analysis runs on this device", 14, Color.rgb(158,176,201)));
-        root.addView(text("No hosted backend. Exact-model reference discovery is online; watch analysis and geometry registration run locally.", 13, Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha15 · analysis runs on this device", 14, Color.rgb(158,176,201)));
+        root.addView(text("No hosted backend. Exact-model reference discovery is used where a verified official source is configured; QC analysis runs locally.", 13, Color.rgb(158,176,201)));
 
         model = new Spinner(this);
-        String[] models = {"126710BLNR · GMT-Master II", "124060 · Submariner No-Date"};
-        model.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, models));
+        model.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, ModelCatalog.labels()));
         root.addView(model, lp(-1,dp(54),10));
 
         Button pick = button("Choose watch photo"); pick.setOnClickListener(v -> pickImage(PICK_WATCH)); root.addView(pick, lp(-1,dp(52),6));
         Button pickRef = button("Choose your own genuine/reference photo (optional)"); pickRef.setOnClickListener(v -> pickImage(PICK_REFERENCE)); root.addView(pickRef, lp(-1,dp(52),6));
-        Button analyse = button("Analyse + find best reference"); analyse.setBackgroundColor(Color.rgb(50,213,242)); analyse.setTextColor(Color.rgb(4,32,42)); analyse.setOnClickListener(v -> analyse()); root.addView(analyse, lp(-1,dp(54),12));
+        Button analyse = button("Analyse QC + reference when available"); analyse.setBackgroundColor(Color.rgb(50,213,242)); analyse.setTextColor(Color.rgb(4,32,42)); analyse.setOnClickListener(v -> analyse()); root.addView(analyse, lp(-1,dp(54),12));
 
         status = text("Choose a watch photo to begin.", 14, Color.rgb(158,176,201)); root.addView(status);
         image = new ImageView(this); image.setAdjustViewBounds(true); image.setScaleType(ImageView.ScaleType.FIT_CENTER); root.addView(image, lp(-1,-2,12));
@@ -94,7 +93,7 @@ public class MainActivity extends Activity {
             Bitmap b = readBitmap(data.getData());
             if (request == PICK_WATCH) {
                 watchBitmap = b; lastResult=null; image.setImageBitmap(b); referenceButton.setEnabled(false); overlayButton.setEnabled(false);
-                status.setText("Watch photo ready. Tap Analyse + find best reference.");
+                status.setText("Watch photo ready. Tap Analyse.");
             } else {
                 referenceBitmap = b; lastResult=null; referenceButton.setEnabled(false); overlayButton.setEnabled(false);
                 status.setText("Your reference photo is ready and will be used instead of online discovery.");
@@ -112,18 +111,37 @@ public class MainActivity extends Activity {
 
     private void analyse() {
         if (watchBitmap == null) { status.setText("Choose your watch photo first."); return; }
-        status.setText(referenceBitmap == null ? "Running QC checks and searching exact-model references…" : "Running QC checks with your chosen reference…");
+        ModelCatalog.Profile profile=ModelCatalog.at(model.getSelectedItemPosition());
         resultText.setText(""); opacity.setVisibility(View.GONE); referenceButton.setEnabled(false); overlayButton.setEnabled(false);
-        Bitmap watch = watchBitmap; Bitmap manualRef = referenceBitmap; String refCode = model.getSelectedItemPosition()==0 ? "126710BLNR" : "124060";
+        Bitmap watch = watchBitmap; Bitmap manualRef = referenceBitmap;
+
+        if(profile.geometryMode==ModelCatalog.GeometryMode.VISUAL_ONLY) {
+            status.setText("Running model-specific visual QC checklist…");
+            worker.submit(() -> {
+                try {
+                    VisualOnlyQc.Result r=VisualOnlyQc.analyse(watch,profile);
+                    runOnUiThread(() -> {lastResult=null;image.setImageBitmap(r.annotated);resultText.setText(r.report);status.setText("Visual QC checklist ready.");});
+                } catch(Throwable t) { runOnUiThread(() -> status.setText("QC error: "+t.getMessage())); }
+            });
+            return;
+        }
+
+        status.setText(manualRef != null ? "Running QC checks with your chosen reference…" :
+                profile.supportsAutoReference() ? "Running QC checks and searching exact-model official references…" : "Running QC checks…");
+
         worker.submit(() -> {
             try {
-                Bitmap ref = manualRef; String sourceNote = "Manual reference selected on device.";
-                if (ref == null) {
-                    OnlineReferenceFinder.Result found = OnlineReferenceFinder.find(this, watch, refCode);
+                Bitmap ref = manualRef; String sourceNote;
+                if (ref != null) {
+                    sourceNote = "Reference: manual genuine/reference photo selected on device.";
+                } else if (profile.supportsAutoReference()) {
+                    OnlineReferenceFinder.Result found = OnlineReferenceFinder.find(this, watch, profile.code);
                     ref = found.bitmap;
                     sourceNote = (found.fromCache ? "Reference: cached exact-model official-source image.\n" : "Reference: downloaded from exact-model official manufacturer source and cached locally.\n") + "Source: " + found.source;
+                } else {
+                    sourceNote = "Reference: automatic official-source discovery is not yet configured for this model. QC ran locally; choose your own genuine/reference photo to enable overlay comparison.";
                 }
-                WatchAlignCoreV13.AnalysisResult r = WatchAlignCoreV13.analyse(watch, ref, refCode);
+                WatchAlignCoreV13.AnalysisResult r = WatchAlignCoreV13.analyse(watch, ref, profile.code);
                 final String note = sourceNote;
                 runOnUiThread(() -> {
                     lastResult=r; image.setImageBitmap(r.annotated); resultText.setText(r.report + "\n\n" + note); status.setText("Analysis complete.");
@@ -134,13 +152,13 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     lastResult=null; referenceButton.setEnabled(false); overlayButton.setEnabled(false); opacity.setVisibility(View.GONE);
                     status.setText("Reference/analysis error: " + t.getMessage());
-                    resultText.setText("Watch Align refused to produce QC/overlay output because the watch or reference geometry could not be verified. No QC verdict has been produced from an unreliable detection.");
+                    resultText.setText("Watch Align refused to produce a geometric QC verdict because the dial/reference geometry could not be verified. Try a clearer, more front-on photo; no pass/fail has been inferred from an unreliable detection.");
                 });
             }
         });
     }
 
-    private void showAnnotated(){opacity.setVisibility(View.GONE); if(lastResult!=null) image.setImageBitmap(lastResult.annotated);}
+    private void showAnnotated(){opacity.setVisibility(View.GONE); if(lastResult!=null) image.setImageBitmap(lastResult.annotated); else if(watchBitmap!=null) image.setImageBitmap(watchBitmap);}
     private void showReference(){opacity.setVisibility(View.GONE); if(lastResult!=null&&lastResult.reference!=null) image.setImageBitmap(lastResult.reference);}
     private void showOverlay(){if(lastResult!=null&&lastResult.aligned!=null){opacity.setVisibility(View.VISIBLE); image.setImageBitmap(lastResult.overlay(opacity.getProgress()/100f));}}
 
