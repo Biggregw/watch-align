@@ -11,7 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
@@ -32,7 +31,7 @@ public class MainActivity extends Activity {
     private Bitmap watchBitmap;
     private Bitmap referenceBitmap;
     private WatchAlignCoreV13.AnalysisResult lastResult;
-    private ImageView image;
+    private ZoomableImageView image;
     private TextView status;
     private TextView resultText;
     private Spinner model;
@@ -55,7 +54,7 @@ public class MainActivity extends Activity {
 
         root.addView(text("WATCH ALIGN · STANDALONE", 12, Color.rgb(50,213,242)));
         TextView h1 = text("Watch Align Android", 28, Color.WHITE); h1.setPadding(0,dp(4),0,0); root.addView(h1);
-        root.addView(text("V1.3.0-alpha16 · analysis runs on this device", 14, Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha17 · analysis runs on this device", 14, Color.rgb(158,176,201)));
         root.addView(text("No hosted backend. Exact-model reference discovery is used where a verified official source is configured; QC analysis runs locally.", 13, Color.rgb(158,176,201)));
 
         model = new Spinner(this);
@@ -67,7 +66,8 @@ public class MainActivity extends Activity {
         Button analyse = button("Analyse QC + reference when available"); analyse.setBackgroundColor(Color.rgb(50,213,242)); analyse.setTextColor(Color.rgb(4,32,42)); analyse.setOnClickListener(v -> analyse()); root.addView(analyse, lp(-1,dp(54),12));
 
         status = text("Choose a watch photo to begin.", 14, Color.rgb(158,176,201)); root.addView(status);
-        image = new ImageView(this); image.setAdjustViewBounds(true); image.setScaleType(ImageView.ScaleType.FIT_CENTER); root.addView(image, lp(-1,-2,12));
+        image = new ZoomableImageView(this); image.setAdjustViewBounds(true); root.addView(image, lp(-1,-2,12));
+        root.addView(text("Tip: pinch to zoom the watch image; double-tap resets the view.", 12, Color.rgb(158,176,201)));
 
         LinearLayout viewButtons = new LinearLayout(this); viewButtons.setOrientation(LinearLayout.HORIZONTAL);
         watchButton = smallButton("QC view"); referenceButton = smallButton("Reference"); overlayButton = smallButton("Overlay");
