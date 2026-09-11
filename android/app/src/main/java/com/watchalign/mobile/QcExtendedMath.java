@@ -65,8 +65,16 @@ final class QcExtendedMath {
         return 0;
     }
 
+    /**
+     * Marker/lens orientation is derived from a local PCA/contour axis. For triangular markers,
+     * cyclops reflections and hands crossing the sample window, a large angle is more commonly
+     * a segmentation failure than a real component rotation. Do not turn those outliers into a
+     * defect verdict. Small, stable deviations remain gradable.
+     */
     static int orientationSeverity(double deg) {
+        if (!Double.isFinite(deg)) return 0;
         double a = Math.abs(deg);
+        if (a > 3.5) return 0;
         if (a > 2.0) return 2;
         if (a > 0.9) return 1;
         return 0;
@@ -79,15 +87,25 @@ final class QcExtendedMath {
         return 0;
     }
 
+    /**
+     * The date aperture is compared with a locally detected minute-track anchor. Single-photo
+     * perspective and track-marker isolation can easily move this by a few degrees, so only
+     * larger, repeatable offsets are ranked.
+     */
     static int dateAxisSeverity(double deg) {
         double a = Math.abs(deg);
-        if (a > 4.5) return 2;
-        if (a > 2.0) return 1;
+        if (a > 7.5) return 2;
+        if (a > 4.5) return 1;
         return 0;
     }
 
+    /**
+     * Horizontal centring is the useful QC signal. The vertical ink centroid changes materially
+     * with the displayed numeral (1, 2, 8, etc.), so it remains diagnostic text only and must not
+     * create an off-centre verdict by itself.
+     */
     static int dateCenterSeverity(double xPct, double yPct) {
-        double m = Math.max(Math.abs(xPct), Math.abs(yPct));
+        double m = Math.abs(xPct);
         if (m > 12.0) return 2;
         if (m > 6.0) return 1;
         return 0;
