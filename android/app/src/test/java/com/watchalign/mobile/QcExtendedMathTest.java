@@ -27,6 +27,37 @@ public class QcExtendedMathTest {
         assertEquals(2,QcExtendedMath.dateCenterSeverity(2,14));
     }
 
+    @Test public void dateAxisSeverityTreatsAlmostOneMinuteMarkerAsStrong() {
+        assertEquals(0,QcExtendedMath.dateAxisSeverity(1.5));
+        assertEquals(1,QcExtendedMath.dateAxisSeverity(3.0));
+        assertEquals(2,QcExtendedMath.dateAxisSeverity(5.5));
+        assertEquals(5.5/6.0,QcExtendedMath.minuteTrackUnits(5.5),1e-9);
+    }
+
+    @Test public void threeOClockHighDateProducesNegativeOffset() {
+        double cx=100,cy=100,r=60;
+        double angle=Math.toRadians(84.0); // one minute-track division high of 3 o'clock
+        double x=cx+Math.sin(angle)*r;
+        double y=cy-Math.cos(angle)*r;
+        assertEquals(-6.0,QcExtendedMath.localDateAxisOffsetDeg(cx,cy,x,y,3,0),1e-6);
+        assertEquals(-1.0,QcExtendedMath.minuteTrackUnits(
+                QcExtendedMath.localDateAxisOffsetDeg(cx,cy,x,y,3,0)),1e-6);
+    }
+
+    @Test public void nineOClockProfileWorksForLeftHandedSprite() {
+        double cx=100,cy=100,r=60;
+        double angle=Math.toRadians(270.0);
+        double x=cx+Math.sin(angle)*r;
+        double y=cy-Math.cos(angle)*r;
+        assertEquals(0.0,QcExtendedMath.localDateAxisOffsetDeg(cx,cy,x,y,9,0),1e-6);
+    }
+
+    @Test public void cyclopsApertureSeparationIsBounded() {
+        assertEquals(0,QcExtendedMath.cyclopsApertureOffsetSeverity(0.02));
+        assertEquals(1,QcExtendedMath.cyclopsApertureOffsetSeverity(0.06));
+        assertEquals(2,QcExtendedMath.cyclopsApertureOffsetSeverity(0.10));
+    }
+
     @Test public void fineQcIsPerspectiveGated() {
         assertTrue(QcExtendedMath.perspectiveAllowsFineQc(7.3));
         assertFalse(QcExtendedMath.perspectiveAllowsFineQc(14.0));
