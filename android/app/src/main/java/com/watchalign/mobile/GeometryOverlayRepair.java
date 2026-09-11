@@ -4,7 +4,9 @@ import android.graphics.Bitmap;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
@@ -15,7 +17,9 @@ import java.lang.reflect.Method;
 /**
  * Deterministic overlay builder that reuses the proven V7 detector but validates
  * the transform analytically instead of re-detecting the already-warped raster.
- * Re-detection after warp was the source of alpha8's false 76.8% centre failure.
+ * The aligned layer is RGBA with a transparent background and is restricted to
+ * the watch-head region so unrelated hand/background pixels cannot obscure the
+ * genuine reference during overlay inspection.
  */
 final class GeometryOverlayRepair {
     static final class Result {
@@ -70,13 +74,23 @@ final class GeometryOverlayRepair {
             if (common < 7 || rms > 3.0) return new Result(null, sol.confidence, centreError, radiusError, rms,"Marker geometry does not agree well enough for overlay.");
 
             double[][] m = t.matrix2x3();
-            Mat affine = new Mat(2,3,org.opencv.core.CvType.CV_64F);
+            Mat affine = new Mat(2,3,CvType.CV_64F);
             affine.put(0,0,m[0][0],m[0][1],m[0][2],m[1][0],m[1][1],m[1][2]);
+
+            // Build an RGBA layer and make everything outside the watch head transparent.
+            Mat rgbaSrc = new Mat();
+            Imgproc.cvtColor(src, rgbaSrc, Imgproc.COLOR_BGR2RGBA);
+            Mat alpha = Mat.zeros(src.rows(),src.cols(),CvType.CV_8UC1);
+            int focusRadius = (int)Math.round(sr * 1.42);
+            Imgproc.circle(alpha,new Point(sx,sy),focusRadius,new Scalar(255),-1,Imgproc.LINE_AA,0);
+            Core.insertChannel(alpha,rgbaSrc,3);
+
             Mat aligned = new Mat();
-            Imgproc.warpAffine(src, aligned, affine, new Size(ref.cols(),ref.rows()), Imgproc.INTER_LINEAR, Core.BORDER_CONSTANT, new Scalar(0,0,0));
+            Imgproc.warpAffine(rgbaSrc,aligned,affine,new Size(ref.cols(),ref.rows()),Imgproc.INTER_LINEAR,Core.BORDER_CONSTANT,new Scalar(0,0,0,0));
             Bitmap out = Bitmap.createBitmap(aligned.cols(), aligned.rows(), Bitmap.Config.ARGB_8888);
-            Mat rgba = new Mat(); Imgproc.cvtColor(aligned,rgba,Imgproc.COLOR_BGR2RGBA); Utils.matToBitmap(rgba,out);
-            rgba.release(); aligned.release(); affine.release();
+            Utils.matToBitmap(aligned,out);
+
+            alpha.release(); rgbaSrc.release(); aligned.release(); affine.release();
             return new Result(out, sol.confidence, centreError, radiusError, rms, null);
         } catch (Throwable e) {
             return bad("Overlay transform failed: " + (e.getCause()!=null?e.getCause().getMessage():e.getMessage()));
