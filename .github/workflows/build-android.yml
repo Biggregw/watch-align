@@ -55,6 +55,8 @@ jobs:
           grep -q 'SimilarityTransform.between' app/src/main/java/com/watchalign/mobile/GeometryOverlayRepair.java
           grep -q 'srcGlobalAngle - refGlobalAngle' app/src/main/java/com/watchalign/mobile/GeometryRegistration.java
           grep -q '1.3.0-alpha16' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q "versionCode 13016" app/build.gradle
+          grep -q "versionName '1.3.0-alpha16'" app/build.gradle
       - name: Run Android unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
       - name: Build standalone APK
