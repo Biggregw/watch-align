@@ -23,4 +23,11 @@ public class QcGuideMathTest {
         assertEquals(2,QcGuideMath.severity(2.1,0.2));
         assertEquals(2,QcGuideMath.severity(0.2,5.1));
     }
+    @Test public void perspectiveGateMatchesQcPolicy() {
+        assertTrue(QcGuideMath.alignmentGuideReliable(7.3));
+        assertTrue(QcGuideMath.alignmentGuideReliable(13.9));
+        assertFalse(QcGuideMath.alignmentGuideReliable(14.0));
+        assertFalse(QcGuideMath.alignmentGuideReliable(24.0));
+        assertTrue(QcGuideMath.alignmentGuideReliable(Double.NaN));
+    }
 }
