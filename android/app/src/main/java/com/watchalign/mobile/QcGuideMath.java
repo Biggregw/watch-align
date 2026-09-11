@@ -20,5 +20,9 @@ final class QcGuideMath {
         return 0;
     }
 
+    static boolean alignmentGuideReliable(double perspectiveEquivalentDeg){
+        return !Double.isFinite(perspectiveEquivalentDeg) || perspectiveEquivalentDeg < 14.0;
+    }
+
     private QcGuideMath() {}
 }
