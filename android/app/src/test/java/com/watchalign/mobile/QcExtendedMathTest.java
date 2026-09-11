@@ -32,4 +32,15 @@ public class QcExtendedMathTest {
         assertFalse(QcExtendedMath.perspectiveAllowsFineQc(14.0));
         assertFalse(QcExtendedMath.perspectiveAllowsFineQc(Double.NaN));
     }
+
+    @Test public void unavailablePerspectiveHasAccurateReason() {
+        assertEquals("perspective could not be verified from this photo",QcExtendedMath.fineQcReason(Double.NaN));
+        assertEquals("perspective distortion is too high for fine grading",QcExtendedMath.fineQcReason(16.0));
+        assertEquals("",QcExtendedMath.fineQcReason(7.3));
+    }
+
+    @Test public void strongerFindingAlwaysRanksAheadOfMilderFinding() {
+        assertTrue(QcExtendedMath.findingPriority(2,2.1)>QcExtendedMath.findingPriority(1,50.0));
+        assertTrue(QcExtendedMath.findingPriority(2,6.1)>QcExtendedMath.findingPriority(2,1.6));
+    }
 }
