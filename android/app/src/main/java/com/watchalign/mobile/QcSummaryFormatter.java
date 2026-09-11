@@ -3,21 +3,26 @@ package com.watchalign.mobile;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Builds a concise user-facing summary while leaving the detailed QC report intact.
- * It deliberately avoids inventing a defect when the detailed engine has not ranked one.
- */
+/** Builds a concise summary while leaving full diagnostic detail intact. */
 final class QcSummaryFormatter {
     static String prependSummary(String report) {
         if (report == null || report.isEmpty()) return report;
 
-        List<String> ranked = extractRanked(report);
-        StringBuilder out = new StringBuilder("QC SUMMARY\n");
+        boolean canonicalGmt = report.contains("CANONICAL GMT GEOMETRY");
+        List<String> ranked = canonicalGmt ? extractCanonicalGmt(report) : extractRanked(report);
+        if (canonicalGmt) {
+            // Keep non-marker findings such as date/SEL issues, but do not let the older
+            // marker-ring-relative 12/6/9 observations override canonical GMT placement.
+            for (String s : extractRanked(report)) {
+                String x=s.toLowerCase();
+                if (x.contains("marker local position") || x.contains("marker body rotation")) continue;
+                ranked.add(s);
+            }
+        }
 
+        StringBuilder out = new StringBuilder("QC SUMMARY\n");
         if (ranked.isEmpty()) {
             out.append("No major defects detected.\n");
-            String minor = bestMinorObservation(report);
-            if (minor != null) out.append("Minor observation: ").append(minor).append("\n");
         } else {
             boolean major = false;
             for (String s : ranked) if (looksMajor(s)) { major = true; break; }
@@ -29,6 +34,23 @@ final class QcSummaryFormatter {
 
         out.append("\nFull QC detail\n").append(report);
         return out.toString();
+    }
+
+    private static List<String> extractCanonicalGmt(String report) {
+        List<String> out=new ArrayList<>();
+        int p=report.indexOf("CANONICAL GMT GEOMETRY\n");
+        if(p<0)return out;
+        int end=report.indexOf("\nInterpretation:",p);
+        if(end<0)end=report.length();
+        String[] lines=report.substring(p,end).split("\\n");
+        for(String line:lines){
+            String s=line.trim();
+            if(!(s.contains("o'clock:")))continue;
+            if(s.contains("OUTSIDE GMT RANGE"))out.add(s.replace("[OUTSIDE GMT RANGE", "[OUTSIDE GMT RANGE"));
+            else if(s.contains("[CHECK;"))out.add(s);
+            else if(s.contains("ANGULAR CHECK"))out.add(s);
+        }
+        return out;
     }
 
     private static List<String> extractRanked(String report) {
@@ -52,31 +74,16 @@ final class QcSummaryFormatter {
 
     private static boolean looksMajor(String s) {
         String x = s.toLowerCase();
-        return x.contains("strong") || x.contains("merits inspection") || x.contains("off-centre") ||
-                x.contains("offset") || x.contains("gap") || x.contains("magnification");
-    }
-
-    private static String bestMinorObservation(String report) {
-        // Only surface a minor note when the engine itself reported a small 12-marker positional bias.
-        // This is not a defect verdict; it is a convenience summary of an existing measurement.
-        String needle = "12 o'clock angular ";
-        int p = report.indexOf(needle);
-        if (p < 0) return null;
-        int e = report.indexOf('\n', p);
-        if (e < 0) e = report.length();
-        String line = report.substring(p, e);
-        int r = line.indexOf("radial ");
-        if (r < 0) return null;
-        String v = line.substring(r + 7).replace("%", "").trim();
-        try {
-            double radial = Double.parseDouble(v);
-            if (Math.abs(radial) < 0.20 || Math.abs(radial) > 1.50) return null;
-            return radial > 0 ? "12 triangle is fractionally high/outward (" + fmt(radial) + "% radial)"
-                              : "12 triangle is fractionally low/inward (" + fmt(radial) + "% radial)";
-        } catch (Exception ignored) { return null; }
+        return x.contains("outside gmt range") || x.contains("strong") || x.contains("merits inspection") ||
+                x.contains("off-centre") || x.contains("offset") || x.contains("gap") || x.contains("magnification");
     }
 
     private static String simplify(String s) {
+        if(s.contains("o'clock:") && s.contains("radial Δ")) {
+            return s.replace(" of dial radius", "")
+                    .replace("[CHECK;", "[CHECK;")
+                    .replace("[OUTSIDE GMT RANGE;", "[OUTSIDE GMT RANGE;");
+        }
         return s.replace("12 marker body rotation", "12 triangle rotated")
                 .replace("6 marker body rotation", "6 marker rotated")
                 .replace("9 marker body rotation", "9 marker rotated")
@@ -86,6 +93,5 @@ final class QcSummaryFormatter {
                 .replace("Bezel/pip 12 offset", "Bezel/pip alignment");
     }
 
-    private static String fmt(double v) { return String.format(java.util.Locale.US, "%+.2f", v); }
     private QcSummaryFormatter() {}
 }
