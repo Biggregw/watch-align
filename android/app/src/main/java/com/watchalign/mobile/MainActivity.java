@@ -78,50 +78,75 @@ public class MainActivity extends Activity {
         root.addView(viewButtons, lp(-1,dp(48),8));
 
         opacity = new SeekBar(this); opacity.setMax(100); opacity.setProgress(50); opacity.setVisibility(View.GONE);
-        opacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){if(lastResult!=null&&lastResult.overlayReady)showOverlay();}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
-        root.addView(opacity, lp(-1,dp(42),0));
-
-        resultText = text("", 14, Color.WHITE); resultText.setPadding(0,dp(8),0,dp(24)); root.addView(resultText);
+        opacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){if(lastResult!=null&&lastResult.aligned!=null) image.setImageBitmap(lastResult.overlay(p/100f));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}}); root.addView(opacity);
+        resultText = text("", 15, Color.WHITE); resultText.setPadding(0,dp(12),0,dp(32)); root.addView(resultText);
         return scroll;
     }
 
-    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode,resultCode,data);
-        if(resultCode!=RESULT_OK || data==null || data.getData()==null) return;
-        Bitmap b=load(data.getData());
-        if(b==null){Toast.makeText(this,"Could not read image",Toast.LENGTH_LONG).show();return;}
-        if(requestCode==PICK_WATCH){watchBitmap=b;image.setImageBitmap(b);status.setText("Watch photo selected.");}
-        else if(requestCode==PICK_REFERENCE){referenceBitmap=b;status.setText("Reference photo selected.");}
-        lastResult=null;referenceButton.setEnabled(false);overlayButton.setEnabled(false);opacity.setVisibility(View.GONE);resultText.setText("");
+    private void pickImage(int request) {
+        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT); i.setType("image/*"); i.addCategory(Intent.CATEGORY_OPENABLE); startActivityForResult(i, request);
+    }
+
+    @Override protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request,result,data);
+        if (result != RESULT_OK || data == null || data.getData() == null) return;
+        try {
+            Bitmap b = readBitmap(data.getData());
+            if (request == PICK_WATCH) {
+                watchBitmap = b; lastResult=null; image.setImageBitmap(b); referenceButton.setEnabled(false); overlayButton.setEnabled(false);
+                status.setText("Watch photo ready. Tap Analyse + find best reference.");
+            } else {
+                referenceBitmap = b; lastResult=null; referenceButton.setEnabled(false); overlayButton.setEnabled(false);
+                status.setText("Your reference photo is ready and will be used instead of online discovery.");
+            }
+        } catch (Exception e) { status.setText("Could not read image: " + e.getMessage()); }
+    }
+
+    private Bitmap readBitmap(Uri uri) throws Exception {
+        try (InputStream in = getContentResolver().openInputStream(uri)) {
+            Bitmap b = BitmapFactory.decodeStream(in); if (b == null) throw new IllegalArgumentException("Not a readable image");
+            int max = Math.max(b.getWidth(), b.getHeight()); if (max <= 1600) return b.copy(Bitmap.Config.ARGB_8888, false);
+            float s = 1600f / max; return Bitmap.createScaledBitmap(b, Math.round(b.getWidth()*s), Math.round(b.getHeight()*s), true).copy(Bitmap.Config.ARGB_8888,false);
+        }
     }
 
     private void analyse() {
-        if(watchBitmap==null){Toast.makeText(this,"Choose a watch photo first",Toast.LENGTH_SHORT).show();return;}
-        status.setText("Analysing…");
-        final Bitmap watch=watchBitmap, supplied=referenceBitmap;
-        final String modelRef=model.getSelectedItemPosition()==0?"126710BLNR":"124060";
+        if (watchBitmap == null) { status.setText("Choose your watch photo first."); return; }
+        status.setText(referenceBitmap == null ? "Running QC checks and searching exact-model references…" : "Running QC checks with your chosen reference…");
+        resultText.setText(""); opacity.setVisibility(View.GONE); referenceButton.setEnabled(false); overlayButton.setEnabled(false);
+        Bitmap watch = watchBitmap; Bitmap manualRef = referenceBitmap; String refCode = model.getSelectedItemPosition()==0 ? "126710BLNR" : "124060";
         worker.submit(() -> {
             try {
-                WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(getApplicationContext(),watch,supplied,modelRef);
+                Bitmap ref = manualRef; String sourceNote = "Manual reference selected on device.";
+                if (ref == null) {
+                    OnlineReferenceFinder.Result found = OnlineReferenceFinder.find(this, watch, refCode);
+                    ref = found.bitmap;
+                    sourceNote = (found.fromCache ? "Reference: cached exact-model official-source image.\n" : "Reference: downloaded from exact-model official manufacturer source and cached locally.\n") + "Source: " + found.source;
+                }
+                WatchAlignCoreV13.AnalysisResult r = WatchAlignCoreV13.analyse(watch, ref, refCode);
+                final String note = sourceNote;
                 runOnUiThread(() -> {
-                    lastResult=r; image.setImageBitmap(r.annotated); resultText.setText(r.report); status.setText("Analysis complete.");
-                    referenceButton.setEnabled(r.reference!=null); overlayButton.setEnabled(r.overlayReady); opacity.setVisibility(r.overlayReady?View.VISIBLE:View.GONE);
+                    lastResult=r; image.setImageBitmap(r.annotated); resultText.setText(r.report + "\n\n" + note); status.setText("Analysis complete.");
+                    referenceButton.setEnabled(r.reference!=null); overlayButton.setEnabled(r.aligned!=null);
+                    if(r.aligned==null) opacity.setVisibility(View.GONE);
                 });
-            } catch(Throwable e) {
-                runOnUiThread(() -> {status.setText("Reference/analysis error: "+e.getMessage()); resultText.setText("");});
+            } catch (Throwable t) {
+                runOnUiThread(() -> {
+                    lastResult=null; referenceButton.setEnabled(false); overlayButton.setEnabled(false); opacity.setVisibility(View.GONE);
+                    status.setText("Reference/analysis error: " + t.getMessage());
+                    resultText.setText("Watch Align refused to produce QC/overlay output because the watch or reference geometry could not be verified. No QC verdict has been produced from an unreliable detection.");
+                });
             }
         });
     }
 
-    private void showAnnotated(){if(lastResult!=null)image.setImageBitmap(lastResult.annotated);else if(watchBitmap!=null)image.setImageBitmap(watchBitmap);opacity.setVisibility(View.GONE);}
-    private void showReference(){if(lastResult!=null&&lastResult.reference!=null)image.setImageBitmap(lastResult.reference);opacity.setVisibility(View.GONE);}
-    private void showOverlay(){if(lastResult!=null&&lastResult.overlayReady&&lastResult.reference!=null){image.setImageBitmap(WatchAlignCoreV13.blend(lastResult.watchAligned,lastResult.reference,opacity.getProgress()/100f));opacity.setVisibility(View.VISIBLE);}}
+    private void showAnnotated(){opacity.setVisibility(View.GONE); if(lastResult!=null) image.setImageBitmap(lastResult.annotated);}
+    private void showReference(){opacity.setVisibility(View.GONE); if(lastResult!=null&&lastResult.reference!=null) image.setImageBitmap(lastResult.reference);}
+    private void showOverlay(){if(lastResult!=null&&lastResult.aligned!=null){opacity.setVisibility(View.VISIBLE); image.setImageBitmap(lastResult.overlay(opacity.getProgress()/100f));}}
 
-    private void pickImage(int code){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("image/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,code);}
-    private Bitmap load(Uri u){try(InputStream in=getContentResolver().openInputStream(u)){return BitmapFactory.decodeStream(in);}catch(Exception e){return null;}}
-    private TextView text(String s,int sp,int color){TextView t=new TextView(this);t.setText(s);t.setTextSize(sp);t.setTextColor(color);return t;}
-    private Button button(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(16);return b;}
-    private Button smallButton(String s){Button b=button(s);b.setTextSize(14);return b;}
+    private TextView text(String s,int sp,int color){TextView v=new TextView(this);v.setText(s);v.setTextSize(sp);v.setTextColor(color);return v;}
+    private Button button(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);return b;}
+    private Button smallButton(String s){Button b=button(s);b.setTextSize(12);return b;}
     private LinearLayout.LayoutParams lp(int w,int h,int top){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(w,h);p.topMargin=dp(top);return p;}
     private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
     @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
