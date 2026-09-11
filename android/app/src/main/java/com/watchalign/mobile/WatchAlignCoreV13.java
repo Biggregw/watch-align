@@ -4,9 +4,9 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
-/** Alpha13: alpha11 comparison plus alpha12 marker guide and extended QC checks. */
+/** Alpha15: geometry-first comparison, Reddit-informed QC guide, generic date/cyclops checks and model catalog. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha13";
+    public static final String CORE_VERSION="1.3.0-alpha15";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned;
