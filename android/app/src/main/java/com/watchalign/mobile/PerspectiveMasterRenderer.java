@@ -27,31 +27,56 @@ final class PerspectiveMasterRenderer {
 
     private static void drawMaster(Canvas c,int width,int height,Pose pose,boolean markers,boolean handles){
         Projector pr=new Projector(pose);float unit=Math.max(1f,Math.min(width,height)/900f);
-        int a=Math.max(80,Math.min(255,Math.round(255*pose.alpha)));
-        Paint halo=paint(Color.BLACK,6.0f*unit,230);
-        Paint red=paint(Color.rgb(255,25,25),3.15f*unit,a);
-        Paint whiteHalo=paint(Color.BLACK,4.4f*unit,220);
-        Paint white=paint(Color.WHITE,2.0f*unit,a);
-        Paint guideHalo=paint(Color.BLACK,6.6f*unit,235);
-        Paint guide=paint(Color.rgb(255,235,0),3.0f*unit,255);
+        int a=Math.max(90,Math.min(255,Math.round(255*pose.alpha)));
+        Paint halo=paint(Color.BLACK,7.0f*unit,235);
+        Paint red=paint(Color.rgb(255,28,28),3.5f*unit,a);
+        Paint whiteHalo=paint(Color.BLACK,5.0f*unit,225);
+        Paint white=paint(Color.WHITE,2.2f*unit,a);
+        Paint guideHalo=paint(Color.BLACK,7.0f*unit,240);
+        Paint guide=paint(Color.rgb(255,235,0),3.2f*unit,255);
 
-        drawCircle(c,pr,Gmt126710BlnrMaster.DIAL_EDGE_R,guideHalo);drawCircle(c,pr,Gmt126710BlnrMaster.DIAL_EDGE_R,guide);
+        drawCircle(c,pr,Gmt126710BlnrMeasured.DIAL_EDGE_R,guideHalo);drawCircle(c,pr,Gmt126710BlnrMeasured.DIAL_EDGE_R,guide);
         if(markers){
-            for(int h:new int[]{1,2,4,5,7,8,10,11}){double ang=Gmt126710BlnrMaster.angleForHour(h);drawRound(c,pr,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.ROUND_OUTER_R,ang,halo);drawRound(c,pr,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.ROUND_OUTER_R,ang,red);drawRound(c,pr,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.ROUND_LUME_R,ang,whiteHalo);drawRound(c,pr,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.ROUND_LUME_R,ang,white);}
-            for(int h:new int[]{6,9}){double ang=Gmt126710BlnrMaster.angleForHour(h);drawRect(c,pr,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.BATON_TANGENTIAL_HALF,Gmt126710BlnrMaster.BATON_RADIAL_HALF,ang,halo);drawRect(c,pr,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.BATON_TANGENTIAL_HALF,Gmt126710BlnrMaster.BATON_RADIAL_HALF,ang,red);drawRect(c,pr,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.BATON_LUME_TANGENTIAL_HALF,Gmt126710BlnrMaster.BATON_LUME_RADIAL_HALF,ang,whiteHalo);drawRect(c,pr,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.BATON_LUME_TANGENTIAL_HALF,Gmt126710BlnrMaster.BATON_LUME_RADIAL_HALF,ang,white);}
-            drawTriangle(c,pr,halo,false);drawTriangle(c,pr,red,false);drawTriangle(c,pr,whiteHalo,true);drawTriangle(c,pr,white,true);
+            for(int h:new int[]{1,2,4,5,7,8,10,11}){
+                drawMeasured(c,pr,Gmt126710BlnrMeasured.ROUND_OUTER,Gmt126710BlnrMeasured.MARKER_CENTER_R,h,1.0f,halo);
+                drawMeasured(c,pr,Gmt126710BlnrMeasured.ROUND_OUTER,Gmt126710BlnrMeasured.MARKER_CENTER_R,h,1.0f,red);
+                drawMeasured(c,pr,Gmt126710BlnrMeasured.ROUND_OUTER,Gmt126710BlnrMeasured.MARKER_CENTER_R,h,0.76f,whiteHalo);
+                drawMeasured(c,pr,Gmt126710BlnrMeasured.ROUND_OUTER,Gmt126710BlnrMeasured.MARKER_CENTER_R,h,0.76f,white);
+            }
+            for(int h:new int[]{6,9}){
+                drawMeasured(c,pr,Gmt126710BlnrMeasured.BATON_OUTER,Gmt126710BlnrMeasured.BATON_CENTER_R,h,1.0f,halo);
+                drawMeasured(c,pr,Gmt126710BlnrMeasured.BATON_OUTER,Gmt126710BlnrMeasured.BATON_CENTER_R,h,1.0f,red);
+                drawMeasured(c,pr,Gmt126710BlnrMeasured.BATON_OUTER,Gmt126710BlnrMeasured.BATON_CENTER_R,h,0.78f,whiteHalo);
+                drawMeasured(c,pr,Gmt126710BlnrMeasured.BATON_OUTER,Gmt126710BlnrMeasured.BATON_CENTER_R,h,0.78f,white);
+            }
+            drawMeasured(c,pr,Gmt126710BlnrMeasured.TRI_OUTER,Gmt126710BlnrMeasured.TRI_CENTER_R,12,1.0f,halo);
+            drawMeasured(c,pr,Gmt126710BlnrMeasured.TRI_OUTER,Gmt126710BlnrMeasured.TRI_CENTER_R,12,1.0f,red);
+            drawMeasured(c,pr,Gmt126710BlnrMeasured.TRI_OUTER,Gmt126710BlnrMeasured.TRI_CENTER_R,12,0.79f,whiteHalo);
+            drawMeasured(c,pr,Gmt126710BlnrMeasured.TRI_OUTER,Gmt126710BlnrMeasured.TRI_CENTER_R,12,0.79f,white);
         }
         if(handles)drawHandles(c,pose,pr,unit);
     }
 
-    private static void drawHandles(Canvas c,Pose p,Projector pr,float unit){
-        Paint black=fill(Color.BLACK,230),yellow=fill(Color.rgb(255,230,0),255),cyan=fill(Color.CYAN,255),magenta=fill(Color.rgb(255,60,220),255),text=new Paint(Paint.ANTI_ALIAS_FLAG);text.setColor(Color.WHITE);text.setTextSize(15*unit);text.setFakeBoldText(true);
-        PointF centre=new PointF(p.centerX,p.centerY),twelve=pr.project(0,-1),three=pr.project(1,0),nine=pr.project(-1,0);
-        handle(c,centre,black,yellow,11*unit,"CENTER",text,12*unit,-14*unit);
-        handle(c,twelve,black,cyan,11*unit,"12",text,12*unit,-14*unit);
-        if(p.perspectiveMode){handle(c,three,black,magenta,10*unit,"3",text,12*unit,-12*unit);handle(c,nine,black,magenta,10*unit,"9",text,12*unit,-12*unit);}
+    /** Draw one marker path measured in local tangential/radial coordinates from the official image. */
+    private static void drawMeasured(Canvas c,Projector pr,float[][] local,double centerR,int hour,float shapeScale,Paint paint){
+        double a=Gmt126710BlnrMaster.angleForHour(hour),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;
+        double cx=centerR*ux,cy=centerR*uy;Path path=new Path();
+        for(int i=0;i<local.length;i++){
+            double tang=local[i][0]*shapeScale,rad=local[i][1]*shapeScale;
+            double x=cx+vx*tang+ux*rad,y=cy+vy*tang+uy*rad;PointF q=pr.project(x,y);
+            if(i==0)path.moveTo(q.x,q.y);else path.lineTo(q.x,q.y);
+        }
+        path.close();c.drawPath(path,paint);
     }
-    private static void handle(Canvas c,PointF q,Paint black,Paint fill,float r,String label,Paint text,float tx,float ty){c.drawCircle(q.x,q.y,r+4,black);c.drawCircle(q.x,q.y,r,fill);c.drawText(label,q.x+tx,q.y+ty,text);}
+
+    private static void drawHandles(Canvas c,Pose p,Projector pr,float unit){
+        Paint black=fill(Color.BLACK,230),yellow=fill(Color.rgb(255,230,0),255),cyan=fill(Color.CYAN,255),magenta=fill(Color.rgb(255,60,220),255),text=new Paint(Paint.ANTI_ALIAS_FLAG);text.setColor(Color.WHITE);text.setTextSize(14*unit);text.setFakeBoldText(true);
+        PointF centre=new PointF(p.centerX,p.centerY),twelve=pr.project(0,-1),three=pr.project(1,0),nine=pr.project(-1,0);
+        handle(c,centre,black,yellow,9*unit,"CENTER",text,11*unit,-12*unit);
+        handle(c,twelve,black,cyan,9*unit,"12",text,11*unit,-12*unit);
+        if(p.perspectiveMode){handle(c,three,black,magenta,8*unit,"3",text,10*unit,-10*unit);handle(c,nine,black,magenta,8*unit,"9",text,10*unit,-10*unit);}
+    }
+    private static void handle(Canvas c,PointF q,Paint black,Paint fill,float r,String label,Paint text,float tx,float ty){c.drawCircle(q.x,q.y,r+3,black);c.drawCircle(q.x,q.y,r,fill);c.drawText(label,q.x+tx,q.y+ty,text);}
 
     private static final class Projector {
         private final Pose p;private final boolean homography;private final double[] H;
@@ -74,10 +99,6 @@ final class PerspectiveMasterRenderer {
     }
 
     private static void drawCircle(Canvas c,Projector pr,double r,Paint paint){Path path=new Path();for(int i=0;i<=180;i++){double a=2*Math.PI*i/180.0;PointF q=pr.project(r*Math.cos(a),r*Math.sin(a));if(i==0)path.moveTo(q.x,q.y);else path.lineTo(q.x,q.y);}c.drawPath(path,paint);}
-    private static void drawRound(Canvas c,Projector pr,double rr,double size,double a,Paint paint){double cx=rr*Math.cos(a),cy=rr*Math.sin(a);Path path=new Path();for(int i=0;i<=64;i++){double q=2*Math.PI*i/64.0;PointF z=pr.project(cx+size*Math.cos(q),cy+size*Math.sin(q));if(i==0)path.moveTo(z.x,z.y);else path.lineTo(z.x,z.y);}path.close();c.drawPath(path,paint);}
-    private static void drawRect(Canvas c,Projector pr,double rr,double tang,double radial,double a,Paint paint){double cx=rr*Math.cos(a),cy=rr*Math.sin(a),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;double[][] pts={{cx-ux*radial-vx*tang,cy-uy*radial-vy*tang},{cx-ux*radial+vx*tang,cy-uy*radial+vy*tang},{cx+ux*radial+vx*tang,cy+uy*radial+vy*tang},{cx+ux*radial-vx*tang,cy+uy*radial-vy*tang}};drawPoly(c,pr,pts,paint);}
-    private static void drawTriangle(Canvas c,Projector pr,Paint paint,boolean lume){double a=Gmt126710BlnrMaster.angleForHour(12),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;double center=lume?Gmt126710BlnrMaster.TRI_LUME_CENTER_R:Gmt126710BlnrMaster.TRI_CENTER_R;double baseOut=lume?Gmt126710BlnrMaster.TRI_LUME_BASE_OUTWARD:Gmt126710BlnrMaster.TRI_BASE_OUTWARD;double apexIn=lume?Gmt126710BlnrMaster.TRI_LUME_APEX_INWARD:Gmt126710BlnrMaster.TRI_APEX_INWARD;double half=lume?Gmt126710BlnrMaster.TRI_LUME_HALF_BASE:Gmt126710BlnrMaster.TRI_HALF_BASE;double cx=center*ux,cy=center*uy;double[][] pts={{cx+ux*baseOut+vx*half,cy+uy*baseOut+vy*half},{cx+ux*baseOut-vx*half,cy+uy*baseOut-vy*half},{cx-ux*apexIn,cy-uy*apexIn}};drawPoly(c,pr,pts,paint);}
-    private static void drawPoly(Canvas c,Projector pr,double[][] pts,Paint paint){Path path=new Path();for(int i=0;i<pts.length;i++){PointF q=pr.project(pts[i][0],pts[i][1]);if(i==0)path.moveTo(q.x,q.y);else path.lineTo(q.x,q.y);}path.close();c.drawPath(path,paint);}
     private static Paint paint(int color,float width,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);p.setStrokeJoin(Paint.Join.ROUND);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(color);p.setAlpha(alpha);return p;}
     private static Paint fill(int color,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setStyle(Paint.Style.FILL);p.setColor(color);p.setAlpha(alpha);return p;}
     private PerspectiveMasterRenderer(){}
