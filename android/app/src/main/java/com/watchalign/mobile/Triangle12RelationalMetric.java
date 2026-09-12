@@ -19,9 +19,17 @@ public final class Triangle12RelationalMetric {
         float ux=p12x-ox,uy=p12y-oy,un=(float)Math.hypot(ux,uy);if(un<1e-6f)un=1;ux/=un;uy/=un;
         float tx=-uy,ty=ux;
         float bw=(float)Math.hypot(rx-lx,ry-ly);if(bw<1e-6f)bw=1e-6f;
+
+        // ux/uy points outward from the dial centre toward 12 o'clock.
+        // Positive gaps therefore mean a larger physical separation between
+        // the neighbouring reference and the triangle feature.
         float baseGap=((mx-baseX)*ux+(my-baseY)*uy)/bw;
         float apexGap=((ax-cx)*ux+(ay-cy)*uy)/bw;
-        float height=((ax-baseX)*ux+(ay-baseY)*uy)/bw;
+
+        // Triangle height is measured from apex inward-to-base along the
+        // outward radial axis. This keeps the genuine reference positive.
+        float height=((baseX-ax)*ux+(baseY-ay)*uy)/bw;
+
         float baseDx=rx-lx,baseDy=ry-ly;
         float baseAlongT=baseDx*tx+baseDy*ty,baseAlongU=baseDx*ux+baseDy*uy;
         float rot=(float)Math.toDegrees(Math.atan2(baseAlongU,baseAlongT));
