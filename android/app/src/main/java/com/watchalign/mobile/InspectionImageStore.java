@@ -1,8 +1,9 @@
 package com.watchalign.mobile;
 
 import android.graphics.Bitmap;
+import android.graphics.PointF;
 
-/** Process-local handoff for full-screen inspection and manual perspective alignment. */
+/** Process-local handoff for full-screen inspection, manual perspective alignment and final QC. */
 final class InspectionImageStore {
     static Bitmap bitmap;
     static Bitmap baseBitmap;
@@ -11,9 +12,11 @@ final class InspectionImageStore {
     static boolean overlayMode;
     static PerspectiveMasterRenderer.Pose alignedPose;
     static String alignedModelRef;
+    static PointF[] trianglePoints;
+    static Triangle12RelationalMetric.Result triangleMetric;
 
     static void set(Bitmap b, String t){
-        bitmap=b;baseBitmap=null;title=t;modelRef=null;overlayMode=false;alignedPose=null;alignedModelRef=null;
+        bitmap=b;baseBitmap=null;title=t;modelRef=null;overlayMode=false;alignedPose=null;alignedModelRef=null;trianglePoints=null;triangleMetric=null;
     }
 
     static void setOverlay(Bitmap base, Bitmap overlay, String t){
@@ -22,13 +25,17 @@ final class InspectionImageStore {
 
     static void setOverlay(Bitmap base, Bitmap overlay, String t,PerspectiveMasterRenderer.Pose pose,String model){
         baseBitmap=base;bitmap=overlay;title=t;modelRef=null;overlayMode=base!=null&&overlay!=null;
-        alignedPose=pose==null?null:pose.copy();alignedModelRef=model;
+        alignedPose=pose==null?null:pose.copy();alignedModelRef=model;trianglePoints=null;triangleMetric=null;
     }
 
     static void setManual(Bitmap base,String model,String t){
-        baseBitmap=base;bitmap=base;title=t;modelRef=model;overlayMode=false;alignedPose=null;alignedModelRef=null;
+        baseBitmap=base;bitmap=base;title=t;modelRef=model;overlayMode=false;alignedPose=null;alignedModelRef=null;trianglePoints=null;triangleMetric=null;
     }
 
-    static void clear(){bitmap=null;baseBitmap=null;title=null;modelRef=null;overlayMode=false;alignedPose=null;alignedModelRef=null;}
+    static void setTriangleResult(PointF[] points,Triangle12RelationalMetric.Result metric){
+        if(points==null){trianglePoints=null;}else{trianglePoints=new PointF[points.length];for(int i=0;i<points.length;i++)trianglePoints[i]=points[i]==null?null:new PointF(points[i].x,points[i].y);}triangleMetric=metric;
+    }
+
+    static void clear(){bitmap=null;baseBitmap=null;title=null;modelRef=null;overlayMode=false;alignedPose=null;alignedModelRef=null;trianglePoints=null;triangleMetric=null;}
     private InspectionImageStore(){}
 }
