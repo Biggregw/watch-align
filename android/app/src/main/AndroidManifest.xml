@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
-    <application android:theme="@style/AppTheme" android:label="Watch Align" android:usesCleartextTraffic="false">
+    <application
+        android:theme="@style/AppTheme"
+        android:label="Watch Align"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:usesCleartextTraffic="false">
         <activity android:name=".FinalQcActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".Triangle12InspectActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".ManualAlignActivity" android:screenOrientation="portrait" android:exported="false" />
