@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -20,7 +19,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** Alpha45: triangle measured relative to the actual 60-minute marker and Rolex crown. */
+/** Alpha46: 12 marker measured locally against minute 60 and the printed Rolex crown. */
 public class Triangle12InspectActivity extends Activity {
     private Bitmap base; private PerspectiveMasterRenderer.Pose pose; private MeasureView measureView;
     private TextView result; private Button stepButton; private boolean fine=true;
@@ -31,7 +30,7 @@ public class Triangle12InspectActivity extends Activity {
         FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.BLACK);measureView=new MeasureView();root.addView(measureView,new FrameLayout.LayoutParams(-1,-1));
         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(6),dp(8),dp(6));top.setBackgroundColor(0xE008111F);
         Button back=btn("Back");back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(72),dp(46)));
-        TextView title=txt("12 triangle relation check · α45",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
+        TextView title=txt("12 triangle relation check · α46",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
         Button reset=btn("Reset");reset.setOnClickListener(v->{measureView.resetActual();updateResult();});top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(8),dp(3),dp(8),dp(5));bottom.setBackgroundColor(0xEE08111F);
@@ -45,7 +44,7 @@ public class Triangle12InspectActivity extends Activity {
 
         LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER_VERTICAL);stepButton=btn("Fine 0.25 px");stepButton.setOnClickListener(v->{fine=!fine;stepButton.setText(fine?"Fine 0.25 px":"Coarse 1 px");});controls.addView(stepButton,new LinearLayout.LayoutParams(dp(118),dp(42)));
         Button left=btn("◀"),up=btn("▲"),down=btn("▼"),right=btn("▶");setupRepeat(left,-1,0);setupRepeat(up,0,-1);setupRepeat(down,0,1);setupRepeat(right,1,0);controls.addView(left,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(up,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(down,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(right,new LinearLayout.LayoutParams(0,dp(42),1));bottom.addView(controls);
-        TextView caveat=txt("Primary comparison is now local and scale-independent: triangle base vs the actual 60-minute marker, and apex vs the actual printed Rolex crown. Genuine ratios come from the supplied front-on gen image, not factory CAD/tolerance.",9);caveat.setGravity(Gravity.CENTER);bottom.addView(caveat,new LinearLayout.LayoutParams(-1,dp(52)));
+        TextView caveat=txt("Primary result is local and scale-independent: triangle base vs the actual 60-minute marker and apex vs the printed Rolex crown. This compares with the supplied front-on genuine image, not Rolex factory tolerances.",9);caveat.setGravity(Gravity.CENTER);bottom.addView(caveat,new LinearLayout.LayoutParams(-1,dp(52)));
         root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(284),Gravity.BOTTOM));setContentView(root);updateResult();
     }
 
@@ -57,11 +56,15 @@ public class Triangle12InspectActivity extends Activity {
         Triangle12RelationalMetric.Result m=measureView.metric();
         float bg=(m.baseGapRatio-GenTriangle12RelationalReference.BASE_TO_60_INNER_OVER_BASE)*100f;
         float ag=(m.apexGapRatio-GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE)*100f;
-        float hg=(m.heightRatio-GenTriangle12RelationalReference.HEIGHT_OVER_BASE)*100f;
-        String baseText=bg>0?String.format("base %.1f%% BW FARTHER from minute track",bg):String.format("base %.1f%% BW CLOSER to minute track",-bg);
-        String crownText=ag>0?String.format("apex-crown gap %.1f%% BW LARGER",ag):String.format("apex-crown gap %.1f%% BW SMALLER",-ag);
+        String baseText=Math.abs(bg)<0.5f?"base-to-60 gap ≈ gen":bg>0?String.format("base-to-60 gap %.1f%% BW LARGER",bg):String.format("base-to-60 gap %.1f%% BW SMALLER",-bg);
+        String crownText=Math.abs(ag)<0.5f?"apex-to-crown gap ≈ gen":ag>0?String.format("apex-to-crown gap %.1f%% BW LARGER",ag):String.format("apex-to-crown gap %.1f%% BW SMALLER",-ag);
+        String radial;
+        if(bg < -0.5f && ag > 0.5f) radial="POSITION: OUTWARD toward minute track vs gen";
+        else if(bg > 0.5f && ag < -0.5f) radial="POSITION: INWARD toward crown vs gen";
+        else if(Math.abs(bg)<0.5f && Math.abs(ag)<0.5f) radial="POSITION: essentially matches gen reference";
+        else radial="POSITION: mixed local relationship, inspect taps/shape";
         String rot=Math.abs(m.rotationDeg)<.03f?"rotation 0.00°":String.format("rotation %.2f° %s",Math.abs(m.rotationDeg),m.rotationDeg>0?"clockwise":"counter-clockwise");
-        result.setText(baseText+" · "+crownText+"\n"+rot+String.format(" · height/base %+5.1f%% vs gen · lateral %+.2f px",hg,m.lateralPx));
+        result.setText(radial+"\n"+baseText+" · "+crownText+"\n"+rot+String.format(" · lateral %+.2f px",m.lateralPx));
     }
 
     private final class MeasureView extends View {
