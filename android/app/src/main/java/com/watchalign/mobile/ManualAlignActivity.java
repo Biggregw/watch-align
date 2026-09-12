@@ -4,104 +4,90 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/** Alpha33 direct-manipulation perspective workbench with reference-calibrated master. */
+/** Alpha34: simple centre + 12 alignment, with optional 3/9 projective perspective handles. */
 public class ManualAlignActivity extends Activity {
     private ZoomableImageView image;
     private Bitmap base;
     private final PerspectiveMasterRenderer.Pose pose=new PerspectiveMasterRenderer.Pose();
-    private PerspectiveJoystickView joystick;
     private String modelRef="126710BLNR";
+    private Button perspectiveButton;
+    private TextView instruction;
+    private int activeHandle=-1;
     private long lastRender=0;
-    private SeekBar scaleBar,rollBar,alphaBar;
-    private boolean centreLocked=false,scaleLocked=false,guidesOnly=false;
-    private Button centreLock,scaleLock,guideToggle;
-    private float lastX,lastY,startPinchDistance,startPinchScale;
-    private boolean pinching=false;
 
     @Override public void onCreate(Bundle state){
         super.onCreate(state);getWindow().setStatusBarColor(Color.rgb(8,17,31));getWindow().setNavigationBarColor(Color.rgb(8,17,31));
-        base=InspectionImageStore.baseBitmap!=null?InspectionImageStore.baseBitmap:InspectionImageStore.bitmap;
-        if(base==null){finish();return;} if(InspectionImageStore.modelRef!=null)modelRef=InspectionImageStore.modelRef;
+        base=InspectionImageStore.baseBitmap!=null?InspectionImageStore.baseBitmap:InspectionImageStore.bitmap;if(base==null){finish();return;}if(InspectionImageStore.modelRef!=null)modelRef=InspectionImageStore.modelRef;
         resetPose();
-        FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.rgb(8,17,31));
-        image=new ZoomableImageView(this);image.setBackgroundColor(Color.BLACK);root.addView(image,new FrameLayout.LayoutParams(-1,-1));
-        image.setImageBitmap(PerspectiveMasterRenderer.render(base,modelRef,pose));
-        image.setOnTouchListener((v,e)->handleDirectManipulation(e));
+        FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.BLACK);
+        image=new ZoomableImageView(this);image.setBackgroundColor(Color.BLACK);image.setImageBitmap(PerspectiveMasterRenderer.renderAlignment(base,modelRef,pose));image.setOnTouchListener((v,e)->handleTouch(e));root.addView(image,new FrameLayout.LayoutParams(-1,-1));
 
-        LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(6),dp(8),dp(6));top.setBackgroundColor(0xCC08111F);
-        Button back=btn("Back");back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(72),dp(44)));
-        TextView title=txt("Perspective align · α33",17);title.setPadding(dp(8),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(44),1));
-        Button reset=btn("Reset");reset.setOnClickListener(v->{resetPose();centreLocked=false;scaleLocked=false;guidesOnly=false;syncControls();renderNow();image.resetZoom();});top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(44)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(58),Gravity.TOP));
+        LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(6),dp(8),dp(6));top.setBackgroundColor(0xE008111F);
+        Button back=btn("Back");back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(72),dp(46)));
+        TextView title=txt("Align master · α34",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
+        Button reset=btn("Reset");reset.setOnClickListener(v->{resetPose();renderNow();});top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
 
-        LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(dp(8),dp(5),dp(8),dp(8));panel.setBackgroundColor(0xDD08111F);
-        LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER_VERTICAL);
-        joystick=new PerspectiveJoystickView(this);joystick.setListener((yaw,pitch)->{pose.yawDeg=yaw;pose.pitchDeg=pitch;renderThrottled();});row.addView(joystick,new LinearLayout.LayoutParams(dp(112),dp(112)));
-        LinearLayout right=new LinearLayout(this);right.setOrientation(LinearLayout.VERTICAL);right.setPadding(dp(8),0,0,0);
-        right.addView(label("Scale (or pinch)"));scaleBar=new SeekBar(this);scaleBar.setMax(100);scaleBar.setOnSeekBarChangeListener(listener(p->{if(!scaleLocked){pose.scalePx=Math.min(base.getWidth(),base.getHeight())*(0.24f+0.0038f*p);renderThrottled();}}));right.addView(scaleBar,new LinearLayout.LayoutParams(-1,dp(32)));
-        right.addView(label("Roll"));rollBar=new SeekBar(this);rollBar.setMax(120);rollBar.setOnSeekBarChangeListener(listener(p->{pose.rollDeg=(p-60)*0.5f;renderThrottled();}));right.addView(rollBar,new LinearLayout.LayoutParams(-1,dp(32)));
-        right.addView(label("Overlay"));alphaBar=new SeekBar(this);alphaBar.setMax(100);alphaBar.setProgress(100);alphaBar.setOnSeekBarChangeListener(listener(p->{pose.alpha=Math.max(0.15f,p/100f);renderThrottled();}));right.addView(alphaBar,new LinearLayout.LayoutParams(-1,dp(32)));
-        row.addView(right,new LinearLayout.LayoutParams(0,dp(112),1));panel.addView(row);
-
-        LinearLayout locks=new LinearLayout(this);locks.setGravity(Gravity.CENTER);
-        centreLock=btn("Lock centre");centreLock.setOnClickListener(v->{centreLocked=!centreLocked;updateLockLabels();});
-        scaleLock=btn("Lock scale");scaleLock.setOnClickListener(v->{scaleLocked=!scaleLocked;updateLockLabels();});
-        guideToggle=btn("Guides only");guideToggle.setOnClickListener(v->{guidesOnly=!guidesOnly;guideToggle.setText(guidesOnly?"Show markers":"Guides only");renderNow();});
-        locks.addView(centreLock,new LinearLayout.LayoutParams(0,dp(38),1));locks.addView(scaleLock,new LinearLayout.LayoutParams(0,dp(38),1));locks.addView(guideToggle,new LinearLayout.LayoutParams(0,dp(38),1));panel.addView(locks);
-
-        LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.CENTER_VERTICAL);
-        Button blink=btn("Hold to blink");blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){renderNow();return true;}return false;});actions.addView(blink,new LinearLayout.LayoutParams(0,dp(42),1));
-        Button set=btn("Set alignment");set.setOnClickListener(v->openLockedInspection());set.setBackgroundColor(Color.rgb(50,213,242));set.setTextColor(Color.rgb(4,32,42));actions.addView(set,new LinearLayout.LayoutParams(0,dp(42),1));panel.addView(actions);
-        TextView hint=txt("Drag = centre • pinch = scale • joystick = perspective • roll = rotation",11);hint.setGravity(Gravity.CENTER);panel.addView(hint,new LinearLayout.LayoutParams(-1,dp(32)));
-        root.addView(panel,new FrameLayout.LayoutParams(-1,dp(224),Gravity.BOTTOM));setContentView(root);
-        syncControls();
+        LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(8),dp(10),dp(10));bottom.setBackgroundColor(0xE608111F);
+        instruction=txt("1 Drag YELLOW CENTER to the pinion   2 Drag CYAN 12 to 12 o'clock",14);instruction.setGravity(Gravity.CENTER);bottom.addView(instruction,new LinearLayout.LayoutParams(-1,dp(46)));
+        LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER);
+        perspectiveButton=btn("Perspective: OFF");perspectiveButton.setOnClickListener(v->togglePerspective());row.addView(perspectiveButton,new LinearLayout.LayoutParams(0,dp(48),1));
+        Button blink=btn("Hold to blink");blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){renderNow();return true;}return false;});row.addView(blink,new LinearLayout.LayoutParams(0,dp(48),1));
+        Button set=btn("Set alignment");set.setBackgroundColor(Color.rgb(50,213,242));set.setTextColor(Color.rgb(4,32,42));set.setOnClickListener(v->openLockedInspection());row.addView(set,new LinearLayout.LayoutParams(0,dp(48),1));bottom.addView(row);
+        TextView hint=txt("Normal photos need only CENTER + 12. Turn Perspective on only for angled QC photos.",12);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(42)));
+        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(154),Gravity.BOTTOM));setContentView(root);
     }
 
-    private boolean handleDirectManipulation(MotionEvent e){
-        int action=e.getActionMasked();
-        if(action==MotionEvent.ACTION_DOWN){lastX=e.getX();lastY=e.getY();pinching=false;return true;}
-        if(action==MotionEvent.ACTION_POINTER_DOWN&&e.getPointerCount()>=2){pinching=true;startPinchDistance=distance(e);startPinchScale=pose.scalePx;return true;}
-        if(action==MotionEvent.ACTION_MOVE){
-            if(e.getPointerCount()>=2&&pinching){
-                if(!scaleLocked){float d=distance(e);if(startPinchDistance>10f&&d>0){pose.scalePx=Math.max(40f,Math.min(Math.min(base.getWidth(),base.getHeight())*0.70f,startPinchScale*(d/startPinchDistance)));syncScaleBar();renderThrottled();}}
-            }else if(!centreLocked){
-                float dx=e.getX()-lastX,dy=e.getY()-lastY;float fit=fitScale();if(fit>0){pose.centerX+=dx/fit;pose.centerY+=dy/fit;}lastX=e.getX();lastY=e.getY();renderThrottled();
-            }
-            return true;
-        }
-        if(action==MotionEvent.ACTION_POINTER_UP){pinching=false;if(e.getPointerCount()>1){int keep=e.getActionIndex()==0?1:0;lastX=e.getX(keep);lastY=e.getY(keep);}return true;}
-        if(action==MotionEvent.ACTION_UP||action==MotionEvent.ACTION_CANCEL){pinching=false;renderNow();return true;}
+    private boolean handleTouch(MotionEvent e){
+        PointF q=screenToBitmap(e.getX(),e.getY());if(q==null)return true;int action=e.getActionMasked();
+        if(action==MotionEvent.ACTION_DOWN){activeHandle=findHandle(q);return true;}
+        if(action==MotionEvent.ACTION_MOVE&&activeHandle>=0){moveHandle(activeHandle,q);renderThrottled();return true;}
+        if(action==MotionEvent.ACTION_UP||action==MotionEvent.ACTION_CANCEL){if(activeHandle>=0)renderNow();activeHandle=-1;return true;}
         return true;
     }
 
-    private float fitScale(){float vw=image.getWidth(),vh=image.getHeight();if(vw<=0||vh<=0)return 1f;return Math.min(vw/base.getWidth(),vh/base.getHeight());}
-    private float distance(MotionEvent e){if(e.getPointerCount()<2)return 0;float dx=e.getX(0)-e.getX(1),dy=e.getY(0)-e.getY(1);return (float)Math.sqrt(dx*dx+dy*dy);}
-
-    private void openLockedInspection(){
-        Bitmap overlay=PerspectiveMasterRenderer.renderOverlay(base.getWidth(),base.getHeight(),modelRef,pose);
-        InspectionImageStore.setOverlay(base,overlay,"Locked QC master · ref-calibrated v5");
-        Toast.makeText(this,"Alignment locked · opening inspector",Toast.LENGTH_SHORT).show();
-        startActivity(new Intent(this,FullscreenInspectActivity.class));
+    private int findHandle(PointF q){
+        PointF c=new PointF(pose.centerX,pose.centerY),p12=PerspectiveMasterRenderer.projectPoint(pose,0,-1);float threshold=screenPxToBitmap(dp(54));
+        int best=-1;float bd=Float.MAX_VALUE;float d=dist(q,c);if(d<bd){bd=d;best=0;}d=dist(q,p12);if(d<bd){bd=d;best=1;}
+        if(pose.perspectiveMode){PointF p3=PerspectiveMasterRenderer.projectPoint(pose,1,0),p9=PerspectiveMasterRenderer.projectPoint(pose,-1,0);d=dist(q,p3);if(d<bd){bd=d;best=2;}d=dist(q,p9);if(d<bd){bd=d;best=3;}}
+        return bd<=threshold?best:-1;
     }
 
-    private void resetPose(){pose.centerX=base.getWidth()/2f;pose.centerY=base.getHeight()/2f;pose.scalePx=Math.min(base.getWidth(),base.getHeight())*0.41f;pose.pitchDeg=0;pose.yawDeg=0;pose.rollDeg=0;pose.alpha=1f;}
-    private void syncControls(){if(joystick!=null)joystick.setTilt(pose.yawDeg,pose.pitchDeg);syncScaleBar();if(rollBar!=null)rollBar.setProgress(Math.round(pose.rollDeg/0.5f)+60);if(alphaBar!=null)alphaBar.setProgress(Math.round(pose.alpha*100));updateLockLabels();}
-    private void syncScaleBar(){if(scaleBar!=null){int p=Math.round((pose.scalePx/Math.min(base.getWidth(),base.getHeight())-0.24f)/0.0038f);scaleBar.setProgress(Math.max(0,Math.min(100,p)));}}
-    private void updateLockLabels(){if(centreLock!=null)centreLock.setText(centreLocked?"Centre locked":"Lock centre");if(scaleLock!=null)scaleLock.setText(scaleLocked?"Scale locked":"Lock scale");}
-    private void renderThrottled(){long now=System.currentTimeMillis();if(now-lastRender<24)return;lastRender=now;renderNow();}
-    private void renderNow(){Bitmap b=guidesOnly?PerspectiveMasterRenderer.renderGuides(base,modelRef,pose):PerspectiveMasterRenderer.render(base,modelRef,pose);image.setImageBitmapPreserveZoom(b);}
-    private SeekBar.OnSeekBarChangeListener listener(java.util.function.IntConsumer f){return new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean from){if(from)f.accept(p);}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){renderNow();}};}
-    private Button btn(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(11);return b;}
+    private void moveHandle(int handle,PointF q){
+        if(handle==0){float dx=q.x-pose.centerX,dy=q.y-pose.centerY;pose.centerX=q.x;pose.centerY=q.y;pose.anchor12X+=dx;pose.anchor12Y+=dy;if(pose.perspectiveMode){pose.anchor3X+=dx;pose.anchor3Y+=dy;pose.anchor9X+=dx;pose.anchor9Y+=dy;}return;}
+        if(handle==1){if(dist(q,new PointF(pose.centerX,pose.centerY))>30f){pose.anchor12X=q.x;pose.anchor12Y=q.y;}return;}
+        if(handle==2||handle==3){
+            float vx=q.x-pose.centerX,vy=q.y-pose.centerY,len=(float)Math.sqrt(vx*vx+vy*vy);if(len<30f)return;float ux=vx/len,uy=vy/len;
+            if(handle==2){float opposite=dist(new PointF(pose.anchor9X,pose.anchor9Y),new PointF(pose.centerX,pose.centerY));pose.anchor3X=q.x;pose.anchor3Y=q.y;pose.anchor9X=pose.centerX-ux*opposite;pose.anchor9Y=pose.centerY-uy*opposite;}
+            else{float opposite=dist(new PointF(pose.anchor3X,pose.anchor3Y),new PointF(pose.centerX,pose.centerY));pose.anchor9X=q.x;pose.anchor9Y=q.y;pose.anchor3X=pose.centerX-ux*opposite;pose.anchor3Y=pose.centerY-uy*opposite;}
+        }
+    }
+
+    private void togglePerspective(){
+        if(!pose.perspectiveMode){PointF p3=PerspectiveMasterRenderer.projectPoint(pose,1,0),p9=PerspectiveMasterRenderer.projectPoint(pose,-1,0);pose.anchor3X=p3.x;pose.anchor3Y=p3.y;pose.anchor9X=p9.x;pose.anchor9Y=p9.y;pose.perspectiveMode=true;perspectiveButton.setText("Perspective: ON");instruction.setText("Fine tune MAGENTA 3 and 9 handles. They stay on one diameter through the centre.");}
+        else{pose.perspectiveMode=false;perspectiveButton.setText("Perspective: OFF");instruction.setText("1 Drag YELLOW CENTER to the pinion   2 Drag CYAN 12 to 12 o'clock");}
+        renderNow();
+    }
+
+    private void resetPose(){float s=Math.min(base.getWidth(),base.getHeight())*0.41f;pose.centerX=base.getWidth()/2f;pose.centerY=base.getHeight()/2f;pose.scalePx=s;pose.pitchDeg=pose.yawDeg=pose.rollDeg=0;pose.alpha=1f;pose.anchorMode=true;pose.perspectiveMode=false;pose.anchor12X=pose.centerX;pose.anchor12Y=pose.centerY-s;pose.anchor3X=pose.centerX+s;pose.anchor3Y=pose.centerY;pose.anchor9X=pose.centerX-s;pose.anchor9Y=pose.centerY;if(perspectiveButton!=null)perspectiveButton.setText("Perspective: OFF");if(instruction!=null)instruction.setText("1 Drag YELLOW CENTER to the pinion   2 Drag CYAN 12 to 12 o'clock");}
+
+    private void openLockedInspection(){Bitmap overlay=PerspectiveMasterRenderer.renderOverlay(base.getWidth(),base.getHeight(),modelRef,pose);InspectionImageStore.setOverlay(base,overlay,"QC master · two-point aligned");Toast.makeText(this,"Alignment set",Toast.LENGTH_SHORT).show();startActivity(new Intent(this,FullscreenInspectActivity.class));}
+    private void renderThrottled(){long now=System.currentTimeMillis();if(now-lastRender<22)return;lastRender=now;renderNow();}
+    private void renderNow(){image.setImageBitmapPreserveZoom(PerspectiveMasterRenderer.renderAlignment(base,modelRef,pose));}
+
+    private PointF screenToBitmap(float sx,float sy){float vw=image.getWidth(),vh=image.getHeight();if(vw<=0||vh<=0)return null;float fit=Math.min(vw/base.getWidth(),vh/base.getHeight());float ox=(vw-base.getWidth()*fit)/2f,oy=(vh-base.getHeight()*fit)/2f;return new PointF((sx-ox)/fit,(sy-oy)/fit);}
+    private float screenPxToBitmap(float px){float fit=Math.min(image.getWidth()/(float)base.getWidth(),image.getHeight()/(float)base.getHeight());return fit>0?px/fit:px;}
+    private float dist(PointF a,PointF b){float dx=a.x-b.x,dy=a.y-b.y;return (float)Math.sqrt(dx*dx+dy*dy);}
+    private Button btn(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(12);return b;}
     private TextView txt(String s,int sp){TextView t=new TextView(this);t.setText(s);t.setTextColor(Color.WHITE);t.setTextSize(sp);return t;}
-    private TextView label(String s){return txt(s,11);}
     private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
 }
