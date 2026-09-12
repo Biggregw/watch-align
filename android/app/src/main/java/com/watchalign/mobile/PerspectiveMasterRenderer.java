@@ -7,7 +7,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
 
-/** Community-style index alignment ruler with perspective-aware projection. */
+/** Community-style index alignment ruler with true four-point projective registration. */
 final class PerspectiveMasterRenderer {
     static final class Pose {
         float centerX, centerY;
@@ -31,13 +31,9 @@ final class PerspectiveMasterRenderer {
         Paint guideHalo=stroke(Color.BLACK,7.0f*unit,240), guide=stroke(Color.rgb(255,235,0),3.1f*unit,255);
         drawCircle(c,pr,1.0,guideHalo);drawCircle(c,pr,1.0,guide);
 
-        // RepTimeQC/WatchQC-style index ruler: radial centre-lines, not guessed marker outlines.
-        // The ruler judges whether each applied index is centred and radial. Perspective projection
-        // is applied to the whole ruler so angled QC photos remain usable.
         for(int h=0;h<12;h++){
             double ang=Math.toRadians(h*30.0-90.0),ux=Math.cos(ang),uy=Math.sin(ang),vx=-uy,vy=ux;
             drawSegment(c,pr,ux*.60,uy*.60,ux*1.00,uy*1.00,halo);drawSegment(c,pr,ux*.60,uy*.60,ux*1.00,uy*1.00,red);
-            // Short crossbar at the typical GMT applied-index radius. This is a centring aid only.
             double r=.79,half=.050;drawSegment(c,pr,ux*r-vx*half,uy*r-vy*half,ux*r+vx*half,uy*r+vy*half,halo);drawSegment(c,pr,ux*r-vx*half,uy*r-vy*half,ux*r+vx*half,uy*r+vy*half,red);
         }
         drawCircle(c,pr,.79,stroke(Color.BLACK,5.0f*unit,190));drawCircle(c,pr,.79,stroke(Color.WHITE,1.8f*unit,175));
@@ -64,10 +60,27 @@ final class PerspectiveMasterRenderer {
         }
     }
 
+    /**
+     * Solve the projective transform from four real correspondences on the dial plane:
+     * canonical centre, 12 edge, 3 edge and 9 edge. No synthetic 6 o'clock point is used.
+     * This lets a tilted dial project asymmetrically exactly as planar perspective requires.
+     */
     private static double[] buildH(Pose p){
-        double p6x=2*p.centerX-p.anchor12X,p6y=2*p.centerY-p.anchor12Y;double[][] src={{0,-1},{1,0},{0,1},{-1,0}},dst={{p.anchor12X,p.anchor12Y},{p.anchor3X,p.anchor3Y},{p6x,p6y},{p.anchor9X,p.anchor9Y}};double[][] a=new double[8][9];
-        for(int i=0;i<4;i++){double x=src[i][0],y=src[i][1],u=dst[i][0],v=dst[i][1];int r=2*i;a[r][0]=x;a[r][1]=y;a[r][2]=1;a[r][6]=-u*x;a[r][7]=-u*y;a[r][8]=u;a[r+1][3]=x;a[r+1][4]=y;a[r+1][5]=1;a[r+1][6]=-v*x;a[r+1][7]=-v*y;a[r+1][8]=v;}
-        for(int col=0;col<8;col++){int pivot=col;for(int r=col+1;r<8;r++)if(Math.abs(a[r][col])>Math.abs(a[pivot][col]))pivot=r;if(Math.abs(a[pivot][col])<1e-8)return null;double[] tmp=a[col];a[col]=a[pivot];a[pivot]=tmp;double div=a[col][col];for(int j=col;j<9;j++)a[col][j]/=div;for(int r=0;r<8;r++){if(r==col)continue;double f=a[r][col];for(int j=col;j<9;j++)a[r][j]-=f*a[col][j];}}
+        double[][] src={{0,0},{0,-1},{1,0},{-1,0}};
+        double[][] dst={{p.centerX,p.centerY},{p.anchor12X,p.anchor12Y},{p.anchor3X,p.anchor3Y},{p.anchor9X,p.anchor9Y}};
+        double[][] a=new double[8][9];
+        for(int i=0;i<4;i++){
+            double x=src[i][0],y=src[i][1],u=dst[i][0],v=dst[i][1];int r=2*i;
+            a[r][0]=x;a[r][1]=y;a[r][2]=1;a[r][6]=-u*x;a[r][7]=-u*y;a[r][8]=u;
+            a[r+1][3]=x;a[r+1][4]=y;a[r+1][5]=1;a[r+1][6]=-v*x;a[r+1][7]=-v*y;a[r+1][8]=v;
+        }
+        for(int col=0;col<8;col++){
+            int pivot=col;for(int r=col+1;r<8;r++)if(Math.abs(a[r][col])>Math.abs(a[pivot][col]))pivot=r;
+            if(Math.abs(a[pivot][col])<1e-8)return null;
+            double[] tmp=a[col];a[col]=a[pivot];a[pivot]=tmp;
+            double div=a[col][col];for(int j=col;j<9;j++)a[col][j]/=div;
+            for(int r=0;r<8;r++){if(r==col)continue;double f=a[r][col];for(int j=col;j<9;j++)a[r][j]-=f*a[col][j];}
+        }
         double[] h=new double[8];for(int i=0;i<8;i++)h[i]=a[i][8];return h;
     }
 
