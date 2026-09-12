@@ -26,9 +26,8 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Alpha26 perspective overlay. Perspective and scale come from the dial ellipse.
- * A fixed model master supplies the inspection geometry. Runtime marker detections never
- * move, resize or reshape the 126710BLNR master.
+ * Alpha27 visual QC overlay. Photo analysis establishes pose only. The fixed 126710BLNR
+ * master supplies all marker geometry. QC markers never move or resize the master.
  */
 final class PerspectiveGmtOverlay {
     static final class Result {
@@ -76,14 +75,13 @@ final class PerspectiveGmtOverlay {
             Bitmap rectified=rectify(src,H,input);
             String master=Gmt126710BlnrMaster.supports(modelRef)?Gmt126710BlnrMaster.ID:"canonical GMT fallback";
             String report=String.format(Locale.US,
-                    "\n\nPERSPECTIVE GMT OVERLAY\n"+
-                    "Pose source: fitted dial ellipse for centre/scale/perspective. Marker consensus supplies only the in-plane 12 o'clock direction; individual marker placement is never used to fit the template.\n"+
-                    "Inspection geometry: %s. This is a fixed Watch Align master and is not re-sized from the markers in the QC photo.\n"+
-                    "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; ellipse angle %.1f°; dial roll %+4.2f°.\n"+
-                    "Dial-centre agreement: %.2f%% of dial radius. Homography reprojection residual: %.2f px.\n"+
-                    "Overlay confidence: %.0f%%.\n"+
-                    "Native Template is the primary inspection view. Rectified is normalized so 12 is at the top and 6 at the bottom. Alpha26 intentionally provides no GL/RL score.\n",
-                    master,major,minor,tiltDeg,ellipse.angle,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0);
+                    "\n\nVISUAL QC MASTER\n"+
+                    "Pose source: fitted dial ellipse plus dial orientation. Applied markers are inspection targets only and never fit the overlay.\n"+
+                    "Inspection geometry: %s. Outer applied-marker bodies are bright cyan; inner lume references are thin white.\n"+
+                    "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+4.2f°.\n"+
+                    "Dial-centre agreement: %.2f%% of dial radius. Pose residual: %.2f px. Confidence: %.0f%%.\n"+
+                    "Use Native Template with opacity/blink in the full-screen inspector. No GL/RL score is generated.\n",
+                    master,major,minor,tiltDeg,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0);
             H.release();
             return new Result(overlay,rectified,report,confidence);
         }catch(Throwable ignored){return null;}
@@ -134,14 +132,12 @@ final class PerspectiveGmtOverlay {
     }
 
     private static Mat homographyFromUnitSquare(Point[] dst){
-        MatOfPoint2f srcPts=new MatOfPoint2f(
-                new Point(0,-1),new Point(1,0),new Point(0,1),new Point(-1,0));
+        MatOfPoint2f srcPts=new MatOfPoint2f(new Point(0,-1),new Point(1,0),new Point(0,1),new Point(-1,0));
         MatOfPoint2f dstPts=new MatOfPoint2f(dst);
         try{return Calib3d.findHomography(srcPts,dstPts,0);}
         finally{srcPts.release();dstPts.release();}
     }
 
-    /** Return image points corresponding to canonical 12,3,6,9 directions. */
     private static Point[] ellipseCardinalPoints(RotatedRect e,double rollDeg){
         return new Point[]{
                 rayEllipseIntersection(e,Math.toRadians(rollDeg-90.0)),
@@ -178,55 +174,51 @@ final class PerspectiveGmtOverlay {
     private static Bitmap renderNative(Bitmap source,Mat H,String modelRef,double confidence){
         Bitmap out=source.copy(Bitmap.Config.ARGB_8888,true);Canvas c=new Canvas(out);
         float scale=Math.max(1f,Math.min(out.getWidth(),out.getHeight())/900f);
-        Paint cyan=paint(Color.rgb(38,220,235),1.55f*scale,205);
-        Paint faint=paint(Color.rgb(38,220,235),1.05f*scale,95);
-        Paint amber=paint(Color.rgb(255,185,35),1.8f*scale,225);
+        Paint outer=paint(Color.rgb(35,225,240),1.55f*scale,235);
+        Paint inner=paint(Color.WHITE,0.9f*scale,155);
+        Paint guide=paint(Color.rgb(35,225,240),0.9f*scale,70);
+        Paint date=paint(Color.rgb(255,185,35),1.45f*scale,210);
 
         if(Gmt126710BlnrMaster.supports(modelRef)){
-            // Keep the inspection surface deliberately clean: dial/minute-track references,
-            // model-specific applied-marker outlines, date aperture and a tiny centre datum.
-            drawProjectedCircle(c,H,Gmt126710BlnrMaster.DIAL_EDGE_R,faint);
-            drawProjectedCircle(c,H,Gmt126710BlnrMaster.MINUTE_TRACK_R,faint);
+            drawProjectedCircle(c,H,Gmt126710BlnrMaster.DIAL_EDGE_R,guide);
+            drawProjectedCircle(c,H,Gmt126710BlnrMaster.MINUTE_TRACK_R,guide);
 
             for(int h:new int[]{1,2,4,5,7,8,10,11}){
                 double a=Gmt126710BlnrMaster.angleForHour(h);
-                drawCircleTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.ROUND_R,a,cyan);
+                drawCircleTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.ROUND_OUTER_R,a,outer);
+                drawCircleTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.ROUND_LUME_R,a,inner);
             }
             for(int h:new int[]{6,9}){
                 double a=Gmt126710BlnrMaster.angleForHour(h);
-                drawRectTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,
-                        Gmt126710BlnrMaster.BATON_TANGENTIAL_HALF,
-                        Gmt126710BlnrMaster.BATON_RADIAL_HALF,a,cyan);
+                drawRectTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.BATON_TANGENTIAL_HALF,Gmt126710BlnrMaster.BATON_RADIAL_HALF,a,outer);
+                drawRectTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.BATON_LUME_TANGENTIAL_HALF,Gmt126710BlnrMaster.BATON_LUME_RADIAL_HALF,a,inner);
             }
-            drawMasterTriangle(c,H,amber);
+            drawMasterTriangle(c,H,outer,false);
+            drawMasterTriangle(c,H,inner,true);
             drawQuad(c,H,new double[][]{
                     {Gmt126710BlnrMaster.DATE_X_INNER,Gmt126710BlnrMaster.DATE_Y_TOP},
                     {Gmt126710BlnrMaster.DATE_X_OUTER,Gmt126710BlnrMaster.DATE_Y_TOP},
                     {Gmt126710BlnrMaster.DATE_X_OUTER,Gmt126710BlnrMaster.DATE_Y_BOTTOM},
-                    {Gmt126710BlnrMaster.DATE_X_INNER,Gmt126710BlnrMaster.DATE_Y_BOTTOM}},amber);
-
-            Point top0=project(H,0,-0.97),top1=project(H,0,-0.90);
-            c.drawLine((float)top0.x,(float)top0.y,(float)top1.x,(float)top1.y,amber);
+                    {Gmt126710BlnrMaster.DATE_X_INNER,Gmt126710BlnrMaster.DATE_Y_BOTTOM}},date);
         }else{
-            drawProjectedCircle(c,H,1.00,cyan);
-            drawProjectedCircle(c,H,0.90,faint);
+            drawProjectedCircle(c,H,1.00,outer);
         }
-
-        Point pc=project(H,0,0);c.drawCircle((float)pc.x,(float)pc.y,3.5f*scale,amber);
-        Paint text=new Paint(Paint.ANTI_ALIAS_FLAG);text.setColor(Color.WHITE);text.setTextSize(16f*scale);text.setAlpha(210);
-        String label=Gmt126710BlnrMaster.supports(modelRef)?Gmt126710BlnrMaster.ID:"GMT template";
-        c.drawText(String.format(Locale.US,"%s · pose %.0f%%",label,confidence*100),18f*scale,28f*scale,text);
         return out;
     }
 
-    private static void drawMasterTriangle(Canvas c,Mat H,Paint p){
+    /** Genuine 12 marker orientation: wide base toward rehaut, point toward hands. */
+    private static void drawMasterTriangle(Canvas c,Mat H,Paint p,boolean lume){
         double a=Gmt126710BlnrMaster.angleForHour(12);
         double ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;
-        double cx=Gmt126710BlnrMaster.TRI_CENTER_R*ux,cy=Gmt126710BlnrMaster.TRI_CENTER_R*uy;
+        double center=lume?Gmt126710BlnrMaster.TRI_LUME_CENTER_R:Gmt126710BlnrMaster.TRI_CENTER_R;
+        double baseOut=lume?Gmt126710BlnrMaster.TRI_LUME_BASE_OUTWARD:Gmt126710BlnrMaster.TRI_BASE_OUTWARD;
+        double apexIn=lume?Gmt126710BlnrMaster.TRI_LUME_APEX_INWARD:Gmt126710BlnrMaster.TRI_APEX_INWARD;
+        double halfBase=lume?Gmt126710BlnrMaster.TRI_LUME_HALF_BASE:Gmt126710BlnrMaster.TRI_HALF_BASE;
+        double cx=center*ux,cy=center*uy;
         double[][] pts={
-                {cx+ux*Gmt126710BlnrMaster.TRI_OUTWARD,cy+uy*Gmt126710BlnrMaster.TRI_OUTWARD},
-                {cx-ux*Gmt126710BlnrMaster.TRI_INWARD+vx*Gmt126710BlnrMaster.TRI_HALF_BASE,cy-uy*Gmt126710BlnrMaster.TRI_INWARD+vy*Gmt126710BlnrMaster.TRI_HALF_BASE},
-                {cx-ux*Gmt126710BlnrMaster.TRI_INWARD-vx*Gmt126710BlnrMaster.TRI_HALF_BASE,cy-uy*Gmt126710BlnrMaster.TRI_INWARD-vy*Gmt126710BlnrMaster.TRI_HALF_BASE}
+                {cx+ux*baseOut+vx*halfBase,cy+uy*baseOut+vy*halfBase},
+                {cx+ux*baseOut-vx*halfBase,cy+uy*baseOut-vy*halfBase},
+                {cx-ux*apexIn,cy-uy*apexIn}
         };
         drawQuad(c,H,pts,p);
     }
