@@ -8,7 +8,6 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.MotionEvent;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -25,7 +24,7 @@ public class FullscreenInspectActivity extends Activity {
         super.onCreate(state);getWindow().setStatusBarColor(Color.rgb(8,17,31));getWindow().setNavigationBarColor(Color.rgb(8,17,31));
         overlay=InspectionImageStore.bitmap;base=InspectionImageStore.baseBitmap;if(overlay==null){finish();return;}
         FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.rgb(8,17,31));
-        image=new ZoomableImageView(this);image.setBackgroundColor(Color.rgb(8,17,31));image.setImageBitmap(overlay);root.addView(image,new FrameLayout.LayoutParams(-1,-1));
+        image=new ZoomableImageView(this);image.setBackgroundColor(Color.rgb(8,17,31));root.addView(image,new FrameLayout.LayoutParams(-1,-1));
 
         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(10),dp(8),dp(10),dp(8));top.setBackgroundColor(0xAA08111F);
         Button back=new Button(this);back.setText("Back");back.setAllCaps(false);back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(78),dp(46)));
@@ -41,6 +40,10 @@ public class FullscreenInspectActivity extends Activity {
         }
         TextView hint=new TextView(this);hint.setText(InspectionImageStore.overlayMode?"Pinch/drag to inspect · slider changes overlay · hold Blink for watch-only":"Pinch to zoom · drag to pan · double-tap zoom");hint.setTextColor(Color.WHITE);hint.setTextSize(12);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(34)));
         FrameLayout.LayoutParams bottomLp=new FrameLayout.LayoutParams(-1,InspectionImageStore.overlayMode?dp(82):dp(42),Gravity.BOTTOM);root.addView(bottom,bottomLp);setContentView(root);
+
+        // Overlay bitmaps from the perspective workbench are transparent layers. Compose
+        // them over the watch immediately so Set alignment always opens a visible result.
+        if(InspectionImageStore.overlayMode&&base!=null)refresh();else image.setImageBitmap(overlay);
     }
 
     private void refresh(){if(base==null){image.setImageBitmapPreserveZoom(overlay);return;}Bitmap out=Bitmap.createBitmap(base.getWidth(),base.getHeight(),Bitmap.Config.ARGB_8888);Canvas c=new Canvas(out);Paint p=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);c.drawBitmap(base,0,0,p);p.setAlpha(Math.max(0,Math.min(255,Math.round(alpha*255))));c.drawBitmap(overlay,0,0,p);image.setImageBitmapPreserveZoom(out);}
