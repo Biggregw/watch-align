@@ -40,16 +40,17 @@ final class PerspectiveMasterRenderer {
 
     private static void drawMaster(Canvas c,int width,int height,String modelRef,Pose pose,boolean markers){
         float unit=Math.max(1f,Math.min(width,height)/900f);
-        int a=Math.max(0,Math.min(255,Math.round(245*pose.alpha)));
-        int ai=Math.max(0,Math.min(255,Math.round(105*pose.alpha)));
-        int ag=Math.max(0,Math.min(255,Math.round(80*pose.alpha)));
-        Paint outer=paint(Color.rgb(255,35,35),1.2f*unit,a);
-        Paint inner=paint(Color.WHITE,0.72f*unit,ai);
-        Paint guide=paint(Color.rgb(255,35,35),0.8f*unit,ag);
+        int a=Math.max(0,Math.min(255,Math.round(255*pose.alpha)));
+        int ai=Math.max(0,Math.min(255,Math.round(190*pose.alpha)));
+        int ag=Math.max(0,Math.min(255,Math.round(230*pose.alpha)));
+        Paint outer=paint(Color.rgb(255,25,25),2.0f*unit,a);
+        Paint inner=paint(Color.WHITE,1.15f*unit,ai);
+        Paint guide=paint(Color.rgb(255,40,40),2.05f*unit,ag);
+        Paint centre=paint(Color.rgb(255,225,0),2.35f*unit,255);
 
         drawCircle(c,pose,Gmt126710BlnrMaster.DIAL_EDGE_R,guide);
         drawCircle(c,pose,Gmt126710BlnrMaster.MINUTE_TRACK_R,guide);
-        drawCrosshair(c,pose,guide,unit);
+        drawCrosshair(c,pose,centre,unit);
         if(!markers)return;
 
         for(int h:new int[]{1,2,4,5,7,8,10,11}){
@@ -66,7 +67,10 @@ final class PerspectiveMasterRenderer {
     }
 
     private static void drawCrosshair(Canvas c,Pose p,Paint paint,float unit){
-        float r=7f*unit;c.drawLine(p.centerX-r,p.centerY,p.centerX+r,p.centerY,paint);c.drawLine(p.centerX,p.centerY-r,p.centerX,p.centerY+r,paint);
+        float r=11f*unit;
+        c.drawLine(p.centerX-r,p.centerY,p.centerX+r,p.centerY,paint);
+        c.drawLine(p.centerX,p.centerY-r,p.centerX,p.centerY+r,paint);
+        c.drawCircle(p.centerX,p.centerY,3.5f*unit,paint);
     }
 
     private static PointF project(Pose p,double x,double y){
