@@ -14,7 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/** Alpha34: simple centre + 12 alignment, with optional 3/9 projective perspective handles. */
+/** Alpha35: centre + 12 alignment with finger-safe precision loupe and optional 3/9 perspective. */
 public class ManualAlignActivity extends Activity {
     private ZoomableImageView image;
     private Bitmap base;
@@ -24,39 +24,54 @@ public class ManualAlignActivity extends Activity {
     private TextView instruction;
     private int activeHandle=-1;
     private long lastRender=0;
+    private FrameLayout root;
+    private PrecisionLoupeView loupe;
 
     @Override public void onCreate(Bundle state){
         super.onCreate(state);getWindow().setStatusBarColor(Color.rgb(8,17,31));getWindow().setNavigationBarColor(Color.rgb(8,17,31));
         base=InspectionImageStore.baseBitmap!=null?InspectionImageStore.baseBitmap:InspectionImageStore.bitmap;if(base==null){finish();return;}if(InspectionImageStore.modelRef!=null)modelRef=InspectionImageStore.modelRef;
         resetPose();
-        FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.BLACK);
+        root=new FrameLayout(this);root.setBackgroundColor(Color.BLACK);
         image=new ZoomableImageView(this);image.setBackgroundColor(Color.BLACK);image.setImageBitmap(PerspectiveMasterRenderer.renderAlignment(base,modelRef,pose));image.setOnTouchListener((v,e)->handleTouch(e));root.addView(image,new FrameLayout.LayoutParams(-1,-1));
+
+        loupe=new PrecisionLoupeView(this);FrameLayout.LayoutParams lpLoupe=new FrameLayout.LayoutParams(dp(164),dp(164));lpLoupe.leftMargin=dp(12);lpLoupe.topMargin=dp(70);root.addView(loupe,lpLoupe);
 
         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(6),dp(8),dp(6));top.setBackgroundColor(0xE008111F);
         Button back=btn("Back");back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(72),dp(46)));
-        TextView title=txt("Align master · α34",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
-        Button reset=btn("Reset");reset.setOnClickListener(v->{resetPose();renderNow();});top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
+        TextView title=txt("Align master · α35",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
+        Button reset=btn("Reset");reset.setOnClickListener(v->{resetPose();loupe.hide();renderNow();});top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(8),dp(10),dp(10));bottom.setBackgroundColor(0xE608111F);
-        instruction=txt("1 Drag YELLOW CENTER to the pinion   2 Drag CYAN 12 to 12 o'clock",14);instruction.setGravity(Gravity.CENTER);bottom.addView(instruction,new LinearLayout.LayoutParams(-1,dp(46)));
+        instruction=txt("1 YELLOW = pinion centre   2 CYAN 12 = yellow dial edge at 12",14);instruction.setGravity(Gravity.CENTER);bottom.addView(instruction,new LinearLayout.LayoutParams(-1,dp(46)));
         LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER);
         perspectiveButton=btn("Perspective: OFF");perspectiveButton.setOnClickListener(v->togglePerspective());row.addView(perspectiveButton,new LinearLayout.LayoutParams(0,dp(48),1));
         Button blink=btn("Hold to blink");blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){renderNow();return true;}return false;});row.addView(blink,new LinearLayout.LayoutParams(0,dp(48),1));
         Button set=btn("Set alignment");set.setBackgroundColor(Color.rgb(50,213,242));set.setTextColor(Color.rgb(4,32,42));set.setOnClickListener(v->openLockedInspection());row.addView(set,new LinearLayout.LayoutParams(0,dp(48),1));bottom.addView(row);
-        TextView hint=txt("Normal photos need only CENTER + 12. Turn Perspective on only for angled QC photos.",12);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(42)));
+        TextView hint=txt("Touch a handle and a 3× precision loupe appears away from your finger. Perspective adds 3/9 handles only when needed.",12);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(42)));
         root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(154),Gravity.BOTTOM));setContentView(root);
     }
 
     private boolean handleTouch(MotionEvent e){
         PointF q=screenToBitmap(e.getX(),e.getY());if(q==null)return true;int action=e.getActionMasked();
-        if(action==MotionEvent.ACTION_DOWN){activeHandle=findHandle(q);return true;}
-        if(action==MotionEvent.ACTION_MOVE&&activeHandle>=0){moveHandle(activeHandle,q);renderThrottled();return true;}
-        if(action==MotionEvent.ACTION_UP||action==MotionEvent.ACTION_CANCEL){if(activeHandle>=0)renderNow();activeHandle=-1;return true;}
+        if(action==MotionEvent.ACTION_DOWN){activeHandle=findHandle(q);if(activeHandle>=0){placeLoupe(e.getX());loupe.show(base,handlePoint(activeHandle));}return true;}
+        if(action==MotionEvent.ACTION_MOVE&&activeHandle>=0){moveHandle(activeHandle,q);loupe.move(handlePoint(activeHandle));renderThrottled();return true;}
+        if(action==MotionEvent.ACTION_UP||action==MotionEvent.ACTION_CANCEL){if(activeHandle>=0)renderNow();activeHandle=-1;loupe.hide();return true;}
         return true;
     }
 
+    private PointF handlePoint(int handle){
+        if(handle==0)return new PointF(pose.centerX,pose.centerY);
+        if(handle==1)return PerspectiveMasterRenderer.projectPoint(pose,0,-1);
+        if(handle==2)return PerspectiveMasterRenderer.projectPoint(pose,1,0);
+        return PerspectiveMasterRenderer.projectPoint(pose,-1,0);
+    }
+
+    private void placeLoupe(float fingerX){
+        FrameLayout.LayoutParams lp=(FrameLayout.LayoutParams)loupe.getLayoutParams();int size=dp(164),margin=dp(12);int w=root.getWidth();lp.leftMargin=(w>0&&fingerX<w/2f)?Math.max(margin,w-size-margin):margin;lp.topMargin=dp(70);loupe.setLayoutParams(lp);
+    }
+
     private int findHandle(PointF q){
-        PointF c=new PointF(pose.centerX,pose.centerY),p12=PerspectiveMasterRenderer.projectPoint(pose,0,-1);float threshold=screenPxToBitmap(dp(54));
+        PointF c=new PointF(pose.centerX,pose.centerY),p12=PerspectiveMasterRenderer.projectPoint(pose,0,-1);float threshold=screenPxToBitmap(dp(58));
         int best=-1;float bd=Float.MAX_VALUE;float d=dist(q,c);if(d<bd){bd=d;best=0;}d=dist(q,p12);if(d<bd){bd=d;best=1;}
         if(pose.perspectiveMode){PointF p3=PerspectiveMasterRenderer.projectPoint(pose,1,0),p9=PerspectiveMasterRenderer.projectPoint(pose,-1,0);d=dist(q,p3);if(d<bd){bd=d;best=2;}d=dist(q,p9);if(d<bd){bd=d;best=3;}}
         return bd<=threshold?best:-1;
@@ -73,14 +88,14 @@ public class ManualAlignActivity extends Activity {
     }
 
     private void togglePerspective(){
-        if(!pose.perspectiveMode){PointF p3=PerspectiveMasterRenderer.projectPoint(pose,1,0),p9=PerspectiveMasterRenderer.projectPoint(pose,-1,0);pose.anchor3X=p3.x;pose.anchor3Y=p3.y;pose.anchor9X=p9.x;pose.anchor9Y=p9.y;pose.perspectiveMode=true;perspectiveButton.setText("Perspective: ON");instruction.setText("Fine tune MAGENTA 3 and 9 handles. They stay on one diameter through the centre.");}
-        else{pose.perspectiveMode=false;perspectiveButton.setText("Perspective: OFF");instruction.setText("1 Drag YELLOW CENTER to the pinion   2 Drag CYAN 12 to 12 o'clock");}
+        if(!pose.perspectiveMode){PointF p3=PerspectiveMasterRenderer.projectPoint(pose,1,0),p9=PerspectiveMasterRenderer.projectPoint(pose,-1,0);pose.anchor3X=p3.x;pose.anchor3Y=p3.y;pose.anchor9X=p9.x;pose.anchor9Y=p9.y;pose.perspectiveMode=true;perspectiveButton.setText("Perspective: ON");instruction.setText("MAGENTA 3 + 9 = same yellow dial edge at 3 and 9");}
+        else{pose.perspectiveMode=false;perspectiveButton.setText("Perspective: OFF");instruction.setText("1 YELLOW = pinion centre   2 CYAN 12 = yellow dial edge at 12");}
         renderNow();
     }
 
-    private void resetPose(){float s=Math.min(base.getWidth(),base.getHeight())*0.41f;pose.centerX=base.getWidth()/2f;pose.centerY=base.getHeight()/2f;pose.scalePx=s;pose.pitchDeg=pose.yawDeg=pose.rollDeg=0;pose.alpha=1f;pose.anchorMode=true;pose.perspectiveMode=false;pose.anchor12X=pose.centerX;pose.anchor12Y=pose.centerY-s;pose.anchor3X=pose.centerX+s;pose.anchor3Y=pose.centerY;pose.anchor9X=pose.centerX-s;pose.anchor9Y=pose.centerY;if(perspectiveButton!=null)perspectiveButton.setText("Perspective: OFF");if(instruction!=null)instruction.setText("1 Drag YELLOW CENTER to the pinion   2 Drag CYAN 12 to 12 o'clock");}
+    private void resetPose(){float s=Math.min(base.getWidth(),base.getHeight())*0.41f;pose.centerX=base.getWidth()/2f;pose.centerY=base.getHeight()/2f;pose.scalePx=s;pose.pitchDeg=pose.yawDeg=pose.rollDeg=0;pose.alpha=1f;pose.anchorMode=true;pose.perspectiveMode=false;pose.anchor12X=pose.centerX;pose.anchor12Y=pose.centerY-s;pose.anchor3X=pose.centerX+s;pose.anchor3Y=pose.centerY;pose.anchor9X=pose.centerX-s;pose.anchor9Y=pose.centerY;if(perspectiveButton!=null)perspectiveButton.setText("Perspective: OFF");if(instruction!=null)instruction.setText("1 YELLOW = pinion centre   2 CYAN 12 = yellow dial edge at 12");}
 
-    private void openLockedInspection(){Bitmap overlay=PerspectiveMasterRenderer.renderOverlay(base.getWidth(),base.getHeight(),modelRef,pose);InspectionImageStore.setOverlay(base,overlay,"QC master · two-point aligned");Toast.makeText(this,"Alignment set",Toast.LENGTH_SHORT).show();startActivity(new Intent(this,FullscreenInspectActivity.class));}
+    private void openLockedInspection(){Bitmap overlay=PerspectiveMasterRenderer.renderOverlay(base.getWidth(),base.getHeight(),modelRef,pose);InspectionImageStore.setOverlay(base,overlay,"QC master · precision aligned · geometry v6");Toast.makeText(this,"Alignment set",Toast.LENGTH_SHORT).show();startActivity(new Intent(this,FullscreenInspectActivity.class));}
     private void renderThrottled(){long now=System.currentTimeMillis();if(now-lastRender<22)return;lastRender=now;renderNow();}
     private void renderNow(){image.setImageBitmapPreserveZoom(PerspectiveMasterRenderer.renderAlignment(base,modelRef,pose));}
 
