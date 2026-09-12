@@ -45,8 +45,8 @@ public class MainActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Color.rgb(8,17,31));
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("WATCH ALIGN · STANDALONE",12,Color.rgb(50,213,242)));TextView h1=text("Watch Align Android",28,Color.WHITE);h1.setPadding(0,dp(4),0,0);root.addView(h1);
-        root.addView(text("V1.3.0-alpha35 · precision loupe + geometry v6",14,Color.rgb(158,176,201)));
-        root.addView(text("Alpha35 keeps the simple CENTER + 12 workflow, adds a 3× finger-safe precision loupe while dragging, and recalibrates the 126710BLNR marker geometry from the alpha34 validation result.",13,Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha36 · official-image traced GMT master",14,Color.rgb(158,176,201)));
+        root.addView(text("Alpha36 keeps the precision CENTER + 12 alignment and 3× loupe, but replaces hand-tuned 126710BLNR marker geometry with a master measured directly from Rolex's first-party front-on catalogue image during the build.",13,Color.rgb(158,176,201)));
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ModelCatalog.labels()));root.addView(model,lp(-1,dp(54),10));
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         Button pickRef=button("Choose genuine reference photos (optional)");pickRef.setOnClickListener(v->pickReferences());root.addView(pickRef,lp(-1,dp(52),6));
