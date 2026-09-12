@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha24 stabilisation: overlay-first GMT inspection, legacy measurements kept off the main report. */
+/** Alpha25: overlay-first GMT inspection with dedicated full-screen image viewer. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha24";
+    public static final String CORE_VERSION="1.3.0-alpha25";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -47,9 +47,9 @@ public final class WatchAlignCoreV13 {
         String report;
         if(canonicalGmt){
             report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nINSPECTION MODE\n"
-                    +"Alpha24 is overlay-first. Use Native Template as the primary QC surface, pinch/drag to inspect details, and use Rectified for a front-on view.\n"
+                    +"Alpha25 is overlay-first. Use Native Template as the primary QC surface and open it in the dedicated full-screen inspector for pinch/pan. Rectified provides a front-on view.\n"
                     +perspectiveReport
-                    +"\nAutomated GL/RL scoring and ranked marker findings are intentionally hidden in this build because they were producing misleading priorities. The Diagnostics button retains the legacy visual annotations for development only.\n";
+                    +"\nAutomated GL/RL scoring and ranked marker findings remain hidden because they produced misleading priorities. Diagnostics retains legacy development annotations only.\n";
         }else{
             String baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;
             String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)+ext.report+baselineReport
