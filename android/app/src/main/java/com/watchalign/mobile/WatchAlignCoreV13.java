@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha40: perspective-aware community QC ruler with true four-edge registration. */
+/** Alpha41: perspective-aware community QC ruler with precision 12-triangle measurement. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha40";
+    public static final String CORE_VERSION="1.3.0-alpha41";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -23,7 +23,7 @@ public final class WatchAlignCoreV13 {
     public static AnalysisResult analyse(Bitmap watch,Bitmap reference,String modelRef){List<Bitmap> refs=reference==null?Collections.emptyList():Collections.singletonList(reference);return analyse(watch,refs,modelRef);}
     public static AnalysisResult analyse(Bitmap watch,List<Bitmap> references,String modelRef){
         List<Bitmap> refs=references==null?Collections.emptyList():new ArrayList<>(references);Bitmap primary=refs.isEmpty()?null:refs.get(0);WatchAlignCoreV11.AnalysisResult base=WatchAlignCoreV11.analyse(watch,primary,modelRef);Bitmap guide=QcGuideRenderer.render(watch);QcExtendedAnalyzer.Result ext=QcExtendedAnalyzer.analyse(watch,primary,modelRef);boolean canonicalGmt=CanonicalGmtGeometryAnalyzer.supports(modelRef);Bitmap combined=QcOverlayComposer.compose(watch,guide,ext.annotated);PerspectiveGmtOverlay.Result perspective=canonicalGmt?PerspectiveGmtOverlay.build(watch,modelRef):null;String perspectiveReport=perspective==null&&canonicalGmt?"\n\nAUTOMATIC TEMPLATE\nUnavailable for this photo. Manual ruler alignment does not depend on this.\n":perspective==null?"":perspective.report;String report;
-        if(canonicalGmt){report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nTRUE PERSPECTIVE QC RULER\nAlpha40 uses four independent dial-edge correspondences at 12, 3, 6 and 9 to solve a full planar projective transform. The pinion is then predicted as an independent CENTER CHECK instead of being forced to the midpoint. No opposite anchor is mirrored or synthesized. Fine nudging and per-anchor locking remain available.\n"+perspectiveReport+"\nThe ruler is a visual alignment aid, not Rolex factory CAD. Automatic analysis remains secondary.\n";}
+        if(canonicalGmt){report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nTRUE PERSPECTIVE QC RULER\nAlpha41 uses four independent dial-edge correspondences at 12, 3, 6 and 9 to solve a full planar projective transform. The pinion is predicted as an independent CENTER CHECK instead of being forced to a midpoint. A dedicated 12-triangle precision screen can then measure radial HIGH/LOW and lateral offset relative to the ruler target, with 0.25 px fine nudging.\n"+perspectiveReport+"\nThe ruler and triangle metric are visual QC aids, not Rolex factory CAD or factory tolerance data. Automatic analysis remains secondary.\n";}
         else{String baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)+ext.report+baselineReport+"\nInterpretation: non-GMT models continue to use the existing reference-distribution diagnostics.";report=QcSummaryFormatter.prependSummary(detail);}
         return new AnalysisResult(combined,base.reference,base.aligned,perspective==null?null:perspective.nativeOverlay,perspective==null?null:perspective.rectified,report,base.registrationConfidence,perspective==null?0.0:perspective.confidence);
     }
