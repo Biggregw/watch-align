@@ -45,8 +45,8 @@ public class MainActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Color.rgb(8,17,31));
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("WATCH ALIGN · STANDALONE",12,Color.rgb(50,213,242)));TextView h1=text("Watch Align Android",28,Color.WHITE);h1.setPadding(0,dp(4),0,0);root.addView(h1);
-        root.addView(text("V1.3.0-alpha25 · full-screen inspection",14,Color.rgb(158,176,201)));
-        root.addView(text("Alpha25 removes zoom gestures from the scrolling results page. Inspection images now open in a dedicated full-screen viewer with no ScrollView competing for touch events.",13,Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha26 · fixed GMT master",14,Color.rgb(158,176,201)));
+        root.addView(text("Alpha26 uses a baked 126710BLNR inspection master. The QC photo only supplies camera pose; its marker positions cannot move or resize the master template.",13,Color.rgb(158,176,201)));
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ModelCatalog.labels()));root.addView(model,lp(-1,dp(54),10));
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         Button pickRef=button("Choose genuine reference photos (optional)");pickRef.setOnClickListener(v->pickReferences());root.addView(pickRef,lp(-1,dp(52),6));
@@ -94,10 +94,10 @@ public class MainActivity extends Activity {
     private void analyse(){
         if(watchBitmap==null){status.setText("Choose your watch photo first.");return;}ModelCatalog.Profile profile=ModelCatalog.at(model.getSelectedItemPosition());resultText.setText("");setResultButtons(false);Bitmap watch=watchBitmap;List<Bitmap>refs=new ArrayList<>(referenceBitmaps);
         if(profile.geometryMode==ModelCatalog.GeometryMode.VISUAL_ONLY){status.setText("Running model-specific visual QC checklist…");worker.submit(()->{try{VisualOnlyQc.Result r=VisualOnlyQc.analyse(watch,profile);runOnUiThread(()->{lastResult=null;preview.setImageBitmap(r.annotated);resultText.setText(r.report);status.setText("Visual QC checklist ready.");});}catch(Throwable t){runOnUiThread(()->status.setText("QC error: "+t.getMessage()));}});return;}
-        status.setText("Solving dial perspective and building canonical template…");
+        status.setText("Solving photo pose and projecting fixed master…");
         worker.submit(()->{try{
-            String sourceNote=refs.isEmpty()?"No genuine reference selected. The canonical GMT template does not require one.":"Genuine comparison: "+refs.size()+" manually selected reference photo"+(refs.size()==1?"":"s")+".";
-            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,refs,profile.code);final String note=sourceNote;runOnUiThread(()->{lastResult=r;preview.setImageBitmap(r.perspectiveOverlay!=null?r.perspectiveOverlay:r.annotated);resultText.setText(r.report+"\n\n"+note);status.setText(r.perspectiveOverlay!=null?"Inspection overlay ready. Tap Native template for full-screen inspection.":"Perspective template unavailable for this photo.");watchButton.setEnabled(r.annotated!=null);referenceButton.setEnabled(r.reference!=null);overlayButton.setEnabled(r.aligned!=null);perspectiveButton.setEnabled(r.perspectiveOverlay!=null);rectifiedButton.setEnabled(r.rectified!=null);});
+            String sourceNote=refs.isEmpty()?"No genuine reference selected. The fixed 126710BLNR master does not require one.":"Genuine comparison: "+refs.size()+" manually selected reference photo"+(refs.size()==1?"":"s")+".";
+            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,refs,profile.code);final String note=sourceNote;runOnUiThread(()->{lastResult=r;preview.setImageBitmap(r.perspectiveOverlay!=null?r.perspectiveOverlay:r.annotated);resultText.setText(r.report+"\n\n"+note);status.setText(r.perspectiveOverlay!=null?"Fixed master projected. Tap Native template for full-screen inspection.":"Perspective template unavailable for this photo.");watchButton.setEnabled(r.annotated!=null);referenceButton.setEnabled(r.reference!=null);overlayButton.setEnabled(r.aligned!=null);perspectiveButton.setEnabled(r.perspectiveOverlay!=null);rectifiedButton.setEnabled(r.rectified!=null);});
         }catch(Throwable t){runOnUiThread(()->{lastResult=null;setResultButtons(false);status.setText("Analysis error: "+t.getMessage());resultText.setText("Watch Align could not establish reliable geometry from this photo. Try a clearer image with the full dial visible.");});}});
     }
 
