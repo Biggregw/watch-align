@@ -45,8 +45,8 @@ public class MainActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Color.rgb(8,17,31));
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("WATCH ALIGN · STANDALONE",12,Color.rgb(50,213,242)));TextView h1=text("Watch Align Android",28,Color.WHITE);h1.setPadding(0,dp(4),0,0);root.addView(h1);
-        root.addView(text("V1.3.0-alpha31 · direct perspective alignment",14,Color.rgb(158,176,201)));
-        root.addView(text("Alpha31 makes the perspective workbench direct: drag to centre, pinch to scale, use the joystick for tilt, lock centre/scale, then set the alignment and inspect full-screen.",13,Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha33 · genuine-reference master",14,Color.rgb(158,176,201)));
+        root.addView(text("Alpha33 replaces the hand-tuned GMT marker geometry with a master recalibrated against the official Rolex 126710BLNR front view and cross-checked against genuine front-on examples.",13,Color.rgb(158,176,201)));
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ModelCatalog.labels()));root.addView(model,lp(-1,dp(54),10));
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         Button pickRef=button("Choose genuine reference photos (optional)");pickRef.setOnClickListener(v->pickReferences());root.addView(pickRef,lp(-1,dp(52),6));
@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
         Button analyse=button("Build automatic QC overlay");analyse.setOnClickListener(v->analyse());root.addView(analyse,lp(-1,dp(52),6));
         status=text("Choose a watch photo to begin.",14,Color.rgb(158,176,201));root.addView(status);
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(Color.rgb(8,17,31));root.addView(preview,lp(-1,-2,12));
-        root.addView(text("Recommended route: Perspective workbench. Align the dial plane manually, lock it, then inspect the fixed master with opacity and blink.",12,Color.rgb(158,176,201)));
+        root.addView(text("Recommended route: Perspective workbench. Start front-on, align the genuine-reference master, and only add perspective tilt when the QC photo actually needs it.",12,Color.rgb(158,176,201)));
 
         LinearLayout row1=new LinearLayout(this);row1.setOrientation(LinearLayout.HORIZONTAL);
         watchButton=smallButton("Diagnostics");perspectiveButton=smallButton("Auto template");rectifiedButton=smallButton("Rectified");
