@@ -1,6 +1,7 @@
 package com.watchalign.mobile;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -32,17 +33,17 @@ public class FullscreenInspectActivity extends Activity {
         Button reset=new Button(this);reset.setText("Reset");reset.setAllCaps(false);reset.setOnClickListener(v->image.resetZoom());top.addView(reset,new LinearLayout.LayoutParams(dp(78),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(62),Gravity.TOP));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(4),dp(10),dp(6));bottom.setBackgroundColor(0xB008111F);
+        boolean hasTriangleCheck=InspectionImageStore.alignedPose!=null&&"126710BLNR".equals(InspectionImageStore.alignedModelRef);
         if(InspectionImageStore.overlayMode&&base!=null){
             LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER_VERTICAL);
             TextView label=new TextView(this);label.setText("Overlay");label.setTextColor(Color.WHITE);label.setTextSize(12);controls.addView(label,new LinearLayout.LayoutParams(dp(54),dp(40)));
             SeekBar seek=new SeekBar(this);seek.setMax(100);seek.setProgress(100);seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){alpha=p/100f;refresh();}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});controls.addView(seek,new LinearLayout.LayoutParams(0,dp(40),1));
             Button blink=new Button(this);blink.setText("Hold to blink");blink.setAllCaps(false);blink.setTextSize(11);blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){refresh();return true;}return false;});controls.addView(blink,new LinearLayout.LayoutParams(dp(118),dp(40)));bottom.addView(controls);
+            if(hasTriangleCheck){Button tri=new Button(this);tri.setText("12 triangle precision check");tri.setAllCaps(false);tri.setOnClickListener(v->startActivity(new Intent(this,Triangle12InspectActivity.class)));bottom.addView(tri,new LinearLayout.LayoutParams(-1,dp(44)));}
         }
         TextView hint=new TextView(this);hint.setText(InspectionImageStore.overlayMode?"Pinch/drag to inspect · slider changes overlay · hold Blink for watch-only":"Pinch to zoom · drag to pan · double-tap zoom");hint.setTextColor(Color.WHITE);hint.setTextSize(12);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(34)));
-        FrameLayout.LayoutParams bottomLp=new FrameLayout.LayoutParams(-1,InspectionImageStore.overlayMode?dp(82):dp(42),Gravity.BOTTOM);root.addView(bottom,bottomLp);setContentView(root);
+        int bottomHeight=InspectionImageStore.overlayMode?(hasTriangleCheck?dp(126):dp(82)):dp(42);FrameLayout.LayoutParams bottomLp=new FrameLayout.LayoutParams(-1,bottomHeight,Gravity.BOTTOM);root.addView(bottom,bottomLp);setContentView(root);
 
-        // Overlay bitmaps from the perspective workbench are transparent layers. Compose
-        // them over the watch immediately so Set alignment always opens a visible result.
         if(InspectionImageStore.overlayMode&&base!=null)refresh();else image.setImageBitmap(overlay);
     }
 
