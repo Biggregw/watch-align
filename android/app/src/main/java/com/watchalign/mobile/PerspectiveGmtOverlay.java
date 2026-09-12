@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Alpha27 visual QC overlay. Photo analysis establishes pose only. The fixed 126710BLNR
+ * Alpha28 visual QC overlay. Photo analysis establishes pose only. The fixed 126710BLNR
  * master supplies all marker geometry. QC markers never move or resize the master.
  */
 final class PerspectiveGmtOverlay {
@@ -77,7 +77,7 @@ final class PerspectiveGmtOverlay {
             String report=String.format(Locale.US,
                     "\n\nVISUAL QC MASTER\n"+
                     "Pose source: fitted dial ellipse plus dial orientation. Applied markers are inspection targets only and never fit the overlay.\n"+
-                    "Inspection geometry: %s. Outer applied-marker bodies are bright cyan; inner lume references are thin white.\n"+
+                    "Inspection geometry: %s. Outer applied-marker bodies are bright red; inner lume references are thin white.\n"+
                     "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+4.2f°.\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. Pose residual: %.2f px. Confidence: %.0f%%.\n"+
                     "Use Native Template with opacity/blink in the full-screen inspector. No GL/RL score is generated.\n",
@@ -174,10 +174,9 @@ final class PerspectiveGmtOverlay {
     private static Bitmap renderNative(Bitmap source,Mat H,String modelRef,double confidence){
         Bitmap out=source.copy(Bitmap.Config.ARGB_8888,true);Canvas c=new Canvas(out);
         float scale=Math.max(1f,Math.min(out.getWidth(),out.getHeight())/900f);
-        Paint outer=paint(Color.rgb(35,225,240),1.55f*scale,235);
-        Paint inner=paint(Color.WHITE,0.9f*scale,155);
-        Paint guide=paint(Color.rgb(35,225,240),0.9f*scale,70);
-        Paint date=paint(Color.rgb(255,185,35),1.45f*scale,210);
+        Paint outer=paint(Color.rgb(255,45,45),1.25f*scale,245);
+        Paint inner=paint(Color.WHITE,0.8f*scale,150);
+        Paint guide=paint(Color.rgb(255,45,45),0.75f*scale,65);
 
         if(Gmt126710BlnrMaster.supports(modelRef)){
             drawProjectedCircle(c,H,Gmt126710BlnrMaster.DIAL_EDGE_R,guide);
@@ -195,11 +194,7 @@ final class PerspectiveGmtOverlay {
             }
             drawMasterTriangle(c,H,outer,false);
             drawMasterTriangle(c,H,inner,true);
-            drawQuad(c,H,new double[][]{
-                    {Gmt126710BlnrMaster.DATE_X_INNER,Gmt126710BlnrMaster.DATE_Y_TOP},
-                    {Gmt126710BlnrMaster.DATE_X_OUTER,Gmt126710BlnrMaster.DATE_Y_TOP},
-                    {Gmt126710BlnrMaster.DATE_X_OUTER,Gmt126710BlnrMaster.DATE_Y_BOTTOM},
-                    {Gmt126710BlnrMaster.DATE_X_INNER,Gmt126710BlnrMaster.DATE_Y_BOTTOM}},date);
+            // Date aperture intentionally omitted in alpha28 until it is separately calibrated.
         }else{
             drawProjectedCircle(c,H,1.00,outer);
         }
