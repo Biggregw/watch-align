@@ -8,8 +8,8 @@ android {
         applicationId 'com.watchalign.mobile'
         minSdk 28
         targetSdk 35
-        versionCode 13037
-        versionName '1.3.0-alpha36-arm64'
+        versionCode 13038
+        versionName '1.3.0-alpha38'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         ndk {
             abiFilters 'arm64-v8a'
