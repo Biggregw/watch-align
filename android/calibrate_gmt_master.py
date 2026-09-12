@@ -70,8 +70,7 @@ def best_edge_pair(profile,coords,min_half,max_half):
         for j in right:
             symmetry=abs(coords[i]+coords[j]);score=float(p[i]+p[j]-4.0*symmetry*p.max())
             if score>bestscore: best=(i,j);bestscore=score
-    if best is None:
-        raise RuntimeError('No edge pair')
+    if best is None: raise RuntimeError('No edge pair')
     return best
 
 def measure_baton(gray,cx,cy,R,hour,roughR):
@@ -81,6 +80,42 @@ def measure_baton(gray,cx,cy,R,hour,roughR):
     ri,rj=best_edge_pair(pr,rcoords,.075,.155);ti,tj=best_edge_pair(pt,tcoords,.025,.075)
     r0,r1=float(rcoords[ri]),float(rcoords[rj]);t0,t1=float(tcoords[ti]),float(tcoords[tj]);roff=(r0+r1)/2;toff=(t0+t1)/2;rh=(r1-r0)/2;th=(t1-t0)/2
     centerR=roughR+roff;path=[(t0-toff,r0-roff),(t1-toff,r0-roff),(t1-toff,r1-roff),(t0-toff,r1-roff)];return centerR,rh,th,path
+
+def measure_triangle(gray,cx,cy,R,roughR):
+    """Trace the 12 applied triangle inside a constrained local dial patch.
+
+    The constraint only excludes rehaut/tick/hand contamination. The returned vertices still
+    come from thresholded pixels in the official Rolex image, not hand-entered dimensions.
+    """
+    ex,ey=polar_point(cx,cy,roughR*R,12);patch,tcoords,rcoords=sample_local(gray,ex,ey,R,12,t_half=.145,r_half=.225)
+    t,_=cv2.threshold(patch,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU);mask=(patch>=max(70,int(t))).astype(np.uint8)*255
+    T,RV=np.meshgrid(tcoords,rcoords)
+    roi=(np.abs(T)<=.125)&(RV>=-.195)&(RV<=.125)
+    mask=np.where(roi,mask,0).astype(np.uint8)
+    mask=cv2.morphologyEx(mask,cv2.MORPH_CLOSE,np.ones((5,5),np.uint8),iterations=2)
+    n,labels,stats,cent=cv2.connectedComponentsWithStats(mask,8);best=None;score=-1e30
+    for i in range(1,n):
+        area=stats[i,cv2.CC_STAT_AREA]
+        if area<80: continue
+        ct=float(tcoords[min(len(tcoords)-1,max(0,int(round(cent[i][0]))))]); cr=float(rcoords[min(len(rcoords)-1,max(0,int(round(cent[i][1]))))])
+        if abs(ct)>.055 or not (-.09<cr<.075): continue
+        s=area-2200*abs(ct)-800*abs(cr)
+        if s>score: best=i;score=s
+    if best is None: raise RuntimeError('No clean 12 triangle component')
+    obj=(labels==best).astype(np.uint8)*255;contours,_=cv2.findContours(obj,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE);cnt=max(contours,key=cv2.contourArea).reshape(-1,2)
+    # Convert patch pixel contour directly to local normalized coordinates.
+    pts=np.array([[tcoords[int(x)],rcoords[int(y)]] for x,y in cnt],dtype=np.float32)
+    hull=cv2.convexHull(pts.reshape(-1,1,2)).reshape(-1,2)
+    poly=cv2.approxPolyDP(hull.reshape(-1,1,2),.012,True).reshape(-1,2)
+    if len(poly)>8: poly=cv2.approxPolyDP(hull.reshape(-1,1,2),.020,True).reshape(-1,2)
+    # Center the local path on its polygon centroid; keep the measured radial offset in centerR.
+    m=cv2.moments(poly.reshape(-1,1,2).astype(np.float32));
+    if abs(m['m00'])>1e-8: tc=m['m10']/m['m00']; rc=m['m01']/m['m00']
+    else: tc=float(poly[:,0].mean());rc=float(poly[:,1].mean())
+    local=[(float(x-tc),float(y-rc)) for x,y in poly]
+    tang=max(abs(x) for x,y in local);rad=max(abs(y) for x,y in local);centerR=roughR+rc
+    if not (.70<centerR<.86 and .085<rad<.23 and .055<tang<.14): raise RuntimeError(f'Implausible measured triangle {centerR:.4f}/{rad:.4f}/{tang:.4f}')
+    return centerR,rad,tang,local
 
 def fmt_arr(points): return ','.join('{%.6ff,%.6ff}'%(x,y) for x,y in points)
 
@@ -105,9 +140,7 @@ def main():
     if not good: raise RuntimeError('No plausible measured baton')
     baton_center=float(np.median([b[0] for b in good]));baton_rad=float(np.median([b[1] for b in good]));baton_tan=float(np.median([b[2] for b in good]));bp=min(good,key=lambda b:abs(b[1]-baton_rad)+abs(b[2]-baton_tan))[3]
 
-    ex,ey=polar_point(cx,cy,round_center*R,12);tri=component_contour(gray,ex,ey,.18*R,'triangle 12');tri_center,tri_rad,tri_tan=radial_tangent_extents(tri,cx,cy,12,R)
-    if not (.68<tri_center<.86 and .09<tri_rad<.26 and .045<tri_tan<.15): raise RuntimeError(f'Implausible triangle {tri_center:.4f}/{tri_rad:.4f}/{tri_tan:.4f}')
-    tri_path=path_points(tri,R,12,max_points=18);print(f'CAL triangle: centerR={tri_center:.5f} radialHalf={tri_rad:.5f} tangHalf={tri_tan:.5f}')
+    tri_center,tri_rad,tri_tan,tri_path=measure_triangle(gray,cx,cy,R,round_center);print(f'CAL triangle: centerR={tri_center:.5f} radialHalf={tri_rad:.5f} tangHalf={tri_tan:.5f}')
 
     java=f'''package com.watchalign.mobile;\n\n/** AUTO-GENERATED from first-party Rolex 126710BLNR catalogue fixture by calibrate_gmt_master.py. */\nfinal class Gmt126710BlnrMeasured {{\n  static final String ID="126710BLNR-official-trace-v1";\n  static final double DIAL_EDGE_R=1.0;\n  static final double MARKER_CENTER_R={round_center:.7f};\n  static final double BATON_CENTER_R={baton_center:.7f};\n  static final double TRI_CENTER_R={tri_center:.7f};\n  static final float[][] ROUND_OUTER={{{fmt_arr(rp)}}};\n  static final float[][] BATON_OUTER={{{fmt_arr(bp)}}};\n  static final float[][] TRI_OUTER={{{fmt_arr(tri_path)}}};\n  private Gmt126710BlnrMeasured(){{}}\n}}\n'''
     OUT.write_text(java,encoding='utf-8');print('CAL medians:',round_center,round_rad,round_tan,baton_center,baton_rad,baton_tan);print('CAL wrote',OUT)
