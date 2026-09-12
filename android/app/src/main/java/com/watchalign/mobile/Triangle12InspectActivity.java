@@ -1,6 +1,7 @@
 package com.watchalign.mobile;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -19,7 +20,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** Alpha48: auto-seeded 12 marker relation check with editable five-point measurement. */
+/** Alpha50: editable 12 marker relation check feeding a combined final QC result. */
 public class Triangle12InspectActivity extends Activity {
     private Bitmap base; private PerspectiveMasterRenderer.Pose pose; private MeasureView measureView;
     private TextView result; private Button stepButton; private boolean fine=true;
@@ -30,11 +31,11 @@ public class Triangle12InspectActivity extends Activity {
         FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.BLACK);measureView=new MeasureView();root.addView(measureView,new FrameLayout.LayoutParams(-1,-1));
         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(6),dp(8),dp(6));top.setBackgroundColor(0xE008111F);
         Button back=btn("Back");back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(72),dp(46)));
-        TextView title=txt("12 relation auto-seed · α48",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
+        TextView title=txt("12 relation check · α50",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
         Button reset=btn("Auto seed");reset.setOnClickListener(v->{measureView.autoSeed();updateResult();});top.addView(reset,new LinearLayout.LayoutParams(dp(88),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(8),dp(3),dp(8),dp(5));bottom.setBackgroundColor(0xEE08111F);
-        TextView hint=txt("Five points are pre-positioned from the aligned gen geometry. Check and adjust: 1 LEFT BASE, 2 RIGHT BASE, 3 APEX, 4 INNER TIP OF 60, 5 CROWN TOP.",10);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(40)));
+        TextView hint=txt("Check and adjust: 1 LEFT BASE, 2 RIGHT BASE, 3 APEX, 4 INNER TIP OF 60, 5 CROWN TOP.",10);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(34)));
         result=txt("",11);result.setGravity(Gravity.CENTER);bottom.addView(result,new LinearLayout.LayoutParams(-1,dp(72)));
 
         LinearLayout row1=new LinearLayout(this);row1.setGravity(Gravity.CENTER);
@@ -44,8 +45,9 @@ public class Triangle12InspectActivity extends Activity {
 
         LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER_VERTICAL);stepButton=btn("Fine 0.25 px");stepButton.setOnClickListener(v->{fine=!fine;stepButton.setText(fine?"Fine 0.25 px":"Coarse 1 px");});controls.addView(stepButton,new LinearLayout.LayoutParams(dp(118),dp(42)));
         Button left=btn("◀"),up=btn("▲"),down=btn("▼"),right=btn("▶");setupRepeat(left,-1,0);setupRepeat(up,0,-1);setupRepeat(down,0,1);setupRepeat(right,1,0);controls.addView(left,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(up,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(down,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(right,new LinearLayout.LayoutParams(0,dp(42),1));bottom.addView(controls);
-        TextView caveat=txt("Auto seed is only a starting suggestion. Final QC uses your corrected points against the supplied front-on genuine reference, not Rolex factory tolerances.",9);caveat.setGravity(Gravity.CENTER);bottom.addView(caveat,new LinearLayout.LayoutParams(-1,dp(48)));
-        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(284),Gravity.BOTTOM));setContentView(root);measureView.autoSeed();updateResult();
+        Button finishQc=btn("Finish QC · combined result");finishQc.setBackgroundColor(Color.rgb(50,213,242));finishQc.setTextColor(Color.rgb(4,32,42));finishQc.setOnClickListener(v->openFinalQc());bottom.addView(finishQc,new LinearLayout.LayoutParams(-1,dp(46)));
+        TextView caveat=txt("Final QC uses your corrected points against the supplied front-on genuine reference, not Rolex factory tolerances.",9);caveat.setGravity(Gravity.CENTER);bottom.addView(caveat,new LinearLayout.LayoutParams(-1,dp(38)));
+        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(322),Gravity.BOTTOM));setContentView(root);measureView.autoSeed();updateResult();
     }
 
     private void setupRepeat(Button b,float dx,float dy){Handler h=new Handler(Looper.getMainLooper());Runnable r=new Runnable(){@Override public void run(){nudge(dx,dy);h.postDelayed(this,80);}};b.setOnTouchListener((v,e)->{int a=e.getActionMasked();if(a==MotionEvent.ACTION_DOWN){nudge(dx,dy);h.postDelayed(r,330);return true;}if(a==MotionEvent.ACTION_UP||a==MotionEvent.ACTION_CANCEL){h.removeCallbacks(r);return true;}return true;});}
@@ -53,7 +55,7 @@ public class Triangle12InspectActivity extends Activity {
 
     private void updateResult(){
         if(result==null||measureView==null)return;if(!measureView.complete()){result.setText("Set all 5 points. Selected: "+measureView.selectedName());return;}
-        Triangle12RelationalMetric.Result m=measureView.metric();
+        Triangle12RelationalMetric.Result m=measureView.metric();InspectionImageStore.setTriangleResult(measureView.copyActual(),m);
         float bg=(m.baseGapRatio-GenTriangle12RelationalReference.BASE_TO_60_INNER_OVER_BASE)*100f;
         float ag=(m.apexGapRatio-GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE)*100f;
         String baseText=Math.abs(bg)<0.5f?"base-to-60 gap ≈ gen":bg>0?String.format("base-to-60 gap %.1f%% BW LARGER",bg):String.format("base-to-60 gap %.1f%% BW SMALLER",-bg);
@@ -62,6 +64,8 @@ public class Triangle12InspectActivity extends Activity {
         String rot=Math.abs(m.rotationDeg)<.03f?"rotation 0.00°":String.format("rotation %.2f° %s",Math.abs(m.rotationDeg),m.rotationDeg>0?"clockwise":"counter-clockwise");
         result.setText(radial+"\n"+baseText+" · "+crownText+"\n"+rot+String.format(" · lateral %+.2f px",m.lateralPx));
     }
+
+    private void openFinalQc(){if(!measureView.complete())return;Triangle12RelationalMetric.Result m=measureView.metric();InspectionImageStore.setTriangleResult(measureView.copyActual(),m);startActivity(new Intent(this,FinalQcActivity.class));}
 
     private final class MeasureView extends View {
         final PointF[] actual=new PointF[5];final boolean[] set={false,false,false,false,false};int selected=0;
@@ -72,22 +76,14 @@ public class Triangle12InspectActivity extends Activity {
             float half=Math.max(64f,dialR*.43f);cropLeft=Math.max(0,p12.x-half);cropRight=Math.min(base.getWidth(),p12.x+half);cropTop=Math.max(0,p12.y-half*.45f);cropBottom=Math.min(base.getHeight(),p12.y+half*1.30f);label.setTextSize(dp(9));label.setFakeBoldText(true);
             setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){PointF q=screenToImage(e.getX(),e.getY());if(q!=null){int near=nearestSet(q);if(near>=0&&dist(q,actual[near])<screenPxToImage(dp(32))){selected=near;}else{actual[selected]=q;set[selected]=true;if(selected<4)selected++;}invalidate();updateResult();}return true;}return true;});
         }
-        void autoSeed(){
-            actual[0]=PerspectiveMasterRenderer.projectPoint(pose,Gmt126710BlnrTriangleReference.LEFT_X,Gmt126710BlnrTriangleReference.LEFT_Y);
-            actual[1]=PerspectiveMasterRenderer.projectPoint(pose,Gmt126710BlnrTriangleReference.RIGHT_X,Gmt126710BlnrTriangleReference.RIGHT_Y);
-            actual[2]=PerspectiveMasterRenderer.projectPoint(pose,Gmt126710BlnrTriangleReference.APEX_X,Gmt126710BlnrTriangleReference.APEX_Y);
-            actual[3]=PerspectiveMasterRenderer.projectPoint(pose,0,-Gmt126710BlnrTriangleReference.MINUTE_INNER_R);
-            float crownY=Gmt126710BlnrTriangleReference.APEX_Y + Gmt126710BlnrTriangleReference.WIDTH_R*GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE;
-            actual[4]=PerspectiveMasterRenderer.projectPoint(pose,0,crownY);
-            for(int i=0;i<5;i++)set[i]=true;selected=0;invalidate();
-        }
+        void autoSeed(){actual[0]=PerspectiveMasterRenderer.projectPoint(pose,Gmt126710BlnrTriangleReference.LEFT_X,Gmt126710BlnrTriangleReference.LEFT_Y);actual[1]=PerspectiveMasterRenderer.projectPoint(pose,Gmt126710BlnrTriangleReference.RIGHT_X,Gmt126710BlnrTriangleReference.RIGHT_Y);actual[2]=PerspectiveMasterRenderer.projectPoint(pose,Gmt126710BlnrTriangleReference.APEX_X,Gmt126710BlnrTriangleReference.APEX_Y);actual[3]=PerspectiveMasterRenderer.projectPoint(pose,0,-Gmt126710BlnrTriangleReference.MINUTE_INNER_R);float crownY=Gmt126710BlnrTriangleReference.APEX_Y + Gmt126710BlnrTriangleReference.WIDTH_R*GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE;actual[4]=PerspectiveMasterRenderer.projectPoint(pose,0,crownY);for(int i=0;i<5;i++)set[i]=true;selected=0;invalidate();}
+        PointF[] copyActual(){PointF[] out=new PointF[5];for(int i=0;i<5;i++)out[i]=actual[i]==null?null:new PointF(actual[i].x,actual[i].y);return out;}
         boolean complete(){for(boolean b:set)if(!b)return false;return true;}boolean hasSelectedPoint(){return set[selected];}
         String selectedName(){return selected==0?"1 Left base":selected==1?"2 Right base":selected==2?"3 Apex":selected==3?"4 Minute 60 inner tip":"5 Crown top";}
-        void select(int i){selected=i;invalidate();updateResult();}void resetActual(){for(int i=0;i<5;i++){set[i]=false;actual[i]=null;}selected=0;invalidate();}
-        void nudge(float dx,float dy){if(!set[selected])return;actual[selected].x+=dx;actual[selected].y+=dy;invalidate();}
+        void select(int i){selected=i;invalidate();updateResult();}void nudge(float dx,float dy){if(!set[selected])return;actual[selected].x+=dx;actual[selected].y+=dy;invalidate();}
         Triangle12RelationalMetric.Result metric(){return Triangle12RelationalMetric.measure(actual[0],actual[1],actual[2],actual[3],actual[4],centre,p12);}
 
-        @Override protected void onDraw(Canvas c){super.onDraw(c);float w=cropRight-cropLeft,h=cropBottom-cropTop;if(w<=1||h<=1)return;float availTop=dp(62),availBottom=getHeight()-dp(288),availH=Math.max(1,availBottom-availTop);drawScale=Math.min(getWidth()/w,availH/h);float dw=w*drawScale,dh=h*drawScale;drawOx=(getWidth()-dw)/2f;drawOy=availTop+(availH-dh)/2f;Rect src=new Rect(Math.round(cropLeft),Math.round(cropTop),Math.round(cropRight),Math.round(cropBottom));RectF dst=new RectF(drawOx,drawOy,drawOx+dw,drawOy+dh);c.drawBitmap(base,src,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
+        @Override protected void onDraw(Canvas c){super.onDraw(c);float w=cropRight-cropLeft,h=cropBottom-cropTop;if(w<=1||h<=1)return;float availTop=dp(62),availBottom=getHeight()-dp(326),availH=Math.max(1,availBottom-availTop);drawScale=Math.min(getWidth()/w,availH/h);float dw=w*drawScale,dh=h*drawScale;drawOx=(getWidth()-dw)/2f;drawOy=availTop+(availH-dh)/2f;Rect src=new Rect(Math.round(cropLeft),Math.round(cropTop),Math.round(cropRight),Math.round(cropBottom));RectF dst=new RectF(drawOx,drawOy,drawOx+dw,drawOy+dh);c.drawBitmap(base,src,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
             drawMinuteAxis(c,-1,"59");drawMinuteAxis(c,0,"60");drawMinuteAxis(c,1,"01");PointF aa=s(PerspectiveMasterRenderer.projectPoint(pose,0,-.52)),bb=s(p12);c.drawLine(aa.x,aa.y,bb.x,bb.y,axis);
             for(int i=0;i<5;i++)if(set[i]){PointF q=s(actual[i]);float r=dp(i==selected?8:5);c.drawCircle(q.x,q.y,r,actualPaint);c.drawText(String.valueOf(i+1),q.x+dp(8),q.y-dp(7),label);}
             if(set[0]&&set[1]){PointF l=s(actual[0]),r=s(actual[1]);c.drawLine(l.x,l.y,r.x,r.y,actualPaint);}if(set[0]&&set[1]&&set[2]){PointF l=s(actual[0]),r=s(actual[1]),ap=s(actual[2]);c.drawLine(l.x,l.y,ap.x,ap.y,actualPaint);c.drawLine(r.x,r.y,ap.x,ap.y,actualPaint);}if(complete())drawGenuineRelationTargets(c);
