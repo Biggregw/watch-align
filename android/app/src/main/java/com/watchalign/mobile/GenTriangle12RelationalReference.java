@@ -7,9 +7,10 @@ package com.watchalign.mobile;
 public final class GenTriangle12RelationalReference {
     private GenTriangle12RelationalReference() {}
 
-    // Perspective-rectified genuine controls now span roughly 0.16-0.19 BW on the
-    // base-to-60 relationship. Keep a little margin around the observed controls.
-    public static final float BASE_TO_60_INNER_OVER_BASE = 0.145f;
+    // Keep the original nominal target for drawing/round-trip regression, but judge
+    // pass/fail against the wider perspective-rectified genuine-control range.
+    // Three genuine runs observed roughly 0.163, 0.169 and 0.190 BW.
+    public static final float BASE_TO_60_INNER_OVER_BASE = 0.125f;
     public static final float BASE_TO_60_MIN = 0.10f;
     public static final float BASE_TO_60_MAX = 0.20f;
 
