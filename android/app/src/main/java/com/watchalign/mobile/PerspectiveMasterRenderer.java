@@ -41,15 +41,17 @@ final class PerspectiveMasterRenderer {
     private static void drawMaster(Canvas c,int width,int height,String modelRef,Pose pose,boolean markers){
         float unit=Math.max(1f,Math.min(width,height)/900f);
         int a=Math.max(0,Math.min(255,Math.round(255*pose.alpha)));
-        int ai=Math.max(0,Math.min(255,Math.round(190*pose.alpha)));
-        int ag=Math.max(0,Math.min(255,Math.round(230*pose.alpha)));
-        Paint outer=paint(Color.rgb(255,25,25),2.0f*unit,a);
-        Paint inner=paint(Color.WHITE,1.15f*unit,ai);
-        Paint guide=paint(Color.rgb(255,40,40),2.05f*unit,ag);
-        Paint centre=paint(Color.rgb(255,225,0),2.35f*unit,255);
+        int ai=Math.max(0,Math.min(255,Math.round(205*pose.alpha)));
+        int ag=Math.max(0,Math.min(255,Math.round(225*pose.alpha)));
+        Paint outer=paint(Color.rgb(255,28,28),1.8f*unit,a);
+        Paint inner=paint(Color.WHITE,1.05f*unit,ai);
+        Paint guide=paint(Color.rgb(255,55,55),1.45f*unit,ag);
+        Paint tick=paint(Color.rgb(255,105,105),0.85f*unit,Math.max(0,Math.min(255,Math.round(175*pose.alpha))));
+        Paint centre=paint(Color.rgb(255,225,0),2.2f*unit,255);
 
         drawCircle(c,pose,Gmt126710BlnrMaster.DIAL_EDGE_R,guide);
         drawCircle(c,pose,Gmt126710BlnrMaster.MINUTE_TRACK_R,guide);
+        drawMinuteTicks(c,pose,tick);
         drawCrosshair(c,pose,centre,unit);
         if(!markers)return;
 
@@ -63,14 +65,27 @@ final class PerspectiveMasterRenderer {
             drawRect(c,pose,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.BATON_TANGENTIAL_HALF,Gmt126710BlnrMaster.BATON_RADIAL_HALF,ang,outer);
             drawRect(c,pose,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.BATON_LUME_TANGENTIAL_HALF,Gmt126710BlnrMaster.BATON_LUME_RADIAL_HALF,ang,inner);
         }
-        drawTriangle(c,pose,outer,false);drawTriangle(c,pose,inner,true);
+        drawTriangle(c,pose,outer,false);
+        drawTriangle(c,pose,inner,true);
+    }
+
+    private static void drawMinuteTicks(Canvas c,Pose p,Paint paint){
+        for(int i=0;i<60;i++){
+            double a=Math.toRadians(i*6.0-90.0);
+            double in=Gmt126710BlnrMaster.MINUTE_TICK_INNER_R;
+            double out=Gmt126710BlnrMaster.MINUTE_TICK_OUTER_R;
+            if(i%5==0)in-=0.012;
+            PointF p1=project(p,in*Math.cos(a),in*Math.sin(a));
+            PointF p2=project(p,out*Math.cos(a),out*Math.sin(a));
+            c.drawLine(p1.x,p1.y,p2.x,p2.y,paint);
+        }
     }
 
     private static void drawCrosshair(Canvas c,Pose p,Paint paint,float unit){
-        float r=11f*unit;
+        float r=10f*unit;
         c.drawLine(p.centerX-r,p.centerY,p.centerX+r,p.centerY,paint);
         c.drawLine(p.centerX,p.centerY-r,p.centerX,p.centerY+r,paint);
-        c.drawCircle(p.centerX,p.centerY,3.5f*unit,paint);
+        c.drawCircle(p.centerX,p.centerY,3.3f*unit,paint);
     }
 
     private static PointF project(Pose p,double x,double y){
@@ -88,7 +103,7 @@ final class PerspectiveMasterRenderer {
         return new PointF(p.centerX+(float)(p.scalePx*xr*perspective),p.centerY+(float)(p.scalePx*yr*perspective));
     }
     private static void drawCircle(Canvas c,Pose p,double r,Paint paint){Path path=new Path();for(int i=0;i<=180;i++){double a=2*Math.PI*i/180.0;PointF q=project(p,r*Math.cos(a),r*Math.sin(a));if(i==0)path.moveTo(q.x,q.y);else path.lineTo(q.x,q.y);}c.drawPath(path,paint);}
-    private static void drawRound(Canvas c,Pose p,double rr,double size,double a,Paint paint){double cx=rr*Math.cos(a),cy=rr*Math.sin(a);Path path=new Path();for(int i=0;i<=48;i++){double q=2*Math.PI*i/48.0;PointF z=project(p,cx+size*Math.cos(q),cy+size*Math.sin(q));if(i==0)path.moveTo(z.x,z.y);else path.lineTo(z.x,z.y);}path.close();c.drawPath(path,paint);}
+    private static void drawRound(Canvas c,Pose p,double rr,double size,double a,Paint paint){double cx=rr*Math.cos(a),cy=rr*Math.sin(a);Path path=new Path();for(int i=0;i<=64;i++){double q=2*Math.PI*i/64.0;PointF z=project(p,cx+size*Math.cos(q),cy+size*Math.sin(q));if(i==0)path.moveTo(z.x,z.y);else path.lineTo(z.x,z.y);}path.close();c.drawPath(path,paint);}
     private static void drawRect(Canvas c,Pose p,double rr,double tang,double radial,double a,Paint paint){double cx=rr*Math.cos(a),cy=rr*Math.sin(a),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;double[][] pts={{cx-ux*radial-vx*tang,cy-uy*radial-vy*tang},{cx-ux*radial+vx*tang,cy-uy*radial+vy*tang},{cx+ux*radial+vx*tang,cy+uy*radial+vy*tang},{cx+ux*radial-vx*tang,cy+uy*radial-vy*tang}};drawPoly(c,p,pts,paint);}
     private static void drawTriangle(Canvas c,Pose p,Paint paint,boolean lume){double a=Gmt126710BlnrMaster.angleForHour(12),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;double center=lume?Gmt126710BlnrMaster.TRI_LUME_CENTER_R:Gmt126710BlnrMaster.TRI_CENTER_R;double baseOut=lume?Gmt126710BlnrMaster.TRI_LUME_BASE_OUTWARD:Gmt126710BlnrMaster.TRI_BASE_OUTWARD;double apexIn=lume?Gmt126710BlnrMaster.TRI_LUME_APEX_INWARD:Gmt126710BlnrMaster.TRI_APEX_INWARD;double half=lume?Gmt126710BlnrMaster.TRI_LUME_HALF_BASE:Gmt126710BlnrMaster.TRI_HALF_BASE;double cx=center*ux,cy=center*uy;double[][] pts={{cx+ux*baseOut+vx*half,cy+uy*baseOut+vy*half},{cx+ux*baseOut-vx*half,cy+uy*baseOut-vy*half},{cx-ux*apexIn,cy-uy*apexIn}};drawPoly(c,p,pts,paint);}
     private static void drawPoly(Canvas c,Pose p,double[][] pts,Paint paint){Path path=new Path();for(int i=0;i<pts.length;i++){PointF q=project(p,pts[i][0],pts[i][1]);if(i==0)path.moveTo(q.x,q.y);else path.lineTo(q.x,q.y);}path.close();c.drawPath(path,paint);}
