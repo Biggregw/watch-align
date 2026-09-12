@@ -18,6 +18,7 @@ on:
       - feature/android-alpha25-fullscreen-inspector
       - feature/android-alpha26-fixed-gmt-master
       - feature/android-alpha27-visual-qc-master
+      - feature/android-alpha28-calibrated-red-master
   workflow_dispatch:
 
 permissions:
@@ -52,12 +53,13 @@ jobs:
           grep -q 'Hold to blink' app/src/main/java/com/watchalign/mobile/FullscreenInspectActivity.java
           grep -q 'setImageBitmapPreserveZoom' app/src/main/java/com/watchalign/mobile/ZoomableImageView.java
           grep -q 'Gmt126710BlnrMaster' app/src/main/java/com/watchalign/mobile/PerspectiveGmtOverlay.java
-          grep -q '126710BLNR-visual-master-v2' app/src/main/java/com/watchalign/mobile/Gmt126710BlnrMaster.java
-          grep -q 'Genuine 12 marker orientation' app/src/main/java/com/watchalign/mobile/PerspectiveGmtOverlay.java
-          grep -q '1.3.0-alpha27' app/src/main/java/com/watchalign/mobile/MainActivity.java
-          grep -q '1.3.0-alpha27' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
-          grep -q "versionCode 13027" app/build.gradle
-          grep -q "versionName '1.3.0-alpha27'" app/build.gradle
+          grep -q '126710BLNR-visual-master-v3' app/src/main/java/com/watchalign/mobile/Gmt126710BlnrMaster.java
+          grep -q 'bright red' app/src/main/java/com/watchalign/mobile/PerspectiveGmtOverlay.java
+          grep -q 'Date aperture intentionally omitted' app/src/main/java/com/watchalign/mobile/PerspectiveGmtOverlay.java
+          grep -q '1.3.0-alpha28' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q '1.3.0-alpha28' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
+          grep -q "versionCode 13028" app/build.gradle
+          grep -q "versionName '1.3.0-alpha28'" app/build.gradle
       - name: Run Android unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
       - name: Fetch exact-model official genuine fixtures
@@ -73,14 +75,14 @@ jobs:
         run: gradle :app:assembleDebug --stacktrace
       - name: Prepare working APK
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha27.apk
-          sha256sum WatchAlign-Android-1.3.0-alpha27.apk > SHA256SUMS-Android.txt
+          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha28.apk
+          sha256sum WatchAlign-Android-1.3.0-alpha28.apk > SHA256SUMS-Android.txt
       - name: Upload working APK
         uses: actions/upload-artifact@v4
         with:
-          name: WatchAlign-Android-1.3.0-alpha27
+          name: WatchAlign-Android-1.3.0-alpha28
           path: |
-            android/WatchAlign-Android-1.3.0-alpha27.apk
+            android/WatchAlign-Android-1.3.0-alpha28.apk
             android/SHA256SUMS-Android.txt
           if-no-files-found: error
           retention-days: 30
