@@ -3,35 +3,46 @@ package com.watchalign.mobile;
 /**
  * Fixed Watch Align visual master for Rolex GMT-Master II 126710BLNR.
  * Coordinates are normalized to dial radius. +x=3 o'clock, +y=6 o'clock.
- * This is a Watch Align calibrated inspection master, not Rolex factory CAD.
+ *
+ * v5 was rebuilt against the official Rolex 126710BLNR front view and
+ * cross-checked against multiple genuine front-on dealer photographs.
+ * It is a calibrated visual reference, not Rolex factory CAD.
  */
 final class Gmt126710BlnrMaster {
-    static final String ID = "126710BLNR-visual-master-v4";
+    static final String ID = "126710BLNR-reference-calibrated-v5";
 
+    // Canonical dial geometry. The overlay is fitted to these stable rings first.
     static final double DIAL_EDGE_R = 1.000;
-    static final double MINUTE_TRACK_R = 0.925;
-    static final double MARKER_CENTER_R = 0.755;
+    static final double MINUTE_TRACK_R = 0.924;
+    static final double MINUTE_TICK_INNER_R = 0.884;
+    static final double MINUTE_TICK_OUTER_R = 0.928;
 
-    // Round applied markers were already fitting well in alpha28, so alpha29 leaves them unchanged.
-    static final double ROUND_OUTER_R = 0.070;
-    static final double ROUND_LUME_R = 0.049;
+    // Genuine front-on references place the applied-marker centres at ~75% dial radius.
+    static final double MARKER_CENTER_R = 0.748;
 
-    // Alpha29 lengthens the 6/9 applied bodies substantially in the radial direction.
-    // Width remains unchanged because the alpha28 screenshot showed the tangential width was already close.
-    static final double BATON_RADIAL_HALF = 0.128;
-    static final double BATON_TANGENTIAL_HALF = 0.044;
-    static final double BATON_LUME_RADIAL_HALF = 0.083;
-    static final double BATON_LUME_TANGENTIAL_HALF = 0.026;
+    // Circular applied markers. The previous master made the lume disc too small.
+    // v5 uses a thinner metal surround matching the genuine reference proportions.
+    static final double ROUND_OUTER_R = 0.068;
+    static final double ROUND_LUME_R = 0.053;
 
-    // 12 triangle. Genuine orientation is BASE OUTWARD, APEX INWARD.
-    // Alpha29 widens the base and extends the apex further inward while retaining the established pose.
-    static final double TRI_CENTER_R = 0.738;
-    static final double TRI_BASE_OUTWARD = 0.106;
-    static final double TRI_APEX_INWARD = 0.190;
-    static final double TRI_HALF_BASE = 0.096;
-    static final double TRI_LUME_CENTER_R = 0.738;
-    static final double TRI_LUME_BASE_OUTWARD = 0.079;
-    static final double TRI_LUME_APEX_INWARD = 0.140;
+    // 6 / 9 applied batons. Independent body/lume dimensions preserve the genuine
+    // thin metal border instead of the undersized lume rectangle used previously.
+    static final double BATON_RADIAL_HALF = 0.118;
+    static final double BATON_TANGENTIAL_HALF = 0.042;
+    static final double BATON_LUME_RADIAL_HALF = 0.101;
+    static final double BATON_LUME_TANGENTIAL_HALF = 0.031;
+
+    // 12 o'clock applied triangle. BASE OUTWARD, APEX INWARD.
+    // The alpha29/32 triangle was intentionally over-extended during manual tuning;
+    // v5 returns to proportions measured from genuine front-on reference imagery.
+    static final double TRI_CENTER_R = 0.748;
+    static final double TRI_BASE_OUTWARD = 0.090;
+    static final double TRI_APEX_INWARD = 0.158;
+    static final double TRI_HALF_BASE = 0.083;
+
+    static final double TRI_LUME_CENTER_R = 0.748;
+    static final double TRI_LUME_BASE_OUTWARD = 0.071;
+    static final double TRI_LUME_APEX_INWARD = 0.132;
     static final double TRI_LUME_HALF_BASE = 0.064;
 
     static boolean supports(String modelRef) {
