@@ -45,8 +45,8 @@ public class MainActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Color.rgb(8,17,31));
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("WATCH ALIGN · STANDALONE",12,Color.rgb(50,213,242)));TextView h1=text("Watch Align Android",28,Color.WHITE);h1.setPadding(0,dp(4),0,0);root.addView(h1);
-        root.addView(text("V1.3.0-alpha46 · local 12-marker relation check",14,Color.rgb(158,176,201)));
-        root.addView(text("Alpha46 keeps four-edge perspective as the default and fixes the 12 o'clock QC calculation. The precision check now compares the triangle directly with the local 60-minute marker and printed Rolex crown, with corrected radial sign conventions and a simpler QC result.",13,Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha47 · automatic perspective anchor seeding",14,Color.rgb(158,176,201)));
+        root.addView(text("Alpha47 keeps perspective permanently enabled and now attempts to place 12, 3, 6 and 9 automatically from the detected dial ellipse. The automatic points are suggestions only: inspect them, fine-nudge anything that is off, then run the local 12-marker relation check.",13,Color.rgb(158,176,201)));
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ModelCatalog.labels()));root.addView(model,lp(-1,dp(54),10));
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         Button pickRef=button("Choose genuine reference photos (optional)");pickRef.setOnClickListener(v->pickReferences());root.addView(pickRef,lp(-1,dp(52),6));
@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
         Button analyse=button("Build automatic QC overlay");analyse.setOnClickListener(v->analyse());root.addView(analyse,lp(-1,dp(52),6));
         status=text("Choose a watch photo to begin.",14,Color.rgb(158,176,201));root.addView(status);
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(Color.rgb(8,17,31));root.addView(preview,lp(-1,-2,12));
-        root.addView(text("Recommended route: Align ruler. Place 12, 3, 6 and 9 on the same dial edge, fine-nudge and lock them, confirm CENTER CHECK on the pinion, then use the 12 triangle relation check from inspection.",12,Color.rgb(158,176,201)));
+        root.addView(text("Recommended route: Align ruler. The app will try to seed 12, 3, 6 and 9 for you. Check the four points, adjust only what is wrong, confirm CENTER CHECK on the pinion, then use the 12 triangle relation check from inspection.",12,Color.rgb(158,176,201)));
 
         LinearLayout row1=new LinearLayout(this);row1.setOrientation(LinearLayout.HORIZONTAL);
         watchButton=smallButton("Diagnostics");perspectiveButton=smallButton("Auto template");rectifiedButton=smallButton("Rectified");
