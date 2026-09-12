@@ -56,8 +56,6 @@ def path_points(cnt,R,hour,max_points=28):
     return [((x-mcx)*vx/R+(y-mcy)*vy/R,(x-mcx)*ux/R+(y-mcy)*uy/R) for x,y in simp]
 
 def sample_local(gray,ex,ey,R,hour,t_half=.11,r_half=.18):
-    # Columns are tangential, rows radial. This gives us clean 1-D edge profiles even
-    # when the 6/9 metal body and lume are separate connected components.
     a=math.radians(hour*30-90);ux,uy=math.cos(a),math.sin(a);vx,vy=-uy,ux
     nt=max(61,int(2*t_half*R)+1); nr=max(101,int(2*r_half*R)+1)
     tv=np.linspace(-t_half*R,t_half*R,nt);rv=np.linspace(-r_half*R,r_half*R,nr);T,RV=np.meshgrid(tv,rv)
@@ -66,26 +64,23 @@ def sample_local(gray,ex,ey,R,hour,t_half=.11,r_half=.18):
     return cv2.GaussianBlur(patch,(3,3),0),tv/R,rv/R
 
 def best_edge_pair(profile,coords,min_half,max_half):
-    p=cv2.GaussianBlur(profile.astype(np.float32).reshape(-1,1),(1,7),0).ravel();mid=np.argmin(abs(coords));best=None;bestscore=-1
+    p=cv2.GaussianBlur(profile.astype(np.float32).reshape(-1,1),(1,7),0).ravel();best=None;bestscore=-1e30
     left=np.where((coords>=-max_half)&(coords<=-min_half))[0];right=np.where((coords>=min_half)&(coords<=max_half))[0]
     for i in left:
         for j in right:
             symmetry=abs(coords[i]+coords[j]);score=float(p[i]+p[j]-4.0*symmetry*p.max())
             if score>bestscore: best=(i,j);bestscore=score
-    if best is None: raise RuntimeError('No edge pair');return best
+    if best is None:
+        raise RuntimeError('No edge pair')
+    return best
 
 def measure_baton(gray,cx,cy,R,hour,roughR):
     ex,ey=polar_point(cx,cy,roughR*R,hour);patch,tcoords,rcoords=sample_local(gray,ex,ey,R,hour)
-    # Derivative normal to each pair of long/short rectangle sides.
-    pr=np.mean(np.abs(np.diff(patch.astype(np.float32),axis=0)),axis=1); pr=np.r_[pr,pr[-1]]
-    pt=np.mean(np.abs(np.diff(patch.astype(np.float32),axis=1)),axis=0); pt=np.r_[pt,pt[-1]]
+    pr=np.mean(np.abs(np.diff(patch.astype(np.float32),axis=0)),axis=1);pr=np.r_[pr,pr[-1]]
+    pt=np.mean(np.abs(np.diff(patch.astype(np.float32),axis=1)),axis=0);pt=np.r_[pt,pt[-1]]
     ri,rj=best_edge_pair(pr,rcoords,.075,.155);ti,tj=best_edge_pair(pt,tcoords,.025,.075)
-    r0,r1=float(rcoords[ri]),float(rcoords[rj]);t0,t1=float(tcoords[ti]),float(tcoords[tj])
-    roff=(r0+r1)/2;toff=(t0+t1)/2;rh=(r1-r0)/2;th=(t1-t0)/2
-    centerR=roughR+roff
-    # local path around the measured outer metal body
-    path=[(t0-toff,r0-roff),(t1-toff,r0-roff),(t1-toff,r1-roff),(t0-toff,r1-roff)]
-    return centerR,rh,th,path
+    r0,r1=float(rcoords[ri]),float(rcoords[rj]);t0,t1=float(tcoords[ti]),float(tcoords[tj]);roff=(r0+r1)/2;toff=(t0+t1)/2;rh=(r1-r0)/2;th=(t1-t0)/2
+    centerR=roughR+roff;path=[(t0-toff,r0-roff),(t1-toff,r0-roff),(t1-toff,r1-roff),(t0-toff,r1-roff)];return centerR,rh,th,path
 
 def fmt_arr(points): return ','.join('{%.6ff,%.6ff}'%(x,y) for x,y in points)
 
