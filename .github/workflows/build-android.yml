@@ -38,26 +38,10 @@ jobs:
           grep -q 'setOverlay' app/src/main/java/com/watchalign/mobile/InspectionImageStore.java
           grep -q 'Hold to blink' app/src/main/java/com/watchalign/mobile/FullscreenInspectActivity.java
           grep -q 'setImageBitmapPreserveZoom' app/src/main/java/com/watchalign/mobile/ZoomableImageView.java
-          grep -q 'Gmt126710BlnrMeasured' app/src/main/java/com/watchalign/mobile/PerspectiveMasterRenderer.java
+          grep -q 'Community-style index alignment ruler' app/src/main/java/com/watchalign/mobile/PerspectiveMasterRenderer.java
           grep -q 'CORE_VERSION' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
+          grep -q "abiFilters 'arm64-v8a'" app/build.gradle
           grep -q 'versionName' app/build.gradle
-      - name: Fetch exact-model official genuine fixtures
-        run: python3 fetch_genuine_fixtures.py
-      - name: Validate genuine fixtures
-        run: |
-          test -s app/src/androidTest/assets/genuine/126710BLNR/official_00.jpg
-          test -s app/src/androidTest/assets/genuine/124060/official_00.jpg
-          grep -q 'rolex' app/src/androidTest/assets/genuine/126710BLNR/sources.tsv
-          grep -q 'rolex' app/src/androidTest/assets/genuine/124060/sources.tsv
-          echo 'Official genuine fixtures prepared.'
-      - name: Install master calibration dependencies
-        run: python3 -m pip install --quiet opencv-python-headless numpy
-      - name: Generate official traced GMT master
-        run: |
-          python3 calibrate_gmt_master.py
-          grep -q 'official-trace-v1' app/src/main/java/com/watchalign/mobile/Gmt126710BlnrMeasured.java
-          grep -q 'ROUND_OUTER' app/src/main/java/com/watchalign/mobile/Gmt126710BlnrMeasured.java
-          cat app/src/main/java/com/watchalign/mobile/Gmt126710BlnrMeasured.java
       - name: Run Android unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
       - name: Build standalone APK
@@ -72,6 +56,7 @@ jobs:
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk "WatchAlign-Android-${{ steps.version.outputs.version }}.apk"
           sha256sum "WatchAlign-Android-${{ steps.version.outputs.version }}.apk" > SHA256SUMS-Android.txt
+          ls -lh "WatchAlign-Android-${{ steps.version.outputs.version }}.apk"
       - name: Upload working APK
         uses: actions/upload-artifact@v4
         with:
