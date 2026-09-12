@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha28: visual-first GMT inspection using a calibrated red model-specific master. */
+/** Alpha29: visual-first GMT inspection using calibrated marker-shape geometry. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha28";
+    public static final String CORE_VERSION="1.3.0-alpha29";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -37,7 +37,7 @@ public final class WatchAlignCoreV13 {
         String report;
         if(canonicalGmt){
             report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nVISUAL INSPECTION MODE\n"
-                    +"Alpha28 keeps the projected model master as the primary QC surface. The 126710BLNR master now uses bright red outer marker outlines, thinner strokes, a longer inward 12 triangle, larger applied-marker body dimensions and no uncalibrated date target.\n"
+                    +"Alpha29 freezes the round-marker geometry from alpha28 and concentrates on the three shapes that still visibly missed the applied markers: the 12 triangle and the 6/9 batons. The 12 outline is wider and extends farther inward; the 6/9 bodies are lengthened radially.\n"
                     +perspectiveReport
                     +"\nAutomated GL/RL scoring and ranked marker findings remain hidden. Diagnostics is retained only as a development view.\n";
         }else{
