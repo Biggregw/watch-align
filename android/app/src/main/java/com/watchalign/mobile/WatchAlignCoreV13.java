@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha23: visual-first perspective-corrected GMT template plus legacy diagnostic QC. */
+/** Alpha24 stabilisation: overlay-first GMT inspection, legacy measurements kept off the main report. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha23";
+    public static final String CORE_VERSION="1.3.0-alpha24";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -37,23 +37,26 @@ public final class WatchAlignCoreV13 {
         Bitmap guide=QcGuideRenderer.render(watch);
         QcExtendedAnalyzer.Result ext=QcExtendedAnalyzer.analyse(watch,primary,modelRef);
         boolean canonicalGmt=CanonicalGmtGeometryAnalyzer.supports(modelRef);
-        String baselineReport;
-        if(canonicalGmt){baselineReport=CanonicalGmtGeometryAnalyzer.analyse(watch,refs,modelRef).report;}
-        else{baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;}
         Bitmap combined=QcOverlayComposer.compose(watch,guide,ext.annotated);
 
         PerspectiveGmtOverlay.Result perspective=canonicalGmt?PerspectiveGmtOverlay.build(watch,modelRef):null;
         String perspectiveReport=perspective==null&&canonicalGmt
-                ?"\n\nPERSPECTIVE GMT OVERLAY\nUnavailable: a stable dial ellipse could not be fitted. Use a clearer photo or manual overlay alignment.\n"
+                ?"\n\nPERSPECTIVE GMT OVERLAY\nUnavailable: a stable dial ellipse could not be fitted. Use a clearer photo.\n"
                 :perspective==null?"":perspective.report;
 
-        String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)
-                + "\n\nQC guide: cyan=dial boundary; yellow=marker-ring consensus; grey spokes=roll-corrected ideal hour axes; white x=ideal marker position; coloured circle=measured marker position."
-                + ext.report + baselineReport + perspectiveReport
-                + (canonicalGmt
-                ? "\nInterpretation: alpha23 remains visual-first. The primary GMT inspection surface is a canonical template projected into the photographed dial perspective from an independently fitted dial ellipse. Hour markers are not used to fit the template. Rectified view normalizes the dial to a front-on plane. Automated marker/date/cyclops measurements remain secondary diagnostics rather than a GL/RL score."
-                : "\nInterpretation: non-GMT models continue to use the existing reference-distribution diagnostics.");
-        String report=QcSummaryFormatter.prependSummary(detail);
+        String report;
+        if(canonicalGmt){
+            report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nINSPECTION MODE\n"
+                    +"Alpha24 is overlay-first. Use Native Template as the primary QC surface, pinch/drag to inspect details, and use Rectified for a front-on view.\n"
+                    +perspectiveReport
+                    +"\nAutomated GL/RL scoring and ranked marker findings are intentionally hidden in this build because they were producing misleading priorities. The Diagnostics button retains the legacy visual annotations for development only.\n";
+        }else{
+            String baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;
+            String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)+ext.report+baselineReport
+                    +"\nInterpretation: non-GMT models continue to use the existing reference-distribution diagnostics.";
+            report=QcSummaryFormatter.prependSummary(detail);
+        }
+
         return new AnalysisResult(combined,base.reference,base.aligned,
                 perspective==null?null:perspective.nativeOverlay,
                 perspective==null?null:perspective.rectified,
