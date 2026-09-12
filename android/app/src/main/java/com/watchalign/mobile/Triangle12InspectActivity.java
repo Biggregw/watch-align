@@ -20,68 +20,83 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** Alpha44: 3-point 12-marker fit against a clean front-on genuine visual reference. */
+/** Alpha45: triangle measured relative to the actual 60-minute marker and Rolex crown. */
 public class Triangle12InspectActivity extends Activity {
-    private Bitmap base; private PerspectiveMasterRenderer.Pose pose; private TriangleView triangleView;
-    private TextView result,hint; private Button stepButton; private boolean fine=true;
+    private Bitmap base; private PerspectiveMasterRenderer.Pose pose; private MeasureView measureView;
+    private TextView result; private Button stepButton; private boolean fine=true;
 
     @Override public void onCreate(Bundle state){
         super.onCreate(state);getWindow().setStatusBarColor(Color.rgb(8,17,31));getWindow().setNavigationBarColor(Color.rgb(8,17,31));
         base=InspectionImageStore.baseBitmap;pose=InspectionImageStore.alignedPose==null?null:InspectionImageStore.alignedPose.copy();if(base==null||pose==null){finish();return;}
-        FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.BLACK);triangleView=new TriangleView();root.addView(triangleView,new FrameLayout.LayoutParams(-1,-1));
+        FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.BLACK);measureView=new MeasureView();root.addView(measureView,new FrameLayout.LayoutParams(-1,-1));
         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(6),dp(8),dp(6));top.setBackgroundColor(0xE008111F);
         Button back=btn("Back");back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(72),dp(46)));
-        TextView title=txt("12 triangle vs gen · α44",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
-        Button reset=btn("Reset");reset.setOnClickListener(v->{triangleView.resetActual();updateResult();});top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
+        TextView title=txt("12 triangle relation check · α45",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
+        Button reset=btn("Reset");reset.setOnClickListener(v->{measureView.resetActual();updateResult();});top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
 
-        LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(4),dp(10),dp(7));bottom.setBackgroundColor(0xEE08111F);
-        hint=txt("Tap OUTER METAL corners: 1 LEFT BASE, 2 RIGHT BASE, 3 APEX. Cyan = calibrated front-on genuine reference.",11);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(38)));
-        result=txt("",12);result.setGravity(Gravity.CENTER);bottom.addView(result,new LinearLayout.LayoutParams(-1,dp(66)));
-        LinearLayout select=new LinearLayout(this);select.setGravity(Gravity.CENTER);Button p1=btn("1 Left"),p2=btn("2 Right"),p3=btn("3 Apex");p1.setOnClickListener(v->triangleView.select(0));p2.setOnClickListener(v->triangleView.select(1));p3.setOnClickListener(v->triangleView.select(2));select.addView(p1,new LinearLayout.LayoutParams(0,dp(40),1));select.addView(p2,new LinearLayout.LayoutParams(0,dp(40),1));select.addView(p3,new LinearLayout.LayoutParams(0,dp(40),1));bottom.addView(select);
-        LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER_VERTICAL);stepButton=btn("Fine 0.25 px");stepButton.setOnClickListener(v->{fine=!fine;stepButton.setText(fine?"Fine 0.25 px":"Coarse 1 px");});controls.addView(stepButton,new LinearLayout.LayoutParams(dp(118),dp(44)));
-        Button left=btn("◀"),up=btn("▲"),down=btn("▼"),right=btn("▶");setupRepeat(left,-1,0);setupRepeat(up,0,-1);setupRepeat(down,0,1);setupRepeat(right,1,0);controls.addView(left,new LinearLayout.LayoutParams(0,dp(44),1));controls.addView(up,new LinearLayout.LayoutParams(0,dp(44),1));controls.addView(down,new LinearLayout.LayoutParams(0,dp(44),1));controls.addView(right,new LinearLayout.LayoutParams(0,dp(44),1));bottom.addView(controls);
-        TextView caveat=txt("Reference outer triangle: width 25.0% R, height 30.4% R, base-to-inner-minute-track gap 6.1% R. Measured from a clean front-on genuine 126710BLNR photo, not Rolex factory CAD/tolerance.",9);caveat.setGravity(Gravity.CENTER);bottom.addView(caveat,new LinearLayout.LayoutParams(-1,dp(48)));
-        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(238),Gravity.BOTTOM));setContentView(root);updateResult();
+        LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(8),dp(3),dp(8),dp(5));bottom.setBackgroundColor(0xEE08111F);
+        TextView hint=txt("Tap 1 LEFT BASE, 2 RIGHT BASE, 3 APEX, 4 INNER TIP OF 60-MINUTE MARKER, 5 TOP OF ROLEX CROWN.",10);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(34)));
+        result=txt("",11);result.setGravity(Gravity.CENTER);bottom.addView(result,new LinearLayout.LayoutParams(-1,dp(74)));
+
+        LinearLayout row1=new LinearLayout(this);row1.setGravity(Gravity.CENTER);
+        String[] names={"1 Left","2 Right","3 Apex"};for(int i=0;i<3;i++){final int k=i;Button b=btn(names[i]);b.setOnClickListener(v->measureView.select(k));row1.addView(b,new LinearLayout.LayoutParams(0,dp(38),1));}bottom.addView(row1);
+        LinearLayout row2=new LinearLayout(this);row2.setGravity(Gravity.CENTER);
+        Button p4=btn("4 Minute 60");p4.setOnClickListener(v->measureView.select(3));Button p5=btn("5 Crown top");p5.setOnClickListener(v->measureView.select(4));row2.addView(p4,new LinearLayout.LayoutParams(0,dp(38),1));row2.addView(p5,new LinearLayout.LayoutParams(0,dp(38),1));bottom.addView(row2);
+
+        LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER_VERTICAL);stepButton=btn("Fine 0.25 px");stepButton.setOnClickListener(v->{fine=!fine;stepButton.setText(fine?"Fine 0.25 px":"Coarse 1 px");});controls.addView(stepButton,new LinearLayout.LayoutParams(dp(118),dp(42)));
+        Button left=btn("◀"),up=btn("▲"),down=btn("▼"),right=btn("▶");setupRepeat(left,-1,0);setupRepeat(up,0,-1);setupRepeat(down,0,1);setupRepeat(right,1,0);controls.addView(left,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(up,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(down,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(right,new LinearLayout.LayoutParams(0,dp(42),1));bottom.addView(controls);
+        TextView caveat=txt("Primary comparison is now local and scale-independent: triangle base vs the actual 60-minute marker, and apex vs the actual printed Rolex crown. Genuine ratios come from the supplied front-on gen image, not factory CAD/tolerance.",9);caveat.setGravity(Gravity.CENTER);bottom.addView(caveat,new LinearLayout.LayoutParams(-1,dp(52)));
+        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(284),Gravity.BOTTOM));setContentView(root);updateResult();
     }
 
     private void setupRepeat(Button b,float dx,float dy){Handler h=new Handler(Looper.getMainLooper());Runnable r=new Runnable(){@Override public void run(){nudge(dx,dy);h.postDelayed(this,80);}};b.setOnTouchListener((v,e)->{int a=e.getActionMasked();if(a==MotionEvent.ACTION_DOWN){nudge(dx,dy);h.postDelayed(r,330);return true;}if(a==MotionEvent.ACTION_UP||a==MotionEvent.ACTION_CANCEL){h.removeCallbacks(r);return true;}return true;});}
-    private void nudge(float dx,float dy){if(!triangleView.hasSelectedPoint())return;float s=fine?.25f:1f;triangleView.nudge(dx*s,dy*s);updateResult();}
+    private void nudge(float dx,float dy){if(!measureView.hasSelectedPoint())return;float s=fine?.25f:1f;measureView.nudge(dx*s,dy*s);updateResult();}
 
     private void updateResult(){
-        if(result==null||triangleView==null)return;if(!triangleView.complete()){result.setText("Set all three outer vertices. Selected: "+triangleView.selectedName());return;}
-        Triangle12ShapeMetric.Result m=triangleView.metric();float baseShift=triangleView.baseTrackShiftPx();float basePct=triangleView.dialR>1e-6f?baseShift/triangleView.dialR*100f:0f;
-        String track=Math.abs(baseShift)<.05f?"BASE AT GEN GAP":(baseShift>0?String.format("BASE %.2f px CLOSER TO MINUTE TRACK",baseShift):String.format("BASE %.2f px FARTHER FROM MINUTE TRACK",-baseShift));
-        String lateral=Math.abs(m.lateralPx)<.05f?"60-axis centred":(m.lateralPx>0?String.format("%.2f px right of 60-axis",m.lateralPx):String.format("%.2f px left of 60-axis",-m.lateralPx));
+        if(result==null||measureView==null)return;if(!measureView.complete()){result.setText("Set all 5 points. Selected: "+measureView.selectedName());return;}
+        Triangle12RelationalMetric.Result m=measureView.metric();
+        float bg=(m.baseGapRatio-GenTriangle12RelationalReference.BASE_TO_60_INNER_OVER_BASE)*100f;
+        float ag=(m.apexGapRatio-GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE)*100f;
+        float hg=(m.heightRatio-GenTriangle12RelationalReference.HEIGHT_OVER_BASE)*100f;
+        String baseText=bg>0?String.format("base %.1f%% BW FARTHER from minute track",bg):String.format("base %.1f%% BW CLOSER to minute track",-bg);
+        String crownText=ag>0?String.format("apex-crown gap %.1f%% BW LARGER",ag):String.format("apex-crown gap %.1f%% BW SMALLER",-ag);
         String rot=Math.abs(m.rotationDeg)<.03f?"rotation 0.00°":String.format("rotation %.2f° %s",Math.abs(m.rotationDeg),m.rotationDeg>0?"clockwise":"counter-clockwise");
-        result.setText(track+String.format(" (%+.3f%% R) · ",basePct)+lateral+"\n"+rot+String.format(" · width %+.1f%% · height %+.1f%% · apex centre %+.2f px",m.widthPct,m.heightPct,m.apexCentrePx));
+        result.setText(baseText+" · "+crownText+"\n"+rot+String.format(" · height/base %+5.1f%% vs gen · lateral %+.2f px",hg,m.lateralPx));
     }
 
-    private final class TriangleView extends View {
-        final PointF[] expected=new PointF[3],actual=new PointF[3];final boolean[] set={false,false,false};int selected=0;
+    private final class MeasureView extends View {
+        final PointF[] actual=new PointF[5];final boolean[] set={false,false,false,false,false};int selected=0;
         final PointF centre,p12,p3,p6,p9;final float dialR,cropLeft,cropTop,cropRight,cropBottom;float drawScale,drawOx,drawOy;
-        final Paint axis=stroke(Color.rgb(255,35,35),2),target=stroke(Color.CYAN,2),actualPaint=stroke(Color.rgb(60,255,120),2),minute=stroke(Color.rgb(255,220,40),2),label=fill(Color.WHITE);
-        TriangleView(){super(Triangle12InspectActivity.this);setBackgroundColor(Color.BLACK);
-            float[][] t=Gmt126710BlnrTriangleReference.vertices();
-            for(int i=0;i<3;i++)expected[i]=PerspectiveMasterRenderer.projectPoint(pose,t[i][0],t[i][1]);
+        final Paint axis=stroke(Color.rgb(255,35,35),2),actualPaint=stroke(Color.rgb(60,255,120),2),minute=stroke(Color.rgb(255,220,40),2),target=stroke(Color.CYAN,2),label=fill(Color.WHITE);
+        MeasureView(){super(Triangle12InspectActivity.this);setBackgroundColor(Color.BLACK);
             centre=PerspectiveMasterRenderer.projectPoint(pose,0,0);p12=PerspectiveMasterRenderer.projectPoint(pose,0,-1);p3=PerspectiveMasterRenderer.projectPoint(pose,1,0);p6=PerspectiveMasterRenderer.projectPoint(pose,0,1);p9=PerspectiveMasterRenderer.projectPoint(pose,-1,0);dialR=(dist(centre,p12)+dist(centre,p3)+dist(centre,p6)+dist(centre,p9))/4f;
-            PointF ec=centroid(expected);float half=Math.max(56f,dialR*.36f);cropLeft=Math.max(0,ec.x-half);cropRight=Math.min(base.getWidth(),ec.x+half);cropTop=Math.max(0,ec.y-half);cropBottom=Math.min(base.getHeight(),ec.y+half);label.setTextSize(dp(10));label.setFakeBoldText(true);
-            setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){PointF q=screenToImage(e.getX(),e.getY());if(q!=null){int near=nearestSet(q);if(near>=0&&dist(q,actual[near])<screenPxToImage(dp(34))){selected=near;}else{actual[selected]=q;set[selected]=true;if(selected<2)selected++;}invalidate();updateResult();}return true;}return true;});
+            float half=Math.max(64f,dialR*.43f);cropLeft=Math.max(0,p12.x-half);cropRight=Math.min(base.getWidth(),p12.x+half);cropTop=Math.max(0,p12.y-half*.45f);cropBottom=Math.min(base.getHeight(),p12.y+half*1.30f);label.setTextSize(dp(9));label.setFakeBoldText(true);
+            setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){PointF q=screenToImage(e.getX(),e.getY());if(q!=null){int near=nearestSet(q);if(near>=0&&dist(q,actual[near])<screenPxToImage(dp(32))){selected=near;}else{actual[selected]=q;set[selected]=true;if(selected<4)selected++;}invalidate();updateResult();}return true;}return true;});
         }
-        boolean complete(){return set[0]&&set[1]&&set[2];}boolean hasSelectedPoint(){return set[selected];}String selectedName(){return selected==0?"1 Left base":selected==1?"2 Right base":"3 Apex";}void select(int i){selected=i;invalidate();updateResult();}
-        void resetActual(){for(int i=0;i<3;i++){set[i]=false;actual[i]=null;}selected=0;invalidate();}
+        boolean complete(){for(boolean b:set)if(!b)return false;return true;}boolean hasSelectedPoint(){return set[selected];}
+        String selectedName(){return selected==0?"1 Left base":selected==1?"2 Right base":selected==2?"3 Apex":selected==3?"4 Minute 60 inner tip":"5 Crown top";}
+        void select(int i){selected=i;invalidate();updateResult();}void resetActual(){for(int i=0;i<5;i++){set[i]=false;actual[i]=null;}selected=0;invalidate();}
         void nudge(float dx,float dy){if(!set[selected])return;actual[selected].x+=dx;actual[selected].y+=dy;invalidate();}
-        Triangle12ShapeMetric.Result metric(){float[] a=pack(actual),e=pack(expected);PointF ec=centroid(expected);float ox=ec.x-centre.x,oy=ec.y-centre.y;PointF er=new PointF(expected[1].x-expected[0].x,expected[1].y-expected[0].y);return Triangle12ShapeMetric.measure(a,e,ox,oy,er.x,er.y,dialR);}
-        float baseTrackShiftPx(){PointF ab=mid(actual[0],actual[1]),eb=mid(expected[0],expected[1]),ec=centroid(expected);float ox=ec.x-centre.x,oy=ec.y-centre.y,on=(float)Math.hypot(ox,oy);if(on<1e-6f)return 0;ox/=on;oy/=on;return (ab.x-eb.x)*ox+(ab.y-eb.y)*oy;}
-        @Override protected void onDraw(Canvas c){super.onDraw(c);float w=cropRight-cropLeft,h=cropBottom-cropTop;if(w<=1||h<=1)return;float availTop=dp(66),availBottom=getHeight()-dp(244),availH=Math.max(1,availBottom-availTop);drawScale=Math.min(getWidth()/w,availH/h);float dw=w*drawScale,dh=h*drawScale;drawOx=(getWidth()-dw)/2f;drawOy=availTop+(availH-dh)/2f;Rect src=new Rect(Math.round(cropLeft),Math.round(cropTop),Math.round(cropRight),Math.round(cropBottom));RectF dst=new RectF(drawOx,drawOy,drawOx+dw,drawOy+dh);c.drawBitmap(base,src,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
-            drawMinuteAxis(c,-1,"59");drawMinuteAxis(c,0,"60");drawMinuteAxis(c,1,"01");
-            PointF a=s(PerspectiveMasterRenderer.projectPoint(pose,0,-.52)),b=s(p12);c.drawLine(a.x,a.y,b.x,b.y,axis);drawTriangle(c,expected,target);
-            PointF eb=s(mid(expected[0],expected[1]));c.drawText("GEN OUTER BASE",eb.x+dp(8),eb.y-dp(6),label);
-            for(int i=0;i<3;i++){if(set[i]){PointF q=s(actual[i]);float r=dp(i==selected?9:6);c.drawCircle(q.x,q.y,r,actualPaint);c.drawText(String.valueOf(i+1),q.x+dp(9),q.y-dp(8),label);}}if(set[0]&&set[1]){PointF l=s(actual[0]),r=s(actual[1]);c.drawLine(l.x,l.y,r.x,r.y,actualPaint);}if(complete()){PointF l=s(actual[0]),r=s(actual[1]),ap=s(actual[2]);c.drawLine(l.x,l.y,ap.x,ap.y,actualPaint);c.drawLine(r.x,r.y,ap.x,ap.y,actualPaint);}}
-        private void drawMinuteAxis(Canvas c,int minuteOffset,String text){double ang=Math.toRadians(minuteOffset*6.0-90.0),ux=Math.cos(ang),uy=Math.sin(ang);float r0=Gmt126710BlnrTriangleReference.MINUTE_INNER_R,r1=Gmt126710BlnrTriangleReference.MINUTE_OUTER_R;PointF a=s(PerspectiveMasterRenderer.projectPoint(pose,ux*r0,uy*r0)),b=s(PerspectiveMasterRenderer.projectPoint(pose,ux*r1,uy*r1));c.drawLine(a.x,a.y,b.x,b.y,minute);c.drawText(text,b.x+dp(3),b.y+dp(11),label);}
-        private void drawTriangle(Canvas c,PointF[] p,Paint paint){Path path=new Path();PointF a=s(p[0]),b=s(p[1]),d=s(p[2]);path.moveTo(a.x,a.y);path.lineTo(b.x,b.y);path.lineTo(d.x,d.y);path.close();c.drawPath(path,paint);}
-        private int nearestSet(PointF q){int best=-1;float bd=Float.MAX_VALUE;for(int i=0;i<3;i++)if(set[i]){float d=dist(q,actual[i]);if(d<bd){bd=d;best=i;}}return best;}
+        Triangle12RelationalMetric.Result metric(){return Triangle12RelationalMetric.measure(actual[0],actual[1],actual[2],actual[3],actual[4],centre,p12);}
+
+        @Override protected void onDraw(Canvas c){super.onDraw(c);float w=cropRight-cropLeft,h=cropBottom-cropTop;if(w<=1||h<=1)return;float availTop=dp(62),availBottom=getHeight()-dp(288),availH=Math.max(1,availBottom-availTop);drawScale=Math.min(getWidth()/w,availH/h);float dw=w*drawScale,dh=h*drawScale;drawOx=(getWidth()-dw)/2f;drawOy=availTop+(availH-dh)/2f;Rect src=new Rect(Math.round(cropLeft),Math.round(cropTop),Math.round(cropRight),Math.round(cropBottom));RectF dst=new RectF(drawOx,drawOy,drawOx+dw,drawOy+dh);c.drawBitmap(base,src,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
+            drawMinuteAxis(c,-1,"59");drawMinuteAxis(c,0,"60");drawMinuteAxis(c,1,"01");PointF aa=s(PerspectiveMasterRenderer.projectPoint(pose,0,-.52)),bb=s(p12);c.drawLine(aa.x,aa.y,bb.x,bb.y,axis);
+            for(int i=0;i<5;i++)if(set[i]){PointF q=s(actual[i]);float r=dp(i==selected?8:5);c.drawCircle(q.x,q.y,r,actualPaint);c.drawText(String.valueOf(i+1),q.x+dp(8),q.y-dp(7),label);}
+            if(set[0]&&set[1]){PointF l=s(actual[0]),r=s(actual[1]);c.drawLine(l.x,l.y,r.x,r.y,actualPaint);}if(set[0]&&set[1]&&set[2]){PointF l=s(actual[0]),r=s(actual[1]),ap=s(actual[2]);c.drawLine(l.x,l.y,ap.x,ap.y,actualPaint);c.drawLine(r.x,r.y,ap.x,ap.y,actualPaint);}
+            if(complete())drawGenuineRelationTargets(c);
+        }
+        private void drawGenuineRelationTargets(Canvas c){
+            PointF lm=mid(actual[0],actual[1]);float bw=dist(actual[0],actual[1]);float ux=p12.x-centre.x,uy=p12.y-centre.y,un=(float)Math.hypot(ux,uy);ux/=un;uy/=un;float tx=-uy,ty=ux;
+            float targetBaseX=actual[3].x-ux*bw*GenTriangle12RelationalReference.BASE_TO_60_INNER_OVER_BASE,targetBaseY=actual[3].y-uy*bw*GenTriangle12RelationalReference.BASE_TO_60_INNER_OVER_BASE;
+            float targetApexX=actual[4].x+ux*bw*GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE,targetApexY=actual[4].y+uy*bw*GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE;
+            PointF b0=s(new PointF(targetBaseX-tx*bw*.5f,targetBaseY-ty*bw*.5f)),b1=s(new PointF(targetBaseX+tx*bw*.5f,targetBaseY+ty*bw*.5f)),ap=s(new PointF(targetApexX,targetApexY));
+            c.drawLine(b0.x,b0.y,b1.x,b1.y,target);c.drawCircle(ap.x,ap.y,dp(5),target);c.drawText("GEN BASE GAP",b1.x+dp(5),b1.y,label);c.drawText("GEN APEX/CROWN GAP",ap.x+dp(6),ap.y,label);
+            PointF m=s(lm);c.drawCircle(m.x,m.y,dp(3),target);
+        }
+        private void drawMinuteAxis(Canvas c,int minuteOffset,String text){double ang=Math.toRadians(minuteOffset*6.0-90.0),ux=Math.cos(ang),uy=Math.sin(ang);PointF a=s(PerspectiveMasterRenderer.projectPoint(pose,ux*.91,uy*.91)),b=s(PerspectiveMasterRenderer.projectPoint(pose,ux,uy));c.drawLine(a.x,a.y,b.x,b.y,minute);c.drawText(text,b.x+dp(3),b.y+dp(10),label);}
+        private int nearestSet(PointF q){int best=-1;float bd=Float.MAX_VALUE;for(int i=0;i<5;i++)if(set[i]){float d=dist(q,actual[i]);if(d<bd){bd=d;best=i;}}return best;}
         private float screenPxToImage(float px){return drawScale>0?px/drawScale:px;}private PointF s(PointF q){return new PointF(drawOx+(q.x-cropLeft)*drawScale,drawOy+(q.y-cropTop)*drawScale);}private PointF screenToImage(float sx,float sy){if(drawScale<=0)return null;float x=cropLeft+(sx-drawOx)/drawScale,y=cropTop+(sy-drawOy)/drawScale;if(x<cropLeft||x>cropRight||y<cropTop||y>cropBottom)return null;return new PointF(x,y);}
     }
-    private static PointF mid(PointF a,PointF b){return new PointF((a.x+b.x)/2f,(a.y+b.y)/2f);}private static float[] pack(PointF[] p){return new float[]{p[0].x,p[0].y,p[1].x,p[1].y,p[2].x,p[2].y};}private static PointF centroid(PointF[] p){return new PointF((p[0].x+p[1].x+p[2].x)/3f,(p[0].y+p[1].y+p[2].y)/3f);}private static float dist(PointF a,PointF b){if(a==null||b==null)return Float.MAX_VALUE;return (float)Math.hypot(a.x-b.x,a.y-b.y);}
-    private Paint stroke(int color,float widthDp){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(dp(Math.round(widthDp)));return p;}private Paint fill(int color){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.FILL);return p;}private Button btn(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(12);return b;}private TextView txt(String s,int sp){TextView t=new TextView(this);t.setText(s);t.setTextColor(Color.WHITE);t.setTextSize(sp);return t;}private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
+    private static PointF mid(PointF a,PointF b){return new PointF((a.x+b.x)/2f,(a.y+b.y)/2f);}private static float dist(PointF a,PointF b){if(a==null||b==null)return Float.MAX_VALUE;return (float)Math.hypot(a.x-b.x,a.y-b.y);}
+    private Paint stroke(int color,float widthDp){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(dp(Math.round(widthDp)));return p;}private Paint fill(int color){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.FILL);return p;}private Button btn(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(11);return b;}private TextView txt(String s,int sp){TextView t=new TextView(this);t.setText(s);t.setTextColor(Color.WHITE);t.setTextSize(sp);return t;}private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
 }
