@@ -7,7 +7,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
 
-/** Community-style index alignment ruler with true four-point projective registration. */
+/** Community-style index alignment ruler with true four-edge projective registration. */
 final class PerspectiveMasterRenderer {
     static final class Pose {
         float centerX, centerY;
@@ -16,8 +16,8 @@ final class PerspectiveMasterRenderer {
         float alpha = 1f;
         boolean anchorMode=false;
         boolean perspectiveMode=false;
-        float anchor12X,anchor12Y,anchor3X,anchor3Y,anchor9X,anchor9Y;
-        Pose copy(){Pose p=new Pose();p.centerX=centerX;p.centerY=centerY;p.scalePx=scalePx;p.pitchDeg=pitchDeg;p.yawDeg=yawDeg;p.rollDeg=rollDeg;p.alpha=alpha;p.anchorMode=anchorMode;p.perspectiveMode=perspectiveMode;p.anchor12X=anchor12X;p.anchor12Y=anchor12Y;p.anchor3X=anchor3X;p.anchor3Y=anchor3Y;p.anchor9X=anchor9X;p.anchor9Y=anchor9Y;return p;}
+        float anchor12X,anchor12Y,anchor3X,anchor3Y,anchor6X,anchor6Y,anchor9X,anchor9Y;
+        Pose copy(){Pose p=new Pose();p.centerX=centerX;p.centerY=centerY;p.scalePx=scalePx;p.pitchDeg=pitchDeg;p.yawDeg=yawDeg;p.rollDeg=rollDeg;p.alpha=alpha;p.anchorMode=anchorMode;p.perspectiveMode=perspectiveMode;p.anchor12X=anchor12X;p.anchor12Y=anchor12Y;p.anchor3X=anchor3X;p.anchor3Y=anchor3Y;p.anchor6X=anchor6X;p.anchor6Y=anchor6Y;p.anchor9X=anchor9X;p.anchor9Y=anchor9Y;return p;}
     }
 
     static Bitmap render(Bitmap base,String modelRef,Pose pose){Bitmap out=base.copy(Bitmap.Config.ARGB_8888,true);if(Gmt126710BlnrMaster.supports(modelRef))drawRuler(new Canvas(out),out.getWidth(),out.getHeight(),pose,false);return out;}
@@ -42,9 +42,19 @@ final class PerspectiveMasterRenderer {
 
     private static void drawHandles(Canvas c,Pose p,Projector pr,float unit){
         Paint black=fill(Color.BLACK,230),yellow=fill(Color.rgb(255,230,0),255),cyan=fill(Color.CYAN,255),magenta=fill(Color.rgb(255,60,220),255),text=new Paint(Paint.ANTI_ALIAS_FLAG);text.setColor(Color.WHITE);text.setTextSize(14*unit);text.setFakeBoldText(true);
-        PointF centre=new PointF(p.centerX,p.centerY),twelve=pr.project(0,-1),three=pr.project(1,0),nine=pr.project(-1,0);
-        handle(c,centre,black,yellow,9*unit,"CENTER",text,11*unit,-12*unit);handle(c,twelve,black,cyan,9*unit,"12",text,11*unit,-12*unit);
-        if(p.perspectiveMode){handle(c,three,black,magenta,8*unit,"3",text,10*unit,-10*unit);handle(c,nine,black,magenta,8*unit,"9",text,10*unit,-10*unit);}
+        PointF twelve=pr.project(0,-1);
+        if(p.perspectiveMode){
+            PointF centre=pr.project(0,0),three=pr.project(1,0),six=pr.project(0,1),nine=pr.project(-1,0);
+            handle(c,centre,black,yellow,7*unit,"CENTER CHECK",text,10*unit,-10*unit);
+            handle(c,twelve,black,cyan,9*unit,"12",text,11*unit,-12*unit);
+            handle(c,three,black,magenta,8*unit,"3",text,10*unit,-10*unit);
+            handle(c,six,black,magenta,8*unit,"6",text,10*unit,-10*unit);
+            handle(c,nine,black,magenta,8*unit,"9",text,10*unit,-10*unit);
+        }else{
+            PointF centre=new PointF(p.centerX,p.centerY);
+            handle(c,centre,black,yellow,9*unit,"CENTER",text,11*unit,-12*unit);
+            handle(c,twelve,black,cyan,9*unit,"12",text,11*unit,-12*unit);
+        }
     }
     private static void handle(Canvas c,PointF q,Paint black,Paint fill,float r,String label,Paint text,float tx,float ty){c.drawCircle(q.x,q.y,r+3,black);c.drawCircle(q.x,q.y,r,fill);c.drawText(label,q.x+tx,q.y+ty,text);}
 
@@ -60,14 +70,10 @@ final class PerspectiveMasterRenderer {
         }
     }
 
-    /**
-     * Solve the projective transform from four real correspondences on the dial plane:
-     * canonical centre, 12 edge, 3 edge and 9 edge. No synthetic 6 o'clock point is used.
-     * This lets a tilted dial project asymmetrically exactly as planar perspective requires.
-     */
+    /** Four non-collinear dial-edge anchors give a unique planar homography. */
     private static double[] buildH(Pose p){
-        double[][] src={{0,0},{0,-1},{1,0},{-1,0}};
-        double[][] dst={{p.centerX,p.centerY},{p.anchor12X,p.anchor12Y},{p.anchor3X,p.anchor3Y},{p.anchor9X,p.anchor9Y}};
+        double[][] src={{0,-1},{1,0},{0,1},{-1,0}};
+        double[][] dst={{p.anchor12X,p.anchor12Y},{p.anchor3X,p.anchor3Y},{p.anchor6X,p.anchor6Y},{p.anchor9X,p.anchor9Y}};
         double[][] a=new double[8][9];
         for(int i=0;i<4;i++){
             double x=src[i][0],y=src[i][1],u=dst[i][0],v=dst[i][1];int r=2*i;
