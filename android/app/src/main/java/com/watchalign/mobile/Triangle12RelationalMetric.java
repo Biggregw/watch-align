@@ -17,7 +17,7 @@ public final class Triangle12RelationalMetric {
         float bw=dist(left,right);if(bw<1e-6f)bw=1e-6f;
         float baseGap=((minute60Inner.x-baseMid.x)*ux+(minute60Inner.y-baseMid.y)*uy)/bw;
         float apexGap=((apex.x-crownTop.x)*ux+(apex.y-crownTop.y)*uy)/bw;
-        float height=((baseMid.x-apex.x)*ux+(baseMid.y-apex.y)*uy)/bw;
+        float height=((apex.x-baseMid.x)*ux+(apex.y-baseMid.y)*uy)/bw;
         float baseDx=right.x-left.x,baseDy=right.y-left.y;
         float baseAlongT=baseDx*tx+baseDy*ty,baseAlongU=baseDx*ux+baseDy*uy;
         float rot=(float)Math.toDegrees(Math.atan2(baseAlongU,baseAlongT));
