@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha35: reference-calibrated master with precision anchor alignment. */
+/** Alpha36: official-image traced GMT master with precision anchor alignment. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha35";
+    public static final String CORE_VERSION="1.3.0-alpha36";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -23,7 +23,7 @@ public final class WatchAlignCoreV13 {
     public static AnalysisResult analyse(Bitmap watch,Bitmap reference,String modelRef){List<Bitmap> refs=reference==null?Collections.emptyList():Collections.singletonList(reference);return analyse(watch,refs,modelRef);}
     public static AnalysisResult analyse(Bitmap watch,List<Bitmap> references,String modelRef){
         List<Bitmap> refs=references==null?Collections.emptyList():new ArrayList<>(references);Bitmap primary=refs.isEmpty()?null:refs.get(0);WatchAlignCoreV11.AnalysisResult base=WatchAlignCoreV11.analyse(watch,primary,modelRef);Bitmap guide=QcGuideRenderer.render(watch);QcExtendedAnalyzer.Result ext=QcExtendedAnalyzer.analyse(watch,primary,modelRef);boolean canonicalGmt=CanonicalGmtGeometryAnalyzer.supports(modelRef);Bitmap combined=QcOverlayComposer.compose(watch,guide,ext.annotated);PerspectiveGmtOverlay.Result perspective=canonicalGmt?PerspectiveGmtOverlay.build(watch,modelRef):null;String perspectiveReport=perspective==null&&canonicalGmt?"\n\nAUTOMATIC TEMPLATE\nUnavailable for this photo. Manual anchor alignment does not depend on this.\n":perspective==null?"":perspective.report;String report;
-        if(canonicalGmt){report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nPRECISION ALIGNMENT\nAlpha35 keeps CENTER + 12 alignment, adds a finger-safe 3× precision loupe while dragging, and updates the fixed 126710BLNR geometry to calibrated v6. Optional 3/9 handles still apply a true projective warp for angled photos.\n"+perspectiveReport+"\nThe master remains a calibrated visual reference, not Rolex factory CAD. Automatic analysis remains secondary.\n";}
+        if(canonicalGmt){report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nOFFICIAL-IMAGE MASTER\nAlpha36 keeps the finger-safe precision alignment workflow but replaces the hand-tuned 126710BLNR marker constants with geometry measured directly from the first-party Rolex front-on catalogue image during the build. Optional 3/9 handles still apply the projective warp for angled photos.\n"+perspectiveReport+"\nThe master is a measured visual reference derived from imagery, not Rolex factory CAD. Automatic analysis remains secondary.\n";}
         else{String baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)+ext.report+baselineReport+"\nInterpretation: non-GMT models continue to use the existing reference-distribution diagnostics.";report=QcSummaryFormatter.prependSummary(detail);}
         return new AnalysisResult(combined,base.reference,base.aligned,perspective==null?null:perspective.nativeOverlay,perspective==null?null:perspective.rectified,report,base.registrationConfidence,perspective==null?0.0:perspective.confidence);
     }
