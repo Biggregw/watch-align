@@ -1,15 +1,10 @@
 package com.watchalign.mobile;
 
-import android.graphics.PointF;
 import org.junit.Test;
+import java.lang.reflect.Method;
 import static org.junit.Assert.*;
 
 public class PerspectiveMasterRendererTest {
-    private static void assertPoint(PointF p,float x,float y){
-        assertEquals(x,p.x,0.01f);
-        assertEquals(y,p.y,0.01f);
-    }
-
     private static PerspectiveMasterRenderer.Pose skewedPose(){
         PerspectiveMasterRenderer.Pose p=new PerspectiveMasterRenderer.Pose();
         p.anchorMode=true;p.perspectiveMode=true;
@@ -20,30 +15,37 @@ public class PerspectiveMasterRendererTest {
         return p;
     }
 
-    @Test public void fourEdgeAnchorsMapExactly(){
-        PerspectiveMasterRenderer.Pose p=skewedPose();
-        assertPoint(PerspectiveMasterRenderer.projectPoint(p,0,-1),485,180);
-        assertPoint(PerspectiveMasterRenderer.projectPoint(p,1,0),850,500);
-        assertPoint(PerspectiveMasterRenderer.projectPoint(p,0,1),530,900);
-        assertPoint(PerspectiveMasterRenderer.projectPoint(p,-1,0),130,545);
+    private static double[] homography(PerspectiveMasterRenderer.Pose p)throws Exception{
+        Method m=PerspectiveMasterRenderer.class.getDeclaredMethod("buildH",PerspectiveMasterRenderer.Pose.class);
+        m.setAccessible(true);return (double[])m.invoke(null,p);
     }
 
-    @Test public void centerIsProjectivelyInferredNotSimpleMidpoint(){
-        PerspectiveMasterRenderer.Pose p=skewedPose();
-        PointF centre=PerspectiveMasterRenderer.projectPoint(p,0,0);
-        float mid126X=(p.anchor12X+p.anchor6X)/2f;
-        float mid126Y=(p.anchor12Y+p.anchor6Y)/2f;
-        float mid39X=(p.anchor3X+p.anchor9X)/2f;
-        float mid39Y=(p.anchor3Y+p.anchor9Y)/2f;
-        assertTrue(Math.abs(centre.x-mid126X)>0.1f || Math.abs(centre.y-mid126Y)>0.1f);
-        assertTrue(Math.abs(centre.x-mid39X)>0.1f || Math.abs(centre.y-mid39Y)>0.1f);
+    private static double[] project(double[] h,double x,double y){
+        double d=h[6]*x+h[7]*y+1.0;
+        return new double[]{(h[0]*x+h[1]*y+h[2])/d,(h[3]*x+h[4]*y+h[5])/d};
     }
 
-    @Test public void movingThreeDoesNotMoveNine(){
-        PerspectiveMasterRenderer.Pose p=skewedPose();
-        PointF nineBefore=PerspectiveMasterRenderer.projectPoint(p,-1,0);
-        p.anchor3X=875;p.anchor3Y=470;
-        PointF nineAfter=PerspectiveMasterRenderer.projectPoint(p,-1,0);
-        assertPoint(nineAfter,nineBefore.x,nineBefore.y);
+    private static void assertPoint(double[] p,double x,double y){assertEquals(x,p[0],0.01);assertEquals(y,p[1],0.01);}
+
+    @Test public void fourEdgeAnchorsMapExactly()throws Exception{
+        PerspectiveMasterRenderer.Pose p=skewedPose();double[] h=homography(p);assertNotNull(h);
+        assertPoint(project(h,0,-1),485,180);
+        assertPoint(project(h,1,0),850,500);
+        assertPoint(project(h,0,1),530,900);
+        assertPoint(project(h,-1,0),130,545);
+    }
+
+    @Test public void centerIsProjectivelyInferredNotSimpleMidpoint()throws Exception{
+        PerspectiveMasterRenderer.Pose p=skewedPose();double[] centre=project(homography(p),0,0);
+        double mid126X=(p.anchor12X+p.anchor6X)/2.0,mid126Y=(p.anchor12Y+p.anchor6Y)/2.0;
+        double mid39X=(p.anchor3X+p.anchor9X)/2.0,mid39Y=(p.anchor3Y+p.anchor9Y)/2.0;
+        assertTrue(Math.abs(centre[0]-mid126X)>0.1 || Math.abs(centre[1]-mid126Y)>0.1);
+        assertTrue(Math.abs(centre[0]-mid39X)>0.1 || Math.abs(centre[1]-mid39Y)>0.1);
+    }
+
+    @Test public void movingThreeDoesNotMoveNine()throws Exception{
+        PerspectiveMasterRenderer.Pose p=skewedPose();double[] before=project(homography(p),-1,0);
+        p.anchor3X=875;p.anchor3Y=470;double[] after=project(homography(p),-1,0);
+        assertPoint(after,before[0],before[1]);
     }
 }
