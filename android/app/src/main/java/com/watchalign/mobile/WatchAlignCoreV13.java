@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha31: direct-manipulation perspective workbench is the recommended path. */
+/** Alpha33: reference-calibrated 126710BLNR visual master. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha31";
+    public static final String CORE_VERSION="1.3.0-alpha33";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -36,10 +36,10 @@ public final class WatchAlignCoreV13 {
         String perspectiveReport=perspective==null&&canonicalGmt?"\n\nAUTOMATIC TEMPLATE\nUnavailable for this photo. Use Perspective workbench instead.\n":perspective==null?"":perspective.report;
         String report;
         if(canonicalGmt){
-            report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nASSISTED PERSPECTIVE MODE\n"
-                    +"Alpha31 makes the workbench direct: drag the projected master to centre it, pinch to scale it, use the joystick for perspective, lock centre/scale when correct, then set alignment and inspect with zoom, opacity and blink.\n"
+            report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nREFERENCE-CALIBRATED MASTER\n"
+                    +"Alpha33 replaces the manually tuned marker proportions with a fixed 126710BLNR master recalibrated against the official Rolex front view and cross-checked against multiple genuine front-on examples. Round-marker metal/lume ratios, 6/9 baton proportions, the 12 triangle and minute-track guide geometry were all revised.\n"
                     +perspectiveReport
-                    +"\nAutomatic analysis remains secondary. Ranked marker findings remain hidden.\n";
+                    +"\nThe calibration is a visual reference, not Rolex factory CAD. Automatic analysis remains secondary.\n";
         }else{
             String baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;
             String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)+ext.report+baselineReport+"\nInterpretation: non-GMT models continue to use the existing reference-distribution diagnostics.";
