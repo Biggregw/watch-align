@@ -47,7 +47,7 @@ jobs:
         run: |
           grep -q 'FullscreenInspectActivity' app/src/main/AndroidManifest.xml
           grep -q 'InspectionImageStore' app/src/main/java/com/watchalign/mobile/MainActivity.java
-          grep -q 'dedicated full-screen inspector' app/src/main/java/com/watchalign/mobile/FullscreenInspectActivity.java
+          grep -q 'Dedicated non-scrolling image inspector' app/src/main/java/com/watchalign/mobile/FullscreenInspectActivity.java
           grep -q 'ScaleGestureDetector owns pinch state' app/src/main/java/com/watchalign/mobile/ZoomableImageView.java
           grep -q 'PerspectiveGmtOverlay' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q '1.3.0-alpha25' app/src/main/java/com/watchalign/mobile/MainActivity.java
