@@ -10,16 +10,15 @@ import android.view.ScaleGestureDetector;
 import android.view.ViewParent;
 import android.widget.ImageView;
 
-/** Robust pinch-zoom/pan ImageView for QC, reference and overlay inspection. */
+/**
+ * Stable matrix zoom view. Alpha24 deliberately avoids manual pointer-index bookkeeping:
+ * ScaleGestureDetector owns pinch state and GestureDetector owns pan/double-tap.
+ */
 final class ZoomableImageView extends ImageView {
     private final Matrix matrix = new Matrix();
     private final ScaleGestureDetector scaleDetector;
     private final GestureDetector gestureDetector;
     private float userScale = 1f;
-    private float baseScale = 1f;
-    private float lastX, lastY;
-    private boolean dragging;
-    private boolean multiTouch;
 
     ZoomableImageView(Context context) { this(context, null); }
 
@@ -30,43 +29,52 @@ final class ZoomableImageView extends ImageView {
 
         scaleDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override public boolean onScaleBegin(ScaleGestureDetector detector) {
-                disallowParentIntercept(true);
+                setParentIntercept(false);
                 return true;
             }
 
             @Override public boolean onScale(ScaleGestureDetector detector) {
-                float factor = detector.getScaleFactor();
-                if (!Float.isFinite(factor) || factor <= 0f) return false;
-                float next = clamp(userScale * factor, 1f, 8f);
-                factor = next / userScale;
+                float sf = detector.getScaleFactor();
+                if (!Float.isFinite(sf) || sf <= 0f) return false;
+                float next = Math.max(1f, Math.min(8f, userScale * sf));
+                float applied = next / userScale;
                 userScale = next;
-                matrix.postScale(factor, factor, detector.getFocusX(), detector.getFocusY());
-                constrainTranslation();
+                matrix.postScale(applied, applied, detector.getFocusX(), detector.getFocusY());
+                clampToBounds();
                 setImageMatrix(matrix);
                 return true;
             }
 
             @Override public void onScaleEnd(ScaleGestureDetector detector) {
-                constrainTranslation();
+                clampToBounds();
                 setImageMatrix(matrix);
-                disallowParentIntercept(userScale > 1.01f);
+                setParentIntercept(userScale <= 1.01f);
             }
         });
 
         gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
             @Override public boolean onDown(MotionEvent e) { return true; }
 
+            @Override public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                if (userScale <= 1.01f || scaleDetector.isInProgress()) return false;
+                setParentIntercept(false);
+                matrix.postTranslate(-distanceX, -distanceY);
+                clampToBounds();
+                setImageMatrix(matrix);
+                return true;
+            }
+
             @Override public boolean onDoubleTap(MotionEvent e) {
                 if (userScale > 1.15f) {
                     fitToView();
                 } else {
                     float target = 2.5f;
-                    float factor = target / userScale;
+                    float applied = target / userScale;
                     userScale = target;
-                    matrix.postScale(factor, factor, e.getX(), e.getY());
-                    constrainTranslation();
+                    matrix.postScale(applied, applied, e.getX(), e.getY());
+                    clampToBounds();
                     setImageMatrix(matrix);
-                    disallowParentIntercept(true);
+                    setParentIntercept(false);
                 }
                 return true;
             }
@@ -75,7 +83,7 @@ final class ZoomableImageView extends ImageView {
 
     @Override protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        fitToView();
+        post(this::fitToView);
     }
 
     @Override public void setImageBitmap(android.graphics.Bitmap bm) {
@@ -84,98 +92,61 @@ final class ZoomableImageView extends ImageView {
     }
 
     private void fitToView() {
-        if (getDrawable() == null || getWidth() == 0 || getHeight() == 0) return;
+        if (getDrawable() == null || getWidth() <= 0 || getHeight() <= 0) return;
         float dw = getDrawable().getIntrinsicWidth();
         float dh = getDrawable().getIntrinsicHeight();
         if (dw <= 0 || dh <= 0) return;
-        baseScale = Math.min(getWidth() / dw, getHeight() / dh);
-        float dx = (getWidth() - dw * baseScale) / 2f;
-        float dy = (getHeight() - dh * baseScale) / 2f;
+        float base = Math.min(getWidth() / dw, getHeight() / dh);
+        float dx = (getWidth() - dw * base) / 2f;
+        float dy = (getHeight() - dh * base) / 2f;
         matrix.reset();
-        matrix.postScale(baseScale, baseScale);
+        matrix.postScale(base, base);
         matrix.postTranslate(dx, dy);
         userScale = 1f;
         setImageMatrix(matrix);
-        disallowParentIntercept(false);
+        setParentIntercept(true);
     }
 
     void resetZoom() { fitToView(); }
 
-    private void constrainTranslation() {
-        if (getDrawable() == null || getWidth() == 0 || getHeight() == 0) return;
+    private void clampToBounds() {
+        if (getDrawable() == null || getWidth() <= 0 || getHeight() <= 0) return;
         RectF r = new RectF(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
         matrix.mapRect(r);
         float dx = 0f, dy = 0f;
-
-        if (r.width() <= getWidth()) dx = getWidth() / 2f - r.centerX();
-        else if (r.left > 0) dx = -r.left;
+        if (r.width() <= getWidth()) dx = getWidth() * 0.5f - r.centerX();
+        else if (r.left > 0f) dx = -r.left;
         else if (r.right < getWidth()) dx = getWidth() - r.right;
-
-        if (r.height() <= getHeight()) dy = getHeight() / 2f - r.centerY();
-        else if (r.top > 0) dy = -r.top;
+        if (r.height() <= getHeight()) dy = getHeight() * 0.5f - r.centerY();
+        else if (r.top > 0f) dy = -r.top;
         else if (r.bottom < getHeight()) dy = getHeight() - r.bottom;
-
         if (dx != 0f || dy != 0f) matrix.postTranslate(dx, dy);
     }
 
-    private void disallowParentIntercept(boolean disallow) {
+    /** allowParent=true means the surrounding ScrollView may intercept single-finger scrolling. */
+    private void setParentIntercept(boolean allowParent) {
         ViewParent p = getParent();
-        while (p != null) {
-            p.requestDisallowInterceptTouchEvent(disallow);
-            p = p.getParent();
-        }
-    }
-
-    private static float clamp(float v, float lo, float hi) {
-        return Math.max(lo, Math.min(hi, v));
+        if (p != null) p.requestDisallowInterceptTouchEvent(!allowParent);
     }
 
     @Override public boolean onTouchEvent(MotionEvent event) {
-        final int action = event.getActionMasked();
-
-        if (action == MotionEvent.ACTION_DOWN) {
-            lastX = event.getX();
-            lastY = event.getY();
-            dragging = true;
-            multiTouch = false;
-            if (userScale > 1.01f) disallowParentIntercept(true);
-        } else if (action == MotionEvent.ACTION_POINTER_DOWN) {
-            multiTouch = true;
-            dragging = false;
-            disallowParentIntercept(true);
-        }
-
-        gestureDetector.onTouchEvent(event);
-        scaleDetector.onTouchEvent(event);
-
-        if (action == MotionEvent.ACTION_MOVE && !scaleDetector.isInProgress() && !multiTouch && dragging && userScale > 1.01f) {
-            float dx = event.getX() - lastX;
-            float dy = event.getY() - lastY;
-            matrix.postTranslate(dx, dy);
-            constrainTranslation();
-            setImageMatrix(matrix);
-            lastX = event.getX();
-            lastY = event.getY();
-            disallowParentIntercept(true);
-        } else if (action == MotionEvent.ACTION_POINTER_UP) {
-            if (event.getPointerCount() <= 2) {
-                multiTouch = false;
-                int remaining = event.getActionIndex() == 0 ? 1 : 0;
-                if (remaining < event.getPointerCount()) {
-                    lastX = event.getX(remaining);
-                    lastY = event.getY(remaining);
-                    dragging = userScale > 1.01f;
-                }
+        try {
+            if (event.getPointerCount() >= 2 || userScale > 1.01f) setParentIntercept(false);
+            scaleDetector.onTouchEvent(event);
+            gestureDetector.onTouchEvent(event);
+            int a = event.getActionMasked();
+            if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) {
+                clampToBounds();
+                setImageMatrix(matrix);
+                setParentIntercept(userScale <= 1.01f);
+                performClick();
             }
-        } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-            dragging = false;
-            multiTouch = false;
-            constrainTranslation();
-            setImageMatrix(matrix);
-            disallowParentIntercept(false);
-            performClick();
+            return true;
+        } catch (RuntimeException ex) {
+            // Gesture streams can be interrupted by Android parent views. Reset safely instead of crashing.
+            fitToView();
+            return true;
         }
-        return true;
     }
 
     @Override public boolean performClick() {
