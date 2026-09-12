@@ -38,7 +38,7 @@ public class MainActivity extends Activity {
     private TextView status,resultText;
     private Spinner model;
     private SeekBar opacity;
-    private Button overlayButton,watchButton,referenceButton;
+    private Button overlayButton,watchButton,referenceButton,perspectiveButton,rectifiedButton;
 
     @Override public void onCreate(Bundle state){super.onCreate(state);if(!OpenCVLoader.initLocal())Toast.makeText(this,"OpenCV could not start",Toast.LENGTH_LONG).show();setContentView(buildUi());}
 
@@ -46,15 +46,23 @@ public class MainActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Color.rgb(8,17,31));
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("WATCH ALIGN · STANDALONE",12,Color.rgb(50,213,242)));TextView h1=text("Watch Align Android",28,Color.WHITE);h1.setPadding(0,dp(4),0,0);root.addView(h1);
-        root.addView(text("V1.3.0-alpha21 · canonical GMT geometry",14,Color.rgb(158,176,201)));
-        root.addView(text("Alpha21 uses the exact GMT hour grid and independent dial-normalised marker placement, with genuine references used to calibrate radial tolerance rather than define the geometry itself.",13,Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha22 · perspective GMT overlay",14,Color.rgb(158,176,201)));
+        root.addView(text("Alpha22 is visual-first: it fits the photographed dial ellipse, derives a planar homography, then projects a canonical GMT template into that exact photo view. Hour markers are inspection targets and are never used to fit the template.",13,Color.rgb(158,176,201)));
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ModelCatalog.labels()));root.addView(model,lp(-1,dp(54),10));
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         Button pickRef=button("Choose genuine reference photos (optional, multi-select)");pickRef.setOnClickListener(v->pickReferences());root.addView(pickRef,lp(-1,dp(52),6));
-        Button analyse=button("Analyse canonical geometry + genuine tolerance");analyse.setBackgroundColor(Color.rgb(50,213,242));analyse.setTextColor(Color.rgb(4,32,42));analyse.setOnClickListener(v->analyse());root.addView(analyse,lp(-1,dp(54),12));
+        Button analyse=button("Build perspective template + diagnostics");analyse.setBackgroundColor(Color.rgb(50,213,242));analyse.setTextColor(Color.rgb(4,32,42));analyse.setOnClickListener(v->analyse());root.addView(analyse,lp(-1,dp(54),12));
         status=text("Choose a watch photo to begin.",14,Color.rgb(158,176,201));root.addView(status);image=new ZoomableImageView(this);image.setAdjustViewBounds(true);root.addView(image,lp(-1,-2,12));
         root.addView(text("Tip: pinch to zoom; double-tap resets the view.",12,Color.rgb(158,176,201)));
-        LinearLayout viewButtons=new LinearLayout(this);viewButtons.setOrientation(LinearLayout.HORIZONTAL);watchButton=smallButton("QC view");referenceButton=smallButton("Reference");overlayButton=smallButton("Overlay");referenceButton.setEnabled(false);overlayButton.setEnabled(false);watchButton.setOnClickListener(v->showAnnotated());referenceButton.setOnClickListener(v->showReference());overlayButton.setOnClickListener(v->showOverlay());viewButtons.addView(watchButton,new LinearLayout.LayoutParams(0,dp(48),1));viewButtons.addView(referenceButton,new LinearLayout.LayoutParams(0,dp(48),1));viewButtons.addView(overlayButton,new LinearLayout.LayoutParams(0,dp(48),1));root.addView(viewButtons,lp(-1,dp(48),8));
+
+        LinearLayout row1=new LinearLayout(this);row1.setOrientation(LinearLayout.HORIZONTAL);
+        watchButton=smallButton("QC view");perspectiveButton=smallButton("Native template");rectifiedButton=smallButton("Rectified");
+        perspectiveButton.setEnabled(false);rectifiedButton.setEnabled(false);
+        watchButton.setOnClickListener(v->showAnnotated());perspectiveButton.setOnClickListener(v->showPerspective());rectifiedButton.setOnClickListener(v->showRectified());
+        row1.addView(watchButton,new LinearLayout.LayoutParams(0,dp(48),1));row1.addView(perspectiveButton,new LinearLayout.LayoutParams(0,dp(48),1));row1.addView(rectifiedButton,new LinearLayout.LayoutParams(0,dp(48),1));root.addView(row1,lp(-1,dp(48),8));
+
+        LinearLayout row2=new LinearLayout(this);row2.setOrientation(LinearLayout.HORIZONTAL);referenceButton=smallButton("Reference");overlayButton=smallButton("Gen overlay");referenceButton.setEnabled(false);overlayButton.setEnabled(false);referenceButton.setOnClickListener(v->showReference());overlayButton.setOnClickListener(v->showOverlay());row2.addView(referenceButton,new LinearLayout.LayoutParams(0,dp(48),1));row2.addView(overlayButton,new LinearLayout.LayoutParams(0,dp(48),1));root.addView(row2,lp(-1,dp(48),6));
+
         opacity=new SeekBar(this);opacity.setMax(100);opacity.setProgress(50);opacity.setVisibility(View.GONE);opacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){if(lastResult!=null&&lastResult.aligned!=null)image.setImageBitmap(lastResult.overlay(p/100f));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});root.addView(opacity);
         resultText=text("",15,Color.WHITE);resultText.setPadding(0,dp(12),0,dp(32));root.addView(resultText);return scroll;
     }
@@ -65,27 +73,30 @@ public class MainActivity extends Activity {
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null)return;
         try{
-            if(request==PICK_WATCH&&data.getData()!=null){watchBitmap=readBitmap(data.getData());lastResult=null;image.setImageBitmap(watchBitmap);referenceButton.setEnabled(false);overlayButton.setEnabled(false);status.setText("Watch photo ready. Tap Analyse.");return;}
-            if(request==PICK_REFERENCE){referenceBitmaps.clear();ClipData clip=data.getClipData();if(clip!=null){for(int i=0;i<clip.getItemCount()&&referenceBitmaps.size()<20;i++){Uri u=clip.getItemAt(i).getUri();if(u!=null)referenceBitmaps.add(readBitmap(u));}}else if(data.getData()!=null)referenceBitmaps.add(readBitmap(data.getData()));lastResult=null;referenceButton.setEnabled(false);overlayButton.setEnabled(false);status.setText(referenceBitmaps.size()+" genuine reference photo"+(referenceBitmaps.size()==1?"":"s")+" ready.");}
+            if(request==PICK_WATCH&&data.getData()!=null){watchBitmap=readBitmap(data.getData());lastResult=null;image.setImageBitmap(watchBitmap);setResultButtons(false);status.setText("Watch photo ready. Tap Build perspective template.");return;}
+            if(request==PICK_REFERENCE){referenceBitmaps.clear();ClipData clip=data.getClipData();if(clip!=null){for(int i=0;i<clip.getItemCount()&&referenceBitmaps.size()<20;i++){Uri u=clip.getItemAt(i).getUri();if(u!=null)referenceBitmaps.add(readBitmap(u));}}else if(data.getData()!=null)referenceBitmaps.add(readBitmap(data.getData()));lastResult=null;setResultButtons(false);status.setText(referenceBitmaps.size()+" genuine reference photo"+(referenceBitmaps.size()==1?"":"s")+" ready.");}
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
     }
 
     private Bitmap readBitmap(Uri uri)throws Exception{try(InputStream in=getContentResolver().openInputStream(uri)){Bitmap b=BitmapFactory.decodeStream(in);if(b==null)throw new IllegalArgumentException("Not a readable image");int max=Math.max(b.getWidth(),b.getHeight());if(max<=1600)return b.copy(Bitmap.Config.ARGB_8888,false);float s=1600f/max;return Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true).copy(Bitmap.Config.ARGB_8888,false);}}
 
     private void analyse(){
-        if(watchBitmap==null){status.setText("Choose your watch photo first.");return;}ModelCatalog.Profile profile=ModelCatalog.at(model.getSelectedItemPosition());resultText.setText("");opacity.setVisibility(View.GONE);referenceButton.setEnabled(false);overlayButton.setEnabled(false);Bitmap watch=watchBitmap;List<Bitmap>manualRefs=new ArrayList<>(referenceBitmaps);
+        if(watchBitmap==null){status.setText("Choose your watch photo first.");return;}ModelCatalog.Profile profile=ModelCatalog.at(model.getSelectedItemPosition());resultText.setText("");opacity.setVisibility(View.GONE);setResultButtons(false);Bitmap watch=watchBitmap;List<Bitmap>manualRefs=new ArrayList<>(referenceBitmaps);
         if(profile.geometryMode==ModelCatalog.GeometryMode.VISUAL_ONLY){status.setText("Running model-specific visual QC checklist…");worker.submit(()->{try{VisualOnlyQc.Result r=VisualOnlyQc.analyse(watch,profile);runOnUiThread(()->{lastResult=null;image.setImageBitmap(r.annotated);resultText.setText(r.report);status.setText("Visual QC checklist ready.");});}catch(Throwable t){runOnUiThread(()->status.setText("QC error: "+t.getMessage()));}});return;}
-        status.setText(!manualRefs.isEmpty()?"Calibrating canonical geometry from your genuine references…":profile.supportsAutoReference()?"Searching exact-model official references and calibrating canonical geometry…":"Running QC checks…");
+        status.setText("Solving dial perspective and building canonical template…");
         worker.submit(()->{try{
             List<Bitmap> refs=manualRefs;String sourceNote;
-            if(!refs.isEmpty())sourceNote="Genuine tolerance calibration: "+refs.size()+" manually selected reference photo"+(refs.size()==1?"":"s")+".";
-            else if(profile.supportsAutoReference()){OnlineReferenceFinder.PoolResult found=OnlineReferenceFinder.findPool(this,watch,profile.code,8);refs=new ArrayList<>(found.bitmaps);sourceNote="Genuine tolerance calibration: "+refs.size()+" exact-model official-source image"+(refs.size()==1?"":"s")+(found.fromCacheOnly?" from cache.":" downloaded/cached.");}
-            else sourceNote="Genuine tolerance calibration unavailable automatically for this model; select genuine reference photos to enable calibrated QC.";
-            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,refs,profile.code);final String note=sourceNote;runOnUiThread(()->{lastResult=r;image.setImageBitmap(r.annotated);resultText.setText(r.report+"\n\n"+note);status.setText("Analysis complete.");referenceButton.setEnabled(r.reference!=null);overlayButton.setEnabled(r.aligned!=null);if(r.aligned==null)opacity.setVisibility(View.GONE);});
-        }catch(Throwable t){runOnUiThread(()->{lastResult=null;referenceButton.setEnabled(false);overlayButton.setEnabled(false);opacity.setVisibility(View.GONE);status.setText("Reference/analysis error: "+t.getMessage());resultText.setText("Watch Align refused to produce a geometric QC verdict because the dial/reference geometry could not be verified. Try clearer, more front-on photos; no pass/fail has been inferred from an unreliable detection.");});}});
+            if(!refs.isEmpty())sourceNote="Genuine diagnostics: "+refs.size()+" manually selected reference photo"+(refs.size()==1?"":"s")+".";
+            else if(profile.supportsAutoReference()){OnlineReferenceFinder.PoolResult found=OnlineReferenceFinder.findPool(this,watch,profile.code,8);refs=new ArrayList<>(found.bitmaps);sourceNote="Genuine diagnostics: "+refs.size()+" exact-model official-source image"+(refs.size()==1?"":"s")+(found.fromCacheOnly?" from cache.":" downloaded/cached.");}
+            else sourceNote="Genuine diagnostics unavailable automatically for this model.";
+            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,refs,profile.code);final String note=sourceNote;runOnUiThread(()->{lastResult=r;image.setImageBitmap(r.perspectiveOverlay!=null?r.perspectiveOverlay:r.annotated);resultText.setText(r.report+"\n\n"+note);status.setText(r.perspectiveOverlay!=null?"Perspective template ready. Inspect visually before using diagnostics.":"Analysis complete; perspective template unavailable for this photo.");referenceButton.setEnabled(r.reference!=null);overlayButton.setEnabled(r.aligned!=null);perspectiveButton.setEnabled(r.perspectiveOverlay!=null);rectifiedButton.setEnabled(r.rectified!=null);});
+        }catch(Throwable t){runOnUiThread(()->{lastResult=null;setResultButtons(false);status.setText("Reference/analysis error: "+t.getMessage());resultText.setText("Watch Align could not establish reliable geometry from this photo. Try a clearer, more front-on image.");});}});
     }
 
+    private void setResultButtons(boolean enabled){referenceButton.setEnabled(enabled);overlayButton.setEnabled(enabled);perspectiveButton.setEnabled(enabled);rectifiedButton.setEnabled(enabled);opacity.setVisibility(View.GONE);}
     private void showAnnotated(){opacity.setVisibility(View.GONE);if(lastResult!=null)image.setImageBitmap(lastResult.annotated);else if(watchBitmap!=null)image.setImageBitmap(watchBitmap);}
+    private void showPerspective(){opacity.setVisibility(View.GONE);if(lastResult!=null&&lastResult.perspectiveOverlay!=null)image.setImageBitmap(lastResult.perspectiveOverlay);}
+    private void showRectified(){opacity.setVisibility(View.GONE);if(lastResult!=null&&lastResult.rectified!=null)image.setImageBitmap(lastResult.rectified);}
     private void showReference(){opacity.setVisibility(View.GONE);if(lastResult!=null&&lastResult.reference!=null)image.setImageBitmap(lastResult.reference);}
     private void showOverlay(){if(lastResult!=null&&lastResult.aligned!=null){opacity.setVisibility(View.VISIBLE);image.setImageBitmap(lastResult.overlay(opacity.getProgress()/100f));}}
     private TextView text(String s,int sp,int color){TextView v=new TextView(this);v.setText(s);v.setTextSize(sp);v.setTextColor(color);return v;}
