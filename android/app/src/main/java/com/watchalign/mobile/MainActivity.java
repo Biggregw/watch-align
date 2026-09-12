@@ -45,8 +45,8 @@ public class MainActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Color.rgb(8,17,31));
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("WATCH ALIGN · STANDALONE",12,Color.rgb(50,213,242)));TextView h1=text("Watch Align Android",28,Color.WHITE);h1.setPadding(0,dp(4),0,0);root.addView(h1);
-        root.addView(text("V1.3.0-alpha43 · genuine 12-marker + minute-track QC",14,Color.rgb(158,176,201)));
-        root.addView(text("Alpha43 keeps four-edge perspective as the default and replaces the guessed 12 triangle with normalized outer-marker geometry measured from a first-party Rolex 126710BLNR catalogue image. The precision check focuses on the triangle's relationship to the 60-minute axis and minute track.",13,Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha44 · front-on gen 12-marker calibration",14,Color.rgb(158,176,201)));
+        root.addView(text("Alpha44 keeps four-edge perspective as the default and recalibrates the 12 o'clock outer metal triangle from the clean front-on genuine 126710BLNR reference supplied for testing. The precision check compares triangle position, shape and its gap to the 59/60/01 minute track.",13,Color.rgb(158,176,201)));
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ModelCatalog.labels()));root.addView(model,lp(-1,dp(54),10));
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         Button pickRef=button("Choose genuine reference photos (optional)");pickRef.setOnClickListener(v->pickReferences());root.addView(pickRef,lp(-1,dp(52),6));
