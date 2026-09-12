@@ -12,8 +12,9 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
-/** Alpha31 direct-manipulation perspective workbench. */
+/** Alpha32 direct-manipulation perspective workbench with high-contrast alignment guides. */
 public class ManualAlignActivity extends Activity {
     private ZoomableImageView image;
     private Bitmap base;
@@ -39,7 +40,7 @@ public class ManualAlignActivity extends Activity {
 
         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(6),dp(8),dp(6));top.setBackgroundColor(0xCC08111F);
         Button back=btn("Back");back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(72),dp(44)));
-        TextView title=txt("Perspective align",17);title.setPadding(dp(8),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(44),1));
+        TextView title=txt("Perspective align · α32",17);title.setPadding(dp(8),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(44),1));
         Button reset=btn("Reset");reset.setOnClickListener(v->{resetPose();centreLocked=false;scaleLocked=false;guidesOnly=false;syncControls();renderNow();image.resetZoom();});top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(44)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(58),Gravity.TOP));
 
         LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(dp(8),dp(5),dp(8),dp(8));panel.setBackgroundColor(0xDD08111F);
@@ -48,7 +49,7 @@ public class ManualAlignActivity extends Activity {
         LinearLayout right=new LinearLayout(this);right.setOrientation(LinearLayout.VERTICAL);right.setPadding(dp(8),0,0,0);
         right.addView(label("Scale (or pinch)"));scaleBar=new SeekBar(this);scaleBar.setMax(100);scaleBar.setOnSeekBarChangeListener(listener(p->{if(!scaleLocked){pose.scalePx=Math.min(base.getWidth(),base.getHeight())*(0.24f+0.0038f*p);renderThrottled();}}));right.addView(scaleBar,new LinearLayout.LayoutParams(-1,dp(32)));
         right.addView(label("Roll"));rollBar=new SeekBar(this);rollBar.setMax(120);rollBar.setOnSeekBarChangeListener(listener(p->{pose.rollDeg=(p-60)*0.5f;renderThrottled();}));right.addView(rollBar,new LinearLayout.LayoutParams(-1,dp(32)));
-        right.addView(label("Overlay"));alphaBar=new SeekBar(this);alphaBar.setMax(100);alphaBar.setProgress(100);alphaBar.setOnSeekBarChangeListener(listener(p->{pose.alpha=Math.max(0.05f,p/100f);renderThrottled();}));right.addView(alphaBar,new LinearLayout.LayoutParams(-1,dp(32)));
+        right.addView(label("Overlay"));alphaBar=new SeekBar(this);alphaBar.setMax(100);alphaBar.setProgress(100);alphaBar.setOnSeekBarChangeListener(listener(p->{pose.alpha=Math.max(0.15f,p/100f);renderThrottled();}));right.addView(alphaBar,new LinearLayout.LayoutParams(-1,dp(32)));
         row.addView(right,new LinearLayout.LayoutParams(0,dp(112),1));panel.addView(row);
 
         LinearLayout locks=new LinearLayout(this);locks.setGravity(Gravity.CENTER);
@@ -60,7 +61,7 @@ public class ManualAlignActivity extends Activity {
         LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.CENTER_VERTICAL);
         Button blink=btn("Hold to blink");blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){renderNow();return true;}return false;});actions.addView(blink,new LinearLayout.LayoutParams(0,dp(42),1));
         Button set=btn("Set alignment");set.setOnClickListener(v->openLockedInspection());set.setBackgroundColor(Color.rgb(50,213,242));set.setTextColor(Color.rgb(4,32,42));actions.addView(set,new LinearLayout.LayoutParams(0,dp(42),1));panel.addView(actions);
-        TextView hint=txt("Drag = centre • pinch = scale • joystick = perspective • roll slider = rotation",11);hint.setGravity(Gravity.CENTER);panel.addView(hint,new LinearLayout.LayoutParams(-1,dp(32)));
+        TextView hint=txt("Drag = centre • pinch = scale • joystick = perspective • roll = rotation",11);hint.setGravity(Gravity.CENTER);panel.addView(hint,new LinearLayout.LayoutParams(-1,dp(32)));
         root.addView(panel,new FrameLayout.LayoutParams(-1,dp(224),Gravity.BOTTOM));setContentView(root);
         syncControls();
     }
@@ -88,6 +89,7 @@ public class ManualAlignActivity extends Activity {
     private void openLockedInspection(){
         Bitmap overlay=PerspectiveMasterRenderer.renderOverlay(base.getWidth(),base.getHeight(),modelRef,pose);
         InspectionImageStore.setOverlay(base,overlay,"Locked QC master");
+        Toast.makeText(this,"Alignment locked · opening inspector",Toast.LENGTH_SHORT).show();
         startActivity(new Intent(this,FullscreenInspectActivity.class));
     }
 
