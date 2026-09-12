@@ -16,7 +16,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/** Alpha39: community ruler with finger-safe drag plus sub-pixel nudge controls. */
+/** Alpha40: community ruler with true four-point perspective and sub-pixel nudge controls. */
 public class ManualAlignActivity extends Activity {
     private ZoomableImageView image;
     private Bitmap base;
@@ -42,7 +42,7 @@ public class ManualAlignActivity extends Activity {
 
         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(6),dp(8),dp(6));top.setBackgroundColor(0xE008111F);
         Button back=btn("Back");back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(72),dp(46)));
-        TextView title=txt("Align ruler · α39",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
+        TextView title=txt("Align ruler · α40",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
         Button reset=btn("Reset");reset.setOnClickListener(v->{resetPose();selectHandle(-1);renderNow();});top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(6),dp(10),dp(8));bottom.setBackgroundColor(0xEE08111F);
@@ -62,7 +62,7 @@ public class ManualAlignActivity extends Activity {
         perspectiveButton=btn("Perspective: OFF");perspectiveButton.setOnClickListener(v->togglePerspective());row.addView(perspectiveButton,new LinearLayout.LayoutParams(0,dp(48),1));
         Button blink=btn("Hold to blink");blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){renderNow();return true;}return false;});row.addView(blink,new LinearLayout.LayoutParams(0,dp(48),1));
         Button set=btn("Set alignment");set.setBackgroundColor(Color.rgb(50,213,242));set.setTextColor(Color.rgb(4,32,42));set.setOnClickListener(v->openLockedInspection());row.addView(set,new LinearLayout.LayoutParams(0,dp(48),1));bottom.addView(row);
-        TextView hint=txt("Tap or drag CENTER / 12 / 3 / 9 to select it. Arrow taps move 0.5 px in Fine mode; hold an arrow to repeat. Lock finished anchors.",11);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(46)));
+        TextView hint=txt("CENTER, 12, 3 and 9 are independent real points. No mirrored 6 point is invented. Fine arrows move the selected point by 0.5 px.",11);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(46)));
         root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(222),Gravity.BOTTOM));setContentView(root);
     }
 
@@ -108,24 +108,31 @@ public class ManualAlignActivity extends Activity {
     }
 
     private void moveHandle(int handle,PointF q){
-        if(handle==0){float dx=q.x-pose.centerX,dy=q.y-pose.centerY;pose.centerX=q.x;pose.centerY=q.y;pose.anchor12X+=dx;pose.anchor12Y+=dy;if(pose.perspectiveMode){pose.anchor3X+=dx;pose.anchor3Y+=dy;pose.anchor9X+=dx;pose.anchor9Y+=dy;}return;}
-        if(handle==1){if(dist(q,new PointF(pose.centerX,pose.centerY))>30f){pose.anchor12X=q.x;pose.anchor12Y=q.y;}return;}
-        if(handle==2||handle==3){
-            float vx=q.x-pose.centerX,vy=q.y-pose.centerY,len=(float)Math.sqrt(vx*vx+vy*vy);if(len<30f)return;float ux=vx/len,uy=vy/len;
-            if(handle==2){float opposite=dist(new PointF(pose.anchor9X,pose.anchor9Y),new PointF(pose.centerX,pose.centerY));pose.anchor3X=q.x;pose.anchor3Y=q.y;pose.anchor9X=pose.centerX-ux*opposite;pose.anchor9Y=pose.centerY-uy*opposite;}
-            else{float opposite=dist(new PointF(pose.anchor3X,pose.anchor3Y),new PointF(pose.centerX,pose.centerY));pose.anchor9X=q.x;pose.anchor9Y=q.y;pose.anchor3X=pose.centerX-ux*opposite;pose.anchor3Y=pose.centerY-uy*opposite;}
+        if(handle==0){
+            float dx=q.x-pose.centerX,dy=q.y-pose.centerY;pose.centerX=q.x;pose.centerY=q.y;
+            pose.anchor12X+=dx;pose.anchor12Y+=dy;
+            if(pose.perspectiveMode){pose.anchor3X+=dx;pose.anchor3Y+=dy;pose.anchor9X+=dx;pose.anchor9Y+=dy;}
+            return;
         }
+        if(handle==1){if(dist(q,new PointF(pose.centerX,pose.centerY))>30f){pose.anchor12X=q.x;pose.anchor12Y=q.y;}return;}
+        if(handle==2){pose.anchor3X=q.x;pose.anchor3Y=q.y;return;}
+        if(handle==3){pose.anchor9X=q.x;pose.anchor9Y=q.y;}
     }
 
     private void togglePerspective(){
-        if(!pose.perspectiveMode){PointF p3=PerspectiveMasterRenderer.projectPoint(pose,1,0),p9=PerspectiveMasterRenderer.projectPoint(pose,-1,0);pose.anchor3X=p3.x;pose.anchor3Y=p3.y;pose.anchor9X=p9.x;pose.anchor9Y=p9.y;pose.perspectiveMode=true;perspectiveButton.setText("Perspective: ON");instruction.setText("Set 3 + 9 on the same yellow dial edge, then fine-nudge");}
-        else{pose.perspectiveMode=false;perspectiveButton.setText("Perspective: OFF");instruction.setText("Drag close, then select a handle and nudge it precisely");if(selectedHandle==2||selectedHandle==3)selectHandle(-1);}
+        if(!pose.perspectiveMode){
+            PointF p3=PerspectiveMasterRenderer.projectPoint(pose,1,0),p9=PerspectiveMasterRenderer.projectPoint(pose,-1,0);
+            pose.anchor3X=p3.x;pose.anchor3Y=p3.y;pose.anchor9X=p9.x;pose.anchor9Y=p9.y;pose.perspectiveMode=true;
+            perspectiveButton.setText("Perspective: ON");instruction.setText("Set CENTER, 12, 3 and 9 independently on the real dial plane");
+        } else {
+            pose.perspectiveMode=false;perspectiveButton.setText("Perspective: OFF");instruction.setText("Drag close, then select a handle and nudge it precisely");if(selectedHandle==2||selectedHandle==3)selectHandle(-1);
+        }
         renderNow();
     }
 
     private void resetPose(){float s=Math.min(base.getWidth(),base.getHeight())*0.41f;pose.centerX=base.getWidth()/2f;pose.centerY=base.getHeight()/2f;pose.scalePx=s;pose.pitchDeg=pose.yawDeg=pose.rollDeg=0;pose.alpha=1f;pose.anchorMode=true;pose.perspectiveMode=false;pose.anchor12X=pose.centerX;pose.anchor12Y=pose.centerY-s;pose.anchor3X=pose.centerX+s;pose.anchor3Y=pose.centerY;pose.anchor9X=pose.centerX-s;pose.anchor9Y=pose.centerY;for(int i=0;i<locked.length;i++)locked[i]=false;selectedHandle=-1;fineStep=true;if(perspectiveButton!=null)perspectiveButton.setText("Perspective: OFF");if(stepButton!=null)stepButton.setText("Fine 0.5 px");if(instruction!=null)instruction.setText("Drag close, then select a handle and nudge it precisely");}
 
-    private void openLockedInspection(){Bitmap overlay=PerspectiveMasterRenderer.renderOverlay(base.getWidth(),base.getHeight(),modelRef,pose);InspectionImageStore.setOverlay(base,overlay,"QC master · community ruler · α39");Toast.makeText(this,"Alignment set",Toast.LENGTH_SHORT).show();startActivity(new Intent(this,FullscreenInspectActivity.class));}
+    private void openLockedInspection(){Bitmap overlay=PerspectiveMasterRenderer.renderOverlay(base.getWidth(),base.getHeight(),modelRef,pose);InspectionImageStore.setOverlay(base,overlay,"QC master · true perspective ruler · α40");Toast.makeText(this,"Alignment set",Toast.LENGTH_SHORT).show();startActivity(new Intent(this,FullscreenInspectActivity.class));}
     private void renderThrottled(){long now=System.currentTimeMillis();if(now-lastRender<22)return;lastRender=now;renderNow();}
     private void renderNow(){image.setImageBitmapPreserveZoom(PerspectiveMasterRenderer.renderAlignment(base,modelRef,pose));}
 
