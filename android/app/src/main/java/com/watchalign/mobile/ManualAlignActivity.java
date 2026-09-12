@@ -14,7 +14,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/** Alpha32 direct-manipulation perspective workbench with high-contrast alignment guides. */
+/** Alpha33 direct-manipulation perspective workbench with reference-calibrated master. */
 public class ManualAlignActivity extends Activity {
     private ZoomableImageView image;
     private Bitmap base;
@@ -40,7 +40,7 @@ public class ManualAlignActivity extends Activity {
 
         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(6),dp(8),dp(6));top.setBackgroundColor(0xCC08111F);
         Button back=btn("Back");back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(72),dp(44)));
-        TextView title=txt("Perspective align · α32",17);title.setPadding(dp(8),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(44),1));
+        TextView title=txt("Perspective align · α33",17);title.setPadding(dp(8),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(44),1));
         Button reset=btn("Reset");reset.setOnClickListener(v->{resetPose();centreLocked=false;scaleLocked=false;guidesOnly=false;syncControls();renderNow();image.resetZoom();});top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(44)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(58),Gravity.TOP));
 
         LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(dp(8),dp(5),dp(8),dp(8));panel.setBackgroundColor(0xDD08111F);
@@ -88,7 +88,7 @@ public class ManualAlignActivity extends Activity {
 
     private void openLockedInspection(){
         Bitmap overlay=PerspectiveMasterRenderer.renderOverlay(base.getWidth(),base.getHeight(),modelRef,pose);
-        InspectionImageStore.setOverlay(base,overlay,"Locked QC master");
+        InspectionImageStore.setOverlay(base,overlay,"Locked QC master · ref-calibrated v5");
         Toast.makeText(this,"Alignment locked · opening inspector",Toast.LENGTH_SHORT).show();
         startActivity(new Intent(this,FullscreenInspectActivity.class));
     }
