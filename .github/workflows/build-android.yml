@@ -14,6 +14,7 @@ on:
       - feature/android-alpha21-canonical-gmt-geometry
       - feature/android-alpha22-perspective-overlay
       - feature/android-alpha23-zoom-fix
+      - feature/android-alpha24-stabilisation
   workflow_dispatch:
 
 permissions:
@@ -47,16 +48,18 @@ jobs:
           grep -q 'PerspectiveGmtOverlay' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q 'findHomography' app/src/main/java/com/watchalign/mobile/PerspectiveGmtOverlay.java
           grep -q 'fitEllipse' app/src/main/java/com/watchalign/mobile/PerspectiveGmtOverlay.java
-          grep -q 'hour markers are inspection targets' app/src/main/java/com/watchalign/mobile/PerspectiveGmtOverlay.java
-          grep -q 'ACTION_POINTER_DOWN' app/src/main/java/com/watchalign/mobile/ZoomableImageView.java
+          grep -q 'rayEllipseIntersection' app/src/main/java/com/watchalign/mobile/PerspectiveGmtOverlay.java
+          grep -q '12 is at the top' app/src/main/java/com/watchalign/mobile/PerspectiveGmtOverlay.java
+          grep -q 'ScaleGestureDetector owns pinch state' app/src/main/java/com/watchalign/mobile/ZoomableImageView.java
+          grep -q 'onScroll' app/src/main/java/com/watchalign/mobile/ZoomableImageView.java
           grep -q 'requestDisallowInterceptTouchEvent' app/src/main/java/com/watchalign/mobile/ZoomableImageView.java
-          grep -q '8f' app/src/main/java/com/watchalign/mobile/ZoomableImageView.java
+          grep -q 'Automated GL/RL scoring' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q 'Native template' app/src/main/java/com/watchalign/mobile/MainActivity.java
-          grep -q 'Rectified' app/src/main/java/com/watchalign/mobile/MainActivity.java
-          grep -q '1.3.0-alpha23' app/src/main/java/com/watchalign/mobile/MainActivity.java
-          grep -q '1.3.0-alpha23' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
-          grep -q "versionCode 13023" app/build.gradle
-          grep -q "versionName '1.3.0-alpha23'" app/build.gradle
+          grep -q 'Diagnostics' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q '1.3.0-alpha24' app/src/main/java/com/watchalign/mobile/MainActivity.java
+          grep -q '1.3.0-alpha24' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
+          grep -q "versionCode 13024" app/build.gradle
+          grep -q "versionName '1.3.0-alpha24'" app/build.gradle
       - name: Run Android unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
       - name: Fetch exact-model official genuine fixtures
@@ -72,14 +75,14 @@ jobs:
         run: gradle :app:assembleDebug --stacktrace
       - name: Prepare working APK
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha23.apk
-          sha256sum WatchAlign-Android-1.3.0-alpha23.apk > SHA256SUMS-Android.txt
+          cp app/build/outputs/apk/debug/app-debug.apk WatchAlign-Android-1.3.0-alpha24.apk
+          sha256sum WatchAlign-Android-1.3.0-alpha24.apk > SHA256SUMS-Android.txt
       - name: Upload working APK
         uses: actions/upload-artifact@v4
         with:
-          name: WatchAlign-Android-1.3.0-alpha23
+          name: WatchAlign-Android-1.3.0-alpha24
           path: |
-            android/WatchAlign-Android-1.3.0-alpha23.apk
+            android/WatchAlign-Android-1.3.0-alpha24.apk
             android/SHA256SUMS-Android.txt
           if-no-files-found: error
           retention-days: 30
