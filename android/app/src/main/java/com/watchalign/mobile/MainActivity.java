@@ -45,8 +45,8 @@ public class MainActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Color.rgb(8,17,31));
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("WATCH ALIGN · STANDALONE",12,Color.rgb(50,213,242)));TextView h1=text("Watch Align Android",28,Color.WHITE);h1.setPadding(0,dp(4),0,0);root.addView(h1);
-        root.addView(text("V1.3.0-alpha39 · community ruler + fine nudge",14,Color.rgb(158,176,201)));
-        root.addView(text("Alpha39 keeps the perspective-aware community QC ruler and adds selectable anchors, 0.5 px fine nudging, 2 px coarse nudging, press-and-hold repeat, and per-anchor locking.",13,Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha40 · true perspective QC ruler",14,Color.rgb(158,176,201)));
+        root.addView(text("Alpha40 keeps the community QC ruler and fine nudge workflow, but replaces the old mirrored perspective approximation with a true four-point projective transform using CENTER, 12, 3 and 9 as independent real dial points.",13,Color.rgb(158,176,201)));
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ModelCatalog.labels()));root.addView(model,lp(-1,dp(54),10));
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         Button pickRef=button("Choose genuine reference photos (optional)");pickRef.setOnClickListener(v->pickReferences());root.addView(pickRef,lp(-1,dp(52),6));
@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
         Button analyse=button("Build automatic QC overlay");analyse.setOnClickListener(v->analyse());root.addView(analyse,lp(-1,dp(52),6));
         status=text("Choose a watch photo to begin.",14,Color.rgb(158,176,201));root.addView(status);
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(Color.rgb(8,17,31));root.addView(preview,lp(-1,-2,12));
-        root.addView(text("Recommended route: Align ruler. Drag a handle close, tap it to select it, then use the fine arrows while watching the loupe. Lock each anchor when finished.",12,Color.rgb(158,176,201)));
+        root.addView(text("Recommended route: Align ruler. Set CENTER and 12, enable Perspective when needed, then set 3 and 9 independently. Fine-nudge and lock each anchor before inspection.",12,Color.rgb(158,176,201)));
 
         LinearLayout row1=new LinearLayout(this);row1.setOrientation(LinearLayout.HORIZONTAL);
         watchButton=smallButton("Diagnostics");perspectiveButton=smallButton("Auto template");rectifiedButton=smallButton("Rectified");
