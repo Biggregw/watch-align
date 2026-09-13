@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "rolex-gmt-126710-triangle12-corrected-pilot-v2",
+  "profileId": "rolex.gmt-master-ii.126710-family",
+  "moduleId": "gmt.triangle12.relationship",
+  "provenance": "image-derived-controls",
+  "factoryTolerance": false,
+  "genuineControlCount": 4,
+  "baseTo60": {
+    "pilotObserved": [0.114754, 0.120690, 0.125000, 0.164000],
+    "pilotMedian": 0.123000,
+    "legacyClassifierMin": 0.100000,
+    "legacyClassifierMax": 0.200000
+  },
+  "apexToCrown": {
+    "pilotMedian": 0.237000,
+    "legacyClassifierMin": 0.180000,
+    "legacyClassifierMax": 0.340000
+  },
+  "rotation": {
+    "observedEnvelopeAbsMaxDeg": 0.500000
+  },
+  "repeatability": {
+    "baseTo60PointPlacementP95": 0.009607
+  },
+  "notes": [
+    "Pilot observations are from four independent modern GMT genuine-control watches.",
+    "Legacy classifier bands are intentionally wider than the current pilot observations.",
+    "These values are image-derived controls, not Rolex factory CAD or manufacturing tolerances."
+  ]
+}
