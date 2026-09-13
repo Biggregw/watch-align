@@ -1,0 +1,4 @@
+metric,genuine_value,replica_value,absolute_separation,median_error,p95_error,max_error,separation_over_median,separation_over_p95,separation_over_max,distinguishable_beyond_max
+base_to_60,0.164000,0.086000,0.078000,0.002077,0.005457,0.008031,37.554165,14.293568,9.712365,true
+apex_to_crown,0.291000,0.284000,0.007000,0.002392,0.006552,0.009271,2.926421,1.068376,0.755043,false
+rotation_deg,0.000000,-0.290000,0.290000,0.137654,0.364686,0.536056,2.106731,0.795205,0.540988,false
