@@ -80,9 +80,9 @@ The first migration step is implemented under `com.watchalign.mobile.qc`:
 
 ### First reusable production module
 
-`GmtTriangle12QcModule` is now the first adapter from existing production measurement code into the reusable module contract.
+`GmtTriangle12QcModule` is the first adapter from existing production measurement code into the reusable module contract.
 
-Important guardrail: it delegates directly to `Triangle12RelationalMetric.measureRectifiedRaw` and does not duplicate or alter the GMT geometry calculations. It exposes the five raw production values through `QcModuleResult`:
+It delegates directly to `Triangle12RelationalMetric.measureRectifiedRaw` and does not duplicate or alter the GMT geometry calculations. It exposes the five raw production values through `QcModuleResult`:
 
 - `base_to_60_over_base`
 - `apex_to_crown_over_base`
@@ -90,11 +90,21 @@ Important guardrail: it delegates directly to `Triangle12RelationalMetric.measur
 - `height_over_base`
 - `lateral_px`
 
-The wrapper deliberately contains no pass/fail or genuine/replica classification. Unit tests compare every wrapped raw value exactly against the legacy production result and verify caller mutation cannot alter a captured input.
+The wrapper deliberately contains no pass/fail or genuine/replica classification.
 
 ### 4. Calibration and reference data
 
 Calibration is versioned and model/reference specific. Keep genuine observations, replica observations, legacy bands, repeatability data and provenance distinct. Do not encode image-derived observations as factory tolerances.
+
+The first production calibration asset is:
+
+`calibrations/rolex/gmt-master-ii/126710/triangle12-corrected-pilot-v2.json`
+
+It stores the current four-watch genuine pilot observations, pilot medians, frozen legacy classifier bands, angular envelope and base-to-60 point-placement p95 error. It is explicitly marked `factoryTolerance: false` and identifies its provenance as image-derived controls.
+
+`Triangle12CalibrationLoader` validates schema version, finite numeric values, observation count and the rule that this image-derived dataset must not be labelled as a factory tolerance.
+
+`FinalQcActivity` no longer owns these pilot/legacy values. It loads the versioned calibration asset and delegates explanatory assessment text to `GmtTriangle12Assessment`. Raw geometry remains unchanged.
 
 ### 5. Assessment layer
 
@@ -130,18 +140,14 @@ Extract common QC result contracts.
 ### Step 2 - complete
 Define the watch-profile schema and loader.
 
-Implemented with immutable `WatchProfile`, validated `WatchProfileLoader`, versioned JSON schema support, capabilities/modules/calibration references and unit tests.
-
 ### Step 3 - complete
 Wrap current GMT 12-triangle logic as the first reusable QC module without changing production calculations.
 
-Implemented with `GmtTriangle12QcModule`, which delegates to `Triangle12RelationalMetric.measureRectifiedRaw`. Regression tests compare all raw values exactly against the legacy production result.
+### Step 4 - complete
+Create the first declarative profile for modern Rolex GMT 126710-family watches and resolve its enabled modules through `QcModuleRegistry`.
 
-### Step 4
-Create the first declarative profile for modern Rolex GMT 126710-family watches.
-
-### Step 5
-Move genuine pilot / legacy classifier metadata out of UI logic into versioned calibration/profile data.
+### Step 5 - complete
+Move genuine pilot / legacy classifier metadata out of Final QC UI logic into versioned calibration data. The UI now reads the calibration asset instead of owning those values.
 
 ### Step 6
 Add a perspective-confidence service used by all modules.
@@ -176,13 +182,14 @@ Do not create one giant per-brand QC activity, bury thresholds inside generic ge
 2. Profile schema + loader
 3. GMT 12-triangle module wrapper
 4. GMT 126710 profile migration
-5. Perspective-confidence service
-6. Per-index geometry module
-7. Submariner profile
-8. Date/cyclops modules
-9. Bezel/rehaut/SEL modules
-10. First non-Rolex profile
-11. Model recognition after profile architecture is stable
+5. Versioned calibration data
+6. Perspective-confidence service
+7. Per-index geometry module
+8. Submariner profile
+9. Date/cyclops modules
+10. Bezel/rehaut/SEL modules
+11. First non-Rolex profile
+12. Model recognition after profile architecture is stable
 
 ## Relationship to research
 
