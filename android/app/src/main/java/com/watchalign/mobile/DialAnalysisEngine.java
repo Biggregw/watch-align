@@ -22,7 +22,7 @@ import java.util.Locale;
  * correctly registered watches correlate poorly.
  */
 final class DialAnalysisEngine {
-    public static final String CORE_VERSION = "1.3.0-alpha7";
+    public static final String CORE_VERSION = "1.3.0";
     private static final double MIN_DIAL_QUALITY = 0.56;
 
     public static final class AnalysisResult {
