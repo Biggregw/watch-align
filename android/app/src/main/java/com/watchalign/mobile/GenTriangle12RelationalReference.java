@@ -1,25 +1,34 @@
 package com.watchalign.mobile;
 
 /**
- * Visual QC reference range measured from multiple genuine 126710BLNR images.
- * These are image-derived genuine controls, not Rolex factory CAD or tolerances.
+ * Visual QC reference range measured from genuine modern 126710-family GMT images.
+ * These are image-derived genuine controls, not Rolex factory CAD or manufacturing tolerances.
  */
 public final class GenTriangle12RelationalReference {
     private GenTriangle12RelationalReference() {}
 
-    // Keep the original nominal target for drawing/round-trip regression, but judge
-    // pass/fail against the wider perspective-rectified genuine-control range.
-    // Three genuine runs observed roughly 0.163, 0.169 and 0.190 BW.
+    /** Number of independent genuine watches in the corrected interim control set. */
+    public static final int CORRECTED_CONTROL_COUNT = 4;
+
+    // Keep the nominal target used to draw the projected reference geometry.
     public static final float BASE_TO_60_INNER_OVER_BASE = 0.125f;
+
+    // Frozen classification range. Do not narrow it from the current small pilot population.
     public static final float BASE_TO_60_MIN = 0.10f;
     public static final float BASE_TO_60_MAX = 0.20f;
-    public static final float BASE_TO_60_MEDIAN = 0.169f;
+
+    // Corrected interim genuine-control median from four independent modern GMT controls:
+    // 0.114754, 0.120690, 0.125000 and 0.164000 BW.
+    // This updates explanatory UI only; it does not change classification behaviour.
+    public static final float BASE_TO_60_MEDIAN = 0.123f;
 
     // Apex-to-crown varies materially across genuine photography/rendering.
     public static final float APEX_TO_CROWN_OVER_BASE = 0.26f;
     public static final float APEX_TO_CROWN_MIN = 0.18f;
     public static final float APEX_TO_CROWN_MAX = 0.34f;
-    public static final float APEX_TO_CROWN_MEDIAN = 0.26f;
+
+    // Corrected interim median from the same four-control pilot, rounded for display.
+    public static final float APEX_TO_CROWN_MEDIAN = 0.237f;
 
     // Genuine controls have shown up to about 0.42 degrees after careful manual taps.
     // Treat <=0.50 degrees as observed genuine angular variation, not a defect by itself.
