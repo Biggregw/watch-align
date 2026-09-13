@@ -1,11 +1,14 @@
 package com.watchalign.mobile;
 
+import com.watchalign.mobile.qc.PerspectiveConfidenceService;
 import com.watchalign.mobile.qc.QcModule;
 import com.watchalign.mobile.qc.QcModuleResult;
 import com.watchalign.mobile.qc.RawMeasurement;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Reusable QC-module wrapper around the existing production GMT 12-triangle measurement.
@@ -54,15 +57,23 @@ public final class GmtTriangle12QcModule implements QcModule<GmtTriangle12QcModu
     public QcModuleResult measure(Input input) {
         if (input == null) throw new IllegalArgumentException("input must not be null");
 
+        PerspectiveConfidenceService.Assessment perspective = assessPerspective(input.pose);
+
         Triangle12RelationalMetric.Result result =
                 Triangle12RelationalMetric.measureRectifiedRaw(input.pose, input.points);
         if (result == null || result.rawRectified == null) {
+            List<String> evidence = new ArrayList<>(perspective.evidence());
+            evidence.add("Production rectified triangle measurement unavailable");
             return new QcModuleResult(
                     ID,
                     Collections.emptyList(),
                     QcModuleResult.Confidence.LOW,
-                    Collections.singletonList("Production rectified triangle measurement unavailable"));
+                    evidence);
         }
+
+        List<String> evidence = new ArrayList<>();
+        evidence.add("Delegated unchanged to Triangle12RelationalMetric.measureRectifiedRaw");
+        evidence.addAll(perspective.evidence());
 
         return new QcModuleResult(
                 ID,
@@ -73,8 +84,23 @@ public final class GmtTriangle12QcModule implements QcModule<GmtTriangle12QcModu
                         new RawMeasurement("height_over_base", result.rawRectified.heightRatio, "BW"),
                         new RawMeasurement("lateral_px", result.rawRectified.lateralPx, "px")
                 ),
-                QcModuleResult.Confidence.HIGH,
-                Collections.singletonList(
-                        "Delegated unchanged to Triangle12RelationalMetric.measureRectifiedRaw"));
+                perspective.confidence(),
+                evidence);
+    }
+
+    private static PerspectiveConfidenceService.Assessment assessPerspective(
+            PerspectiveMasterRenderer.Pose pose) {
+        if (!pose.anchorMode || !pose.perspectiveMode) {
+            return PerspectiveConfidenceService.assess(
+                    Double.NaN, pose.anchor12Y,
+                    pose.anchor3X, pose.anchor3Y,
+                    pose.anchor6X, pose.anchor6Y,
+                    pose.anchor9X, pose.anchor9Y);
+        }
+        return PerspectiveConfidenceService.assess(
+                pose.anchor12X, pose.anchor12Y,
+                pose.anchor3X, pose.anchor3Y,
+                pose.anchor6X, pose.anchor6Y,
+                pose.anchor9X, pose.anchor9Y);
     }
 }
