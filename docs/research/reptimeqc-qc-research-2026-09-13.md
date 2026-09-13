@@ -8,6 +8,7 @@ Research combined:
 
 - the earlier structured 24-thread sample across GMT-Master II, Submariner and Datejust
 - an additional broad pass across Rolex GMT/Submariner/Datejust plus Royal Oak, Nautilus and Omega examples
+- a further multi-brand pass covering Tudor Black Bay, Omega Aqua Terra, IWC Mark XX, Cartier Santos/Tank, Breitling Navitimer and additional Patek Nautilus examples
 - emphasis on posts where comments distinguished a genuine issue from a photo-angle/reflection false positive
 
 The findings should be treated as empirical QC guidance, not factory tolerances.
@@ -175,17 +176,104 @@ Examples:
 
 **Implication:** if Watch Align adds timegrapher support, treat it as a separate module with movement-specific lift-angle context.
 
-## 11. Non-Rolex model-specific geometry
+## 11. Model-specific geometry beyond Rolex
 
-The broader pass reinforces that QC logic must be model-specific.
+The broader pass strongly reinforces that Watch Align must use model/reference-specific QC profiles.
+
+### Tudor Black Bay 58
+
+Recurring pattern: small but systematic marker deviations are common enough that experienced reviewers judge them in a model-specific tolerance context.
+
+Examples:
+
+- ZF BB58: 3 marker slightly low and CW, 9 slightly CW, 6 slightly right of centre; still judged a decent GL for this model/factory.
+  https://www.reddit.com/r/RepTimeQC/comments/1w1pkew/first_qc_tudor_black_bay_58/
+- Earlier BB58 example specifically focused on whether the 3 marker was off.
+  https://www.reddit.com/r/RepTimeQC/comments/sw2fk2
+
+**Implication:** do not apply Rolex marker thresholds to Tudor. Add a Tudor-specific marker-position model and tolerance envelope.
+
+### Omega Aqua Terra / Seamaster
+
+Recurring checks:
+
+- index alignment
+- Omega symbol/logo centring and rotation
+- date-window rotation and date-wheel vertical/horizontal position
+- photo darkness/quality as a confidence limiter
+
+Examples:
+
+- Aqua Terra 150M: indices good, logo/symbol straight, but date window itself slightly CCW; reviewer said the single date was good and suggested more dates.
+  https://www.reddit.com/r/RepTimeQC/comments/1v6b17p/omega_seamaster_aqua_terra_150m_qc/
+- Aqua Terra: date slightly high was noted, but overall GL.
+  https://www.reddit.com/r/RepTimeQC/comments/1vf2l4g/qc_omega_seamaster_aqua_terra_41mm/
+- Aqua Terra: logo placement is a known concern, but a slight apparent offset can be invisible in normal wear and overblown zoom can exaggerate it.
+  https://www.reddit.com/r/RepTimeQC/comments/1eqrkz4
+- Aqua Terra: user concern over date-wheel centring led experienced commenters to request multiple dates rather than judge one frame.
+  https://www.reddit.com/r/RepTimeQC/comments/18ptkzi
+
+**Implication:** Omega profiles should include logo/symbol orientation and date-window rotation as first-class metrics.
+
+### IWC Mark XX
+
+A particularly useful example because it shows why feature selection must depend on dial construction.
+
+- IWC Mark XX black dial: owner thought the 6 index, date and hand alignment were bad. Experienced reviewer pointed out that it is a printed dial, so the usual individual applied-index overlay logic does not apply; key checks were print bleeds, triangle straightness and date centring.
+  https://www.reddit.com/r/RepTimeQC/comments/1jcbib9
+
+**Implication:** model profiles need a `printed dial` vs `applied indices` distinction. The app should disable inappropriate index-placement overlays for printed-dial models.
+
+### Cartier Santos
+
+Recurring QC categories differ substantially from Rolex:
+
+- overall dial rotation within case
+- printed Roman numeral crispness
+- Cartier logo and microprint at VII
+- factory-specific historical quirks such as BVF floating-R discussion
+- date-wheel centring on large models
+- screw appearance/seat and crystal quality
+
+Examples:
+
+- BVF Santos 35: community repeatedly highlighted that the dial was unusually straight; printed dial/crystal/microprint were the meaningful checks and the index overlay was unnecessary.
+  https://www.reddit.com/r/RepTimeQC/comments/1jqnsjc/bvf_cartier_santos_35mm_qc/
+- BVF Santos 40: date-wheel position was the user's concern, while experienced feedback said printed dial, crystal and microprint were fine.
+  https://www.reddit.com/r/RepTimeQC/comments/1pgkwar/bvf_cartier_santos_40mm/
+- Santos 40: owner noted a possibly crooked overall dial and date 26 shifted left.
+  https://www.reddit.com/r/RepTimeQC/comments/1k31y8e
+- AF Santos: oversized/heavy-looking printed C was noted, but microprint is extremely small in normal wear and should not be overweighted.
+  https://www.reddit.com/r/RepTimeQC/comments/1u6cyr4/cartier_santos_40mm_help_with_qc_please/
+- K11 Tank: very little geometry QC applies beyond overall dial/print/crown because many standard template categories are N/A.
+  https://www.reddit.com/r/RepTimeQC/comments/1eksa6y/k11_cartier_tank_small_black_template_in_comments/
+
+**Implication:** Cartier needs dial-rotation/print quality/date centring logic, not Rolex-style marker geometry.
+
+### Patek Nautilus
+
+Recurring themes:
+
+- date aperture/window rotation
+- marker radial positioning
+- small perimeter dot/track alignment on some references
+
+Examples:
+
+- 3KF Nautilus 5711 white dial: date window called seriously crooked and RL-worthy.
+  https://www.reddit.com/r/RepTimeQC/comments/1cruhm9
+- 3KF Nautilus 7118: concerns over 1/2 o'clock markers sitting high and perimeter dots around 10–2 not lining up evenly.
+  https://www.reddit.com/r/RepTimeQC/comments/1evqutz
+
+**Implication:** Nautilus should have a reference-specific date-window rotation metric plus marker/outer-track relationship checks.
 
 ### AP Royal Oak
 
 Recurring concerns include:
 
-- bezel screw alignment/seat depth
+- bezel screw angular alignment and seat depth
 - AP logo lean
-- 12 double-marker symmetry
+- double-12 symmetry
 - date position
 
 Examples:
@@ -195,36 +283,48 @@ Examples:
 - ZF Royal Oak 15500: concern about screw recessing and date centring; commenters warned against over-relying on anecdotal gen comparison.
   https://www.reddit.com/r/RepTimeQC/comments/1jyaive
 
-### Patek Nautilus
+**Implication:** Royal Oak needs screw-vector/seat-depth checks and AP-logo geometry, which are irrelevant to Rolex models.
 
-- date aperture/window rotation can be a strong visible defect
-- generic Rolex-style rules do not transfer directly
+### Breitling Navitimer
 
-Example:
+The busy multi-scale dial introduces a different alignment problem.
 
-- 3KF Nautilus 5711 white dial: date window called seriously crooked and RL-worthy.
-  https://www.reddit.com/r/RepTimeQC/comments/1cruhm9
+- BLS Navitimer B01: owner identified misalignment between bezel/slide-rule/dial markings in multiple sectors, a date shifted right, and a high rate on the timegrapher.
+  https://www.reddit.com/r/RepTimeQC/comments/14i7tgz
 
-### Omega Seamaster
+**Implication:** Navitimer requires concentric scale-registration checks rather than simple hour-marker-only analysis.
 
-- index alignment and date-wheel vertical position are prominent
-- model-specific acceptance norms differ from Rolex
+## 12. Model capability matrix should become a core architecture feature
 
-Example:
+Each model/reference profile should explicitly declare which checks are meaningful.
 
-- VSF Seamaster 300m: low date wheel but otherwise good alignment.
-  https://www.reddit.com/r/RepTimeQC/comments/1s6r19f/qc_vsf_omega_seamaster/
+Suggested capability flags:
 
-**Implication:** Watch Align should maintain model/reference-specific feature sets and baselines rather than a universal watch geometry model.
+- applied_index_geometry
+- printed_dial_rotation
+- logo_orientation
+- date_aperture_geometry
+- date_wheel_centring
+- cyclops_geometry
+- bezel_detent_alignment
+- rehaut_alignment
+- sel_gap_detection
+- screw_alignment
+- outer_track_registration
+- hand_alignment_test
+- timegrapher_interpretation
+
+The UI should hide or mark N/A for irrelevant checks instead of presenting the same generic checklist for every watch.
 
 ## Updated implementation priorities
 
 ### P0
 
-- Per-index angular/radial/tangential geometry
+- Per-index angular/radial/tangential geometry for applicable models
 - Perspective/rectification confidence gate
 - Keep raw metrics separate from classification
 - Model/reference-specific calibration only
+- Add model capability matrix so irrelevant checks are disabled
 
 ### P1
 
@@ -233,18 +333,16 @@ Example:
 - Bezel alignment with click/detent uncertainty
 - Rehaut alignment
 - Dedicated hand-alignment capture/test state
+- Printed-dial overall rotation/registration
+- Logo orientation/centering where model-relevant
 
 ### P2
 
 - SEL true-gap detection
 - Lume/marker-shape anomaly detection with reflection downgrade
 - Timegrapher module with movement/lift-angle context
-
-### Model-specific extensions
-
-- AP Royal Oak: screw alignment/seat depth, AP logo, double-12 symmetry
-- Nautilus: date-window rotation/geometry
-- Omega Seamaster: model-specific date and marker baselines
+- AP screw vector/seat checks
+- Navitimer concentric scale registration
 
 ## Product positioning
 
