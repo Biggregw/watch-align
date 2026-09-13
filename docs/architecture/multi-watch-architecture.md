@@ -107,6 +107,16 @@ Initial module set:
 
 Each module should return raw measurements, confidence and evidence. It should not directly decide whether a watch is fake.
 
+### Implemented common contracts
+
+The first migration step is now implemented under `com.watchalign.mobile.qc`:
+
+- `RawMeasurement` holds an immutable metric id, finite numeric value and unit.
+- `QcModuleResult` holds a module id, immutable raw measurements, confidence and supporting evidence only.
+- `QcModule<I>` is the generic interface for reusable measurement modules.
+
+These types intentionally contain no model-specific pass/fail or genuine/replica classification. That remains the responsibility of the later assessment layer.
+
 ### 4. Calibration and reference data
 
 Calibration should be versioned and model/reference specific.
@@ -202,28 +212,33 @@ Automatic model recognition can be added later as a separate feature without cou
 
 Do not rewrite everything at once. Migrate incrementally.
 
-### Step 1
+### Step 1 - complete
 Extract a common QC result interface and raw-measurement result type.
 
+Implemented with `RawMeasurement`, `QcModuleResult` and `QcModule<I>`, plus unit tests covering raw-value preservation, immutability and invalid numeric rejection. No existing GMT production calculation has been changed.
+
 ### Step 2
-Wrap the current GMT 12-triangle logic as the first reusable module without changing its production calculations.
+Define the watch-profile schema and loader.
 
 ### Step 3
-Create the first declarative profile for modern Rolex GMT 126710-family watches.
+Wrap the current GMT 12-triangle logic as the first reusable module without changing its production calculations.
 
 ### Step 4
-Move genuine pilot / legacy classifier metadata out of UI logic into versioned calibration/profile data.
+Create the first declarative profile for modern Rolex GMT 126710-family watches.
 
 ### Step 5
-Add a perspective-confidence service used by all modules.
+Move genuine pilot / legacy classifier metadata out of UI logic into versioned calibration/profile data.
 
 ### Step 6
-Implement per-index geometry as the first new generic module.
+Add a perspective-confidence service used by all modules.
 
 ### Step 7
-Add a second model family, ideally Submariner 124060, to prove the architecture is genuinely reusable.
+Implement per-index geometry as the first new generic module.
 
 ### Step 8
+Add a second model family, ideally Submariner 124060, to prove the architecture is genuinely reusable.
+
+### Step 9
 Add a non-Rolex family such as Omega Seamaster or IWC Mark XX to prove capability-based behaviour, especially applied-index vs printed-dial logic.
 
 ## Testing requirements
