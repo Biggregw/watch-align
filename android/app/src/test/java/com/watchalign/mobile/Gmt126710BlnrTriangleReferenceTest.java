@@ -4,10 +4,12 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class Gmt126710BlnrTriangleReferenceTest {
-    @Test public void dimensionsMatchFrozenVisualReference(){
+    @Test public void dimensionsMatchCorrectedPilotReference(){
         assertEquals(0.2500f,Gmt126710BlnrTriangleReference.WIDTH_R,0.0001f);
-        assertEquals(0.3040f,Gmt126710BlnrTriangleReference.HEIGHT_R,0.0001f);
-        assertEquals(0.0610f,Gmt126710BlnrTriangleReference.BASE_TO_TRACK_R,0.0001f);
+        assertEquals(0.3115f,Gmt126710BlnrTriangleReference.HEIGHT_R,0.0001f);
+        assertEquals(0.03075f,Gmt126710BlnrTriangleReference.BASE_TO_TRACK_R,0.0001f);
+        assertEquals(0.123f,Gmt126710BlnrTriangleReference.CALIBRATED_BASE_TO_60_OVER_BASE,0.0001f);
+        assertEquals(1.246f,Gmt126710BlnrTriangleReference.CALIBRATED_HEIGHT_OVER_BASE,0.0001f);
     }
 
     @Test public void triangleIsCentredOnTwelveAxis(){
