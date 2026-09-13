@@ -15,7 +15,7 @@ All analysis is local. The app has no Internet permission. See [docs/PRIVACY.md]
 
 ## Build
 
-Use Java 17, Gradle 8.10.2 and Android SDK 35:
+Use Java 17, Gradle 8.10.2 and Android SDK 36:
 
 ```sh
 gradle :app:testDebugUnitTest

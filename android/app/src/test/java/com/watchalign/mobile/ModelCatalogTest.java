@@ -39,9 +39,9 @@ public class ModelCatalogTest {
         assertEquals(9,ModelCatalog.require("126720VTNR").dateHour);
     }
 
-    @Test public void onlyVerifiedExactModelsAdvertiseAutoReference() {
-        assertTrue(ModelCatalog.require("126710BLNR").supportsAutoReference());
-        assertTrue(ModelCatalog.require("124060").supportsAutoReference());
+    @Test public void onlineReferenceSourcingIsPermanentlyDisabled() {
+        assertFalse(ModelCatalog.require("126710BLNR").supportsAutoReference());
+        assertFalse(ModelCatalog.require("124060").supportsAutoReference());
         assertFalse(ModelCatalog.require("126334").supportsAutoReference());
         assertFalse(ModelCatalog.require("OMEGA-SMP300").supportsAutoReference());
     }

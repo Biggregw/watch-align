@@ -31,3 +31,5 @@ No DNN, video, network or cloud API is used. Replacing OpenCV would require vali
 ## Storage and network
 
 Analysis and capture are local. The app has no Internet permission. User-selected and captured images remain local unless the user explicitly invokes Android sharing.
+
+Online reference sourcing is permanently removed. See `REFERENCE_POLICY.md` for the decision and the requirements for any future reconsideration.

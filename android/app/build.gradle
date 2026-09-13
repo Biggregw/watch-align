@@ -2,12 +2,12 @@ plugins { id 'com.android.application' }
 
 android {
     namespace 'com.watchalign.mobile'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId 'com.watchalign.mobile'
         minSdk 28
-        targetSdk 35
+        targetSdk 36
         versionCode 13055
         versionName '1.3.0-rc1'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -62,4 +62,5 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test:runner:1.6.2'
     implementation 'androidx.core:core:1.15.0'
+    implementation 'androidx.exifinterface:exifinterface:1.4.1'
 }

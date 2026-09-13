@@ -42,7 +42,7 @@ final class ModelCatalog {
         }
 
         boolean hasDate(){ return dateHour>=1 && dateHour<=12; }
-        boolean supportsAutoReference(){ return officialPage!=null && !officialPage.isEmpty(); }
+        boolean supportsAutoReference(){ return false; }
         String capability(){return geometryMode==GeometryMode.VISUAL_ONLY?"VISUAL ONLY":"FULL GEOMETRY";}
         String unavailableChecks(){if(geometryMode==GeometryMode.VISUAL_ONLY)return "Radial marker, perspective ruler and triangle geometry checks are unavailable for this case shape.";if(!CanonicalGmtGeometryAnalyzer.supports(code))return "Exact-model GMT master and rectified 12-triangle checks are unavailable; common round-index diagnostics remain available.";return "All current exact-model geometry checks are available.";}
         @Override public String toString(){ return label; }
@@ -57,11 +57,11 @@ final class ModelCatalog {
         // Rolex sports / everyday models that dominate RepTimeQC traffic.
         // GMT 24-hour bezel triangles are deliberately visual-only for now. The old brightness
         // peak scan could lock onto bezel numerals/reflections and manufacture multi-degree errors.
-        add(p,"126710BLNR","Rolex GMT-Master II 126710BLNR · Batman/Batgirl","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,false,true,true,"https://www.rolex.com/watches/gmt-master-ii/m126710blnr-0002");
+        add(p,"126710BLNR","Rolex GMT-Master II 126710BLNR · Batman/Batgirl","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,false,true,true,null);
         add(p,"126710BLRO","Rolex GMT-Master II 126710BLRO · Pepsi","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,false,true,true,null);
         add(p,"126710GRNR","Rolex GMT-Master II 126710GRNR · Bruce Wayne","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,false,true,true,null);
         add(p,"126720VTNR","Rolex GMT-Master II 126720VTNR · Sprite","Rolex",GeometryMode.ROUND_INDEXED,9,true,0.69,false,true,true,null);
-        add(p,"124060","Rolex Submariner 124060 · No-Date","Rolex",GeometryMode.ROUND_INDEXED,0,false,0.0,true,true,true,"https://www.rolex.com/watches/submariner/m124060-0001");
+        add(p,"124060","Rolex Submariner 124060 · No-Date","Rolex",GeometryMode.ROUND_INDEXED,0,false,0.0,true,true,true,null);
         add(p,"126610LN","Rolex Submariner Date 126610LN","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,true,true,true,null);
         add(p,"126610LV","Rolex Submariner Date 126610LV · Starbucks","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,true,true,true,null);
         add(p,"116610LN","Rolex Submariner Date 116610LN","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,true,true,true,null);

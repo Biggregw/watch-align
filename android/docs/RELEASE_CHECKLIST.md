@@ -9,4 +9,5 @@
 - [ ] Verify adaptive, round and monochrome launcher icons.
 - [ ] Review `PRIVACY.md` against the final manifest and dependencies.
 - [ ] Reconfirm the target SDK and Play policy immediately before submission.
+- [ ] Run the physical-device path in `DEVICE_TESTING.md` and manually verify portrait/landscape still orientation and guide-to-JPEG framing.
 - [ ] Upload the signed AAB to an internal Play test track before production.
