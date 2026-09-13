@@ -58,6 +58,7 @@ public final class WatchAlignCore {
                     +"Four independent dial-edge correspondences at 12, 3, 6 and 9 solve the planar projective transform. "
                     +"The pinion is an independent CENTER CHECK. The 12-triangle relation check is measured after perspective rectification.\n"
                     +perspectiveReport
+                    +ext.report
                     +"\nThe ruler and QC ranges are visual aids derived from genuine-image controls, not Rolex factory CAD or factory tolerance data. Automatic analysis remains secondary.\n";
         } else {
             String baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;
