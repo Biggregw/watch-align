@@ -27,6 +27,7 @@ public final class QcModuleRegistry {
 
     private static QcModule<?> create(String moduleId) {
         if (GmtTriangle12QcModule.ID.equals(moduleId)) return new GmtTriangle12QcModule();
+        if (IndexGeometryQcModule.ID.equals(moduleId)) return new IndexGeometryQcModule();
         return null;
     }
 }
