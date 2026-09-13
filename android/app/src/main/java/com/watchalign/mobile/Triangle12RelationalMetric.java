@@ -4,9 +4,24 @@ import android.graphics.PointF;
 
 /** Scale-independent 12-marker relationship metric. */
 public final class Triangle12RelationalMetric {
+    public static final class RawMeasurement {
+        public final float baseTo60Ratio,apexToCrownRatio,rotationDeg,heightRatio,lateralPx;
+        RawMeasurement(float base,float apex,float rotation,float height,float lateral){baseTo60Ratio=base;apexToCrownRatio=apex;rotationDeg=rotation;heightRatio=height;lateralPx=lateral;}
+    }
+    public enum RangePosition { BELOW,WITHIN,ABOVE }
+    public static final class Classification {
+        public final RangePosition baseTo60,apexToCrown,rotationMagnitude;
+        Classification(float base,float apex,float rotation){baseTo60=position(base,GenTriangle12RelationalReference.BASE_TO_60_MIN,GenTriangle12RelationalReference.BASE_TO_60_MAX);apexToCrown=position(apex,GenTriangle12RelationalReference.APEX_TO_CROWN_MIN,GenTriangle12RelationalReference.APEX_TO_CROWN_MAX);rotationMagnitude=Math.abs(rotation)<=GenTriangle12RelationalReference.ROTATION_OBSERVED_GEN_MAX_DEG?RangePosition.WITHIN:RangePosition.ABOVE;}
+        private static RangePosition position(float value,float min,float max){return value<min?RangePosition.BELOW:value>max?RangePosition.ABOVE:RangePosition.WITHIN;}
+    }
     public static final class Result {
         public final float baseGapRatio, apexGapRatio, heightRatio, rotationDeg, lateralPx;
-        Result(float bg,float ag,float hr,float rd,float lat){baseGapRatio=bg;apexGapRatio=ag;heightRatio=hr;rotationDeg=rd;lateralPx=lat;}
+        /** Present only when the five manual points were perspective-rectified first. */
+        public final RawMeasurement rawRectified;
+        /** Classification uses the frozen genuine-control ranges and never changes the raw values. */
+        public final Classification classification;
+        Result(float bg,float ag,float hr,float rd,float lat){this(bg,ag,hr,rd,lat,false);}
+        private Result(float bg,float ag,float hr,float rd,float lat,boolean rectified){baseGapRatio=bg;apexGapRatio=ag;heightRatio=hr;rotationDeg=rd;lateralPx=lat;rawRectified=rectified?new RawMeasurement(bg,ag,rd,hr,lat):null;classification=new Classification(bg,ag,rd);}
     }
     private Triangle12RelationalMetric() {}
 
@@ -27,7 +42,15 @@ public final class Triangle12RelationalMetric {
 
         float meanR=(dist(pose.anchor12X,pose.anchor12Y,pose.anchor6X,pose.anchor6Y)+dist(pose.anchor3X,pose.anchor3Y,pose.anchor9X,pose.anchor9Y))/4f;
         float lateralPx=raw.lateralPx*meanR;
-        return new Result(raw.baseGapRatio,raw.apexGapRatio,raw.heightRatio,raw.rotationDeg,lateralPx);
+        return new Result(raw.baseGapRatio,raw.apexGapRatio,raw.heightRatio,raw.rotationDeg,lateralPx,true);
+    }
+
+    /** Explicit-pose entry point for validation runners; it does not read or mutate activity state. */
+    static Result measureRectifiedRaw(PerspectiveMasterRenderer.Pose pose,double[][] points){
+        if(points==null||points.length!=5)return null;double[][] q=new double[5][];for(int i=0;i<5;i++){if(points[i]==null||points[i].length<2)return null;q[i]=PerspectiveRectifier.toDialRaw(pose,points[i][0],points[i][1]);if(q[i]==null)return null;}
+        Result raw=measureRaw((float)q[0][0],(float)q[0][1],(float)q[1][0],(float)q[1][1],(float)q[2][0],(float)q[2][1],(float)q[3][0],(float)q[3][1],(float)q[4][0],(float)q[4][1],0,0,0,-1);
+        float meanR=(dist(pose.anchor12X,pose.anchor12Y,pose.anchor6X,pose.anchor6Y)+dist(pose.anchor3X,pose.anchor3Y,pose.anchor9X,pose.anchor9Y))/4f;
+        return new Result(raw.baseGapRatio,raw.apexGapRatio,raw.heightRatio,raw.rotationDeg,raw.lateralPx*meanR,true);
     }
 
     static Result measureRaw(float lx,float ly,float rx,float ry,float ax,float ay,float mx,float my,float cx,float cy,float ox,float oy,float p12x,float p12y){

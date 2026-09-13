@@ -53,6 +53,14 @@ jobs:
           ! grep -q 'captureFrame.*getBitmap' app/src/main/java/com/watchalign/mobile/CaptureActivity.java
       - name: Run Android unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
+      - name: Publish repeatability evidence
+        if: always()
+        run: |
+          REPORT=$(find app/build/test-results/testDebugUnitTest -name '*.xml' -print0 | xargs -0 grep -h 'system-out' -A 30 || true)
+          echo "### 12-triangle validation" >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          echo "$REPORT" | sed -E 's/<[^>]+>//g' | head -80 >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
       - name: Build standalone APK
         run: gradle :app:assembleDebug --stacktrace
       - name: Compile real-device tests

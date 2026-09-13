@@ -17,6 +17,8 @@ Exact-model geometry is represented in Java constants. The duplicate JSON catalo
 
 Alpha52 is the frozen baseline for the four manual dial-edge anchors, projective rectification, and 12-triangle control classification. Automatic points are suggestions. No inspected marker is moved to improve a score. Genuine-control ranges are observations from images, not manufacturer tolerances and not an authenticity test.
 
+Raw rectified 12-triangle measurements and their frozen-range classification are separate values. Validation and control-set runners call the same explicit-pose metric without reading or changing Activity state. See `TRIANGLE_VALIDATION.md`.
+
 ## OpenCV audit
 
 The app uses the OpenCV Android artifact locally. Used modules and APIs are:
