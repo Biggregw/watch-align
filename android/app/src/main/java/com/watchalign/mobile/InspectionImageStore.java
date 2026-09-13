@@ -14,6 +14,10 @@ final class InspectionImageStore {
     static String alignedModelRef;
     static PointF[] trianglePoints;
     static Triangle12RelationalMetric.Result triangleMetric;
+    static Bitmap capturedBitmap;
+
+    static void setCaptured(Bitmap bitmap){capturedBitmap=bitmap;}
+    static Bitmap takeCaptured(){Bitmap b=capturedBitmap;capturedBitmap=null;return b;}
 
     static void set(Bitmap b, String t){
         bitmap=b;baseBitmap=null;title=t;modelRef=null;overlayMode=false;alignedPose=null;alignedModelRef=null;trianglePoints=null;triangleMetric=null;
