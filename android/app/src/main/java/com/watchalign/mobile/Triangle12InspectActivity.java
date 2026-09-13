@@ -20,7 +20,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** Alpha50: editable 12 marker relation check feeding a combined final QC result. */
+/** Editable 12 marker relation check feeding a combined final QC result. */
 public class Triangle12InspectActivity extends Activity {
     private Bitmap base; private PerspectiveMasterRenderer.Pose pose; private MeasureView measureView;
     private TextView result; private Button stepButton; private boolean fine=true;
@@ -36,7 +36,7 @@ public class Triangle12InspectActivity extends Activity {
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(8),dp(3),dp(8),dp(5));bottom.setBackgroundColor(0xEE08111F);
         TextView hint=txt("CYAN = projected genuine-reference triangle · GREEN = your corrected marker. Adjust 1 LEFT BASE, 2 RIGHT BASE, 3 APEX, 4 INNER TIP OF 60, 5 CROWN TOP.",9);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(42)));
-        result=txt("",10);result.setGravity(Gravity.CENTER);bottom.addView(result,new LinearLayout.LayoutParams(-1,dp(92)));
+        result=txt("",10);result.setGravity(Gravity.CENTER);bottom.addView(result,new LinearLayout.LayoutParams(-1,dp(124)));
 
         LinearLayout row1=new LinearLayout(this);row1.setGravity(Gravity.CENTER);
         String[] names={"1 Left","2 Right","3 Apex"};for(int i=0;i<3;i++){final int k=i;Button b=btn(names[i]);b.setOnClickListener(v->measureView.select(k));row1.addView(b,new LinearLayout.LayoutParams(0,dp(38),1));}bottom.addView(row1);
@@ -47,7 +47,7 @@ public class Triangle12InspectActivity extends Activity {
         Button left=btn("◀"),up=btn("▲"),down=btn("▼"),right=btn("▶");setupRepeat(left,-1,0);setupRepeat(up,0,-1);setupRepeat(down,0,1);setupRepeat(right,1,0);controls.addView(left,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(up,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(down,new LinearLayout.LayoutParams(0,dp(42),1));controls.addView(right,new LinearLayout.LayoutParams(0,dp(42),1));bottom.addView(controls);
         Button finishQc=btn("Finish QC · combined result");finishQc.setBackgroundColor(Color.rgb(50,213,242));finishQc.setTextColor(Color.rgb(4,32,42));finishQc.setOnClickListener(v->openFinalQc());bottom.addView(finishQc,new LinearLayout.LayoutParams(-1,dp(46)));
         TextView caveat=txt("Projected outline is an image-derived genuine reference, not Rolex factory CAD or a manufacturing tolerance.",9);caveat.setGravity(Gravity.CENTER);bottom.addView(caveat,new LinearLayout.LayoutParams(-1,dp(38)));
-        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(350),Gravity.BOTTOM));setContentView(root);measureView.autoSeed();updateResult();
+        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(382),Gravity.BOTTOM));setContentView(root);measureView.autoSeed();updateResult();
     }
 
     private void setupRepeat(Button b,float dx,float dy){Handler h=new Handler(Looper.getMainLooper());Runnable r=new Runnable(){@Override public void run(){nudge(dx,dy);h.postDelayed(this,80);}};b.setOnTouchListener((v,e)->{int a=e.getActionMasked();if(a==MotionEvent.ACTION_DOWN){nudge(dx,dy);h.postDelayed(r,330);return true;}if(a==MotionEvent.ACTION_UP||a==MotionEvent.ACTION_CANCEL){h.removeCallbacks(r);return true;}return true;});}
@@ -55,11 +55,14 @@ public class Triangle12InspectActivity extends Activity {
 
     private void updateResult(){
         if(result==null||measureView==null)return;if(!measureView.complete()){result.setText("Set all 5 points. Selected: "+measureView.selectedName());return;}
-        Triangle12RelationalMetric.Result m=measureView.metric();InspectionImageStore.setTriangleResult(measureView.copyActual(),m);
+        PointF[] actual=measureView.copyActual();
+        Triangle12RelationalMetric.Result m=measureView.metric();InspectionImageStore.setTriangleResult(actual,m);
         String baseText=QcMeasurementFormatter.range("Base-to-60",m.baseGapRatio,GenTriangle12RelationalReference.BASE_TO_60_MEDIAN,GenTriangle12RelationalReference.BASE_TO_60_MIN,GenTriangle12RelationalReference.BASE_TO_60_MAX,"BW");
         String positionText=QcMeasurementFormatter.triangleTrackPosition(m.baseGapRatio);
         String crownText=QcMeasurementFormatter.range("Apex-to-crown",m.apexGapRatio,GenTriangle12RelationalReference.APEX_TO_CROWN_MEDIAN,GenTriangle12RelationalReference.APEX_TO_CROWN_MIN,GenTriangle12RelationalReference.APEX_TO_CROWN_MAX,"BW");
-        result.setText(positionText+"\n"+baseText+"\n"+crownText+"\n"+QcMeasurementFormatter.rotation(m.rotationDeg)+String.format(" · lateral %+.2f px",m.lateralPx));
+        Triangle12ReferenceDiagnostics.Result d=Triangle12ReferenceDiagnostics.measure(pose,actual);
+        String diag=d==null?"Reference displacement unavailable":d.compact(m.rotationDeg)+"\n"+d.vertexCompact();
+        result.setText(positionText+"\n"+diag+"\n"+baseText+"\n"+crownText);
     }
 
     private void openFinalQc(){if(!measureView.complete())return;Triangle12RelationalMetric.Result m=measureView.metric();InspectionImageStore.setTriangleResult(measureView.copyActual(),m);startActivity(new Intent(this,FinalQcActivity.class));}
@@ -80,7 +83,7 @@ public class Triangle12InspectActivity extends Activity {
         void select(int i){selected=i;invalidate();updateResult();}void nudge(float dx,float dy){if(!set[selected])return;actual[selected].x+=dx;actual[selected].y+=dy;invalidate();}
         Triangle12RelationalMetric.Result metric(){return Triangle12RelationalMetric.measure(actual[0],actual[1],actual[2],actual[3],actual[4],centre,p12);}
 
-        @Override protected void onDraw(Canvas c){super.onDraw(c);float w=cropRight-cropLeft,h=cropBottom-cropTop;if(w<=1||h<=1)return;float availTop=dp(62),availBottom=getHeight()-dp(354),availH=Math.max(1,availBottom-availTop);drawScale=Math.min(getWidth()/w,availH/h);float dw=w*drawScale,dh=h*drawScale;drawOx=(getWidth()-dw)/2f;drawOy=availTop+(availH-dh)/2f;Rect src=new Rect(Math.round(cropLeft),Math.round(cropTop),Math.round(cropRight),Math.round(cropBottom));RectF dst=new RectF(drawOx,drawOy,drawOx+dw,drawOy+dh);c.drawBitmap(base,src,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
+        @Override protected void onDraw(Canvas c){super.onDraw(c);float w=cropRight-cropLeft,h=cropBottom-cropTop;if(w<=1||h<=1)return;float availTop=dp(62),availBottom=getHeight()-dp(386),availH=Math.max(1,availBottom-availTop);drawScale=Math.min(getWidth()/w,availH/h);float dw=w*drawScale,dh=h*drawScale;drawOx=(getWidth()-dw)/2f;drawOy=availTop+(availH-dh)/2f;Rect src=new Rect(Math.round(cropLeft),Math.round(cropTop),Math.round(cropRight),Math.round(cropBottom));RectF dst=new RectF(drawOx,drawOy,drawOx+dw,drawOy+dh);c.drawBitmap(base,src,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
             drawMinuteAxis(c,-1,"59");drawMinuteAxis(c,0,"60");drawMinuteAxis(c,1,"01");PointF aa=s(PerspectiveMasterRenderer.projectPoint(pose,0,-.52)),bb=s(p12);c.drawLine(aa.x,aa.y,bb.x,bb.y,axis);
             drawProjectedReferenceTriangle(c);
             for(int i=0;i<5;i++)if(set[i]){PointF q=s(actual[i]);float r=dp(i==selected?8:5);c.drawCircle(q.x,q.y,r,actualPaint);c.drawText(String.valueOf(i+1),q.x+dp(8),q.y-dp(7),label);}
