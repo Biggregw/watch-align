@@ -16,7 +16,8 @@
     "sel-gap"
   ],
   "enabledModules": [
-    "gmt.triangle12.relationship"
+    "gmt.triangle12.relationship",
+    "generic.index_geometry"
   ],
   "calibrationIds": {
     "triangle12": "rolex-gmt-126710-triangle12-corrected-pilot-v2"
