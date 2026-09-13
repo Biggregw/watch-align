@@ -43,6 +43,8 @@ final class ModelCatalog {
 
         boolean hasDate(){ return dateHour>=1 && dateHour<=12; }
         boolean supportsAutoReference(){ return officialPage!=null && !officialPage.isEmpty(); }
+        String capability(){return geometryMode==GeometryMode.VISUAL_ONLY?"VISUAL ONLY":"FULL GEOMETRY";}
+        String unavailableChecks(){if(geometryMode==GeometryMode.VISUAL_ONLY)return "Radial marker, perspective ruler and triangle geometry checks are unavailable for this case shape.";if(!CanonicalGmtGeometryAnalyzer.supports(code))return "Exact-model GMT master and rectified 12-triangle checks are unavailable; common round-index diagnostics remain available.";return "All current exact-model geometry checks are available.";}
         @Override public String toString(){ return label; }
     }
 
@@ -122,7 +124,7 @@ final class ModelCatalog {
     }
     static String[] labels(){
         String[] out=new String[ALL.size()];
-        for(int i=0;i<ALL.size();i++) out[i]=ALL.get(i).label;
+        for(int i=0;i<ALL.size();i++) out[i]=ALL.get(i).label+" · "+ALL.get(i).capability();
         return out;
     }
     static Profile at(int index){ return ALL.get(index); }

@@ -18,6 +18,7 @@ import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.AdapterView;
 
 import org.opencv.android.OpenCVLoader;
 
@@ -49,10 +50,12 @@ public class MainActivity extends Activity {
         root.addView(text("V1.3.0-alpha54 · consolidated core",14,Color.rgb(158,176,201)));
         root.addView(text("Perspective alignment, 12-triangle relation QC and final summary all run locally. The automatic points are suggestions only: inspect them, fine-nudge anything that is off, then run the local 12-marker relation check.",13,Color.rgb(158,176,201)));
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ModelCatalog.labels()));root.addView(model,lp(-1,dp(54),10));
+        TextView capability=text("",12,Color.rgb(158,176,201));root.addView(capability);model.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> p,View v,int position,long id){ModelCatalog.Profile x=ModelCatalog.at(position);capability.setText(x.capability()+" · "+x.unavailableChecks());}public void onNothingSelected(AdapterView<?> p){}});
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         Button camera=button("Take guided watch photo");camera.setOnClickListener(v->startActivityForResult(new Intent(this,CaptureActivity.class),CAPTURE_WATCH));root.addView(camera,lp(-1,dp(52),6));
         Button history=button("Inspection history");history.setOnClickListener(v->startActivity(new Intent(this,HistoryActivity.class)));root.addView(history,lp(-1,dp(52),6));
         Button pickRef=button("Choose genuine reference photos (optional)");pickRef.setOnClickListener(v->pickReferences());root.addView(pickRef,lp(-1,dp(52),6));
+        Button saveRef=button("Save selected photos as confirmed genuine");saveRef.setOnClickListener(v->{if(referenceBitmaps.isEmpty()){Toast.makeText(this,"Choose reference photos first",Toast.LENGTH_SHORT).show();return;}try{int n=ReferenceLibrary.save(this,ModelCatalog.at(model.getSelectedItemPosition()).code,referenceBitmaps);Toast.makeText(this,n+" reference photo"+(n==1?"":"s")+" saved locally",Toast.LENGTH_LONG).show();}catch(Exception e){Toast.makeText(this,"Could not save references",Toast.LENGTH_LONG).show();}});root.addView(saveRef,lp(-1,dp(52),6));
         Button manual=button("Align ruler");manual.setBackgroundColor(Color.rgb(255,60,60));manual.setTextColor(Color.WHITE);manual.setOnClickListener(v->openManualWorkbench());root.addView(manual,lp(-1,dp(54),12));
         Button analyse=button("Build automatic QC overlay");analyse.setOnClickListener(v->analyse());root.addView(analyse,lp(-1,dp(52),6));
         status=text("Choose a watch photo to begin.",14,Color.rgb(158,176,201));root.addView(status);
