@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "watch-align://profiles/watch-profile.schema.json",
+  "title": "Watch Align watch profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "brand",
+    "modelFamily",
+    "reference",
+    "displayName",
+    "dialType",
+    "capabilities",
+    "enabledModules",
+    "calibrationIds"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "brand": { "type": "string", "minLength": 1 },
+    "modelFamily": { "type": "string", "minLength": 1 },
+    "reference": { "type": "string", "minLength": 1 },
+    "displayName": { "type": "string", "minLength": 1 },
+    "dialType": {
+      "type": "string",
+      "enum": ["APPLIED_INDEX", "PRINTED", "MIXED"]
+    },
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "enabledModules": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "calibrationIds": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    }
+  }
+}
