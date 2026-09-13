@@ -29,7 +29,7 @@ public class PerspectiveConfidenceServiceTest {
 
     @Test public void crossedAnchorsAreRejected() {
         PerspectiveConfidenceService.Assessment a = PerspectiveConfidenceService.assess(
-                0,-100, -100,0, 0,100, 100,0);
+                0,-100, 100,0, -100,0, 0,100);
         assertEquals(QcModuleResult.Confidence.LOW, a.confidence());
         assertEquals(0.0, a.score(), 0.0);
     }
