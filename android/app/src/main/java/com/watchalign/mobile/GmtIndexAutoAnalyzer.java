@@ -4,8 +4,8 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PointF;
 
+import com.watchalign.mobile.qc.GmtIndexPlausibility;
 import com.watchalign.mobile.qc.IndexGeometryQcModule;
 import com.watchalign.mobile.qc.PerspectiveConfidenceService;
 import com.watchalign.mobile.qc.QcModuleResult;
@@ -13,7 +13,6 @@ import com.watchalign.mobile.qc.RawMeasurement;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
@@ -24,12 +23,13 @@ import java.util.Locale;
 
 /**
  * Production bridge from automatic GMT marker localisation into the generic per-index geometry
- * module. Marker centres are rectified through the user's 12/3/6/9 pose before measurement.
+ * module. Marker centres are rectified through the user's corrected 12/3/6/9 pose before
+ * measurement.
  *
- * <p>The expected marker radius is the median radius of the successfully rectified markers in the
- * same watch image. It is therefore a within-watch consensus baseline, not a Rolex tolerance or a
- * genuine-control calibration. Body rotation is only treated as measurable for the elongated 6
- * and 9 markers. Round hour plots have no meaningful orientation and are used for position only.</p>
+ * <p>The expected marker radius is the median radius of plausible rectified markers in the same
+ * watch image. It is a within-watch consensus baseline, not a Rolex tolerance or a genuine-control
+ * calibration. Any localisation that lands outside the selected hour sector or far from the common
+ * marker ring is rejected before it can reach the measurement module.</p>
  */
 final class GmtIndexAutoAnalyzer {
     static final class Result {
@@ -78,16 +78,17 @@ final class GmtIndexAutoAnalyzer {
                 return unavailable(watch, "Index geometry unavailable: no hour-marker centres were localized reliably.");
             }
             double global = Double.isFinite(set.globalRotation) ? set.globalRotation : 0.0;
-            List<Candidate> candidates = new ArrayList<>();
+            List<Candidate> firstPass = new ArrayList<>();
             List<Double> radii = new ArrayList<>();
 
             for (DialAnalysisEngine.Marker marker : set.markers) {
+                if (marker.hour == 3) continue; // GMT date aperture, not an applied index.
                 double clockDeg = (marker.hour == 12 ? 0.0 : marker.hour * 30.0) + global + marker.angular;
                 double theta = Math.toRadians(clockDeg);
                 double ix = dial.x + Math.sin(theta) * marker.radius;
                 double iy = dial.y - Math.cos(theta) * marker.radius;
                 double[] q = PerspectiveRectifier.toDialRaw(pose, ix, iy);
-                if (q == null || !finite(q[0]) || !finite(q[1])) continue;
+                if (q == null || !GmtIndexPlausibility.plausibleCanonicalPosition(marker.hour, q[0], q[1])) continue;
 
                 Candidate c = new Candidate();
                 c.hour = marker.hour;
@@ -96,21 +97,28 @@ final class GmtIndexAutoAnalyzer {
                 c.dialX = q[0];
                 c.dialY = q[1];
                 c.radius = Math.hypot(q[0], q[1]);
-                if (!finite(c.radius) || c.radius <= 0.0 || c.radius > 1.35) continue;
-
-                // Only 6/9 are elongated enough for a useful automatic body-axis estimate.
                 if (marker.hour == 6 || marker.hour == 9) {
                     c.axis = elongatedAxis(src, ix, iy, Math.max(10.0, dial.r * 0.10));
                 }
-                candidates.add(c);
+                firstPass.add(c);
                 radii.add(c.radius);
             }
 
-            if (candidates.size() < 5) {
-                return unavailable(watch, "Index geometry unavailable: fewer than five markers survived rectification.");
+            if (firstPass.size() < 7) {
+                return unavailable(watch, "Index geometry unavailable: fewer than seven hour markers passed canonical sector checks.");
             }
 
             double expectedRadius = median(radii);
+            List<Candidate> candidates = new ArrayList<>();
+            for (Candidate c : firstPass) {
+                if (GmtIndexPlausibility.plausibleAgainstRing(c.hour, c.dialX, c.dialY, expectedRadius)) {
+                    candidates.add(c);
+                }
+            }
+            if (candidates.size() < 7) {
+                return unavailable(watch, "Index geometry unavailable: marker-ring geometry was inconsistent after rectification.");
+            }
+
             List<IndexGeometryQcModule.MarkerObservation> observations = new ArrayList<>();
             for (Candidate c : candidates) {
                 double[] innerOuter = rectifiedAxis(pose, c, expectedRadius);
@@ -119,7 +127,7 @@ final class GmtIndexAutoAnalyzer {
                         c.hour, c.dialX, c.dialY,
                         innerOuter[0], innerOuter[1], innerOuter[2], innerOuter[3], expectedRadius));
             }
-            if (observations.size() < 5) {
+            if (observations.size() < 7) {
                 return unavailable(watch, "Index geometry unavailable: marker axes could not be rectified reliably.");
             }
 
@@ -137,7 +145,7 @@ final class GmtIndexAutoAnalyzer {
     /**
      * Returns canonical inner/outer axis endpoints. For elongated 6/9 markers the image-derived
      * PCA axis is used. Round plots use the radial line only as a structural placeholder so their
-     * rotation output must not be interpreted; their centre/radial/tangential outputs remain valid.
+     * rotation output is never shown as a body-rotation measurement.
      */
     private static double[] rectifiedAxis(PerspectiveMasterRenderer.Pose pose, Candidate c, double expectedRadius) {
         if (c.axis != null) {
@@ -187,6 +195,7 @@ final class GmtIndexAutoAnalyzer {
         List<Ranked> tangential = new ArrayList<>();
         List<Ranked> radial = new ArrayList<>();
         for (int hour = 1; hour <= 12; hour++) {
+            if (hour == 3) continue;
             RawMeasurement t = result.measurement(String.format(Locale.US, "index_%02d_tangential_offset_over_dial_radius", hour));
             RawMeasurement r = result.measurement(String.format(Locale.US, "index_%02d_radial_offset_over_dial_radius", hour));
             if (t != null) tangential.add(new Ranked(hour, t.value()));
@@ -196,17 +205,20 @@ final class GmtIndexAutoAnalyzer {
         Collections.sort(tangential, byAbs); Collections.sort(radial, byAbs);
         String worstT = tangential.isEmpty() ? "n/a" : String.format(Locale.US, "%d %+5.3f DR", tangential.get(0).hour, tangential.get(0).value);
         String worstR = radial.isEmpty() ? "n/a" : String.format(Locale.US, "%d %+5.3f DR", radial.get(0).hour, radial.get(0).value);
-        String body = "";
-        RawMeasurement r6 = result.measurement("index_06_rotation_deg");
-        RawMeasurement r9 = result.measurement("index_09_rotation_deg");
-        if (r6 != null || r9 != null) {
-            body = String.format(Locale.US, "\n6/9 body axis: %s / %s (diagnostic)",
-                    r6 == null ? "n/a" : String.format(Locale.US, "%+.2f°", r6.value()),
-                    r9 == null ? "n/a" : String.format(Locale.US, "%+.2f°", r9.value()));
+
+        List<String> usableBody = new ArrayList<>();
+        for (int hour : new int[]{6,9}) {
+            RawMeasurement rotation = result.measurement(String.format(Locale.US, "index_%02d_rotation_deg", hour));
+            if (rotation != null && GmtIndexPlausibility.bodyRotationUsable(hour, rotation.value(), result.confidence())) {
+                usableBody.add(String.format(Locale.US, "%d %+.2f°", hour, rotation.value()));
+            }
         }
+        String body = usableBody.isEmpty() ? "\n6/9 body axis: withheld unless high-confidence component isolation is plausible"
+                : "\n6/9 body axis: " + String.join(" · ", usableBody) + " (diagnostic)";
+
         return "INDEX GEOMETRY · " + localizedCount + " markers · " + result.confidence().name().toLowerCase(Locale.US) + " perspective"
                 + "\nLargest tangential: " + worstT + " · radial: " + worstR + body
-                + "\nPosition baseline = this watch's marker-ring median; not a Rolex tolerance.";
+                + "\nPosition baseline = this watch's marker-ring median; impossible sector/ring localisations are rejected; not a Rolex tolerance.";
     }
 
     private static Bitmap annotate(Bitmap watch, List<Candidate> candidates) {
@@ -232,8 +244,6 @@ final class GmtIndexAutoAnalyzer {
         List<Double> copy = new ArrayList<>(values); Collections.sort(copy);
         int n = copy.size(); return n % 2 == 1 ? copy.get(n/2) : (copy.get(n/2-1) + copy.get(n/2)) / 2.0;
     }
-
-    private static boolean finite(double v) { return Double.isFinite(v); }
 
     private static final class Ranked {
         final int hour; final double value;
