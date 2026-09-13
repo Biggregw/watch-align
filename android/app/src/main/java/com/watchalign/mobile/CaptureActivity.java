@@ -14,22 +14,19 @@ public final class CaptureActivity extends Activity implements TextureView.Surfa
     private void configurePreviewTransform(int width,int height){
         if(previewSize==null||width==0||height==0)return;
         int displayRotation=getWindowManager().getDefaultDisplay().getRotation();
-        int displayDegrees=displayRotation==Surface.ROTATION_90?90:displayRotation==Surface.ROTATION_180?180:displayRotation==Surface.ROTATION_270?270:0;
-        Integer sensorValue=characteristics==null?null:characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-        int sensorDegrees=sensorValue==null?90:sensorValue;
-        int relativeRotation=(sensorDegrees-displayDegrees+360)%360;
-        boolean swap=relativeRotation==90||relativeRotation==270;
-
-        float bufferWidth=swap?previewSize.getHeight():previewSize.getWidth();
-        float bufferHeight=swap?previewSize.getWidth():previewSize.getHeight();
-        float scale=Math.max(width/bufferWidth,height/bufferHeight);
-        float scaledWidth=bufferWidth*scale;
-        float scaledHeight=bufferHeight*scale;
-
-        RectF source=new RectF(0,0,bufferWidth,bufferHeight);
-        RectF target=new RectF((width-scaledWidth)/2f,(height-scaledHeight)/2f,(width+scaledWidth)/2f,(height+scaledHeight)/2f);
+        RectF viewRect=new RectF(0,0,width,height);
+        RectF bufferRect=new RectF(0,0,previewSize.getHeight(),previewSize.getWidth());
+        float centreX=viewRect.centerX(),centreY=viewRect.centerY();
+        bufferRect.offset(centreX-bufferRect.centerX(),centreY-bufferRect.centerY());
         Matrix matrix=new Matrix();
-        matrix.setRectToRect(source,target,Matrix.ScaleToFit.FILL);
+        if(displayRotation==Surface.ROTATION_90||displayRotation==Surface.ROTATION_270){
+            matrix.setRectToRect(viewRect,bufferRect,Matrix.ScaleToFit.FILL);
+            float scale=Math.max((float)height/previewSize.getHeight(),(float)width/previewSize.getWidth());
+            matrix.postScale(scale,scale,centreX,centreY);
+            matrix.postRotate(90f*(displayRotation-2),centreX,centreY);
+        }else if(displayRotation==Surface.ROTATION_180){
+            matrix.postRotate(180f,centreX,centreY);
+        }
         preview.setTransform(matrix);
     }
     private final Runnable analyseLoop=new Runnable(){public void run(){if(handler==null||camera==null)return;if(!analysing&&!capturing&&preview.isAvailable()){analysing=true;Bitmap frame=preview.getBitmap(480,480);if(frame!=null)try{CaptureQualityAnalyzer.Result r=CaptureQualityAnalyzer.analyse(frame);runOnUiThread(()->{status.setText(r.guidance);guide.setReady(r.ready);capture.setText(r.ready?"Capture":"Capture anyway");});}catch(Throwable ignored){}finally{frame.recycle();analysing=false;}}handler.postDelayed(this,650);}};
