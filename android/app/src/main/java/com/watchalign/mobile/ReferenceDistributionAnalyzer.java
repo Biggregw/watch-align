@@ -5,8 +5,6 @@ import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -79,20 +77,17 @@ final class ReferenceDistributionAnalyzer {
         Mat src=new Mat();
         try{
             Utils.bitmapToMat(bitmap,src);Imgproc.cvtColor(src,src,Imgproc.COLOR_RGBA2BGR);
-            Method detect=method("detectDial",Mat.class);Object dial=detect.invoke(null,src);if(dial==null)return null;
-            double q=num(dial,"quality");
-            Method markersM=method("measureMarkerSet",Mat.class,dial.getClass());Object set=markersM.invoke(null,src,dial);
-            Method perspectiveM=method("perspectiveEquivalent",Mat.class,dial.getClass());double p=((Number)perspectiveM.invoke(null,src,dial)).doubleValue();
-            @SuppressWarnings("unchecked") List<Object> markers=(List<Object>)field(set,"markers");
+            DialAnalysisEngine.Circle dial=DialAnalysisEngine.detectDial(src);if(dial==null)return null;
+            double q=dial.quality;
+            DialAnalysisEngine.MarkerSet set=DialAnalysisEngine.measureMarkerSet(src,dial);
+            double p=DialAnalysisEngine.perspectiveEquivalent(src,dial);
+            List<DialAnalysisEngine.Marker> markers=set.markers;
             if(markers==null||markers.size()<7)return null;
             Measure m=new Measure(q,p);
-            for(Object x:markers){int h=(int)Math.round(num(x,"hour"));if(h<1||h>12)continue;m.present[h]=true;m.angular[h]=num(x,"angular");m.radial[h]=num(x,"radial");}
+            for(DialAnalysisEngine.Marker x:markers){int h=x.hour;if(h<1||h>12)continue;m.present[h]=true;m.angular[h]=x.angular;m.radial[h]=x.radial;}
             return m;
         }catch(Throwable ignored){return null;}finally{src.release();}
     }
 
-    private static Method method(String name,Class<?>...types)throws Exception{Method m=WatchAlignCoreV7.class.getDeclaredMethod(name,types);m.setAccessible(true);return m;}
-    private static Object field(Object o,String name)throws Exception{Field f=o.getClass().getDeclaredField(name);f.setAccessible(true);return f.get(o);}
-    private static double num(Object o,String name)throws Exception{return ((Number)field(o,name)).doubleValue();}
     private ReferenceDistributionAnalyzer(){}
 }

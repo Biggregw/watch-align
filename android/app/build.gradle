@@ -18,10 +18,10 @@ android {
 
     buildTypes {
         debug {
-            // Test APKs remain installable with the debug key but are not attachable as debuggable apps.
-            debuggable false
+            debuggable true
         }
         release {
+            debuggable false
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'

@@ -21,7 +21,7 @@ import java.util.Locale;
  * not used as a validity gate because different hands/reflections can make two
  * correctly registered watches correlate poorly.
  */
-public final class WatchAlignCoreV7 {
+final class DialAnalysisEngine {
     public static final String CORE_VERSION = "1.3.0-alpha7";
     private static final double MIN_DIAL_QUALITY = 0.56;
 
@@ -47,7 +47,7 @@ public final class WatchAlignCoreV7 {
         }
     }
 
-    private static final class Circle {
+    static final class Circle {
         double x, y, r, quality, darkFraction, boundaryContrast;
         Circle(double x, double y, double r, double quality, double darkFraction, double boundaryContrast) {
             this.x=x; this.y=y; this.r=r; this.quality=quality;
@@ -62,14 +62,14 @@ public final class WatchAlignCoreV7 {
         }
     }
 
-    private static final class Marker {
+    static final class Marker {
         int hour; double angular, radial, radius, strength;
         Marker(int hour, double angular, double radial, double radius, double strength) {
             this.hour=hour; this.angular=angular; this.radial=radial; this.radius=radius; this.strength=strength;
         }
     }
 
-    private static final class MarkerSet {
+    static final class MarkerSet {
         List<Marker> markers = new ArrayList<>();
         double globalRotation = Double.NaN;
         double medianRadius = Double.NaN;
@@ -194,7 +194,7 @@ public final class WatchAlignCoreV7 {
         return new AnalysisResult(ann,refBitmap,alignedBitmap,report.toString(),registrationConfidence);
     }
 
-    private static Circle detectDial(Mat bgr) {
+    static Circle detectDial(Mat bgr) {
         Mat gray=new Mat(); Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY); Imgproc.GaussianBlur(gray,gray,new Size(7,7),0);
         int min=Math.min(bgr.cols(),bgr.rows()); Circle best=null; double bestQ=-1;
         Mat circles=new Mat();
@@ -247,7 +247,7 @@ public final class WatchAlignCoreV7 {
         return (strongerBoundary&&smaller&&qualityClose)?best:outer;
     }
 
-    private static MarkerSet measureMarkerSet(Mat bgr,Circle c) {
+    static MarkerSet measureMarkerSet(Mat bgr,Circle c) {
         Mat gray=new Mat(); Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);
         int w=gray.cols(),h=gray.rows(); double inner=c.r*0.66,outer=c.r*0.94;
         List<RawMarker> raw=new ArrayList<>();
@@ -294,11 +294,11 @@ public final class WatchAlignCoreV7 {
         return hits;
     }
 
-    private static int commonMarkerCount(MarkerSet a,MarkerSet b) {
+    static int commonMarkerCount(MarkerSet a,MarkerSet b) {
         int n=0; for(Marker x:a.markers) if(find(b,x.hour)!=null)n++; return n;
     }
 
-    private static double commonMarkerRms(MarkerSet a,MarkerSet b) {
+    static double commonMarkerRms(MarkerSet a,MarkerSet b) {
         double ss=0; int n=0;
         for(Marker x:a.markers){Marker y=find(b,x.hour);if(y==null)continue;double d=GeometryRegistration.wrap180(x.angular-y.angular);ss+=d*d;n++;}
         return n>0?Math.sqrt(ss/n):99.0;
@@ -343,7 +343,7 @@ public final class WatchAlignCoreV7 {
         return n>0?sum/n:0;
     }
 
-    private static double perspectiveEquivalent(Mat bgr,Circle c) {
+    static double perspectiveEquivalent(Mat bgr,Circle c) {
         Mat gray=new Mat();Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);Mat edges=new Mat();Imgproc.Canny(gray,edges,50,150);
         List<org.opencv.core.MatOfPoint> contours=new ArrayList<>();Mat hierarchy=new Mat();Imgproc.findContours(edges,contours,hierarchy,Imgproc.RETR_LIST,Imgproc.CHAIN_APPROX_NONE);
         double bestScore=0,bestRatio=Double.NaN;
@@ -356,5 +356,5 @@ public final class WatchAlignCoreV7 {
 
     private static void addTo(Mat m,int row,int col,double delta){double[]v=m.get(row,col);m.put(row,col,(v!=null&&v.length>0?v[0]:0)+delta);}
     private static Bitmap toBitmap(Mat bgr){Mat rgba=new Mat();Imgproc.cvtColor(bgr,rgba,Imgproc.COLOR_BGR2RGBA);Bitmap out=Bitmap.createBitmap(rgba.cols(),rgba.rows(),Bitmap.Config.ARGB_8888);Utils.matToBitmap(rgba,out);rgba.release();return out;}
-    private WatchAlignCoreV7() {}
+    private DialAnalysisEngine() {}
 }

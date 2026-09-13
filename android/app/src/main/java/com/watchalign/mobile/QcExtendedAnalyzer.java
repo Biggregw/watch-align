@@ -15,8 +15,6 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -66,19 +64,16 @@ final class QcExtendedAnalyzer {
         try {
             ModelCatalog.Profile profile=ModelCatalog.require(modelRef);
             Utils.bitmapToMat(watch,src); Imgproc.cvtColor(src,src,Imgproc.COLOR_RGBA2BGR);
-            Method detect=method("detectDial",Mat.class);
-            Object dial=detect.invoke(null,src);
+            DialAnalysisEngine.Circle dial=DialAnalysisEngine.detectDial(src);
             if(dial==null) return new Result(watch.copy(Bitmap.Config.ARGB_8888,false),"Extended QC unavailable: dial geometry not verified.");
-            Method measure=method("measureMarkerSet",Mat.class,dial.getClass());
-            Method perspective=method("perspectiveEquivalent",Mat.class,dial.getClass());
-            Object set=measure.invoke(null,src,dial);
-            double tilt=((Number)perspective.invoke(null,src,dial)).doubleValue();
+            DialAnalysisEngine.MarkerSet set=DialAnalysisEngine.measureMarkerSet(src,dial);
+            double tilt=DialAnalysisEngine.perspectiveEquivalent(src,dial);
             boolean fine=QcExtendedMath.perspectiveAllowsFineQc(tilt);
             String fineReason=QcExtendedMath.fineQcReason(tilt);
             String advisorySuffix=fine?"":" (advisory: "+fineReason+")";
-            double cx=num(dial,"x"), cy=num(dial,"y"), dr=num(dial,"r");
-            double global=num(set,"globalRotation"); if(!Double.isFinite(global))global=0.0;
-            @SuppressWarnings("unchecked") List<Object> markers=(List<Object>)field(set,"markers");
+            double cx=dial.x,cy=dial.y,dr=dial.r;
+            double global=set.globalRotation;if(!Double.isFinite(global))global=0.0;
+            List<DialAnalysisEngine.Marker> markers=set.markers;
 
             Mat out=src.clone();
             Scalar green=new Scalar(120,220,120), amber=new Scalar(40,180,255), red=new Scalar(70,70,255);
@@ -87,8 +82,8 @@ final class QcExtendedAnalyzer {
             List<Finding> findings=new ArrayList<>();
 
             for(int h:new int[]{12,6,9}) {
-                Object m=findHour(markers,h); if(m==null)continue;
-                double angular=num(m,"angular"),actualR=num(m,"radius");
+                DialAnalysisEngine.Marker m=findHour(markers,h);if(m==null)continue;
+                double angular=m.angular,actualR=m.radius;
                 double idealDeg=QcExtendedMath.hourAngleDeg(h)+global;
                 int sev=QcExtendedMath.localTrackSeverity(angular);
                 Point p=polar(cx,cy,actualR,idealDeg+angular);
@@ -152,12 +147,12 @@ final class QcExtendedAnalyzer {
                         Mat rm=new Mat();
                         try {
                             Utils.bitmapToMat(reference,rm);Imgproc.cvtColor(rm,rm,Imgproc.COLOR_RGBA2BGR);
-                            Object rd=detect.invoke(null,rm);
+                            DialAnalysisEngine.Circle rd=DialAnalysisEngine.detectDial(rm);
                             if(rd!=null) {
-                                Object rs=measure.invoke(null,rm,rd);
-                                double rcx=num(rd,"x"),rcy=num(rd,"y"),rdr=num(rd,"r");
-                                double rglobal=num(rs,"globalRotation");if(!Double.isFinite(rglobal))rglobal=0.0;
-                                refTilt=((Number)perspective.invoke(null,rm,rd)).doubleValue();
+                                DialAnalysisEngine.MarkerSet rs=DialAnalysisEngine.measureMarkerSet(rm,rd);
+                                double rcx=rd.x,rcy=rd.y,rdr=rd.r;
+                                double rglobal=rs.globalRotation;if(!Double.isFinite(rglobal))rglobal=0.0;
+                                refTilt=DialAnalysisEngine.perspectiveEquivalent(rm,rd);
                                 refDate=measureDate(rm,rcx,rcy,rdr,rglobal,profile);
                             }
                         } finally {rm.release();}
@@ -297,9 +292,6 @@ final class QcExtendedAnalyzer {
     private static void drawSelBox(Mat out,double cx,double cy,double dr,double evidence){Scalar s=evidence>0.22?new Scalar(40,180,255):new Scalar(180,180,180);Point a=new Point(cx-dr*0.17,cy-dr*0.20),b=new Point(cx+dr*0.17,cy+dr*0.20);Imgproc.rectangle(out,a,b,s,1,Imgproc.LINE_AA,0);}
     private static Rect safeRect(int x,int y,int w,int h,int cols,int rows){x=Math.max(0,x);y=Math.max(0,y);if(x>=cols||y>=rows)return null;w=Math.min(w,cols-x);h=Math.min(h,rows-y);return w>2&&h>2?new Rect(x,y,w,h):null;}
     private static Point polar(double cx,double cy,double r,double deg){double a=Math.toRadians(deg);return new Point(cx+Math.sin(a)*r,cy-Math.cos(a)*r);}
-    private static Object findHour(List<Object> list,int h)throws Exception{for(Object m:list)if((int)Math.round(num(m,"hour"))==h)return m;return null;}
-    private static Method method(String n,Class<?>...t)throws Exception{Method m=WatchAlignCoreV7.class.getDeclaredMethod(n,t);m.setAccessible(true);return m;}
-    private static Object field(Object o,String n)throws Exception{Field f=o.getClass().getDeclaredField(n);f.setAccessible(true);return f.get(o);}
-    private static double num(Object o,String n)throws Exception{return ((Number)field(o,n)).doubleValue();}
+    private static DialAnalysisEngine.Marker findHour(List<DialAnalysisEngine.Marker> list,int h){for(DialAnalysisEngine.Marker m:list)if(m.hour==h)return m;return null;}
     private QcExtendedAnalyzer(){}
 }

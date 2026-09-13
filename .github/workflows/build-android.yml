@@ -42,8 +42,8 @@ jobs:
           grep -q 'Community-style index alignment ruler' app/src/main/java/com/watchalign/mobile/PerspectiveMasterRenderer.java
           grep -q 'CORE_VERSION="1.3.0-alpha54"' app/src/main/java/com/watchalign/mobile/WatchAlignCore.java
           grep -q 'WatchAlignCore.AnalysisResult' app/src/main/java/com/watchalign/mobile/MainActivity.java
-          ! grep -q 'WatchAlignCoreV13' app/src/main/java/com/watchalign/mobile/MainActivity.java
-          test ! -e app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
+          ! grep -R -q 'java.lang.reflect' app/src/main/java
+          ! find app/src/main/java -name 'WatchAlignCoreV*.java' | grep -q .
           test ! -e app/src/main/java/com/watchalign/mobile/OnlineReferenceFinder.java
           grep -q "abiFilters 'arm64-v8a'" app/build.gradle
           grep -q "versionName '1.3.0-alpha54'" app/build.gradle

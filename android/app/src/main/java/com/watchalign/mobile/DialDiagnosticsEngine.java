@@ -7,13 +7,19 @@ package com.watchalign.mobile;
  * avoids version-stacked core classes while preserving behaviour.
  */
 final class DialDiagnosticsEngine {
+    static final class Result {
+        final android.graphics.Bitmap annotated;
+        final String report;
+        Result(android.graphics.Bitmap annotated,String report){this.annotated=annotated;this.report=report;}
+    }
     private DialDiagnosticsEngine() {}
 
     static double referenceScore(android.graphics.Bitmap watch, android.graphics.Bitmap reference) {
-        return WatchAlignCoreV7.referenceScore(watch, reference);
+        return DialAnalysisEngine.referenceScore(watch, reference);
     }
 
-    static WatchAlignCoreV7.AnalysisResult analyse(android.graphics.Bitmap watch, android.graphics.Bitmap reference, String modelRef) {
-        return WatchAlignCoreV7.analyse(watch, reference, modelRef);
+    static Result analyse(android.graphics.Bitmap watch, android.graphics.Bitmap reference, String modelRef) {
+        DialAnalysisEngine.AnalysisResult result=DialAnalysisEngine.analyse(watch, reference, modelRef);
+        return new Result(result.annotated,result.report);
     }
 }

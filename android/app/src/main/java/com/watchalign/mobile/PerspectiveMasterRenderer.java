@@ -71,7 +71,7 @@ final class PerspectiveMasterRenderer {
     }
 
     /** Four non-collinear dial-edge anchors give a unique planar homography. */
-    private static double[] buildH(Pose p){
+    static double[] buildH(Pose p){
         double[][] src={{0,-1},{1,0},{0,1},{-1,0}};
         double[][] dst={{p.anchor12X,p.anchor12Y},{p.anchor3X,p.anchor3Y},{p.anchor6X,p.anchor6Y},{p.anchor9X,p.anchor9Y}};
         double[][] a=new double[8][9];

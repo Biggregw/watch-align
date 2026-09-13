@@ -1,7 +1,6 @@
 package com.watchalign.mobile;
 
 import org.junit.Test;
-import java.lang.reflect.Method;
 import static org.junit.Assert.*;
 
 public class PerspectiveMasterRendererTest {
@@ -15,10 +14,7 @@ public class PerspectiveMasterRendererTest {
         return p;
     }
 
-    private static double[] homography(PerspectiveMasterRenderer.Pose p)throws Exception{
-        Method m=PerspectiveMasterRenderer.class.getDeclaredMethod("buildH",PerspectiveMasterRenderer.Pose.class);
-        m.setAccessible(true);return (double[])m.invoke(null,p);
-    }
+    private static double[] homography(PerspectiveMasterRenderer.Pose p){return PerspectiveMasterRenderer.buildH(p);}
 
     private static double[] project(double[] h,double x,double y){
         double d=h[6]*x+h[7]*y+1.0;

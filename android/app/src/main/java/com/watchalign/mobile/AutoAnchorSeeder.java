@@ -12,8 +12,6 @@ import org.opencv.core.RotatedRect;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,18 +66,16 @@ final class AutoAnchorSeeder {
         }
     }
 
-    private static DialSeed detectSeed(Mat rgba)throws Exception{
+    private static DialSeed detectSeed(Mat rgba){
         Mat bgr=new Mat();
         try{
             Imgproc.cvtColor(rgba,bgr,Imgproc.COLOR_RGBA2BGR);
-            Method detect=WatchAlignCoreV7.class.getDeclaredMethod("detectDial",Mat.class);detect.setAccessible(true);
-            Object d=detect.invoke(null,bgr);if(d==null)return null;
+            DialAnalysisEngine.Circle d=DialAnalysisEngine.detectDial(bgr);if(d==null)return null;
             double roll=0.0;
             try{
-                Method markers=WatchAlignCoreV7.class.getDeclaredMethod("measureMarkerSet",Mat.class,d.getClass());markers.setAccessible(true);
-                Object set=markers.invoke(null,bgr,d);double r=num(set,"globalRotation");if(Double.isFinite(r)&&Math.abs(r)<30)roll=r;
+                DialAnalysisEngine.MarkerSet set=DialAnalysisEngine.measureMarkerSet(bgr,d);double r=set.globalRotation;if(Double.isFinite(r)&&Math.abs(r)<30)roll=r;
             }catch(Throwable ignored){}
-            return new DialSeed(num(d,"x"),num(d,"y"),num(d,"r"),num(d,"quality"),roll);
+            return new DialSeed(d.x,d.y,d.r,d.quality,roll);
         }finally{bgr.release();}
     }
 
@@ -121,6 +117,5 @@ final class AutoAnchorSeeder {
         return new Point(e.center.x+s*dx,e.center.y+s*dy);
     }
 
-    private static double num(Object o,String name)throws Exception{Field f=o.getClass().getDeclaredField(name);f.setAccessible(true);return ((Number)f.get(o)).doubleValue();}
     private static PointF pf(Point p){return new PointF((float)p.x,(float)p.y);}
 }
