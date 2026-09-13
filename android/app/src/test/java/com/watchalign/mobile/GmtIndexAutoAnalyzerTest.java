@@ -29,7 +29,7 @@ public class GmtIndexAutoAnalyzerTest {
         assertTrue(summary.contains("10 markers"));
         assertTrue(summary.contains("Largest tangential: 5 +0.031 DR"));
         assertTrue(summary.contains("radial: 6 +0.018 DR"));
-        assertTrue(summary.contains("6/9 body axis: +1.20° / -0.40°"));
+        assertTrue(summary.contains("6/9 body axis: 6 +1.20° · 9 -0.40°"));
         assertTrue(summary.contains("not a Rolex tolerance"));
     }
 }
