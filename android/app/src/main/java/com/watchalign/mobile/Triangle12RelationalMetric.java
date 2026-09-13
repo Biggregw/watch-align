@@ -25,20 +25,9 @@ public final class Triangle12RelationalMetric {
         if(l==null||r==null||a==null||m==null||c==null)return null;
         Result raw=measureRaw(l.x,l.y,r.x,r.y,a.x,a.y,m.x,m.y,c.x,c.y,0f,0f,0f,-1f);
 
-        // Map genuine-range values onto the reference centre so the existing UI reads "≈ gen".
-        // Outside the range, preserve only the amount beyond the nearest genuine control boundary.
-        float bg=rangeAdjusted(raw.baseGapRatio,GenTriangle12RelationalReference.BASE_TO_60_MIN,GenTriangle12RelationalReference.BASE_TO_60_MAX,GenTriangle12RelationalReference.BASE_TO_60_INNER_OVER_BASE);
-        float ag=rangeAdjusted(raw.apexGapRatio,GenTriangle12RelationalReference.APEX_TO_CROWN_MIN,GenTriangle12RelationalReference.APEX_TO_CROWN_MAX,GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE);
-
         float meanR=(dist(pose.anchor12X,pose.anchor12Y,pose.anchor6X,pose.anchor6Y)+dist(pose.anchor3X,pose.anchor3Y,pose.anchor9X,pose.anchor9Y))/4f;
         float lateralPx=raw.lateralPx*meanR;
-        return new Result(bg,ag,raw.heightRatio,raw.rotationDeg,lateralPx);
-    }
-
-    private static float rangeAdjusted(float v,float min,float max,float centre){
-        if(v>=min&&v<=max)return centre;
-        if(v<min)return centre+(v-min);
-        return centre+(v-max);
+        return new Result(raw.baseGapRatio,raw.apexGapRatio,raw.heightRatio,raw.rotationDeg,lateralPx);
     }
 
     static Result measureRaw(float lx,float ly,float rx,float ry,float ax,float ay,float mx,float my,float cx,float cy,float ox,float oy,float p12x,float p12y){

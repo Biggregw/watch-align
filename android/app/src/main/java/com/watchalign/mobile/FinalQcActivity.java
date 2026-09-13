@@ -37,13 +37,13 @@ public class FinalQcActivity extends Activity {
         Button reset=btn("Reset");reset.setOnClickListener(v->image.resetZoom());top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(5),dp(10),dp(7));bottom.setBackgroundColor(0xEE08111F);
-        TextView summary=txt(buildSummary(),12);summary.setGravity(Gravity.CENTER);bottom.addView(summary,new LinearLayout.LayoutParams(-1,dp(90)));
+        TextView summary=txt(buildSummary(),11);summary.setGravity(Gravity.CENTER);bottom.addView(summary,new LinearLayout.LayoutParams(-1,dp(160)));
         LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER);
         Button blink=btn("Hold watch only");blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){image.setImageBitmapPreserveZoom(combined);return true;}return false;});row.addView(blink,new LinearLayout.LayoutParams(0,dp(46),1));
         Button main=btn("Main overlay");main.setOnClickListener(v->image.setImageBitmapPreserveZoom(mainOnly(base,InspectionImageStore.alignedPose)));row.addView(main,new LinearLayout.LayoutParams(0,dp(46),1));
         Button both=btn("Combined");both.setOnClickListener(v->image.setImageBitmapPreserveZoom(combined));row.addView(both,new LinearLayout.LayoutParams(0,dp(46),1));bottom.addView(row);
         TextView hint=txt("Perspective-rectified result. Green = measured triangle, cyan = genuine-control centre target, red/yellow = main dial ruler. Ranges are observed genuine-image controls, not Rolex factory tolerances.",10);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(50)));
-        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(198),Gravity.BOTTOM));setContentView(root);
+        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(268),Gravity.BOTTOM));setContentView(root);
     }
 
     private Bitmap mainOnly(Bitmap src,PerspectiveMasterRenderer.Pose pose){
@@ -67,29 +67,24 @@ public class FinalQcActivity extends Activity {
         Triangle12RelationalMetric.Result m=InspectionImageStore.triangleMetric;
         if(m==null)return "QC SUMMARY\n12 triangle measurements unavailable";
 
-        // measureRectified collapses values inside each observed genuine range to the
-        // reference centre. Non-zero deltas below therefore mean distance beyond the
-        // nearest genuine-control boundary, not distance from one exact ideal watch.
-        float bg=(m.baseGapRatio-GenTriangle12RelationalReference.BASE_TO_60_INNER_OVER_BASE)*100f;
-        float ag=(m.apexGapRatio-GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE)*100f;
-        boolean baseOk=Math.abs(bg)<0.05f;
-        boolean crownOk=Math.abs(ag)<0.05f;
+        boolean baseOk=GenTriangle12RelationalReference.baseGapInRange(m.baseGapRatio);
+        boolean crownOk=GenTriangle12RelationalReference.crownGapInRange(m.apexGapRatio);
         boolean rotOk=GenTriangle12RelationalReference.rotationInObservedGenRange(m.rotationDeg);
 
         String position;
         if(baseOk&&crownOk) position="within observed genuine range";
-        else if(bg<0f&&ag>0f) position="outward beyond observed gen range";
-        else if(bg>0f&&ag<0f) position="inward beyond observed gen range";
+        else if(m.baseGapRatio<GenTriangle12RelationalReference.BASE_TO_60_MIN&&m.apexGapRatio>GenTriangle12RelationalReference.APEX_TO_CROWN_MAX) position="outward beyond observed gen range";
+        else if(m.baseGapRatio>GenTriangle12RelationalReference.BASE_TO_60_MAX&&m.apexGapRatio<GenTriangle12RelationalReference.APEX_TO_CROWN_MIN) position="inward beyond observed gen range";
         else position="one local relationship outside observed gen range";
 
         String rot=rotOk
                 ? (Math.abs(m.rotationDeg)<.10f?"essentially straight":String.format("%.2f° %s (within gen controls)",Math.abs(m.rotationDeg),m.rotationDeg>0?"clockwise":"counter-clockwise"))
                 : String.format("%.2f° %s (outside gen controls)",Math.abs(m.rotationDeg),m.rotationDeg>0?"clockwise":"counter-clockwise");
         String centre=Math.abs(m.lateralPx)<.5f?"centred":String.format("%+.2f px lateral",m.lateralPx);
-        String baseText=baseOk?"Base-to-60 within gen range":String.format("Base-to-60 %+.1f%% BW beyond range",bg);
-        String crownText=crownOk?"apex-to-crown within gen range":String.format("apex-to-crown %+.1f%% BW beyond range",ag);
+        String baseText=QcMeasurementFormatter.range("Base-to-60",m.baseGapRatio,GenTriangle12RelationalReference.BASE_TO_60_MEDIAN,GenTriangle12RelationalReference.BASE_TO_60_MIN,GenTriangle12RelationalReference.BASE_TO_60_MAX,"BW");
+        String crownText=QcMeasurementFormatter.range("Apex-to-crown",m.apexGapRatio,GenTriangle12RelationalReference.APEX_TO_CROWN_MEDIAN,GenTriangle12RelationalReference.APEX_TO_CROWN_MIN,GenTriangle12RelationalReference.APEX_TO_CROWN_MAX,"BW");
 
-        return "QC SUMMARY\n12 triangle: "+position+" · "+centre+" · "+rot+"\n"+baseText+" · "+crownText;
+        return "QC SUMMARY\n12 triangle: "+position+" · "+centre+" · "+rot+"\n"+baseText+"\n"+crownText+"\n"+QcMeasurementFormatter.rotation(m.rotationDeg);
     }
 
     private void path(Canvas c,PointF a,PointF b,PointF d,Paint p){Path q=new Path();q.moveTo(a.x,a.y);q.lineTo(b.x,b.y);q.lineTo(d.x,d.y);q.close();c.drawPath(q,p);}private float dist(PointF a,PointF b){return (float)Math.hypot(a.x-b.x,a.y-b.y);}private Paint stroke(int color,float width,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);p.setStrokeJoin(Paint.Join.ROUND);p.setStrokeCap(Paint.Cap.ROUND);p.setAlpha(alpha);return p;}private Paint fill(int color,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.FILL);p.setAlpha(alpha);return p;}private Button btn(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(11);return b;}private TextView txt(String s,int sp){TextView t=new TextView(this);t.setText(s);t.setTextColor(Color.WHITE);t.setTextSize(sp);return t;}private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}

@@ -56,13 +56,9 @@ public class Triangle12InspectActivity extends Activity {
     private void updateResult(){
         if(result==null||measureView==null)return;if(!measureView.complete()){result.setText("Set all 5 points. Selected: "+measureView.selectedName());return;}
         Triangle12RelationalMetric.Result m=measureView.metric();InspectionImageStore.setTriangleResult(measureView.copyActual(),m);
-        float bg=(m.baseGapRatio-GenTriangle12RelationalReference.BASE_TO_60_INNER_OVER_BASE)*100f;
-        float ag=(m.apexGapRatio-GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE)*100f;
-        String baseText=Math.abs(bg)<0.5f?"base-to-60 gap ≈ gen":bg>0?String.format("base-to-60 gap %.1f%% BW LARGER",bg):String.format("base-to-60 gap %.1f%% BW SMALLER",-bg);
-        String crownText=Math.abs(ag)<0.5f?"apex-to-crown gap ≈ gen":ag>0?String.format("apex-to-crown gap %.1f%% BW LARGER",ag):String.format("apex-to-crown gap %.1f%% BW SMALLER",-ag);
-        String radial;if(bg < -0.5f && ag > 0.5f) radial="POSITION: OUTWARD toward minute track vs gen";else if(bg > 0.5f && ag < -0.5f) radial="POSITION: INWARD toward crown vs gen";else if(Math.abs(bg)<0.5f && Math.abs(ag)<0.5f) radial="POSITION: essentially matches gen reference";else radial="POSITION: mixed local relationship, inspect taps/shape";
-        String rot=Math.abs(m.rotationDeg)<.03f?"rotation 0.00°":String.format("rotation %.2f° %s",Math.abs(m.rotationDeg),m.rotationDeg>0?"clockwise":"counter-clockwise");
-        result.setText(radial+"\n"+baseText+" · "+crownText+"\n"+rot+String.format(" · lateral %+.2f px",m.lateralPx));
+        String baseText=QcMeasurementFormatter.range("Base-to-60",m.baseGapRatio,GenTriangle12RelationalReference.BASE_TO_60_MEDIAN,GenTriangle12RelationalReference.BASE_TO_60_MIN,GenTriangle12RelationalReference.BASE_TO_60_MAX,"BW");
+        String crownText=QcMeasurementFormatter.range("Apex-to-crown",m.apexGapRatio,GenTriangle12RelationalReference.APEX_TO_CROWN_MEDIAN,GenTriangle12RelationalReference.APEX_TO_CROWN_MIN,GenTriangle12RelationalReference.APEX_TO_CROWN_MAX,"BW");
+        result.setText(baseText+"\n"+crownText+"\n"+QcMeasurementFormatter.rotation(m.rotationDeg)+String.format(" · lateral %+.2f px",m.lateralPx));
     }
 
     private void openFinalQc(){if(!measureView.complete())return;Triangle12RelationalMetric.Result m=measureView.metric();InspectionImageStore.setTriangleResult(measureView.copyActual(),m);startActivity(new Intent(this,FinalQcActivity.class));}

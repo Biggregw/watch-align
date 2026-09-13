@@ -13,11 +13,13 @@ public final class GenTriangle12RelationalReference {
     public static final float BASE_TO_60_INNER_OVER_BASE = 0.125f;
     public static final float BASE_TO_60_MIN = 0.10f;
     public static final float BASE_TO_60_MAX = 0.20f;
+    public static final float BASE_TO_60_MEDIAN = 0.169f;
 
     // Apex-to-crown varies materially across genuine photography/rendering.
     public static final float APEX_TO_CROWN_OVER_BASE = 0.26f;
     public static final float APEX_TO_CROWN_MIN = 0.18f;
     public static final float APEX_TO_CROWN_MAX = 0.34f;
+    public static final float APEX_TO_CROWN_MEDIAN = 0.26f;
 
     // Genuine controls have shown up to about 0.42 degrees after careful manual taps.
     // Treat <=0.50 degrees as observed genuine angular variation, not a defect by itself.
