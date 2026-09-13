@@ -110,6 +110,14 @@ It stores the current four-watch genuine pilot observations, pilot medians, froz
 
 Assessment consumes raw metric + profile + calibration + confidence. Raw values remain available even if classification logic changes later.
 
+### Perspective confidence
+
+`PerspectiveConfidenceService` is the common brand/model-agnostic confidence gate for four-anchor rectification.
+
+It evaluates the supplied 12/3/6/9 dial-edge quadrilateral using scale-independent geometry: convexity, side-length balance, diagonal balance, diagonal-intersection margin and area relative to the diagonals. It returns `HIGH`, `MEDIUM` or `LOW` confidence plus a 0-1 score and supporting evidence.
+
+The service does not suppress raw measurements and does not classify the watch. A low-confidence image can still produce raw geometry, but fine alignment claims must be treated cautiously. The GMT triangle module is the first module wired to this common service, replacing its previous unconditional `HIGH` confidence.
+
 ## Capability matrix
 
 Profiles explicitly declare applicable features so unsupported checks do not run.
@@ -149,8 +157,8 @@ Create the first declarative profile for modern Rolex GMT 126710-family watches 
 ### Step 5 - complete
 Move genuine pilot / legacy classifier metadata out of Final QC UI logic into versioned calibration data. The UI now reads the calibration asset instead of owning those values.
 
-### Step 6
-Add a perspective-confidence service used by all modules.
+### Step 6 - complete
+Add a common perspective-confidence service. The first production consumer is `GmtTriangle12QcModule`; raw GMT measurements remain unchanged while confidence now reflects four-anchor geometry quality.
 
 ### Step 7
 Implement per-index geometry as the first new generic module.
