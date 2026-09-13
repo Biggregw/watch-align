@@ -65,7 +65,22 @@ A profile should define:
 - enabled QC modules
 - calibration dataset IDs and versions
 
-Profiles should live outside measurement code wherever practical, ideally as versioned JSON or similar data files.
+Profiles now live outside measurement code as versioned JSON assets. The initial schema is `android/app/src/main/assets/profiles/watch-profile.schema.json` and is loaded through `com.watchalign.mobile.profile.WatchProfileLoader` into immutable `WatchProfile` objects.
+
+Schema version 1 currently carries:
+
+- `schemaVersion`
+- `id`
+- `brand`
+- `modelFamily`
+- `reference`
+- `displayName`
+- `dialType`: `APPLIED_INDEX`, `PRINTED`, or `MIXED`
+- `capabilities`
+- `enabledModules`
+- `calibrationIds`
+
+Capability and module identifiers intentionally remain strings so new modules can be added without changing the parser contract. The loader rejects unsupported schema versions, missing required fields, unsupported dial types and duplicate capability/module entries.
 
 Suggested structure:
 
@@ -109,7 +124,7 @@ Each module should return raw measurements, confidence and evidence. It should n
 
 ### Implemented common contracts
 
-The first migration step is now implemented under `com.watchalign.mobile.qc`:
+The first migration step is implemented under `com.watchalign.mobile.qc`:
 
 - `RawMeasurement` holds an immutable metric id, finite numeric value and unit.
 - `QcModuleResult` holds a module id, immutable raw measurements, confidence and supporting evidence only.
@@ -217,8 +232,10 @@ Extract a common QC result interface and raw-measurement result type.
 
 Implemented with `RawMeasurement`, `QcModuleResult` and `QcModule<I>`, plus unit tests covering raw-value preservation, immutability and invalid numeric rejection. No existing GMT production calculation has been changed.
 
-### Step 2
+### Step 2 - complete
 Define the watch-profile schema and loader.
+
+Implemented with immutable `WatchProfile`, validated `WatchProfileLoader`, JSON schema version 1, asset loading support and JVM unit tests.
 
 ### Step 3
 Wrap the current GMT 12-triangle logic as the first reusable module without changing its production calculations.
@@ -265,8 +282,8 @@ Do not:
 
 ## Recommended implementation order
 
-1. Common result contracts
-2. Profile schema + loader
+1. Common result contracts - complete
+2. Profile schema + loader - complete
 3. GMT 126710 profile migration
 4. Perspective-confidence service
 5. Per-index geometry module
