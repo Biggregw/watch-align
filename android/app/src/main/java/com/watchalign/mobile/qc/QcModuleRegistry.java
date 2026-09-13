@@ -16,6 +16,7 @@ public final class QcModuleRegistry {
 
         List<QcModule<?>> modules = new ArrayList<>();
         for (String moduleId : profile.enabledModules) {
+            ensureCapability(profile, moduleId);
             QcModule<?> module = create(moduleId);
             if (module == null) {
                 throw new IllegalArgumentException("profile enables unknown QC module: " + moduleId);
@@ -23,6 +24,19 @@ public final class QcModuleRegistry {
             modules.add(module);
         }
         return Collections.unmodifiableList(modules);
+    }
+
+    private static void ensureCapability(WatchProfile profile, String moduleId) {
+        if (GmtTriangle12QcModule.ID.equals(moduleId)
+                && !profile.supports("triangle-12-relationship")) {
+            throw new IllegalArgumentException(
+                    "profile enables GMT triangle module without triangle-12-relationship capability");
+        }
+        if (IndexGeometryQcModule.ID.equals(moduleId)
+                && !profile.supports("applied-index-geometry")) {
+            throw new IllegalArgumentException(
+                    "profile enables per-index geometry without applied-index-geometry capability");
+        }
     }
 
     private static QcModule<?> create(String moduleId) {
