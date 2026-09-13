@@ -15,7 +15,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** Alpha52 final combined QC view: perspective-rectified 12 check against observed genuine controls. */
+/** Final combined QC view: perspective-rectified 12 check against image-derived genuine controls. */
 public class FinalQcActivity extends Activity {
     private ZoomableImageView image;
     private Bitmap combined, base;
@@ -38,14 +38,14 @@ public class FinalQcActivity extends Activity {
         Button reset=btn("Reset");reset.setOnClickListener(v->image.resetZoom());top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(5),dp(10),dp(7));bottom.setBackgroundColor(0xEE08111F);
-        TextView summary=txt(qcSummary,11);summary.setGravity(Gravity.CENTER);bottom.addView(summary,new LinearLayout.LayoutParams(-1,dp(160)));
+        TextView summary=txt(qcSummary,10);summary.setGravity(Gravity.CENTER);bottom.addView(summary,new LinearLayout.LayoutParams(-1,dp(190)));
         LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER);
         Button blink=btn("Hold watch only");blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){image.setImageBitmapPreserveZoom(combined);return true;}return false;});row.addView(blink,new LinearLayout.LayoutParams(0,dp(46),1));
         Button main=btn("Main overlay");main.setOnClickListener(v->image.setImageBitmapPreserveZoom(mainOnly(base,InspectionImageStore.alignedPose)));row.addView(main,new LinearLayout.LayoutParams(0,dp(46),1));
         Button both=btn("Combined");both.setOnClickListener(v->image.setImageBitmapPreserveZoom(combined));row.addView(both,new LinearLayout.LayoutParams(0,dp(46),1));
         Button share=btn("Share QC");share.setOnClickListener(v->{try{QcExport.share(this,combined,InspectionImageStore.alignedModelRef,qcSummary);}catch(Exception e){android.widget.Toast.makeText(this,"Could not export: "+e.getMessage(),android.widget.Toast.LENGTH_LONG).show();}});row.addView(share,new LinearLayout.LayoutParams(0,dp(46),1));bottom.addView(row);
-        TextView hint=txt("Perspective-rectified result. Green = measured triangle, cyan = genuine-control centre target, red/yellow = main dial ruler. Ranges are observed genuine-image controls, not Rolex factory tolerances.",10);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(50)));
-        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(268),Gravity.BOTTOM));setContentView(root);
+        TextView hint=txt("Green = measured triangle. Cyan = fixed projected genuine-reference outline. Results near a control boundary are labelled borderline. Image-derived controls only, not Rolex factory tolerances.",9);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(58)));
+        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(300),Gravity.BOTTOM));setContentView(root);
     }
 
     private Bitmap mainOnly(Bitmap src,PerspectiveMasterRenderer.Pose pose){
@@ -55,13 +55,16 @@ public class FinalQcActivity extends Activity {
 
     private Bitmap buildCombined(Bitmap src,PerspectiveMasterRenderer.Pose pose,PointF[] p){
         Bitmap out=mainOnly(src,pose);Canvas c=new Canvas(out);float u=Math.max(1f,Math.min(out.getWidth(),out.getHeight())/900f);
-        Paint halo=stroke(Color.BLACK,7*u,215),green=stroke(Color.rgb(60,255,120),3.2f*u,255),cyan=stroke(Color.CYAN,2.5f*u,245),white=fill(Color.WHITE,245);white.setTextSize(17*u);white.setFakeBoldText(true);
+        Paint halo=stroke(Color.BLACK,7*u,215),green=stroke(Color.rgb(60,255,120),3.2f*u,255),cyan=stroke(Color.CYAN,2.8f*u,245),white=fill(Color.WHITE,245);white.setTextSize(16*u);white.setFakeBoldText(true);
         path(c,p[0],p[1],p[2],halo);path(c,p[0],p[1],p[2],green);
-        float bw=dist(p[0],p[1]);PointF centre=PerspectiveMasterRenderer.projectPoint(pose,0,0),p12=PerspectiveMasterRenderer.projectPoint(pose,0,-1);float ux=p12.x-centre.x,uy=p12.y-centre.y,n=(float)Math.hypot(ux,uy);if(n<1)n=1;ux/=n;uy/=n;float tx=-uy,ty=ux;
-        float bx=p[3].x-ux*bw*GenTriangle12RelationalReference.BASE_TO_60_INNER_OVER_BASE,by=p[3].y-uy*bw*GenTriangle12RelationalReference.BASE_TO_60_INNER_OVER_BASE;
-        PointF b0=new PointF(bx-tx*bw*.5f,by-ty*bw*.5f),b1=new PointF(bx+tx*bw*.5f,by+ty*bw*.5f);
-        float ax=p[4].x+ux*bw*GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE,ay=p[4].y+uy*bw*GenTriangle12RelationalReference.APEX_TO_CROWN_OVER_BASE;
-        c.drawLine(b0.x,b0.y,b1.x,b1.y,cyan);c.drawCircle(ax,ay,6*u,cyan);c.drawText("12 QC",p[1].x+10*u,p[1].y-12*u,white);
+
+        PointF rl=PerspectiveMasterRenderer.projectPoint(pose,Gmt126710BlnrTriangleReference.LEFT_X,Gmt126710BlnrTriangleReference.LEFT_Y);
+        PointF rr=PerspectiveMasterRenderer.projectPoint(pose,Gmt126710BlnrTriangleReference.RIGHT_X,Gmt126710BlnrTriangleReference.RIGHT_Y);
+        PointF ra=PerspectiveMasterRenderer.projectPoint(pose,Gmt126710BlnrTriangleReference.APEX_X,Gmt126710BlnrTriangleReference.APEX_Y);
+        path(c,rl,rr,ra,cyan);
+        c.drawCircle(rl.x,rl.y,5*u,cyan);c.drawCircle(rr.x,rr.y,5*u,cyan);c.drawCircle(ra.x,ra.y,5*u,cyan);
+        PointF rm=PerspectiveMasterRenderer.projectPoint(pose,0,-Gmt126710BlnrTriangleReference.MINUTE_INNER_R);
+        c.drawCircle(rm.x,rm.y,5*u,cyan);c.drawText("GEN REF",rr.x+9*u,rr.y-10*u,white);
         return out;
     }
 
@@ -69,25 +72,35 @@ public class FinalQcActivity extends Activity {
         Triangle12RelationalMetric.Result m=InspectionImageStore.triangleMetric;
         if(m==null)return "QC SUMMARY\n12 triangle measurements unavailable";
 
-        boolean baseOk=GenTriangle12RelationalReference.baseGapInRange(m.baseGapRatio);
-        boolean crownOk=GenTriangle12RelationalReference.crownGapInRange(m.apexGapRatio);
-        boolean rotOk=GenTriangle12RelationalReference.rotationInObservedGenRange(m.rotationDeg);
+        float baseMin=GenTriangle12RelationalReference.BASE_TO_60_MIN,baseMax=GenTriangle12RelationalReference.BASE_TO_60_MAX;
+        float crownMin=GenTriangle12RelationalReference.APEX_TO_CROWN_MIN,crownMax=GenTriangle12RelationalReference.APEX_TO_CROWN_MAX;
+        float rotMax=GenTriangle12RelationalReference.ROTATION_OBSERVED_GEN_MAX_DEG;
+        boolean baseOk=m.baseGapRatio>=baseMin&&m.baseGapRatio<=baseMax;
+        boolean crownOk=m.apexGapRatio>=crownMin&&m.apexGapRatio<=crownMax;
+        boolean rotOk=Math.abs(m.rotationDeg)<=rotMax;
+        float baseMargin=baseOk?Math.min(m.baseGapRatio-baseMin,baseMax-m.baseGapRatio):Math.min(Math.abs(m.baseGapRatio-baseMin),Math.abs(m.baseGapRatio-baseMax));
+        boolean borderlineBase=baseOk&&baseMargin<0.010f;
 
-        String position;
-        if(baseOk&&crownOk) position="within observed genuine range";
-        else if(m.baseGapRatio<GenTriangle12RelationalReference.BASE_TO_60_MIN&&m.apexGapRatio>GenTriangle12RelationalReference.APEX_TO_CROWN_MAX) position="outward beyond observed gen range";
-        else if(m.baseGapRatio>GenTriangle12RelationalReference.BASE_TO_60_MAX&&m.apexGapRatio<GenTriangle12RelationalReference.APEX_TO_CROWN_MIN) position="inward beyond observed gen range";
-        else position="one local relationship outside observed gen range";
+        String headline;
+        if(!rotOk)headline=borderlineBase?"position borderline low · rotation outside observed controls":"rotation outside observed controls";
+        else if(!baseOk)headline=m.baseGapRatio<baseMin?"triangle too close to minute track vs observed controls":"triangle too far from minute track vs observed controls";
+        else if(!crownOk)headline="apex/crown relationship outside observed controls";
+        else if(borderlineBase)headline="position borderline near genuine-control boundary";
+        else headline="measured relationships inside current observed controls";
 
-        String rot=rotOk
-                ? (Math.abs(m.rotationDeg)<.10f?"essentially straight":String.format("%.2f° %s (within gen controls)",Math.abs(m.rotationDeg),m.rotationDeg>0?"clockwise":"counter-clockwise"))
-                : String.format("%.2f° %s (outside gen controls)",Math.abs(m.rotationDeg),m.rotationDeg>0?"clockwise":"counter-clockwise");
+        float trackDelta=m.baseGapRatio-GenTriangle12RelationalReference.BASE_TO_60_MEDIAN;
+        String trackDir=trackDelta<0?"closer to minute track":"farther from minute track";
         String centre=Math.abs(m.lateralPx)<.5f?"centred":String.format("%+.2f px lateral",m.lateralPx);
-        String baseText=QcMeasurementFormatter.range("Base-to-60",m.baseGapRatio,GenTriangle12RelationalReference.BASE_TO_60_MEDIAN,GenTriangle12RelationalReference.BASE_TO_60_MIN,GenTriangle12RelationalReference.BASE_TO_60_MAX,"BW");
-        String crownText=QcMeasurementFormatter.range("Apex-to-crown",m.apexGapRatio,GenTriangle12RelationalReference.APEX_TO_CROWN_MEDIAN,GenTriangle12RelationalReference.APEX_TO_CROWN_MIN,GenTriangle12RelationalReference.APEX_TO_CROWN_MAX,"BW");
+        String rot=rotOk?String.format("%+.2f° (inside ±%.2f°)",m.rotationDeg,rotMax):String.format("%+.2f° · %.2f° beyond observed limit",m.rotationDeg,Math.abs(m.rotationDeg)-rotMax);
 
-        return "QC SUMMARY\n12 triangle: "+position+" · "+centre+" · "+rot+"\n"+baseText+"\n"+crownText+"\n"+QcMeasurementFormatter.rotation(m.rotationDeg);
+        String baseText=String.format("Track gap: %.3f BW · %.3f %s than genuine median %.3f · lower-bound margin %.3f",
+                m.baseGapRatio,Math.abs(trackDelta),trackDir,GenTriangle12RelationalReference.BASE_TO_60_MEDIAN,m.baseGapRatio-baseMin);
+        String crownText=String.format("Apex-to-crown: %.3f BW · genuine median %.3f · %s current observed %.3f–%.3f",
+                m.apexGapRatio,GenTriangle12RelationalReference.APEX_TO_CROWN_MEDIAN,crownOk?"inside":"outside",crownMin,crownMax);
+        String confidence=borderlineBase?"Confidence: BORDERLINE because track-gap is within 0.010 BW of the control boundary.":"Confidence: not boundary-limited on track gap.";
+
+        return "QC SUMMARY\n12 triangle: "+headline+" · "+centre+"\n"+baseText+"\n"+crownText+"\nRotation: "+rot+"\n"+confidence;
     }
 
-    private void path(Canvas c,PointF a,PointF b,PointF d,Paint p){Path q=new Path();q.moveTo(a.x,a.y);q.lineTo(b.x,b.y);q.lineTo(d.x,d.y);q.close();c.drawPath(q,p);}private float dist(PointF a,PointF b){return (float)Math.hypot(a.x-b.x,a.y-b.y);}private Paint stroke(int color,float width,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);p.setStrokeJoin(Paint.Join.ROUND);p.setStrokeCap(Paint.Cap.ROUND);p.setAlpha(alpha);return p;}private Paint fill(int color,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.FILL);p.setAlpha(alpha);return p;}private Button btn(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(11);return b;}private TextView txt(String s,int sp){TextView t=new TextView(this);t.setText(s);t.setTextColor(Color.WHITE);t.setTextSize(sp);return t;}private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
+    private void path(Canvas c,PointF a,PointF b,PointF d,Paint p){Path q=new Path();q.moveTo(a.x,a.y);q.lineTo(b.x,b.y);q.lineTo(d.x,d.y);q.close();c.drawPath(q,p);}private Paint stroke(int color,float width,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);p.setStrokeJoin(Paint.Join.ROUND);p.setStrokeCap(Paint.Cap.ROUND);p.setAlpha(alpha);return p;}private Paint fill(int color,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.FILL);p.setAlpha(alpha);return p;}private Button btn(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(11);return b;}private TextView txt(String s,int sp){TextView t=new TextView(this);t.setText(s);t.setTextColor(Color.WHITE);t.setTextSize(sp);return t;}private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
 }
