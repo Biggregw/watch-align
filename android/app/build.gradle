@@ -8,11 +8,23 @@ android {
         applicationId 'com.watchalign.mobile'
         minSdk 28
         targetSdk 35
-        versionCode 13054
-        versionName '1.3.0-alpha54'
+        versionCode 13055
+        versionName '1.3.0-rc1'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         ndk {
             abiFilters 'arm64-v8a'
+        }
+    }
+
+    def releaseKeystore=System.getenv('WATCH_ALIGN_KEYSTORE')
+    signingConfigs {
+        if(releaseKeystore) {
+            release {
+                storeFile file(releaseKeystore)
+                storePassword System.getenv('WATCH_ALIGN_STORE_PASSWORD')
+                keyAlias System.getenv('WATCH_ALIGN_KEY_ALIAS')
+                keyPassword System.getenv('WATCH_ALIGN_KEY_PASSWORD')
+            }
         }
     }
 
@@ -22,6 +34,7 @@ android {
         }
         release {
             debuggable false
+            if(releaseKeystore) signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'

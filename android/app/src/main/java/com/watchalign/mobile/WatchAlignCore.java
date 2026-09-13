@@ -16,7 +16,7 @@ import java.util.List;
  * to named helpers rather than chaining versioned cores.
  */
 public final class WatchAlignCore {
-    public static final String CORE_VERSION="1.3.0-alpha54";
+    public static final String CORE_VERSION="1.3.0";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;

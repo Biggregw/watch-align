@@ -40,17 +40,19 @@ jobs:
           grep -q 'Hold to blink' app/src/main/java/com/watchalign/mobile/FullscreenInspectActivity.java
           grep -q 'setImageBitmapPreserveZoom' app/src/main/java/com/watchalign/mobile/ZoomableImageView.java
           grep -q 'Community-style index alignment ruler' app/src/main/java/com/watchalign/mobile/PerspectiveMasterRenderer.java
-          grep -q 'CORE_VERSION="1.3.0-alpha54"' app/src/main/java/com/watchalign/mobile/WatchAlignCore.java
+          grep -q 'CORE_VERSION="1.3.0"' app/src/main/java/com/watchalign/mobile/WatchAlignCore.java
           grep -q 'WatchAlignCore.AnalysisResult' app/src/main/java/com/watchalign/mobile/MainActivity.java
           ! grep -R -q 'java.lang.reflect' app/src/main/java
           ! find app/src/main/java -name 'WatchAlignCoreV*.java' | grep -q .
           test ! -e app/src/main/java/com/watchalign/mobile/OnlineReferenceFinder.java
           grep -q "abiFilters 'arm64-v8a'" app/build.gradle
-          grep -q "versionName '1.3.0-alpha54'" app/build.gradle
+          grep -q "versionName '1.3.0-rc1'" app/build.gradle
       - name: Run Android unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
       - name: Build standalone APK
         run: gradle :app:assembleDebug --stacktrace
+      - name: Build release AAB path
+        run: gradle :app:bundleRelease --stacktrace
       - name: Read app version
         id: version
         shell: bash
@@ -62,6 +64,11 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk "WatchAlign-Android-${{ steps.version.outputs.version }}.apk"
           sha256sum "WatchAlign-Android-${{ steps.version.outputs.version }}.apk" > SHA256SUMS-Android.txt
           ls -lh "WatchAlign-Android-${{ steps.version.outputs.version }}.apk"
+          APK_BYTES=$(stat -c %s "WatchAlign-Android-${{ steps.version.outputs.version }}.apk")
+          AAB_BYTES=$(stat -c %s app/build/outputs/bundle/release/app-release.aab)
+          echo "### Android package sizes" >> "$GITHUB_STEP_SUMMARY"
+          echo "* arm64 debug APK: ${APK_BYTES} bytes" >> "$GITHUB_STEP_SUMMARY"
+          echo "* release AAB: ${AAB_BYTES} bytes" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload working APK
         uses: actions/upload-artifact@v4
         with:
@@ -69,5 +76,6 @@ jobs:
           path: |
             android/WatchAlign-Android-${{ steps.version.outputs.version }}.apk
             android/SHA256SUMS-Android.txt
+            android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30

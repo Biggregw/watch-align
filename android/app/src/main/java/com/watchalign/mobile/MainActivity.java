@@ -47,7 +47,7 @@ public class MainActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Color.rgb(8,17,31));
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("WATCH ALIGN · STANDALONE",12,Color.rgb(50,213,242)));TextView h1=text("Watch Align Android",28,Color.WHITE);h1.setPadding(0,dp(4),0,0);root.addView(h1);
-        root.addView(text("V1.3.0-alpha54 · consolidated core",14,Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0 · local visual QC",14,Color.rgb(158,176,201)));
         root.addView(text("Perspective alignment, 12-triangle relation QC and final summary all run locally. The automatic points are suggestions only: inspect them, fine-nudge anything that is off, then run the local 12-marker relation check.",13,Color.rgb(158,176,201)));
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ModelCatalog.labels()));root.addView(model,lp(-1,dp(54),10));
         TextView capability=text("",12,Color.rgb(158,176,201));root.addView(capability);model.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> p,View v,int position,long id){ModelCatalog.Profile x=ModelCatalog.at(position);capability.setText(x.capability()+" · "+x.unavailableChecks());}public void onNothingSelected(AdapterView<?> p){}});
