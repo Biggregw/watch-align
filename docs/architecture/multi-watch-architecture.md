@@ -110,9 +110,17 @@ Rotation is treated as line orientation, so reversing the two axis endpoints can
 
 The module inherits `HIGH`, `MEDIUM` or `LOW` confidence from `PerspectiveConfidenceService` without modifying the raw measurements. This is intended to prevent tiny apparent marker cants caused by oblique photographs from being presented with unjustified confidence.
 
-`QcModuleRegistry` knows about this generic module and now verifies required profile capabilities before returning modules. In particular, `generic.index_geometry` requires `applied-index-geometry`, so a printed-dial profile cannot accidentally run an applied-marker detector merely because a module ID was added to its JSON.
+`QcModuleRegistry` knows about this generic module and verifies required profile capabilities before returning modules. In particular, `generic.index_geometry` requires `applied-index-geometry`, so a printed-dial profile cannot accidentally run an applied-marker detector merely because a module ID was added to its JSON.
 
-This step provides the measurement layer only. Automatic marker localisation / point placement and model-specific calibration remain separate later work.
+### GMT production bridge
+
+The 126710-family profile now enables both `gmt.triangle12.relationship` and `generic.index_geometry`.
+
+`GmtIndexAutoAnalyzer` bridges the existing automatic GMT marker localisation into the generic index module after rectifying marker centres through the user's corrected 12/3/6/9 pose. All reliably localized marker centres contribute radial and tangential position measurements. The expected marker radius is the median marker-ring radius from that same watch image, explicitly a within-watch consensus baseline rather than a Rolex tolerance or genuine calibration.
+
+Round GMT hour plots are position-only because body rotation is not meaningful for a circle. Automatic body-axis estimation is therefore surfaced only for elongated 6 and 9 markers, and remains diagnostic rather than a hard defect verdict. The 12 triangle continues to use its dedicated manually corrected production measurement.
+
+`FinalQcActivity` now shows the per-index summary alongside the existing 12-triangle assessment, provides an `Indices` overlay, and links to `GmtExtendedQcActivity`. The extended screen exposes the existing date, cyclops, bezel, rehaut and SEL checks with their photo-sensitivity caveats. `WatchAlignCore` also retains the extended GMT report instead of calculating and then discarding it.
 
 ### 4. Calibration and reference data
 
@@ -185,7 +193,7 @@ Add a common perspective-confidence service. The first production consumer is `G
 ### Step 7 - complete
 Add `IndexGeometryQcModule` as the generic applied-marker geometry engine. It independently measures marker cant, radial position and tangential position for each supplied hour marker in rectified dial coordinates, with optional normalized width/height. It is confidence-gated by the common perspective assessment and registered behind the `applied-index-geometry` capability.
 
-Automatic marker localisation and model-specific acceptance/calibration are intentionally not part of this module.
+The GMT production flow now feeds automatically localized marker centres through this module after manual perspective correction and surfaces those results in Final QC. This is integration, not a new factory-tolerance calibration: marker radial offsets currently use the watch's own marker-ring median as their baseline.
 
 ### Step 8
 Add a second model family, ideally Submariner 124060, to prove the architecture is genuinely reusable.
