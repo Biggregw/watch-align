@@ -92,6 +92,28 @@ It delegates directly to `Triangle12RelationalMetric.measureRectifiedRaw` and do
 
 The wrapper deliberately contains no pass/fail or genuine/replica classification.
 
+### Generic per-index geometry
+
+`IndexGeometryQcModule` is the first new brand/model-agnostic geometry module.
+
+It operates only on marker observations already transformed into the canonical rectified dial frame. For each applied hour marker it reports raw measurements for:
+
+- marker-centre radius relative to dial radius
+- radial offset from the model/profile supplied expected centre radius
+- tangential offset from the expected hour axis
+- marker rotation/cant relative to the expected radial axis
+- optional marker width and height normalised by dial radius
+
+The module does not contain model-specific tolerances. The expected marker-centre radius is supplied with each observation so a GMT, Submariner, Royal Oak or other applied-index model can reuse the same geometry implementation with separate calibration data.
+
+Rotation is treated as line orientation, so reversing the two axis endpoints cannot turn a correct marker into a 180-degree error. Positive rotation is defined as clockwise in image coordinates.
+
+The module inherits `HIGH`, `MEDIUM` or `LOW` confidence from `PerspectiveConfidenceService` without modifying the raw measurements. This is intended to prevent tiny apparent marker cants caused by oblique photographs from being presented with unjustified confidence.
+
+`QcModuleRegistry` knows about this generic module and now verifies required profile capabilities before returning modules. In particular, `generic.index_geometry` requires `applied-index-geometry`, so a printed-dial profile cannot accidentally run an applied-marker detector merely because a module ID was added to its JSON.
+
+This step provides the measurement layer only. Automatic marker localisation / point placement and model-specific calibration remain separate later work.
+
 ### 4. Calibration and reference data
 
 Calibration is versioned and model/reference specific. Keep genuine observations, replica observations, legacy bands, repeatability data and provenance distinct. Do not encode image-derived observations as factory tolerances.
@@ -158,10 +180,12 @@ Create the first declarative profile for modern Rolex GMT 126710-family watches 
 Move genuine pilot / legacy classifier metadata out of Final QC UI logic into versioned calibration data. The UI now reads the calibration asset instead of owning those values.
 
 ### Step 6 - complete
-Add a common perspective-confidence service. The first production consumer is `GmtTriangle12QcModule`; raw GMT measurements remain unchanged while confidence now reflects four-anchor geometry quality.
+Add a common perspective-confidence service. The first production consumer is `GmtTriangle12QcModule`; raw GMT measurements remain unchanged while confidence now reflects four-anchor geometry quality. Corrected validation passed in workflow run 423.
 
-### Step 7
-Implement per-index geometry as the first new generic module.
+### Step 7 - complete
+Add `IndexGeometryQcModule` as the generic applied-marker geometry engine. It independently measures marker cant, radial position and tangential position for each supplied hour marker in rectified dial coordinates, with optional normalized width/height. It is confidence-gated by the common perspective assessment and registered behind the `applied-index-geometry` capability.
+
+Automatic marker localisation and model-specific acceptance/calibration are intentionally not part of this module.
 
 ### Step 8
 Add a second model family, ideally Submariner 124060, to prove the architecture is genuinely reusable.
