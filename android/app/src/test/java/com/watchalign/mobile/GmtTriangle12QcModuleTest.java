@@ -2,6 +2,7 @@ package com.watchalign.mobile;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.watchalign.mobile.qc.QcModuleResult;
 import com.watchalign.mobile.qc.RawMeasurement;
@@ -24,15 +25,15 @@ public class GmtTriangle12QcModuleTest {
         return p;
     }
 
+    private static double[][] points() {
+        return new double[][]{
+                {-24, 75}, {24, 75}, {0, 143}, {0, 69}, {0, 155.48}
+        };
+    }
+
     @Test public void wrapperPreservesProductionRawMeasurementsExactly() {
         PerspectiveMasterRenderer.Pose pose = canonicalPose();
-        double[][] points = {
-                {-24, 75},
-                {24, 75},
-                {0, 143},
-                {0, 69},
-                {0, 155.48}
-        };
+        double[][] points = points();
 
         Triangle12RelationalMetric.Result legacy =
                 Triangle12RelationalMetric.measureRectifiedRaw(pose, points);
@@ -56,13 +57,12 @@ public class GmtTriangle12QcModuleTest {
                 wrapped.measurement("height_over_base"));
         assertSameValue(legacy.rawRectified.lateralPx,
                 wrapped.measurement("lateral_px"));
+        assertTrue(wrapped.evidence().size() >= 2);
     }
 
     @Test public void wrapperCopiesInputSoCallerMutationCannotChangeMeasurement() {
         PerspectiveMasterRenderer.Pose pose = canonicalPose();
-        double[][] points = {
-                {-24, 75}, {24, 75}, {0, 143}, {0, 69}, {0, 155.48}
-        };
+        double[][] points = points();
         GmtTriangle12QcModule.Input input = GmtTriangle12QcModule.Input.rectified(pose, points);
 
         points[0][0] = 9999;
@@ -72,6 +72,31 @@ public class GmtTriangle12QcModuleTest {
         RawMeasurement base = wrapped.measurement("base_to_60_over_base");
         assertNotNull(base);
         assertEquals(0.125d, base.value(), 0.000001d);
+    }
+
+    @Test public void extremePerspectiveLowersConfidenceWithoutChangingRawGeometryPath() {
+        PerspectiveMasterRenderer.Pose pose = canonicalPose();
+        pose.anchor12Y = -20f;
+        pose.anchor6Y = 22f;
+        pose.anchor3X = 120f;
+        pose.anchor9X = -120f;
+
+        QcModuleResult wrapped = new GmtTriangle12QcModule().measure(
+                GmtTriangle12QcModule.Input.rectified(pose, points()));
+
+        assertEquals(QcModuleResult.Confidence.LOW, wrapped.confidence());
+        assertEquals(5, wrapped.measurements().size());
+        assertNotNull(wrapped.measurement("base_to_60_over_base"));
+    }
+
+    @Test public void missingPerspectiveAnchorsCannotClaimHighConfidence() {
+        PerspectiveMasterRenderer.Pose pose = canonicalPose();
+        pose.perspectiveMode = false;
+
+        QcModuleResult wrapped = new GmtTriangle12QcModule().measure(
+                GmtTriangle12QcModule.Input.rectified(pose, points()));
+
+        assertEquals(QcModuleResult.Confidence.LOW, wrapped.confidence());
     }
 
     private static void assertSameValue(float expected, RawMeasurement actual) {
