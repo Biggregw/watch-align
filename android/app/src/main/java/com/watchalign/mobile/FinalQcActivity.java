@@ -38,14 +38,14 @@ public class FinalQcActivity extends Activity {
         Button reset=btn("Reset");reset.setOnClickListener(v->image.resetZoom());top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(5),dp(10),dp(7));bottom.setBackgroundColor(0xEE08111F);
-        TextView summary=txt(qcSummary,10);summary.setGravity(Gravity.CENTER);bottom.addView(summary,new LinearLayout.LayoutParams(-1,dp(190)));
+        TextView summary=txt(qcSummary,10);summary.setGravity(Gravity.CENTER);bottom.addView(summary,new LinearLayout.LayoutParams(-1,dp(205)));
         LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER);
         Button blink=btn("Hold watch only");blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){image.setImageBitmapPreserveZoom(combined);return true;}return false;});row.addView(blink,new LinearLayout.LayoutParams(0,dp(46),1));
         Button main=btn("Main overlay");main.setOnClickListener(v->image.setImageBitmapPreserveZoom(mainOnly(base,InspectionImageStore.alignedPose)));row.addView(main,new LinearLayout.LayoutParams(0,dp(46),1));
         Button both=btn("Combined");both.setOnClickListener(v->image.setImageBitmapPreserveZoom(combined));row.addView(both,new LinearLayout.LayoutParams(0,dp(46),1));
         Button share=btn("Share QC");share.setOnClickListener(v->{try{QcExport.share(this,combined,InspectionImageStore.alignedModelRef,qcSummary);}catch(Exception e){android.widget.Toast.makeText(this,"Could not export: "+e.getMessage(),android.widget.Toast.LENGTH_LONG).show();}});row.addView(share,new LinearLayout.LayoutParams(0,dp(46),1));bottom.addView(row);
-        TextView hint=txt("Green = measured triangle. Cyan = fixed projected genuine-reference outline. Results near a control boundary are labelled borderline. Image-derived controls only, not Rolex factory tolerances.",9);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(58)));
-        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(300),Gravity.BOTTOM));setContentView(root);
+        TextView hint=txt("Green = measured triangle. Cyan = fixed projected genuine-reference outline. Pilot observations currently contain four genuine GMT controls; legacy bands are retained separately and are not Rolex factory tolerances.",9);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(62)));
+        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(320),Gravity.BOTTOM));setContentView(root);
     }
 
     private Bitmap mainOnly(Bitmap src,PerspectiveMasterRenderer.Pose pose){
@@ -72,34 +72,48 @@ public class FinalQcActivity extends Activity {
         Triangle12RelationalMetric.Result m=InspectionImageStore.triangleMetric;
         if(m==null)return "QC SUMMARY\n12 triangle measurements unavailable";
 
-        float baseMin=GenTriangle12RelationalReference.BASE_TO_60_MIN,baseMax=GenTriangle12RelationalReference.BASE_TO_60_MAX;
-        float crownMin=GenTriangle12RelationalReference.APEX_TO_CROWN_MIN,crownMax=GenTriangle12RelationalReference.APEX_TO_CROWN_MAX;
+        float legacyBaseMin=GenTriangle12RelationalReference.BASE_TO_60_MIN;
+        float legacyBaseMax=GenTriangle12RelationalReference.BASE_TO_60_MAX;
+        float pilotBaseMin=GenTriangle12RelationalReference.BASE_TO_60_PILOT_MIN;
+        float pilotBaseMax=GenTriangle12RelationalReference.BASE_TO_60_PILOT_MAX;
+        float crownMin=GenTriangle12RelationalReference.APEX_TO_CROWN_MIN;
+        float crownMax=GenTriangle12RelationalReference.APEX_TO_CROWN_MAX;
         float rotMax=GenTriangle12RelationalReference.ROTATION_OBSERVED_GEN_MAX_DEG;
-        boolean baseOk=m.baseGapRatio>=baseMin&&m.baseGapRatio<=baseMax;
+
+        boolean legacyBaseOk=m.baseGapRatio>=legacyBaseMin&&m.baseGapRatio<=legacyBaseMax;
+        boolean pilotBaseOk=m.baseGapRatio>=pilotBaseMin&&m.baseGapRatio<=pilotBaseMax;
         boolean crownOk=m.apexGapRatio>=crownMin&&m.apexGapRatio<=crownMax;
         boolean rotOk=Math.abs(m.rotationDeg)<=rotMax;
-        float baseMargin=baseOk?Math.min(m.baseGapRatio-baseMin,baseMax-m.baseGapRatio):Math.min(Math.abs(m.baseGapRatio-baseMin),Math.abs(m.baseGapRatio-baseMax));
-        boolean borderlineBase=baseOk&&baseMargin<0.010f;
 
         String headline;
-        if(!rotOk)headline=borderlineBase?"position borderline low · rotation outside observed controls":"rotation outside observed controls";
-        else if(!baseOk)headline=m.baseGapRatio<baseMin?"triangle too close to minute track vs observed controls":"triangle too far from minute track vs observed controls";
-        else if(!crownOk)headline="apex/crown relationship outside observed controls";
-        else if(borderlineBase)headline="position borderline near genuine-control boundary";
-        else headline="measured relationships inside current observed controls";
+        if(m.baseGapRatio<pilotBaseMin)headline="track gap below current genuine pilot observations";
+        else if(m.baseGapRatio>pilotBaseMax)headline="track gap above current genuine pilot observations";
+        else headline="track gap inside current genuine pilot observations";
+        if(!rotOk)headline+=" · rotation outside current angular envelope";
 
         float trackDelta=m.baseGapRatio-GenTriangle12RelationalReference.BASE_TO_60_MEDIAN;
         String trackDir=trackDelta<0?"closer to minute track":"farther from minute track";
         String centre=Math.abs(m.lateralPx)<.5f?"centred":String.format("%+.2f px lateral",m.lateralPx);
-        String rot=rotOk?String.format("%+.2f° (inside ±%.2f°)",m.rotationDeg,rotMax):String.format("%+.2f° · %.2f° beyond observed limit",m.rotationDeg,Math.abs(m.rotationDeg)-rotMax);
+        String rot=rotOk?String.format("%+.2f° · inside current ±%.2f° envelope",m.rotationDeg,rotMax):String.format("%+.2f° · %.2f° beyond current ±%.2f° envelope",m.rotationDeg,Math.abs(m.rotationDeg)-rotMax,rotMax);
 
-        String baseText=String.format("Track gap: %.3f BW · %.3f %s than genuine median %.3f · lower-bound margin %.3f",
-                m.baseGapRatio,Math.abs(trackDelta),trackDir,GenTriangle12RelationalReference.BASE_TO_60_MEDIAN,m.baseGapRatio-baseMin);
-        String crownText=String.format("Apex-to-crown: %.3f BW · genuine median %.3f · %s current observed %.3f–%.3f",
+        String baseText=String.format("Track gap: %.3f BW · %.3f %s than genuine pilot median %.3f · pilot %.3f–%.3f (n=%d)",
+                m.baseGapRatio,Math.abs(trackDelta),trackDir,GenTriangle12RelationalReference.BASE_TO_60_MEDIAN,pilotBaseMin,pilotBaseMax,GenTriangle12RelationalReference.CORRECTED_CONTROL_COUNT);
+
+        String pilotPosition;
+        if(m.baseGapRatio<pilotBaseMin)pilotPosition=String.format("Pilot position: %.3f below lowest genuine control",pilotBaseMin-m.baseGapRatio);
+        else if(m.baseGapRatio>pilotBaseMax)pilotPosition=String.format("Pilot position: %.3f above highest genuine control",m.baseGapRatio-pilotBaseMax);
+        else pilotPosition=String.format("Pilot position: inside observations · nearest edge %.3f",Math.min(m.baseGapRatio-pilotBaseMin,pilotBaseMax-m.baseGapRatio));
+        String legacyText=String.format("Legacy classifier: %s frozen %.3f–%.3f band",legacyBaseOk?"inside":"outside",legacyBaseMin,legacyBaseMax);
+
+        String crownText=String.format("Apex-to-crown: %.3f BW · pilot median %.3f · %s legacy %.3f–%.3f band",
                 m.apexGapRatio,GenTriangle12RelationalReference.APEX_TO_CROWN_MEDIAN,crownOk?"inside":"outside",crownMin,crownMax);
-        String confidence=borderlineBase?"Confidence: BORDERLINE because track-gap is within 0.010 BW of the control boundary.":"Confidence: not boundary-limited on track gap.";
 
-        return "QC SUMMARY\n12 triangle: "+headline+" · "+centre+"\n"+baseText+"\n"+crownText+"\nRotation: "+rot+"\n"+confidence;
+        String confidence;
+        if(!pilotBaseOk&&legacyBaseOk)confidence="Assessment: outside current genuine pilot observations, while still inside the intentionally wider legacy classifier.";
+        else if(pilotBaseOk)confidence="Assessment: track gap sits inside the current four-watch genuine pilot observations.";
+        else confidence="Assessment: track gap is outside both the current genuine pilot observations and the frozen legacy classifier.";
+
+        return "QC SUMMARY\n12 triangle: "+headline+" · "+centre+"\n"+baseText+"\n"+pilotPosition+" · "+legacyText+"\n"+crownText+"\nRotation: "+rot+"\n"+confidence;
     }
 
     private void path(Canvas c,PointF a,PointF b,PointF d,Paint p){Path q=new Path();q.moveTo(a.x,a.y);q.lineTo(b.x,b.y);q.lineTo(d.x,d.y);q.close();c.drawPath(q,p);}private Paint stroke(int color,float width,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);p.setStrokeJoin(Paint.Join.ROUND);p.setStrokeCap(Paint.Cap.ROUND);p.setAlpha(alpha);return p;}private Paint fill(int color,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(color);p.setStyle(Paint.Style.FILL);p.setAlpha(alpha);return p;}private Button btn(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(11);return b;}private TextView txt(String s,int sp){TextView t=new TextView(this);t.setText(s);t.setTextColor(Color.WHITE);t.setTextSize(sp);return t;}private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
