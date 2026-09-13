@@ -51,6 +51,7 @@ public class MainActivity extends Activity {
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ModelCatalog.labels()));root.addView(model,lp(-1,dp(54),10));
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         Button camera=button("Take guided watch photo");camera.setOnClickListener(v->startActivityForResult(new Intent(this,CaptureActivity.class),CAPTURE_WATCH));root.addView(camera,lp(-1,dp(52),6));
+        Button history=button("Inspection history");history.setOnClickListener(v->startActivity(new Intent(this,HistoryActivity.class)));root.addView(history,lp(-1,dp(52),6));
         Button pickRef=button("Choose genuine reference photos (optional)");pickRef.setOnClickListener(v->pickReferences());root.addView(pickRef,lp(-1,dp(52),6));
         Button manual=button("Align ruler");manual.setBackgroundColor(Color.rgb(255,60,60));manual.setTextColor(Color.WHITE);manual.setOnClickListener(v->openManualWorkbench());root.addView(manual,lp(-1,dp(54),12));
         Button analyse=button("Build automatic QC overlay");analyse.setOnClickListener(v->analyse());root.addView(analyse,lp(-1,dp(52),6));

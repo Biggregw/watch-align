@@ -26,7 +26,8 @@ public class FinalQcActivity extends Activity {
         PerspectiveMasterRenderer.Pose pose=InspectionImageStore.alignedPose;
         PointF[] tri=InspectionImageStore.trianglePoints;
         if(base==null||pose==null||tri==null||tri.length<5){finish();return;}
-        combined=buildCombined(base,pose,tri);
+        combined=buildCombined(base,pose,tri);final String qcSummary=buildSummary();
+        if(InspectionImageStore.historyRecordId==null)try{InspectionHistory.Record saved=InspectionHistory.save(this,base,InspectionImageStore.alignedModelRef,pose,tri,InspectionImageStore.triangleMetric,qcSummary);InspectionImageStore.historyRecordId=saved.id;}catch(Exception ignored){}
 
         FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.rgb(8,17,31));
         image=new ZoomableImageView(this);image.setBackgroundColor(Color.BLACK);image.setImageBitmap(combined);root.addView(image,new FrameLayout.LayoutParams(-1,-1));
@@ -37,11 +38,12 @@ public class FinalQcActivity extends Activity {
         Button reset=btn("Reset");reset.setOnClickListener(v->image.resetZoom());top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(5),dp(10),dp(7));bottom.setBackgroundColor(0xEE08111F);
-        TextView summary=txt(buildSummary(),11);summary.setGravity(Gravity.CENTER);bottom.addView(summary,new LinearLayout.LayoutParams(-1,dp(160)));
+        TextView summary=txt(qcSummary,11);summary.setGravity(Gravity.CENTER);bottom.addView(summary,new LinearLayout.LayoutParams(-1,dp(160)));
         LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER);
         Button blink=btn("Hold watch only");blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){image.setImageBitmapPreserveZoom(combined);return true;}return false;});row.addView(blink,new LinearLayout.LayoutParams(0,dp(46),1));
         Button main=btn("Main overlay");main.setOnClickListener(v->image.setImageBitmapPreserveZoom(mainOnly(base,InspectionImageStore.alignedPose)));row.addView(main,new LinearLayout.LayoutParams(0,dp(46),1));
-        Button both=btn("Combined");both.setOnClickListener(v->image.setImageBitmapPreserveZoom(combined));row.addView(both,new LinearLayout.LayoutParams(0,dp(46),1));bottom.addView(row);
+        Button both=btn("Combined");both.setOnClickListener(v->image.setImageBitmapPreserveZoom(combined));row.addView(both,new LinearLayout.LayoutParams(0,dp(46),1));
+        Button share=btn("Share QC");share.setOnClickListener(v->{try{QcExport.share(this,combined,InspectionImageStore.alignedModelRef,qcSummary);}catch(Exception e){android.widget.Toast.makeText(this,"Could not export: "+e.getMessage(),android.widget.Toast.LENGTH_LONG).show();}});row.addView(share,new LinearLayout.LayoutParams(0,dp(46),1));bottom.addView(row);
         TextView hint=txt("Perspective-rectified result. Green = measured triangle, cyan = genuine-control centre target, red/yellow = main dial ruler. Ranges are observed genuine-image controls, not Rolex factory tolerances.",10);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(50)));
         root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(268),Gravity.BOTTOM));setContentView(root);
     }

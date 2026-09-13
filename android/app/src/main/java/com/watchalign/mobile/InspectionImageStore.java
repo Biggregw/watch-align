@@ -15,6 +15,7 @@ final class InspectionImageStore {
     static PointF[] trianglePoints;
     static Triangle12RelationalMetric.Result triangleMetric;
     static Bitmap capturedBitmap;
+    static String historyRecordId;
 
     static void setCaptured(Bitmap bitmap){capturedBitmap=bitmap;}
     static Bitmap takeCaptured(){Bitmap b=capturedBitmap;capturedBitmap=null;return b;}
@@ -34,6 +35,7 @@ final class InspectionImageStore {
 
     static void setManual(Bitmap base,String model,String t){
         baseBitmap=base;bitmap=base;title=t;modelRef=model;overlayMode=false;alignedPose=null;alignedModelRef=null;trianglePoints=null;triangleMetric=null;
+        historyRecordId=null;
     }
 
     static void setTriangleResult(PointF[] points,Triangle12RelationalMetric.Result metric){
