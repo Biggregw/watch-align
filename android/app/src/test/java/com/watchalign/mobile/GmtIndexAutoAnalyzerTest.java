@@ -11,7 +11,7 @@ import java.util.Collections;
 import org.junit.Test;
 
 public class GmtIndexAutoAnalyzerTest {
-    @Test public void summarySurfacesLargestPositionOffsetsInIdealGeometryModel() {
+    @Test public void summarySeparatesExactAnglesFromCalibratedDimensions() {
         QcModuleResult result = new QcModuleResult(
                 "generic.index_geometry",
                 Arrays.asList(
@@ -26,13 +26,13 @@ public class GmtIndexAutoAnalyzerTest {
                 Collections.emptyList());
 
         String summary = GmtIndexAutoAnalyzer.summarize(result, 10);
-        assertTrue(summary.contains("10 markers"));
+        assertTrue(summary.contains("10 QC markers passed strict contour checks"));
+        assertTrue(summary.contains("Exact angular model"));
         assertTrue(summary.contains("Largest residual: tangential 5 +0.031 DR"));
-        assertTrue(summary.contains("radial 6 +0.018 DR"));
+        assertTrue(summary.contains("reference radial delta 6 +0.018 DR"));
         assertTrue(summary.contains("6/9 body axis: 6 +1.20° · 9 -0.40°"));
-        assertTrue(summary.contains("rectification"));
-        assertTrue(summary.contains("Fixed 126710 marker-centre radius"));
-        assertTrue(summary.contains("perspective-projected ideal"));
-        assertTrue(summary.contains("12 triangle is measured automatically"));
+        assertTrue(summary.contains("Image-calibrated 126710 marker-centre reference"));
+        assertTrue(summary.contains("Cyan axes are mathematical"));
+        assertTrue(summary.contains("12 outer-metal triangle is measured automatically"));
     }
 }
