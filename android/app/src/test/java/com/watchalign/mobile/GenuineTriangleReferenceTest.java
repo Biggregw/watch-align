@@ -4,19 +4,21 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class GenuineTriangleReferenceTest {
-    @Test public void officialTriangleGeometryMatchesCalibration(){
-        assertEquals("126710BLNR-reference-geometry-v3",Gmt126710BlnrMeasured.ID);
-        assertEquals(0.7843200,Gmt126710BlnrMeasured.TRI_CENTER_R,1e-7);
+    @Test public void canonicalTriangleGeometryMatchesUnifiedInnerEdgeCalibration(){
+        assertEquals("126710BLNR-inner-edge-reference-v4",Gmt126710BlnrMeasured.ID);
+        assertEquals(Gmt126710BlnrMaster.TRI_CENTER_R,Gmt126710BlnrMeasured.TRI_CENTER_R,1e-9);
         assertEquals(3,Gmt126710BlnrMeasured.TRI_OUTER.length);
-        assertEquals(-0.086726f,Gmt126710BlnrMeasured.TRI_OUTER[0][0],1e-6f);
-        assertEquals(0.098697f,Gmt126710BlnrMeasured.TRI_OUTER[0][1],1e-6f);
-        assertEquals(0.085841f,Gmt126710BlnrMeasured.TRI_OUTER[1][0],1e-6f);
-        assertEquals(0.000885f,Gmt126710BlnrMeasured.TRI_OUTER[2][0],1e-6f);
-        assertEquals(-0.197395f,Gmt126710BlnrMeasured.TRI_OUTER[2][1],1e-6f);
+        assertEquals(-(float)Gmt126710BlnrMaster.TRI_HALF_BASE,Gmt126710BlnrMeasured.TRI_OUTER[0][0],1e-6f);
+        assertEquals((float)Gmt126710BlnrMaster.TRI_BASE_OUTWARD,Gmt126710BlnrMeasured.TRI_OUTER[0][1],1e-6f);
+        assertEquals((float)Gmt126710BlnrMaster.TRI_HALF_BASE,Gmt126710BlnrMeasured.TRI_OUTER[1][0],1e-6f);
+        assertEquals(0f,Gmt126710BlnrMeasured.TRI_OUTER[2][0],1e-6f);
+        assertEquals(-(float)Gmt126710BlnrMaster.TRI_APEX_INWARD,Gmt126710BlnrMeasured.TRI_OUTER[2][1],1e-6f);
         double baseRadius=Gmt126710BlnrMeasured.TRI_CENTER_R+Gmt126710BlnrMeasured.TRI_OUTER[0][1];
         double apexRadius=Gmt126710BlnrMeasured.TRI_CENTER_R+Gmt126710BlnrMeasured.TRI_OUTER[2][1];
-        assertEquals(0.883017,baseRadius,1e-6);
-        assertEquals(0.586925,apexRadius,1e-6);
+        assertEquals(Gmt126710BlnrMaster.TRI_CENTER_R+Gmt126710BlnrMaster.TRI_BASE_OUTWARD,baseRadius,1e-6);
+        assertEquals(Gmt126710BlnrMaster.TRI_CENTER_R-Gmt126710BlnrMaster.TRI_APEX_INWARD,apexRadius,1e-6);
+        assertTrue(apexRadius<baseRadius);
+        assertTrue(baseRadius<Gmt126710BlnrMaster.MINUTE_TRACK_R);
     }
 
     @Test public void dateApertureIsExactlyCentredOnThreeOClockAxisBeforePerspective(){
