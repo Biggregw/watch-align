@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 
 public class GenuineTriangleReferenceTest {
     @Test public void officialTriangleGeometryMatchesCalibration(){
-        assertEquals("126710BLNR-official-trace-v1",Gmt126710BlnrMeasured.ID);
+        assertEquals("126710BLNR-reference-geometry-v2",Gmt126710BlnrMeasured.ID);
         assertEquals(0.7843200,Gmt126710BlnrMeasured.TRI_CENTER_R,1e-7);
         assertEquals(3,Gmt126710BlnrMeasured.TRI_OUTER.length);
         assertEquals(-0.086726f,Gmt126710BlnrMeasured.TRI_OUTER[0][0],1e-6f);
