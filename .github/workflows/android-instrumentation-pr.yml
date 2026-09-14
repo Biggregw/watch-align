@@ -42,7 +42,6 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: pixel_7
-          force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           working-directory: android
