@@ -36,10 +36,14 @@ public final class WatchAlignCoreV13 {
         String perspectiveReport=perspective==null&&canonicalGmt?"\n\nVISUAL QC MASTER\nUnavailable: a stable dial ellipse could not be fitted. Use a clearer photo.\n":perspective==null?"":perspective.report;
         String report;
         if(canonicalGmt){
-            report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nVISUAL INSPECTION MODE\n"
+            CanonicalGmtGeometryAnalyzer.Result canonical=CanonicalGmtGeometryAnalyzer.analyse(watch,refs,modelRef);
+            String detail=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nVISUAL INSPECTION MODE\n"
                     +"Alpha28 keeps the projected model master as the primary QC surface. The 126710BLNR master now uses bright red outer marker outlines, thinner strokes, a longer inward 12 triangle, larger applied-marker body dimensions and no uncalibrated date target.\n"
                     +perspectiveReport
-                    +"\nAutomated GL/RL scoring and ranked marker findings remain hidden. Diagnostics is retained only as a development view.\n";
+                    +canonical.report
+                    +ext.report
+                    +"\nInterpretation: the projected master remains the primary inspection surface. Canonical GMT geometry now grades marker placement only in perspective-corrected normalized dial coordinates calibrated from genuine references; legacy 12/6/9 local marker heuristics stay diagnostics-only.\n";
+            report=QcSummaryFormatter.prependSummary(detail);
         }else{
             String baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;
             String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)+ext.report+baselineReport+"\nInterpretation: non-GMT models continue to use the existing reference-distribution diagnostics.";
