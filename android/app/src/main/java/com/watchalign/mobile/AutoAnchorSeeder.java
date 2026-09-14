@@ -18,11 +18,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Produces an automatic starting pose for the four INNER DIAL-EDGE perspective anchors.
+ * Produces an automatic starting pose for the INNER DIAL-EDGE perspective registration.
  *
- * Non-12 marker geometry supplies orientation and perspective. The projected edge is then refined
- * independently on each cardinal ray and the smaller member of the nearby rehaut-edge pair is used.
- * 12 is never used to register itself.
+ * Non-12 marker geometry is only a coarse initializer. The preferred production solution then fits
+ * one coherent inner-rehaut boundary over the whole circumference and uses the independent 60-minute
+ * grid to establish angular phase. Applied hour markers therefore do not define the final QC axes.
  */
 final class AutoAnchorSeeder {
     static final class Result {
@@ -48,7 +48,7 @@ final class AutoAnchorSeeder {
             DialSeed seed=detectSeed(src);
             if(seed==null||seed.r<40)return null;
 
-            Result markerFit=markerGeometrySeed(src,seed);
+            Result markerFit=markerGeometrySeed(input,src,seed);
             if(markerFit!=null&&markerFit.confidence>=0.52f)return markerFit;
 
             // Conservative fallback. The ellipse only proposes directions; the physical scale is
@@ -74,17 +74,17 @@ final class AutoAnchorSeeder {
             boolean verified=paired>=3;
             String level=conf>=0.78f&&verified?"strong":conf>=0.45f?"usable":"uncertain";
             return new Result(pf(chosen[0]),pf(chosen[1]),pf(chosen[2]),pf(chosen[3]),conf,verified,
-                    "Automatic inner dial-edge fit: "+level+". Inner/outer rehaut pair verified on "+paired+"/4 directions; the SMALLER edge is used. Review the yellow edge before accepting.");
+                    "Fallback cardinal inner-edge fit: "+level+". Rehaut pair verified on "+paired+"/4 directions. Global circumference fit was unavailable; review the yellow edge.");
         }catch(Throwable ignored){return null;}
         finally{src.release();gray.release();blur.release();edges.release();}
     }
 
     /**
-     * Preferred GMT registration. Canonical marker radii come from the 126710 image calibration,
-     * not from the detected circular edge. This prevents a mistakenly chosen outer rehaut boundary
-     * from defining the scale of the overlay.
+     * Coarse registration from non-date/non-12 marker geometry, followed by the preferred global
+     * physical-boundary fit. Marker correspondences initialise the search only; accepted final axes
+     * come from the coherent inner boundary plus 60-minute grid when those features are available.
      */
-    private static Result markerGeometrySeed(Mat rgba,DialSeed seed){
+    private static Result markerGeometrySeed(Bitmap bitmap,Mat rgba,DialSeed seed){
         Mat bgr=new Mat(),mask=new Mat(),h=null;MatOfPoint2f canonical=null,observed=null,edge=null,projected=null;
         try{
             Imgproc.cvtColor(rgba,bgr,Imgproc.COLOR_RGBA2BGR);
@@ -118,17 +118,26 @@ final class AutoAnchorSeeder {
             for(int i=0;i<n;i++){double d=dist(rp[i],dstPts.get(i));ss+=d*d;double[] mv=mask.empty()?null:mask.get(i,0);if(mv==null||mv.length==0||mv[0]>0)inliers++;}
             double rms=n>0?Math.sqrt(ss/n):99.0,inlierRatio=n>0?inliers/(double)n:0;
 
+            // Preferred path: one global physical inner boundary + independent 60-minute phase.
+            GmtGlobalDialRegistration.Result global=GmtGlobalDialRegistration.refine(bitmap,bgr,h);
+            if(global!=null&&global.confidence>=.50f){
+                String level=global.confidence>=.80f&&global.boundaryVerified?"strong":global.confidence>=.65f?"good":"usable";
+                return new Result(global.p12,global.p3,global.p6,global.p9,global.confidence,global.boundaryVerified,
+                        "Automatic GMT global fit: "+level+". "+global.note+" Hour markers only initialise the search; the final angular phase comes from the minute grid.");
+            }
+
+            // Legacy fallback retained for difficult photographs. Confidence is deliberately capped
+            // because four local rays are weaker evidence than one coherent circumference.
             Point[] predicted={p[0],p[1],p[2],p[3]};
             GmtInnerDialEdgeDetector.Refinement refined=GmtInnerDialEdgeDetector.refineCardinals(bgr,p[4],predicted);
             if(refined==null)return null;
             Point[] chosen=refined.cardinals;int paired=refined.pairedDirections;
             double q=clamp((dial.quality-0.42)/0.40),rmsQ=clamp(1-rms/Math.max(2.0,set.medianRadius*0.045)),centreQ=clamp(1-centreErr/0.20);
             float conf=(float)clamp(0.22*q+0.25*inlierRatio+0.16*rmsQ+0.10*centreQ+0.27*refined.score);
-            if(paired<3)conf=Math.min(conf,.69f);
-            boolean verified=paired>=3;
-            String level=conf>=0.78f&&verified?"strong":conf>=0.58f?"good":"usable";
+            conf=Math.min(conf,.72f);if(paired<3)conf=Math.min(conf,.62f);
+            boolean verified=false;
             return new Result(pf(chosen[0]),pf(chosen[1]),pf(chosen[2]),pf(chosen[3]),conf,verified,
-                    "Automatic GMT perspective fit: "+level+" ("+inliers+"/"+n+" registration sectors support the fit; rehaut pair verified on "+paired+"/4 directions). The SMALLER edge is the inner dial edge.");
+                    "Fallback four-ray fit (global circumference/minute-grid fit unavailable). Rehaut pair agreed on "+paired+"/4 directions. Review the yellow edge before using QC residuals.");
         }catch(Throwable ignored){return null;}
         finally{bgr.release();mask.release();if(h!=null)h.release();if(canonical!=null)canonical.release();if(observed!=null)observed.release();if(edge!=null)edge.release();if(projected!=null)projected.release();}
     }
