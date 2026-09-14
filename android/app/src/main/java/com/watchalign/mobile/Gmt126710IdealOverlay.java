@@ -8,15 +8,16 @@ import android.graphics.Path;
 import android.graphics.PointF;
 
 /**
- * Perspective-projected ideal-layout overlay for the Rolex GMT-Master II 126710 family.
+ * Perspective-projected GMT 126710 reference overlay.
  *
- * Angular relationships are mathematical: 12 hour axes at 30 degrees, 60 minute axes at
- * 6 degrees, exact opposite/mirror relationships. Marker body dimensions use the current
- * calibrated 126710 design model and are deliberately kept separate from tolerance decisions.
+ * The angular scaffold is mathematical: 12 hour axes at 30 degrees, 60 minute axes at 6 degrees,
+ * exact opposite/mirror relationships. Applied-marker radii/body dimensions are image-calibrated
+ * 126710 references and are deliberately kept separate from factory-tolerance claims.
  */
 final class Gmt126710IdealOverlay {
     private Gmt126710IdealOverlay() {}
 
+    /** Image-calibrated marker-centre radius, not Rolex CAD. */
     static double markerCenterRadius() { return Gmt126710BlnrMaster.MARKER_CENTER_R; }
 
     static void draw(Bitmap out, PerspectiveMasterRenderer.Pose pose, double ignoredLegacyRadius) {
@@ -44,6 +45,7 @@ final class Gmt126710IdealOverlay {
         }
 
         // Full expected applied-marker bodies. 3 o'clock is intentionally left to the date module.
+        // Body shapes/radii are calibrated references; only their angular axes are mathematically exact.
         for (int hour = 1; hour <= 12; hour++) {
             if (hour == 3) continue;
             if (hour == 12) drawTriangle(c, pose, ideal);
@@ -56,17 +58,20 @@ final class Gmt126710IdealOverlay {
         int h = ((hour % 12) + 12) % 12;
         double a = Math.toRadians(h * 30.0);
         double r = Gmt126710BlnrMaster.MARKER_CENTER_R;
-        if (h == 0) r = Gmt126710BlnrMaster.TRI_CENTER_R;
+        if (h == 0) {
+            float[][] v=Gmt126710BlnrTriangleReference.vertices();
+            double cy=(v[0][1]+v[1][1]+v[2][1])/3.0;
+            r=-cy;
+        }
         return project(pose, r * Math.sin(a), -r * Math.cos(a));
     }
 
     static PointF[] idealTriangle(PerspectiveMasterRenderer.Pose pose) {
-        double baseR = Gmt126710BlnrMaster.TRI_CENTER_R + Gmt126710BlnrMaster.TRI_BASE_OUTWARD;
-        double apexR = Gmt126710BlnrMaster.TRI_CENTER_R - Gmt126710BlnrMaster.TRI_APEX_INWARD;
+        float[][] v=Gmt126710BlnrTriangleReference.vertices();
         return new PointF[] {
-                project(pose, -Gmt126710BlnrMaster.TRI_HALF_BASE, -baseR),
-                project(pose,  Gmt126710BlnrMaster.TRI_HALF_BASE, -baseR),
-                project(pose, 0, -apexR)
+                project(pose, v[0][0], v[0][1]),
+                project(pose, v[1][0], v[1][1]),
+                project(pose, v[2][0], v[2][1])
         };
     }
 
