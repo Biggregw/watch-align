@@ -62,8 +62,21 @@ final class CanonicalGmtDial implements AutoCloseable {
     private static double anchorArea(PerspectiveMasterRenderer.Pose p){double[] x={p.anchor12X,p.anchor3X,p.anchor6X,p.anchor9X},y={p.anchor12Y,p.anchor3Y,p.anchor6Y,p.anchor9Y};double s=0;for(int i=0;i<4;i++){int j=(i+1)%4;s+=x[i]*y[j]-x[j]*y[i];}return Math.abs(s)*.5;}
 
     private static double reprojectionRms(Mat h,PerspectiveMasterRenderer.Pose p){
-        Point[] in={new Point(p.anchor12X,p.anchor12Y),new Point(p.anchor3X,p.anchor3Y),new Point(p.anchor6X,p.anchor6Y),new Point(p.anchor9X,p.anchor9Y)};Point[] target={new Point(CENTER,CENTER-RADIUS),new Point(CENTER+RADIUS,CENTER),new Point(CENTER,CENTER+RADIUS),new Point(CENTER-RADIUS,CENTER)};double ss=0;
-        for(int i=0;i<4;i++){double[] a=h.get(0,0),b=h.get(1,0),c=h.get(2,0);double den=c[0]*in[i].x+c[1]*in[i].y+c[2];double x=(a[0]*in[i].x+a[1]*in[i].y+a[2])/den,y=(b[0]*in[i].x+b[1]*in[i].y+b[2])/den;ss+=(x-target[i].x)*(x-target[i].x)+(y-target[i].y)*(y-target[i].y);}return Math.sqrt(ss/4.0);
+        Point[] in={new Point(p.anchor12X,p.anchor12Y),new Point(p.anchor3X,p.anchor3Y),new Point(p.anchor6X,p.anchor6Y),new Point(p.anchor9X,p.anchor9Y)};
+        Point[] target={new Point(CENTER,CENTER-RADIUS),new Point(CENTER+RADIUS,CENTER),new Point(CENTER,CENTER+RADIUS),new Point(CENTER-RADIUS,CENTER)};
+        double h00=h.get(0,0)[0],h01=h.get(0,1)[0],h02=h.get(0,2)[0];
+        double h10=h.get(1,0)[0],h11=h.get(1,1)[0],h12=h.get(1,2)[0];
+        double h20=h.get(2,0)[0],h21=h.get(2,1)[0],h22=h.get(2,2)[0];
+        double ss=0;
+        for(int i=0;i<4;i++){
+            double den=h20*in[i].x+h21*in[i].y+h22;
+            if(Math.abs(den)<1e-12||!Double.isFinite(den))throw new IllegalStateException("homography denominator is invalid");
+            double x=(h00*in[i].x+h01*in[i].y+h02)/den;
+            double y=(h10*in[i].x+h11*in[i].y+h12)/den;
+            if(!Double.isFinite(x)||!Double.isFinite(y))throw new IllegalStateException("homography reprojection is non-finite");
+            ss+=(x-target[i].x)*(x-target[i].x)+(y-target[i].y)*(y-target[i].y);
+        }
+        return Math.sqrt(ss/4.0);
     }
 
     private static double safeReprojectionRms(Mat h,PerspectiveMasterRenderer.Pose p){try{return reprojectionRms(h,p);}catch(Throwable ignored){return Double.NaN;}}
