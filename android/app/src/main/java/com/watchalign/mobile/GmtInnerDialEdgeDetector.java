@@ -13,10 +13,10 @@ import java.util.List;
  * Locates the dial-side edge of the rehaut pair.
  *
  * A GMT photo normally contains two strong, nearby, concentric boundaries around the dial. The
- * QC coordinate system belongs on the smaller / inner member of that pair. This helper deliberately
- * treats pair orientation as independent evidence: if the homography has accidentally been placed
- * on the larger outer boundary, the rectified image will show the companion edge inside radius 1
- * rather than outside it and verification will fail.
+ * QC coordinate system belongs on the smaller / inner member of that pair. Candidate pairs are not
+ * accepted independently per direction: opposite sides must agree on both the normalized inner
+ * radius and the rehaut-pair separation. This prevents a local reflection/minute-track edge at 6 or
+ * 9 o'clock from being mistaken for the physical dial boundary.
  */
 final class GmtInnerDialEdgeDetector {
     static final class Refinement {
@@ -33,6 +33,10 @@ final class GmtInnerDialEdgeDetector {
         Verification(boolean o,double s,double a,double c){observed=o;score=s;anchorPeakRadius=a;companionRadius=c;}
     }
     private static final class Peak {double r,strength;Peak(double r,double s){this.r=r;strength=s;}}
+    private static final class PairCandidate {
+        final Peak inner,outer;final double predicted,innerRatio,sepRatio,score;
+        PairCandidate(Peak i,Peak o,double p,double s){inner=i;outer=o;predicted=p;innerRatio=i.r/p;sepRatio=(o.r-i.r)/p;score=s;}
+    }
     private GmtInnerDialEdgeDetector(){}
 
     static Refinement refineCardinals(Mat image, Point centre, Point[] predicted){
@@ -40,26 +44,72 @@ final class GmtInnerDialEdgeDetector {
         Mat gray=new Mat();
         try{
             toGray(image,gray);
+            @SuppressWarnings("unchecked") List<PairCandidate>[] options=new List[4];
+            double[] ux=new double[4],uy=new double[4],pr=new double[4];
+            for(int i=0;i<4;i++){
+                Point q=predicted[i];double vx=q.x-centre.x,vy=q.y-centre.y;pr[i]=Math.hypot(vx,vy);
+                if(pr[i]<20){options[i]=new ArrayList<>();continue;}
+                ux[i]=vx/pr[i];uy[i]=vy/pr[i];double tx=-uy[i],ty=ux[i];
+                List<Peak> peaks=rayPeaks(gray,centre,ux[i],uy[i],tx,ty,pr[i]*.86,pr[i]*1.12,Math.max(1.0,pr[i]/220.0));
+                options[i]=pairCandidates(peaks,pr[i]);
+            }
+
+            PairCandidate[] chosen=new PairCandidate[4];
+            chooseOpposite(options,chosen,0,2); // 12 versus 6
+            chooseOpposite(options,chosen,1,3); // 3 versus 9
+
             Point[] out=new Point[4];int pairs=0;double quality=0;
             for(int i=0;i<4;i++){
-                Point q=predicted[i];double vx=q.x-centre.x,vy=q.y-centre.y,pr=Math.hypot(vx,vy);
-                if(pr<20){out[i]=q;continue;}double ux=vx/pr,uy=vy/pr,tx=-uy,ty=ux;
-                List<Peak> peaks=rayPeaks(gray,centre,ux,uy,tx,ty,pr*.86,pr*1.12,Math.max(1.0,pr/220.0));
-                Peak[] pair=bestPair(peaks,pr);
-                if(pair!=null){
-                    Peak inner=pair[0].r<pair[1].r?pair[0]:pair[1];Peak outer=inner==pair[0]?pair[1]:pair[0];
-                    out[i]=new Point(centre.x+ux*inner.r,centre.y+uy*inner.r);pairs++;
-                    double closeness=clamp(1-Math.abs((inner.r+outer.r)*.5-pr)/(pr*.12));
-                    double strength=clamp(Math.min(inner.strength,outer.strength)/24.0);
-                    quality+=.55*closeness+.45*strength;
+                PairCandidate pc=chosen[i];
+                if(pc!=null){
+                    out[i]=new Point(centre.x+ux[i]*pc.inner.r,centre.y+uy[i]*pc.inner.r);pairs++;
+                    quality+=pc.score;
                 }else{
-                    Peak one=nearestStrongPeak(peaks,pr);
-                    if(one!=null){out[i]=new Point(centre.x+ux*one.r,centre.y+uy*one.r);quality+=.20*clamp(one.strength/24.0);}else out[i]=q;
+                    // Never silently claim a verified direction from a single ambiguous edge. Keep
+                    // the marker-homography prediction and let confidence/auto-lock fall instead.
+                    out[i]=predicted[i];
                 }
             }
-            double pairFrac=pairs/4.0,score=clamp(.72*pairFrac+.28*(quality/4.0));
+            double pairFrac=pairs/4.0,meanQ=pairs>0?quality/pairs:0;
+            double score=clamp(.70*pairFrac+.30*meanQ);
             return new Refinement(out,pairs,score);
         }finally{gray.release();}
+    }
+
+    /** Select an opposite pair only when both sides describe the same physical concentric pair. */
+    private static void chooseOpposite(List<PairCandidate>[] options,PairCandidate[] chosen,int a,int b){
+        if(options[a]==null||options[b]==null||options[a].isEmpty()||options[b].isEmpty())return;
+        PairCandidate bestA=null,bestB=null;double best=-1;
+        int na=Math.min(8,options[a].size()),nb=Math.min(8,options[b].size());
+        for(int i=0;i<na;i++)for(int j=0;j<nb;j++){
+            PairCandidate x=options[a].get(i),y=options[b].get(j);
+            double radiusAgreement=clamp(1-Math.abs(x.innerRatio-y.innerRatio)/.035);
+            double sepAgreement=clamp(1-Math.abs(x.sepRatio-y.sepRatio)/.025);
+            double prediction=0.5*(clamp(1-Math.abs(x.innerRatio-1.0)/.065)+clamp(1-Math.abs(y.innerRatio-1.0)/.065));
+            double individual=(x.score+y.score)*.5;
+            double score=.43*individual+.27*radiusAgreement+.15*sepAgreement+.15*prediction;
+            if(score>best){best=score;bestA=x;bestB=y;}
+        }
+        if(best>=.48){chosen[a]=bestA;chosen[b]=bestB;}
+    }
+
+    private static List<PairCandidate> pairCandidates(List<Peak> peaks,double predicted){
+        List<PairCandidate> out=new ArrayList<>();int limit=Math.min(12,peaks.size());
+        for(int i=0;i<limit;i++)for(int j=i+1;j<limit;j++){
+            Peak a=peaks.get(i),b=peaks.get(j),inner=a.r<b.r?a:b,outer=inner==a?b:a;
+            double sep=(outer.r-inner.r)/predicted;
+            // The rehaut pair is close. Wider pairs are usually the minute-track / rehaut or bezel.
+            if(sep<.014||sep>.085)continue;
+            double innerRatio=inner.r/predicted;
+            if(innerRatio<.91||innerRatio>1.07)continue;
+            double strength=clamp(Math.min(inner.strength,outer.strength)/24.0);
+            double innerClose=clamp(1-Math.abs(innerRatio-1.0)/.070);
+            double sepShape=clamp(1-Math.abs(sep-.042)/.045);
+            double score=.48*strength+.38*innerClose+.14*sepShape;
+            out.add(new PairCandidate(inner,outer,predicted,score));
+        }
+        Collections.sort(out,Comparator.comparingDouble((PairCandidate p)->p.score).reversed());
+        return out;
     }
 
     static Verification verifyCanonicalPair(Mat image,double cx,double cy,double radius){
@@ -88,8 +138,6 @@ final class GmtInnerDialEdgeDetector {
     private static double rayGradient(Mat g,Point c,double ux,double uy,double tx,double ty,double r,double dr){double sum=0,n=0;for(double t=-4;t<=4;t+=2){double a=sample(g,c.x+ux*(r-dr)+tx*t,c.y+uy*(r-dr)+ty*t),b=sample(g,c.x+ux*(r+dr)+tx*t,c.y+uy*(r+dr)+ty*t);if(Double.isFinite(a)&&Double.isFinite(b)){sum+=Math.abs(b-a);n++;}}return n>0?sum/n:0;}
     private static double meanRadialGradient(Mat g,double cx,double cy,double r,double dr){double sum=0,n=0;for(int deg=0;deg<360;deg+=4){if(deg>=340||deg<=20)continue;double a=Math.toRadians(deg),ca=Math.cos(a),sa=Math.sin(a);double x1=cx+ca*(r-dr),y1=cy+sa*(r-dr),x2=cx+ca*(r+dr),y2=cy+sa*(r+dr);double v1=sample(g,x1,y1),v2=sample(g,x2,y2);if(Double.isFinite(v1)&&Double.isFinite(v2)){sum+=Math.abs(v2-v1);n++;}}return n>0?sum/n:0;}
     private static List<Peak> localMaxima(List<Peak> samples){List<Peak> out=new ArrayList<>();for(int i=1;i+1<samples.size();i++){Peak a=samples.get(i-1),b=samples.get(i),c=samples.get(i+1);if(b.strength>=a.strength&&b.strength>=c.strength)out.add(new Peak(b.r,b.strength));}Collections.sort(out,Comparator.comparingDouble((Peak p)->p.strength).reversed());return out;}
-    private static Peak[] bestPair(List<Peak> peaks,double predicted){Peak[] best=null;double bestScore=-1;int limit=Math.min(10,peaks.size());for(int i=0;i<limit;i++)for(int j=i+1;j<limit;j++){Peak a=peaks.get(i),b=peaks.get(j);double lo=Math.min(a.r,b.r),hi=Math.max(a.r,b.r),sep=(hi-lo)/predicted;if(sep<.012||sep>.115)continue;double mid=(lo+hi)*.5,close=clamp(1-Math.abs(mid-predicted)/(predicted*.14)),strength=clamp(Math.min(a.strength,b.strength)/24.0),score=.58*strength+.42*close;if(score>bestScore){bestScore=score;best=new Peak[]{a,b};}}return bestScore>=.28?best:null;}
-    private static Peak nearestStrongPeak(List<Peak> peaks,double predicted){Peak best=null;double d=Double.POSITIVE_INFINITY;for(Peak p:peaks){if(p.strength<5)continue;double x=Math.abs(p.r-predicted);if(x<d){d=x;best=p;}}return best;}
     private static Peak bestIn(List<Peak> peaks,double lo,double hi){Peak best=null;for(Peak p:peaks)if(p.r>=lo&&p.r<=hi&&(best==null||p.strength>best.strength))best=p;return best;}
     private static double sample(Mat g,double x,double y){int xi=(int)Math.round(x),yi=(int)Math.round(y);if(xi<0||yi<0||xi>=g.cols()||yi>=g.rows())return Double.NaN;double[]v=g.get(yi,xi);return v==null||v.length==0?Double.NaN:v[0];}
     private static double clamp(double x){return Math.max(0,Math.min(1,x));}
