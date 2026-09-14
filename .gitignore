@@ -51,7 +51,7 @@ local.properties
 .android/
 captures/
 .cxx/
-externalNativeBuild/
+.externalNativeBuild/
 
 # Local signing material
 *.jks
