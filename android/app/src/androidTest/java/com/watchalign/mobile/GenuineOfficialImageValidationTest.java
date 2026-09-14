@@ -45,6 +45,7 @@ public class GenuineOfficialImageValidationTest {
         assertNotNull(names);
         Arrays.sort(names);
 
+        boolean visualFirstGmt = CanonicalGmtGeometryAnalyzer.supports(modelRef);
         List<String> failures = new ArrayList<>();
         int checked = 0;
         for (String name : names) {
@@ -59,13 +60,28 @@ public class GenuineOfficialImageValidationTest {
                 WatchAlignCoreV13.AnalysisResult r = WatchAlignCoreV13.analyse(b, b, modelRef);
                 checked++;
                 String rep = r.report == null ? "" : r.report;
-                if (r.registrationConfidence < 0.90) failures.add("registration=" + r.registrationConfidence + " @ " + name);
-                if (!rep.startsWith("QC SUMMARY\nNo major defects detected.")) failures.add("summary flagged genuine image @ " + name + "\n" + rep);
+                if (!Double.isFinite(r.registrationConfidence) || r.registrationConfidence < 0.90) {
+                    failures.add("registration=" + r.registrationConfidence + " @ " + name);
+                }
+
+                if (visualFirstGmt) {
+                    if (!rep.contains("VISUAL INSPECTION MODE")) {
+                        failures.add("GMT visual-inspection report mode missing @ " + name + "\n" + rep);
+                    }
+                    if (!rep.contains("VISUAL QC MASTER")) {
+                        failures.add("GMT visual master report missing @ " + name + "\n" + rep);
+                    }
+                } else {
+                    if (!rep.startsWith("QC SUMMARY\nNo major defects detected.")) {
+                        failures.add("summary flagged genuine image @ " + name + "\n" + rep);
+                    }
+                    if (expectDate && !rep.contains("Apparent date numeral magnification vs genuine: 100.0%")) {
+                        failures.add("self magnification not 100% @ " + name + "\n" + rep);
+                    }
+                }
+
                 if (rep.contains("strong detected deviation")) failures.add("strong marker defect @ " + name + "\n" + rep);
                 if (rep.contains("merits inspection")) failures.add("inspection defect @ " + name + "\n" + rep);
-                if (expectDate && !rep.contains("Apparent date numeral magnification vs genuine: 100.0%")) {
-                    failures.add("self magnification not 100% @ " + name + "\n" + rep);
-                }
             } finally {
                 b.recycle();
             }
