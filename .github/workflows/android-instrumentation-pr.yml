@@ -1,0 +1,72 @@
+name: Android Instrumentation Test (PR)
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  perspective-gmt-overlay-geometry:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Run PerspectiveGmtOverlayGeometryTest on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_7
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          working-directory: android
+          script: |
+            set -o pipefail
+            adb logcat -c
+            if ! gradle :app:connectedDebugAndroidTest --stacktrace -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.PerspectiveGmtOverlayGeometryTest; then
+              adb logcat -d > instrumentation-logcat.txt || true
+              exit 1
+            fi
+
+      - name: Capture emulator log on failure
+        if: failure()
+        run: |
+          /usr/local/lib/android/sdk/platform-tools/adb logcat -d > instrumentation-logcat.txt || true
+
+      - name: Upload instrumentation failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perspective-gmt-overlay-geometry-failure
+          path: |
+            android/instrumentation-logcat.txt
+            android/app/build/reports/androidTests/connected
+            android/app/build/outputs/androidTest-results/connected
+          if-no-files-found: warn
+          retention-days: 30
