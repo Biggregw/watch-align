@@ -2,7 +2,7 @@ package com.watchalign.mobile;
 
 import android.graphics.Bitmap;import android.graphics.Canvas;import android.graphics.Color;import android.graphics.Paint;
 import com.watchalign.mobile.qc.GmtIndexPlausibility;import com.watchalign.mobile.qc.IndexGeometryQcModule;import com.watchalign.mobile.qc.QcModuleResult;import com.watchalign.mobile.qc.RawMeasurement;
-import org.opencv.core.Core;import org.opencv.core.Mat;import org.opencv.core.MatOfPoint;import org.opencv.core.MatOfPoint2f;import org.opencv.core.Point;import org.opencv.core.Rect;import org.opencv.core.RotatedRect;import org.opencv.core.Scalar;import org.opencv.core.Size;import org.opencv.imgproc.Imgproc;import org.opencv.imgproc.Moments;
+import org.opencv.core.Core;import org.opencv.core.Mat;import org.opencv.core.MatOfPoint;import org.opencv.core.MatOfPoint2f;import org.opencv.core.Point;import org.opencv.core.Rect;import org.opencv.core.RotatedRect;import org.opencv.core.Size;import org.opencv.imgproc.Imgproc;import org.opencv.imgproc.Moments;
 import java.util.ArrayList;import java.util.Collections;import java.util.Comparator;import java.util.List;import java.util.Locale;
 
 /** Sector-constrained GMT marker localisation on the shared canonical rectified dial. */
@@ -14,9 +14,15 @@ final class GmtIndexAutoAnalyzer {
 
     static Result analyse(Bitmap watch,PerspectiveMasterRenderer.Pose pose){
         try(CanonicalGmtDial dial=CanonicalGmtDial.create(watch,pose)){
-            if(dial==null)return unavailable(watch,"Index analysis unavailable: corrected 12/3/6/9 anchors could not create a canonical dial ("+CanonicalGmtDial.lastFailureReason()+").");
+            if(dial==null)return unavailableForKnownDialFailure(watch,CanonicalGmtDial.lastFailureReason());
             return analyse(watch,dial);
         }catch(Throwable t){return unavailable(watch,"Index analysis unavailable: "+t.getClass().getSimpleName()+".");}
+    }
+
+    /** Use after a CanonicalGmtDial creation attempt has already failed. Never retries the warp. */
+    static Result unavailableForKnownDialFailure(Bitmap watch,String reason){
+        String why=reason==null||reason.trim().isEmpty()?"unknown failure":reason;
+        return unavailable(watch,"Index analysis unavailable: corrected 12/3/6/9 anchors could not create a canonical dial ("+why+").");
     }
 
     static Result analyse(Bitmap watch,CanonicalGmtDial dial){
@@ -39,7 +45,7 @@ final class GmtIndexAutoAnalyzer {
 
     private static Candidate score(MatOfPoint contour,Mat gray,int hour){
         double area=Math.abs(Imgproc.contourArea(contour));if(area<150||area>18000)return null;Moments m=Imgproc.moments(contour);if(Math.abs(m.m00)<1e-6)return null;double px=m.m10/m.m00,py=m.m01/m.m00,x=(px-CanonicalGmtDial.CENTER)/CanonicalGmtDial.RADIUS,y=(py-CanonicalGmtDial.CENTER)/CanonicalGmtDial.RADIUS,r=Math.hypot(x,y);if(!GmtIndexPlausibility.plausibleCanonicalPosition(hour,x,y))return null;
-        Rect box=Imgproc.boundingRect(contour);double perimeter=Imgproc.arcLength(new MatOfPoint2f(contour.toArray()),true);double circularity=perimeter>0?4*Math.PI*area/(perimeter*perimeter):0;double aspect=Math.max(box.width,box.height)/(double)Math.max(1,Math.min(box.width,box.height));boolean elongated=hour==6||hour==9;double shape=elongated?clamp((aspect-1.15)/1.2):clamp(1-Math.abs(circularity-.72)/.55);double expected=Math.toRadians(hour*30.0);double angleError=Math.abs(wrap(Math.toDegrees(Math.atan2(x,-y))-hour*30.0));double angle=clamp(1-angleError/7.0),radial=clamp(1-Math.abs(r-.72)/.16),areaScore=clamp(area/1800.0)*clamp(1-area/18000.0);
+        Rect box=Imgproc.boundingRect(contour);double perimeter=Imgproc.arcLength(new MatOfPoint2f(contour.toArray()),true);double circularity=perimeter>0?4*Math.PI*area/(perimeter*perimeter):0;double aspect=Math.max(box.width,box.height)/(double)Math.max(1,Math.min(box.width,box.height));boolean elongated=hour==6||hour==9;double shape=elongated?clamp((aspect-1.15)/1.2):clamp(1-Math.abs(circularity-.72)/.55);double angleError=Math.abs(wrap(Math.toDegrees(Math.atan2(x,-y))-hour*30.0));double angle=clamp(1-angleError/7.0),radial=clamp(1-Math.abs(r-.72)/.16),areaScore=clamp(area/1800.0)*clamp(1-area/18000.0);
         double inside=Core.mean(gray.submat(box)).val[0],outside=annulusMean(gray,px,py,Math.max(box.width,box.height)*.7,Math.max(box.width,box.height)*1.1);double contrast=clamp(Math.abs(inside-outside)/55.0);double compact=clamp(area/Math.max(1.0,box.area()));double total=.27*angle+.20*radial+.14*areaScore+.16*contrast+.10*compact+.13*shape;
         Candidate c=new Candidate();c.hour=hour;c.x=x;c.y=y;c.r=r;c.score=total;c.elongated=elongated;if(elongated){MatOfPoint2f f=new MatOfPoint2f(contour.toArray());RotatedRect rr=Imgproc.minAreaRect(f);f.release();double longAngle=rr.angle;if(rr.size.width<rr.size.height)longAngle+=90;c.axisDeg=longAngle;c.axisConfidence=shape*contrast;}return c;
     }
