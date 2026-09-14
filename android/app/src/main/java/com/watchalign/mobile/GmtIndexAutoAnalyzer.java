@@ -22,7 +22,7 @@ final class GmtIndexAutoAnalyzer {
     /** Use after a CanonicalGmtDial creation attempt has already failed. Never retries the warp. */
     static Result unavailableForKnownDialFailure(Bitmap watch,String reason){
         String why=reason==null||reason.trim().isEmpty()?"unknown failure":reason;
-        return unavailable(watch,"Index analysis unavailable: corrected 12/3/6/9 anchors could not create a canonical dial ("+why+").");
+        return unavailable(watch,"Index analysis unavailable: corrected 12/3/6/9 dial-edge anchors could not create a canonical dial ("+why+").");
     }
 
     static Result analyse(Bitmap watch,CanonicalGmtDial dial){
@@ -31,9 +31,10 @@ final class GmtIndexAutoAnalyzer {
             List<Candidate> candidates=localize(dial);if(candidates.size()<7)return unavailable(watch,"Index analysis unavailable: fewer than seven reliable non-date/non-12 markers passed sector, shape and contrast checks.");
             double medianR=medianRadius(candidates),mad=madRadius(candidates,medianR);List<Candidate> consistent=new ArrayList<>();for(Candidate c:candidates)if(Math.abs(c.r-medianR)<=Math.max(.035,3.5*mad)&&GmtIndexPlausibility.plausibleAgainstRing(c.hour,c.x,c.y,medianR))consistent.add(c);
             if(consistent.size()<7)return unavailable(watch,"Index analysis unavailable: fewer than seven markers passed robust ring consistency.");
-            List<IndexGeometryQcModule.MarkerObservation> observations=new ArrayList<>();for(Candidate c:consistent){if(c.elongated&&c.axisConfidence>=.70){double a=Math.toRadians(c.axisDeg),ax=Math.cos(a),ay=Math.sin(a),half=.035;observations.add(IndexGeometryQcModule.MarkerObservation.of(c.hour,c.x,c.y,c.x-ax*half,c.y-ay*half,c.x+ax*half,c.y+ay*half,medianR));}else observations.add(IndexGeometryQcModule.MarkerObservation.positionOnly(c.hour,c.x,c.y,medianR));}
+            double designR=Gmt126710IdealOverlay.markerCenterRadius();
+            List<IndexGeometryQcModule.MarkerObservation> observations=new ArrayList<>();for(Candidate c:consistent){if(c.elongated&&c.axisConfidence>=.70){double a=Math.toRadians(c.axisDeg),ax=Math.cos(a),ay=Math.sin(a),half=.035;observations.add(IndexGeometryQcModule.MarkerObservation.of(c.hour,c.x,c.y,c.x-ax*half,c.y-ay*half,c.x+ax*half,c.y+ay*half,designR));}else observations.add(IndexGeometryQcModule.MarkerObservation.positionOnly(c.hour,c.x,c.y,designR));}
             QcModuleResult measured=new IndexGeometryQcModule().measure(IndexGeometryQcModule.Input.rectified(0,0,1,observations,dial.rectification));
-            return new Result(measured,annotate(watch,dial,consistent,medianR),summarize(measured,consistent.size()),consistent.size());
+            return new Result(measured,annotate(watch,dial,consistent,designR),summarize(measured,consistent.size()),consistent.size());
         }catch(Throwable t){return unavailable(watch,"Index analysis unavailable: "+t.getClass().getSimpleName()+".");}
     }
 
@@ -45,30 +46,23 @@ final class GmtIndexAutoAnalyzer {
 
     private static Candidate score(MatOfPoint contour,Mat gray,int hour){
         double area=Math.abs(Imgproc.contourArea(contour));if(area<150||area>18000)return null;Moments m=Imgproc.moments(contour);if(Math.abs(m.m00)<1e-6)return null;double px=m.m10/m.m00,py=m.m01/m.m00,x=(px-CanonicalGmtDial.CENTER)/CanonicalGmtDial.RADIUS,y=(py-CanonicalGmtDial.CENTER)/CanonicalGmtDial.RADIUS,r=Math.hypot(x,y);if(!GmtIndexPlausibility.plausibleCanonicalPosition(hour,x,y))return null;
-        Rect box=Imgproc.boundingRect(contour);double perimeter=Imgproc.arcLength(new MatOfPoint2f(contour.toArray()),true);double circularity=perimeter>0?4*Math.PI*area/(perimeter*perimeter):0;double aspect=Math.max(box.width,box.height)/(double)Math.max(1,Math.min(box.width,box.height));boolean elongated=hour==6||hour==9;double shape=elongated?clamp((aspect-1.15)/1.2):clamp(1-Math.abs(circularity-.72)/.55);double angleError=Math.abs(wrap(Math.toDegrees(Math.atan2(x,-y))-hour*30.0));double angle=clamp(1-angleError/7.0),radial=clamp(1-Math.abs(r-.72)/.16),areaScore=clamp(area/1800.0)*clamp(1-area/18000.0);
+        Rect box=Imgproc.boundingRect(contour);MatOfPoint2f perimeterPts=new MatOfPoint2f(contour.toArray());double perimeter=Imgproc.arcLength(perimeterPts,true);perimeterPts.release();double circularity=perimeter>0?4*Math.PI*area/(perimeter*perimeter):0;double aspect=Math.max(box.width,box.height)/(double)Math.max(1,Math.min(box.width,box.height));boolean elongated=hour==6||hour==9;double shape=elongated?clamp((aspect-1.15)/1.2):clamp(1-Math.abs(circularity-.72)/.55);double angleError=Math.abs(wrap(Math.toDegrees(Math.atan2(x,-y))-hour*30.0));double angle=clamp(1-angleError/7.0),radial=clamp(1-Math.abs(r-Gmt126710IdealOverlay.markerCenterRadius())/.16),areaScore=clamp(area/1800.0)*clamp(1-area/18000.0);
         double inside=Core.mean(gray.submat(box)).val[0],outside=annulusMean(gray,px,py,Math.max(box.width,box.height)*.7,Math.max(box.width,box.height)*1.1);double contrast=clamp(Math.abs(inside-outside)/55.0);double compact=clamp(area/Math.max(1.0,box.area()));double total=.27*angle+.20*radial+.14*areaScore+.16*contrast+.10*compact+.13*shape;
         Candidate c=new Candidate();c.hour=hour;c.x=x;c.y=y;c.r=r;c.score=total;c.elongated=elongated;if(elongated){MatOfPoint2f f=new MatOfPoint2f(contour.toArray());RotatedRect rr=Imgproc.minAreaRect(f);f.release();double longAngle=rr.angle;if(rr.size.width<rr.size.height)longAngle+=90;c.axisDeg=longAngle;c.axisConfidence=shape*contrast;}return c;
     }
     private static double annulusMean(Mat g,double cx,double cy,double inner,double outer){double sum=0,n=0;for(int y=(int)(cy-outer);y<=cy+outer;y+=2)for(int x=(int)(cx-outer);x<=cx+outer;x+=2){if(x<0||y<0||x>=g.cols()||y>=g.rows())continue;double d=Math.hypot(x-cx,y-cy);if(d>=inner&&d<=outer){sum+=g.get(y,x)[0];n++;}}return n>0?sum/n:0;}
 
-    /**
-     * Evidence view for the new GMT-first mathematical model.
-     * Cyan/white is the exact 360-degree geometry, yellow circles are ideal marker centres on
-     * the robustly fitted ring, magenta is the detected centre, and the short magenta vector is
-     * the residual from perfect geometry. This intentionally stops treating 12 as a separate
-     * coordinate system: its axis is part of the same exact grid even while its shape metric is
-     * retained elsewhere for comparison during validation.
-     */
-    private static Bitmap annotate(Bitmap watch,CanonicalGmtDial dial,List<Candidate> cs,double medianR){
+    /** Yellow/cyan is fixed ideal 126710 geometry; magenta is what the detector measured. */
+    private static Bitmap annotate(Bitmap watch,CanonicalGmtDial dial,List<Candidate> cs,double designR){
         Bitmap out=watch.copy(Bitmap.Config.ARGB_8888,true);
-        Gmt126710IdealOverlay.draw(out,dial.pose,medianR);
+        Gmt126710IdealOverlay.draw(out,dial.pose,designR);
         Canvas canvas=new Canvas(out);float u=Math.max(1f,Math.min(out.getWidth(),out.getHeight())/900f);
         Paint actual=new Paint(Paint.ANTI_ALIAS_FLAG);actual.setColor(Color.MAGENTA);actual.setStyle(Paint.Style.STROKE);actual.setStrokeWidth(2.5f*u);
         Paint residual=new Paint(actual);residual.setStrokeWidth(1.5f*u);
         Paint text=new Paint(Paint.ANTI_ALIAS_FLAG);text.setColor(Color.WHITE);text.setStyle(Paint.Style.FILL);text.setTextSize(14*u);text.setFakeBoldText(true);
         for(Candidate c:cs){
             Point q=dial.sourcePoint(CanonicalGmtDial.CENTER+c.x*CanonicalGmtDial.RADIUS,CanonicalGmtDial.CENTER+c.y*CanonicalGmtDial.RADIUS);
-            android.graphics.PointF ideal=Gmt126710IdealOverlay.idealMarker(dial.pose,c.hour,medianR);
+            android.graphics.PointF ideal=Gmt126710IdealOverlay.idealMarker(dial.pose,c.hour,designR);
             canvas.drawLine(ideal.x,ideal.y,(float)q.x,(float)q.y,residual);
             canvas.drawCircle((float)q.x,(float)q.y,6*u,actual);
             canvas.drawText(String.valueOf(c.hour),(float)q.x+8*u,(float)q.y-8*u,text);
@@ -76,6 +70,13 @@ final class GmtIndexAutoAnalyzer {
         return out;
     }
 
-    static String summarize(QcModuleResult result,int count){if(result==null||result.measurements().isEmpty())return "IDEAL GMT GEOMETRY\nNo reliable per-index measurements.";List<Ranked> tangential=new ArrayList<>(),radial=new ArrayList<>();for(int h:HOURS){RawMeasurement t=result.measurement(String.format(Locale.US,"index_%02d_tangential_offset_over_dial_radius",h)),r=result.measurement(String.format(Locale.US,"index_%02d_radial_offset_over_dial_radius",h));if(t!=null)tangential.add(new Ranked(h,t.value()));if(r!=null)radial.add(new Ranked(h,r.value()));}Comparator<Ranked> abs=(a,b)->Double.compare(Math.abs(b.value),Math.abs(a.value));Collections.sort(tangential,abs);Collections.sort(radial,abs);String wt=tangential.isEmpty()?"n/a":String.format(Locale.US,"%d %+.3f DR",tangential.get(0).hour,tangential.get(0).value),wr=radial.isEmpty()?"n/a":String.format(Locale.US,"%d %+.3f DR",radial.get(0).hour,radial.get(0).value);List<String> body=new ArrayList<>();for(int h:new int[]{6,9}){RawMeasurement x=result.measurement(String.format(Locale.US,"index_%02d_rotation_deg",h));if(x!=null&&GmtIndexPlausibility.bodyRotationUsable(h,x.value(),result.confidence()))body.add(String.format(Locale.US,"%d %+.2f°",h,x.value()));}return "IDEAL GMT GEOMETRY · "+count+" markers · "+result.confidence().name().toLowerCase(Locale.US)+" rectification\nExact model: 12 hour axes at 30° · 60 minute axes at 6° · 3/9 and 12/6 exact diameters\nLargest residual: tangential "+wt+" · radial "+wr+"\n6/9 body axis: "+(body.isEmpty()?"withheld because an elongated contour was not isolated confidently":String.join(" · ",body))+"\nYellow/cyan overlay is mathematical ideal; magenta is measured. 12 now shares this coordinate model; its legacy triangle metric is retained temporarily for A/B validation.";}
+    static String summarize(QcModuleResult result,int count){
+        if(result==null||result.measurements().isEmpty())return "IDEAL GMT GEOMETRY\nNo reliable per-index measurements.";
+        List<Ranked> tangential=new ArrayList<>(),radial=new ArrayList<>();for(int h:HOURS){RawMeasurement t=result.measurement(String.format(Locale.US,"index_%02d_tangential_offset_over_dial_radius",h)),r=result.measurement(String.format(Locale.US,"index_%02d_radial_offset_over_dial_radius",h));if(t!=null)tangential.add(new Ranked(h,t.value()));if(r!=null)radial.add(new Ranked(h,r.value()));}
+        Comparator<Ranked> abs=(a,b)->Double.compare(Math.abs(b.value),Math.abs(a.value));Collections.sort(tangential,abs);Collections.sort(radial,abs);
+        String wt=tangential.isEmpty()?"n/a":String.format(Locale.US,"%d %+.3f DR",tangential.get(0).hour,tangential.get(0).value),wr=radial.isEmpty()?"n/a":String.format(Locale.US,"%d %+.3f DR",radial.get(0).hour,radial.get(0).value);
+        List<String> body=new ArrayList<>();for(int h:new int[]{6,9}){RawMeasurement x=result.measurement(String.format(Locale.US,"index_%02d_rotation_deg",h));if(x!=null&&GmtIndexPlausibility.bodyRotationUsable(h,x.value(),result.confidence()))body.add(String.format(Locale.US,"%d %+.2f°",h,x.value()));}
+        return "IDEAL GMT GEOMETRY · "+count+" markers · "+result.confidence().name().toLowerCase(Locale.US)+" rectification\nExact model: 12 hour axes at 30° · 60 minute axes at 6° · 3/9 and 12/6 exact diameters\nFixed 126710 marker-centre radius: "+String.format(Locale.US,"%.3f DR",Gmt126710IdealOverlay.markerCenterRadius())+"\nLargest residual: tangential "+wt+" · radial "+wr+"\n6/9 body axis: "+(body.isEmpty()?"withheld because an elongated contour was not isolated confidently":String.join(" · ",body))+"\nYellow/cyan is the perspective-projected ideal; magenta is measured. The 12 triangle is measured automatically by the same GMT QC pass.";
+    }
     private static Result unavailable(Bitmap w,String m){return new Result(null,w==null?null:w.copy(Bitmap.Config.ARGB_8888,false),"IDEAL GMT GEOMETRY\n"+m,0);}private static double medianRadius(List<Candidate> c){List<Double>x=new ArrayList<>();for(Candidate q:c)x.add(q.r);Collections.sort(x);return x.get(x.size()/2);}private static double madRadius(List<Candidate> c,double m){List<Double>x=new ArrayList<>();for(Candidate q:c)x.add(Math.abs(q.r-m));Collections.sort(x);return x.get(x.size()/2);}private static double wrap(double x){while(x>180)x-=360;while(x<=-180)x+=360;return x;}private static double clamp(double x){return Math.max(0,Math.min(1,x));}private static final class Ranked{final int hour;final double value;Ranked(int h,double v){hour=h;value=v;}}
 }
