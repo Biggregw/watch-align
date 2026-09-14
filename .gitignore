@@ -35,3 +35,36 @@ smoke-result.json
 artifact/
 WatchAlign-V1-Windows.zip
 SHA256SUMS.txt
+
+# Android / Gradle generated files
+.gradle/
+**/build/
+local.properties
+*.apk
+*.aab
+
+# Android Studio / IntelliJ IDEA local files
+.idea/
+*.iml
+*.ipr
+*.iws
+.android/
+captures/
+.cxx/
+.externalNativeBuild/
+
+# Local signing material
+*.jks
+*.keystore
+*.p12
+
+# Temporary build and cache files
+.cache/
+*.tmp
+*.temp
+*.swp
+*~
+
+# Keep versioned Android instrumentation-test fixtures available.
+!android/app/src/androidTest/assets/genuine/
+!android/app/src/androidTest/assets/genuine/**
