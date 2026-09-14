@@ -22,13 +22,13 @@ final class GmtIndexAutoAnalyzer {
     /** Use after a CanonicalGmtDial creation attempt has already failed. Never retries the warp. */
     static Result unavailableForKnownDialFailure(Bitmap watch,String reason){
         String why=reason==null||reason.trim().isEmpty()?"unknown failure":reason;
-        return unavailable(watch,"Index analysis unavailable: corrected 12/3/6/9 dial-edge anchors could not create a canonical dial ("+why+").");
+        return unavailable(watch,"Index analysis unavailable: corrected 12/3/6/9 inner dial-edge anchors could not create a canonical dial ("+why+").");
     }
 
     static Result analyse(Bitmap watch,CanonicalGmtDial dial){
         try{
             if(dial.rectification.confidence()==QcModuleResult.Confidence.LOW)return unavailable(watch,"Index analysis unavailable: rectification confidence is low. "+String.join("; ",dial.rectification.evidence()));
-            List<Candidate> candidates=localize(dial);if(candidates.size()<7)return unavailable(watch,"Index analysis unavailable: fewer than seven reliable non-date/non-12 markers passed sector, shape and contrast checks.");
+            List<Candidate> candidates=localize(dial);if(candidates.size()<7)return unavailable(watch,"Index analysis unavailable: fewer than seven reliable non-date/non-12 markers passed strict sector, shape and contrast QC checks.");
             double medianR=medianRadius(candidates),mad=madRadius(candidates,medianR);List<Candidate> consistent=new ArrayList<>();for(Candidate c:candidates)if(Math.abs(c.r-medianR)<=Math.max(.035,3.5*mad)&&GmtIndexPlausibility.plausibleAgainstRing(c.hour,c.x,c.y,medianR))consistent.add(c);
             if(consistent.size()<7)return unavailable(watch,"Index analysis unavailable: fewer than seven markers passed robust ring consistency.");
             double designR=Gmt126710IdealOverlay.markerCenterRadius();
@@ -52,7 +52,7 @@ final class GmtIndexAutoAnalyzer {
     }
     private static double annulusMean(Mat g,double cx,double cy,double inner,double outer){double sum=0,n=0;for(int y=(int)(cy-outer);y<=cy+outer;y+=2)for(int x=(int)(cx-outer);x<=cx+outer;x+=2){if(x<0||y<0||x>=g.cols()||y>=g.rows())continue;double d=Math.hypot(x-cx,y-cy);if(d>=inner&&d<=outer){sum+=g.get(y,x)[0];n++;}}return n>0?sum/n:0;}
 
-    /** Yellow/cyan is fixed ideal 126710 geometry; magenta is what the detector measured. */
+    /** Cyan axes are exact GMT angular geometry. Yellow bodies/radii are image-calibrated references. */
     private static Bitmap annotate(Bitmap watch,CanonicalGmtDial dial,List<Candidate> cs,double designR){
         Bitmap out=watch.copy(Bitmap.Config.ARGB_8888,true);
         Gmt126710IdealOverlay.draw(out,dial.pose,designR);
@@ -71,12 +71,12 @@ final class GmtIndexAutoAnalyzer {
     }
 
     static String summarize(QcModuleResult result,int count){
-        if(result==null||result.measurements().isEmpty())return "IDEAL GMT GEOMETRY\nNo reliable per-index measurements.";
+        if(result==null||result.measurements().isEmpty())return "REFERENCE GMT GEOMETRY\nNo reliable per-index measurements.";
         List<Ranked> tangential=new ArrayList<>(),radial=new ArrayList<>();for(int h:HOURS){RawMeasurement t=result.measurement(String.format(Locale.US,"index_%02d_tangential_offset_over_dial_radius",h)),r=result.measurement(String.format(Locale.US,"index_%02d_radial_offset_over_dial_radius",h));if(t!=null)tangential.add(new Ranked(h,t.value()));if(r!=null)radial.add(new Ranked(h,r.value()));}
         Comparator<Ranked> abs=(a,b)->Double.compare(Math.abs(b.value),Math.abs(a.value));Collections.sort(tangential,abs);Collections.sort(radial,abs);
         String wt=tangential.isEmpty()?"n/a":String.format(Locale.US,"%d %+.3f DR",tangential.get(0).hour,tangential.get(0).value),wr=radial.isEmpty()?"n/a":String.format(Locale.US,"%d %+.3f DR",radial.get(0).hour,radial.get(0).value);
         List<String> body=new ArrayList<>();for(int h:new int[]{6,9}){RawMeasurement x=result.measurement(String.format(Locale.US,"index_%02d_rotation_deg",h));if(x!=null&&GmtIndexPlausibility.bodyRotationUsable(h,x.value(),result.confidence()))body.add(String.format(Locale.US,"%d %+.2f°",h,x.value()));}
-        return "IDEAL GMT GEOMETRY · "+count+" markers · "+result.confidence().name().toLowerCase(Locale.US)+" rectification\nExact model: 12 hour axes at 30° · 60 minute axes at 6° · 3/9 and 12/6 exact diameters\nFixed 126710 marker-centre radius: "+String.format(Locale.US,"%.3f DR",Gmt126710IdealOverlay.markerCenterRadius())+"\nLargest residual: tangential "+wt+" · radial "+wr+"\n6/9 body axis: "+(body.isEmpty()?"withheld because an elongated contour was not isolated confidently":String.join(" · ",body))+"\nYellow/cyan is the perspective-projected ideal; magenta is measured. The 12 triangle is measured automatically by the same GMT QC pass.";
+        return "REFERENCE GMT GEOMETRY · "+count+" QC markers passed strict contour checks · "+result.confidence().name().toLowerCase(Locale.US)+" rectification\nExact angular model: 12 hour axes at 30° · 60 minute axes at 6° · 3/9 and 12/6 exact diameters\nImage-calibrated 126710 marker-centre reference: "+String.format(Locale.US,"%.3f DR",Gmt126710IdealOverlay.markerCenterRadius())+"\nLargest residual: tangential "+wt+" · reference radial delta "+wr+"\n6/9 body axis: "+(body.isEmpty()?"withheld because an elongated contour was not isolated confidently":String.join(" · ",body))+"\nCyan axes are mathematical; yellow body dimensions/radii are image-calibrated 126710 references; magenta is measured. The 12 outer-metal triangle is measured automatically.";
     }
-    private static Result unavailable(Bitmap w,String m){return new Result(null,w==null?null:w.copy(Bitmap.Config.ARGB_8888,false),"IDEAL GMT GEOMETRY\n"+m,0);}private static double medianRadius(List<Candidate> c){List<Double>x=new ArrayList<>();for(Candidate q:c)x.add(q.r);Collections.sort(x);return x.get(x.size()/2);}private static double madRadius(List<Candidate> c,double m){List<Double>x=new ArrayList<>();for(Candidate q:c)x.add(Math.abs(q.r-m));Collections.sort(x);return x.get(x.size()/2);}private static double wrap(double x){while(x>180)x-=360;while(x<=-180)x+=360;return x;}private static double clamp(double x){return Math.max(0,Math.min(1,x));}private static final class Ranked{final int hour;final double value;Ranked(int h,double v){hour=h;value=v;}}
+    private static Result unavailable(Bitmap w,String m){return new Result(null,w==null?null:w.copy(Bitmap.Config.ARGB_8888,false),"REFERENCE GMT GEOMETRY\n"+m,0);}private static double medianRadius(List<Candidate> c){List<Double>x=new ArrayList<>();for(Candidate q:c)x.add(q.r);Collections.sort(x);return x.get(x.size()/2);}private static double madRadius(List<Candidate> c,double m){List<Double>x=new ArrayList<>();for(Candidate q:c)x.add(Math.abs(q.r-m));Collections.sort(x);return x.get(x.size()/2);}private static double wrap(double x){while(x>180)x-=360;while(x<=-180)x+=360;return x;}private static double clamp(double x){return Math.max(0,Math.min(1,x));}private static final class Ranked{final int hour;final double value;Ranked(int h,double v){hour=h;value=v;}}
 }
