@@ -21,9 +21,9 @@ final class Gmt126710BlnrMeasured {
     static final double BATON_CENTER_R=Gmt126710BlnrMaster.MARKER_CENTER_R;
     static final double TRI_CENTER_R=Gmt126710BlnrMaster.TRI_CENTER_R;
 
-    // Clean ideal round body. The overlay constructs a true circle from the master radius rather
-    // than replaying a sparse photographed contour.
-    static final float ROUND_RADIUS=(float)Gmt126710BlnrMaster.ROUND_OUTER_R;
+    // Clean ideal round body. Keep this as double precision because it participates directly in
+    // the canonical reference geometry and should not acquire a float-rounding offset.
+    static final double ROUND_RADIUS=Gmt126710BlnrMaster.ROUND_OUTER_R;
 
     // Local marker coordinates: x=tangential, y=radial; +y points outward to the minute track.
     static final float BATON_TANGENTIAL_HALF=(float)Gmt126710BlnrMaster.BATON_TANGENTIAL_HALF;
