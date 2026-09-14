@@ -7,6 +7,8 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
 
+import com.watchalign.mobile.qc.QcModuleResult;
+
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -20,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Automatic 12-triangle measurement on the shared rectified GMT dial. */
+/** Automatic OUTER APPLIED-METAL 12-triangle measurement on the shared rectified GMT dial. */
 final class GmtTriangleAutoAnalyzer {
     static final class Result {
         final boolean available;
@@ -42,23 +44,24 @@ final class GmtTriangleAutoAnalyzer {
 
     static Result analyse(CanonicalGmtDial dial){
         if(dial==null)return unavailable("canonical dial unavailable");
+        if(dial.rectification.confidence()==QcModuleResult.Confidence.LOW)return unavailable("rectification confidence is low; outer-metal triangle measurement is withheld");
         Mat blur=new Mat(),edges=new Mat(),binary=new Mat(),combined=new Mat(),hierarchy=new Mat();
         List<MatOfPoint> contours=new ArrayList<>();
         try{
             Imgproc.GaussianBlur(dial.gray,blur,new Size(5,5),0);
-            Imgproc.Canny(blur,edges,42,128);
+            Imgproc.Canny(blur,edges,38,122);
             Imgproc.adaptiveThreshold(blur,binary,255,Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,Imgproc.THRESH_BINARY,41,-4);
             Core.bitwise_or(edges,binary,combined);
             Imgproc.findContours(combined,contours,hierarchy,Imgproc.RETR_LIST,Imgproc.CHAIN_APPROX_SIMPLE);
             Candidate best=null;
             for(MatOfPoint contour:contours){Candidate c=score(contour);if(c!=null&&(best==null||c.score>best.score))best=c;}
-            if(best==null||best.score<0.56)return unavailable("no 12-triangle contour passed the position, size and shape gates");
+            if(best==null||best.score<0.55)return unavailable("no outer applied-metal 12-triangle contour passed the calibrated position, size and shape gates; an inner lume contour is not used as a substitute");
             return result(best,dial);
         }catch(Throwable t){return unavailable(t.getClass().getSimpleName());}
         finally{for(MatOfPoint c:contours)c.release();blur.release();edges.release();binary.release();combined.release();hierarchy.release();}
     }
 
-    static Result unavailable(String reason){String why=reason==null||reason.trim().isEmpty()?"unknown reason":reason;return new Result(false,null,null,null,Double.NaN,Double.NaN,Double.NaN,Double.NaN,Double.NaN,Double.NaN,Double.NaN,0,"12 TRIANGLE · AUTO\nMeasurement withheld: "+why+".");}
+    static Result unavailable(String reason){String why=reason==null||reason.trim().isEmpty()?"unknown reason":reason;return new Result(false,null,null,null,Double.NaN,Double.NaN,Double.NaN,Double.NaN,Double.NaN,Double.NaN,Double.NaN,0,"12 TRIANGLE · OUTER METAL AUTO\nMeasurement withheld: "+why+".");}
 
     static Bitmap drawMeasured(Bitmap source,Result r){
         if(source==null)return null;Bitmap out=source.copy(Bitmap.Config.ARGB_8888,true);if(r==null||!r.available)return out;
@@ -68,26 +71,29 @@ final class GmtTriangleAutoAnalyzer {
     }
 
     private static Candidate score(MatOfPoint contour){
-        double area=Math.abs(Imgproc.contourArea(contour));if(area<650||area>33000)return null;
+        double area=Math.abs(Imgproc.contourArea(contour));if(area<1600||area>42000)return null;
         Moments m=Imgproc.moments(contour);if(Math.abs(m.m00)<1e-6)return null;
         double cx=m.m10/m.m00,cy=m.m01/m.m00,nx=(cx-CanonicalGmtDial.CENTER)/CanonicalGmtDial.RADIUS,ny=(cy-CanonicalGmtDial.CENTER)/CanonicalGmtDial.RADIUS;
-        if(Math.abs(nx)>.20||ny<-.98||ny>-.48)return null;
+        if(Math.abs(nx)>.20||ny<-.99||ny>-.45)return null;
         Rect box=Imgproc.boundingRect(contour);double w=box.width/CanonicalGmtDial.RADIUS,h=box.height/CanonicalGmtDial.RADIUS;
-        if(w<.10||w>.42||h<.11||h>.48)return null;
+        // These lower gates deliberately reject the smaller lume/inner contour. The measurement
+        // must correspond to the visible OUTER applied-metal body used by the calibrated reference.
+        if(w<.17||w>.42||h<.20||h>.50)return null;
         Point[] vertices=extract(contour.toArray(),box);if(vertices==null)return null;
         double base=dist(vertices[0],vertices[1])/CanonicalGmtDial.RADIUS,height=pointLineDistance(vertices[2],vertices[0],vertices[1])/CanonicalGmtDial.RADIUS;
-        if(base<.09||height<.10)return null;
+        if(base<.17||base>.38||height<.20||height>.46)return null;
 
-        double idealBaseR=Gmt126710BlnrMaster.TRI_CENTER_R+Gmt126710BlnrMaster.TRI_BASE_OUTWARD;
-        double idealApexR=Gmt126710BlnrMaster.TRI_CENTER_R-Gmt126710BlnrMaster.TRI_APEX_INWARD;
-        double idealWidth=2*Gmt126710BlnrMaster.TRI_HALF_BASE,idealHeight=idealBaseR-idealApexR;
-        double idealCy=-(2*idealBaseR+idealApexR)/3.0;
-        double position=clamp(1-Math.abs(nx)/.13)*clamp(1-Math.abs(ny-idealCy)/.20);
-        double widthScore=clamp(1-Math.abs(base-idealWidth)/.16),heightScore=clamp(1-Math.abs(height-idealHeight)/.17);
-        double ratioScore=clamp(1-Math.abs(height/base-idealHeight/idealWidth)/.85);
-        double apexX=Math.abs((vertices[2].x-(vertices[0].x+vertices[1].x)/2.0)/Math.max(1.0,dist(vertices[0],vertices[1])));double symmetry=clamp(1-apexX/.40);
-        double fill=area/Math.max(1.0,box.area()),fillScore=clamp(1-Math.abs(fill-.42)/.38);
-        Candidate c=new Candidate();c.left=vertices[0];c.right=vertices[1];c.apex=vertices[2];c.score=.30*position+.18*widthScore+.18*heightScore+.16*ratioScore+.12*symmetry+.06*fillScore;return c;
+        double idealWidth=Gmt126710BlnrTriangleReference.WIDTH_R;
+        double idealHeight=Gmt126710BlnrTriangleReference.HEIGHT_R;
+        double idealCy=(Gmt126710BlnrTriangleReference.LEFT_Y+Gmt126710BlnrTriangleReference.RIGHT_Y+Gmt126710BlnrTriangleReference.APEX_Y)/3.0;
+        double position=clamp(1-Math.abs(nx)/.11)*clamp(1-Math.abs(ny-idealCy)/.16);
+        double widthScore=clamp(1-Math.abs(base-idealWidth)/.13),heightScore=clamp(1-Math.abs(height-idealHeight)/.15);
+        double ratioScore=clamp(1-Math.abs(height/base-idealHeight/idealWidth)/.60);
+        double apexX=Math.abs((vertices[2].x-(vertices[0].x+vertices[1].x)/2.0)/Math.max(1.0,dist(vertices[0],vertices[1])));double symmetry=clamp(1-apexX/.32);
+        double fill=area/Math.max(1.0,box.area()),fillScore=clamp(1-Math.abs(fill-.42)/.35);
+        // Size agreement gets deliberately higher weight so a strong inner/lume contour cannot
+        // beat the physically larger outer applied-metal contour merely because it has sharper edges.
+        Candidate c=new Candidate();c.left=vertices[0];c.right=vertices[1];c.apex=vertices[2];c.score=.22*position+.24*widthScore+.24*heightScore+.14*ratioScore+.10*symmetry+.06*fillScore;return c;
     }
 
     private static Point[] extract(Point[] points,Rect box){
@@ -99,16 +105,24 @@ final class GmtTriangleAutoAnalyzer {
     private static Result result(Candidate c,CanonicalGmtDial dial){
         double lx=nx(c.left.x),ly=ny(c.left.y),rx=nx(c.right.x),ry=ny(c.right.y),ax=nx(c.apex.x),ay=ny(c.apex.y);
         double actualCx=(lx+rx+ax)/3.0,actualCy=(ly+ry+ay)/3.0;
-        double idealBaseR=Gmt126710BlnrMaster.TRI_CENTER_R+Gmt126710BlnrMaster.TRI_BASE_OUTWARD,idealApexR=Gmt126710BlnrMaster.TRI_CENTER_R-Gmt126710BlnrMaster.TRI_APEX_INWARD;
-        double idealWidth=2*Gmt126710BlnrMaster.TRI_HALF_BASE,idealHeight=idealBaseR-idealApexR,idealCy=-(2*idealBaseR+idealApexR)/3.0;
+        double idealWidth=Gmt126710BlnrTriangleReference.WIDTH_R,idealHeight=Gmt126710BlnrTriangleReference.HEIGHT_R;
+        double idealCy=(Gmt126710BlnrTriangleReference.LEFT_Y+Gmt126710BlnrTriangleReference.RIGHT_Y+Gmt126710BlnrTriangleReference.APEX_Y)/3.0;
         double width=Math.hypot(rx-lx,ry-ly),height=pointLineDistance(new Point(ax,ay),new Point(lx,ly),new Point(rx,ry));
         double rotation=Math.toDegrees(Math.atan2(ry-ly,rx-lx));while(rotation>90)rotation-=180;while(rotation<=-90)rotation+=180;
         double widthDelta=100*(width-idealWidth)/idealWidth,heightDelta=100*(height-idealHeight)/idealHeight;
-        double baseRadial=-(ly+ry)/2.0,gap=(Gmt126710BlnrMaster.MINUTE_TICK_INNER_R-baseRadial)/Math.max(1e-9,width);
-        double idealGap=(Gmt126710BlnrMaster.MINUTE_TICK_INNER_R-idealBaseR)/idealWidth,gapDelta=gap-idealGap;
+        double baseRadial=-(ly+ry)/2.0;
+        double gap=(Gmt126710BlnrTriangleReference.MINUTE_INNER_R-baseRadial)/Math.max(1e-9,width);
+        double idealGap=Gmt126710BlnrTriangleReference.CALIBRATED_BASE_TO_60_OVER_BASE,gapDelta=gap-idealGap;
         Point sl=dial.sourcePoint(c.left.x,c.left.y),sr=dial.sourcePoint(c.right.x,c.right.y),sa=dial.sourcePoint(c.apex.x,c.apex.y);
-        double conf=clamp((c.score-.46)/.40);
-        String text=String.format(Locale.US,"12 TRIANGLE · AUTO · %.0f%% component confidence\nCentre residual: tangential %+.3f DR · radial %+.3f DR (positive radial = inward)\nRotation: %+.2f° from ideal · base width %+.1f%% · height %+.1f%%\nTrack gap: %.3f BW · current design-model delta %+.3f BW",conf*100,actualCx,actualCy-idealCy,rotation,widthDelta,heightDelta,gap,gapDelta);
+        double conf=clamp((c.score-.45)/.40);
+        if(dial.rectification.confidence()==QcModuleResult.Confidence.MEDIUM)conf=Math.min(conf,.65);
+        String text=String.format(Locale.US,
+                "12 TRIANGLE · OUTER METAL AUTO · %.0f%% component confidence\n"+
+                "Centre residual: tangential %+.3f DR · radial %+.3f DR (positive radial = inward)\n"+
+                "Rotation: %+.2f° from 12 axis · outer-body width %+.1f%% · height %+.1f%% vs calibrated reference\n"+
+                "Track gap: %.3f BW · calibrated genuine-pilot median %.3f BW · delta %+.3f BW\n"+
+                "Dimension reference is image-calibrated, not Rolex factory CAD.",
+                conf*100,actualCx,actualCy-idealCy,rotation,widthDelta,heightDelta,gap,idealGap,gapDelta);
         return new Result(true,new PointF((float)sl.x,(float)sl.y),new PointF((float)sr.x,(float)sr.y),new PointF((float)sa.x,(float)sa.y),actualCx,actualCy-idealCy,rotation,widthDelta,heightDelta,gap,gapDelta,conf,text);
     }
 
