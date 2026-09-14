@@ -9,6 +9,7 @@ final class QcSummaryFormatter {
         if (report == null || report.isEmpty()) return report;
 
         boolean canonicalGmt = report.contains("CANONICAL GMT GEOMETRY");
+        boolean advisoryOnly = report.contains("Top QC observations — advisory only\n") && !report.contains("Top QC findings\n");
         List<String> ranked = canonicalGmt ? extractCanonicalGmt(report) : extractRanked(report);
         if (canonicalGmt) {
             // Keep non-marker findings such as date/SEL issues, but do not let the older
@@ -25,7 +26,9 @@ final class QcSummaryFormatter {
             out.append("No major defects detected.\n");
         } else {
             boolean major = false;
-            for (String s : ranked) if (looksMajor(s)) { major = true; break; }
+            if (!advisoryOnly) {
+                for (String s : ranked) if (looksMajor(s)) { major = true; break; }
+            }
             out.append(major ? "Biggest detected issues\n" : "No major defects detected. Minor observations\n");
             for (int i = 0; i < Math.min(3, ranked.size()); i++) {
                 out.append(i + 1).append(". ").append(simplify(ranked.get(i))).append("\n");

@@ -37,4 +37,15 @@ public class QcSummaryFormatterTest {
         String out=QcSummaryFormatter.prependSummary(report);
         assertTrue(out.contains("No major defects detected. Minor observations"));
     }
+
+    @Test public void advisoryOnlyFindingsNeverBecomeMajorDefects() {
+        String report="Top QC observations — advisory only\n"+
+                "1. Bezel/pip 12 offset -8.00° (advisory: perspective could not be verified from this photo)\n"+
+                "2. 12 marker local position -3.31° vs minute track (advisory: perspective could not be verified from this photo)\n\n"+
+                "Extended QC checks\n";
+        String out=QcSummaryFormatter.prependSummary(report);
+        assertTrue(out.startsWith("QC SUMMARY\nNo major defects detected. Minor observations"));
+        assertFalse(out.contains("QC SUMMARY\nBiggest detected issues"));
+        assertTrue(out.contains("Bezel/pip alignment -8.00°"));
+    }
 }
