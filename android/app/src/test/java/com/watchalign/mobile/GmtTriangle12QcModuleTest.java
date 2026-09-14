@@ -44,7 +44,9 @@ public class GmtTriangle12QcModuleTest {
                 GmtTriangle12QcModule.Input.rectified(pose, points));
 
         assertEquals(GmtTriangle12QcModule.ID, wrapped.moduleId());
-        assertEquals(QcModuleResult.Confidence.HIGH, wrapped.confidence());
+        // This legacy wrapper has only the four registration anchors. It deliberately cannot claim
+        // HIGH after the confidence hardening because it has no independent inner-rehaut evidence.
+        assertEquals(QcModuleResult.Confidence.MEDIUM, wrapped.confidence());
         assertEquals(5, wrapped.measurements().size());
 
         assertSameValue(legacy.rawRectified.baseTo60Ratio,
