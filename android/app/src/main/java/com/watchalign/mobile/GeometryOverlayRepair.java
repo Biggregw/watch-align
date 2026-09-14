@@ -11,8 +11,6 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 /**
  * Deterministic overlay builder that reuses the proven V7 detector but validates
@@ -41,25 +39,19 @@ final class GeometryOverlayRepair {
             Utils.bitmapToMat(watch, src); Imgproc.cvtColor(src, src, Imgproc.COLOR_RGBA2BGR);
             Utils.bitmapToMat(reference, ref); Imgproc.cvtColor(ref, ref, Imgproc.COLOR_RGBA2BGR);
 
-            Method detectDial = privateMethod("detectDial", Mat.class);
-            Method measureMarkerSet = privateMethod("measureMarkerSet", Mat.class, detectDial.getReturnType());
-            Method commonCount = privateMethod("commonMarkerCount", measureMarkerSet.getReturnType(), measureMarkerSet.getReturnType());
-            Method commonRms = privateMethod("commonMarkerRms", measureMarkerSet.getReturnType(), measureMarkerSet.getReturnType());
-            Method perspective = privateMethod("perspectiveEquivalent", Mat.class, detectDial.getReturnType());
-
-            Object sd = detectDial.invoke(null, src), rd = detectDial.invoke(null, ref);
+            DialAnalysisEngine.Circle sd=DialAnalysisEngine.detectDial(src),rd=DialAnalysisEngine.detectDial(ref);
             if (sd == null || rd == null) return bad("Dial geometry could not be verified for both images.");
-            double sx = number(sd,"x"), sy = number(sd,"y"), sr = number(sd,"r"), sq = number(sd,"quality");
-            double rx = number(rd,"x"), ry = number(rd,"y"), rr = number(rd,"r"), rq = number(rd,"quality");
+            double sx=sd.x,sy=sd.y,sr=sd.r,sq=sd.quality;
+            double rx=rd.x,ry=rd.y,rr=rd.r,rq=rd.quality;
             if (sq < 0.56 || rq < 0.56 || sr <= 0 || rr <= 0) return bad("Dial geometry quality is below the overlay threshold.");
 
-            Object sm = measureMarkerSet.invoke(null, src, sd), rm = measureMarkerSet.invoke(null, ref, rd);
-            double smr = number(sm,"medianRadius"), rmr = number(rm,"medianRadius");
-            double sga = number(sm,"globalRotation"), rga = number(rm,"globalRotation");
-            int common = ((Number)commonCount.invoke(null, sm, rm)).intValue();
-            double rms = ((Number)commonRms.invoke(null, sm, rm)).doubleValue();
-            double sp = ((Number)perspective.invoke(null, src, sd)).doubleValue();
-            double rp = ((Number)perspective.invoke(null, ref, rd)).doubleValue();
+            DialAnalysisEngine.MarkerSet sm=DialAnalysisEngine.measureMarkerSet(src,sd),rm=DialAnalysisEngine.measureMarkerSet(ref,rd);
+            double smr=sm.medianRadius,rmr=rm.medianRadius;
+            double sga=sm.globalRotation,rga=rm.globalRotation;
+            int common=DialAnalysisEngine.commonMarkerCount(sm,rm);
+            double rms=DialAnalysisEngine.commonMarkerRms(sm,rm);
+            double sp=DialAnalysisEngine.perspectiveEquivalent(src,sd);
+            double rp=DialAnalysisEngine.perspectiveEquivalent(ref,rd);
             double mismatch = (Double.isFinite(sp) && Double.isFinite(rp)) ? Math.abs(sp-rp) : Double.NaN;
 
             GeometryRegistration.Solution sol = GeometryRegistration.solve(sr, rr, smr, rmr, sga, rga, sq, rq, common, rms, mismatch);
@@ -97,12 +89,6 @@ final class GeometryOverlayRepair {
         } finally { src.release(); ref.release(); }
     }
 
-    private static Method privateMethod(String name, Class<?>... types) throws Exception {
-        Method m = WatchAlignCoreV7.class.getDeclaredMethod(name, types); m.setAccessible(true); return m;
-    }
-    private static double number(Object obj,String field) throws Exception {
-        Field f=obj.getClass().getDeclaredField(field); f.setAccessible(true); return ((Number)f.get(obj)).doubleValue();
-    }
     private static Result bad(String why){return new Result(null,0,Double.NaN,Double.NaN,Double.NaN,why);}
     private GeometryOverlayRepair() {}
 }

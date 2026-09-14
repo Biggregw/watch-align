@@ -19,8 +19,6 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -88,21 +86,18 @@ final class PerspectiveGmtOverlay {
         finally{src.release();gray.release();blur.release();edges.release();}
     }
 
-    private static DialSeed seed(Mat rgba)throws Exception{
+    private static DialSeed seed(Mat rgba){
         Mat bgr=new Mat();
         try{
             Imgproc.cvtColor(rgba,bgr,Imgproc.COLOR_RGBA2BGR);
-            Method detect=WatchAlignCoreV7.class.getDeclaredMethod("detectDial",Mat.class);detect.setAccessible(true);
-            Object d=detect.invoke(null,bgr);if(d==null)return null;
+            DialAnalysisEngine.Circle d=DialAnalysisEngine.detectDial(bgr);if(d==null)return null;
             double roll=0.0;
             try{
-                Method markers=WatchAlignCoreV7.class.getDeclaredMethod("measureMarkerSet",Mat.class,d.getClass());
-                markers.setAccessible(true);
-                Object set=markers.invoke(null,bgr,d);
-                double r=num(set,"globalRotation");
+                DialAnalysisEngine.MarkerSet set=DialAnalysisEngine.measureMarkerSet(bgr,d);
+                double r=set.globalRotation;
                 if(Double.isFinite(r))roll=r;
             }catch(Throwable ignored){}
-            return new DialSeed(num(d,"x"),num(d,"y"),num(d,"r"),num(d,"quality"),roll);
+            return new DialSeed(d.x,d.y,d.r,d.quality,roll);
         }finally{bgr.release();}
     }
 
@@ -232,7 +227,5 @@ final class PerspectiveGmtOverlay {
     private static void drawQuad(Canvas c,Mat H,double[][] pts,Paint p){Path path=new Path();for(int i=0;i<pts.length;i++){Point q=project(H,pts[i][0],pts[i][1]);if(i==0)path.moveTo((float)q.x,(float)q.y);else path.lineTo((float)q.x,(float)q.y);}path.close();c.drawPath(path,p);}
     private static Paint paint(int color,float width,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);p.setColor(color);p.setAlpha(alpha);return p;}
     private static Point project(Mat H,double x,double y){double[] h=new double[9];H.get(0,0,h);double w=h[6]*x+h[7]*y+h[8];if(Math.abs(w)<1e-9)w=1e-9;return new Point((h[0]*x+h[1]*y+h[2])/w,(h[3]*x+h[4]*y+h[5])/w);}
-    private static Object field(Object o,String n)throws Exception{Field f=o.getClass().getDeclaredField(n);f.setAccessible(true);return f.get(o);}
-    private static double num(Object o,String n)throws Exception{return ((Number)field(o,n)).doubleValue();}
     private PerspectiveGmtOverlay(){}
 }

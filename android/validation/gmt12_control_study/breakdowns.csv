@@ -1,0 +1,7 @@
+group,breakdown,value,metric,n,mean,median
+genuine,reference,126710BLNR,base_to_60,1,0.164000,0.164000
+genuine,reference,126710BLNR,apex_to_crown,1,0.291000,0.291000
+genuine,reference,126710BLNR,rotation_deg,1,0.000000,0.000000
+replica,factory,ARF,base_to_60,1,0.086000,0.086000
+replica,factory,ARF,apex_to_crown,1,0.284000,0.284000
+replica,factory,ARF,rotation_deg,1,-0.290000,-0.290000

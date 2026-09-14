@@ -1,0 +1,1 @@
+Alpha36: generate the GMT master from the official Rolex fixture during CI, then build the renderer against those traced polygons.

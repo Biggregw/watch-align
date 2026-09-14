@@ -1,0 +1,4 @@
+metric,samples,seed,feature_point_noise_px,anchor_noise_px,median_abs_error,p95_abs_error,max_abs_error
+base_to_60,2000,520013,0.75,1.00,0.002077,0.005457,0.008031
+apex_to_crown,2000,520013,0.75,1.00,0.002392,0.006552,0.009271
+rotation_deg,2000,520013,0.75,1.00,0.137654,0.364686,0.536056

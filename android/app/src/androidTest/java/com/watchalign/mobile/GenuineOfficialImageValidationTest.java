@@ -56,7 +56,7 @@ public class GenuineOfficialImageValidationTest {
             }
             if (b == null || Math.min(b.getWidth(), b.getHeight()) < 450) continue;
             try {
-                WatchAlignCoreV13.AnalysisResult r = WatchAlignCoreV13.analyse(b, b, modelRef);
+                WatchAlignCore.AnalysisResult r = WatchAlignCore.analyse(b, b, modelRef);
                 checked++;
                 String rep = r.report == null ? "" : r.report;
                 if (r.registrationConfidence < 0.90) failures.add("registration=" + r.registrationConfidence + " @ " + name);

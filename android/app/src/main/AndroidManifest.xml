@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.INTERNET" />
-    <application android:theme="@style/AppTheme" android:label="Watch Align" android:usesCleartextTraffic="false">
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+    <application
+        android:theme="@style/AppTheme"
+        android:label="Watch Align"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:usesCleartextTraffic="false">
+        <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.files" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>
+        <activity android:name=".HistoryActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".CaptureActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".FinalQcActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".Triangle12InspectActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".ManualAlignActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".FullscreenInspectActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
             <intent-filter>

@@ -8,8 +8,6 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 /** Visual QC guide: dial boundary, roll-corrected ideal marker positions and measured marker positions. */
 final class QcGuideRenderer {
@@ -17,17 +15,14 @@ final class QcGuideRenderer {
         Mat src=new Mat();
         try {
             Utils.bitmapToMat(watch,src); Imgproc.cvtColor(src,src,Imgproc.COLOR_RGBA2BGR);
-            Method detect=privateMethod("detectDial",Mat.class);
-            Object dial=detect.invoke(null,src);
+            DialAnalysisEngine.Circle dial=DialAnalysisEngine.detectDial(src);
             if(dial==null) return watch.copy(Bitmap.Config.ARGB_8888,false);
-            Method measure=privateMethod("measureMarkerSet",Mat.class,dial.getClass());
-            Method perspective=privateMethod("perspectiveEquivalent",Mat.class,dial.getClass());
-            Object set=measure.invoke(null,src,dial);
-            double tilt=((Number)perspective.invoke(null,src,dial)).doubleValue();
+            DialAnalysisEngine.MarkerSet set=DialAnalysisEngine.measureMarkerSet(src,dial);
+            double tilt=DialAnalysisEngine.perspectiveEquivalent(src,dial);
             boolean reliable=QcGuideMath.alignmentGuideReliable(tilt);
 
-            double cx=num(dial,"x"), cy=num(dial,"y"), dr=num(dial,"r");
-            double global=num(set,"globalRotation"), median=num(set,"medianRadius");
+            double cx=dial.x, cy=dial.y, dr=dial.r;
+            double global=set.globalRotation, median=set.medianRadius;
 
             Mat out=src.clone();
             Scalar cyan=new Scalar(242,213,50);
@@ -42,10 +37,9 @@ final class QcGuideRenderer {
             if(Double.isFinite(median)) Imgproc.circle(out,new Point(cx,cy),(int)Math.round(median),yellow,2,Imgproc.LINE_AA,0);
             Imgproc.drawMarker(out,new Point(cx,cy),white,Imgproc.MARKER_CROSS,18,2,Imgproc.LINE_AA);
 
-            Object markers=field(set,"markers");
-            java.util.List<?> list=(java.util.List<?>)markers;
+            java.util.List<DialAnalysisEngine.Marker> list=set.markers;
             for(int h=1;h<=12;h++) {
-                Object marker=findHour(list,h);
+                DialAnalysisEngine.Marker marker=findHour(list,h);
                 double idealDeg=QcGuideMath.idealAngleDeg(h,global);
                 QcGuideMath.P p0=QcGuideMath.polar(cx,cy,dr*0.56,idealDeg);
                 QcGuideMath.P p1=QcGuideMath.polar(cx,cy,dr*0.93,idealDeg);
@@ -56,7 +50,7 @@ final class QcGuideRenderer {
 
                 Scalar sev=neutral;
                 if(marker!=null) {
-                    double angular=num(marker,"angular"), radial=num(marker,"radial"), actualR=num(marker,"radius");
+                    double angular=marker.angular, radial=marker.radial, actualR=marker.radius;
                     if(reliable){int level=QcGuideMath.severity(angular,radial);sev=level==0?green:level==1?amber:red;}
                     QcGuideMath.P actual=QcGuideMath.polar(cx,cy,actualR,idealDeg+angular);
                     Imgproc.circle(out,new Point(actual.x,actual.y),6,sev,2,Imgproc.LINE_AA,0);
@@ -78,12 +72,9 @@ final class QcGuideRenderer {
         } finally { src.release(); }
     }
 
-    private static Object findHour(java.util.List<?> list,int hour) throws Exception {
-        for(Object m:list) if((int)Math.round(num(m,"hour"))==hour) return m;
+    private static DialAnalysisEngine.Marker findHour(java.util.List<DialAnalysisEngine.Marker> list,int hour) {
+        for(DialAnalysisEngine.Marker m:list) if(m.hour==hour) return m;
         return null;
     }
-    private static Method privateMethod(String name,Class<?>...types)throws Exception{Method m=WatchAlignCoreV7.class.getDeclaredMethod(name,types);m.setAccessible(true);return m;}
-    private static Object field(Object o,String n)throws Exception{Field f=o.getClass().getDeclaredField(n);f.setAccessible(true);return f.get(o);}
-    private static double num(Object o,String n)throws Exception{Object v=field(o,n);return ((Number)v).doubleValue();}
     private QcGuideRenderer(){}
 }
