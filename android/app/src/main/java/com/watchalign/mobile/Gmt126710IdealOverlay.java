@@ -45,12 +45,12 @@ final class Gmt126710IdealOverlay {
             c.drawLine(inner.x, inner.y, outer.x, outer.y, h % 3 == 0 ? cardinal : axis);
         }
 
-        // Full expected applied-marker bodies. 3 o'clock is intentionally left to the date module.
-        // IMPORTANT: every body below now comes from the same first-party measured reference as its
-        // centre radius. Do not mix these with the older v6 visual-master circle/rectangle constants.
+        // Full expected applied-marker bodies. At 3 o'clock the date aperture replaces the marker.
+        // Its height is centred exactly on the 15-minute/3-o'clock axis in canonical dial geometry,
+        // then the entire outline is projected through the same perspective transform as every index.
         for (int hour = 1; hour <= 12; hour++) {
-            if (hour == 3) continue;
-            if (hour == 12) drawTriangle(c, pose, reference);
+            if (hour == 3) drawDateAperture(c, pose, reference);
+            else if (hour == 12) drawTriangle(c, pose, reference);
             else if (hour == 6 || hour == 9) drawMeasuredBody(c, pose, hour, Gmt126710BlnrMeasured.BATON_CENTER_R, Gmt126710BlnrMeasured.BATON_OUTER, reference);
             else drawMeasuredBody(c, pose, hour, Gmt126710BlnrMeasured.MARKER_CENTER_R, Gmt126710BlnrMeasured.ROUND_OUTER, reference);
         }
@@ -68,8 +68,16 @@ final class Gmt126710IdealOverlay {
         return bodyPoints(pose,12,cr,local);
     }
 
+    static PointF[] idealDateAperture(PerspectiveMasterRenderer.Pose pose) {
+        return bodyPoints(pose,3,Gmt126710BlnrMeasured.DATE_CENTER_R,Gmt126710BlnrMeasured.DATE_APERTURE_OUTER);
+    }
+
     private static void drawTriangle(Canvas c, PerspectiveMasterRenderer.Pose pose, Paint p) {
         PointF[] q = idealTriangle(pose);drawClosed(c,q,p);
+    }
+
+    private static void drawDateAperture(Canvas c, PerspectiveMasterRenderer.Pose pose, Paint p) {
+        drawClosed(c,idealDateAperture(pose),p);
     }
 
     /**
