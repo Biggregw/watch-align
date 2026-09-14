@@ -31,7 +31,8 @@ public class GmtIndexAutoAnalyzerTest {
         assertTrue(summary.contains("radial 6 +0.018 DR"));
         assertTrue(summary.contains("6/9 body axis: 6 +1.20° · 9 -0.40°"));
         assertTrue(summary.contains("rectification"));
-        assertTrue(summary.contains("12 now shares this coordinate model"));
-        assertTrue(summary.contains("mathematical ideal"));
+        assertTrue(summary.contains("Fixed 126710 marker-centre radius"));
+        assertTrue(summary.contains("perspective-projected ideal"));
+        assertTrue(summary.contains("12 triangle is measured automatically"));
     }
 }
