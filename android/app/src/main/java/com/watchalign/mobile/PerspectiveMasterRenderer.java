@@ -41,19 +41,19 @@ final class PerspectiveMasterRenderer {
     }
 
     private static void drawHandles(Canvas c,Pose p,Projector pr,float unit){
-        Paint black=fill(Color.BLACK,230),yellow=fill(Color.rgb(255,230,0),255),cyan=fill(Color.CYAN,255),magenta=fill(Color.rgb(255,60,220),255),text=new Paint(Paint.ANTI_ALIAS_FLAG);text.setColor(Color.WHITE);text.setTextSize(14*unit);text.setFakeBoldText(true);
+        Paint black=fill(Color.BLACK,230),yellow=fill(Color.rgb(255,230,0),255),cyan=fill(Color.CYAN,255),magenta=fill(Color.rgb(255,60,220),255),text=new Paint(Paint.ANTI_ALIAS_FLAG);text.setColor(Color.WHITE);text.setTextSize(13*unit);text.setFakeBoldText(true);
         PointF twelve=pr.project(0,-1);
         if(p.perspectiveMode){
             PointF centre=pr.project(0,0),three=pr.project(1,0),six=pr.project(0,1),nine=pr.project(-1,0);
-            handle(c,centre,black,yellow,7*unit,"CENTER CHECK",text,10*unit,-10*unit);
-            handle(c,twelve,black,cyan,9*unit,"12",text,11*unit,-12*unit);
-            handle(c,three,black,magenta,8*unit,"3",text,10*unit,-10*unit);
-            handle(c,six,black,magenta,8*unit,"6",text,10*unit,-10*unit);
-            handle(c,nine,black,magenta,8*unit,"9",text,10*unit,-10*unit);
+            handle(c,centre,black,yellow,7*unit,"PINION CHECK",text,10*unit,-10*unit);
+            handle(c,twelve,black,cyan,9*unit,"12 DIAL EDGE",text,11*unit,-12*unit);
+            handle(c,three,black,magenta,8*unit,"3 DIAL EDGE",text,10*unit,-10*unit);
+            handle(c,six,black,magenta,8*unit,"6 DIAL EDGE",text,10*unit,-10*unit);
+            handle(c,nine,black,magenta,8*unit,"9 DIAL EDGE",text,10*unit,-10*unit);
         }else{
             PointF centre=new PointF(p.centerX,p.centerY);
-            handle(c,centre,black,yellow,9*unit,"CENTER",text,11*unit,-12*unit);
-            handle(c,twelve,black,cyan,9*unit,"12",text,11*unit,-12*unit);
+            handle(c,centre,black,yellow,9*unit,"PINION",text,11*unit,-12*unit);
+            handle(c,twelve,black,cyan,9*unit,"12 DIAL EDGE",text,11*unit,-12*unit);
         }
     }
     private static void handle(Canvas c,PointF q,Paint black,Paint fill,float r,String label,Paint text,float tx,float ty){c.drawCircle(q.x,q.y,r+3,black);c.drawCircle(q.x,q.y,r,fill);c.drawText(label,q.x+tx,q.y+ty,text);}
