@@ -31,7 +31,8 @@ public class GmtIndexAutoAnalyzerTest {
         assertTrue(summary.contains("Largest residual: tangential 5 +0.031 DR"));
         assertTrue(summary.contains("reference radial delta 6 +0.018 DR"));
         assertTrue(summary.contains("6/9 body axis: 6 +1.20° · 9 -0.40°"));
-        assertTrue(summary.contains("Image-calibrated 126710 marker-centre reference"));
+        assertTrue(summary.contains("Image-calibrated centres: round"));
+        assertTrue(summary.contains("6/9 baton"));
         assertTrue(summary.contains("Cyan axes are mathematical"));
         assertTrue(summary.contains("12 outer-metal triangle is measured automatically"));
     }
