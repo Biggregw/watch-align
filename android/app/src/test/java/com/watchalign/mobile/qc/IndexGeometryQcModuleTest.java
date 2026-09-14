@@ -92,6 +92,13 @@ public class IndexGeometryQcModuleTest {
         assertValue(result, "index_06_height_over_dial_radius", 0.20);
     }
 
+    @Test public void circularPlotCanBePositionOnlyAtRawOutputLevel() {
+        IndexGeometryQcModule.MarkerObservation m=IndexGeometryQcModule.MarkerObservation.positionOnly(5,40,69.282,0.80);
+        QcModuleResult result=new IndexGeometryQcModule().measure(IndexGeometryQcModule.Input.rectified(0,0,100,Collections.singletonList(m),highPerspective()));
+        assertNotNull(result.measurement("index_05_tangential_offset_over_dial_radius"));
+        org.junit.Assert.assertNull(result.measurement("index_05_rotation_deg"));
+    }
+
     @Test public void perspectiveConfidencePropagatesWithoutChangingRawGeometry() {
         RectificationConfidenceService.Assessment low = RectificationConfidenceService.assess(
                 0,-20, 120,0, 0,22, -120,0);

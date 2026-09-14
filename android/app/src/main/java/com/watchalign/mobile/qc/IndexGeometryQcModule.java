@@ -30,6 +30,7 @@ public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModu
         public final double expectedCenterRadiusRatio;
         public final Double widthPx;
         public final Double heightPx;
+        public final boolean orientationSupported;
 
         private MarkerObservation(
                 int hour,
@@ -41,7 +42,7 @@ public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModu
                 double axisOuterY,
                 double expectedCenterRadiusRatio,
                 Double widthPx,
-                Double heightPx) {
+                Double heightPx,boolean orientationSupported) {
             validateHour(hour);
             requireFinite(centerX, "centerX");
             requireFinite(centerY, "centerY");
@@ -68,6 +69,7 @@ public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModu
             this.expectedCenterRadiusRatio = expectedCenterRadiusRatio;
             this.widthPx = widthPx;
             this.heightPx = heightPx;
+            this.orientationSupported=orientationSupported;
         }
 
         public static MarkerObservation of(
@@ -82,7 +84,13 @@ public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModu
             return new MarkerObservation(
                     hour, centerX, centerY,
                     axisInnerX, axisInnerY, axisOuterX, axisOuterY,
-                    expectedCenterRadiusRatio, null, null);
+                    expectedCenterRadiusRatio, null, null,true);
+        }
+
+        public static MarkerObservation positionOnly(
+                int hour,double centerX,double centerY,double expectedCenterRadiusRatio) {
+            double angle=Math.atan2(centerY,centerX),d=.001;
+            return new MarkerObservation(hour,centerX,centerY,centerX-Math.cos(angle)*d,centerY-Math.sin(angle)*d,centerX+Math.cos(angle)*d,centerY+Math.sin(angle)*d,expectedCenterRadiusRatio,null,null,false);
         }
 
         public static MarkerObservation ofWithSize(
@@ -99,7 +107,7 @@ public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModu
             return new MarkerObservation(
                     hour, centerX, centerY,
                     axisInnerX, axisInnerY, axisOuterX, axisOuterY,
-                    expectedCenterRadiusRatio, widthPx, heightPx);
+                    expectedCenterRadiusRatio, widthPx, heightPx,true);
         }
     }
 
@@ -203,7 +211,7 @@ public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModu
         out.add(new RawMeasurement(prefix + "radial_offset_over_dial_radius",
                 radialRatio - marker.expectedCenterRadiusRatio, "DR"));
         out.add(new RawMeasurement(prefix + "tangential_offset_over_dial_radius", tangentialRatio, "DR"));
-        out.add(new RawMeasurement(prefix + "rotation_deg", rotationDeg, "deg"));
+        if(marker.orientationSupported)out.add(new RawMeasurement(prefix + "rotation_deg", rotationDeg, "deg"));
 
         if (marker.widthPx != null) {
             out.add(new RawMeasurement(prefix + "width_over_dial_radius",
