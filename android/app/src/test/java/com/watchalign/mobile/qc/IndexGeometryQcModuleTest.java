@@ -12,7 +12,8 @@ import java.util.Collections;
 public class IndexGeometryQcModuleTest {
     private static RectificationConfidenceService.Assessment highPerspective() {
         return RectificationConfidenceService.assess(
-                0,-100, 100,0, 0,100, -100,0);
+                0,-100, 100,0, 0,100, -100,0,
+                new RectificationConfidenceService.Validation(.0001,.99,Double.NaN,.98,true));
     }
 
     @Test public void perfectCardinalMarkersProduceZeroOffsetsAndRotation() {
