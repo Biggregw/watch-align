@@ -17,7 +17,7 @@ import android.graphics.PointF;
 final class Gmt126710IdealOverlay {
     private Gmt126710IdealOverlay() {}
 
-    /** Image-calibrated round-marker centre radius from the first-party 126710BLNR reference. */
+    /** Image-calibrated marker-centre radii from the first-party 126710BLNR trace. */
     static double markerCenterRadius() { return Gmt126710BlnrMeasured.MARKER_CENTER_R; }
     static double markerCenterRadius(int hour) {return (hour==6||hour==9)?Gmt126710BlnrMeasured.BATON_CENTER_R:Gmt126710BlnrMeasured.MARKER_CENTER_R;}
 
@@ -46,12 +46,13 @@ final class Gmt126710IdealOverlay {
         }
 
         // Full expected applied-marker bodies. 3 o'clock is intentionally left to the date module.
-        // Body shapes/radii are calibrated references; only their angular axes are mathematically exact.
+        // IMPORTANT: every body below now comes from the same first-party measured reference as its
+        // centre radius. Do not mix these with the older v6 visual-master circle/rectangle constants.
         for (int hour = 1; hour <= 12; hour++) {
             if (hour == 3) continue;
             if (hour == 12) drawTriangle(c, pose, reference);
-            else if (hour == 6 || hour == 9) drawBaton(c, pose, hour, reference);
-            else drawRound(c, pose, hour, reference);
+            else if (hour == 6 || hour == 9) drawMeasuredBody(c, pose, hour, Gmt126710BlnrMeasured.BATON_CENTER_R, Gmt126710BlnrMeasured.BATON_OUTER, reference);
+            else drawMeasuredBody(c, pose, hour, Gmt126710BlnrMeasured.MARKER_CENTER_R, Gmt126710BlnrMeasured.ROUND_OUTER, reference);
         }
     }
 
@@ -64,39 +65,34 @@ final class Gmt126710IdealOverlay {
 
     static PointF[] idealTriangle(PerspectiveMasterRenderer.Pose pose) {
         float[][] local=Gmt126710BlnrMeasured.TRI_OUTER;double cr=Gmt126710BlnrMeasured.TRI_CENTER_R;
-        return new PointF[] {
-                project(pose, local[0][0], -(cr+local[0][1])),
-                project(pose, local[1][0], -(cr+local[1][1])),
-                project(pose, local[2][0], -(cr+local[2][1]))
-        };
+        return bodyPoints(pose,12,cr,local);
     }
 
     private static void drawTriangle(Canvas c, PerspectiveMasterRenderer.Pose pose, Paint p) {
-        PointF[] q = idealTriangle(pose);
-        Path path = new Path();path.moveTo(q[0].x,q[0].y);path.lineTo(q[1].x,q[1].y);path.lineTo(q[2].x,q[2].y);path.close();c.drawPath(path,p);
+        PointF[] q = idealTriangle(pose);drawClosed(c,q,p);
     }
 
-    private static void drawRound(Canvas c, PerspectiveMasterRenderer.Pose pose, int hour, Paint p) {
-        double a = Math.toRadians(hour * 30.0), urx = Math.sin(a), ury = -Math.cos(a), utx = Math.cos(a), uty = Math.sin(a);
-        double cr = Gmt126710BlnrMeasured.MARKER_CENTER_R, rr = Gmt126710BlnrMaster.ROUND_OUTER_R;
-        Path path = new Path();
-        for (int i=0;i<=48;i++) {
-            double t=2*Math.PI*i/48.0,radial=cr+rr*Math.cos(t),tan=rr*Math.sin(t);
-            PointF q=project(pose,urx*radial+utx*tan,ury*radial+uty*tan);
-            if(i==0)path.moveTo(q.x,q.y);else path.lineTo(q.x,q.y);
+    /**
+     * local[x,y] convention from the calibration trace: x is tangential; +y is radially outward.
+     * The whole local body is transformed through the SAME homography as the marker centre, so an
+     * oblique source photo produces the appropriate projected shape instead of a screen-space circle.
+     */
+    private static void drawMeasuredBody(Canvas c,PerspectiveMasterRenderer.Pose pose,int hour,double centreR,float[][] local,Paint p){
+        drawClosed(c,bodyPoints(pose,hour,centreR,local),p);
+    }
+
+    private static PointF[] bodyPoints(PerspectiveMasterRenderer.Pose pose,int hour,double centreR,float[][] local){
+        double a=Math.toRadians(hour*30.0),urx=Math.sin(a),ury=-Math.cos(a),utx=Math.cos(a),uty=Math.sin(a);
+        PointF[] q=new PointF[local.length];
+        for(int i=0;i<local.length;i++){
+            double tangential=local[i][0],radial=centreR+local[i][1];
+            q[i]=project(pose,urx*radial+utx*tangential,ury*radial+uty*tangential);
         }
-        path.close();c.drawPath(path,p);
+        return q;
     }
 
-    private static void drawBaton(Canvas c, PerspectiveMasterRenderer.Pose pose, int hour, Paint p) {
-        double a=Math.toRadians(hour*30.0),urx=Math.sin(a),ury=-Math.cos(a),utx=Math.cos(a),uty=Math.sin(a),r=Gmt126710BlnrMeasured.BATON_CENTER_R;
-        double rh=.113824,th=.071566;
-        PointF[] q=new PointF[]{
-                project(pose,urx*(r-rh)-utx*th,ury*(r-rh)-uty*th),
-                project(pose,urx*(r-rh)+utx*th,ury*(r-rh)+uty*th),
-                project(pose,urx*(r+rh)+utx*th,ury*(r+rh)+uty*th),
-                project(pose,urx*(r+rh)-utx*th,ury*(r+rh)-uty*th)};
-        Path path=new Path();path.moveTo(q[0].x,q[0].y);for(int i=1;i<4;i++)path.lineTo(q[i].x,q[i].y);path.close();c.drawPath(path,p);
+    private static void drawClosed(Canvas c,PointF[] q,Paint p){
+        if(q==null||q.length<2)return;Path path=new Path();path.moveTo(q[0].x,q[0].y);for(int i=1;i<q.length;i++)path.lineTo(q[i].x,q[i].y);path.close();c.drawPath(path,p);
     }
 
     private static PointF project(PerspectiveMasterRenderer.Pose pose, double x, double y) {return PerspectiveMasterRenderer.projectPoint(pose, x, y);}
