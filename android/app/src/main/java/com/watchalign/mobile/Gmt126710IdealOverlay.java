@@ -14,45 +14,24 @@ import android.graphics.PointF;
  * exact opposite/mirror relationships. Applied-marker positions/body dimensions are image-derived
  * 126710 references and are deliberately kept separate from factory-tolerance claims.
  *
- * IMPORTANT: the yellow ideal bodies are built as CLEAN canonical primitives before projection.
- * A round applied marker is a true circle in the face-on dial plane, 6/9 are true rectangles,
- * 12 is the calibrated triangle and 3 is the date-aperture rectangle. We never draw a noisy
- * photographed contour as the ideal body. The homography is applied only after the canonical
- * primitive has been constructed, so a round marker can become a smooth perspective conic but
- * can never become the lumpy polygon produced by the old trace-based overlay.
+ * All yellow bodies use ONE canonical radius definition: radius 1.0 is the smaller/inner dial-side
+ * rehaut boundary used by the production rectifier. No legacy catalogue-radius constants are mixed
+ * into the overlay.
  */
 final class Gmt126710IdealOverlay {
     private static final int ROUND_SEGMENTS = 96;
-
-    /*
-     * Round-body size comes from the genuine-reference visual master. The first-party automatic
-     * trace is still useful for the marker-centre ring, but its sparse outline is not an ideal shape.
-     */
-    private static final double ROUND_REFERENCE_R = Gmt126710BlnrMaster.ROUND_OUTER_R;
-
-    /*
-     * The catalogue baton trace clipped the long bright inner edge. Preserve the well-located outer
-     * end from that trace, but use the genuine-reference master for the inner end. This produces one
-     * clean canonical rectangle rather than centring a too-short box on the clipped contour.
-     */
-    private static final double BATON_REFERENCE_OUTER_R = Math.min(
-            Gmt126710BlnrMeasured.BATON_CENTER_R + Gmt126710BlnrMeasured.BATON_RADIAL_HALF,
-            Gmt126710BlnrMaster.MINUTE_TRACK_R - 0.002);
-    private static final double BATON_REFERENCE_INNER_R =
-            Gmt126710BlnrMaster.MARKER_CENTER_R - Gmt126710BlnrMaster.BATON_RADIAL_HALF;
-    private static final double BATON_REFERENCE_CENTER_R =
-            (BATON_REFERENCE_OUTER_R + BATON_REFERENCE_INNER_R) * 0.5;
-    private static final double BATON_REFERENCE_RADIAL_HALF =
-            (BATON_REFERENCE_OUTER_R - BATON_REFERENCE_INNER_R) * 0.5;
-    private static final double BATON_REFERENCE_TANGENTIAL_HALF =
-            Gmt126710BlnrMaster.BATON_TANGENTIAL_HALF;
+    private static final double ROUND_REFERENCE_R = Gmt126710BlnrMeasured.ROUND_RADIUS;
+    private static final double BATON_REFERENCE_CENTER_R = Gmt126710BlnrMeasured.BATON_CENTER_R;
+    private static final double BATON_REFERENCE_RADIAL_HALF = Gmt126710BlnrMeasured.BATON_RADIAL_HALF;
+    private static final double BATON_REFERENCE_TANGENTIAL_HALF = Gmt126710BlnrMeasured.BATON_TANGENTIAL_HALF;
+    private static final double BATON_REFERENCE_INNER_R = BATON_REFERENCE_CENTER_R-BATON_REFERENCE_RADIAL_HALF;
+    private static final double BATON_REFERENCE_OUTER_R = BATON_REFERENCE_CENTER_R+BATON_REFERENCE_RADIAL_HALF;
 
     private Gmt126710IdealOverlay() {}
 
-    /** Image-calibrated round-marker centre ring. */
+    /** Image-calibrated marker-centre ring in the production inner-edge radius convention. */
     static double markerCenterRadius() { return Gmt126710BlnrMeasured.MARKER_CENTER_R; }
 
-    /** 6/9 use the geometric midpoint of the corrected full applied-metal body. */
     static double markerCenterRadius(int hour) {
         return (hour == 6 || hour == 9) ? BATON_REFERENCE_CENTER_R : Gmt126710BlnrMeasured.MARKER_CENTER_R;
     }
@@ -85,7 +64,6 @@ final class Gmt126710IdealOverlay {
             c.drawLine(inner.x, inner.y, outer.x, outer.y, h % 3 == 0 ? cardinal : axis);
         }
 
-        // Full expected applied-marker bodies. At 3 o'clock the date aperture replaces the marker.
         for (int hour = 1; hour <= 12; hour++) {
             if (hour == 3) drawDateAperture(c, pose, reference);
             else if (hour == 12) drawTriangle(c, pose, reference);
@@ -105,9 +83,7 @@ final class Gmt126710IdealOverlay {
     }
 
     static PointF[] idealTriangle(PerspectiveMasterRenderer.Pose pose) {
-        float[][] local = Gmt126710BlnrMeasured.TRI_OUTER;
-        double cr = Gmt126710BlnrMeasured.TRI_CENTER_R;
-        return bodyPoints(pose, 12, cr, local);
+        return bodyPoints(pose, 12, Gmt126710BlnrMeasured.TRI_CENTER_R, Gmt126710BlnrMeasured.TRI_OUTER);
     }
 
     static PointF[] idealDateAperture(PerspectiveMasterRenderer.Pose pose) {
@@ -128,12 +104,7 @@ final class Gmt126710IdealOverlay {
     private static void drawBaton(Canvas c, PerspectiveMasterRenderer.Pose pose, int hour, Paint p) {
         float w = (float) BATON_REFERENCE_TANGENTIAL_HALF;
         float h = (float) BATON_REFERENCE_RADIAL_HALF;
-        float[][] local = {
-                {-w, -h},
-                { w, -h},
-                { w,  h},
-                {-w,  h}
-        };
+        float[][] local = {{-w,-h},{w,-h},{w,h},{-w,h}};
         drawClosed(c, bodyPoints(pose, hour, BATON_REFERENCE_CENTER_R, local), p);
     }
 
@@ -145,15 +116,9 @@ final class Gmt126710IdealOverlay {
         drawClosed(c, idealDateAperture(pose), p);
     }
 
-    /**
-     * local[x,y] convention: x is tangential; +y is radially outward.
-     * The entire canonical body is transformed through the SAME homography as its centre.
-     */
     private static PointF[] bodyPoints(PerspectiveMasterRenderer.Pose pose, int hour, double centreR, float[][] local) {
         PointF[] q = new PointF[local.length];
-        for (int i = 0; i < local.length; i++) {
-            q[i] = bodyPoint(pose, hour, centreR, local[i][0], local[i][1]);
-        }
+        for (int i = 0; i < local.length; i++) q[i] = bodyPoint(pose, hour, centreR, local[i][0], local[i][1]);
         return q;
     }
 
