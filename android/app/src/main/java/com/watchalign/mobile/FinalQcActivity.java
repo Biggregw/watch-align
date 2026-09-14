@@ -39,24 +39,26 @@ public class FinalQcActivity extends Activity {
         final String qcSummary=buildSummary(indexResult);
         if(InspectionImageStore.historyRecordId==null)try{InspectionHistory.Record saved=InspectionHistory.save(this,base,InspectionImageStore.alignedModelRef,pose,tri,InspectionImageStore.triangleMetric,qcSummary);InspectionImageStore.historyRecordId=saved.id;}catch(Exception ignored){}
 
-        FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.rgb(8,17,31));
-        image=new ZoomableImageView(this);image.setBackgroundColor(Color.BLACK);image.setImageBitmap(combined);root.addView(image,new FrameLayout.LayoutParams(-1,-1));
+        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Color.rgb(8,17,31));
+        root.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(0,insets.getSystemWindowInsetTop(),0,insets.getSystemWindowInsetBottom());return insets;});
 
         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(6),dp(8),dp(6));top.setBackgroundColor(0xE008111F);
         Button back=btn("Back");back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(72),dp(46)));
         TextView title=txt("Final GMT QC",18);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
-        Button reset=btn("Reset");reset.setOnClickListener(v->image.resetZoom());top.addView(reset,new LinearLayout.LayoutParams(dp(76),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(60),Gravity.TOP));
+        Button reset=btn("Fit watch");reset.setOnClickListener(v->image.resetZoom());top.addView(reset,new LinearLayout.LayoutParams(dp(86),dp(46)));root.addView(top,new LinearLayout.LayoutParams(-1,dp(60)));
+
+        image=new ZoomableImageView(this);image.setBackgroundColor(Color.BLACK);image.setImageBitmap(combined);root.addView(image,new LinearLayout.LayoutParams(-1,0,1));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(5),dp(10),dp(7));bottom.setBackgroundColor(0xEE08111F);
-        TextView summary=txt(qcSummary,9);summary.setGravity(Gravity.CENTER);bottom.addView(summary,new LinearLayout.LayoutParams(-1,dp(205)));
+        TextView summary=txt(qcSummary,9);summary.setGravity(Gravity.CENTER);bottom.addView(summary,new LinearLayout.LayoutParams(-1,dp(175)));
         LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER);
-        Button blink=btn("Watch only");blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){image.setImageBitmapPreserveZoom(combined);return true;}return false;});row.addView(blink,new LinearLayout.LayoutParams(0,dp(46),1));
-        Button indices=btn("Indices");indices.setOnClickListener(v->{if(indexResult.annotated!=null)image.setImageBitmapPreserveZoom(indexResult.annotated);});row.addView(indices,new LinearLayout.LayoutParams(0,dp(46),1));
-        Button both=btn("Combined");both.setOnClickListener(v->image.setImageBitmapPreserveZoom(combined));row.addView(both,new LinearLayout.LayoutParams(0,dp(46),1));
-        Button share=btn("Share QC");share.setOnClickListener(v->{try{QcExport.share(this,combined,InspectionImageStore.alignedModelRef,qcSummary);}catch(Exception e){android.widget.Toast.makeText(this,"Could not export: "+e.getMessage(),android.widget.Toast.LENGTH_LONG).show();}});row.addView(share,new LinearLayout.LayoutParams(0,dp(46),1));bottom.addView(row);
-        Button extended=btn("All GMT checks · indices · date · cyclops · rehaut · SEL");extended.setOnClickListener(v->startActivity(new Intent(this,GmtExtendedQcActivity.class)));bottom.addView(extended,new LinearLayout.LayoutParams(-1,dp(42)));
-        TextView hint=txt("Green/cyan = corrected 12 relation. Index positions use the same perspective pose. Reference observations are image-derived evidence, not Rolex factory tolerances.",9);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(55)));
-        root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(360),Gravity.BOTTOM));setContentView(root);
+        Button blink=btn("Hold: original");blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){image.setImageBitmapPreserveZoom(combined);return true;}return false;});row.addView(blink,new LinearLayout.LayoutParams(0,dp(46),1));
+        Button indices=btn("Index evidence");indices.setOnClickListener(v->{if(indexResult.annotated!=null)image.setImageBitmapPreserveZoom(indexResult.annotated);});row.addView(indices,new LinearLayout.LayoutParams(0,dp(46),1));
+        Button both=btn("12 overlay");both.setOnClickListener(v->image.setImageBitmapPreserveZoom(combined));row.addView(both,new LinearLayout.LayoutParams(0,dp(46),1));
+        Button share=btn("Share report");share.setOnClickListener(v->{try{QcExport.share(this,combined,InspectionImageStore.alignedModelRef,qcSummary);}catch(Exception e){android.widget.Toast.makeText(this,"Could not export: "+e.getMessage(),android.widget.Toast.LENGTH_LONG).show();}});row.addView(share,new LinearLayout.LayoutParams(0,dp(46),1));bottom.addView(row);
+        Button extended=btn("Detailed GMT checks: date, cyclops, rehaut and SEL");extended.setOnClickListener(v->startActivity(new Intent(this,GmtExtendedQcActivity.class)));bottom.addView(extended,new LinearLayout.LayoutParams(-1,dp(42)));
+        TextView hint=txt("Pinch or double-tap to inspect. Green/cyan shows the corrected 12 relation. Evidence is image-derived, not a Rolex factory tolerance.",9);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(45)));
+        root.addView(bottom,new LinearLayout.LayoutParams(-1,dp(318)));setContentView(root);
     }
 
     private Bitmap mainOnly(Bitmap src,PerspectiveMasterRenderer.Pose pose){
