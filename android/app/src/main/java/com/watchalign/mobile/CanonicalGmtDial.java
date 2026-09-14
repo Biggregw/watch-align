@@ -27,28 +27,39 @@ final class CanonicalGmtDial implements AutoCloseable {
         LAST_FAILURE.remove();
         if(source==null){LAST_FAILURE.set("source image is unavailable");return null;}
         if(pose==null||!pose.anchorMode||!pose.perspectiveMode){LAST_FAILURE.set("corrected anchor pose is unavailable");return null;}
-        Mat rgba=new Mat(),src=new Mat(),dst=new Mat(),gray=new Mat();
+        if(!finitePose(pose)){LAST_FAILURE.set("corrected anchor pose contains non-finite coordinates");return null;}
+        if(anchorArea(pose)<25.0){LAST_FAILURE.set("corrected anchor quadrilateral is degenerate");return null;}
+        Mat rgba=new Mat(),src=new Mat(),dst=new Mat(),gray=new Mat();MatOfPoint2f from=null,to=null;Mat h=null;String stage="bitmapToMat";
         try{
-            Utils.bitmapToMat(source,rgba);Imgproc.cvtColor(rgba,src,Imgproc.COLOR_RGBA2BGR);
-            MatOfPoint2f from=new MatOfPoint2f(new Point(pose.anchor12X,pose.anchor12Y),new Point(pose.anchor3X,pose.anchor3Y),new Point(pose.anchor6X,pose.anchor6Y),new Point(pose.anchor9X,pose.anchor9Y));
-            MatOfPoint2f to=new MatOfPoint2f(new Point(CENTER,CENTER-RADIUS),new Point(CENTER+RADIUS,CENTER),new Point(CENTER,CENTER+RADIUS),new Point(CENTER-RADIUS,CENTER));
-            Mat h=Imgproc.getPerspectiveTransform(from,to);Imgproc.warpPerspective(src,dst,h,new Size(SIZE,SIZE),Imgproc.INTER_CUBIC,Core.BORDER_REPLICATE);Imgproc.cvtColor(dst,gray,Imgproc.COLOR_BGR2GRAY);
+            Utils.bitmapToMat(source,rgba);
+            stage="RGBA to BGR";Imgproc.cvtColor(rgba,src,Imgproc.COLOR_RGBA2BGR);
+            stage="anchor matrix";from=new MatOfPoint2f(new Point(pose.anchor12X,pose.anchor12Y),new Point(pose.anchor3X,pose.anchor3Y),new Point(pose.anchor6X,pose.anchor6Y),new Point(pose.anchor9X,pose.anchor9Y));
+            to=new MatOfPoint2f(new Point(CENTER,CENTER-RADIUS),new Point(CENTER+RADIUS,CENTER),new Point(CENTER,CENTER+RADIUS),new Point(CENTER-RADIUS,CENTER));
+            stage="getPerspectiveTransform";h=Imgproc.getPerspectiveTransform(from,to);
+            if(h==null||h.empty()){LAST_FAILURE.set("getPerspectiveTransform returned an empty homography");return null;}
+            stage="warpPerspective";Imgproc.warpPerspective(src,dst,h,new Size(SIZE,SIZE),Imgproc.INTER_CUBIC,Core.BORDER_REPLICATE);
+            if(dst.empty()){LAST_FAILURE.set("warpPerspective returned an empty canonical dial");return null;}
+            stage="canonical grayscale";Imgproc.cvtColor(dst,gray,Imgproc.COLOR_BGR2GRAY);
             // Boundary evidence is advisory. A difficult bezel/rehaut edge must not discard an
             // otherwise valid four-point homography or suppress every planar component.
-            double sourceCircle=safeBoundaryCircularity(src);double rectCircle=safeBoundaryCircularity(gray);
+            stage="rectification diagnostics";double sourceCircle=safeBoundaryCircularity(src);double rectCircle=safeBoundaryCircularity(gray);
             double axis=Math.min(Math.hypot(pose.anchor6X-pose.anchor12X,pose.anchor6Y-pose.anchor12Y),Math.hypot(pose.anchor9X-pose.anchor3X,pose.anchor9Y-pose.anchor3Y))/Math.max(1e-9,Math.max(Math.hypot(pose.anchor6X-pose.anchor12X,pose.anchor6Y-pose.anchor12Y),Math.hypot(pose.anchor9X-pose.anchor3X,pose.anchor9Y-pose.anchor3Y)));
             double repro=safeReprojectionRms(h,pose)/RADIUS;
             boolean observed=Double.isFinite(sourceCircle)&&Double.isFinite(rectCircle);
             RectificationConfidenceService.Validation validation=new RectificationConfidenceService.Validation(repro,axis,sourceCircle,rectCircle,observed);
             RectificationConfidenceService.Assessment confidence=RectificationConfidenceService.assess(pose.anchor12X,pose.anchor12Y,pose.anchor3X,pose.anchor3Y,pose.anchor6X,pose.anchor6Y,pose.anchor9X,pose.anchor9Y,validation);
-            from.release();to.release();h.release();src.release();rgba.release();return new CanonicalGmtDial(dst,gray,pose,confidence);
-        }catch(Throwable t){LAST_FAILURE.set(t.getClass().getSimpleName()+(t.getMessage()==null?"":": "+t.getMessage()));rgba.release();src.release();dst.release();gray.release();return null;}
+            Mat resultBgr=dst;Mat resultGray=gray;dst=null;gray=null;return new CanonicalGmtDial(resultBgr,resultGray,pose,confidence);
+        }catch(Throwable t){LAST_FAILURE.set(stage+" failed: "+t.getClass().getSimpleName()+(t.getMessage()==null?"":": "+t.getMessage()));return null;}
+        finally{if(from!=null)from.release();if(to!=null)to.release();if(h!=null)h.release();rgba.release();src.release();if(dst!=null)dst.release();if(gray!=null)gray.release();}
     }
 
     static String lastFailureReason(){String reason=LAST_FAILURE.get();return reason==null?"unknown warp failure":reason;}
 
     Point sourcePoint(double canonicalX,double canonicalY){PointF p=PerspectiveMasterRenderer.projectPoint(pose,(canonicalX-CENTER)/RADIUS,(canonicalY-CENTER)/RADIUS);return new Point(p.x,p.y);}
     Bitmap bitmap(){Bitmap out=Bitmap.createBitmap(SIZE,SIZE,Bitmap.Config.ARGB_8888);Mat rgba=new Mat();Imgproc.cvtColor(bgr,rgba,Imgproc.COLOR_BGR2RGBA);Utils.matToBitmap(rgba,out);rgba.release();return out;}
+
+    private static boolean finitePose(PerspectiveMasterRenderer.Pose p){return Float.isFinite(p.anchor12X)&&Float.isFinite(p.anchor12Y)&&Float.isFinite(p.anchor3X)&&Float.isFinite(p.anchor3Y)&&Float.isFinite(p.anchor6X)&&Float.isFinite(p.anchor6Y)&&Float.isFinite(p.anchor9X)&&Float.isFinite(p.anchor9Y);}
+    private static double anchorArea(PerspectiveMasterRenderer.Pose p){double[] x={p.anchor12X,p.anchor3X,p.anchor6X,p.anchor9X},y={p.anchor12Y,p.anchor3Y,p.anchor6Y,p.anchor9Y};double s=0;for(int i=0;i<4;i++){int j=(i+1)%4;s+=x[i]*y[j]-x[j]*y[i];}return Math.abs(s)*.5;}
 
     private static double reprojectionRms(Mat h,PerspectiveMasterRenderer.Pose p){
         Point[] in={new Point(p.anchor12X,p.anchor12Y),new Point(p.anchor3X,p.anchor3Y),new Point(p.anchor6X,p.anchor6Y),new Point(p.anchor9X,p.anchor9Y)};Point[] target={new Point(CENTER,CENTER-RADIUS),new Point(CENTER+RADIUS,CENTER),new Point(CENTER,CENTER+RADIUS),new Point(CENTER-RADIUS,CENTER)};double ss=0;
