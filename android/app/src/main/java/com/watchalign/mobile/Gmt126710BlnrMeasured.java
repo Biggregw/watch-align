@@ -1,29 +1,33 @@
 package com.watchalign.mobile;
 
 /**
- * Normalized visual geometry for the Rolex GMT-Master II 126710BLNR.
+ * One canonical image-derived geometry source for Rolex GMT-Master II 126710BLNR.
  *
- * Marker centres and the round/triangle traces come from the first-party 2026 catalogue calibration.
- * The original automatic trace under-captured the long 6/9 applied-baton edges, so the baton body is
- * represented by the separately validated visual-master dimensions. The date aperture dimensions are
- * an image-derived 126710 reference: its tangential midpoint is constrained exactly to the 3 o'clock /
- * 15-minute axis, while its radial centre and size remain reference-calibrated rather than factory CAD.
+ * IMPORTANT: every radial value in this class uses the SAME radius definition as the production
+ * rectifier: radius 1.0 is the smaller / inner dial-side rehaut boundary selected by the global
+ * boundary fit. Older catalogue-trace constants used a slightly different visual radius and must
+ * not be mixed with these values, because that manufactured ~0.028 DR radial residuals.
+ *
+ * Angular relationships are mathematical. Body dimensions and radial locations are visual QC
+ * references, not Rolex CAD or factory tolerances.
  */
 final class Gmt126710BlnrMeasured {
-    static final String ID="126710BLNR-reference-geometry-v3";
+    static final String ID="126710BLNR-inner-edge-reference-v4";
     static final double DIAL_EDGE_R=1.0;
-    static final double MARKER_CENTER_R=0.7904886;
-    static final double BATON_CENTER_R=0.7977680;
-    static final double TRI_CENTER_R=0.7843200;
 
-    static final float[][] ROUND_OUTER={{-0.067988f,0.004086f},{-0.060003f,-0.040131f},{0.006452f,-0.035846f},{0.038089f,-0.060205f},{0.047677f,-0.038320f},{0.067018f,-0.031206f},{0.043555f,-0.008520f},{0.045159f,0.057582f},{0.002614f,0.057771f}};
+    // Unified centre ring on the production inner-edge radius. Keep round plots and 6/9 on one
+    // coherent radial system; individual QC reports deviations from this fixed reference.
+    static final double MARKER_CENTER_R=Gmt126710BlnrMaster.MARKER_CENTER_R;
+    static final double BATON_CENTER_R=Gmt126710BlnrMaster.MARKER_CENTER_R;
+    static final double TRI_CENTER_R=Gmt126710BlnrMaster.TRI_CENTER_R;
+
+    // Clean ideal round body. The overlay constructs a true circle from the master radius rather
+    // than replaying a sparse photographed contour.
+    static final float ROUND_RADIUS=(float)Gmt126710BlnrMaster.ROUND_OUTER_R;
 
     // Local marker coordinates: x=tangential, y=radial; +y points outward to the minute track.
-    // The catalogue contour trace clipped the bright long edges of the 6/9 markers and produced a
-    // visibly squat box. Use the validated applied-metal proportions instead: long radial body,
-    // narrower tangential width. The same body is used for both 6 and 9 before perspective projection.
-    static final float BATON_TANGENTIAL_HALF=0.047f;
-    static final float BATON_RADIAL_HALF=0.124f;
+    static final float BATON_TANGENTIAL_HALF=(float)Gmt126710BlnrMaster.BATON_TANGENTIAL_HALF;
+    static final float BATON_RADIAL_HALF=(float)Gmt126710BlnrMaster.BATON_RADIAL_HALF;
     static final float[][] BATON_OUTER={
             {-BATON_TANGENTIAL_HALF,-BATON_RADIAL_HALF},
             { BATON_TANGENTIAL_HALF,-BATON_RADIAL_HALF},
@@ -31,11 +35,17 @@ final class Gmt126710BlnrMeasured {
             {-BATON_TANGENTIAL_HALF, BATON_RADIAL_HALF}
     };
 
-    static final float[][] TRI_OUTER={{-0.086726f,0.098697f},{0.085841f,0.098697f},{0.000885f,-0.197395f}};
+    // 12 o'clock OUTER APPLIED-METAL triangle. The old catalogue trace was much too tall and used
+    // the obsolete radius convention. Base is outward, apex inward.
+    static final float[][] TRI_OUTER={
+            {-(float)Gmt126710BlnrMaster.TRI_HALF_BASE,(float)Gmt126710BlnrMaster.TRI_BASE_OUTWARD},
+            { (float)Gmt126710BlnrMaster.TRI_HALF_BASE,(float)Gmt126710BlnrMaster.TRI_BASE_OUTWARD},
+            {0f,-(float)Gmt126710BlnrMaster.TRI_APEX_INWARD}
+    };
 
-    // 3 o'clock date aperture. Before perspective projection the aperture is horizontal and its
-    // HEIGHT is exactly centred on the 15-minute radial axis: tangential midpoint = 0 by construction.
-    // Radial location and body dimensions are image-calibrated 126710 reference values.
+    // 3 o'clock date aperture. Its tangential midpoint is constrained exactly to the 15-minute axis.
+    // Radial location and body dimensions remain image-calibrated and will be refined from the
+    // genuine-control set; they are deliberately kept in this one radius convention.
     static final double DATE_CENTER_R=0.690;
     static final float DATE_TANGENTIAL_HALF=0.081f;
     static final float DATE_RADIAL_HALF=0.123f;
