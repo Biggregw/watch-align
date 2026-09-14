@@ -34,7 +34,8 @@ public class FinalQcActivity extends Activity {
         PointF[] tri=InspectionImageStore.trianglePoints;
         if(base==null||pose==null||tri==null||tri.length<5){finish();return;}
         combined=buildCombined(base,pose,tri);
-        final GmtIndexAutoAnalyzer.Result indexResult=GmtIndexAutoAnalyzer.analyse(base,pose);
+        InspectionImageStore.gmtQc=GmtQcPipeline.analyse(base,InspectionImageStore.alignedModelRef,pose);
+        final GmtIndexAutoAnalyzer.Result indexResult=InspectionImageStore.gmtQc==null?GmtIndexAutoAnalyzer.analyse(base,pose):InspectionImageStore.gmtQc.indices;
         final String qcSummary=buildSummary(indexResult);
         if(InspectionImageStore.historyRecordId==null)try{InspectionHistory.Record saved=InspectionHistory.save(this,base,InspectionImageStore.alignedModelRef,pose,tri,InspectionImageStore.triangleMetric,qcSummary);InspectionImageStore.historyRecordId=saved.id;}catch(Exception ignored){}
 
@@ -53,7 +54,7 @@ public class FinalQcActivity extends Activity {
         Button indices=btn("Indices");indices.setOnClickListener(v->{if(indexResult.annotated!=null)image.setImageBitmapPreserveZoom(indexResult.annotated);});row.addView(indices,new LinearLayout.LayoutParams(0,dp(46),1));
         Button both=btn("Combined");both.setOnClickListener(v->image.setImageBitmapPreserveZoom(combined));row.addView(both,new LinearLayout.LayoutParams(0,dp(46),1));
         Button share=btn("Share QC");share.setOnClickListener(v->{try{QcExport.share(this,combined,InspectionImageStore.alignedModelRef,qcSummary);}catch(Exception e){android.widget.Toast.makeText(this,"Could not export: "+e.getMessage(),android.widget.Toast.LENGTH_LONG).show();}});row.addView(share,new LinearLayout.LayoutParams(0,dp(46),1));bottom.addView(row);
-        Button extended=btn("All GMT checks · date · cyclops · bezel · rehaut · SEL");extended.setOnClickListener(v->startActivity(new Intent(this,GmtExtendedQcActivity.class)));bottom.addView(extended,new LinearLayout.LayoutParams(-1,dp(42)));
+        Button extended=btn("All GMT checks · indices · date · cyclops · rehaut · SEL");extended.setOnClickListener(v->startActivity(new Intent(this,GmtExtendedQcActivity.class)));bottom.addView(extended,new LinearLayout.LayoutParams(-1,dp(42)));
         TextView hint=txt("Green/cyan = corrected 12 relation. Index positions use the same perspective pose. Reference observations are image-derived evidence, not Rolex factory tolerances.",9);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(55)));
         root.addView(bottom,new FrameLayout.LayoutParams(-1,dp(360),Gravity.BOTTOM));setContentView(root);
     }

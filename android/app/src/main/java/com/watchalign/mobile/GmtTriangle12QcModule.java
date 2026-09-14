@@ -1,6 +1,6 @@
 package com.watchalign.mobile;
 
-import com.watchalign.mobile.qc.PerspectiveConfidenceService;
+import com.watchalign.mobile.qc.RectificationConfidenceService;
 import com.watchalign.mobile.qc.QcModule;
 import com.watchalign.mobile.qc.QcModuleResult;
 import com.watchalign.mobile.qc.RawMeasurement;
@@ -57,12 +57,12 @@ public final class GmtTriangle12QcModule implements QcModule<GmtTriangle12QcModu
     public QcModuleResult measure(Input input) {
         if (input == null) throw new IllegalArgumentException("input must not be null");
 
-        PerspectiveConfidenceService.Assessment perspective = assessPerspective(input.pose);
+        RectificationConfidenceService.Assessment rectification = assessRectification(input.pose);
 
         Triangle12RelationalMetric.Result result =
                 Triangle12RelationalMetric.measureRectifiedRaw(input.pose, input.points);
         if (result == null || result.rawRectified == null) {
-            List<String> evidence = new ArrayList<>(perspective.evidence());
+            List<String> evidence = new ArrayList<>(rectification.evidence());
             evidence.add("Production rectified triangle measurement unavailable");
             return new QcModuleResult(
                     ID,
@@ -73,7 +73,7 @@ public final class GmtTriangle12QcModule implements QcModule<GmtTriangle12QcModu
 
         List<String> evidence = new ArrayList<>();
         evidence.add("Delegated unchanged to Triangle12RelationalMetric.measureRectifiedRaw");
-        evidence.addAll(perspective.evidence());
+        evidence.addAll(rectification.evidence());
 
         return new QcModuleResult(
                 ID,
@@ -84,20 +84,20 @@ public final class GmtTriangle12QcModule implements QcModule<GmtTriangle12QcModu
                         new RawMeasurement("height_over_base", result.rawRectified.heightRatio, "BW"),
                         new RawMeasurement("lateral_px", result.rawRectified.lateralPx, "px")
                 ),
-                perspective.confidence(),
+                rectification.confidence(),
                 evidence);
     }
 
-    private static PerspectiveConfidenceService.Assessment assessPerspective(
+    private static RectificationConfidenceService.Assessment assessRectification(
             PerspectiveMasterRenderer.Pose pose) {
         if (!pose.anchorMode || !pose.perspectiveMode) {
-            return PerspectiveConfidenceService.assess(
+            return RectificationConfidenceService.assess(
                     Double.NaN, pose.anchor12Y,
                     pose.anchor3X, pose.anchor3Y,
                     pose.anchor6X, pose.anchor6Y,
                     pose.anchor9X, pose.anchor9Y);
         }
-        return PerspectiveConfidenceService.assess(
+        return RectificationConfidenceService.assess(
                 pose.anchor12X, pose.anchor12Y,
                 pose.anchor3X, pose.anchor3Y,
                 pose.anchor6X, pose.anchor6Y,

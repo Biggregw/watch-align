@@ -30,6 +30,8 @@ public class GmtIndexAutoAnalyzerTest {
         assertTrue(summary.contains("Largest tangential: 5 +0.031 DR"));
         assertTrue(summary.contains("radial: 6 +0.018 DR"));
         assertTrue(summary.contains("6/9 body axis: 6 +1.20° · 9 -0.40°"));
+        assertTrue(summary.contains("rectification"));
+        assertTrue(summary.contains("12 is owned by the dedicated triangle check"));
         assertTrue(summary.contains("not a Rolex tolerance"));
     }
 }

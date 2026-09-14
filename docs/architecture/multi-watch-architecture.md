@@ -13,7 +13,7 @@ The architecture must keep raw geometry, model capability, calibration evidence 
 3. Raw measurements must remain separate from classification and severity.
 4. Calibration data must be model/reference specific.
 5. Genuine control observations, replica observations and legacy classifier bands must remain distinct.
-6. Perspective/pose confidence must gate fine-grained QC claims.
+6. Rectification confidence and component confidence independently gate fine-grained QC claims.
 7. Model detection should be separate from QC. Initial UX should be Brand -> Model -> Reference.
 8. New watch support should usually mean adding/configuring a profile plus reusable modules, not writing a new monolithic activity.
 
@@ -108,7 +108,7 @@ The module does not contain model-specific tolerances. The expected marker-centr
 
 Rotation is treated as line orientation, so reversing the two axis endpoints cannot turn a correct marker into a 180-degree error. Positive rotation is defined as clockwise in image coordinates.
 
-The module inherits `HIGH`, `MEDIUM` or `LOW` confidence from `PerspectiveConfidenceService` without modifying the raw measurements. This is intended to prevent tiny apparent marker cants caused by oblique photographs from being presented with unjustified confidence.
+The module inherits `HIGH`, `MEDIUM` or `LOW` confidence from `RectificationConfidenceService` without modifying the raw measurements. A planar component cannot claim confidence above the shared rectification confidence.
 
 `QcModuleRegistry` knows about this generic module and verifies required profile capabilities before returning modules. In particular, `generic.index_geometry` requires `applied-index-geometry`, so a printed-dial profile cannot accidentally run an applied-marker detector merely because a module ID was added to its JSON.
 
@@ -116,11 +116,15 @@ The module inherits `HIGH`, `MEDIUM` or `LOW` confidence from `PerspectiveConfid
 
 The 126710-family profile now enables both `gmt.triangle12.relationship` and `generic.index_geometry`.
 
-`GmtIndexAutoAnalyzer` bridges the existing automatic GMT marker localisation into the generic index module after rectifying marker centres through the user's corrected 12/3/6/9 pose. All reliably localized marker centres contribute radial and tangential position measurements. The expected marker radius is the median marker-ring radius from that same watch image, explicitly a within-watch consensus baseline rather than a Rolex tolerance or genuine calibration.
+`GmtQcPipeline` creates one `CanonicalGmtDial` from the corrected 12/3/6/9 anchors and shares it across the GMT modules. `GmtIndexAutoAnalyzer` searches only the narrow angular sectors and model ring occupied by 1, 2, 4, 5, 6, 7, 8, 9, 10 and 11. Candidate evidence combines edge/threshold contours, expected angle and radius, area, contrast, compactness and shape. A median/MAD ring check rejects inconsistent survivors. Fewer than seven reliable markers suppresses index analysis entirely.
 
-Round GMT hour plots are position-only because body rotation is not meaningful for a circle. Automatic body-axis estimation is therefore surfaced only for elongated 6 and 9 markers, and remains diagnostic rather than a hard defect verdict. The 12 triangle continues to use its dedicated manually corrected production measurement.
+Round GMT hour plots are position-only because body rotation is not meaningful for a circle. Automatic body-axis estimation is surfaced only for 6 and 9 when an elongated contour has strong component evidence. The 12 triangle is excluded and continues to use its dedicated manually corrected production measurement. The 3 position is excluded because the date module owns it.
 
-`FinalQcActivity` now shows the per-index summary alongside the existing 12-triangle assessment, provides an `Indices` overlay, and links to `GmtExtendedQcActivity`. The extended screen exposes the existing date, cyclops, bezel, rehaut and SEL checks with their photo-sensitivity caveats. `WatchAlignCore` also retains the extended GMT report instead of calculating and then discarding it.
+`GlobalMinuteTrackPhase` samples the complete rectified minute-track annulus and estimates one repeating 60-position phase. Weak periodic support is withheld and falls back to profile axes at lower confidence. There is no per-marker local bright-tick override, and no track result can replace the dedicated triangle result.
+
+The date pipeline first isolates a plausible aperture in an original-image ROI located from the canonical geometry. Numeral centring is measured only inside that observed aperture. Cyclops output is advisory because refracted pixels do not obey the dial-plane homography. SEL automation is deliberately disabled and the release text is exactly `SEL: visual inspection only; no automatic gap score`.
+
+`FinalQcActivity` computes and stores one `GmtQcPipeline.Result`; `GmtExtendedQcActivity` reuses the same per-index, component and rectification objects. Detector failure remains component-specific, with an explicit withholding reason.
 
 ### 4. Calibration and reference data
 
@@ -140,13 +144,11 @@ It stores the current four-watch genuine pilot observations, pilot medians, froz
 
 Assessment consumes raw metric + profile + calibration + confidence. Raw values remain available even if classification logic changes later.
 
-### Perspective confidence
+### Rectification and component confidence
 
-`PerspectiveConfidenceService` is the common brand/model-agnostic confidence gate for four-anchor rectification.
+`RectificationConfidenceService` evaluates four-anchor convexity, scale-independent side/area sanity, opposite-axis consistency, anchor reprojection residual and, where a dial boundary can be isolated, source-to-warp circularity. Obliqueness alone is not a failure. A constrained oblique warp can remain usable, while a visually frontal image with inconsistent anchors is downgraded.
 
-It evaluates the supplied 12/3/6/9 dial-edge quadrilateral using scale-independent geometry: convexity, side-length balance, diagonal balance, diagonal-intersection margin and area relative to the diagonals. It returns `HIGH`, `MEDIUM` or `LOW` confidence plus a 0-1 score and supporting evidence.
-
-The service does not suppress raw measurements and does not classify the watch. A low-confidence image can still produce raw geometry, but fine alignment claims must be treated cautiously. The GMT triangle module is the first module wired to this common service, replacing its previous unconditional `HIGH` confidence.
+Each detector also owns a component confidence. For planar components it is capped at the rectification confidence. A failed aperture, track or marker detector suppresses only that output and records the reason. This makes contradictory states such as high rectification confidence combined with “perspective could not be verified” impossible in the final GMT report.
 
 ## Capability matrix
 
@@ -188,12 +190,12 @@ Create the first declarative profile for modern Rolex GMT 126710-family watches 
 Move genuine pilot / legacy classifier metadata out of Final QC UI logic into versioned calibration data. The UI now reads the calibration asset instead of owning those values.
 
 ### Step 6 - complete
-Add a common perspective-confidence service. The first production consumer is `GmtTriangle12QcModule`; raw GMT measurements remain unchanged while confidence now reflects four-anchor geometry quality. Corrected validation passed in workflow run 423.
+Add the common rectification-confidence service and canonical GMT dial. The production triangle wrapper still delegates unchanged to `measureRectifiedRaw`.
 
 ### Step 7 - complete
 Add `IndexGeometryQcModule` as the generic applied-marker geometry engine. It independently measures marker cant, radial position and tangential position for each supplied hour marker in rectified dial coordinates, with optional normalized width/height. It is confidence-gated by the common perspective assessment and registered behind the `applied-index-geometry` capability.
 
-The GMT production flow now feeds automatically localized marker centres through this module after manual perspective correction and surfaces those results in Final QC. This is integration, not a new factory-tolerance calibration: marker radial offsets currently use the watch's own marker-ring median as their baseline.
+The GMT production flow now feeds sector-constrained, shape-verified marker centres from the one canonical warp through this module and surfaces those results in Final QC. This is integration, not a new factory-tolerance calibration: marker radial offsets use the watch's robust marker-ring consensus as their baseline.
 
 ### Step 8
 Add a second model family, ideally Submariner 124060, to prove the architecture is genuinely reusable.

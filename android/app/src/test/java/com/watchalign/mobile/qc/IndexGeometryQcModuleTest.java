@@ -10,8 +10,8 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class IndexGeometryQcModuleTest {
-    private static PerspectiveConfidenceService.Assessment highPerspective() {
-        return PerspectiveConfidenceService.assess(
+    private static RectificationConfidenceService.Assessment highPerspective() {
+        return RectificationConfidenceService.assess(
                 0,-100, 100,0, 0,100, -100,0);
     }
 
@@ -93,7 +93,7 @@ public class IndexGeometryQcModuleTest {
     }
 
     @Test public void perspectiveConfidencePropagatesWithoutChangingRawGeometry() {
-        PerspectiveConfidenceService.Assessment low = PerspectiveConfidenceService.assess(
+        RectificationConfidenceService.Assessment low = RectificationConfidenceService.assess(
                 0,-20, 120,0, 0,22, -120,0);
         assertEquals(QcModuleResult.Confidence.LOW, low.confidence());
 

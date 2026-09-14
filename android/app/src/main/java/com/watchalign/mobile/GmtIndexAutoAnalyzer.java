@@ -1,252 +1,51 @@
 package com.watchalign.mobile;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
+import android.graphics.Bitmap;import android.graphics.Canvas;import android.graphics.Color;import android.graphics.Paint;
+import com.watchalign.mobile.qc.GmtIndexPlausibility;import com.watchalign.mobile.qc.IndexGeometryQcModule;import com.watchalign.mobile.qc.QcModuleResult;import com.watchalign.mobile.qc.RawMeasurement;
+import org.opencv.core.Core;import org.opencv.core.Mat;import org.opencv.core.MatOfPoint;import org.opencv.core.MatOfPoint2f;import org.opencv.core.Point;import org.opencv.core.Rect;import org.opencv.core.RotatedRect;import org.opencv.core.Scalar;import org.opencv.core.Size;import org.opencv.imgproc.Imgproc;import org.opencv.imgproc.Moments;
+import java.util.ArrayList;import java.util.Collections;import java.util.Comparator;import java.util.List;import java.util.Locale;
 
-import com.watchalign.mobile.qc.GmtIndexPlausibility;
-import com.watchalign.mobile.qc.IndexGeometryQcModule;
-import com.watchalign.mobile.qc.PerspectiveConfidenceService;
-import com.watchalign.mobile.qc.QcModuleResult;
-import com.watchalign.mobile.qc.RawMeasurement;
-
-import org.opencv.android.Utils;
-import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-
-/**
- * Production bridge from automatic GMT marker localisation into the generic per-index geometry
- * module. Marker centres are rectified through the user's corrected 12/3/6/9 pose before
- * measurement.
- *
- * <p>The expected marker radius is the median radius of plausible rectified markers in the same
- * watch image. It is a within-watch consensus baseline, not a Rolex tolerance or a genuine-control
- * calibration. Any localisation that lands outside the selected hour sector or far from the common
- * marker ring is rejected before it can reach the measurement module.</p>
- */
+/** Sector-constrained GMT marker localisation on the shared canonical rectified dial. */
 final class GmtIndexAutoAnalyzer {
-    static final class Result {
-        final QcModuleResult geometry;
-        final Bitmap annotated;
-        final String summary;
-        final int localizedCount;
+    private static final int[] HOURS={1,2,4,5,6,7,8,9,10,11};
+    static final class Result {final QcModuleResult geometry;final Bitmap annotated;final String summary;final int localizedCount;Result(QcModuleResult g,Bitmap a,String s,int n){geometry=g;annotated=a;summary=s;localizedCount=n;}}
+    private static final class Candidate {int hour;double x,y,r,score,axisDeg,axisConfidence;boolean elongated;}
+    private GmtIndexAutoAnalyzer(){}
 
-        Result(QcModuleResult geometry, Bitmap annotated, String summary, int localizedCount) {
-            this.geometry = geometry;
-            this.annotated = annotated;
-            this.summary = summary;
-            this.localizedCount = localizedCount;
-        }
+    static Result analyse(Bitmap watch,PerspectiveMasterRenderer.Pose pose){
+        try(CanonicalGmtDial dial=CanonicalGmtDial.create(watch,pose)){
+            if(dial==null)return unavailable(watch,"Index analysis unavailable: corrected 12/3/6/9 anchors could not create a canonical dial.");
+            return analyse(watch,dial);
+        }catch(Throwable t){return unavailable(watch,"Index analysis unavailable: "+t.getClass().getSimpleName()+".");}
     }
 
-    private static final class Candidate {
-        int hour;
-        double imageX, imageY;
-        double dialX, dialY, radius;
-        double[] axis;
+    static Result analyse(Bitmap watch,CanonicalGmtDial dial){
+        try{
+            if(dial.rectification.confidence()==QcModuleResult.Confidence.LOW)return unavailable(watch,"Index analysis unavailable: rectification confidence is low. "+String.join("; ",dial.rectification.evidence()));
+            List<Candidate> candidates=localize(dial);if(candidates.size()<7)return unavailable(watch,"Index analysis unavailable: fewer than seven reliable non-date/non-12 markers passed sector, shape and contrast checks.");
+            double medianR=medianRadius(candidates),mad=madRadius(candidates,medianR);List<Candidate> consistent=new ArrayList<>();for(Candidate c:candidates)if(Math.abs(c.r-medianR)<=Math.max(.035,3.5*mad)&&GmtIndexPlausibility.plausibleAgainstRing(c.hour,c.x,c.y,medianR))consistent.add(c);
+            if(consistent.size()<7)return unavailable(watch,"Index analysis unavailable: fewer than seven markers passed robust ring consistency.");
+            List<IndexGeometryQcModule.MarkerObservation> observations=new ArrayList<>();for(Candidate c:consistent){double theta=Math.atan2(c.y,c.x),half=.035;double ax=Math.cos(theta),ay=Math.sin(theta);if(c.elongated&&c.axisConfidence>=.70){double a=Math.toRadians(c.axisDeg);ax=Math.cos(a);ay=Math.sin(a);}observations.add(IndexGeometryQcModule.MarkerObservation.of(c.hour,c.x,c.y,c.x-ax*half,c.y-ay*half,c.x+ax*half,c.y+ay*half,medianR));}
+            QcModuleResult measured=new IndexGeometryQcModule().measure(IndexGeometryQcModule.Input.rectified(0,0,1,observations,dial.rectification));
+            return new Result(measured,annotate(watch,dial,consistent),summarize(measured,consistent.size()),consistent.size());
+        }catch(Throwable t){return unavailable(watch,"Index analysis unavailable: "+t.getClass().getSimpleName()+".");}
     }
 
-    private GmtIndexAutoAnalyzer() {}
+    private static List<Candidate> localize(CanonicalGmtDial dial){
+        Mat blur=new Mat(),edges=new Mat(),binary=new Mat(),combined=new Mat(),hierarchy=new Mat();List<MatOfPoint> contours=new ArrayList<>();List<Candidate> all=new ArrayList<>();
+        try{Imgproc.GaussianBlur(dial.gray,blur,new Size(5,5),0);Imgproc.Canny(blur,edges,45,130);Imgproc.adaptiveThreshold(blur,binary,255,Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,Imgproc.THRESH_BINARY,41,-4);Core.bitwise_or(edges,binary,combined);Imgproc.findContours(combined,contours,hierarchy,Imgproc.RETR_LIST,Imgproc.CHAIN_APPROX_SIMPLE);
+            for(int hour:HOURS){Candidate best=null;for(MatOfPoint contour:contours){Candidate c=score(contour,dial.gray,hour);if(c!=null&&(best==null||c.score>best.score))best=c;}if(best!=null&&best.score>=.58)all.add(best);}return all;
+        }finally{for(MatOfPoint c:contours)c.release();blur.release();edges.release();binary.release();combined.release();hierarchy.release();}}
 
-    static Result analyse(Bitmap watch, PerspectiveMasterRenderer.Pose pose) {
-        if (watch == null || pose == null || !pose.anchorMode || !pose.perspectiveMode) {
-            return unavailable(watch, "Index geometry unavailable: corrected 12/3/6/9 perspective anchors are required.");
-        }
-
-        PerspectiveConfidenceService.Assessment perspective = PerspectiveConfidenceService.assess(
-                pose.anchor12X, pose.anchor12Y,
-                pose.anchor3X, pose.anchor3Y,
-                pose.anchor6X, pose.anchor6Y,
-                pose.anchor9X, pose.anchor9Y);
-
-        Mat src = new Mat();
-        try {
-            Utils.bitmapToMat(watch, src);
-            Imgproc.cvtColor(src, src, Imgproc.COLOR_RGBA2BGR);
-            DialAnalysisEngine.Circle dial = DialAnalysisEngine.detectDial(src);
-            if (dial == null) return unavailable(watch, "Index geometry unavailable: dial could not be localized reliably.");
-
-            DialAnalysisEngine.MarkerSet set = DialAnalysisEngine.measureMarkerSet(src, dial);
-            if (set == null || set.markers == null || set.markers.isEmpty()) {
-                return unavailable(watch, "Index geometry unavailable: no hour-marker centres were localized reliably.");
-            }
-            double global = Double.isFinite(set.globalRotation) ? set.globalRotation : 0.0;
-            List<Candidate> firstPass = new ArrayList<>();
-            List<Double> radii = new ArrayList<>();
-
-            for (DialAnalysisEngine.Marker marker : set.markers) {
-                if (marker.hour == 3) continue; // GMT date aperture, not an applied index.
-                double clockDeg = (marker.hour == 12 ? 0.0 : marker.hour * 30.0) + global + marker.angular;
-                double theta = Math.toRadians(clockDeg);
-                double ix = dial.x + Math.sin(theta) * marker.radius;
-                double iy = dial.y - Math.cos(theta) * marker.radius;
-                double[] q = PerspectiveRectifier.toDialRaw(pose, ix, iy);
-                if (q == null || !GmtIndexPlausibility.plausibleCanonicalPosition(marker.hour, q[0], q[1])) continue;
-
-                Candidate c = new Candidate();
-                c.hour = marker.hour;
-                c.imageX = ix;
-                c.imageY = iy;
-                c.dialX = q[0];
-                c.dialY = q[1];
-                c.radius = Math.hypot(q[0], q[1]);
-                if (marker.hour == 6 || marker.hour == 9) {
-                    c.axis = elongatedAxis(src, ix, iy, Math.max(10.0, dial.r * 0.10));
-                }
-                firstPass.add(c);
-                radii.add(c.radius);
-            }
-
-            if (firstPass.size() < 7) {
-                return unavailable(watch, "Index geometry unavailable: fewer than seven hour markers passed canonical sector checks.");
-            }
-
-            double expectedRadius = median(radii);
-            List<Candidate> candidates = new ArrayList<>();
-            for (Candidate c : firstPass) {
-                if (GmtIndexPlausibility.plausibleAgainstRing(c.hour, c.dialX, c.dialY, expectedRadius)) {
-                    candidates.add(c);
-                }
-            }
-            if (candidates.size() < 7) {
-                return unavailable(watch, "Index geometry unavailable: marker-ring geometry was inconsistent after rectification.");
-            }
-
-            List<IndexGeometryQcModule.MarkerObservation> observations = new ArrayList<>();
-            for (Candidate c : candidates) {
-                double[] innerOuter = rectifiedAxis(pose, c, expectedRadius);
-                if (innerOuter == null) continue;
-                observations.add(IndexGeometryQcModule.MarkerObservation.of(
-                        c.hour, c.dialX, c.dialY,
-                        innerOuter[0], innerOuter[1], innerOuter[2], innerOuter[3], expectedRadius));
-            }
-            if (observations.size() < 7) {
-                return unavailable(watch, "Index geometry unavailable: marker axes could not be rectified reliably.");
-            }
-
-            QcModuleResult measured = new IndexGeometryQcModule().measure(
-                    IndexGeometryQcModule.Input.rectified(0.0, 0.0, 1.0, observations, perspective));
-            Bitmap annotated = annotate(watch, candidates);
-            return new Result(measured, annotated, summarize(measured, observations.size()), observations.size());
-        } catch (Throwable t) {
-            return unavailable(watch, "Index geometry unavailable: " + t.getClass().getSimpleName() + ".");
-        } finally {
-            src.release();
-        }
+    private static Candidate score(MatOfPoint contour,Mat gray,int hour){
+        double area=Math.abs(Imgproc.contourArea(contour));if(area<150||area>18000)return null;Moments m=Imgproc.moments(contour);if(Math.abs(m.m00)<1e-6)return null;double px=m.m10/m.m00,py=m.m01/m.m00,x=(px-CanonicalGmtDial.CENTER)/CanonicalGmtDial.RADIUS,y=(py-CanonicalGmtDial.CENTER)/CanonicalGmtDial.RADIUS,r=Math.hypot(x,y);if(!GmtIndexPlausibility.plausibleCanonicalPosition(hour,x,y))return null;
+        Rect box=Imgproc.boundingRect(contour);double perimeter=Imgproc.arcLength(new MatOfPoint2f(contour.toArray()),true);double circularity=perimeter>0?4*Math.PI*area/(perimeter*perimeter):0;double aspect=Math.max(box.width,box.height)/(double)Math.max(1,Math.min(box.width,box.height));boolean elongated=hour==6||hour==9;double shape=elongated?clamp((aspect-1.15)/1.2):clamp(1-Math.abs(circularity-.72)/.55);double expected=Math.toRadians(hour*30.0);double angleError=Math.abs(wrap(Math.toDegrees(Math.atan2(x,-y))-hour*30.0));double angle=clamp(1-angleError/7.0),radial=clamp(1-Math.abs(r-.72)/.16),areaScore=clamp(area/1800.0)*clamp(1-area/18000.0);
+        double inside=Core.mean(gray.submat(box)).val[0],outside=annulusMean(gray,px,py,Math.max(box.width,box.height)*.7,Math.max(box.width,box.height)*1.1);double contrast=clamp(Math.abs(inside-outside)/55.0);double compact=clamp(area/Math.max(1.0,box.area()));double total=.27*angle+.20*radial+.14*areaScore+.16*contrast+.10*compact+.13*shape;
+        Candidate c=new Candidate();c.hour=hour;c.x=x;c.y=y;c.r=r;c.score=total;c.elongated=elongated;if(elongated){MatOfPoint2f f=new MatOfPoint2f(contour.toArray());RotatedRect rr=Imgproc.minAreaRect(f);f.release();double longAngle=rr.angle;if(rr.size.width<rr.size.height)longAngle+=90;c.axisDeg=longAngle;c.axisConfidence=shape*contrast;}return c;
     }
+    private static double annulusMean(Mat g,double cx,double cy,double inner,double outer){double sum=0,n=0;for(int y=(int)(cy-outer);y<=cy+outer;y+=2)for(int x=(int)(cx-outer);x<=cx+outer;x+=2){if(x<0||y<0||x>=g.cols()||y>=g.rows())continue;double d=Math.hypot(x-cx,y-cy);if(d>=inner&&d<=outer){sum+=g.get(y,x)[0];n++;}}return n>0?sum/n:0;}
+    private static Bitmap annotate(Bitmap watch,CanonicalGmtDial dial,List<Candidate> cs){Bitmap out=watch.copy(Bitmap.Config.ARGB_8888,true);Canvas canvas=new Canvas(out);Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(Color.CYAN);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Math.max(2,out.getWidth()/500f));Paint t=new Paint(p);t.setStyle(Paint.Style.FILL);t.setTextSize(Math.max(14,out.getWidth()/65f));for(Candidate c:cs){Point q=dial.sourcePoint(CanonicalGmtDial.CENTER+c.x*CanonicalGmtDial.RADIUS,CanonicalGmtDial.CENTER+c.y*CanonicalGmtDial.RADIUS);canvas.drawCircle((float)q.x,(float)q.y,7,p);canvas.drawText(String.valueOf(c.hour),(float)q.x+8,(float)q.y-8,t);}return out;}
 
-    /**
-     * Returns canonical inner/outer axis endpoints. For elongated 6/9 markers the image-derived
-     * PCA axis is used. Round plots use the radial line only as a structural placeholder so their
-     * rotation output is never shown as a body-rotation measurement.
-     */
-    private static double[] rectifiedAxis(PerspectiveMasterRenderer.Pose pose, Candidate c, double expectedRadius) {
-        if (c.axis != null) {
-            double[] a = PerspectiveRectifier.toDialRaw(pose, c.axis[0], c.axis[1]);
-            double[] b = PerspectiveRectifier.toDialRaw(pose, c.axis[2], c.axis[3]);
-            if (a != null && b != null) return new double[]{a[0], a[1], b[0], b[1]};
-        }
-        double r = Math.max(0.02, expectedRadius * 0.05);
-        double n = Math.hypot(c.dialX, c.dialY);
-        if (n <= 1e-9) return null;
-        double ux = c.dialX / n, uy = c.dialY / n;
-        return new double[]{c.dialX - ux * r, c.dialY - uy * r, c.dialX + ux * r, c.dialY + uy * r};
-    }
-
-    /** Weighted local PCA of bright marker material. Returns image-space line endpoints. */
-    private static double[] elongatedAxis(Mat bgr, double cx, double cy, double half) {
-        Mat gray = new Mat();
-        try {
-            Imgproc.cvtColor(bgr, gray, Imgproc.COLOR_BGR2GRAY);
-            int x0 = (int)Math.max(0, cx - half), x1 = (int)Math.min(gray.cols() - 1, cx + half);
-            int y0 = (int)Math.max(0, cy - half), y1 = (int)Math.min(gray.rows() - 1, cy + half);
-            double sw = 0, mx = 0, my = 0;
-            for (int y = y0; y <= y1; y += 2) for (int x = x0; x <= x1; x += 2) {
-                double[] g = gray.get(y, x); if (g == null) continue;
-                double v = g[0]; if (v < 150) continue;
-                double w = v - 140; sw += w; mx += w * x; my += w * y;
-            }
-            if (sw < 200) return null;
-            mx /= sw; my /= sw;
-            double cxx = 0, cyy = 0, cxy = 0;
-            for (int y = y0; y <= y1; y += 2) for (int x = x0; x <= x1; x += 2) {
-                double[] g = gray.get(y, x); if (g == null) continue;
-                double v = g[0]; if (v < 150) continue;
-                double w = v - 140, dx = x - mx, dy = y - my;
-                cxx += w * dx * dx; cyy += w * dy * dy; cxy += w * dx * dy;
-            }
-            double angle = 0.5 * Math.atan2(2.0 * cxy, cxx - cyy);
-            double ux = Math.cos(angle), uy = Math.sin(angle), len = Math.max(5.0, half * 0.65);
-            return new double[]{mx - ux * len, my - uy * len, mx + ux * len, my + uy * len};
-        } finally {
-            gray.release();
-        }
-    }
-
-    static String summarize(QcModuleResult result, int localizedCount) {
-        if (result == null || result.measurements().isEmpty()) return "INDEX GEOMETRY\nNo reliable per-index measurements.";
-        List<Ranked> tangential = new ArrayList<>();
-        List<Ranked> radial = new ArrayList<>();
-        for (int hour = 1; hour <= 12; hour++) {
-            if (hour == 3) continue;
-            RawMeasurement t = result.measurement(String.format(Locale.US, "index_%02d_tangential_offset_over_dial_radius", hour));
-            RawMeasurement r = result.measurement(String.format(Locale.US, "index_%02d_radial_offset_over_dial_radius", hour));
-            if (t != null) tangential.add(new Ranked(hour, t.value()));
-            if (r != null) radial.add(new Ranked(hour, r.value()));
-        }
-        Comparator<Ranked> byAbs = (a,b) -> Double.compare(Math.abs(b.value), Math.abs(a.value));
-        Collections.sort(tangential, byAbs); Collections.sort(radial, byAbs);
-        String worstT = tangential.isEmpty() ? "n/a" : String.format(Locale.US, "%d %+5.3f DR", tangential.get(0).hour, tangential.get(0).value);
-        String worstR = radial.isEmpty() ? "n/a" : String.format(Locale.US, "%d %+5.3f DR", radial.get(0).hour, radial.get(0).value);
-
-        List<String> usableBody = new ArrayList<>();
-        for (int hour : new int[]{6,9}) {
-            RawMeasurement rotation = result.measurement(String.format(Locale.US, "index_%02d_rotation_deg", hour));
-            if (rotation != null && GmtIndexPlausibility.bodyRotationUsable(hour, rotation.value(), result.confidence())) {
-                usableBody.add(String.format(Locale.US, "%d %+.2f°", hour, rotation.value()));
-            }
-        }
-        String body = usableBody.isEmpty() ? "\n6/9 body axis: withheld unless high-confidence component isolation is plausible"
-                : "\n6/9 body axis: " + String.join(" · ", usableBody) + " (diagnostic)";
-
-        return "INDEX GEOMETRY · " + localizedCount + " markers · " + result.confidence().name().toLowerCase(Locale.US) + " perspective"
-                + "\nLargest tangential: " + worstT + " · radial: " + worstR + body
-                + "\nPosition baseline = this watch's marker-ring median; impossible sector/ring localisations are rejected; not a Rolex tolerance.";
-    }
-
-    private static Bitmap annotate(Bitmap watch, List<Candidate> candidates) {
-        Bitmap out = watch.copy(Bitmap.Config.ARGB_8888, true);
-        Canvas canvas = new Canvas(out);
-        float u = Math.max(1f, Math.min(out.getWidth(), out.getHeight()) / 900f);
-        Paint ring = new Paint(Paint.ANTI_ALIAS_FLAG); ring.setStyle(Paint.Style.STROKE); ring.setStrokeWidth(2.4f * u); ring.setColor(Color.CYAN);
-        Paint text = new Paint(Paint.ANTI_ALIAS_FLAG); text.setStyle(Paint.Style.FILL); text.setTextSize(14f * u); text.setColor(Color.WHITE); text.setFakeBoldText(true);
-        for (Candidate c : candidates) {
-            canvas.drawCircle((float)c.imageX, (float)c.imageY, 6f * u, ring);
-            canvas.drawText(String.valueOf(c.hour), (float)c.imageX + 7f * u, (float)c.imageY - 7f * u, text);
-            if (c.axis != null) canvas.drawLine((float)c.axis[0], (float)c.axis[1], (float)c.axis[2], (float)c.axis[3], ring);
-        }
-        return out;
-    }
-
-    private static Result unavailable(Bitmap watch, String message) {
-        Bitmap out = watch == null ? null : watch.copy(Bitmap.Config.ARGB_8888, false);
-        return new Result(null, out, "INDEX GEOMETRY\n" + message, 0);
-    }
-
-    private static double median(List<Double> values) {
-        List<Double> copy = new ArrayList<>(values); Collections.sort(copy);
-        int n = copy.size(); return n % 2 == 1 ? copy.get(n/2) : (copy.get(n/2-1) + copy.get(n/2)) / 2.0;
-    }
-
-    private static final class Ranked {
-        final int hour; final double value;
-        Ranked(int hour, double value) { this.hour = hour; this.value = value; }
-    }
+    static String summarize(QcModuleResult result,int count){if(result==null||result.measurements().isEmpty())return "INDEX GEOMETRY\nNo reliable per-index measurements.";List<Ranked> tangential=new ArrayList<>(),radial=new ArrayList<>();for(int h:HOURS){RawMeasurement t=result.measurement(String.format(Locale.US,"index_%02d_tangential_offset_over_dial_radius",h)),r=result.measurement(String.format(Locale.US,"index_%02d_radial_offset_over_dial_radius",h));if(t!=null)tangential.add(new Ranked(h,t.value()));if(r!=null)radial.add(new Ranked(h,r.value()));}Comparator<Ranked> abs=(a,b)->Double.compare(Math.abs(b.value),Math.abs(a.value));Collections.sort(tangential,abs);Collections.sort(radial,abs);String wt=tangential.isEmpty()?"n/a":String.format(Locale.US,"%d %+.3f DR",tangential.get(0).hour,tangential.get(0).value),wr=radial.isEmpty()?"n/a":String.format(Locale.US,"%d %+.3f DR",radial.get(0).hour,radial.get(0).value);List<String> body=new ArrayList<>();for(int h:new int[]{6,9}){RawMeasurement x=result.measurement(String.format(Locale.US,"index_%02d_rotation_deg",h));if(x!=null&&GmtIndexPlausibility.bodyRotationUsable(h,x.value(),result.confidence()))body.add(String.format(Locale.US,"%d %+.2f°",h,x.value()));}return "INDEX GEOMETRY · "+count+" markers · "+result.confidence().name().toLowerCase(Locale.US)+" rectification\nLargest tangential: "+wt+" · radial: "+wr+"\n6/9 body axis: "+(body.isEmpty()?"withheld because an elongated contour was not isolated confidently":String.join(" · ",body))+"\n12 is owned by the dedicated triangle check; 3 is the date aperture. Position evidence is image-derived QC, not a Rolex tolerance.";}
+    private static Result unavailable(Bitmap w,String m){return new Result(null,w==null?null:w.copy(Bitmap.Config.ARGB_8888,false),"INDEX GEOMETRY\n"+m,0);}private static double medianRadius(List<Candidate> c){List<Double>x=new ArrayList<>();for(Candidate q:c)x.add(q.r);Collections.sort(x);return x.get(x.size()/2);}private static double madRadius(List<Candidate> c,double m){List<Double>x=new ArrayList<>();for(Candidate q:c)x.add(Math.abs(q.r-m));Collections.sort(x);return x.get(x.size()/2);}private static double wrap(double x){while(x>180)x-=360;while(x<=-180)x+=360;return x;}private static double clamp(double x){return Math.max(0,Math.min(1,x));}private static final class Ranked{final int hour;final double value;Ranked(int h,double v){hour=h;value=v;}}
 }

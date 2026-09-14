@@ -12,7 +12,7 @@ import java.util.Set;
  *
  * <p>The module is deliberately brand/model agnostic. A watch profile or calibration supplies the
  * expected marker-centre radius. This module only reports raw geometry and inherits confidence from
- * the common perspective-confidence service.</p>
+ * the shared rectification-confidence service.</p>
  */
 public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModule.Input> {
     public static final String ID = "generic.index_geometry";
@@ -108,14 +108,15 @@ public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModu
         final double dialCenterY;
         final double dialRadiusPx;
         final List<MarkerObservation> markers;
-        final PerspectiveConfidenceService.Assessment perspective;
+        final QcModuleResult.Confidence rectificationConfidence;
+        final List<String> rectificationEvidence;
 
         private Input(
                 double dialCenterX,
                 double dialCenterY,
                 double dialRadiusPx,
                 List<MarkerObservation> markers,
-                PerspectiveConfidenceService.Assessment perspective) {
+                QcModuleResult.Confidence rectificationConfidence,List<String> rectificationEvidence) {
             requireFinite(dialCenterX, "dialCenterX");
             requireFinite(dialCenterY, "dialCenterY");
             requireFinite(dialRadiusPx, "dialRadiusPx");
@@ -123,8 +124,8 @@ public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModu
             if (markers == null || markers.isEmpty()) {
                 throw new IllegalArgumentException("at least one marker observation is required");
             }
-            if (perspective == null) {
-                throw new IllegalArgumentException("perspective assessment must not be null");
+            if (rectificationConfidence == null) {
+                throw new IllegalArgumentException("rectification assessment must not be null");
             }
             Set<Integer> hours = new HashSet<>();
             for (MarkerObservation marker : markers) {
@@ -137,16 +138,15 @@ public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModu
             this.dialCenterY = dialCenterY;
             this.dialRadiusPx = dialRadiusPx;
             this.markers = Collections.unmodifiableList(new ArrayList<>(markers));
-            this.perspective = perspective;
+            this.rectificationConfidence=rectificationConfidence;
+            this.rectificationEvidence=Collections.unmodifiableList(new ArrayList<>(rectificationEvidence));
         }
 
         public static Input rectified(
-                double dialCenterX,
-                double dialCenterY,
-                double dialRadiusPx,
-                List<MarkerObservation> markers,
-                PerspectiveConfidenceService.Assessment perspective) {
-            return new Input(dialCenterX, dialCenterY, dialRadiusPx, markers, perspective);
+                double dialCenterX,double dialCenterY,double dialRadiusPx,List<MarkerObservation> markers,
+                RectificationConfidenceService.Assessment rectification) {
+            if(rectification==null)throw new IllegalArgumentException("rectification assessment must not be null");
+            return new Input(dialCenterX,dialCenterY,dialRadiusPx,markers,rectification.confidence(),rectification.evidence());
         }
     }
 
@@ -164,7 +164,7 @@ public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModu
             addMarkerMeasurements(measurements, input, marker);
         }
 
-        List<String> evidence = new ArrayList<>(input.perspective.evidence());
+        List<String> evidence = new ArrayList<>(input.rectificationEvidence);
         evidence.add(String.format(Locale.US,
                 "%d applied hour marker%s measured in rectified dial coordinates",
                 input.markers.size(), input.markers.size() == 1 ? "" : "s"));
@@ -173,7 +173,7 @@ public final class IndexGeometryQcModule implements QcModule<IndexGeometryQcModu
         return new QcModuleResult(
                 ID,
                 measurements,
-                input.perspective.confidence(),
+                input.rectificationConfidence,
                 evidence);
     }
 

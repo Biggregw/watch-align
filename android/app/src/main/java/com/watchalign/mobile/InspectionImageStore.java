@@ -16,12 +16,13 @@ final class InspectionImageStore {
     static Triangle12RelationalMetric.Result triangleMetric;
     static Bitmap capturedBitmap;
     static String historyRecordId;
+    static GmtQcPipeline.Result gmtQc;
 
     static void setCaptured(Bitmap bitmap){capturedBitmap=bitmap;}
     static Bitmap takeCaptured(){Bitmap b=capturedBitmap;capturedBitmap=null;return b;}
 
     static void set(Bitmap b, String t){
-        bitmap=b;baseBitmap=null;title=t;modelRef=null;overlayMode=false;alignedPose=null;alignedModelRef=null;trianglePoints=null;triangleMetric=null;
+        bitmap=b;baseBitmap=null;title=t;modelRef=null;overlayMode=false;alignedPose=null;alignedModelRef=null;trianglePoints=null;triangleMetric=null;gmtQc=null;
     }
 
     static void setOverlay(Bitmap base, Bitmap overlay, String t){
@@ -30,11 +31,11 @@ final class InspectionImageStore {
 
     static void setOverlay(Bitmap base, Bitmap overlay, String t,PerspectiveMasterRenderer.Pose pose,String model){
         baseBitmap=base;bitmap=overlay;title=t;modelRef=null;overlayMode=base!=null&&overlay!=null;
-        alignedPose=pose==null?null:pose.copy();alignedModelRef=model;trianglePoints=null;triangleMetric=null;
+        alignedPose=pose==null?null:pose.copy();alignedModelRef=model;trianglePoints=null;triangleMetric=null;gmtQc=null;
     }
 
     static void setManual(Bitmap base,String model,String t){
-        baseBitmap=base;bitmap=base;title=t;modelRef=model;overlayMode=false;alignedPose=null;alignedModelRef=null;trianglePoints=null;triangleMetric=null;
+        baseBitmap=base;bitmap=base;title=t;modelRef=model;overlayMode=false;alignedPose=null;alignedModelRef=null;trianglePoints=null;triangleMetric=null;gmtQc=null;
         historyRecordId=null;
     }
 
@@ -42,6 +43,6 @@ final class InspectionImageStore {
         if(points==null){trianglePoints=null;}else{trianglePoints=new PointF[points.length];for(int i=0;i<points.length;i++)trianglePoints[i]=points[i]==null?null:new PointF(points[i].x,points[i].y);}triangleMetric=metric;
     }
 
-    static void clear(){bitmap=null;baseBitmap=null;title=null;modelRef=null;overlayMode=false;alignedPose=null;alignedModelRef=null;trianglePoints=null;triangleMetric=null;}
+    static void clear(){bitmap=null;baseBitmap=null;title=null;modelRef=null;overlayMode=false;alignedPose=null;alignedModelRef=null;trianglePoints=null;triangleMetric=null;gmtQc=null;}
     private InspectionImageStore(){}
 }
