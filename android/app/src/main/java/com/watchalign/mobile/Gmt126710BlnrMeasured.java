@@ -5,11 +5,12 @@ package com.watchalign.mobile;
  *
  * Marker centres and the round/triangle traces come from the first-party 2026 catalogue calibration.
  * The original automatic trace under-captured the long 6/9 applied-baton edges, so the baton body is
- * represented by the separately validated visual-master dimensions. This is image-derived QC
- * reference geometry, not Rolex factory CAD or a manufacturing tolerance.
+ * represented by the separately validated visual-master dimensions. The date aperture dimensions are
+ * an image-derived 126710 reference: its tangential midpoint is constrained exactly to the 3 o'clock /
+ * 15-minute axis, while its radial centre and size remain reference-calibrated rather than factory CAD.
  */
 final class Gmt126710BlnrMeasured {
-    static final String ID="126710BLNR-reference-geometry-v2";
+    static final String ID="126710BLNR-reference-geometry-v3";
     static final double DIAL_EDGE_R=1.0;
     static final double MARKER_CENTER_R=0.7904886;
     static final double BATON_CENTER_R=0.7977680;
@@ -31,5 +32,19 @@ final class Gmt126710BlnrMeasured {
     };
 
     static final float[][] TRI_OUTER={{-0.086726f,0.098697f},{0.085841f,0.098697f},{0.000885f,-0.197395f}};
+
+    // 3 o'clock date aperture. Before perspective projection the aperture is horizontal and its
+    // HEIGHT is exactly centred on the 15-minute radial axis: tangential midpoint = 0 by construction.
+    // Radial location and body dimensions are image-calibrated 126710 reference values.
+    static final double DATE_CENTER_R=0.690;
+    static final float DATE_TANGENTIAL_HALF=0.081f;
+    static final float DATE_RADIAL_HALF=0.123f;
+    static final float[][] DATE_APERTURE_OUTER={
+            {-DATE_TANGENTIAL_HALF,-DATE_RADIAL_HALF},
+            { DATE_TANGENTIAL_HALF,-DATE_RADIAL_HALF},
+            { DATE_TANGENTIAL_HALF, DATE_RADIAL_HALF},
+            {-DATE_TANGENTIAL_HALF, DATE_RADIAL_HALF}
+    };
+
     private Gmt126710BlnrMeasured(){}
 }
