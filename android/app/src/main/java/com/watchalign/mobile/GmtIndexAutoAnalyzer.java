@@ -14,7 +14,7 @@ final class GmtIndexAutoAnalyzer {
 
     static Result analyse(Bitmap watch,PerspectiveMasterRenderer.Pose pose){
         try(CanonicalGmtDial dial=CanonicalGmtDial.create(watch,pose)){
-            if(dial==null)return unavailable(watch,"Index analysis unavailable: corrected 12/3/6/9 anchors could not create a canonical dial.");
+            if(dial==null)return unavailable(watch,"Index analysis unavailable: corrected 12/3/6/9 anchors could not create a canonical dial ("+CanonicalGmtDial.lastFailureReason()+").");
             return analyse(watch,dial);
         }catch(Throwable t){return unavailable(watch,"Index analysis unavailable: "+t.getClass().getSimpleName()+".");}
     }
