@@ -45,16 +45,22 @@ jobs:
           grep -q 'CORE_VERSION' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q 'versionName' app/build.gradle
       - name: Run Android unit tests
-        run: gradle :app:test --stacktrace
+        run: gradle :app:testDebugUnitTest --stacktrace
       - name: Print test result XML
         if: always()
         run: |
-          for f in app/build/test-results/testDebugUnitTest/*.xml; do
-            echo "=========================================="
-            echo "FILE: $f"
-            echo "=========================================="
-            cat "$f"
-          done
+          shopt -s nullglob
+          files=(app/build/test-results/testDebugUnitTest/*.xml)
+          if [ ${#files[@]} -gt 0 ]; then
+            for f in "${files[@]}"; do
+              echo "=========================================="
+              echo "FILE: $f"
+              echo "=========================================="
+              cat "$f"
+            done
+          else
+            echo "No test result XML files found."
+          fi
       - name: Upload unit test reports
         if: always()
         uses: actions/upload-artifact@v4
