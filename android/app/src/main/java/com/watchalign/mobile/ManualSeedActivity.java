@@ -257,10 +257,16 @@ public class ManualSeedActivity extends Activity {
                     tappedImagePoints.add(new PointF(imgX, imgY));
                     updateStepUi();
                     invalidate();
+                    performClick();
                 }
                 return true;
             }
             return super.onTouchEvent(event);
+        }
+
+        @Override public boolean performClick() {
+            super.performClick();
+            return true;
         }
     }
 }
