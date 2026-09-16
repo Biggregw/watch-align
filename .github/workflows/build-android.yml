@@ -47,11 +47,8 @@ jobs:
       - name: Run Android unit tests
         run: |
           gradle :app:testDebugUnitTest --info || {
-            echo "========== TEST RESULTS =========="
-            for f in app/build/test-results/testDebugUnitTest/*.xml; do
-              echo "=== $f ==="
-              cat "$f"
-            done
+            echo "========== TEST FAILURE REPORTS =========="
+            find . -name "TEST-*.xml" -exec echo "=== {} ===" \; -exec cat {} \;
             exit 1
           }
       - name: Upload unit test reports
