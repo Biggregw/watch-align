@@ -37,9 +37,9 @@ public final class WatchAlignCoreV13 {
         String report;
         if(canonicalGmt){
             report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nVISUAL INSPECTION MODE\n"
-                    +"Alpha28 keeps the projected model master as the primary QC surface. The 126710BLNR master now uses bright red outer marker outlines, thinner strokes, a longer inward 12 triangle, larger applied-marker body dimensions and no uncalibrated date target.\n"
+                    +"Projected model master provides the primary QC surface. Open Native template in Fullscreen Inspector to use opacity & micro-nudge fine tuning.\n"
                     +perspectiveReport
-                    +"\nAutomated GL/RL scoring and ranked marker findings remain hidden. Diagnostics is retained only as a development view.\n";
+                    +ext.report;
         }else{
             String baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;
             String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)+ext.report+baselineReport+"\nInterpretation: non-GMT models continue to use the existing reference-distribution diagnostics.";
