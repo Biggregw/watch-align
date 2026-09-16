@@ -286,13 +286,7 @@ public final class WatchAlignCoreV7 {
                 double wt=Math.max(1.0,(gv[0]-145.0)/18.0); sw+=wt;sd+=d*wt;sr+=r*wt;count++;
             }
             if(sw>10&&count>=4) {
-                double avgRadius = sr/sw;
-                if (hour == 12) {
-                    // Shape-aware compensation for 12 o'clock triangle marker:
-                    // Compensate for centroid vs apex offset relative to minute track.
-                    avgRadius += c.r * 0.018;
-                }
-                raw.add(new RawMarker(hour, sd/sw, avgRadius, count));
+                raw.add(new RawMarker(hour, sd/sw, sr/sw, count));
             }
         }
         gray.release();
