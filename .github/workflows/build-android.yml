@@ -46,6 +46,15 @@ jobs:
           grep -q 'versionName' app/build.gradle
       - name: Run Android unit tests
         run: gradle :app:test --stacktrace
+      - name: Print test result XML
+        if: always()
+        run: |
+          for f in app/build/test-results/testDebugUnitTest/*.xml; do
+            echo "=========================================="
+            echo "FILE: $f"
+            echo "=========================================="
+            cat "$f"
+          done
       - name: Upload unit test reports
         if: always()
         uses: actions/upload-artifact@v4
