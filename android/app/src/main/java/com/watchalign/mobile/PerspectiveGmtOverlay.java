@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Alpha28 visual QC overlay. Photo analysis establishes pose only. The fixed 126710BLNR
+ * Visual QC overlay. Photo analysis establishes pose only. The fixed 126710BLNR
  * master supplies all marker geometry. QC markers never move or resize the master.
  */
 final class PerspectiveGmtOverlay {
@@ -57,9 +57,34 @@ final class PerspectiveGmtOverlay {
             Imgproc.cvtColor(src,gray,Imgproc.COLOR_RGBA2GRAY);
             Imgproc.GaussianBlur(gray,blur,new Size(5,5),1.2);
             Imgproc.Canny(blur,edges,55,145);
-            DialSeed seed = manualSeed != null ? manualSeed : seed(src);
+
+            DialSeed detectedSeed=seed(src);
+            DialSeed seed=manualSeed!=null?manualSeed:detectedSeed;
             if(seed==null||!(seed.r>40))return null;
-            RotatedRect ellipse = manualSeed != null ? new RotatedRect(new Point(seed.x, seed.y), new Size(seed.r*2.0, seed.r*2.0), seed.rollDeg) : findDialEllipse(edges,seed);
+
+            RotatedRect detectedEllipse=detectedSeed==null?null:findDialEllipse(edges,detectedSeed);
+            RotatedRect ellipse;
+            String seedSource;
+            boolean perspectiveFallback=false;
+
+            if(manualSeed!=null){
+                if(detectedEllipse!=null){
+                    double measured=rayEllipseRadius(detectedEllipse,Math.toRadians(manualSeed.rollDeg-90.0));
+                    double scale=(measured>1.0&&Double.isFinite(measured))?manualSeed.r/measured:1.0;
+                    ellipse=new RotatedRect(
+                            new Point(manualSeed.x,manualSeed.y),
+                            new Size(detectedEllipse.size.width*scale,detectedEllipse.size.height*scale),
+                            detectedEllipse.angle);
+                    seedSource="2-point dial-edge seed with fitted perspective ellipse";
+                }else{
+                    ellipse=new RotatedRect(new Point(seed.x,seed.y),new Size(seed.r*2.0,seed.r*2.0),0.0);
+                    seedSource="2-point dial-edge seed with circular fallback";
+                    perspectiveFallback=true;
+                }
+            }else{
+                ellipse=detectedEllipse;
+                seedSource="fitted dial ellipse plus detected dial orientation";
+            }
             if(ellipse==null)return null;
 
             double major=Math.max(ellipse.size.width,ellipse.size.height);
@@ -74,18 +99,18 @@ final class PerspectiveGmtOverlay {
             double reproj=reprojectionError(H,card);
             double centerErr=Math.hypot(ellipse.center.x-seed.x,ellipse.center.y-seed.y)/Math.max(1.0,seed.r);
             double confidence=confidence(seed.quality,reproj,centerErr,axisRatio);
+            if(perspectiveFallback)confidence*=0.65;
 
-            Bitmap overlay=renderNative(input,H,modelRef,confidence,overlayColor);
+            Bitmap overlay=renderNative(input,H,modelRef,overlayColor);
             Bitmap rectified=rectify(src,H,input);
             String master=Gmt126710BlnrMaster.supports(modelRef)?Gmt126710BlnrMaster.ID:"canonical GMT fallback";
-            String seedSource = manualSeed != null ? "user-assisted 3-point seed" : "fitted dial ellipse plus dial orientation";
             String report=String.format(Locale.US,
                     "\n\nVISUAL QC MASTER\n"+
-                    "Pose source: %s. Applied markers are inspection targets only and never fit the overlay.\n"+
-                    "Inspection geometry: %s. Outer applied-marker bodies use target overlay color; inner lume references are thin white.\n"+
-                    "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+4.2f°.\n"+
+                    "Pose source: %s. Assisted points use the dial edge, not hour markers, so marker QC is not fitted away.\n"+
+                    "Inspection geometry: %s. Red outlines are the fixed master; white outlines are lume references.\n"+
+                    "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+.2f°.\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. Pose residual: %.2f px. Confidence: %.0f%%.\n"+
-                    "Use Native Template with opacity/blink in the full-screen inspector. No GL/RL score is generated.\n",
+                    "Use Native Template with opacity/blink and fine nudge. Automated QC checks remain available separately.\n",
                     seedSource,master,major,minor,tiltDeg,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0);
             H.release();
             return new Result(overlay,rectified,report,confidence);
@@ -105,7 +130,7 @@ final class PerspectiveGmtOverlay {
                 markers.setAccessible(true);
                 Object set=markers.invoke(null,bgr,d);
                 double r=num(set,"globalRotation");
-                if(Double.isFinite(r) && Math.abs(r) <= 15.0) roll=r;
+                if(Double.isFinite(r)&&Math.abs(r)<=15.0)roll=r;
             }catch(Throwable ignored){}
             return new DialSeed(num(d,"x"),num(d,"y"),num(d,"r"),num(d,"quality"),roll);
         }finally{bgr.release();}
@@ -163,6 +188,11 @@ final class PerspectiveGmtOverlay {
         return new Point(e.center.x+s*dx,e.center.y+s*dy);
     }
 
+    private static double rayEllipseRadius(RotatedRect e,double imageAngle){
+        Point p=rayEllipseIntersection(e,imageAngle);
+        return Math.hypot(p.x-e.center.x,p.y-e.center.y);
+    }
+
     private static double reprojectionError(Mat H,Point[] expected){
         Point[] canonical={new Point(0,-1),new Point(1,0),new Point(0,1),new Point(-1,0)};
         double sum=0;for(int i=0;i<4;i++){Point p=project(H,canonical[i].x,canonical[i].y);sum+=Math.hypot(p.x-expected[i].x,p.y-expected[i].y);}return sum/4.0;
@@ -176,8 +206,9 @@ final class PerspectiveGmtOverlay {
         return Math.max(0,Math.min(1,0.35*a+0.20*b+0.30*c+0.15*d));
     }
 
-    private static Bitmap renderNative(Bitmap source,Mat H,String modelRef,double confidence,int overlayColor){
-        Bitmap out=source.copy(Bitmap.Config.ARGB_8888,true);Canvas c=new Canvas(out);
+    /** Returns only the transparent master graphics. The watch image is composited by the caller. */
+    private static Bitmap renderNative(Bitmap source,Mat H,String modelRef,int overlayColor){
+        Bitmap out=Bitmap.createBitmap(source.getWidth(),source.getHeight(),Bitmap.Config.ARGB_8888);Canvas c=new Canvas(out);
         float scale=Math.max(1f,Math.min(out.getWidth(),out.getHeight())/900f);
         Paint outer=paint(overlayColor,1.25f*scale,245);
         Paint inner=paint(Color.WHITE,0.8f*scale,150);
@@ -199,7 +230,6 @@ final class PerspectiveGmtOverlay {
             }
             drawMasterTriangle(c,H,outer,false);
             drawMasterTriangle(c,H,inner,true);
-            // Date aperture intentionally omitted in alpha28 until it is separately calibrated.
         }else{
             drawProjectedCircle(c,H,1.00,outer);
         }
