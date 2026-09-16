@@ -20,10 +20,12 @@ Reference comparison uses deterministic geometry-first registration. The app ref
 
 The Android project lives alongside the Windows application so the two implementations can continue converging toward a shared cross-platform core. Android remains an alpha and is not presented as proof of authenticity.
 
-Build locally with Gradle 8.10.x and Android SDK 35:
+Open this android/ directory in Android Studio. Use Gradle JDK 17, the committed Gradle 8.14.5 wrapper, and Android SDK Platform 35. OpenCV uses the official org.opencv:opencv:4.9.0 Android AAR from Maven Central.
 
-    gradle :app:testDebugUnitTest
-    gradle :app:assembleDebug
+Build from this directory in Windows PowerShell:
+
+    .\gradlew.bat :app:testDebugUnitTest --stacktrace
+    .\gradlew.bat :app:assembleDebug --stacktrace
 
 APK output:
 

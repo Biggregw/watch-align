@@ -59,6 +59,7 @@ captures/
 *.p12
 
 # Temporary build and cache files
+.artifacts/
 .cache/
 *.tmp
 *.temp

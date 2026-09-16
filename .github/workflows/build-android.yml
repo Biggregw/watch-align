@@ -33,8 +33,6 @@ jobs:
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.10.2'
       - name: Static safety checks
         run: |
           grep -q 'FullscreenInspectActivity' app/src/main/AndroidManifest.xml
@@ -46,7 +44,7 @@ jobs:
           grep -q 'versionName' app/build.gradle
       - name: Run Android unit tests
         run: |
-          gradle :app:testDebugUnitTest --stacktrace > gradle_error.log 2>&1 || {
+          bash ./gradlew :app:testDebugUnitTest --stacktrace > gradle_error.log 2>&1 || {
             echo "========== GRADLE BUILD LOG =========="
             cat gradle_error.log
             exit 1
@@ -72,8 +70,8 @@ jobs:
         with:
           name: unit-test-reports
           path: |
-            app/build/reports/tests/
-            app/build/test-results/
+            android/app/build/reports/tests/
+            android/app/build/test-results/
           if-no-files-found: warn
       - name: Fetch exact-model official genuine fixtures
         run: python3 fetch_genuine_fixtures.py
@@ -85,7 +83,7 @@ jobs:
           grep -q 'rolex' app/src/androidTest/assets/genuine/124060/sources.tsv
           echo 'Official genuine fixtures prepared.'
       - name: Build standalone APK
-        run: gradle :app:assembleDebug --stacktrace
+        run: bash ./gradlew :app:assembleDebug --stacktrace
       - name: Read app version
         id: version
         shell: bash
@@ -113,8 +111,8 @@ jobs:
           name: "Watch Align Android v${{ steps.version.outputs.version }}"
           body: "Official standalone build for Watch Align Android v${{ steps.version.outputs.version }}."
           files: |
-            WatchAlign-Android-${{ steps.version.outputs.version }}.apk
-            SHA256SUMS-Android.txt
+            android/WatchAlign-Android-${{ steps.version.outputs.version }}.apk
+            android/SHA256SUMS-Android.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -135,8 +133,6 @@ jobs:
           java-version: '17'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.10.2'
       - name: Fetch exact-model official genuine fixtures
         run: python3 fetch_genuine_fixtures.py
       - name: Validate genuine fixtures
@@ -157,7 +153,7 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: cd android && gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.GenuineOfficialImageValidationTest --stacktrace
+          script: cd android && bash ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.GenuineOfficialImageValidationTest --stacktrace
       - name: Upload instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v4

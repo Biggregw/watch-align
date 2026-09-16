@@ -18,7 +18,7 @@ From the repository root:
 
 ```bash
 cd android
-gradle :app:assembleDebug
+./gradlew :app:assembleDebug
 ```
 
 The GitHub Actions workflow `.github/workflows/build-android.yml` builds the standalone APK.
