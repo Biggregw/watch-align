@@ -17,6 +17,9 @@ final class ZoomableImageView extends ImageView {
     private final ScaleGestureDetector scaleDetector;
     private final GestureDetector gestureDetector;
     private float userScale = 1f;
+    private boolean gestureLocked = false;
+
+    public void setGestureLocked(boolean locked) { this.gestureLocked = locked; }
 
     ZoomableImageView(Context context) { this(context, null); }
     ZoomableImageView(Context context, AttributeSet attrs) {
@@ -59,6 +62,7 @@ final class ZoomableImageView extends ImageView {
     }
     private void setParentIntercept(boolean allowParent){ViewParent p=getParent();if(p!=null)p.requestDisallowInterceptTouchEvent(!allowParent);}
     @Override public boolean onTouchEvent(MotionEvent event){
+        if(gestureLocked) return true;
         try{if(event.getPointerCount()>=2||userScale>1.01f)setParentIntercept(false);scaleDetector.onTouchEvent(event);gestureDetector.onTouchEvent(event);int a=event.getActionMasked();if(a==MotionEvent.ACTION_UP||a==MotionEvent.ACTION_CANCEL){clampToBounds();setImageMatrix(matrix);setParentIntercept(userScale<=1.01f);performClick();}return true;}
         catch(RuntimeException ex){fitToView();return true;}
     }

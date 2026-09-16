@@ -135,7 +135,32 @@ public class MainActivity extends Activity {
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
     }
 
-    private Bitmap readBitmap(Uri uri)throws Exception{try(InputStream in=getContentResolver().openInputStream(uri)){Bitmap b=BitmapFactory.decodeStream(in);if(b==null)throw new IllegalArgumentException("Not a readable image");int max=Math.max(b.getWidth(),b.getHeight());if(max<=1600)return b.copy(Bitmap.Config.ARGB_8888,false);float s=1600f/max;return Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true).copy(Bitmap.Config.ARGB_8888,false);}}
+    private Bitmap readBitmap(Uri uri)throws Exception{
+        BitmapFactory.Options opts=new BitmapFactory.Options();
+        opts.inJustDecodeBounds=true;
+        try(InputStream in=getContentResolver().openInputStream(uri)){
+            BitmapFactory.decodeStream(in,null,opts);
+        }
+        if(opts.outWidth<=0||opts.outHeight<=0)throw new IllegalArgumentException("Not a readable image");
+        int maxDim=Math.max(opts.outWidth,opts.outHeight);
+        int sampleSize=1;
+        while(maxDim/(sampleSize*2)>=1600){
+            sampleSize*=2;
+        }
+        opts.inJustDecodeBounds=false;
+        opts.inSampleSize=sampleSize;
+        opts.inPreferredConfig=Bitmap.Config.ARGB_8888;
+
+        Bitmap b;
+        try(InputStream in=getContentResolver().openInputStream(uri)){
+            b=BitmapFactory.decodeStream(in,null,opts);
+        }
+        if(b==null)throw new IllegalArgumentException("Not a readable image");
+        int currentMax=Math.max(b.getWidth(),b.getHeight());
+        if(currentMax<=1600)return b.copy(Bitmap.Config.ARGB_8888,false);
+        float scale=1600f/currentMax;
+        return Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*scale),Math.round(b.getHeight()*scale),true).copy(Bitmap.Config.ARGB_8888,false);
+    }
 
     private void analyse(){
         if(watchBitmap==null){status.setText("Choose your watch photo first.");return;}ModelCatalog.Profile profile=ModelCatalog.at(model.getSelectedItemPosition());resultText.setText("");setResultButtons(false);Bitmap watch=watchBitmap;List<Bitmap>refs=new ArrayList<>(referenceBitmaps);
