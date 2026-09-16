@@ -98,8 +98,8 @@ jobs:
           name: "Watch Align Android v${{ steps.version.outputs.version }}"
           body: "Official standalone build for Watch Align Android v${{ steps.version.outputs.version }}."
           files: |
-            android/WatchAlign-Android-${{ steps.version.outputs.version }}.apk
-            android/SHA256SUMS-Android.txt
+            WatchAlign-Android-${{ steps.version.outputs.version }}.apk
+            SHA256SUMS-Android.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
