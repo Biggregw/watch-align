@@ -2,10 +2,6 @@ package com.watchalign.mobile;
 
 import android.graphics.Bitmap;
 
-import org.opencv.android.Utils;
-import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -166,25 +162,33 @@ final class CanonicalGmtGeometryAnalyzer {
 
     private static Measure measure(Bitmap bitmap){
         if(bitmap==null)return null;
-        Mat src=new Mat();
-        try{
-            Utils.bitmapToMat(bitmap,src); Imgproc.cvtColor(src,src,Imgproc.COLOR_RGBA2BGR);
-            Method detect=method("detectDial",Mat.class); Object dial=detect.invoke(null,src); if(dial==null)return null;
-            double q=num(dial,"quality"),dr=num(dial,"r"); if(!(dr>0))return null;
-            Method markersM=method("measureMarkerSet",Mat.class,dial.getClass()); Object set=markersM.invoke(null,src,dial);
-            Method perspectiveM=method("perspectiveEquivalent",Mat.class,dial.getClass()); double p=((Number)perspectiveM.invoke(null,src,dial)).doubleValue();
-            @SuppressWarnings("unchecked") List<Object> markers=(List<Object>)field(set,"markers");
-            if(markers==null||markers.size()<7)return null;
-            Measure m=new Measure(q,p);
-            for(Object x:markers){
-                int h=(int)Math.round(num(x,"hour")); if(h<1||h>12)continue;
-                double radius=num(x,"radius");
-                m.present[h]=true;
-                m.angularResidualDeg[h]=num(x,"angular");
-                m.radialPctDial[h]=100.0*radius/dr;
-            }
-            return m;
-        }catch(Throwable ignored){return null;}finally{try{src.release();}catch(Throwable ignored){}}
+        try{ return ImageMeasurer.measureImage(bitmap); }
+        catch(Throwable ignored){ return null; }
+    }
+
+    private static final class ImageMeasurer {
+        static Measure measureImage(Bitmap bitmap) {
+            org.opencv.core.Mat src=new org.opencv.core.Mat();
+            try{
+                org.opencv.android.Utils.bitmapToMat(bitmap,src);
+                org.opencv.imgproc.Imgproc.cvtColor(src,src,org.opencv.imgproc.Imgproc.COLOR_RGBA2BGR);
+                Method detect=method("detectDial",org.opencv.core.Mat.class); Object dial=detect.invoke(null,src); if(dial==null)return null;
+                double q=num(dial,"quality"),dr=num(dial,"r"); if(!(dr>0))return null;
+                Method markersM=method("measureMarkerSet",org.opencv.core.Mat.class,dial.getClass()); Object set=markersM.invoke(null,src,dial);
+                Method perspectiveM=method("perspectiveEquivalent",org.opencv.core.Mat.class,dial.getClass()); double p=((Number)perspectiveM.invoke(null,src,dial)).doubleValue();
+                @SuppressWarnings("unchecked") List<Object> markers=(List<Object>)field(set,"markers");
+                if(markers==null||markers.size()<7)return null;
+                Measure m=new Measure(q,p);
+                for(Object x:markers){
+                    int h=(int)Math.round(num(x,"hour")); if(h<1||h>12)continue;
+                    double radius=num(x,"radius");
+                    m.present[h]=true;
+                    m.angularResidualDeg[h]=num(x,"angular");
+                    m.radialPctDial[h]=100.0*radius/dr;
+                }
+                return m;
+            }catch(Throwable ignored){return null;}finally{try{src.release();}catch(Throwable ignored){}}
+        }
     }
 
     private static Method method(String name,Class<?>...types)throws Exception{Method m=WatchAlignCoreV7.class.getDeclaredMethod(name,types);m.setAccessible(true);return m;}
