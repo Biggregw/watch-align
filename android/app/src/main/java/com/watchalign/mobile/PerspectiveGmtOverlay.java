@@ -81,11 +81,19 @@ final class PerspectiveGmtOverlay {
                     seedSource="2-point dial-edge seed with circular fallback";
                     perspectiveFallback=true;
                 }
-            }else{
+            }else if(detectedEllipse!=null){
                 ellipse=detectedEllipse;
                 seedSource="fitted dial ellipse plus detected dial orientation";
+            }else{
+                // A clean frontal watch can still fail contour ellipse selection because hands,
+                // cyclops glare and bezel edges fragment the dial boundary. Do not throw away
+                // an otherwise valid dial seed. Use its centre/radius/roll as a conservative
+                // circular pose and mark the result as lower confidence so the user can refine
+                // it with Precision Align if necessary.
+                ellipse=new RotatedRect(new Point(seed.x,seed.y),new Size(seed.r*2.0,seed.r*2.0),0.0);
+                seedSource="detected dial seed with circular fallback";
+                perspectiveFallback=true;
             }
-            if(ellipse==null)return null;
 
             double major=Math.max(ellipse.size.width,ellipse.size.height);
             double minor=Math.min(ellipse.size.width,ellipse.size.height);
