@@ -165,6 +165,7 @@ final class CanonicalGmtGeometryAnalyzer {
     }
 
     private static Measure measure(Bitmap bitmap){
+        if(bitmap==null)return null;
         Mat src=new Mat();
         try{
             Utils.bitmapToMat(bitmap,src); Imgproc.cvtColor(src,src,Imgproc.COLOR_RGBA2BGR);
@@ -183,7 +184,7 @@ final class CanonicalGmtGeometryAnalyzer {
                 m.radialPctDial[h]=100.0*radius/dr;
             }
             return m;
-        }catch(Throwable ignored){return null;}finally{src.release();}
+        }catch(Throwable ignored){return null;}finally{try{src.release();}catch(Throwable ignored){}}
     }
 
     private static Method method(String name,Class<?>...types)throws Exception{Method m=WatchAlignCoreV7.class.getDeclaredMethod(name,types);m.setAccessible(true);return m;}
