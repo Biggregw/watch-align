@@ -78,8 +78,8 @@ final class QcExtendedMath {
 
     static int localTrackSeverity(double deg) {
         double a = Math.abs(deg);
-        if (a > 1.2) return 2;
-        if (a > 0.6) return 1;
+        if (a > 1.5) return 2;
+        if (a > 0.7) return 1;
         return 0;
     }
 
@@ -90,8 +90,8 @@ final class QcExtendedMath {
      */
     static int dateAxisSeverity(double deg) {
         double a = Math.abs(deg);
-        if (a > 6.5) return 2;
-        if (a > 3.5) return 1;
+        if (a > 7.5) return 2;
+        if (a > 4.5) return 1;
         return 0;
     }
 
