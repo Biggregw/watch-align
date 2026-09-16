@@ -45,20 +45,15 @@ jobs:
           grep -q 'CORE_VERSION' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q 'versionName' app/build.gradle
       - name: Run Android unit tests
-        run: |
-          gradle :app:testDebugUnitTest --info || {
-            echo "========== PRINTING TEST FAILURE XML FILES =========="
-            find app/build/test-results/testDebugUnitTest -name "*.xml" -exec echo "FILE: {}" \; -exec cat {} \;
-            exit 1
-          }
+        run: gradle :app:test --stacktrace
       - name: Upload unit test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-reports
           path: |
-            app/build/reports/tests/testDebugUnitTest/
-            app/build/test-results/testDebugUnitTest/
+            android/app/build/reports/tests/
+            android/app/build/test-results/
           if-no-files-found: warn
       - name: Fetch exact-model official genuine fixtures
         run: python3 fetch_genuine_fixtures.py
