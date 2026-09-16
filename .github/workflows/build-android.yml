@@ -45,7 +45,15 @@ jobs:
           grep -q 'CORE_VERSION' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q 'versionName' app/build.gradle
       - name: Run Android unit tests
-        run: gradle :app:testDebugUnitTest --info
+        run: |
+          gradle :app:testDebugUnitTest --info || {
+            echo "========== TEST RESULTS =========="
+            for f in app/build/test-results/testDebugUnitTest/*.xml; do
+              echo "=== $f ==="
+              cat "$f"
+            done
+            exit 1
+          }
       - name: Upload unit test reports
         if: always()
         uses: actions/upload-artifact@v4
