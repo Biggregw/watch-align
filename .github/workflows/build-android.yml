@@ -45,7 +45,12 @@ jobs:
           grep -q 'CORE_VERSION' app/src/main/java/com/watchalign/mobile/WatchAlignCoreV13.java
           grep -q 'versionName' app/build.gradle
       - name: Run Android unit tests
-        run: gradle :app:testDebugUnitTest --stacktrace
+        run: |
+          gradle :app:testDebugUnitTest --stacktrace > gradle_error.log 2>&1 || {
+            echo "========== GRADLE BUILD LOG =========="
+            cat gradle_error.log
+            exit 1
+          }
       - name: Print test result XML
         if: always()
         run: |
