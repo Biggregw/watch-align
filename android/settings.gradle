@@ -1,4 +1,4 @@
-pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal(); maven { url 'https://raw.githubusercontent.com/quickbirdstudios/OpenCV-Android/master' }; maven { url 'https://jitpack.io' } } }
-dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral(); maven { url 'https://raw.githubusercontent.com/quickbirdstudios/OpenCV-Android/master' }; maven { url 'https://jitpack.io' } } }
+pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal(); maven { url 'https://jitpack.io' } } }
+dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral(); maven { url 'https://jitpack.io' } } }
 rootProject.name = 'WatchAlignAndroid'
 include ':app'
