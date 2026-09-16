@@ -229,7 +229,10 @@ public final class WatchAlignCoreV7 {
             circlesClahe.release(); claheMat.release();
         }
         blur.release();
-        if(best!=null){Circle inner=refineInnerDial(gray,best,min);if(inner!=null)best=inner;}
+        // Keep the validated Hough boundary. The legacy inner-ring refinement can
+        // collapse a correct dial edge onto the hour-marker ring, shrinking the
+        // entire QC coordinate system. PerspectiveGmtOverlay can fit the actual
+        // dial ellipse from this outer seed without that destructive rescaling.
         gray.release(); return best;
     }
 
@@ -356,7 +359,6 @@ public final class WatchAlignCoreV7 {
             double[]vi=gray.get(yi,xi),vo=gray.get(yo,xo);if(vi!=null&&vo!=null)best=Math.max(best,Math.abs(vo[0]-vi[0])/255.0);
         }sum+=best;n++;}return n>0?sum/n:0;
     }
-
     private static double sampleBoundaryContrast(Mat gray,double cx,double cy,double r) {
         double sum=0;int n=0;
         for(int deg=0;deg<360;deg+=5){if(deg>=70&&deg<=110)continue;double a=Math.toRadians(deg);
