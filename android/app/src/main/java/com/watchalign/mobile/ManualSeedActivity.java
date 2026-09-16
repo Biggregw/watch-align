@@ -14,6 +14,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.Magnifier;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Dedicated interactive 3-point touch seed activity (Center, 12, 6). */
+/** Precision assisted alignment using opposite points on the dial edge at 12 and 6. */
 public class ManualSeedActivity extends Activity {
     private Bitmap watchBitmap;
     private final List<PointF> tappedImagePoints = new ArrayList<>();
@@ -36,7 +37,7 @@ public class ManualSeedActivity extends Activity {
 
         watchBitmap = InspectionImageStore.baseBitmap;
         if (watchBitmap == null) {
-            Toast.makeText(this, "No watch image available for 3-point seeding", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No watch image available for assisted alignment", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -47,7 +48,6 @@ public class ManualSeedActivity extends Activity {
         touchOverlayView = new TouchOverlayView(this);
         root.addView(touchOverlayView, new FrameLayout.LayoutParams(-1, -1));
 
-        // Top Navigation Bar
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.setPadding(dp(12), dp(8), dp(12), dp(8));
@@ -60,42 +60,40 @@ public class ManualSeedActivity extends Activity {
         top.addView(back, new LinearLayout.LayoutParams(dp(76), dp(46)));
 
         TextView title = new TextView(this);
-        title.setText("3-Point Touch Alignment Seed");
+        title.setText("2-Point Precision Alignment");
         title.setTextColor(Color.WHITE);
         title.setTextSize(16);
         title.setPadding(dp(10), 0, 0, 0);
         top.addView(title, new LinearLayout.LayoutParams(0, dp(46), 1));
 
         resetButton = new Button(this);
-        resetButton.setText("Reset Taps");
+        resetButton.setText("Reset");
         resetButton.setAllCaps(false);
         resetButton.setOnClickListener(v -> resetTaps());
-        top.addView(resetButton, new LinearLayout.LayoutParams(dp(100), dp(46)));
-
+        top.addView(resetButton, new LinearLayout.LayoutParams(dp(82), dp(46)));
         root.addView(top, new FrameLayout.LayoutParams(-1, dp(62), Gravity.TOP));
 
-        // Bottom Controls & Status Bar
         LinearLayout bottom = new LinearLayout(this);
         bottom.setOrientation(LinearLayout.VERTICAL);
         bottom.setPadding(dp(16), dp(8), dp(16), dp(12));
         bottom.setBackgroundColor(0xD008111F);
 
         promptText = new TextView(this);
-        promptText.setText("Step 1/3: Tap the DIAL CENTER");
-        promptText.setTextColor(Color.rgb(50, 213, 242));
+        promptText.setText("Step 1/2: Set the DIAL EDGE at 12");
+        promptText.setTextColor(Color.rgb(255, 75, 75));
         promptText.setTextSize(15);
         promptText.setGravity(Gravity.CENTER);
         bottom.addView(promptText, new LinearLayout.LayoutParams(-1, dp(32)));
 
         statsText = new TextView(this);
-        statsText.setText("Tap on the watch photo above to set alignment points.");
+        statsText.setText("Press near the dial/rehaut boundary, drag under the magnifier, then release.");
         statsText.setTextColor(Color.rgb(158, 176, 201));
         statsText.setTextSize(12);
         statsText.setGravity(Gravity.CENTER);
-        bottom.addView(statsText, new LinearLayout.LayoutParams(-1, dp(28)));
+        bottom.addView(statsText, new LinearLayout.LayoutParams(-1, dp(42)));
 
         applyButton = new Button(this);
-        applyButton.setText("Apply Seed & Solve Pose");
+        applyButton.setText("Apply Alignment & Run QC");
         applyButton.setAllCaps(false);
         applyButton.setBackgroundColor(Color.rgb(50, 213, 242));
         applyButton.setTextColor(Color.rgb(4, 32, 42));
@@ -103,62 +101,49 @@ public class ManualSeedActivity extends Activity {
         applyButton.setOnClickListener(v -> applySeed());
         bottom.addView(applyButton, new LinearLayout.LayoutParams(-1, dp(50)));
 
-        root.addView(bottom, new FrameLayout.LayoutParams(-1, dp(134), Gravity.BOTTOM));
+        root.addView(bottom, new FrameLayout.LayoutParams(-1, dp(148), Gravity.BOTTOM));
         setContentView(root);
     }
 
     private void resetTaps() {
         tappedImagePoints.clear();
         updateStepUi();
+        touchOverlayView.clearPending();
         touchOverlayView.invalidate();
     }
 
     private void updateStepUi() {
         int count = tappedImagePoints.size();
         if (count == 0) {
-            promptText.setText("Step 1/3: Tap the DIAL CENTER");
-            promptText.setTextColor(Color.rgb(50, 213, 242));
-            statsText.setText("Tap the exact center of the watch dial.");
+            promptText.setText("Step 1/2: Set the DIAL EDGE at 12");
+            promptText.setTextColor(Color.rgb(255, 75, 75));
+            statsText.setText("Use the dial/rehaut boundary, not the 12 marker. Press, drag with magnifier, release.");
             applyButton.setEnabled(false);
         } else if (count == 1) {
-            promptText.setText("Step 2/3: Tap the 12 O'CLOCK MARKER");
-            promptText.setTextColor(Color.rgb(255, 75, 75));
-            statsText.setText("Tap the top 12 o'clock marker or triangle tip.");
-            applyButton.setEnabled(false);
-        } else if (count == 2) {
-            promptText.setText("Step 3/3: Tap the 6 O'CLOCK MARKER");
+            promptText.setText("Step 2/2: Set the DIAL EDGE at 6");
             promptText.setTextColor(Color.rgb(75, 150, 255));
-            statsText.setText("Tap the bottom 6 o'clock marker.");
+            statsText.setText("Set the opposite dial/rehaut boundary at 6 o'clock. The centre is calculated automatically.");
             applyButton.setEnabled(false);
         } else {
-            promptText.setText("All 3 Points Set!");
+            promptText.setText("Alignment points set");
             promptText.setTextColor(Color.rgb(127, 225, 170));
             double[] seed = calculateSeedParams();
             if (seed != null) {
-                statsText.setText(String.format(Locale.US, "Center: (%.0f, %.0f)  Radius: %.1f px  Roll: %+.2f°",
+                statsText.setText(String.format(Locale.US, "Calculated centre (%.0f, %.0f) · radius %.1f px · roll %+.2f°",
                         seed[0], seed[1], seed[2], seed[3]));
                 applyButton.setEnabled(true);
+            } else {
+                statsText.setText("Those points are too close together. Reset and try again.");
+                applyButton.setEnabled(false);
             }
         }
     }
 
     private double[] calculateSeedParams() {
-        if (tappedImagePoints.size() < 3) return null;
-        PointF p0 = tappedImagePoints.get(0);
-        PointF p1 = tappedImagePoints.get(1);
-        PointF p2 = tappedImagePoints.get(2);
-
-        double cx = p0.x;
-        double cy = p0.y;
-        double r1 = Math.hypot(p1.x - cx, p1.y - cy);
-        double r2 = Math.hypot(p2.x - cx, p2.y - cy);
-        double r = (r1 + r2) / 2.0;
-
-        double clockAngle = Math.toDegrees(Math.atan2(p1.x - cx, -(p1.y - cy)));
-        if (clockAngle < 0) clockAngle += 360.0;
-        double rollDeg = clockAngle <= 180.0 ? clockAngle : clockAngle - 360.0;
-
-        return new double[]{cx, cy, r, rollDeg};
+        if (tappedImagePoints.size() < 2) return null;
+        PointF p12 = tappedImagePoints.get(0);
+        PointF p6 = tappedImagePoints.get(1);
+        return ManualSeedMath.fromOppositeDialEdges(p12.x, p12.y, p6.x, p6.y);
     }
 
     private void applySeed() {
@@ -172,7 +157,7 @@ public class ManualSeedActivity extends Activity {
         InspectionImageStore.hasManualSeed = true;
 
         setResult(RESULT_OK);
-        Toast.makeText(this, "Manual 3-point seed applied!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Assisted dial alignment applied", Toast.LENGTH_SHORT).show();
         finish();
     }
 
@@ -185,8 +170,11 @@ public class ManualSeedActivity extends Activity {
         private final Paint paint12 = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint paint6 = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint paintLine = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint paintPending = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Magnifier magnifier;
+        private PointF pendingImagePoint;
 
-        public TouchOverlayView(Context context) {
+        TouchOverlayView(Context context) {
             super(context);
             paintCenter.setColor(Color.rgb(50, 213, 242));
             paintCenter.setStrokeWidth(4f);
@@ -203,6 +191,17 @@ public class ManualSeedActivity extends Activity {
             paintLine.setColor(Color.WHITE);
             paintLine.setStrokeWidth(3f);
             paintLine.setStyle(Paint.Style.STROKE);
+
+            paintPending.setColor(Color.YELLOW);
+            paintPending.setStrokeWidth(3f);
+            paintPending.setStyle(Paint.Style.STROKE);
+
+            magnifier = new Magnifier(this);
+        }
+
+        void clearPending() {
+            pendingImagePoint = null;
+            try { magnifier.dismiss(); } catch (Throwable ignored) {}
         }
 
         @Override protected void onDraw(Canvas canvas) {
@@ -223,42 +222,74 @@ public class ManualSeedActivity extends Activity {
                 PointF imgP = tappedImagePoints.get(i);
                 float vx = dx + imgP.x * scale;
                 float vy = dy + imgP.y * scale;
-
-                Paint p = (i == 0) ? paintCenter : (i == 1) ? paint12 : paint6;
+                Paint p = i == 0 ? paint12 : paint6;
                 canvas.drawCircle(vx, vy, 18f, p);
-                canvas.drawCircle(vx, vy, 4f, p);
+                canvas.drawLine(vx - 12f, vy, vx + 12f, vy, p);
+                canvas.drawLine(vx, vy - 12f, vx, vy + 12f, p);
+            }
 
-                if (i > 0) {
-                    PointF cP = tappedImagePoints.get(0);
-                    float cvx = dx + cP.x * scale;
-                    float cvy = dy + cP.y * scale;
-                    canvas.drawLine(cvx, cvy, vx, vy, paintLine);
+            if (tappedImagePoints.size() == 2) {
+                double[] seed = calculateSeedParams();
+                if (seed != null) {
+                    float cx = dx + (float) seed[0] * scale;
+                    float cy = dy + (float) seed[1] * scale;
+                    PointF p12 = tappedImagePoints.get(0);
+                    PointF p6 = tappedImagePoints.get(1);
+                    canvas.drawLine(dx + p12.x * scale, dy + p12.y * scale,
+                            dx + p6.x * scale, dy + p6.y * scale, paintLine);
+                    canvas.drawCircle(cx, cy, 14f, paintCenter);
+                    canvas.drawLine(cx - 10f, cy, cx + 10f, cy, paintCenter);
+                    canvas.drawLine(cx, cy - 10f, cx, cy + 10f, paintCenter);
                 }
+            }
+
+            if (pendingImagePoint != null) {
+                float px = dx + pendingImagePoint.x * scale;
+                float py = dy + pendingImagePoint.y * scale;
+                canvas.drawCircle(px, py, 16f, paintPending);
+                canvas.drawLine(px - 12f, py, px + 12f, py, paintPending);
+                canvas.drawLine(px, py - 12f, px, py + 12f, paintPending);
             }
         }
 
+        private PointF imagePoint(float touchX, float touchY) {
+            int vw = getWidth(), vh = getHeight();
+            int bw = watchBitmap.getWidth(), bh = watchBitmap.getHeight();
+            float scale = Math.min((float) vw / bw, (float) vh / bh);
+            float dx = (vw - bw * scale) / 2f;
+            float dy = (vh - bh * scale) / 2f;
+            float imgX = (touchX - dx) / scale;
+            float imgY = (touchY - dy) / scale;
+            if (imgX < 0 || imgX > bw || imgY < 0 || imgY > bh) return null;
+            return new PointF(imgX, imgY);
+        }
+
         @Override public boolean onTouchEvent(MotionEvent event) {
-            if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-                if (tappedImagePoints.size() >= 3) return true;
-
-                int vw = getWidth(), vh = getHeight();
-                int bw = watchBitmap.getWidth(), bh = watchBitmap.getHeight();
-                float scale = Math.min((float) vw / bw, (float) vh / bh);
-                float dx = (vw - bw * scale) / 2f;
-                float dy = (vh - bh * scale) / 2f;
-
-                float touchX = event.getX();
-                float touchY = event.getY();
-
-                float imgX = (touchX - dx) / scale;
-                float imgY = (touchY - dy) / scale;
-
-                if (imgX >= 0 && imgX <= bw && imgY >= 0 && imgY <= bh) {
-                    tappedImagePoints.add(new PointF(imgX, imgY));
+            if (tappedImagePoints.size() >= 2) return true;
+            int action = event.getActionMasked();
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE) {
+                pendingImagePoint = imagePoint(event.getX(), event.getY());
+                if (pendingImagePoint != null) {
+                    try { magnifier.show(event.getX(), event.getY()); } catch (Throwable ignored) {}
+                    invalidate();
+                }
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP) {
+                PointF p = imagePoint(event.getX(), event.getY());
+                try { magnifier.dismiss(); } catch (Throwable ignored) {}
+                pendingImagePoint = null;
+                if (p != null) {
+                    tappedImagePoints.add(p);
                     updateStepUi();
                     invalidate();
                     performClick();
                 }
+                return true;
+            }
+            if (action == MotionEvent.ACTION_CANCEL) {
+                clearPending();
+                invalidate();
                 return true;
             }
             return super.onTouchEvent(event);
