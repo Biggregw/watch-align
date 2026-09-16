@@ -60,15 +60,33 @@ public class SimilarityTransformTest {
         assertEquals(t.mapY(x,y),m[1][0]*x+m[1][1]*y+m[1][2],1e-10);
     }
 
-    @Test public void rejectsInvalidScale() {
-        assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(0,0,1,1,0,0));
-        assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(0,0,1,1,Double.NaN,0));
-        assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(0,0,1,1,-1,0));
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsInvalidScaleZero() {
+        SimilarityTransform.between(0,0,1,1,0,0);
     }
 
-    @Test public void rejectsNonFiniteCoordinatesAndRotation() {
-        assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(Double.NaN,0,1,1,1,0));
-        assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(0,0,Double.POSITIVE_INFINITY,1,1,0));
-        assertThrows(IllegalArgumentException.class,()->SimilarityTransform.between(0,0,1,1,1,Double.NaN));
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsInvalidScaleNan() {
+        SimilarityTransform.between(0,0,1,1,Double.NaN,0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsInvalidScaleNegative() {
+        SimilarityTransform.between(0,0,1,1,-1,0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsNonFiniteCoordinatesNan() {
+        SimilarityTransform.between(Double.NaN,0,1,1,1,0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsNonFiniteCoordinatesInfinity() {
+        SimilarityTransform.between(0,0,Double.POSITIVE_INFINITY,1,1,0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsNonFiniteRotationNan() {
+        SimilarityTransform.between(0,0,1,1,1,Double.NaN);
     }
 }
