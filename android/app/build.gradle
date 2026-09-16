@@ -33,7 +33,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.quickbirdstudios:opencv-android:4.5.2.0'
+    implementation 'org.opencv:opencv:4.10.0'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test:runner:1.6.2'
