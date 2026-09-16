@@ -32,6 +32,10 @@ android {
     }
 }
 
+tasks.withType(com.android.build.gradle.internal.tasks.AarMetadataTask).configureEach {
+    enabled = false
+}
+
 dependencies {
     implementation 'com.github.quickbirdstudios:OpenCV-Android:4.5.2'
     testImplementation 'junit:junit:4.13.2'
