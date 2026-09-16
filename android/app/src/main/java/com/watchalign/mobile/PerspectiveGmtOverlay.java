@@ -38,7 +38,7 @@ final class PerspectiveGmtOverlay {
         Result(Bitmap n, Bitmap r, String s, double c){nativeOverlay=n;rectified=r;report=s;confidence=c;}
     }
 
-    private static final class DialSeed {
+    static final class DialSeed {
         final double x,y,r,quality,rollDeg;
         DialSeed(double x,double y,double r,double q,double roll){this.x=x;this.y=y;this.r=r;this.quality=q;this.rollDeg=roll;}
     }

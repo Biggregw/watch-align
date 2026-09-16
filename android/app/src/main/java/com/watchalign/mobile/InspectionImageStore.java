@@ -9,6 +9,9 @@ final class InspectionImageStore {
     static String title;
     static boolean overlayMode;
 
+    static double manualCx, manualCy, manualR, manualRoll;
+    static boolean hasManualSeed;
+
     static void set(Bitmap b, String t){
         bitmap=b;baseBitmap=null;title=t;overlayMode=false;
     }
@@ -17,6 +20,10 @@ final class InspectionImageStore {
         baseBitmap=base;bitmap=overlay;title=t;overlayMode=base!=null&&overlay!=null;
     }
 
-    static void clear(){bitmap=null;baseBitmap=null;title=null;overlayMode=false;}
+    static void clearManualSeed(){
+        hasManualSeed=false;manualCx=0;manualCy=0;manualR=0;manualRoll=0;
+    }
+
+    static void clear(){bitmap=null;baseBitmap=null;title=null;overlayMode=false;clearManualSeed();}
     private InspectionImageStore(){}
 }

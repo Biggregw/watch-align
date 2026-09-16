@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 public class MainActivity extends Activity {
     private static final int PICK_WATCH=1001;
     private static final int PICK_REFERENCE=1002;
+    private static final int PICK_SEED=1003;
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private Bitmap watchBitmap;
     private final List<Bitmap> referenceBitmaps=new ArrayList<>();
@@ -51,6 +52,7 @@ public class MainActivity extends Activity {
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         Button pickRef=button("Choose genuine reference photos (optional)");pickRef.setOnClickListener(v->pickReferences());root.addView(pickRef,lp(-1,dp(52),6));
         Button analyse=button("Build visual QC overlay");analyse.setBackgroundColor(Color.rgb(50,213,242));analyse.setTextColor(Color.rgb(4,32,42));analyse.setOnClickListener(v->analyse());root.addView(analyse,lp(-1,dp(54),12));
+        Button seedBtn=button("Tap 3-point seed (assisted alignment)");seedBtn.setOnClickListener(v->openManualSeedPicker());root.addView(seedBtn,lp(-1,dp(50),6));
         status=text("Choose a watch photo to begin.",14,Color.rgb(158,176,201));root.addView(status);
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(Color.rgb(8,17,31));root.addView(preview,lp(-1,-2,12));
         root.addView(text("Native template is the primary QC view. Open it full-screen, zoom to a marker, then use the opacity slider or hold Blink to compare against the watch alone.",12,Color.rgb(158,176,201)));
@@ -114,11 +116,21 @@ public class MainActivity extends Activity {
 
     private void pickWatch(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("image/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,PICK_WATCH);}
     private void pickReferences(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("image/*");i.addCategory(Intent.CATEGORY_OPENABLE);i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);startActivityForResult(i,PICK_REFERENCE);}
+    private void openManualSeedPicker(){
+        if(watchBitmap==null){status.setText("Choose a watch photo first.");return;}
+        InspectionImageStore.baseBitmap=watchBitmap;
+        startActivityForResult(new Intent(this,ManualSeedActivity.class),PICK_SEED);
+    }
 
     @Override protected void onActivityResult(int request,int result,Intent data){
+        if(request==PICK_SEED && result==RESULT_OK && InspectionImageStore.hasManualSeed){
+            status.setText("Manual 3-point seed set! Solving pose…");
+            analyse();
+            return;
+        }
         super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null)return;
         try{
-            if(request==PICK_WATCH&&data.getData()!=null){watchBitmap=readBitmap(data.getData());lastResult=null;preview.setImageBitmap(watchBitmap);setResultButtons(false);status.setText("Watch photo ready. Tap Build visual QC overlay.");return;}
+            if(request==PICK_WATCH&&data.getData()!=null){InspectionImageStore.clearManualSeed();watchBitmap=readBitmap(data.getData());lastResult=null;preview.setImageBitmap(watchBitmap);setResultButtons(false);status.setText("Watch photo ready. Tap Build visual QC overlay.");return;}
             if(request==PICK_REFERENCE){referenceBitmaps.clear();ClipData clip=data.getClipData();if(clip!=null){for(int i=0;i<clip.getItemCount()&&referenceBitmaps.size()<20;i++){Uri u=clip.getItemAt(i).getUri();if(u!=null)referenceBitmaps.add(readBitmap(u));}}else if(data.getData()!=null)referenceBitmaps.add(readBitmap(data.getData()));lastResult=null;setResultButtons(false);status.setText(referenceBitmaps.size()+" genuine reference photo"+(referenceBitmaps.size()==1?"":"s")+" ready.");}
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
     }
