@@ -57,8 +57,8 @@ jobs:
         with:
           name: unit-test-reports
           path: |
-            android/app/build/reports/tests/testDebugUnitTest/
-            android/app/build/test-results/testDebugUnitTest/
+            app/build/reports/tests/testDebugUnitTest/
+            app/build/test-results/testDebugUnitTest/
           if-no-files-found: warn
       - name: Fetch exact-model official genuine fixtures
         run: python3 fetch_genuine_fixtures.py
@@ -86,8 +86,8 @@ jobs:
         with:
           name: WatchAlign-Android-${{ steps.version.outputs.version }}
           path: |
-            android/WatchAlign-Android-${{ steps.version.outputs.version }}.apk
-            android/SHA256SUMS-Android.txt
+            WatchAlign-Android-${{ steps.version.outputs.version }}.apk
+            SHA256SUMS-Android.txt
           if-no-files-found: error
           retention-days: 30
       - name: Create or Update GitHub Release
