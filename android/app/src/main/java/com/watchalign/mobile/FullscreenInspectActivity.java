@@ -20,7 +20,7 @@ public class FullscreenInspectActivity extends Activity {
     private ZoomableImageView image;
     private Bitmap base,overlay;
     private float alpha=1f;
-    private float nudgeDx=0f, nudgeDy=0f, nudgeRot=0f, nudgeScale=1f;
+    private float nudgeDx=0f,nudgeDy=0f,nudgeRot=0f,nudgeScale=1f;
 
     @Override public void onCreate(Bundle state){
         super.onCreate(state);getWindow().setStatusBarColor(Color.rgb(8,17,31));getWindow().setNavigationBarColor(Color.rgb(8,17,31));
@@ -42,24 +42,19 @@ public class FullscreenInspectActivity extends Activity {
 
             LinearLayout nudgeRow=new LinearLayout(this);nudgeRow.setGravity(Gravity.CENTER_VERTICAL);
             TextView nudgeLabel=new TextView(this);nudgeLabel.setText("Nudge");nudgeLabel.setTextColor(Color.rgb(158,176,201));nudgeLabel.setTextSize(11);nudgeRow.addView(nudgeLabel,new LinearLayout.LayoutParams(dp(44),dp(36)));
-
-            Button up=smallBtn("▲"); up.setOnClickListener(v->{nudgeDy-=1f;refresh();});
-            Button down=smallBtn("▼"); down.setOnClickListener(v->{nudgeDy+=1f;refresh();});
-            Button left=smallBtn("◄"); left.setOnClickListener(v->{nudgeDx-=1f;refresh();});
-            Button right=smallBtn("►"); right.setOnClickListener(v->{nudgeDx+=1f;refresh();});
-            Button rotCcw=smallBtn("↺"); rotCcw.setOnClickListener(v->{nudgeRot-=0.2f;refresh();});
-            Button rotCw=smallBtn("↻"); rotCw.setOnClickListener(v->{nudgeRot+=0.2f;refresh();});
-            Button scaleDown=smallBtn("−"); scaleDown.setOnClickListener(v->{nudgeScale=Math.max(0.8f,nudgeScale-0.002f);refresh();});
-            Button scaleUp=smallBtn("+"); scaleUp.setOnClickListener(v->{nudgeScale=Math.min(1.2f,nudgeScale+0.002f);refresh();});
-
-            nudgeRow.addView(left,lpSmall()); nudgeRow.addView(right,lpSmall());
-            nudgeRow.addView(up,lpSmall()); nudgeRow.addView(down,lpSmall());
-            nudgeRow.addView(rotCcw,lpSmall()); nudgeRow.addView(rotCw,lpSmall());
-            nudgeRow.addView(scaleDown,lpSmall()); nudgeRow.addView(scaleUp,lpSmall());
-            bottom.addView(nudgeRow);
+            Button up=smallBtn("▲");up.setOnClickListener(v->{nudgeDy-=1f;refresh();});
+            Button down=smallBtn("▼");down.setOnClickListener(v->{nudgeDy+=1f;refresh();});
+            Button left=smallBtn("◄");left.setOnClickListener(v->{nudgeDx-=1f;refresh();});
+            Button right=smallBtn("►");right.setOnClickListener(v->{nudgeDx+=1f;refresh();});
+            Button rotCcw=smallBtn("↺");rotCcw.setOnClickListener(v->{nudgeRot-=0.2f;refresh();});
+            Button rotCw=smallBtn("↻");rotCw.setOnClickListener(v->{nudgeRot+=0.2f;refresh();});
+            Button scaleDown=smallBtn("−");scaleDown.setOnClickListener(v->{nudgeScale=Math.max(0.8f,nudgeScale-0.002f);refresh();});
+            Button scaleUp=smallBtn("+");scaleUp.setOnClickListener(v->{nudgeScale=Math.min(1.2f,nudgeScale+0.002f);refresh();});
+            nudgeRow.addView(left,lpSmall());nudgeRow.addView(right,lpSmall());nudgeRow.addView(up,lpSmall());nudgeRow.addView(down,lpSmall());nudgeRow.addView(rotCcw,lpSmall());nudgeRow.addView(rotCw,lpSmall());nudgeRow.addView(scaleDown,lpSmall());nudgeRow.addView(scaleUp,lpSmall());bottom.addView(nudgeRow);
         }
-        TextView hint=new TextView(this);hint.setText(InspectionImageStore.overlayMode?"Pinch/drag to inspect · slider changes overlay · hold Blink for watch-only · Nudge to fine-tune":"Pinch to zoom · drag to pan · double-tap zoom");hint.setTextColor(Color.WHITE);hint.setTextSize(12);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(34)));
+        TextView hint=new TextView(this);hint.setText(InspectionImageStore.overlayMode?"Pinch/drag to inspect · slider changes overlay · hold Blink for watch-only · Nudge moves only the master":"Pinch to zoom · drag to pan · double-tap zoom");hint.setTextColor(Color.WHITE);hint.setTextSize(12);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(34)));
         FrameLayout.LayoutParams bottomLp=new FrameLayout.LayoutParams(-1,InspectionImageStore.overlayMode?dp(120):dp(42),Gravity.BOTTOM);root.addView(bottom,bottomLp);setContentView(root);
+        if(InspectionImageStore.overlayMode&&base!=null)refresh();
     }
 
     private Button smallBtn(String txt){Button b=new Button(this);b.setText(txt);b.setAllCaps(false);b.setTextSize(10);b.setPadding(0,0,0,0);return b;}
@@ -69,20 +64,11 @@ public class FullscreenInspectActivity extends Activity {
     private void refresh(){
         if(base==null){image.setImageBitmapPreserveZoom(overlay);return;}
         Bitmap out=Bitmap.createBitmap(base.getWidth(),base.getHeight(),Bitmap.Config.ARGB_8888);
-        Canvas c=new Canvas(out);Paint p=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
-        c.drawBitmap(base,0,0,p);
-        p.setAlpha(Math.max(0,Math.min(255,Math.round(alpha*255))));
+        Canvas c=new Canvas(out);Paint p=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);c.drawBitmap(base,0,0,p);p.setAlpha(Math.max(0,Math.min(255,Math.round(alpha*255))));
         if(overlay!=null){
             if(nudgeDx!=0f||nudgeDy!=0f||nudgeRot!=0f||nudgeScale!=1f){
-                android.graphics.Matrix m=new android.graphics.Matrix();
-                float cx=overlay.getWidth()/2f, cy=overlay.getHeight()/2f;
-                m.postScale(nudgeScale,nudgeScale,cx,cy);
-                m.postRotate(nudgeRot,cx,cy);
-                m.postTranslate(nudgeDx,nudgeDy);
-                c.drawBitmap(overlay,m,p);
-            } else {
-                c.drawBitmap(overlay,0,0,p);
-            }
+                android.graphics.Matrix m=new android.graphics.Matrix();float cx=overlay.getWidth()/2f,cy=overlay.getHeight()/2f;m.postScale(nudgeScale,nudgeScale,cx,cy);m.postRotate(nudgeRot,cx,cy);m.postTranslate(nudgeDx,nudgeDy);c.drawBitmap(overlay,m,p);
+            }else{c.drawBitmap(overlay,0,0,p);}
         }
         image.setImageBitmapPreserveZoom(out);
     }
