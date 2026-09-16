@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha28: visual-first GMT inspection using a calibrated red model-specific master. */
+/** Alpha29: visual-first GMT inspection using CLAHE glare processing & micro-nudge controls. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha28";
+    public static final String CORE_VERSION="1.3.0-alpha29";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;

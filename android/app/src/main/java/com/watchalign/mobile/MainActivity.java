@@ -37,7 +37,7 @@ public class MainActivity extends Activity {
     private ImageView preview;
     private TextView status,resultText;
     private Spinner model;
-    private Button overlayButton,watchButton,referenceButton,perspectiveButton,rectifiedButton;
+    private Button overlayButton,watchButton,referenceButton,perspectiveButton,rectifiedButton,exportButton;
 
     @Override public void onCreate(Bundle state){super.onCreate(state);if(!OpenCVLoader.initLocal())Toast.makeText(this,"OpenCV could not start",Toast.LENGTH_LONG).show();setContentView(buildUi());}
 
@@ -45,8 +45,8 @@ public class MainActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Color.rgb(8,17,31));
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("WATCH ALIGN · STANDALONE",12,Color.rgb(50,213,242)));TextView h1=text("Watch Align Android",28,Color.WHITE);h1.setPadding(0,dp(4),0,0);root.addView(h1);
-        root.addView(text("V1.3.0-alpha28 · calibrated red master",14,Color.rgb(158,176,201)));
-        root.addView(text("Alpha28 keeps the visual-QC workflow but uses a brighter red master, thinner outlines and recalibrated 126710BLNR marker geometry. The uncalibrated date target is removed.",13,Color.rgb(158,176,201)));
+        root.addView(text("V1.3.0-alpha29 · CLAHE glare processing & micro-nudge controls",14,Color.rgb(158,176,201)));
+        root.addView(text("Alpha29 introduces CLAHE glare pre-processing, interactive fullscreen micro-nudge controls (center, rotate, scale), and one-tap QC summary card export.",13,Color.rgb(158,176,201)));
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ModelCatalog.labels()));root.addView(model,lp(-1,dp(54),10));
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         Button pickRef=button("Choose genuine reference photos (optional)");pickRef.setOnClickListener(v->pickReferences());root.addView(pickRef,lp(-1,dp(52),6));
@@ -64,12 +64,49 @@ public class MainActivity extends Activity {
         row1.addView(watchButton,new LinearLayout.LayoutParams(0,dp(48),1));row1.addView(perspectiveButton,new LinearLayout.LayoutParams(0,dp(48),1));row1.addView(rectifiedButton,new LinearLayout.LayoutParams(0,dp(48),1));root.addView(row1,lp(-1,dp(48),8));
 
         LinearLayout row2=new LinearLayout(this);row2.setOrientation(LinearLayout.HORIZONTAL);
-        referenceButton=smallButton("Reference");overlayButton=smallButton("Gen overlay");referenceButton.setEnabled(false);overlayButton.setEnabled(false);
+        referenceButton=smallButton("Reference");overlayButton=smallButton("Gen overlay");exportButton=smallButton("Export QC card");
+        referenceButton.setEnabled(false);overlayButton.setEnabled(false);exportButton.setEnabled(false);
         referenceButton.setOnClickListener(v->{if(lastResult!=null)openInspector("Genuine reference",lastResult.reference);});
         overlayButton.setOnClickListener(v->{if(lastResult!=null&&lastResult.aligned!=null)openInspector("Genuine overlay",lastResult.overlay(0.5f));});
-        row2.addView(referenceButton,new LinearLayout.LayoutParams(0,dp(48),1));row2.addView(overlayButton,new LinearLayout.LayoutParams(0,dp(48),1));root.addView(row2,lp(-1,dp(48),6));
+        exportButton.setOnClickListener(v->exportQcCard());
+        row2.addView(referenceButton,new LinearLayout.LayoutParams(0,dp(48),1));row2.addView(overlayButton,new LinearLayout.LayoutParams(0,dp(48),1));row2.addView(exportButton,new LinearLayout.LayoutParams(0,dp(48),1));root.addView(row2,lp(-1,dp(48),6));
 
         resultText=text("",15,Color.WHITE);resultText.setPadding(0,dp(12),0,dp(32));root.addView(resultText);return scroll;
+    }
+
+    private void exportQcCard(){
+        if(watchBitmap==null||lastResult==null)return;
+        Bitmap card=renderQcCard(watchBitmap,lastResult);
+        if(card!=null){
+            InspectionImageStore.set(card,"QC Summary Card");
+            startActivity(new Intent(this,FullscreenInspectActivity.class));
+            Toast.makeText(this,"QC Card generated! Open to view and save.",Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private Bitmap renderQcCard(Bitmap watch,WatchAlignCoreV13.AnalysisResult result){
+        Bitmap overlay=result.perspectiveOverlay!=null?result.perspectiveOverlay:result.annotated;
+        int w=1080, topH=1080, botH=600;
+        Bitmap card=Bitmap.createBitmap(w,topH+botH,Bitmap.Config.ARGB_8888);
+        Canvas c=new Canvas(card);
+        c.drawColor(Color.rgb(8,17,31));
+        if(overlay!=null){
+            android.graphics.Rect src=new android.graphics.Rect(0,0,overlay.getWidth(),overlay.getHeight());
+            android.graphics.Rect dst=new android.graphics.Rect(0,0,w,topH);
+            c.drawBitmap(overlay,src,dst,new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG|android.graphics.Paint.FILTER_BITMAP_FLAG));
+        }
+        android.graphics.Paint pText=new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);pText.setColor(Color.WHITE);pText.setTextSize(26f);
+        android.graphics.Paint pHeader=new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);pHeader.setColor(Color.rgb(50,213,242));pHeader.setTextSize(32f);pHeader.setFakeBoldText(true);
+        c.drawText("WATCH ALIGN · QC REPORT CARD",40,topH+50,pHeader);
+        String[] lines=result.report.split("\n");
+        int y=topH+100;
+        for(String line:lines){
+            if(line.trim().isEmpty())continue;
+            if(y>topH+botH-30)break;
+            c.drawText(line,40,y,pText);
+            y+=34;
+        }
+        return card;
     }
 
     private void openInspector(String title,Bitmap bitmap){if(bitmap==null)return;InspectionImageStore.set(bitmap,title);startActivity(new Intent(this,FullscreenInspectActivity.class));}
@@ -94,11 +131,11 @@ public class MainActivity extends Activity {
         status.setText("Solving photo pose and projecting calibrated red master…");
         worker.submit(()->{try{
             String sourceNote=refs.isEmpty()?"No genuine reference selected. The fixed 126710BLNR visual master does not require one.":"Genuine comparison: "+refs.size()+" manually selected reference photo"+(refs.size()==1?"":"s")+".";
-            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,refs,profile.code);final String note=sourceNote;runOnUiThread(()->{lastResult=r;preview.setImageBitmap(r.perspectiveOverlay!=null?r.perspectiveOverlay:r.annotated);resultText.setText(r.report+"\n\n"+note);status.setText(r.perspectiveOverlay!=null?"Calibrated red master ready. Open Native template and use blink/opacity to inspect.":"Perspective template unavailable for this photo.");watchButton.setEnabled(r.annotated!=null);referenceButton.setEnabled(r.reference!=null);overlayButton.setEnabled(r.aligned!=null);perspectiveButton.setEnabled(r.perspectiveOverlay!=null);rectifiedButton.setEnabled(r.rectified!=null);});
+            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,refs,profile.code);final String note=sourceNote;runOnUiThread(()->{lastResult=r;preview.setImageBitmap(r.perspectiveOverlay!=null?r.perspectiveOverlay:r.annotated);resultText.setText(r.report+"\n\n"+note);status.setText(r.perspectiveOverlay!=null?"Calibrated red master ready. Open Native template and use blink/opacity to inspect.":"Perspective template unavailable for this photo.");watchButton.setEnabled(r.annotated!=null);referenceButton.setEnabled(r.reference!=null);overlayButton.setEnabled(r.aligned!=null);perspectiveButton.setEnabled(r.perspectiveOverlay!=null);rectifiedButton.setEnabled(r.rectified!=null);exportButton.setEnabled(r!=null);});
         }catch(Throwable t){runOnUiThread(()->{lastResult=null;setResultButtons(false);status.setText("Analysis error: "+t.getMessage());resultText.setText("Watch Align could not establish reliable geometry from this photo. Try a clearer image with the full dial visible.");});}});
     }
 
-    private void setResultButtons(boolean enabled){watchButton.setEnabled(enabled);referenceButton.setEnabled(enabled);overlayButton.setEnabled(enabled);perspectiveButton.setEnabled(enabled);rectifiedButton.setEnabled(enabled);}
+    private void setResultButtons(boolean enabled){watchButton.setEnabled(enabled);referenceButton.setEnabled(enabled);overlayButton.setEnabled(enabled);perspectiveButton.setEnabled(enabled);rectifiedButton.setEnabled(enabled);exportButton.setEnabled(enabled);}
     private TextView text(String s,int sp,int color){TextView v=new TextView(this);v.setText(s);v.setTextSize(sp);v.setTextColor(color);return v;}
     private Button button(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);return b;}
     private Button smallButton(String s){Button b=button(s);b.setTextSize(12);return b;}

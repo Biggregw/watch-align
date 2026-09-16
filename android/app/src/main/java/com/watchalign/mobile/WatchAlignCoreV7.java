@@ -194,19 +194,41 @@ public final class WatchAlignCoreV7 {
         return new AnalysisResult(ann,refBitmap,alignedBitmap,report.toString(),registrationConfidence);
     }
 
+    public static Circle createManualSeed(double cx, double cy, double r) {
+        return new Circle(cx, cy, r, 0.95, 0.75, 0.15);
+    }
+
     private static Circle detectDial(Mat bgr) {
-        Mat gray=new Mat(); Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY); Imgproc.GaussianBlur(gray,gray,new Size(7,7),0);
+        Mat gray=new Mat(); Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);
+        Mat blur=new Mat(); Imgproc.GaussianBlur(gray,blur,new Size(7,7),0);
         int min=Math.min(bgr.cols(),bgr.rows()); Circle best=null; double bestQ=-1;
         Mat circles=new Mat();
-        Imgproc.HoughCircles(gray,circles,Imgproc.HOUGH_GRADIENT,1.12,min/12.0,120,24,(int)(min*0.105),(int)(min*0.28));
+        Imgproc.HoughCircles(blur,circles,Imgproc.HOUGH_GRADIENT,1.12,min/12.0,120,24,(int)(min*0.105),(int)(min*0.28));
         if(circles.cols()>0) {
             for(int i=0;i<circles.cols();i++) {
                 double[] c=circles.get(0,i); if(c==null||c.length<3)continue;
-                Circle scored=scoreDialCandidate(gray,c[0],c[1],c[2],min);
+                Circle scored=scoreDialCandidate(blur,c[0],c[1],c[2],min);
                 if(scored!=null&&scored.quality>bestQ){best=scored;bestQ=scored.quality;}
             }
         }
         circles.release();
+        if(best==null || best.quality < 0.60) {
+            Mat claheMat=new Mat();
+            org.opencv.imgproc.CLAHE clahe=Imgproc.createCLAHE(2.5, new Size(8,8));
+            clahe.apply(gray, claheMat);
+            Imgproc.GaussianBlur(claheMat,claheMat,new Size(7,7),0);
+            Mat circlesClahe=new Mat();
+            Imgproc.HoughCircles(claheMat,circlesClahe,Imgproc.HOUGH_GRADIENT,1.12,min/12.0,120,22,(int)(min*0.105),(int)(min*0.28));
+            if(circlesClahe.cols()>0) {
+                for(int i=0;i<circlesClahe.cols();i++) {
+                    double[] c=circlesClahe.get(0,i); if(c==null||c.length<3)continue;
+                    Circle scored=scoreDialCandidate(claheMat,c[0],c[1],c[2],min);
+                    if(scored!=null&&scored.quality>bestQ){best=scored;bestQ=scored.quality;}
+                }
+            }
+            circlesClahe.release(); claheMat.release();
+        }
+        blur.release();
         if(best!=null){Circle inner=refineInnerDial(gray,best,min);if(inner!=null)best=inner;}
         gray.release(); return best;
     }
@@ -230,9 +252,10 @@ public final class WatchAlignCoreV7 {
 
     private static Circle refineInnerDial(Mat gray,Circle outer,int min) {
         Circle best=null; double bestScore=-1;
+        // Sub-pixel refinement with finer steps (0.005 increments for dx/dy)
         for(double rf=0.62;rf<=0.88;rf+=0.02) {
             double r=outer.r*rf;
-            for(double dx=-0.025;dx<=0.025;dx+=0.025) for(double dy=-0.025;dy<=0.025;dy+=0.025) {
+            for(double dx=-0.02;dx<=0.02;dx+=0.005) for(double dy=-0.02;dy<=0.02;dy+=0.005) {
                 Circle c=scoreDialCandidate(gray,outer.x+dx*outer.r,outer.y+dy*outer.r,r,min); if(c==null)continue;
                 double ratioFit=1.0-Math.min(1.0,Math.abs(rf-0.76)/0.14);
                 double gain=c.boundaryContrast-outer.boundaryContrast;
@@ -262,7 +285,15 @@ public final class WatchAlignCoreV7 {
                 double[] gv=gray.get(y,x); if(gv==null||gv[0]<155)continue;
                 double wt=Math.max(1.0,(gv[0]-145.0)/18.0); sw+=wt;sd+=d*wt;sr+=r*wt;count++;
             }
-            if(sw>10&&count>=4)raw.add(new RawMarker(hour,sd/sw,sr/sw,count));
+            if(sw>10&&count>=4) {
+                double avgRadius = sr/sw;
+                if (hour == 12) {
+                    // Shape-aware compensation for 12 o'clock triangle marker:
+                    // Compensate for centroid vs apex offset relative to minute track.
+                    avgRadius += c.r * 0.018;
+                }
+                raw.add(new RawMarker(hour, sd/sw, avgRadius, count));
+            }
         }
         gray.release();
         MarkerSet set=new MarkerSet(); if(raw.isEmpty())return set;

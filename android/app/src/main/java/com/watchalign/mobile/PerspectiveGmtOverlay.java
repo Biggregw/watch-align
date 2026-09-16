@@ -46,6 +46,10 @@ final class PerspectiveGmtOverlay {
     static boolean supports(String modelRef){return CanonicalGmtGeometryAnalyzer.supports(modelRef);}
 
     static Result build(Bitmap input,String modelRef){
+        return build(input, modelRef, null, Color.rgb(255,45,45));
+    }
+
+    static Result build(Bitmap input,String modelRef,DialSeed manualSeed,int overlayColor){
         if(input==null||!supports(modelRef))return null;
         Mat src=new Mat(),gray=new Mat(),blur=new Mat(),edges=new Mat();
         try{
@@ -53,9 +57,9 @@ final class PerspectiveGmtOverlay {
             Imgproc.cvtColor(src,gray,Imgproc.COLOR_RGBA2GRAY);
             Imgproc.GaussianBlur(gray,blur,new Size(5,5),1.2);
             Imgproc.Canny(blur,edges,55,145);
-            DialSeed seed=seed(src);
+            DialSeed seed = manualSeed != null ? manualSeed : seed(src);
             if(seed==null||!(seed.r>40))return null;
-            RotatedRect ellipse=findDialEllipse(edges,seed);
+            RotatedRect ellipse = manualSeed != null ? new RotatedRect(new Point(seed.x, seed.y), new Size(seed.r*2.0, seed.r*2.0), seed.rollDeg) : findDialEllipse(edges,seed);
             if(ellipse==null)return null;
 
             double major=Math.max(ellipse.size.width,ellipse.size.height);
@@ -71,17 +75,18 @@ final class PerspectiveGmtOverlay {
             double centerErr=Math.hypot(ellipse.center.x-seed.x,ellipse.center.y-seed.y)/Math.max(1.0,seed.r);
             double confidence=confidence(seed.quality,reproj,centerErr,axisRatio);
 
-            Bitmap overlay=renderNative(input,H,modelRef,confidence);
+            Bitmap overlay=renderNative(input,H,modelRef,confidence,overlayColor);
             Bitmap rectified=rectify(src,H,input);
             String master=Gmt126710BlnrMaster.supports(modelRef)?Gmt126710BlnrMaster.ID:"canonical GMT fallback";
+            String seedSource = manualSeed != null ? "user-assisted 3-point seed" : "fitted dial ellipse plus dial orientation";
             String report=String.format(Locale.US,
                     "\n\nVISUAL QC MASTER\n"+
-                    "Pose source: fitted dial ellipse plus dial orientation. Applied markers are inspection targets only and never fit the overlay.\n"+
-                    "Inspection geometry: %s. Outer applied-marker bodies are bright red; inner lume references are thin white.\n"+
+                    "Pose source: %s. Applied markers are inspection targets only and never fit the overlay.\n"+
+                    "Inspection geometry: %s. Outer applied-marker bodies use target overlay color; inner lume references are thin white.\n"+
                     "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+4.2f°.\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. Pose residual: %.2f px. Confidence: %.0f%%.\n"+
                     "Use Native Template with opacity/blink in the full-screen inspector. No GL/RL score is generated.\n",
-                    master,major,minor,tiltDeg,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0);
+                    seedSource,master,major,minor,tiltDeg,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0);
             H.release();
             return new Result(overlay,rectified,report,confidence);
         }catch(Throwable ignored){return null;}
@@ -100,7 +105,7 @@ final class PerspectiveGmtOverlay {
                 markers.setAccessible(true);
                 Object set=markers.invoke(null,bgr,d);
                 double r=num(set,"globalRotation");
-                if(Double.isFinite(r))roll=r;
+                if(Double.isFinite(r) && Math.abs(r) <= 15.0) roll=r;
             }catch(Throwable ignored){}
             return new DialSeed(num(d,"x"),num(d,"y"),num(d,"r"),num(d,"quality"),roll);
         }finally{bgr.release();}
@@ -171,12 +176,12 @@ final class PerspectiveGmtOverlay {
         return Math.max(0,Math.min(1,0.35*a+0.20*b+0.30*c+0.15*d));
     }
 
-    private static Bitmap renderNative(Bitmap source,Mat H,String modelRef,double confidence){
+    private static Bitmap renderNative(Bitmap source,Mat H,String modelRef,double confidence,int overlayColor){
         Bitmap out=source.copy(Bitmap.Config.ARGB_8888,true);Canvas c=new Canvas(out);
         float scale=Math.max(1f,Math.min(out.getWidth(),out.getHeight())/900f);
-        Paint outer=paint(Color.rgb(255,45,45),1.25f*scale,245);
+        Paint outer=paint(overlayColor,1.25f*scale,245);
         Paint inner=paint(Color.WHITE,0.8f*scale,150);
-        Paint guide=paint(Color.rgb(255,45,45),0.75f*scale,65);
+        Paint guide=paint(overlayColor,0.75f*scale,65);
 
         if(Gmt126710BlnrMaster.supports(modelRef)){
             drawProjectedCircle(c,H,Gmt126710BlnrMaster.DIAL_EDGE_R,guide);

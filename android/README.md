@@ -2,9 +2,9 @@
 
 Watch Align Android is a standalone on-device QC and comparison app. It does not require a hosted Watch Align backend: watch analysis, marker geometry, QC annotations and reference registration run locally with OpenCV Android. Internet access is used only to discover/download an exact-model official manufacturer reference when that model has a verified source configured and the user has not supplied a reference photo; downloaded references are cached locally.
 
-Current working version: **1.3.0-alpha16**
+Current working version: **1.3.0-alpha29**
 
-Alpha16 keeps the broad model catalog introduced in alpha15 and improves date/cyclops QC. For watches with a date aperture, the app now attempts to detect the local minute-track marker at the date position (for example the 15-minute marker at 3 o'clock, or 45-minute marker at 9 o'clock) and measures the date aperture against that photographed local anchor rather than only a theoretical global dial axis. If the local hash cannot be isolated reliably, the report states that it has fallen back to the fitted dial axis.
+Alpha29 introduces CLAHE glare pre-processing, interactive fullscreen micro-nudge controls (center translate, rotate, scale), customizable overlay colors, manual 3-point seed support, sub-pixel dial detection, 12 o'clock shape-aware radial compensation, and one-tap QC summary card export.
 
 Where a genuine/reference image is available, the app also compares the apparent date-numeral height normalized to dial radius and reports it as a percentage of the genuine reference (`100% = genuine`). This is an image-based apparent magnification comparison, not a laboratory measurement of the cyclops optical magnification factor. Perspective mismatch between candidate and reference causes the result to be marked advisory.
 
