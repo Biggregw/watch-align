@@ -33,7 +33,7 @@ android {
 }
 
 dependencies {
-    implementation 'org.opencv:opencv-android:4.1.0'
+    implementation 'org.openpnp:opencv:4.7.0-1'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test:runner:1.6.2'
