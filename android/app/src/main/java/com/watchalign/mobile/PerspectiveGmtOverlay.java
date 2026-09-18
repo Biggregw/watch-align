@@ -101,8 +101,10 @@ final class PerspectiveGmtOverlay {
             double tiltDeg=Math.toDegrees(Math.acos(Math.max(0.0,Math.min(1.0,axisRatio))));
 
             Point[] card=ellipseCardinalPoints(ellipse,seed.rollDeg);
-            Mat H=homographyFromUnitSquare(card);
-            if(H==null||H.empty())return null;
+            Mat H0=homographyFromUnitSquare(card);
+            if(H0==null||H0.empty())return null;
+            Mat H=DialProjectiveRefiner.refine(edges,H0);
+            H0.release();
 
             double reproj=reprojectionError(H,card);
             double centerErr=Math.hypot(ellipse.center.x-seed.x,ellipse.center.y-seed.y)/Math.max(1.0,seed.r);
