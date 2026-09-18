@@ -84,6 +84,18 @@ final class DialProjectiveRefiner {
                 }
             }
         }
+        double coarseP = best[6], coarseQ = best[7];
+        for (double p = coarseP - 0.08; p <= coarseP + 0.08 + 1e-9; p += 0.02) {
+            for (double q = coarseQ - 0.08; q <= coarseQ + 0.08 + 1e-9; q += 0.02) {
+                if (Math.abs(p) > LIMIT[6] || Math.abs(q) > LIMIT[7]) continue;
+                double[] candidate = conicPreservingSeed(p, q);
+                double value = objective(field, h0, candidate);
+                if (value < bestObjective) {
+                    bestObjective = value;
+                    best = candidate;
+                }
+            }
+        }
 
         // Deterministic bounded coordinate search. Several shifted sweeps reduce
         // coordinate-order bias without introducing unstable random behaviour.
