@@ -88,11 +88,15 @@ final class DialProjectiveRefiner {
         for (double p = coarseP - 0.08; p <= coarseP + 0.08 + 1e-9; p += 0.02) {
             for (double q = coarseQ - 0.08; q <= coarseQ + 0.08 + 1e-9; q += 0.02) {
                 if (Math.abs(p) > LIMIT[6] || Math.abs(q) > LIMIT[7]) continue;
-                double[] candidate = conicPreservingSeed(p, q);
-                double value = objective(field, h0, candidate);
-                if (value < bestObjective) {
-                    bestObjective = value;
-                    best = candidate;
+                for (double rotation = -0.06; rotation <= 0.06 + 1e-9; rotation += 0.02) {
+                    double[] candidate = conicPreservingSeed(p, q);
+                    candidate[1] = rotation;
+                    candidate[2] = -rotation;
+                    double value = objective(field, h0, candidate);
+                    if (value < bestObjective) {
+                        bestObjective = value;
+                        best = candidate;
+                    }
                 }
             }
         }
