@@ -82,8 +82,8 @@ final class PerspectiveGmtOverlay {
                     perspectiveFallback=true;
                 }
             }else if(detectedEllipse!=null){
-                ellipse=detectedEllipse;
-                seedSource="fitted dial ellipse plus detected dial orientation";
+                ellipse=normalizeEllipseToOuterRadius(detectedEllipse,seed);
+                seedSource="fitted dial ellipse normalized to detected outer dial radius";
             }else{
                 // A clean frontal watch can still fail contour ellipse selection because hands,
                 // cyclops glare and bezel edges fragment the dial boundary. Do not throw away
@@ -206,6 +206,14 @@ final class PerspectiveGmtOverlay {
             mapped[i]=new Point(e.center.x+ca*scaledX-sa*scaledY,e.center.y+sa*scaledX+ca*scaledY);
         }
         return mapped;
+    }
+
+    static RotatedRect normalizeEllipseToOuterRadius(RotatedRect ellipse,DialSeed seed){
+        double measured=rayEllipseRadius(ellipse,Math.toRadians(seed.rollDeg-90.0));
+        if(!(measured>1.0)||!Double.isFinite(measured)||!(seed.r>1.0)||!Double.isFinite(seed.r))return ellipse;
+        double scale=seed.r/measured;
+        return new RotatedRect(ellipse.center,
+                new Size(ellipse.size.width*scale,ellipse.size.height*scale),ellipse.angle);
     }
 
     private static Point rayEllipseIntersection(RotatedRect e,double imageAngle){
