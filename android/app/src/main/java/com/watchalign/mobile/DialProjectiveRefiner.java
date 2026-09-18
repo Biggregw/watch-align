@@ -186,7 +186,9 @@ final class DialProjectiveRefiner {
         }
         for (int minute = 0; minute < 60; minute++) {
             if (minute % 5 == 0) continue; // all twelve five-minute/hour-marker sectors
-            boolean thisHoldout = (minute & 1) == 0;
+            // Keep adjacent 6-degree structure in the fit set to avoid a 12-degree
+            // phase ambiguity. Every fourth minor tick is a distributed holdout.
+            boolean thisHoldout = minute % 4 == 2;
             if (thisHoldout != holdout) continue;
             double angle = Math.toRadians(minute * 6.0 - 90.0);
             groups.add(tickScore(field, h, angle));
