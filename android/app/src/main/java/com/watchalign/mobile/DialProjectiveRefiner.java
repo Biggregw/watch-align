@@ -5,7 +5,6 @@ import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -179,7 +178,7 @@ final class DialProjectiveRefiner {
             double angle = Math.toRadians(minute * 6.0 - 90.0);
             groups.add(tickScore(field, h, angle));
         }
-        return trimmedMean(groups);
+        return cappedMean(groups);
     }
 
     private static double tickScore(DistanceField field, double[][] h, double angle) {
@@ -212,15 +211,11 @@ final class DialProjectiveRefiner {
         return Math.min(LOSS_CAP_PX, Math.max(0.0, field.distance(px, py)));
     }
 
-    private static double trimmedMean(List<Double> values) {
+    private static double cappedMean(List<Double> values) {
         if (values.isEmpty()) return LOSS_CAP_PX;
-        double[] sorted = new double[values.size()];
-        for (int i = 0; i < sorted.length; i++) sorted[i] = Math.min(LOSS_CAP_PX, values.get(i));
-        Arrays.sort(sorted);
-        int keep = Math.max(1, (int) Math.ceil(sorted.length * 0.80));
         double sum = 0.0;
-        for (int i = 0; i < keep; i++) sum += sorted[i];
-        return sum / keep;
+        for (double value : values) sum += Math.min(LOSS_CAP_PX, value);
+        return sum / values.size();
     }
 
     private static double[][] compose(double[][] h0, double[] p) {
