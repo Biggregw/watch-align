@@ -176,13 +176,20 @@ final class PerspectiveGmtOverlay {
         finally{srcPts.release();dstPts.release();}
     }
 
-    private static Point[] ellipseCardinalPoints(RotatedRect e,double rollDeg){
-        return new Point[]{
-                rayEllipseIntersection(e,Math.toRadians(rollDeg-90.0)),
-                rayEllipseIntersection(e,Math.toRadians(rollDeg)),
-                rayEllipseIntersection(e,Math.toRadians(rollDeg+90.0)),
-                rayEllipseIntersection(e,Math.toRadians(rollDeg+180.0))
-        };
+    static Point[] ellipseCardinalPoints(RotatedRect e,double rollDeg){
+        double rx=Math.max(1e-6,e.size.width/2.0),ry=Math.max(1e-6,e.size.height/2.0);
+        double axis=Math.toRadians(e.angle),ca=Math.cos(axis),sa=Math.sin(axis);
+        double roll=Math.toRadians(rollDeg),cr=Math.cos(roll),sr=Math.sin(roll);
+        double[][] canonical={{0,-1},{1,0},{0,1},{-1,0}};
+        Point[] mapped=new Point[canonical.length];
+        for(int i=0;i<canonical.length;i++){
+            double x=cr*canonical[i][0]-sr*canonical[i][1];
+            double y=sr*canonical[i][0]+cr*canonical[i][1];
+            double localX=ca*x+sa*y,localY=-sa*x+ca*y;
+            double scaledX=rx*localX,scaledY=ry*localY;
+            mapped[i]=new Point(e.center.x+ca*scaledX-sa*scaledY,e.center.y+sa*scaledX+ca*scaledY);
+        }
+        return mapped;
     }
 
     private static Point rayEllipseIntersection(RotatedRect e,double imageAngle){
