@@ -50,15 +50,14 @@ public class PerspectiveGmtOverlayTest {
         PerspectiveGmtOverlay.DialSeed seed=new PerspectiveGmtOverlay.DialSeed(198,302,92,0.9,4);
 
         RotatedRect normalized=PerspectiveGmtOverlay.normalizeEllipseToOuterRadius(fitted,seed);
-        double direction=Math.toRadians(seed.rollDeg-90.0);
-        Point edge=rayIntersection(normalized,direction);
+        Point twelve=PerspectiveGmtOverlay.ellipseCardinalPoints(normalized,seed.rollDeg)[0];
 
-        assertEquals(fitted.center.x,normalized.center.x,EPS);
-        assertEquals(fitted.center.y,normalized.center.y,EPS);
+        assertEquals(seed.x,normalized.center.x,EPS);
+        assertEquals(seed.y,normalized.center.y,EPS);
         assertEquals(fitted.angle,normalized.angle,EPS);
         assertEquals(fitted.size.width/fitted.size.height,
                 normalized.size.width/normalized.size.height,EPS);
-        assertEquals(seed.r,Math.hypot(edge.x-normalized.center.x,edge.y-normalized.center.y),EPS);
+        assertEquals(seed.r,Math.hypot(twelve.x-normalized.center.x,twelve.y-normalized.center.y),EPS);
     }
 
     private static void assertOppositePairs(Point[] p,Point center) {
@@ -71,14 +70,5 @@ public class PerspectiveGmtOverlayTest {
     private static void assertPoint(Point actual,double x,double y) {
         assertEquals(x,actual.x,EPS);
         assertEquals(y,actual.y,EPS);
-    }
-
-
-    private static Point rayIntersection(RotatedRect ellipse,double angle) {
-        double rx=ellipse.size.width/2.0,ry=ellipse.size.height/2.0;
-        double t=Math.toRadians(ellipse.angle),dx=Math.cos(angle),dy=Math.sin(angle);
-        double lx=dx*Math.cos(t)+dy*Math.sin(t),ly=-dx*Math.sin(t)+dy*Math.cos(t);
-        double distance=1.0/Math.sqrt(lx*lx/(rx*rx)+ly*ly/(ry*ry));
-        return new Point(ellipse.center.x+distance*dx,ellipse.center.y+distance*dy);
     }
 }

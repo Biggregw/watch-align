@@ -209,10 +209,11 @@ final class PerspectiveGmtOverlay {
     }
 
     static RotatedRect normalizeEllipseToOuterRadius(RotatedRect ellipse,DialSeed seed){
-        double measured=rayEllipseRadius(ellipse,Math.toRadians(seed.rollDeg-90.0));
+        Point canonicalTwelve=ellipseCardinalPoints(ellipse,seed.rollDeg)[0];
+        double measured=Math.hypot(canonicalTwelve.x-ellipse.center.x,canonicalTwelve.y-ellipse.center.y);
         if(!(measured>1.0)||!Double.isFinite(measured)||!(seed.r>1.0)||!Double.isFinite(seed.r))return ellipse;
         double scale=seed.r/measured;
-        return new RotatedRect(ellipse.center,
+        return new RotatedRect(new Point(seed.x,seed.y),
                 new Size(ellipse.size.width*scale,ellipse.size.height*scale),ellipse.angle);
     }
 
