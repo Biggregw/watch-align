@@ -103,7 +103,9 @@ final class PerspectiveGmtOverlay {
             Point[] card=ellipseCardinalPoints(ellipse,seed.rollDeg);
             Mat H0=homographyFromUnitSquare(card);
             if(H0==null||H0.empty())return null;
-            Mat H=DialProjectiveRefiner.refine(edges,H0);
+            double[] h0Values=matrixValues(H0);
+            DialProjectiveRefiner.MatResult refinement=DialProjectiveRefiner.refineWithDiagnostics(edges,H0);
+            Mat H=refinement.homography;
             H0.release();
 
             double reproj=reprojectionError(H,card);
@@ -120,8 +122,20 @@ final class PerspectiveGmtOverlay {
                     "Inspection geometry: %s. Red outlines are the fixed master; white outlines are lume references.\n"+
                     "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+.2f°.\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. Pose residual: %.2f px. Confidence: %.0f%%.\n"+
+                    "Projective refinement: %s.\n"+
+                    "H0 projective terms: h31=%+.6f, h32=%+.6f.\n"+
+                    "Refined candidate terms: h31=%+.6f, h32=%+.6f.\n"+
+                    "Fit evidence: %.4f before, %.4f after. Holdout evidence: %.4f before, %.4f after.\n"+
+                    "H0 fallback used: %s.\n"+
                     "Use Native Template with opacity/blink and fine nudge. Automated QC checks remain available separately.\n",
-                    seedSource,master,major,minor,tiltDeg,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0);
+                    seedSource,master,major,minor,tiltDeg,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0,
+                    refinement.diagnostics.accepted?"ACCEPTED":"REJECTED",
+                    normalizedTerm(h0Values,6),normalizedTerm(h0Values,7),
+                    normalizedTerm(refinement.diagnostics.evaluatedHomography,2,0),
+                    normalizedTerm(refinement.diagnostics.evaluatedHomography,2,1),
+                    refinement.diagnostics.fitBefore,refinement.diagnostics.evaluatedFitAfter,
+                    refinement.diagnostics.holdoutBefore,refinement.diagnostics.evaluatedHoldoutAfter,
+                    refinement.diagnostics.accepted?"NO":"YES");
             H.release();
             return new Result(overlay,rectified,report,confidence);
         }catch(Throwable ignored){return null;}
@@ -283,6 +297,9 @@ final class PerspectiveGmtOverlay {
     private static void drawRectTarget(Canvas c,Mat H,double rr,double tangentialHalf,double radialHalf,double a,Paint p){double cx=rr*Math.cos(a),cy=rr*Math.sin(a);double ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;double[][] pts={{cx-ux*radialHalf-vx*tangentialHalf,cy-uy*radialHalf-vy*tangentialHalf},{cx-ux*radialHalf+vx*tangentialHalf,cy-uy*radialHalf+vy*tangentialHalf},{cx+ux*radialHalf+vx*tangentialHalf,cy+uy*radialHalf+vy*tangentialHalf},{cx+ux*radialHalf-vx*tangentialHalf,cy+uy*radialHalf-vy*tangentialHalf}};drawQuad(c,H,pts,p);}
     private static void drawQuad(Canvas c,Mat H,double[][] pts,Paint p){Path path=new Path();for(int i=0;i<pts.length;i++){Point q=project(H,pts[i][0],pts[i][1]);if(i==0)path.moveTo((float)q.x,(float)q.y);else path.lineTo((float)q.x,(float)q.y);}path.close();c.drawPath(path,p);}
     private static Paint paint(int color,float width,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);p.setColor(color);p.setAlpha(alpha);return p;}
+    private static double[] matrixValues(Mat h){double[] values=new double[9];h.get(0,0,values);return values;}
+    private static double normalizedTerm(double[] h,int index){return h[index]/h[8];}
+    private static double normalizedTerm(double[][] h,int row,int col){return h[row][col]/h[2][2];}
     private static Point project(Mat H,double x,double y){double[] h=new double[9];H.get(0,0,h);double w=h[6]*x+h[7]*y+h[8];if(Math.abs(w)<1e-9)w=1e-9;return new Point((h[0]*x+h[1]*y+h[2])/w,(h[3]*x+h[4]*y+h[5])/w);}
     private static Object field(Object o,String n)throws Exception{Field f=o.getClass().getDeclaredField(n);f.setAccessible(true);return f.get(o);}
     private static double num(Object o,String n)throws Exception{return ((Number)field(o,n)).doubleValue();}

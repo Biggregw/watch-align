@@ -30,34 +30,50 @@ final class DialProjectiveRefiner {
 
     static final class Result {
         final double[][] homography;
+        final double[][] evaluatedHomography;
         final boolean accepted;
         final double fitBefore;
         final double fitAfter;
+        final double evaluatedFitAfter;
         final double holdoutBefore;
         final double holdoutAfter;
+        final double evaluatedHoldoutAfter;
 
-        Result(double[][] h, boolean accepted, double fitBefore, double fitAfter,
-               double holdoutBefore, double holdoutAfter) {
+        Result(double[][] h, double[][] evaluatedHomography, boolean accepted,
+               double fitBefore, double fitAfter, double evaluatedFitAfter,
+               double holdoutBefore, double holdoutAfter, double evaluatedHoldoutAfter) {
             this.homography = h;
+            this.evaluatedHomography = evaluatedHomography;
             this.accepted = accepted;
             this.fitBefore = fitBefore;
             this.fitAfter = fitAfter;
+            this.evaluatedFitAfter = evaluatedFitAfter;
             this.holdoutBefore = holdoutBefore;
             this.holdoutAfter = holdoutAfter;
+            this.evaluatedHoldoutAfter = evaluatedHoldoutAfter;
         }
     }
 
-    static Mat refine(Mat edges, Mat h0) {
+    static final class MatResult {
+        final Mat homography;
+        final Result diagnostics;
+        MatResult(Mat homography, Result diagnostics) {
+            this.homography = homography;
+            this.diagnostics = diagnostics;
+        }
+    }
+
+    static MatResult refineWithDiagnostics(Mat edges, Mat h0) {
         Mat inverted = new Mat();
         Mat distance = new Mat();
         try {
             Imgproc.threshold(edges, inverted, 0.0, 255.0, Imgproc.THRESH_BINARY_INV);
             Imgproc.distanceTransform(inverted, distance, Imgproc.DIST_L2, Imgproc.DIST_MASK_PRECISE);
             Result result = refine(new MatDistanceField(distance), matrix(h0));
-            if (!result.accepted) return h0.clone();
+            if (!result.accepted) return new MatResult(h0.clone(), result);
             Mat refined = new Mat(3, 3, CvType.CV_64F);
             refined.put(0, 0, flatten(result.homography));
-            return refined;
+            return new MatResult(refined, result);
         } finally {
             inverted.release();
             distance.release();
@@ -135,9 +151,9 @@ final class DialProjectiveRefiner {
         boolean improvesFit = fitAfter < fitBefore - 0.08 && fitAfter <= fitBefore * 0.985;
         boolean improvesHoldout = holdoutAfter < holdoutBefore - 0.08 && holdoutAfter <= holdoutBefore * 0.985;
         boolean accepted = hasEvidence && improvesFit && improvesHoldout && finite(candidate);
-        return new Result(accepted ? candidate : copy(h0), accepted,
-                fitBefore, accepted ? fitAfter : fitBefore,
-                holdoutBefore, accepted ? holdoutAfter : holdoutBefore);
+        return new Result(accepted ? candidate : copy(h0), copy(candidate), accepted,
+                fitBefore, accepted ? fitAfter : fitBefore, fitAfter,
+                holdoutBefore, accepted ? holdoutAfter : holdoutBefore, holdoutAfter);
     }
 
     /**
