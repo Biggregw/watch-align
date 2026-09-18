@@ -19,8 +19,8 @@ final class DialProjectiveRefiner {
     private static final double LOSS_CAP_PX = 8.0;
 
     // Transform relative to H0: four linear nuisance terms, translation, h31 and h32.
-    private static final double[] LIMIT = {0.08, 0.08, 0.08, 0.08, 0.26, 0.26, 0.32, 0.32};
-    private static final double[] INITIAL_STEP = {0.025, 0.025, 0.025, 0.025, 0.055, 0.055, 0.055, 0.055};
+    private static final double[] LIMIT = {0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.32, 0.32};
+    private static final double[] INITIAL_STEP = {0.025, 0.025, 0.025, 0.025, 0.02, 0.02, 0.055, 0.055};
 
     interface DistanceField {
         int width();
@@ -125,22 +125,23 @@ final class DialProjectiveRefiner {
     }
 
     /**
-     * A normalized Lorentz boost maps the unit circle onto itself while adding
-     * the requested projective denominator. H0 composed with this transform
-     * therefore stays on the fitted ellipse and provides a physically useful
-     * basin for the bounded nuisance search.
+     * Seeds the projective coordinates with zero affine nuisance. Composition
+     * constructs the corresponding normalized Lorentz boost, which maps the
+     * unit circle onto itself and stays on the fitted ellipse.
      */
     private static double[] conicPreservingSeed(double p, double q) {
+        return new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, p, q};
+    }
+
+    private static double[][] conicPreservingDelta(double p, double q) {
         double magnitude2 = p * p + q * q;
         double gamma = 1.0 / Math.sqrt(Math.max(1e-6, 1.0 - magnitude2));
         double inverseGamma = 1.0 / gamma;
         double blend = magnitude2 > 1e-12 ? (1.0 - inverseGamma) / magnitude2 : 0.0;
-        return new double[]{
-                inverseGamma + blend * p * p - 1.0,
-                blend * p * q,
-                blend * p * q,
-                inverseGamma + blend * q * q - 1.0,
-                p, q, p, q
+        return new double[][]{
+                {inverseGamma + blend * p * p, blend * p * q, p},
+                {blend * p * q, inverseGamma + blend * q * q, q},
+                {p, q, 1.0}
         };
     }
 
@@ -219,11 +220,13 @@ final class DialProjectiveRefiner {
     }
 
     private static double[][] compose(double[][] h0, double[] p) {
-        double[][] delta = {
-                {1.0 + p[0], p[1], p[4]},
-                {p[2], 1.0 + p[3], p[5]},
-                {p[6], p[7], 1.0}
-        };
+        double[][] delta = conicPreservingDelta(p[6], p[7]);
+        delta[0][0] += p[0];
+        delta[0][1] += p[1];
+        delta[1][0] += p[2];
+        delta[1][1] += p[3];
+        delta[0][2] += p[4];
+        delta[1][2] += p[5];
         double[][] out = multiply(h0, delta);
         double scale = out[2][2];
         if (Math.abs(scale) < 1e-9) return out;
