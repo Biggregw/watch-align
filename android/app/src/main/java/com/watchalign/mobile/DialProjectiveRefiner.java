@@ -77,11 +77,7 @@ final class DialProjectiveRefiner {
         // edge loss. Seed the local search with a small bounded h31/h32 grid.
         for (double p = -LIMIT[6]; p <= LIMIT[6] + 1e-9; p += 0.08) {
             for (double q = -LIMIT[7]; q <= LIMIT[7] + 1e-9; q += 0.08) {
-                double[] candidate = zero.clone();
-                candidate[4] = clamp(p, -LIMIT[4], LIMIT[4]);
-                candidate[5] = clamp(q, -LIMIT[5], LIMIT[5]);
-                candidate[6] = p;
-                candidate[7] = q;
+                double[] candidate = conicPreservingSeed(p, q);
                 double value = objective(field, h0, candidate);
                 if (value < bestObjective) {
                     bestObjective = value;
@@ -127,6 +123,26 @@ final class DialProjectiveRefiner {
         return new Result(accepted ? candidate : copy(h0), accepted,
                 fitBefore, accepted ? fitAfter : fitBefore,
                 holdoutBefore, accepted ? holdoutAfter : holdoutBefore);
+    }
+
+    /**
+     * A normalized Lorentz boost maps the unit circle onto itself while adding
+     * the requested projective denominator. H0 composed with this transform
+     * therefore stays on the fitted ellipse and provides a physically useful
+     * basin for the bounded nuisance search.
+     */
+    private static double[] conicPreservingSeed(double p, double q) {
+        double magnitude2 = p * p + q * q;
+        double gamma = 1.0 / Math.sqrt(Math.max(1e-6, 1.0 - magnitude2));
+        double inverseGamma = 1.0 / gamma;
+        double blend = magnitude2 > 1e-12 ? (1.0 - inverseGamma) / magnitude2 : 0.0;
+        return new double[]{
+                inverseGamma + blend * p * p - 1.0,
+                blend * p * q,
+                blend * p * q,
+                inverseGamma + blend * q * q - 1.0,
+                p, q, p, q
+        };
     }
 
     private static double objective(DistanceField field, double[][] h0, double[] p) {
