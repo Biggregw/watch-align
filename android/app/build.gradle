@@ -11,6 +11,17 @@ android {
         versionCode 13030
         versionName '1.3.0-alpha30'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+
+        // The OpenCV Android AAR contains native libraries for four ABIs. For the
+        // sideload APK we build an arm64-only package to avoid shipping x86,
+        // x86_64 and 32-bit ARM copies that the target phone can never load.
+        // Keep this property opt-in so emulator/instrumentation builds still have
+        // their required x86_64 OpenCV library.
+        if (project.hasProperty('watchAlignArm64Only')) {
+            ndk {
+                abiFilters 'arm64-v8a'
+            }
+        }
     }
 
     buildTypes {
