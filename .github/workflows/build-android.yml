@@ -82,8 +82,8 @@ jobs:
           grep -q 'rolex' app/src/androidTest/assets/genuine/126710BLNR/sources.tsv
           grep -q 'rolex' app/src/androidTest/assets/genuine/124060/sources.tsv
           echo 'Official genuine fixtures prepared.'
-      - name: Build standalone APK
-        run: bash ./gradlew :app:assembleDebug --stacktrace
+      - name: Build standalone arm64 APK
+        run: bash ./gradlew :app:assembleDebug -PwatchAlignArm64Only --stacktrace
       - name: Read app version
         id: version
         shell: bash
@@ -92,14 +92,14 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Prepare working APK
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk "WatchAlign-Android-${{ steps.version.outputs.version }}.apk"
-          sha256sum "WatchAlign-Android-${{ steps.version.outputs.version }}.apk" > SHA256SUMS-Android.txt
+          cp app/build/outputs/apk/debug/app-debug.apk "WatchAlign-Android-${{ steps.version.outputs.version }}-arm64.apk"
+          sha256sum "WatchAlign-Android-${{ steps.version.outputs.version }}-arm64.apk" > SHA256SUMS-Android.txt
       - name: Upload working APK
         uses: actions/upload-artifact@v4
         with:
-          name: WatchAlign-Android-${{ steps.version.outputs.version }}
+          name: WatchAlign-Android-${{ steps.version.outputs.version }}-arm64
           path: |
-            android/WatchAlign-Android-${{ steps.version.outputs.version }}.apk
+            android/WatchAlign-Android-${{ steps.version.outputs.version }}-arm64.apk
             android/SHA256SUMS-Android.txt
           if-no-files-found: error
           retention-days: 30
@@ -109,9 +109,9 @@ jobs:
         with:
           tag_name: "v${{ steps.version.outputs.version }}"
           name: "Watch Align Android v${{ steps.version.outputs.version }}"
-          body: "Official standalone build for Watch Align Android v${{ steps.version.outputs.version }}."
+          body: "Official standalone arm64 build for Watch Align Android v${{ steps.version.outputs.version }}."
           files: |
-            android/WatchAlign-Android-${{ steps.version.outputs.version }}.apk
+            android/WatchAlign-Android-${{ steps.version.outputs.version }}-arm64.apk
             android/SHA256SUMS-Android.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
