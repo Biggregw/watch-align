@@ -63,6 +63,21 @@ final class PerspectiveGmtOverlay {
             if(seed==null||!(seed.r>40))return null;
 
             RotatedRect detectedEllipse=detectedSeed==null?null:findDialEllipse(edges,detectedSeed);
+            if(manualSeed==null&&detectedEllipse!=null){
+                // The circular-dial roll estimate (measureMarkerSet, in WatchAlignCoreV7) assumes
+                // markers are evenly spaced at 30 degree intervals in image space, which is only
+                // true for a perfectly frontal photo. Any real tilt warps that spacing unevenly,
+                // biasing the roll. Since roll seeds all four homography anchor points exactly
+                // (ellipseCardinalPoints -> homographyFromUnitSquare), that bias lands undiluted
+                // on whichever markers sit at those anchors (12 and 9 o'clock here) while getting
+                // smeared across the interpolated markers elsewhere. Re-measure roll in the fitted
+                // ellipse's own normalized frame, where marker spacing is genuinely uniform, and
+                // prefer that corrected estimate.
+                double correctedRoll=ellipseAwareRoll(gray,detectedEllipse,seed.rollDeg);
+                if(Double.isFinite(correctedRoll)&&Math.abs(correctedRoll)<=15.0){
+                    seed=new DialSeed(seed.x,seed.y,seed.r,seed.quality,correctedRoll);
+                }
+            }
             RotatedRect ellipse;
             String seedSource;
             boolean perspectiveFallback=false;
@@ -140,6 +155,44 @@ final class PerspectiveGmtOverlay {
             return new Result(overlay,rectified,report,confidence);
         }catch(Throwable ignored){return null;}
         finally{src.release();gray.release();blur.release();edges.release();}
+    }
+
+    /**
+     * Re-measures marker angular offsets in the fitted ellipse's own normalized frame
+     * (undo tilt rotation, then divide by each axis's radius) instead of raw image-space
+     * angles around a plain circle. In that normalized frame a genuinely evenly-spaced
+     * dial maps back to even 30-degree spacing regardless of photo tilt, so the median
+     * offset from target is a much less biased estimate of true roll than the circular
+     * measurement in WatchAlignCoreV7.measureMarkerSet.
+     */
+    private static double ellipseAwareRoll(Mat gray,RotatedRect ellipse,double fallbackRoll){
+        double axis=Math.toRadians(ellipse.angle),ca=Math.cos(axis),sa=Math.sin(axis);
+        double rx=Math.max(1e-6,ellipse.size.width/2.0),ry=Math.max(1e-6,ellipse.size.height/2.0);
+        double cx=ellipse.center.x,cy=ellipse.center.y;
+        int w=gray.cols(),h=gray.rows();
+        double innerN=0.66,outerN=0.94;
+        double reach=Math.max(rx,ry)+4;
+        int x0=Math.max(0,(int)(cx-reach)),x1=Math.min(w-1,(int)(cx+reach));
+        int y0=Math.max(0,(int)(cy-reach)),y1=Math.min(h-1,(int)(cy+reach));
+        List<Double> offsets=new ArrayList<>();
+        for(int hour=1;hour<=12;hour++){
+            double target=hour==12?0:hour*30.0,sw=0,sd=0;int count=0;
+            for(int y=y0;y<=y1;y+=2)for(int x=x0;x<=x1;x+=2){
+                double dx=x-cx,dy=y-cy;
+                double lx=ca*dx+sa*dy,ly=-sa*dx+ca*dy;
+                double nx=lx/rx,ny=ly/ry;
+                double r=Math.hypot(nx,ny);if(r<innerN||r>outerN)continue;
+                double a=Math.toDegrees(Math.atan2(nx,-ny));if(a<0)a+=360;
+                double d=GeometryRegistration.wrap180(a-target);if(Math.abs(d)>8.0)continue;
+                double[] gv=gray.get(y,x);if(gv==null||gv[0]<155)continue;
+                double wt=Math.max(1.0,(gv[0]-145.0)/18.0);sw+=wt;sd+=d*wt;count++;
+            }
+            if(sw>10&&count>=4)offsets.add(sd/sw);
+        }
+        if(offsets.size()<4)return fallbackRoll;
+        double[] arr=new double[offsets.size()];for(int i=0;i<arr.length;i++)arr[i]=offsets.get(i);
+        double corrected=GeometryRegistration.median(arr);
+        return Double.isFinite(corrected)?corrected:fallbackRoll;
     }
 
     private static DialSeed seed(Mat rgba)throws Exception{
