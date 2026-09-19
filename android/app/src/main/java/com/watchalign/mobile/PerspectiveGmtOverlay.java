@@ -78,6 +78,16 @@ final class PerspectiveGmtOverlay {
                     seed=new DialSeed(seed.x,seed.y,seed.r,seed.quality,correctedRoll);
                 }
             }
+
+            double rawEllipseMajor=Double.NaN,rawEllipseMinor=Double.NaN,rawTwelveRadius=Double.NaN,seedToRawScale=Double.NaN;
+            if(detectedEllipse!=null){
+                rawEllipseMajor=Math.max(detectedEllipse.size.width,detectedEllipse.size.height);
+                rawEllipseMinor=Math.min(detectedEllipse.size.width,detectedEllipse.size.height);
+                Point rawTwelve=ellipseCardinalPoints(detectedEllipse,seed.rollDeg)[0];
+                rawTwelveRadius=Math.hypot(rawTwelve.x-detectedEllipse.center.x,rawTwelve.y-detectedEllipse.center.y);
+                if(rawTwelveRadius>1.0&&Double.isFinite(rawTwelveRadius))seedToRawScale=seed.r/rawTwelveRadius;
+            }
+
             RotatedRect ellipse;
             String seedSource;
             boolean perspectiveFallback=false;
@@ -97,8 +107,13 @@ final class PerspectiveGmtOverlay {
                     perspectiveFallback=true;
                 }
             }else if(detectedEllipse!=null){
-                ellipse=normalizeEllipseToOuterRadius(detectedEllipse,seed);
-                seedSource="fitted dial ellipse normalized to detected outer dial radius";
+                // The contour fit is independent evidence for dial scale. Earlier builds fitted
+                // this ellipse correctly, then rescaled it back to the Hough-circle seed radius.
+                // On GMT photos the Hough seed can lock onto an inner dial/minute-track boundary,
+                // making the entire visual master about 7-9% too small. Keep the seed centre, which
+                // is stable, but preserve the fitted ellipse axes exactly.
+                ellipse=anchorFittedEllipseToSeedCenter(detectedEllipse,seed);
+                seedSource="fitted dial ellipse scale with detected dial centre";
             }else{
                 // A clean frontal watch can still fail contour ellipse selection because hands,
                 // cyclops glare and bezel edges fragment the dial boundary. Do not throw away
@@ -145,6 +160,7 @@ final class PerspectiveGmtOverlay {
                     "Pose source: %s. Assisted points use the dial edge, not hour markers, so marker QC is not fitted away.\n"+
                     "Inspection geometry: %s. Red outlines are the fixed master; white outlines are lume references.\n"+
                     "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+.2f°.\n"+
+                    "Scale diagnostics: seed diameter %.1f px; raw fitted ellipse %.1f × %.1f px; seed/raw 12-radius ratio %.4f. Fitted ellipse scale preserved.\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. Pose residual: %.2f px. Confidence: %.0f%%.\n"+
                     "Projective refinement: %s.\n"+
                     "H0 projective terms: h31=%+.6f, h32=%+.6f.\n"+
@@ -152,7 +168,9 @@ final class PerspectiveGmtOverlay {
                     "Fit evidence: %.4f before, %.4f after. Holdout evidence: %.4f before, %.4f after.\n"+
                     "H0 fallback used: %s.\n"+
                     "Use Native Template with opacity/blink and fine nudge. Automated QC checks remain available separately.\n",
-                    seedSource,master,major,minor,tiltDeg,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0,
+                    seedSource,master,major,minor,tiltDeg,seed.rollDeg,
+                    seed.r*2.0,rawEllipseMajor,rawEllipseMinor,seedToRawScale,
+                    centerErr*100.0,reproj,confidence*100.0,
                     refinement.diagnostics.accepted?"ACCEPTED":"REJECTED",
                     normalizedTerm(h0Values,6),normalizedTerm(h0Values,7),
                     normalizedTerm(refinement.diagnostics.evaluatedHomography,2,0),
@@ -270,13 +288,9 @@ final class PerspectiveGmtOverlay {
         return mapped;
     }
 
-    static RotatedRect normalizeEllipseToOuterRadius(RotatedRect ellipse,DialSeed seed){
-        Point canonicalTwelve=ellipseCardinalPoints(ellipse,seed.rollDeg)[0];
-        double measured=Math.hypot(canonicalTwelve.x-ellipse.center.x,canonicalTwelve.y-ellipse.center.y);
-        if(!(measured>1.0)||!Double.isFinite(measured)||!(seed.r>1.0)||!Double.isFinite(seed.r))return ellipse;
-        double scale=seed.r/measured;
+    static RotatedRect anchorFittedEllipseToSeedCenter(RotatedRect ellipse,DialSeed seed){
         return new RotatedRect(new Point(seed.x,seed.y),
-                new Size(ellipse.size.width*scale,ellipse.size.height*scale),ellipse.angle);
+                new Size(ellipse.size.width,ellipse.size.height),ellipse.angle);
     }
 
     private static Point rayEllipseIntersection(RotatedRect e,double imageAngle){
