@@ -26,8 +26,9 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Visual QC overlay. Photo analysis establishes pose only. The fixed 126710BLNR
- * master supplies all marker geometry. QC markers never move or resize the master.
+ * Visual QC overlay. The dial edge establishes centre/scale/ellipse pose. Dial rotation is
+ * solved separately from minor minute-track ticks. A disjoint set of minor ticks validates
+ * the final pose before the automatic master is trusted.
  */
 final class PerspectiveGmtOverlay {
     static final class Result {
@@ -35,7 +36,10 @@ final class PerspectiveGmtOverlay {
         final Bitmap rectified;
         final String report;
         final double confidence;
-        Result(Bitmap n, Bitmap r, String s, double c){nativeOverlay=n;rectified=r;report=s;confidence=c;}
+        final boolean automaticAccepted;
+        Result(Bitmap n,Bitmap r,String s,double c,boolean accepted){
+            nativeOverlay=n;rectified=r;report=s;confidence=c;automaticAccepted=accepted;
+        }
     }
 
     static final class DialSeed {
@@ -46,7 +50,7 @@ final class PerspectiveGmtOverlay {
     static boolean supports(String modelRef){return CanonicalGmtGeometryAnalyzer.supports(modelRef);}
 
     static Result build(Bitmap input,String modelRef){
-        return build(input, modelRef, null, Color.rgb(255,45,45));
+        return build(input,modelRef,null,Color.rgb(255,45,45));
     }
 
     static Result build(Bitmap input,String modelRef,DialSeed manualSeed,int overlayColor){
@@ -63,22 +67,11 @@ final class PerspectiveGmtOverlay {
             if(seed==null||!(seed.r>40))return null;
 
             RotatedRect detectedEllipse=detectedSeed==null?null:findDialEllipse(edges,detectedSeed);
-            if(manualSeed==null&&detectedEllipse!=null){
-                // Measure roll after undoing ellipse distortion, but keep the normalized vector
-                // in the original image/dial coordinate frame. Earlier code rotated the point into
-                // ellipse-local axes and divided by rx/ry, then measured its angle without rotating
-                // it back. That leaked the fitted ellipse axis angle directly into dial roll.
-                double correctedRoll=ellipseAwareRoll(gray,detectedEllipse,seed.rollDeg);
-                if(Double.isFinite(correctedRoll)&&Math.abs(correctedRoll)<=15.0){
-                    seed=new DialSeed(seed.x,seed.y,seed.r,seed.quality,correctedRoll);
-                }
-            }
-
             double rawEllipseMajor=Double.NaN,rawEllipseMinor=Double.NaN,rawTwelveRadius=Double.NaN,seedToRawScale=Double.NaN;
             if(detectedEllipse!=null){
                 rawEllipseMajor=Math.max(detectedEllipse.size.width,detectedEllipse.size.height);
                 rawEllipseMinor=Math.min(detectedEllipse.size.width,detectedEllipse.size.height);
-                Point rawTwelve=ellipseCardinalPoints(detectedEllipse,seed.rollDeg)[0];
+                Point rawTwelve=ellipseCardinalPoints(detectedEllipse,0.0)[0];
                 rawTwelveRadius=Math.hypot(rawTwelve.x-detectedEllipse.center.x,rawTwelve.y-detectedEllipse.center.y);
                 if(rawTwelveRadius>1.0&&Double.isFinite(rawTwelveRadius))seedToRawScale=seed.r/rawTwelveRadius;
             }
@@ -86,15 +79,12 @@ final class PerspectiveGmtOverlay {
             RotatedRect ellipse;
             String seedSource;
             boolean perspectiveFallback=false;
-
             if(manualSeed!=null){
                 if(detectedEllipse!=null){
                     double measured=rayEllipseRadius(detectedEllipse,Math.toRadians(manualSeed.rollDeg-90.0));
                     double scale=(measured>1.0&&Double.isFinite(measured))?manualSeed.r/measured:1.0;
-                    ellipse=new RotatedRect(
-                            new Point(manualSeed.x,manualSeed.y),
-                            new Size(detectedEllipse.size.width*scale,detectedEllipse.size.height*scale),
-                            detectedEllipse.angle);
+                    ellipse=new RotatedRect(new Point(manualSeed.x,manualSeed.y),
+                            new Size(detectedEllipse.size.width*scale,detectedEllipse.size.height*scale),detectedEllipse.angle);
                     seedSource="2-point dial-edge seed with fitted perspective ellipse";
                 }else{
                     ellipse=new RotatedRect(new Point(seed.x,seed.y),new Size(seed.r*2.0,seed.r*2.0),0.0);
@@ -102,19 +92,9 @@ final class PerspectiveGmtOverlay {
                     perspectiveFallback=true;
                 }
             }else if(detectedEllipse!=null){
-                // The contour fit is independent evidence for dial scale. Earlier builds fitted
-                // this ellipse correctly, then rescaled it back to the Hough-circle seed radius.
-                // On GMT photos the Hough seed can lock onto an inner dial/minute-track boundary,
-                // making the entire visual master about 7-9% too small. Keep the seed centre, which
-                // is stable, but preserve the fitted ellipse axes exactly.
                 ellipse=anchorFittedEllipseToSeedCenter(detectedEllipse,seed);
                 seedSource="fitted dial ellipse scale with detected dial centre";
             }else{
-                // A clean frontal watch can still fail contour ellipse selection because hands,
-                // cyclops glare and bezel edges fragment the dial boundary. Do not throw away
-                // an otherwise valid dial seed. Use its centre/radius/roll as a conservative
-                // circular pose and mark the result as lower confidence so the user can refine
-                // it with Precision Align if necessary.
                 ellipse=new RotatedRect(new Point(seed.x,seed.y),new Size(seed.r*2.0,seed.r*2.0),0.0);
                 seedSource="detected dial seed with circular fallback";
                 perspectiveFallback=true;
@@ -124,48 +104,85 @@ final class PerspectiveGmtOverlay {
             double minor=Math.min(ellipse.size.width,ellipse.size.height);
             double axisRatio=minor/Math.max(1.0,major);
             double tiltDeg=Math.toDegrees(Math.acos(Math.max(0.0,Math.min(1.0,axisRatio))));
+            double dialRadiusPx=(major+minor)/4.0;
 
-            Point[] card=ellipseCardinalPoints(ellipse,seed.rollDeg);
-            Mat H0=homographyFromUnitSquare(card);
-            if(H0==null||H0.empty())return null;
-            double[] h0Values=matrixValues(H0);
-            // The fitted ellipse's own eccentricity already tells us roughly how tilted this
-            // photo is. A genuine additional projective (keystone) correction on top of that
-            // should scale with the tilt, not be a fixed allowance for every photo: a near-frontal
-            // dial (small tiltDeg) has little room for a real h31/h32 term, so let the refiner
-            // search only as far as the observed tilt justifies. This keeps it from locking onto
-            // unrelated edge clutter (bezel numerals, hands, reflections) by taking a large,
-            // implausible projective excursion that happens to shave a fraction of a pixel off
-            // the average tick-edge distance.
+            // Base pose comes only from the dial edge/ellipse. Do not use applied markers to set it.
+            double startingRoll=manualSeed!=null?manualSeed.rollDeg:0.0;
+            Point[] baseCard=ellipseCardinalPoints(ellipse,startingRoll);
+            Mat edgeH=homographyFromUnitSquare(baseCard);
+            if(edgeH==null||edgeH.empty())return null;
+
+            // Automatic rotation is a separate phase using minor minute-track ticks only.
+            MinuteTrackPoseValidator.RotationResult initialRotation=null;
+            Mat rotatedH;
+            double solvedRoll=startingRoll;
+            if(manualSeed==null){
+                initialRotation=MinuteTrackPoseValidator.solveRotation(edges,edgeH,15.0);
+                rotatedH=initialRotation.homography;
+                solvedRoll=initialRotation.deltaDeg;
+            }else{
+                rotatedH=edgeH.clone();
+            }
+            edgeH.release();
+
+            double[] h0Values=matrixValues(rotatedH);
             double projectiveLimit=Math.max(0.015,Math.min(0.32,0.45*Math.sin(Math.toRadians(tiltDeg))));
-            DialProjectiveRefiner.MatResult refinement=DialProjectiveRefiner.refineWithDiagnostics(edges,H0,projectiveLimit);
-            Mat H=refinement.homography;
-            H0.release();
+            DialProjectiveRefiner.MatResult refinement=DialProjectiveRefiner.refineWithDiagnostics(edges,rotatedH,projectiveLimit);
+            rotatedH.release();
 
-            double reproj=reprojectionError(H,card);
+            Mat H;
+            MinuteTrackPoseValidator.RotationResult fineRotation=null;
+            if(manualSeed==null){
+                // The refiner may make a small rotation-like affine move. Re-solve only a narrow
+                // final rotation from the minute track, keeping rotation conceptually separate.
+                fineRotation=MinuteTrackPoseValidator.fineTuneRotation(edges,refinement.homography);
+                H=fineRotation.homography;
+                solvedRoll+=fineRotation.deltaDeg;
+            }else{
+                H=refinement.homography.clone();
+            }
+            refinement.homography.release();
+
+            MinuteTrackPoseValidator.ValidationResult validation=MinuteTrackPoseValidator.validate(edges,H,dialRadiusPx);
+            boolean automaticAccepted=manualSeed!=null||(!perspectiveFallback&&validation.accepted);
+
+            Point[] expectedCard=ellipseCardinalPoints(ellipse,solvedRoll);
+            double reproj=reprojectionError(H,expectedCard);
             double centerErr=Math.hypot(ellipse.center.x-seed.x,ellipse.center.y-seed.y)/Math.max(1.0,seed.r);
             double confidence=confidence(seed.quality,reproj,centerErr,axisRatio);
             if(perspectiveFallback)confidence*=0.65;
+            if(!automaticAccepted)confidence=Math.min(confidence,0.35);
 
             Bitmap overlay=renderNative(input,H,modelRef,overlayColor);
             Bitmap rectified=rectify(src,H,input);
             String master=Gmt126710BlnrMaster.supports(modelRef)?Gmt126710BlnrMaster.ID:"canonical GMT fallback";
+            double initialFit=initialRotation==null?Double.NaN:initialRotation.fitMedianPx;
+            double fineDelta=fineRotation==null?0.0:fineRotation.deltaDeg;
             String report=String.format(Locale.US,
                     "\n\nVISUAL QC MASTER\n"+
-                    "Pose source: %s. Assisted points use the dial edge, not hour markers, so marker QC is not fitted away.\n"+
+                    "Pose source: %s. Dial edge establishes centre/scale/ellipse pose; applied hour markers are not used to fit the master.\n"+
                     "Inspection geometry: %s. Red outlines are the fixed master; white outlines are lume references.\n"+
-                    "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+.2f°; raw ellipse axis %+.2f°.\n"+
+                    "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; minute-track roll %+.2f°; raw ellipse axis %+.2f°.\n"+
                     "Scale diagnostics: seed diameter %.1f px; raw fitted ellipse %.1f × %.1f px; seed/raw 12-radius ratio %.4f. Fitted ellipse scale preserved.\n"+
+                    "Rotation solve: minor ticks only; initial fit median %.2f px; final fine correction %+.2f°.\n"+
+                    "Independent minute-track validation: %s; %d held-out ticks; median %.2f px (limit %.2f), p90 %.2f px (limit %.2f), inliers %.0f%% at %.2f px.\n"+
+                    "Automatic master: %s. %s\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. Pose residual: %.2f px. Confidence: %.0f%%.\n"+
                     "Projective refinement: %s.\n"+
                     "H0 projective terms: h31=%+.6f, h32=%+.6f.\n"+
                     "Refined candidate terms: h31=%+.6f, h32=%+.6f.\n"+
                     "Fit evidence: %.4f before, %.4f after. Holdout evidence: %.4f before, %.4f after.\n"+
                     "H0 fallback used: %s.\n"+
-                    "Use Native Template with opacity/blink and fine nudge. Automated QC checks remain available separately.\n",
-                    seedSource,master,major,minor,tiltDeg,seed.rollDeg,
+                    "Use Native Template with opacity/blink and manual move/resize/rotate when required. Automated QC checks remain separate.\n",
+                    seedSource,master,major,minor,tiltDeg,solvedRoll,
                     detectedEllipse!=null?detectedEllipse.angle:Double.NaN,
                     seed.r*2.0,rawEllipseMajor,rawEllipseMinor,seedToRawScale,
+                    initialFit,fineDelta,
+                    validation.accepted?"ACCEPTED":"REJECTED",validation.holdoutTicks,
+                    validation.medianPx,validation.medianLimitPx,validation.p90Px,validation.p90LimitPx,
+                    validation.inlierFraction*100.0,validation.inlierLimitPx,
+                    automaticAccepted?"ACCEPTED":"REJECTED",
+                    automaticAccepted?"Safe to show automatically.":"Not shown automatically; open Native Template and align manually.",
                     centerErr*100.0,reproj,confidence*100.0,
                     refinement.diagnostics.accepted?"ACCEPTED":"REJECTED",
                     normalizedTerm(h0Values,6),normalizedTerm(h0Values,7),
@@ -175,47 +192,12 @@ final class PerspectiveGmtOverlay {
                     refinement.diagnostics.holdoutBefore,refinement.diagnostics.evaluatedHoldoutAfter,
                     refinement.diagnostics.accepted?"NO":"YES");
             H.release();
-            return new Result(overlay,rectified,report,confidence);
+            return new Result(overlay,rectified,report,confidence,automaticAccepted);
         }catch(Throwable ignored){return null;}
         finally{src.release();gray.release();blur.release();edges.release();}
     }
 
-    /**
-     * Re-measures marker angular offsets after removing ellipse distortion while preserving
-     * the original image/dial axes. The inverse of ellipseCardinalPoints' shape transform is
-     * R(axis) * S^-1 * R(-axis). Measuring angle before the final R(axis) rotation introduces
-     * a spurious -ellipse.angle term into the estimated dial roll.
-     */
-    private static double ellipseAwareRoll(Mat gray,RotatedRect ellipse,double fallbackRoll){
-        double rx=Math.max(1e-6,ellipse.size.width/2.0),ry=Math.max(1e-6,ellipse.size.height/2.0);
-        double cx=ellipse.center.x,cy=ellipse.center.y;
-        int w=gray.cols(),h=gray.rows();
-        double innerN=0.66,outerN=0.94;
-        double reach=Math.max(rx,ry)+4;
-        int x0=Math.max(0,(int)(cx-reach)),x1=Math.min(w-1,(int)(cx+reach));
-        int y0=Math.max(0,(int)(cy-reach)),y1=Math.min(h-1,(int)(cy+reach));
-        List<Double> offsets=new ArrayList<>();
-        for(int hour=1;hour<=12;hour++){
-            double target=hour==12?0:hour*30.0,sw=0,sd=0;int count=0;
-            for(int y=y0;y<=y1;y+=2)for(int x=x0;x<=x1;x+=2){
-                double dx=x-cx,dy=y-cy;
-                Point normalized=undoEllipseDistortion(ellipse,dx,dy);
-                double nx=normalized.x,ny=normalized.y;
-                double r=Math.hypot(nx,ny);if(r<innerN||r>outerN)continue;
-                double a=Math.toDegrees(Math.atan2(nx,-ny));if(a<0)a+=360;
-                double d=GeometryRegistration.wrap180(a-target);if(Math.abs(d)>8.0)continue;
-                double[] gv=gray.get(y,x);if(gv==null||gv[0]<155)continue;
-                double wt=Math.max(1.0,(gv[0]-145.0)/18.0);sw+=wt;sd+=d*wt;count++;
-            }
-            if(sw>10&&count>=4)offsets.add(sd/sw);
-        }
-        if(offsets.size()<4)return fallbackRoll;
-        double[] arr=new double[offsets.size()];for(int i=0;i<arr.length;i++)arr[i]=offsets.get(i);
-        double corrected=GeometryRegistration.median(arr);
-        return Double.isFinite(corrected)?corrected:fallbackRoll;
-    }
-
-    /** Undo the ellipse shape transform without rotating the dial coordinate frame. */
+    /** Retained for diagnostic/unit-test coverage of ellipse-axis normalization. */
     static Point undoEllipseDistortion(RotatedRect ellipse,double dx,double dy){
         double axis=Math.toRadians(ellipse.angle),ca=Math.cos(axis),sa=Math.sin(axis);
         double rx=Math.max(1e-6,ellipse.size.width/2.0),ry=Math.max(1e-6,ellipse.size.height/2.0);
@@ -293,8 +275,7 @@ final class PerspectiveGmtOverlay {
     }
 
     static RotatedRect anchorFittedEllipseToSeedCenter(RotatedRect ellipse,DialSeed seed){
-        return new RotatedRect(new Point(seed.x,seed.y),
-                new Size(ellipse.size.width,ellipse.size.height),ellipse.angle);
+        return new RotatedRect(new Point(seed.x,seed.y),new Size(ellipse.size.width,ellipse.size.height),ellipse.angle);
     }
 
     private static Point rayEllipseIntersection(RotatedRect e,double imageAngle){
@@ -326,18 +307,15 @@ final class PerspectiveGmtOverlay {
         return Math.max(0,Math.min(1,0.35*a+0.20*b+0.30*c+0.15*d));
     }
 
-    /** Returns only the transparent master graphics. The watch image is composited by the caller. */
     private static Bitmap renderNative(Bitmap source,Mat H,String modelRef,int overlayColor){
         Bitmap out=Bitmap.createBitmap(source.getWidth(),source.getHeight(),Bitmap.Config.ARGB_8888);Canvas c=new Canvas(out);
         float scale=Math.max(1f,Math.min(out.getWidth(),out.getHeight())/900f);
         Paint outer=paint(overlayColor,1.25f*scale,245);
         Paint inner=paint(Color.WHITE,0.8f*scale,150);
         Paint guide=paint(overlayColor,0.75f*scale,65);
-
         if(Gmt126710BlnrMaster.supports(modelRef)){
             drawProjectedCircle(c,H,Gmt126710BlnrMaster.DIAL_EDGE_R,guide);
             drawProjectedCircle(c,H,Gmt126710BlnrMaster.MINUTE_TRACK_R,guide);
-
             for(int h:new int[]{1,2,4,5,7,8,10,11}){
                 double a=Gmt126710BlnrMaster.angleForHour(h);
                 drawCircleTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.ROUND_OUTER_R,a,outer);
@@ -348,28 +326,19 @@ final class PerspectiveGmtOverlay {
                 drawRectTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.BATON_TANGENTIAL_HALF,Gmt126710BlnrMaster.BATON_RADIAL_HALF,a,outer);
                 drawRectTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,Gmt126710BlnrMaster.BATON_LUME_TANGENTIAL_HALF,Gmt126710BlnrMaster.BATON_LUME_RADIAL_HALF,a,inner);
             }
-            drawMasterTriangle(c,H,outer,false);
-            drawMasterTriangle(c,H,inner,true);
-        }else{
-            drawProjectedCircle(c,H,1.00,outer);
-        }
+            drawMasterTriangle(c,H,outer,false);drawMasterTriangle(c,H,inner,true);
+        }else drawProjectedCircle(c,H,1.00,outer);
         return out;
     }
 
-    /** Genuine 12 marker orientation: wide base toward rehaut, point toward hands. */
     private static void drawMasterTriangle(Canvas c,Mat H,Paint p,boolean lume){
-        double a=Gmt126710BlnrMaster.angleForHour(12);
-        double ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;
+        double a=Gmt126710BlnrMaster.angleForHour(12),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;
         double center=lume?Gmt126710BlnrMaster.TRI_LUME_CENTER_R:Gmt126710BlnrMaster.TRI_CENTER_R;
         double baseOut=lume?Gmt126710BlnrMaster.TRI_LUME_BASE_OUTWARD:Gmt126710BlnrMaster.TRI_BASE_OUTWARD;
         double apexIn=lume?Gmt126710BlnrMaster.TRI_LUME_APEX_INWARD:Gmt126710BlnrMaster.TRI_APEX_INWARD;
         double halfBase=lume?Gmt126710BlnrMaster.TRI_LUME_HALF_BASE:Gmt126710BlnrMaster.TRI_HALF_BASE;
         double cx=center*ux,cy=center*uy;
-        double[][] pts={
-                {cx+ux*baseOut+vx*halfBase,cy+uy*baseOut+vy*halfBase},
-                {cx+ux*baseOut-vx*halfBase,cy+uy*baseOut-vy*halfBase},
-                {cx-ux*apexIn,cy-uy*apexIn}
-        };
+        double[][] pts={{cx+ux*baseOut+vx*halfBase,cy+uy*baseOut+vy*halfBase},{cx+ux*baseOut-vx*halfBase,cy+uy*baseOut-vy*halfBase},{cx-ux*apexIn,cy-uy*apexIn}};
         drawQuad(c,H,pts,p);
     }
 
@@ -383,7 +352,7 @@ final class PerspectiveGmtOverlay {
 
     private static void drawProjectedCircle(Canvas c,Mat H,double r,Paint p){Path path=new Path();for(int i=0;i<=180;i++){double a=2*Math.PI*i/180.0;Point q=project(H,r*Math.cos(a),r*Math.sin(a));if(i==0)path.moveTo((float)q.x,(float)q.y);else path.lineTo((float)q.x,(float)q.y);}c.drawPath(path,p);}
     private static void drawCircleTarget(Canvas c,Mat H,double rr,double size,double a,Paint p){double cx=rr*Math.cos(a),cy=rr*Math.sin(a);Path path=new Path();for(int i=0;i<=48;i++){double q=2*Math.PI*i/48.0;Point x=project(H,cx+size*Math.cos(q),cy+size*Math.sin(q));if(i==0)path.moveTo((float)x.x,(float)x.y);else path.lineTo((float)x.x,(float)x.y);}c.drawPath(path,p);}
-    private static void drawRectTarget(Canvas c,Mat H,double rr,double tangentialHalf,double radialHalf,double a,Paint p){double cx=rr*Math.cos(a),cy=rr*Math.sin(a);double ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;double[][] pts={{cx-ux*radialHalf-vx*tangentialHalf,cy-uy*radialHalf-vy*tangentialHalf},{cx-ux*radialHalf+vx*tangentialHalf,cy-uy*radialHalf+vy*tangentialHalf},{cx+ux*radialHalf+vx*tangentialHalf,cy+uy*radialHalf+vy*tangentialHalf},{cx+ux*radialHalf-vx*tangentialHalf,cy+uy*radialHalf-vy*tangentialHalf}};drawQuad(c,H,pts,p);}
+    private static void drawRectTarget(Canvas c,Mat H,double rr,double tangentialHalf,double radialHalf,double a,Paint p){double cx=rr*Math.cos(a),cy=rr*Math.sin(a),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;double[][] pts={{cx-ux*radialHalf-vx*tangentialHalf,cy-uy*radialHalf-vy*tangentialHalf},{cx-ux*radialHalf+vx*tangentialHalf,cy-uy*radialHalf+vy*tangentialHalf},{cx+ux*radialHalf+vx*tangentialHalf,cy+uy*radialHalf+vy*tangentialHalf},{cx+ux*radialHalf-vx*tangentialHalf,cy+uy*radialHalf-vy*tangentialHalf}};drawQuad(c,H,pts,p);}
     private static void drawQuad(Canvas c,Mat H,double[][] pts,Paint p){Path path=new Path();for(int i=0;i<pts.length;i++){Point q=project(H,pts[i][0],pts[i][1]);if(i==0)path.moveTo((float)q.x,(float)q.y);else path.lineTo((float)q.x,(float)q.y);}path.close();c.drawPath(path,p);}
     private static Paint paint(int color,float width,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);p.setColor(color);p.setAlpha(alpha);return p;}
     private static double[] matrixValues(Mat h){double[] values=new double[9];h.get(0,0,values);return values;}
