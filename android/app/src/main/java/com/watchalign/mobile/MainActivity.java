@@ -64,7 +64,7 @@ public class MainActivity extends Activity {
         watchButton=smallButton("Diagnostics");perspectiveButton=smallButton("Native template");rectifiedButton=smallButton("Rectified");
         perspectiveButton.setEnabled(false);rectifiedButton.setEnabled(false);watchButton.setEnabled(false);
         watchButton.setOnClickListener(v->{if(lastResult!=null)openDiagnosticsInspector(lastResult);});
-        perspectiveButton.setOnClickListener(v->{if(lastResult!=null&&lastResult.perspectiveOverlay!=null)openOverlayInspector("Visual QC master",watchBitmap,lastResult.perspectiveOverlay);});
+        perspectiveButton.setOnClickListener(v->{if(lastResult!=null&&lastResult.perspectiveOverlay!=null)openOverlayInspector(lastResult.perspectiveAccepted?"Visual QC master":"Visual QC master · manual alignment required",watchBitmap,lastResult.perspectiveOverlay);});
         rectifiedButton.setOnClickListener(v->{if(lastResult!=null)openInspector("Rectified",lastResult.rectified);});
         row1.addView(watchButton,new LinearLayout.LayoutParams(0,dp(48),1));row1.addView(perspectiveButton,new LinearLayout.LayoutParams(0,dp(48),1));row1.addView(rectifiedButton,new LinearLayout.LayoutParams(0,dp(48),1));root.addView(row1,lp(-1,dp(48),8));
 
@@ -90,7 +90,7 @@ public class MainActivity extends Activity {
     }
 
     private Bitmap renderQcCard(Bitmap watch,WatchAlignCoreV13.AnalysisResult result){
-        Bitmap display=result.perspectiveOverlay!=null?composeOverlay(watch,result.perspectiveOverlay):result.annotated;
+        Bitmap display=result.perspectiveAccepted&&result.perspectiveOverlay!=null?composeOverlay(watch,result.perspectiveOverlay):result.annotated;
         int w=1080,topH=1080,botH=600;
         Bitmap card=Bitmap.createBitmap(w,topH+botH,Bitmap.Config.ARGB_8888);
         Canvas c=new Canvas(card);c.drawColor(Color.rgb(8,17,31));
@@ -129,7 +129,7 @@ public class MainActivity extends Activity {
         StringBuilder text=new StringBuilder();
         boolean copy=false;
         for(String line:result.report.split("\n")){
-            if(line.startsWith("Projective refinement:"))copy=true;
+            if(line.startsWith("Rotation solve:")||line.startsWith("Independent minute-track validation:")||line.startsWith("Automatic master:")||line.startsWith("Projective refinement:"))copy=true;
             if(copy){if(text.length()>0)text.append('\n');text.append(line);}
             if(line.startsWith("H0 fallback used:"))break;
         }
@@ -147,7 +147,7 @@ public class MainActivity extends Activity {
         super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null)return;
         try{
             if(request==PICK_WATCH&&data.getData()!=null){InspectionImageStore.clearManualSeed();watchBitmap=readBitmap(data.getData());lastResult=null;preview.setImageBitmap(watchBitmap);setResultButtons(false);status.setText("Watch photo ready. Tap Build visual QC overlay.");return;}
-            if(request==PICK_REFERENCE){referenceBitmaps.clear();ClipData clip=data.getClipData();if(clip!=null){for(int i=0;i<clip.getItemCount()&&referenceBitmaps.size()<20;i++){Uri u=clip.getItemAt(i).getUri();if(u!=null)referenceBitmaps.add(readBitmap(u));}}else if(data.getData()!=null)referenceBitmaps.add(readBitmap(data.getData()));lastResult=null;setResultButtons(false);status.setText(referenceBitmaps.size()+" genuine reference photo"+(referenceBitmaps.size()==1?"":"s")+" ready.");}
+            if(request==PICK_REFERENCE){referenceBitmaps.clear();ClipData clip=data.getClipData();if(clip!=null){for(int i=0;i<clip.getItemCount()&&referenceBitmaps.size()<20;i++){Uri u=clip.getItemAt(i).getUri();if(u!=null)referenceBitmaps.add(readBitmap(u));}}else if(data.getData()!=null)referenceBitmaps.add(readBitmap(data.getData());lastResult=null;setResultButtons(false);status.setText(referenceBitmaps.size()+" genuine reference photo"+(referenceBitmaps.size()==1?"":"s")+" ready.");}
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
     }
 
@@ -168,7 +168,16 @@ public class MainActivity extends Activity {
         status.setText("Solving photo pose, projecting master and running QC checks…");
         worker.submit(()->{try{
             String sourceNote=refs.isEmpty()?"No genuine reference selected. The fixed 126710BLNR visual master does not require one.":"Genuine comparison: "+refs.size()+" manually selected reference photo"+(refs.size()==1?"":"s")+".";
-            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,refs,profile.code);final String note=sourceNote;runOnUiThread(()->{lastResult=r;preview.setImageBitmap(r.perspectiveOverlay!=null?composeOverlay(watchBitmap,r.perspectiveOverlay):r.annotated);resultText.setText(r.report+"\n\n"+note);qcButton.setEnabled(true);status.setText(r.perspectiveOverlay!=null?"Overlay ready and QC checks complete. Open Native template or View QC checks.":"QC checks complete, but the perspective template is unavailable for this photo.");watchButton.setEnabled(r.annotated!=null);referenceButton.setEnabled(r.reference!=null);overlayButton.setEnabled(r.aligned!=null);perspectiveButton.setEnabled(r.perspectiveOverlay!=null);rectifiedButton.setEnabled(r.rectified!=null);exportButton.setEnabled(true);});
+            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,refs,profile.code);final String note=sourceNote;runOnUiThread(()->{
+                lastResult=r;
+                boolean autoVisible=r.perspectiveAccepted&&r.perspectiveOverlay!=null;
+                preview.setImageBitmap(autoVisible?composeOverlay(watchBitmap,r.perspectiveOverlay):r.annotated);
+                resultText.setText(r.report+"\n\n"+note);qcButton.setEnabled(true);
+                if(r.perspectiveOverlay==null)status.setText("QC checks complete, but the perspective template is unavailable for this photo.");
+                else if(r.perspectiveAccepted)status.setText("Automatic overlay passed independent minute-track validation. Open Native template or View QC checks.");
+                else status.setText("Automatic overlay rejected by independent minute-track validation. It is hidden here; open Native template to align it manually.");
+                watchButton.setEnabled(r.annotated!=null);referenceButton.setEnabled(r.reference!=null);overlayButton.setEnabled(r.aligned!=null);perspectiveButton.setEnabled(r.perspectiveOverlay!=null);rectifiedButton.setEnabled(r.rectified!=null);exportButton.setEnabled(true);
+            });
         }catch(Throwable t){runOnUiThread(()->{lastResult=null;setResultButtons(false);status.setText("Analysis error: "+t.getMessage());resultText.setText("Watch Align could not establish reliable geometry from this photo. Try a clearer image with the full dial visible.");});}});
     }
 
