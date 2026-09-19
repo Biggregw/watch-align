@@ -63,6 +63,10 @@ final class DialProjectiveRefiner {
         }
     }
 
+    static MatResult refineWithDiagnostics(Mat edges, Mat h0) {
+        return refineWithDiagnostics(edges, h0, LIMIT[6]);
+    }
+
     static MatResult refineWithDiagnostics(Mat edges, Mat h0, double projectiveLimit) {
         Mat inverted = new Mat();
         Mat distance = new Mat();
@@ -78,6 +82,10 @@ final class DialProjectiveRefiner {
             inverted.release();
             distance.release();
         }
+    }
+
+    static Result refine(DistanceField field, double[][] h0) {
+        return refine(field, h0, LIMIT[6]);
     }
 
     static Result refine(DistanceField field, double[][] h0, double projectiveLimit) {
