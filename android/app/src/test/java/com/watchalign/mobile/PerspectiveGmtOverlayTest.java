@@ -45,19 +45,19 @@ public class PerspectiveGmtOverlayTest {
         assertOppositePairs(p,ellipse.center);
     }
 
-    @Test public void fittedEllipseIsScaledToValidatedOuterDialRadius() {
+    @Test public void fittedEllipseKeepsMeasuredScaleWhileUsingStableSeedCentre() {
         RotatedRect fitted=new RotatedRect(new Point(200,300),new Size(160,120),27);
         PerspectiveGmtOverlay.DialSeed seed=new PerspectiveGmtOverlay.DialSeed(198,302,92,0.9,4);
 
-        RotatedRect normalized=PerspectiveGmtOverlay.normalizeEllipseToOuterRadius(fitted,seed);
-        Point twelve=PerspectiveGmtOverlay.ellipseCardinalPoints(normalized,seed.rollDeg)[0];
+        RotatedRect anchored=PerspectiveGmtOverlay.anchorFittedEllipseToSeedCenter(fitted,seed);
 
-        assertEquals(seed.x,normalized.center.x,EPS);
-        assertEquals(seed.y,normalized.center.y,EPS);
-        assertEquals(fitted.angle,normalized.angle,EPS);
+        assertEquals(seed.x,anchored.center.x,EPS);
+        assertEquals(seed.y,anchored.center.y,EPS);
+        assertEquals(fitted.angle,anchored.angle,EPS);
+        assertEquals(fitted.size.width,anchored.size.width,EPS);
+        assertEquals(fitted.size.height,anchored.size.height,EPS);
         assertEquals(fitted.size.width/fitted.size.height,
-                normalized.size.width/normalized.size.height,EPS);
-        assertEquals(seed.r,Math.hypot(twelve.x-normalized.center.x,twelve.y-normalized.center.y),EPS);
+                anchored.size.width/anchored.size.height,EPS);
     }
 
     private static void assertOppositePairs(Point[] p,Point center) {
