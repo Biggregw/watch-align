@@ -16,7 +16,11 @@ public final class WatchAlignCoreV13 {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
         public final String report;
         public final double registrationConfidence,perspectiveConfidence;
-        AnalysisResult(Bitmap a,Bitmap r,Bitmap al,Bitmap po,Bitmap rect,String rep,double c,double pc){annotated=a;reference=r;aligned=al;perspectiveOverlay=po;rectified=rect;report=rep;registrationConfidence=c;perspectiveConfidence=pc;}
+        public final boolean perspectiveAccepted;
+        AnalysisResult(Bitmap a,Bitmap r,Bitmap al,Bitmap po,Bitmap rect,String rep,double c,double pc,boolean accepted){
+            annotated=a;reference=r;aligned=al;perspectiveOverlay=po;rectified=rect;report=rep;
+            registrationConfidence=c;perspectiveConfidence=pc;perspectiveAccepted=accepted;
+        }
         public Bitmap overlay(float alpha){
             if(reference==null||aligned==null)return annotated;
             Bitmap out=Bitmap.createBitmap(reference.getWidth(),reference.getHeight(),Bitmap.Config.ARGB_8888);
@@ -47,7 +51,12 @@ public final class WatchAlignCoreV13 {
             String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)+ext.report+baselineReport+"\nInterpretation: non-GMT models continue to use the existing reference-distribution diagnostics.";
             report=QcSummaryFormatter.prependSummary(detail);
         }
-        return new AnalysisResult(combined,base.reference,base.aligned,perspective==null?null:perspective.nativeOverlay,perspective==null?null:perspective.rectified,report,base.registrationConfidence,perspective==null?0.0:perspective.confidence);
+        return new AnalysisResult(combined,base.reference,base.aligned,
+                perspective==null?null:perspective.nativeOverlay,
+                perspective==null?null:perspective.rectified,
+                report,base.registrationConfidence,
+                perspective==null?0.0:perspective.confidence,
+                perspective!=null&&perspective.automaticAccepted);
     }
     private WatchAlignCoreV13(){}
 }
