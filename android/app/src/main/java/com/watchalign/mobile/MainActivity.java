@@ -147,7 +147,7 @@ public class MainActivity extends Activity {
         super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null)return;
         try{
             if(request==PICK_WATCH&&data.getData()!=null){InspectionImageStore.clearManualSeed();watchBitmap=readBitmap(data.getData());lastResult=null;preview.setImageBitmap(watchBitmap);setResultButtons(false);status.setText("Watch photo ready. Tap Build visual QC overlay.");return;}
-            if(request==PICK_REFERENCE){referenceBitmaps.clear();ClipData clip=data.getClipData();if(clip!=null){for(int i=0;i<clip.getItemCount()&&referenceBitmaps.size()<20;i++){Uri u=clip.getItemAt(i).getUri();if(u!=null)referenceBitmaps.add(readBitmap(u));}}else if(data.getData()!=null)referenceBitmaps.add(readBitmap(data.getData());lastResult=null;setResultButtons(false);status.setText(referenceBitmaps.size()+" genuine reference photo"+(referenceBitmaps.size()==1?"":"s")+" ready.");}
+            if(request==PICK_REFERENCE){referenceBitmaps.clear();ClipData clip=data.getClipData();if(clip!=null){for(int i=0;i<clip.getItemCount()&&referenceBitmaps.size()<20;i++){Uri u=clip.getItemAt(i).getUri();if(u!=null)referenceBitmaps.add(readBitmap(u));}}else if(data.getData()!=null)referenceBitmaps.add(readBitmap(data.getData()));lastResult=null;setResultButtons(false);status.setText(referenceBitmaps.size()+" genuine reference photo"+(referenceBitmaps.size()==1?"":"s")+" ready.");}
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
     }
 
