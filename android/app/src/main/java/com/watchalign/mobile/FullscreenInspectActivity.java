@@ -13,6 +13,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 /** Dedicated non-scrolling image inspector with visual overlay comparison tools. */
@@ -34,6 +35,7 @@ public class FullscreenInspectActivity extends Activity {
         Button reset=new Button(this);reset.setText("Reset");reset.setAllCaps(false);reset.setOnClickListener(v->{image.resetZoom();resetNudge();});top.addView(reset,new LinearLayout.LayoutParams(dp(78),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(62),Gravity.TOP));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(4),dp(10),dp(6));bottom.setBackgroundColor(0xB008111F);
+        boolean hasDiagnostics=InspectionImageStore.diagnosticsText!=null&&!InspectionImageStore.diagnosticsText.isEmpty();
         if(InspectionImageStore.overlayMode&&base!=null){
             LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER_VERTICAL);
             TextView label=new TextView(this);label.setText("Overlay");label.setTextColor(Color.WHITE);label.setTextSize(12);controls.addView(label,new LinearLayout.LayoutParams(dp(54),dp(40)));
@@ -52,8 +54,12 @@ public class FullscreenInspectActivity extends Activity {
             Button scaleUp=smallBtn("+");scaleUp.setOnClickListener(v->{nudgeScale=Math.min(1.2f,nudgeScale+0.002f);refresh();});
             nudgeRow.addView(left,lpSmall());nudgeRow.addView(right,lpSmall());nudgeRow.addView(up,lpSmall());nudgeRow.addView(down,lpSmall());nudgeRow.addView(rotCcw,lpSmall());nudgeRow.addView(rotCw,lpSmall());nudgeRow.addView(scaleDown,lpSmall());nudgeRow.addView(scaleUp,lpSmall());bottom.addView(nudgeRow);
         }
+        if(hasDiagnostics){
+            TextView diagnostics=new TextView(this);diagnostics.setText(InspectionImageStore.diagnosticsText);diagnostics.setTextColor(Color.WHITE);diagnostics.setTextSize(11);diagnostics.setTextIsSelectable(true);diagnostics.setPadding(dp(6),dp(4),dp(6),dp(4));
+            ScrollView diagnosticScroll=new ScrollView(this);diagnosticScroll.addView(diagnostics);bottom.addView(diagnosticScroll,new LinearLayout.LayoutParams(-1,dp(142)));
+        }
         TextView hint=new TextView(this);hint.setText(InspectionImageStore.overlayMode?"Pinch/drag to inspect · slider changes overlay · hold Blink for watch-only · Nudge moves only the master":"Pinch to zoom · drag to pan · double-tap zoom");hint.setTextColor(Color.WHITE);hint.setTextSize(12);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(34)));
-        FrameLayout.LayoutParams bottomLp=new FrameLayout.LayoutParams(-1,InspectionImageStore.overlayMode?dp(120):dp(42),Gravity.BOTTOM);root.addView(bottom,bottomLp);setContentView(root);
+        FrameLayout.LayoutParams bottomLp=new FrameLayout.LayoutParams(-1,InspectionImageStore.overlayMode?dp(120):hasDiagnostics?dp(184):dp(42),Gravity.BOTTOM);root.addView(bottom,bottomLp);setContentView(root);
         if(InspectionImageStore.overlayMode&&base!=null)refresh();
     }
 

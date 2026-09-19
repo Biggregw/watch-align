@@ -63,7 +63,7 @@ public class MainActivity extends Activity {
         LinearLayout row1=new LinearLayout(this);row1.setOrientation(LinearLayout.HORIZONTAL);
         watchButton=smallButton("Diagnostics");perspectiveButton=smallButton("Native template");rectifiedButton=smallButton("Rectified");
         perspectiveButton.setEnabled(false);rectifiedButton.setEnabled(false);watchButton.setEnabled(false);
-        watchButton.setOnClickListener(v->{if(lastResult!=null)openInspector("Diagnostics",lastResult.annotated);});
+        watchButton.setOnClickListener(v->{if(lastResult!=null)openDiagnosticsInspector(lastResult);});
         perspectiveButton.setOnClickListener(v->{if(lastResult!=null&&lastResult.perspectiveOverlay!=null)openOverlayInspector("Visual QC master",watchBitmap,lastResult.perspectiveOverlay);});
         rectifiedButton.setOnClickListener(v->{if(lastResult!=null)openInspector("Rectified",lastResult.rectified);});
         row1.addView(watchButton,new LinearLayout.LayoutParams(0,dp(48),1));row1.addView(perspectiveButton,new LinearLayout.LayoutParams(0,dp(48),1));row1.addView(rectifiedButton,new LinearLayout.LayoutParams(0,dp(48),1));root.addView(row1,lp(-1,dp(48),8));
@@ -124,6 +124,18 @@ public class MainActivity extends Activity {
     }
 
     private void openInspector(String title,Bitmap bitmap){if(bitmap==null)return;InspectionImageStore.set(bitmap,title);startActivity(new Intent(this,FullscreenInspectActivity.class));}
+    private void openDiagnosticsInspector(WatchAlignCoreV13.AnalysisResult result){
+        if(result.annotated==null)return;
+        StringBuilder text=new StringBuilder();
+        boolean copy=false;
+        for(String line:result.report.split("\n")){
+            if(line.startsWith("Projective refinement:"))copy=true;
+            if(copy){if(text.length()>0)text.append('\n');text.append(line);}
+            if(line.startsWith("H0 fallback used:"))break;
+        }
+        InspectionImageStore.setDiagnostics(result.annotated,"Diagnostics",text.toString());
+        startActivity(new Intent(this,FullscreenInspectActivity.class));
+    }
     private void openOverlayInspector(String title,Bitmap base,Bitmap overlay){if(base==null||overlay==null)return;InspectionImageStore.setOverlay(base,overlay,title);startActivity(new Intent(this,FullscreenInspectActivity.class));}
 
     private void pickWatch(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("image/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,PICK_WATCH);}

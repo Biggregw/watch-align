@@ -63,6 +63,21 @@ final class PerspectiveGmtOverlay {
             if(seed==null||!(seed.r>40))return null;
 
             RotatedRect detectedEllipse=detectedSeed==null?null:findDialEllipse(edges,detectedSeed);
+            if(manualSeed==null&&detectedEllipse!=null){
+                // The circular-dial roll estimate (measureMarkerSet, in WatchAlignCoreV7) assumes
+                // markers are evenly spaced at 30 degree intervals in image space, which is only
+                // true for a perfectly frontal photo. Any real tilt warps that spacing unevenly,
+                // biasing the roll. Since roll seeds all four homography anchor points exactly
+                // (ellipseCardinalPoints -> homographyFromUnitSquare), that bias lands undiluted
+                // on whichever markers sit at those anchors (12 and 9 o'clock here) while getting
+                // smeared across the interpolated markers elsewhere. Re-measure roll in the fitted
+                // ellipse's own normalized frame, where marker spacing is genuinely uniform, and
+                // prefer that corrected estimate.
+                double correctedRoll=ellipseAwareRoll(gray,detectedEllipse,seed.rollDeg);
+                if(Double.isFinite(correctedRoll)&&Math.abs(correctedRoll)<=15.0){
+                    seed=new DialSeed(seed.x,seed.y,seed.r,seed.quality,correctedRoll);
+                }
+            }
             RotatedRect ellipse;
             String seedSource;
             boolean perspectiveFallback=false;
@@ -82,8 +97,8 @@ final class PerspectiveGmtOverlay {
                     perspectiveFallback=true;
                 }
             }else if(detectedEllipse!=null){
-                ellipse=detectedEllipse;
-                seedSource="fitted dial ellipse plus detected dial orientation";
+                ellipse=normalizeEllipseToOuterRadius(detectedEllipse,seed);
+                seedSource="fitted dial ellipse normalized to detected outer dial radius";
             }else{
                 // A clean frontal watch can still fail contour ellipse selection because hands,
                 // cyclops glare and bezel edges fragment the dial boundary. Do not throw away
@@ -101,8 +116,12 @@ final class PerspectiveGmtOverlay {
             double tiltDeg=Math.toDegrees(Math.acos(Math.max(0.0,Math.min(1.0,axisRatio))));
 
             Point[] card=ellipseCardinalPoints(ellipse,seed.rollDeg);
-            Mat H=homographyFromUnitSquare(card);
-            if(H==null||H.empty())return null;
+            Mat H0=homographyFromUnitSquare(card);
+            if(H0==null||H0.empty())return null;
+            double[] h0Values=matrixValues(H0);
+            DialProjectiveRefiner.MatResult refinement=DialProjectiveRefiner.refineWithDiagnostics(edges,H0);
+            Mat H=refinement.homography;
+            H0.release();
 
             double reproj=reprojectionError(H,card);
             double centerErr=Math.hypot(ellipse.center.x-seed.x,ellipse.center.y-seed.y)/Math.max(1.0,seed.r);
@@ -118,12 +137,62 @@ final class PerspectiveGmtOverlay {
                     "Inspection geometry: %s. Red outlines are the fixed master; white outlines are lume references.\n"+
                     "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+.2f°.\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. Pose residual: %.2f px. Confidence: %.0f%%.\n"+
+                    "Projective refinement: %s.\n"+
+                    "H0 projective terms: h31=%+.6f, h32=%+.6f.\n"+
+                    "Refined candidate terms: h31=%+.6f, h32=%+.6f.\n"+
+                    "Fit evidence: %.4f before, %.4f after. Holdout evidence: %.4f before, %.4f after.\n"+
+                    "H0 fallback used: %s.\n"+
                     "Use Native Template with opacity/blink and fine nudge. Automated QC checks remain available separately.\n",
-                    seedSource,master,major,minor,tiltDeg,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0);
+                    seedSource,master,major,minor,tiltDeg,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0,
+                    refinement.diagnostics.accepted?"ACCEPTED":"REJECTED",
+                    normalizedTerm(h0Values,6),normalizedTerm(h0Values,7),
+                    normalizedTerm(refinement.diagnostics.evaluatedHomography,2,0),
+                    normalizedTerm(refinement.diagnostics.evaluatedHomography,2,1),
+                    refinement.diagnostics.fitBefore,refinement.diagnostics.evaluatedFitAfter,
+                    refinement.diagnostics.holdoutBefore,refinement.diagnostics.evaluatedHoldoutAfter,
+                    refinement.diagnostics.accepted?"NO":"YES");
             H.release();
             return new Result(overlay,rectified,report,confidence);
         }catch(Throwable ignored){return null;}
         finally{src.release();gray.release();blur.release();edges.release();}
+    }
+
+    /**
+     * Re-measures marker angular offsets in the fitted ellipse's own normalized frame
+     * (undo tilt rotation, then divide by each axis's radius) instead of raw image-space
+     * angles around a plain circle. In that normalized frame a genuinely evenly-spaced
+     * dial maps back to even 30-degree spacing regardless of photo tilt, so the median
+     * offset from target is a much less biased estimate of true roll than the circular
+     * measurement in WatchAlignCoreV7.measureMarkerSet.
+     */
+    private static double ellipseAwareRoll(Mat gray,RotatedRect ellipse,double fallbackRoll){
+        double axis=Math.toRadians(ellipse.angle),ca=Math.cos(axis),sa=Math.sin(axis);
+        double rx=Math.max(1e-6,ellipse.size.width/2.0),ry=Math.max(1e-6,ellipse.size.height/2.0);
+        double cx=ellipse.center.x,cy=ellipse.center.y;
+        int w=gray.cols(),h=gray.rows();
+        double innerN=0.66,outerN=0.94;
+        double reach=Math.max(rx,ry)+4;
+        int x0=Math.max(0,(int)(cx-reach)),x1=Math.min(w-1,(int)(cx+reach));
+        int y0=Math.max(0,(int)(cy-reach)),y1=Math.min(h-1,(int)(cy+reach));
+        List<Double> offsets=new ArrayList<>();
+        for(int hour=1;hour<=12;hour++){
+            double target=hour==12?0:hour*30.0,sw=0,sd=0;int count=0;
+            for(int y=y0;y<=y1;y+=2)for(int x=x0;x<=x1;x+=2){
+                double dx=x-cx,dy=y-cy;
+                double lx=ca*dx+sa*dy,ly=-sa*dx+ca*dy;
+                double nx=lx/rx,ny=ly/ry;
+                double r=Math.hypot(nx,ny);if(r<innerN||r>outerN)continue;
+                double a=Math.toDegrees(Math.atan2(nx,-ny));if(a<0)a+=360;
+                double d=GeometryRegistration.wrap180(a-target);if(Math.abs(d)>8.0)continue;
+                double[] gv=gray.get(y,x);if(gv==null||gv[0]<155)continue;
+                double wt=Math.max(1.0,(gv[0]-145.0)/18.0);sw+=wt;sd+=d*wt;count++;
+            }
+            if(sw>10&&count>=4)offsets.add(sd/sw);
+        }
+        if(offsets.size()<4)return fallbackRoll;
+        double[] arr=new double[offsets.size()];for(int i=0;i<arr.length;i++)arr[i]=offsets.get(i);
+        double corrected=GeometryRegistration.median(arr);
+        return Double.isFinite(corrected)?corrected:fallbackRoll;
     }
 
     private static DialSeed seed(Mat rgba)throws Exception{
@@ -176,13 +245,29 @@ final class PerspectiveGmtOverlay {
         finally{srcPts.release();dstPts.release();}
     }
 
-    private static Point[] ellipseCardinalPoints(RotatedRect e,double rollDeg){
-        return new Point[]{
-                rayEllipseIntersection(e,Math.toRadians(rollDeg-90.0)),
-                rayEllipseIntersection(e,Math.toRadians(rollDeg)),
-                rayEllipseIntersection(e,Math.toRadians(rollDeg+90.0)),
-                rayEllipseIntersection(e,Math.toRadians(rollDeg+180.0))
-        };
+    static Point[] ellipseCardinalPoints(RotatedRect e,double rollDeg){
+        double rx=Math.max(1e-6,e.size.width/2.0),ry=Math.max(1e-6,e.size.height/2.0);
+        double axis=Math.toRadians(e.angle),ca=Math.cos(axis),sa=Math.sin(axis);
+        double roll=Math.toRadians(rollDeg),cr=Math.cos(roll),sr=Math.sin(roll);
+        double[][] canonical={{0,-1},{1,0},{0,1},{-1,0}};
+        Point[] mapped=new Point[canonical.length];
+        for(int i=0;i<canonical.length;i++){
+            double x=cr*canonical[i][0]-sr*canonical[i][1];
+            double y=sr*canonical[i][0]+cr*canonical[i][1];
+            double localX=ca*x+sa*y,localY=-sa*x+ca*y;
+            double scaledX=rx*localX,scaledY=ry*localY;
+            mapped[i]=new Point(e.center.x+ca*scaledX-sa*scaledY,e.center.y+sa*scaledX+ca*scaledY);
+        }
+        return mapped;
+    }
+
+    static RotatedRect normalizeEllipseToOuterRadius(RotatedRect ellipse,DialSeed seed){
+        Point canonicalTwelve=ellipseCardinalPoints(ellipse,seed.rollDeg)[0];
+        double measured=Math.hypot(canonicalTwelve.x-ellipse.center.x,canonicalTwelve.y-ellipse.center.y);
+        if(!(measured>1.0)||!Double.isFinite(measured)||!(seed.r>1.0)||!Double.isFinite(seed.r))return ellipse;
+        double scale=seed.r/measured;
+        return new RotatedRect(new Point(seed.x,seed.y),
+                new Size(ellipse.size.width*scale,ellipse.size.height*scale),ellipse.angle);
     }
 
     private static Point rayEllipseIntersection(RotatedRect e,double imageAngle){
@@ -274,6 +359,9 @@ final class PerspectiveGmtOverlay {
     private static void drawRectTarget(Canvas c,Mat H,double rr,double tangentialHalf,double radialHalf,double a,Paint p){double cx=rr*Math.cos(a),cy=rr*Math.sin(a);double ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;double[][] pts={{cx-ux*radialHalf-vx*tangentialHalf,cy-uy*radialHalf-vy*tangentialHalf},{cx-ux*radialHalf+vx*tangentialHalf,cy-uy*radialHalf+vy*tangentialHalf},{cx+ux*radialHalf+vx*tangentialHalf,cy+uy*radialHalf+vy*tangentialHalf},{cx+ux*radialHalf-vx*tangentialHalf,cy+uy*radialHalf-vy*tangentialHalf}};drawQuad(c,H,pts,p);}
     private static void drawQuad(Canvas c,Mat H,double[][] pts,Paint p){Path path=new Path();for(int i=0;i<pts.length;i++){Point q=project(H,pts[i][0],pts[i][1]);if(i==0)path.moveTo((float)q.x,(float)q.y);else path.lineTo((float)q.x,(float)q.y);}path.close();c.drawPath(path,p);}
     private static Paint paint(int color,float width,int alpha){Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);p.setColor(color);p.setAlpha(alpha);return p;}
+    private static double[] matrixValues(Mat h){double[] values=new double[9];h.get(0,0,values);return values;}
+    private static double normalizedTerm(double[] h,int index){return h[index]/h[8];}
+    private static double normalizedTerm(double[][] h,int row,int col){return h[row][col]/h[2][2];}
     private static Point project(Mat H,double x,double y){double[] h=new double[9];H.get(0,0,h);double w=h[6]*x+h[7]*y+h[8];if(Math.abs(w)<1e-9)w=1e-9;return new Point((h[0]*x+h[1]*y+h[2])/w,(h[3]*x+h[4]*y+h[5])/w);}
     private static Object field(Object o,String n)throws Exception{Field f=o.getClass().getDeclaredField(n);f.setAccessible(true);return f.get(o);}
     private static double num(Object o,String n)throws Exception{return ((Number)field(o,n)).doubleValue();}
