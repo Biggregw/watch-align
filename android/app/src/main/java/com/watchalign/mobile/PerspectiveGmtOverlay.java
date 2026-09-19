@@ -64,15 +64,10 @@ final class PerspectiveGmtOverlay {
 
             RotatedRect detectedEllipse=detectedSeed==null?null:findDialEllipse(edges,detectedSeed);
             if(manualSeed==null&&detectedEllipse!=null){
-                // The circular-dial roll estimate (measureMarkerSet, in WatchAlignCoreV7) assumes
-                // markers are evenly spaced at 30 degree intervals in image space, which is only
-                // true for a perfectly frontal photo. Any real tilt warps that spacing unevenly,
-                // biasing the roll. Since roll seeds all four homography anchor points exactly
-                // (ellipseCardinalPoints -> homographyFromUnitSquare), that bias lands undiluted
-                // on whichever markers sit at those anchors (12 and 9 o'clock here) while getting
-                // smeared across the interpolated markers elsewhere. Re-measure roll in the fitted
-                // ellipse's own normalized frame, where marker spacing is genuinely uniform, and
-                // prefer that corrected estimate.
+                // Measure roll after undoing ellipse distortion, but keep the normalized vector
+                // in the original image/dial coordinate frame. Earlier code rotated the point into
+                // ellipse-local axes and divided by rx/ry, then measured its angle without rotating
+                // it back. That leaked the fitted ellipse axis angle directly into dial roll.
                 double correctedRoll=ellipseAwareRoll(gray,detectedEllipse,seed.rollDeg);
                 if(Double.isFinite(correctedRoll)&&Math.abs(correctedRoll)<=15.0){
                     seed=new DialSeed(seed.x,seed.y,seed.r,seed.quality,correctedRoll);
@@ -159,7 +154,7 @@ final class PerspectiveGmtOverlay {
                     "\n\nVISUAL QC MASTER\n"+
                     "Pose source: %s. Assisted points use the dial edge, not hour markers, so marker QC is not fitted away.\n"+
                     "Inspection geometry: %s. Red outlines are the fixed master; white outlines are lume references.\n"+
-                    "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+.2f°.\n"+
+                    "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+.2f°; raw ellipse axis %+.2f°.\n"+
                     "Scale diagnostics: seed diameter %.1f px; raw fitted ellipse %.1f × %.1f px; seed/raw 12-radius ratio %.4f. Fitted ellipse scale preserved.\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. Pose residual: %.2f px. Confidence: %.0f%%.\n"+
                     "Projective refinement: %s.\n"+
@@ -169,6 +164,7 @@ final class PerspectiveGmtOverlay {
                     "H0 fallback used: %s.\n"+
                     "Use Native Template with opacity/blink and fine nudge. Automated QC checks remain available separately.\n",
                     seedSource,master,major,minor,tiltDeg,seed.rollDeg,
+                    detectedEllipse!=null?detectedEllipse.angle:Double.NaN,
                     seed.r*2.0,rawEllipseMajor,rawEllipseMinor,seedToRawScale,
                     centerErr*100.0,reproj,confidence*100.0,
                     refinement.diagnostics.accepted?"ACCEPTED":"REJECTED",
@@ -185,15 +181,12 @@ final class PerspectiveGmtOverlay {
     }
 
     /**
-     * Re-measures marker angular offsets in the fitted ellipse's own normalized frame
-     * (undo tilt rotation, then divide by each axis's radius) instead of raw image-space
-     * angles around a plain circle. In that normalized frame a genuinely evenly-spaced
-     * dial maps back to even 30-degree spacing regardless of photo tilt, so the median
-     * offset from target is a much less biased estimate of true roll than the circular
-     * measurement in WatchAlignCoreV7.measureMarkerSet.
+     * Re-measures marker angular offsets after removing ellipse distortion while preserving
+     * the original image/dial axes. The inverse of ellipseCardinalPoints' shape transform is
+     * R(axis) * S^-1 * R(-axis). Measuring angle before the final R(axis) rotation introduces
+     * a spurious -ellipse.angle term into the estimated dial roll.
      */
     private static double ellipseAwareRoll(Mat gray,RotatedRect ellipse,double fallbackRoll){
-        double axis=Math.toRadians(ellipse.angle),ca=Math.cos(axis),sa=Math.sin(axis);
         double rx=Math.max(1e-6,ellipse.size.width/2.0),ry=Math.max(1e-6,ellipse.size.height/2.0);
         double cx=ellipse.center.x,cy=ellipse.center.y;
         int w=gray.cols(),h=gray.rows();
@@ -206,8 +199,8 @@ final class PerspectiveGmtOverlay {
             double target=hour==12?0:hour*30.0,sw=0,sd=0;int count=0;
             for(int y=y0;y<=y1;y+=2)for(int x=x0;x<=x1;x+=2){
                 double dx=x-cx,dy=y-cy;
-                double lx=ca*dx+sa*dy,ly=-sa*dx+ca*dy;
-                double nx=lx/rx,ny=ly/ry;
+                Point normalized=undoEllipseDistortion(ellipse,dx,dy);
+                double nx=normalized.x,ny=normalized.y;
                 double r=Math.hypot(nx,ny);if(r<innerN||r>outerN)continue;
                 double a=Math.toDegrees(Math.atan2(nx,-ny));if(a<0)a+=360;
                 double d=GeometryRegistration.wrap180(a-target);if(Math.abs(d)>8.0)continue;
@@ -220,6 +213,17 @@ final class PerspectiveGmtOverlay {
         double[] arr=new double[offsets.size()];for(int i=0;i<arr.length;i++)arr[i]=offsets.get(i);
         double corrected=GeometryRegistration.median(arr);
         return Double.isFinite(corrected)?corrected:fallbackRoll;
+    }
+
+    /** Undo the ellipse shape transform without rotating the dial coordinate frame. */
+    static Point undoEllipseDistortion(RotatedRect ellipse,double dx,double dy){
+        double axis=Math.toRadians(ellipse.angle),ca=Math.cos(axis),sa=Math.sin(axis);
+        double rx=Math.max(1e-6,ellipse.size.width/2.0),ry=Math.max(1e-6,ellipse.size.height/2.0);
+        double localX=ca*dx+sa*dy;
+        double localY=-sa*dx+ca*dy;
+        double scaledX=localX/rx;
+        double scaledY=localY/ry;
+        return new Point(ca*scaledX-sa*scaledY,sa*scaledX+ca*scaledY);
     }
 
     private static DialSeed seed(Mat rgba)throws Exception{
