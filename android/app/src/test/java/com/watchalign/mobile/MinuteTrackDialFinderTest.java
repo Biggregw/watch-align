@@ -1,6 +1,7 @@
 package com.watchalign.mobile;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -37,5 +38,12 @@ public class MinuteTrackDialFinderTest {
     @Test public void postAnchorFineRotationCannotJumpAnotherMinuteTick(){
         assertTrue(MinuteTrackPoseValidator.fineRotationLimitDeg()<3.0);
         assertTrue(MinuteTrackPoseValidator.fineRotationLimitDeg()<6.0);
+    }
+
+    @Test public void outwardRingIsAdvisoryAndCannotVetoStrongMinuteTrackPose(){
+        assertTrue(MinuteTrackFirstOverlay.automaticAcceptance(true,true,true));
+        assertFalse(MinuteTrackFirstOverlay.automaticAcceptance(false,true,true));
+        assertFalse(MinuteTrackFirstOverlay.automaticAcceptance(true,false,true));
+        assertFalse(MinuteTrackFirstOverlay.automaticAcceptance(true,true,false));
     }
 }
