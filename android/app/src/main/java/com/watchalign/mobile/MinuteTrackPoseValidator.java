@@ -19,6 +19,7 @@ final class MinuteTrackPoseValidator {
     private static final double TICK_RADIAL_HALF = 0.025;
     private static final double TICK_ANGULAR_HALF = Math.toRadians(0.34);
     private static final double LOSS_CAP_PX = 10.0;
+    private static final double FINE_ROTATION_LIMIT_DEG = 2.0;
 
     static final class RotationResult {
         final Mat homography;
@@ -84,10 +85,15 @@ final class MinuteTrackPoseValidator {
         }finally{distance.release();}
     }
 
-    /** Final small rotation correction after projective refinement. */
+    /**
+     * Final small correction after projective refinement. The absolute 6 degree branch has
+     * already been fixed by the image-up anchor, so this must never search a full tick pitch.
+     */
     static RotationResult fineTuneRotation(Mat edges,Mat baseH){
-        return solveRotation(edges,baseH,2.0);
+        return solveRotation(edges,baseH,FINE_ROTATION_LIMIT_DEG);
     }
+
+    static double fineRotationLimitDeg(){return FINE_ROTATION_LIMIT_DEG;}
 
     private static Mat distanceField(Mat edges){
         Mat inverted=new Mat(),distance=new Mat();
@@ -101,14 +107,13 @@ final class MinuteTrackPoseValidator {
         List<Double> scores=tickScores(distance,h,holdout,deltaDeg);
         if(scores.isEmpty())return LOSS_CAP_PX;
         Collections.sort(scores);
-        // Median keeps hands, cyclops glare and a few damaged/hidden ticks from steering rotation.
         return percentileSorted(scores,0.50);
     }
 
     private static List<Double> tickScores(Mat distance,Mat h,boolean holdout,double deltaDeg){
         List<Double> out=new ArrayList<>();
         for(int minute=0;minute<60;minute++){
-            if(minute%5==0)continue; // exclude all applied hour-marker sectors
+            if(minute%5==0)continue;
             boolean thisHoldout=minute%4==2;
             if(thisHoldout!=holdout)continue;
             double angle=Math.toRadians(minute*6.0-90.0+deltaDeg);
