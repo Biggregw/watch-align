@@ -19,7 +19,7 @@ public class GmtMarkerQcRepairTest {
         assertEquals(-1.25,GmtMarkerQcRepair.radialOffsetPctR(expected-0.0125,12),1e-9);
     }
 
-    @Test public void reportSeparatesAngularRadialAndBodyRotation(){
+    @Test public void reportSeparatesAngularRadialAndBodyRotationAndRemovesLegacyTopFinding(){
         String report="Top QC findings\n"+
                 "1. 9 marker local position -0.75° vs minute track\n\n"+
                 "Extended QC checks\n"+
@@ -34,14 +34,31 @@ public class GmtMarkerQcRepairTest {
 
         String out=GmtMarkerQcRepair.rewriteReport(report,d);
 
-        assertTrue(out.contains("9 marker angular offset -0.78° vs minute track"));
         assertTrue(out.contains("12 marker vs minute track: angular offset +0.04°, radial +1.35% R vs visual master, body rotation +0.62°"));
+        assertTrue(out.contains("9 marker vs minute track: angular offset -0.78°, radial +0.05% R vs visual master, body rotation -1.28°"));
         assertTrue(out.contains("positive = outward/high"));
         assertFalse(out.contains("local position"));
         assertFalse(out.contains("-48.53°"));
+        assertFalse(out.contains("1. 9 marker"));
     }
 
-    @Test public void lowConfidenceTriangleDoesNotLeakLegacyRotation(){
+    @Test public void unmeasuredMarkerDoesNotLeakAnyLegacyValue(){
+        String report="Top QC findings\n"+
+                "1. 12 marker body rotation -48.53° (strong detected deviation)\n\n"+
+                "Extended QC checks\n"+
+                "12 marker vs minute track: position +44.45°, body rotation +72.39°\n";
+        GmtMarkerQcRepair.MarkerDiagnostic[] d=new GmtMarkerQcRepair.MarkerDiagnostic[13];
+        d[12]=new GmtMarkerQcRepair.MarkerDiagnostic(12,Double.NaN,Double.NaN,Double.NaN,true,false);
+
+        String out=GmtMarkerQcRepair.rewriteReport(report,d);
+
+        assertTrue(out.contains("12 marker: not confidently isolated inside projected master ROI"));
+        assertFalse(out.contains("44.45"));
+        assertFalse(out.contains("72.39"));
+        assertFalse(out.contains("48.53"));
+    }
+
+    @Test public void lowConfidenceOrientationCanRemainUnavailableWithoutDroppingPosition(){
         String report="Top QC findings: no material geometric deviation detected.\n\n"+
                 "Extended QC checks\n"+
                 "12 marker vs minute track: position +0.04°, body rotation -48.53°\n";
