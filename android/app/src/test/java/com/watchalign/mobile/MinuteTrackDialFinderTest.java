@@ -11,8 +11,9 @@ import org.opencv.core.Size;
 
 public class MinuteTrackDialFinderTest {
     @Test public void convertsMinuteTrackRadiusToDialRadiusUsingMasterRatio(){
-        double track=92.5;
+        double track=100.0*Gmt126710BlnrMaster.MINUTE_TRACK_R;
         assertEquals(100.0,MinuteTrackDialFinder.expectedDialRadiusFromTrackRadius(track),1e-9);
+        assertEquals(0.891,Gmt126710BlnrMaster.MINUTE_TRACK_R,1e-12);
     }
 
     @Test public void outwardBoundaryValidationDoesNotRescaleMinuteTrackEllipse(){
