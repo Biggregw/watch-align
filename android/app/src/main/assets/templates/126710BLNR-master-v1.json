@@ -2,9 +2,9 @@
   "id": "126710BLNR-master-v1",
   "model": "Rolex GMT-Master II 126710BLNR",
   "coordinate_system": "dial radius normalized; centre=(0,0); +x=3 o'clock; +y=6 o'clock",
-  "provenance": "Watch Align one-off inspection master calibrated from front-on genuine 126710BLNR product imagery; not Rolex factory CAD",
+  "provenance": "Watch Align one-off inspection master calibrated from front-on genuine 126710BLNR product imagery; not Rolex factory CAD. Minute-track centreline re-measured against a known-genuine control on 2026-09-20; replica imagery was used only as an independent cross-check.",
   "dial_edge_radius": 1.000,
-  "minute_track_radius": 0.925,
+  "minute_track_radius": 0.891,
   "marker_center_radius": 0.755,
   "markers": {
     "round": {"hours": [1,2,4,5,7,8,10,11], "radius": 0.061},
