@@ -3,11 +3,14 @@ package com.watchalign.mobile;
 import android.graphics.Bitmap;
 
 import org.opencv.android.Utils;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.RotatedRect;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.imgproc.Moments;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -18,12 +21,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Repairs the shaped-marker part of the legacy extended QC report for 126710-family GMTs.
+ * GMT marker QC using the accepted minute-track pose as the datum.
  *
- * The accepted minute-track pose is the datum. Angular offset, radial offset and marker-body
- * rotation are deliberately separate quantities so a high/low marker cannot be hidden by an
- * angular-only measurement. Radial values remain diagnostic until the visual-master constants
- * have been calibrated against a sufficiently large genuine cohort.
+ * Marker positions are NOT taken from WatchAlignCoreV7.measureMarkerSet. The legacy detector
+ * averages bright pixels across a broad hour-sector annulus and can latch onto hands, minute
+ * ticks or reflections. Instead, this class projects a small shape-specific ROI from the fixed
+ * master and only measures a connected bright component that is geometrically plausible there.
+ * If the component cannot be isolated, the marker is reported as not measurable rather than
+ * emitting an extreme false value.
  */
 final class GmtMarkerQcRepair {
     static final class MarkerDiagnostic {
@@ -32,20 +37,50 @@ final class GmtMarkerQcRepair {
         final double radialPctR;
         final double bodyRotationDeg;
         final boolean minuteTrackAnchored;
+        final boolean measured;
 
         MarkerDiagnostic(int hour,double angularDeg,double radialPctR,
                          double bodyRotationDeg,boolean minuteTrackAnchored){
+            this(hour,angularDeg,radialPctR,bodyRotationDeg,minuteTrackAnchored,true);
+        }
+
+        MarkerDiagnostic(int hour,double angularDeg,double radialPctR,
+                         double bodyRotationDeg,boolean minuteTrackAnchored,boolean measured){
             this.hour=hour;
             this.angularDeg=angularDeg;
             this.radialPctR=radialPctR;
             this.bodyRotationDeg=bodyRotationDeg;
             this.minuteTrackAnchored=minuteTrackAnchored;
+            this.measured=measured;
+        }
+    }
+
+    private static final class Basis {
+        final Point center;
+        final double rx,ry,tx,ty,det;
+        Basis(Point center,double rx,double ry,double tx,double ty){
+            this.center=center;this.rx=rx;this.ry=ry;this.tx=tx;this.ty=ty;
+            this.det=rx*ty-ry*tx;
+        }
+        Point local(double x,double y){
+            double dx=x-center.x,dy=y-center.y;
+            return new Point((dx*ty-dy*tx)/det,(-dx*ry+dy*rx)/det);
+        }
+    }
+
+    private static final class Candidate {
+        final Point center;
+        final double radialLocal,tangentLocal,areaNorm,rotationDeg,anisotropy;
+        Candidate(Point center,double radial,double tangent,double area,
+                  double rotation,double anisotropy){
+            this.center=center;this.radialLocal=radial;this.tangentLocal=tangent;
+            this.areaNorm=area;this.rotationDeg=rotation;this.anisotropy=anisotropy;
         }
     }
 
     private static final Pattern DETAIL=Pattern.compile("(?m)^(12|6|9) marker vs minute track:.*$");
-    private static final Pattern TOP_MARKER=Pattern.compile("(?m)^(\\d+)\\. (12|6|9) marker (?:local position|angular offset).*?$");
-    private static final Pattern TOP_BODY=Pattern.compile("(?m)^(\\d+)\\. (12|6|9) marker body rotation .*?$");
+    private static final Pattern TOP_MARKER=Pattern.compile("(?m)^\\d+\\. (12|6|9) marker (?:local position|angular offset).*?$");
+    private static final Pattern TOP_BODY=Pattern.compile("(?m)^\\d+\\. (12|6|9) marker body rotation .*?$");
 
     static String repair(Bitmap watch,String report,String modelRef){
         if(report==null||watch==null||!CanonicalGmtGeometryAnalyzer.supports(modelRef))return report;
@@ -64,41 +99,26 @@ final class GmtMarkerQcRepair {
 
     static String rewriteReport(String report,MarkerDiagnostic[] diagnostics){
         String out=report==null?"":report.replace("marker local position","marker angular offset");
-        for(int hour:new int[]{12,6,9}){
-            MarkerDiagnostic d=find(diagnostics,hour);
-            if(d==null)continue;
-            Pattern detailForHour=Pattern.compile("(?m)^"+hour+" marker vs minute track:.*$");
-            Matcher dm=detailForHour.matcher(out);
-            if(dm.find())out=dm.replaceFirst(Matcher.quoteReplacement(detailLine(d)));
 
-            Pattern topForHour=Pattern.compile("(?m)^(\\d+)\\. "+hour+" marker angular offset .*?$");
-            Matcher tm=topForHour.matcher(out);
-            if(tm.find()){
-                if(QcExtendedMath.localTrackSeverity(d.angularDeg)>0){
-                    String replacement=tm.group(1)+". "+topFinding(d);
-                    out=tm.replaceFirst(Matcher.quoteReplacement(replacement));
-                }else out=tm.replaceFirst("");
-            }
+        // Remove every legacy 12/6/9 value first. If the replacement detector fails, no stale
+        // legacy number is allowed to leak back into the report.
+        out=DETAIL.matcher(out).replaceAll("");
+        out=TOP_MARKER.matcher(out).replaceAll("");
+        out=TOP_BODY.matcher(out).replaceAll("");
 
-            Pattern bodyForHour=Pattern.compile("(?m)^(\\d+)\\. "+hour+" marker body rotation .*?$");
-            Matcher bm=bodyForHour.matcher(out);
-            if(bm.find())out=bm.replaceFirst("");
+        StringBuilder block=new StringBuilder();
+        for(int h:new int[]{12,6,9}){
+            MarkerDiagnostic d=find(diagnostics,h);
+            if(d!=null)block.append(detailLine(d)).append('\n');
         }
+        block.append("Marker radial sign: positive = outward/high, negative = inward/low. ")
+                .append("Radial values are relative to the current visual master and are diagnostic only until genuine-cohort calibration is complete.\n");
 
-        if(!DETAIL.matcher(out).find()&&out.contains("Extended QC checks")){
-            StringBuilder insertion=new StringBuilder("Extended QC checks\n");
-            for(int h:new int[]{12,6,9}){
-                MarkerDiagnostic d=find(diagnostics,h);
-                if(d!=null)insertion.append(detailLine(d)).append('\n');
-            }
-            out=out.replaceFirst("Extended QC checks\\n",Matcher.quoteReplacement(insertion.toString()));
-        }
-
-        String note="Marker radial sign: positive = outward/high, negative = inward/low. " +
-                "Radial values are relative to the current visual master and are diagnostic only until genuine-cohort calibration is complete.";
-        if(!out.contains("Marker radial sign:")){
-            Matcher nine=Pattern.compile("(?m)^9 marker vs minute track:.*$").matcher(out);
-            if(nine.find())out=nine.replaceFirst(Matcher.quoteReplacement(nine.group()+"\n"+note));
+        if(out.contains("Extended QC checks\n")){
+            out=out.replaceFirst("Extended QC checks\\n",
+                    Matcher.quoteReplacement("Extended QC checks\n"+block));
+        }else{
+            out += "\nExtended QC checks\n"+block;
         }
 
         out=renumberTopFindings(out);
@@ -106,18 +126,17 @@ final class GmtMarkerQcRepair {
     }
 
     private static String detailLine(MarkerDiagnostic d){
-        String source=d.minuteTrackAnchored?"":" [minute-track pose unavailable; fitted-grid fallback]";
+        if(!d.measured){
+            return String.format(Locale.US,
+                    "%d marker: not confidently isolated inside projected master ROI; no positional/orientation value reported.",d.hour);
+        }
+        String source=d.minuteTrackAnchored?"":" [minute-track pose unavailable]";
         String body=Double.isFinite(d.bodyRotationDeg)?
                 String.format(Locale.US,", body rotation %+.2f°",d.bodyRotationDeg):
                 ", body rotation unavailable (component isolation confidence low)";
         return String.format(Locale.US,
                 "%d marker vs minute track: angular offset %+.2f°, radial %+.2f%% R vs visual master%s%s",
                 d.hour,d.angularDeg,d.radialPctR,body,source);
-    }
-
-    private static String topFinding(MarkerDiagnostic d){
-        return String.format(Locale.US,"%d marker angular offset %+.2f° vs minute track%s",
-                d.hour,d.angularDeg,d.minuteTrackAnchored?"":" [fitted-grid fallback]");
     }
 
     private static String renumberTopFindings(String report){
@@ -151,48 +170,41 @@ final class GmtMarkerQcRepair {
 
             Method detect=method("detectDial",Mat.class);
             Object dial=detect.invoke(null,bgr);if(dial==null)return null;
-            double cx=num(dial,"x"),cy=num(dial,"y"),dr=num(dial,"r");
-            if(!(dr>40.0))return null;
-            Method measure=method("measureMarkerSet",Mat.class,dial.getClass());
-            Object set=measure.invoke(null,bgr,dial);
-            double global=num(set,"globalRotation");if(!Double.isFinite(global))global=0.0;
-            @SuppressWarnings("unchecked") List<Object> markers=(List<Object>)field(set,"markers");
-            if(markers==null)return null;
+            double seedX=num(dial,"x"),seedY=num(dial,"y"),seedR=num(dial,"r");
+            if(!(seedR>40.0))return null;
 
-            MinuteTrackDialFinder.Result pose=MinuteTrackDialFinder.find(edges,cx,cy,dr);
-            RotatedRect ellipse=pose==null?null:pose.dialEllipse;
-            double roll=pose==null?0.0:pose.rollDeg;
-            double dialRadiusPx=ellipse==null?dr:(Math.max(ellipse.size.width,ellipse.size.height)
+            MinuteTrackDialFinder.Result pose=MinuteTrackDialFinder.find(edges,seedX,seedY,seedR);
+            if(pose==null||pose.dialEllipse==null||!pose.topPhaseAccepted)return null;
+            RotatedRect ellipse=pose.dialEllipse;
+            double roll=pose.rollDeg;
+            double dialRadiusPx=(Math.max(ellipse.size.width,ellipse.size.height)
                     +Math.min(ellipse.size.width,ellipse.size.height))/4.0;
 
             MarkerDiagnostic[] out=new MarkerDiagnostic[13];
             for(int hour:new int[]{12,6,9}){
-                Object marker=findHour(markers,hour);if(marker==null)continue;
-                double legacyAngular=num(marker,"angular"),actualR=num(marker,"radius");
-                double imageClock=QcExtendedMath.hourAngleDeg(hour)+global+legacyAngular;
-                Point center=polar(cx,cy,actualR,imageClock);
-                double angular=legacyAngular;
-                double normalizedRadius=actualR/Math.max(1.0,dr);
-                double bodyAxisExpected=imageClock-90.0;
-                boolean anchored=false;
-
-                if(ellipse!=null){
-                    Point corrected=PerspectiveGmtOverlay.undoEllipseDistortion(ellipse,
-                            center.x-ellipse.center.x,center.y-ellipse.center.y);
-                    normalizedRadius=Math.hypot(corrected.x,corrected.y);
-                    double correctedClock=QcExtendedMath.clockAngleDeg(0,0,corrected.x,corrected.y);
-                    double expectedClock=wrap360(QcExtendedMath.hourAngleDeg(hour)+roll);
-                    angular=QcExtendedMath.wrap180(correctedClock-expectedClock);
-                    double canonicalClock=wrap360(correctedClock-roll);
-                    bodyAxisExpected=projectedRadialAxisDeg(ellipse,roll,canonicalClock,normalizedRadius);
-                    anchored=pose.topPhaseAccepted;
+                Candidate c=measureProjectedMarker(gray,ellipse,roll,dialRadiusPx,hour);
+                if(c==null){
+                    out[hour]=new MarkerDiagnostic(hour,Double.NaN,Double.NaN,Double.NaN,true,false);
+                    continue;
                 }
 
+                Point corrected=PerspectiveGmtOverlay.undoEllipseDistortion(ellipse,
+                        c.center.x-ellipse.center.x,c.center.y-ellipse.center.y);
+                double normalizedRadius=Math.hypot(corrected.x,corrected.y);
+                double correctedClock=QcExtendedMath.clockAngleDeg(0,0,corrected.x,corrected.y);
+                double expectedClock=wrap360(QcExtendedMath.hourAngleDeg(hour)+roll);
+                double angular=QcExtendedMath.wrap180(correctedClock-expectedClock);
                 double radial=radialOffsetPctR(normalizedRadius,hour);
-                double body=hour==12?
-                        componentAxisError(bgr,center,dialRadiusPx,bodyAxisExpected,-0.18,0.13,0.11,1.18):
-                        componentAxisError(bgr,center,dialRadiusPx,bodyAxisExpected,-0.13,0.13,0.065,1.25);
-                out[hour]=new MarkerDiagnostic(hour,angular,radial,body,anchored);
+
+                // These are detector sanity limits, not QC tolerances. Anything outside them is
+                // overwhelmingly more likely to be the wrong image structure than a watch defect.
+                if(Math.abs(angular)>4.0||Math.abs(radial)>8.0){
+                    out[hour]=new MarkerDiagnostic(hour,Double.NaN,Double.NaN,Double.NaN,true,false);
+                    continue;
+                }
+
+                double body=(Math.abs(c.rotationDeg)<=12.0&&dialRadiusPx>=55.0)?c.rotationDeg:Double.NaN;
+                out[hour]=new MarkerDiagnostic(hour,angular,radial,body,true,true);
             }
             return out;
         }catch(Throwable ignored){return null;}
@@ -200,58 +212,91 @@ final class GmtMarkerQcRepair {
     }
 
     /**
-     * PCA only inside a marker-shaped window aligned to the expected projected radial axis.
-     * This avoids the old square ROI at 12 o'clock, which admitted hands/coronet/minute-track
-     * pixels and produced impossible values such as -48 degrees for a visually upright triangle.
+     * Isolate one marker inside a small ROI projected from the fixed master. The marker under
+     * test never moves the ROI or the pose. Shape/area/centroid bounds are detection sanity
+     * checks only; they intentionally cause a safe "not measurable" result on ambiguous images.
      */
-    private static double componentAxisError(Mat bgr,Point center,double dialRadiusPx,
-                                             double expectedAxisDeg,double radialMinR,
-                                             double radialMaxR,double tangentialHalfR,
-                                             double minAnisotropy){
-        Mat gray=new Mat();
+    private static Candidate measureProjectedMarker(Mat gray,RotatedRect ellipse,double roll,
+                                                     double dialRadiusPx,int hour){
+        double radius=expectedRadiusRatio(hour);
+        double angle=Gmt126710BlnrMaster.angleForHour(hour);
+        Basis basis=basisAt(ellipse,roll,radius,angle);
+        if(basis==null||Math.abs(basis.det)<1e-8)return null;
+
+        double radialMin=hour==12?-0.17:-0.13;
+        double radialMax=hour==12? 0.11: 0.13;
+        double tangentHalf=hour==12?0.10:0.075;
+        double minAreaNorm=hour==12?0.010:0.008;
+        double maxAreaNorm=hour==12?0.060:0.040;
+        double targetAreaNorm=hour==12?0.025:0.016;
+
+        double maxBasis=Math.max(Math.hypot(basis.rx,basis.ry),Math.hypot(basis.tx,basis.ty));
+        int extent=(int)Math.ceil(maxBasis*0.20+5.0);
+        int x0=Math.max(0,(int)Math.floor(basis.center.x-extent));
+        int x1=Math.min(gray.cols()-1,(int)Math.ceil(basis.center.x+extent));
+        int y0=Math.max(0,(int)Math.floor(basis.center.y-extent));
+        int y1=Math.min(gray.rows()-1,(int)Math.ceil(basis.center.y+extent));
+        if(x1<=x0||y1<=y0)return null;
+
+        Mat mask=Mat.zeros(y1-y0+1,x1-x0+1,CvType.CV_8UC1);
         try{
-            Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);
-            double a=Math.toRadians(expectedAxisDeg),ux=Math.cos(a),uy=Math.sin(a);
-            double vx=-uy,vy=ux;
-            double extent=dialRadiusPx*Math.max(Math.max(Math.abs(radialMinR),Math.abs(radialMaxR)),tangentialHalfR)+3.0;
-            int x0=(int)Math.max(0,Math.floor(center.x-extent)),x1=(int)Math.min(gray.cols()-1,Math.ceil(center.x+extent));
-            int y0=(int)Math.max(0,Math.floor(center.y-extent)),y1=(int)Math.min(gray.rows()-1,Math.ceil(center.y+extent));
-            double sw=0,mx=0,my=0;int count=0;
             for(int y=y0;y<=y1;y++)for(int x=x0;x<=x1;x++){
-                double dx=x-center.x,dy=y-center.y;
-                double radial=(dx*ux+dy*uy)/dialRadiusPx;
-                double tangent=(dx*vx+dy*vy)/dialRadiusPx;
-                if(radial<radialMinR||radial>radialMaxR||Math.abs(tangent)>tangentialHalfR)continue;
-                double value=gray.get(y,x)[0];if(value<155.0)continue;
-                double w=Math.max(1.0,value-145.0);sw+=w;mx+=w*x;my+=w*y;count++;
+                Point local=basis.local(x,y);
+                if(local.x<radialMin||local.x>radialMax||Math.abs(local.y)>tangentHalf)continue;
+                double[] v=gray.get(y,x);if(v==null||v[0]<150.0)continue;
+                mask.put(y-y0,x-x0,255.0);
             }
-            if(sw<220.0||count<18)return Double.NaN;
-            mx/=sw;my/=sw;
-            double cxx=0,cyy=0,cxy=0;
-            for(int y=y0;y<=y1;y++)for(int x=x0;x<=x1;x++){
-                double dx0=x-center.x,dy0=y-center.y;
-                double radial=(dx0*ux+dy0*uy)/dialRadiusPx;
-                double tangent=(dx0*vx+dy0*vy)/dialRadiusPx;
-                if(radial<radialMinR||radial>radialMaxR||Math.abs(tangent)>tangentialHalfR)continue;
-                double value=gray.get(y,x)[0];if(value<155.0)continue;
-                double w=Math.max(1.0,value-145.0),dx=x-mx,dy=y-my;
-                cxx+=w*dx*dx;cyy+=w*dy*dy;cxy+=w*dx*dy;
+
+            List<MatOfPoint> contours=new ArrayList<>();Mat hierarchy=new Mat();
+            try{
+                Imgproc.findContours(mask,contours,hierarchy,Imgproc.RETR_EXTERNAL,Imgproc.CHAIN_APPROX_SIMPLE);
+                Candidate best=null;double bestScore=Double.POSITIVE_INFINITY;
+                for(MatOfPoint contour:contours){
+                    double area=Math.abs(Imgproc.contourArea(contour));
+                    double areaNorm=area/Math.max(1.0,dialRadiusPx*dialRadiusPx);
+                    if(areaNorm<minAreaNorm||areaNorm>maxAreaNorm)continue;
+                    Moments m=Imgproc.moments(contour);
+                    if(!(m.m00>0.0))continue;
+                    Point center=new Point(x0+m.m10/m.m00,y0+m.m01/m.m00);
+                    Point local=basis.local(center.x,center.y);
+                    if(Math.abs(local.x)>0.080||Math.abs(local.y)>0.060)continue;
+
+                    double trace=m.mu20+m.mu02;
+                    double disc=Math.sqrt(Math.max(0.0,(m.mu20-m.mu02)*(m.mu20-m.mu02)+4.0*m.mu11*m.mu11));
+                    double l1=(trace+disc)/2.0,l2=Math.max(1e-9,(trace-disc)/2.0);
+                    double anisotropy=l1/l2;
+                    double axis=Math.toDegrees(0.5*Math.atan2(2.0*m.mu11,m.mu20-m.mu02));
+                    double expectedAxis=Math.toDegrees(Math.atan2(basis.ry,basis.rx));
+                    double rotation=QcExtendedMath.smallestAxisError(axis,expectedAxis);
+                    double minAnisotropy=hour==12?1.35:2.0;
+                    if(anisotropy<minAnisotropy||Math.abs(rotation)>25.0)continue;
+
+                    double score=4.0*Math.hypot(local.x,local.y)
+                            +1.5*Math.abs(areaNorm-targetAreaNorm);
+                    if(score<bestScore){
+                        bestScore=score;
+                        best=new Candidate(center,local.x,local.y,areaNorm,rotation,anisotropy);
+                    }
+                }
+                return best;
+            }finally{
+                hierarchy.release();for(MatOfPoint c:contours)c.release();
             }
-            double trace=cxx+cyy,disc=Math.sqrt(Math.max(0.0,(cxx-cyy)*(cxx-cyy)+4.0*cxy*cxy));
-            double l1=(trace+disc)/2.0,l2=Math.max(1e-9,(trace-disc)/2.0);
-            if(!(l1/l2>=minAnisotropy))return Double.NaN;
-            double axis=Math.toDegrees(0.5*Math.atan2(2.0*cxy,cxx-cyy));
-            return QcExtendedMath.smallestAxisError(axis,expectedAxisDeg);
-        }finally{gray.release();}
+        }finally{mask.release();}
     }
 
-    private static double projectedRadialAxisDeg(RotatedRect ellipse,double rollDeg,
-                                                  double canonicalClockDeg,double radius){
-        double math=Math.toRadians(canonicalClockDeg-90.0);
-        double r0=Math.max(0.05,radius-0.04),r1=radius+0.04;
-        Point p0=map(ellipse,rollDeg,r0*Math.cos(math),r0*Math.sin(math));
-        Point p1=map(ellipse,rollDeg,r1*Math.cos(math),r1*Math.sin(math));
-        return Math.toDegrees(Math.atan2(p1.y-p0.y,p1.x-p0.x));
+    /** Projected radial/tangential basis in pixels per one normalized dial-radius unit. */
+    private static Basis basisAt(RotatedRect ellipse,double roll,double radius,double angle){
+        double ca=Math.cos(angle),sa=Math.sin(angle);
+        Point center=map(ellipse,roll,radius*ca,radius*sa);
+        double eps=0.04;
+        Point r0=map(ellipse,roll,(radius-eps)*ca,(radius-eps)*sa);
+        Point r1=map(ellipse,roll,(radius+eps)*ca,(radius+eps)*sa);
+        double tx=-sa,ty=ca;
+        Point t0=map(ellipse,roll,radius*ca-eps*tx,radius*sa-eps*ty);
+        Point t1=map(ellipse,roll,radius*ca+eps*tx,radius*sa+eps*ty);
+        return new Basis(center,(r1.x-r0.x)/(2.0*eps),(r1.y-r0.y)/(2.0*eps),
+                (t1.x-t0.x)/(2.0*eps),(t1.y-t0.y)/(2.0*eps));
     }
 
     private static Point map(RotatedRect e,double rollDeg,double x,double y){
@@ -265,12 +310,6 @@ final class GmtMarkerQcRepair {
     }
 
     private static double wrap360(double d){double x=d%360.0;if(x<0)x+=360.0;return x;}
-    private static Point polar(double cx,double cy,double r,double deg){
-        double a=Math.toRadians(deg);return new Point(cx+Math.sin(a)*r,cy-Math.cos(a)*r);
-    }
-    private static Object findHour(List<Object> list,int h)throws Exception{
-        for(Object m:list)if((int)Math.round(num(m,"hour"))==h)return m;return null;
-    }
     private static Method method(String n,Class<?>...t)throws Exception{
         Method m=WatchAlignCoreV7.class.getDeclaredMethod(n,t);m.setAccessible(true);return m;
     }
