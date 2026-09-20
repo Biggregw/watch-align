@@ -38,7 +38,7 @@ public final class WatchAlignCoreV13 {
         boolean canonicalGmt=CanonicalGmtGeometryAnalyzer.supports(modelRef);Bitmap combined=QcOverlayComposer.compose(watch,guide,ext.annotated);
         PerspectiveGmtOverlay.DialSeed manualSeed=InspectionImageStore.hasManualSeed?
                 new PerspectiveGmtOverlay.DialSeed(InspectionImageStore.manualCx,InspectionImageStore.manualCy,InspectionImageStore.manualR,0.98,InspectionImageStore.manualRoll):null;
-        PerspectiveGmtOverlay.Result perspective=canonicalGmt?MinuteTrackFirstOverlay.build(watch,modelRef,manualSeed,android.graphics.Color.rgb(255,45,45)):null;
+        PerspectiveGmtOverlay.Result perspective=canonicalGmt?MinuteTrackRescueOverlay.build(watch,modelRef,manualSeed,android.graphics.Color.rgb(255,45,45)):null;
         boolean geometryTrusted=perspective!=null&&perspective.automaticAccepted;
         String perspectiveReport=perspective==null&&canonicalGmt?"\n\nVISUAL QC MASTER\nUnavailable: minute-track-first acquisition could not establish reliable geometry. Use a clearer photo or precision dial-edge alignment.\n":perspective==null?"":perspective.report;
         String report;
