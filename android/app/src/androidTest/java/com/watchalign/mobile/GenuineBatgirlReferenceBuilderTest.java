@@ -69,8 +69,9 @@ public class GenuineBatgirlReferenceBuilderTest {
     }
 
     @Test public void buildCanonicalGenuineEdgeReference()throws Exception{
-        Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
-        AssetManager assets=context.getAssets();
+        Context testContext=InstrumentationRegistry.getInstrumentation().getContext();
+        Context targetContext=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        AssetManager assets=testContext.getAssets();
         String[] sourceDirs=assets.list(BASE);
         assertNotNull(sourceDirs);Arrays.sort(sourceDirs);
 
@@ -150,7 +151,7 @@ public class GenuineBatgirlReferenceBuilderTest {
                 Imgproc.threshold(support8,consensus,CONSENSUS*255.0,255.0,Imgproc.THRESH_BINARY);
                 mask(consensus);
 
-                File root=new File(context.getExternalFilesDir(null),"batgirl-reference");
+                File root=new File(targetContext.getExternalFilesDir(null),"batgirl-reference");
                 File selectedDir=new File(root,"selected");
                 assertTrue(selectedDir.mkdirs()||selectedDir.isDirectory());
                 writePng(support8,new File(root,"batgirl_genuine_edge_support.png"));
