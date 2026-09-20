@@ -9,7 +9,14 @@ final class Gmt126710BlnrMaster {
     static final String ID = "126710BLNR-visual-master-v3";
 
     static final double DIAL_EDGE_R = 1.000;
-    static final double MINUTE_TRACK_R = 0.925;
+
+    // Re-measured from a known-genuine front-on 126710BLNR control using the centreline of
+    // the minor minute ticks. The previous 0.925 value sat near the outward part of the tick
+    // band and made minute-track-first fitting shrink the entire master by about 3-5%.
+    // A separate replica image independently reproduced the same ~0.891 tick-centre ratio,
+    // but was not used to set the calibration value.
+    static final double MINUTE_TRACK_R = 0.891;
+
     static final double MARKER_CENTER_R = 0.755;
 
     // Applied marker outer body and inner lume references.
