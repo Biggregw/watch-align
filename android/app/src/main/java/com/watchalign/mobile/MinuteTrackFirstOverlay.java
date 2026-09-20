@@ -81,8 +81,11 @@ final class MinuteTrackFirstOverlay {
             double finalTopError=topPhaseErrorDeg(H);
             boolean finalTopAccepted=Double.isFinite(finalTopError)&&finalTopError<=FINAL_TOP_PHASE_LIMIT_DEG
                     &&canonicalTwelveIsAboveCentre(H);
-            boolean automaticAccepted=acquisition.usable&&acquisition.topPhaseAccepted
-                    &&finalTopAccepted&&validation.accepted;
+
+            // The minute track owns pose acceptance. The outward-ring detector is advisory
+            // because crystal/rehaut edges can be stronger than the physical dial boundary.
+            boolean automaticAccepted=automaticAcceptance(
+                    acquisition.topPhaseAccepted,finalTopAccepted,validation.accepted);
 
             Point[] expectedCard=PerspectiveGmtOverlay.ellipseCardinalPoints(ellipse,solvedRoll);
             double reproj=reprojectionError(H,expectedCard);
@@ -101,10 +104,11 @@ final class MinuteTrackFirstOverlay {
                     "Inspection geometry: %s. Red outlines are the fixed master; white outlines are lume references.\n"+
                     "Minute-track acquisition: %d concentric ellipse candidates evaluated; minor-tick fit median %.2f px; anchored roll %+.2f°. Minute track sets centre and scale.\n"+
                     "Top-phase anchor: %s; canonical 12 axis %.2f° from image-up. QC photos are required to be upright with the 12 minute-track tick nearest the top.\n"+
-                    "Next outward ring: %s at canonical radius %.4f (expected 1.0000); boundary median %.2f px, p90 %.2f px. VALIDATION ONLY: it does not resize the master. Track/dial master ratio %.4f.\n"+
+                    "Next outward ring: %s at canonical radius %.4f (expected 1.0000); boundary median %.2f px, p90 %.2f px. ADVISORY ONLY: it does not resize or veto the automatic master. Track/dial master ratio %.4f.\n"+
                     "Selected dial ellipse: %.1f × %.1f px; apparent tilt %.1f°; centre moved %.2f%% of dial radius from the legacy seed.\n"+
                     "Final rotation correction: %+.2f° (bounded to ±%.2f°); final 12-axis error %.2f° (%s).\n"+
                     "Independent minute-track validation: %s; %d held-out ticks; median %.2f px (limit %.2f), p90 %.2f px (limit %.2f), inliers %.0f%% at %.2f px.\n"+
+                    "Automatic decision gates: initial top-phase %s; final 12-axis %s; held-out minute track %s; outward ring advisory %s.\n"+
                     "Automatic master: %s. %s\n"+
                     "Pose residual: %.2f px. Confidence: %.0f%%.\n"+
                     "Projective refinement: %s.\n"+
@@ -125,6 +129,10 @@ final class MinuteTrackFirstOverlay {
                     validation.medianPx,validation.medianLimitPx,
                     validation.p90Px,validation.p90LimitPx,
                     validation.inlierFraction*100.0,validation.inlierLimitPx,
+                    acquisition.topPhaseAccepted?"PASS":"FAIL",
+                    finalTopAccepted?"PASS":"FAIL",
+                    validation.accepted?"PASS":"FAIL",
+                    acquisition.boundaryConfirmed?"CONFIRMED":"NOT CONFIRMED",
                     automaticAccepted?"ACCEPTED":"REJECTED",
                     automaticAccepted?"Safe to show automatically.":
                             "Hidden from the main QC view; use Native Template for manual alignment.",
@@ -145,6 +153,12 @@ final class MinuteTrackFirstOverlay {
         }finally{
             src.release();gray.release();blur.release();edges.release();
         }
+    }
+
+    static boolean automaticAcceptance(boolean acquisitionTopPhaseAccepted,
+                                       boolean finalTopAccepted,
+                                       boolean independentMinuteTrackAccepted){
+        return acquisitionTopPhaseAccepted&&finalTopAccepted&&independentMinuteTrackAccepted;
     }
 
     private static PerspectiveGmtOverlay.Result rejectedLegacyFallback(Bitmap input,String modelRef,
