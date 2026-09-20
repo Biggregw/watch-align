@@ -6,7 +6,7 @@ package com.watchalign.mobile;
  * This is a Watch Align calibrated inspection master, not Rolex factory CAD.
  */
 final class Gmt126710BlnrMaster {
-    static final String ID = "126710BLNR-visual-master-v3";
+    static final String ID = "126710BLNR-visual-master-v4";
 
     static final double DIAL_EDGE_R = 1.000;
 
@@ -17,10 +17,14 @@ final class Gmt126710BlnrMaster {
     // but was not used to set the calibration value.
     static final double MINUTE_TRACK_R = 0.891;
 
-    static final double MARKER_CENTER_R = 0.755;
+    // Marker centres are deliberately shape-specific. A single 0.755R marker ring was found
+    // to place the genuine round markers and especially the 6/9 batons too far outward.
+    // These visual centres were measured against the corrected minute-track/dial-radius datum
+    // on a known-genuine front-on 126710BLNR control, then checked against the real-photo overlays.
+    static final double ROUND_CENTER_R = 0.722;
+    static final double BATON_CENTER_R = 0.677;
 
     // Applied marker outer body and inner lume references.
-    // Alpha28 enlarges the outer body to trace the applied white-gold surround rather than the lume only.
     static final double ROUND_OUTER_R = 0.070;
     static final double ROUND_LUME_R = 0.049;
 
@@ -31,15 +35,23 @@ final class Gmt126710BlnrMaster {
     static final double BATON_LUME_TANGENTIAL_HALF = 0.026;
 
     // 12 triangle. Genuine orientation is BASE OUTWARD, APEX INWARD.
-    // Alpha28 shifts the body slightly inward and extends the apex so the outline traces the full applied marker.
-    static final double TRI_CENTER_R = 0.748;
+    // The visual anchor is solved from both independently measured endpoints on the genuine
+    // control: outer base 0.805R - 0.096R = 0.709R, and inner apex 0.555R + 0.154R = 0.709R.
+    static final double TRI_CENTER_R = 0.709;
     static final double TRI_BASE_OUTWARD = 0.096;
     static final double TRI_APEX_INWARD = 0.154;
     static final double TRI_HALF_BASE = 0.083;
-    static final double TRI_LUME_CENTER_R = 0.746;
+
+    // Keep the lume triangle translated with the outer body rather than changing its shape.
+    static final double TRI_LUME_CENTER_R = 0.707;
     static final double TRI_LUME_BASE_OUTWARD = 0.071;
     static final double TRI_LUME_APEX_INWARD = 0.118;
     static final double TRI_LUME_HALF_BASE = 0.058;
+
+    // Detection centroid is not the same point as the triangle's visual geometric anchor.
+    // A separate genuine-derived centroid datum prevents QC from forcing the search ROI onto
+    // the visual anchor and then measuring the wrong bright structure.
+    static final double TRI_DETECTION_CENTER_R = 0.729;
 
     static boolean supports(String modelRef) {
         return modelRef != null && modelRef.toUpperCase().contains("126710BLNR");
