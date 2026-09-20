@@ -54,9 +54,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            cd android
-            bash ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.GenuineBatgirlReferenceBuilderTest --stacktrace
-            cd ..
+            bash android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.GenuineBatgirlReferenceBuilderTest --stacktrace
             mkdir -p batgirl-reference-output
             adb pull /sdcard/Android/data/com.watchalign.mobile/files/batgirl-reference/. batgirl-reference-output/
 
