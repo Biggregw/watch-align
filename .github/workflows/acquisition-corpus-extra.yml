@@ -1,0 +1,85 @@
+name: Expand GMT acquisition validation corpus
+
+on:
+  push:
+    branches:
+      - research/acquisition-corpus-2026-09-20
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  extra-corpus:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install fetch tools
+        run: pip install --disable-pip-version-check gallery-dl pillow
+      - name: Fetch extra exact-model images
+        shell: bash
+        run: |
+          cat > /tmp/fetch_extra.py <<'PY'
+          from pathlib import Path
+          import csv, hashlib, subprocess
+          from PIL import Image, ImageOps
+          root=Path('acquisition-corpus-extra'); root.mkdir(exist_ok=True)
+          srcs=[
+            ('gen_candidate','gen_wex_WsCcFNT','https://imgur.com/a/WsCcFNT'),
+            ('gen_candidate','gen_wex_e99gXKb','https://imgur.com/a/e99gXKb'),
+            ('gen_candidate','gen_wex_8Rg3vqJ','https://imgur.com/a/8Rg3vqJ'),
+            ('gen_candidate','gen_wex_5m4COuG','https://imgur.com/a/5m4COuG'),
+            ('gen_candidate','gen_wex_3KSuGhC','https://imgur.com/a/3KSuGhC'),
+            ('gen_candidate','gen_wex_I9FxPLn','https://imgur.com/a/I9FxPLn'),
+            ('gen_candidate','gen_wex_EZKpLku','https://imgur.com/gallery/EZKpLku'),
+            ('gen_candidate','gen_wex_1TDYtpN','https://imgur.com/a/1TDYtpN'),
+            ('gen_candidate','gen_wex_imgchest_2026','https://imgchest.com/p/md7or8a5d7p'),
+            ('rep','rep_vsf_xzWyIzk','https://imgur.com/a/xzWyIzk'),
+            ('rep','rep_vsf_KfRKFwA','https://imgur.com/a/KfRKFwA'),
+            ('rep','rep_clean_r4FaUMH','https://imgur.com/a/r4FaUMH'),
+            ('rep','rep_vrf_q94heQu','https://imgur.com/a/q94heQu'),
+          ]
+          rows=[]
+          for kind,label,url in srcs:
+            d=root/kind/label; d.mkdir(parents=True,exist_ok=True)
+            p=subprocess.run(['gallery-dl','--no-mtime','--range','1-10','-D',str(d),url],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=180)
+            (d/'fetch.log').write_text(p.stdout,encoding='utf-8',errors='replace')
+            rows.append((kind,label,url,p.returncode))
+          valid={'.jpg','.jpeg','.png','.webp','.bmp','.gif'}; manifest=[]; seen=set()
+          for p in list(root.rglob('*')):
+            if not p.is_file() or p.suffix.lower() not in valid: continue
+            try:
+              im=Image.open(p); im.seek(0); im=ImageOps.exif_transpose(im).convert('RGB')
+              if min(im.size)<180 or im.width*im.height<90000: continue
+              im.thumbnail((1600,1600),Image.Resampling.LANCZOS)
+              out=p.with_suffix('.jpg'); im.save(out,'JPEG',quality=90,optimize=True)
+              if out!=p:
+                try:p.unlink()
+                except:pass
+              sha=hashlib.sha256(out.read_bytes()).hexdigest()
+              if sha in seen: out.unlink(missing_ok=True); continue
+              seen.add(sha); rel=out.relative_to(root); parts=rel.parts
+              manifest.append((parts[0],parts[1],str(rel),im.width,im.height,sha))
+            except Exception: pass
+          with (root/'manifest.tsv').open('w',newline='',encoding='utf-8') as f:
+            w=csv.writer(f,delimiter='\t'); w.writerow(['class','source_id','path','width','height','sha256']); w.writerows(manifest)
+          with (root/'sources.tsv').open('w',newline='',encoding='utf-8') as f:
+            w=csv.writer(f,delimiter='\t'); w.writerow(['class','source_id','url','fetch_rc']); w.writerows(rows)
+          print('images',len(manifest));
+          for kind in ('gen_candidate','rep'):
+            print(kind,sum(1 for x in manifest if x[0]==kind))
+          PY
+          python /tmp/fetch_extra.py
+          cat acquisition-corpus-extra/sources.tsv
+          wc -l acquisition-corpus-extra/manifest.tsv
+          du -sh acquisition-corpus-extra
+      - name: Upload extra corpus
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmt-acquisition-validation-corpus-extra
+          path: acquisition-corpus-extra/
+          if-no-files-found: error
+          retention-days: 7
