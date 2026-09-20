@@ -33,8 +33,19 @@ final class MinuteTrackRescueOverlay {
                 MinuteTrackFirstOverlay.build(input,modelRef,manualSeed,overlayColor);
         if(manualSeed!=null||primary==null||primary.automaticAccepted)return primary;
 
+        // Reached whenever the primary path rejects, including when its own geometry passed but
+        // was vetoed by the independent identity gate for a suspicious centre displacement.
         PerspectiveGmtOverlay.Result rescued=buildRescue(input,modelRef,overlayColor);
-        return rescued!=null&&rescued.automaticAccepted?rescued:primary;
+        boolean rescueReplacedPrimary=rescued!=null&&rescued.automaticAccepted;
+        String annotation=String.format(Locale.US,
+                "\n\nRESCUE SELECTOR\nRescue attempted: YES. Rescue replaced primary: %s.\n",
+                rescueReplacedPrimary?"YES":"NO");
+        if(rescueReplacedPrimary){
+            return new PerspectiveGmtOverlay.Result(rescued.nativeOverlay,rescued.rectified,
+                    annotation+rescued.report,rescued.confidence,true);
+        }
+        return new PerspectiveGmtOverlay.Result(primary.nativeOverlay,primary.rectified,
+                annotation+primary.report,primary.confidence,false);
     }
 
     private static PerspectiveGmtOverlay.Result buildRescue(Bitmap input,String modelRef,int overlayColor){

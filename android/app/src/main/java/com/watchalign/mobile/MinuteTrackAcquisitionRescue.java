@@ -1,6 +1,5 @@
 package com.watchalign.mobile;
 
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.RotatedRect;
@@ -330,77 +329,10 @@ final class MinuteTrackAcquisitionRescue {
         return sum/Math.max(1,count);
     }
 
+    /** Delegates to the shared independent identity gate; rescue keeps its strict all-three rule. */
     private static Semantic semanticGate(Mat gray,RotatedRect ellipse,double roll){
-        double dialMedian=dialInteriorMedian(gray,ellipse,roll);
-        boolean ok=Double.isFinite(dialMedian)&&dialMedian<=135.0
-                &&markerGood(gray,ellipse,roll,12)
-                &&markerGood(gray,ellipse,roll,6)
-                &&markerGood(gray,ellipse,roll,9);
-        return new Semantic(ok,dialMedian);
-    }
-
-    private static double dialInteriorMedian(Mat gray,RotatedRect ellipse,double roll){
-        List<Double> values=new ArrayList<>();
-        for(int ri=0;ri<8;ri++){
-            double r=0.32+(0.60-0.32)*ri/7.0;
-            for(int ai=0;ai<72;ai++){
-                double a=2.0*Math.PI*ai/72.0;
-                Point p=map(ellipse,1.0,roll,r*Math.cos(a),r*Math.sin(a));
-                double v=sampleGray(gray,p.x,p.y);if(Double.isFinite(v))values.add(v);
-            }
-        }
-        Collections.sort(values);return values.isEmpty()?Double.NaN:percentileSorted(values,0.50);
-    }
-
-    private static boolean markerGood(Mat gray,RotatedRect ellipse,double roll,int hour){
-        double centerR=hour==12?0.729:0.677;
-        double radialHalf=hour==12?0.15:0.14;
-        double tangHalf=hour==12?0.11:0.075;
-        double angle=Gmt126710BlnrMaster.angleForHour(hour);
-        double ux=Math.cos(angle),uy=Math.sin(angle),vx=-uy,vy=ux;
-        double cx=centerR*ux,cy=centerR*uy;
-        double radialExtent=radialHalf*1.45,tangExtent=tangHalf*1.80;
-        int rows=72,cols=72;
-        Mat patch=new Mat(rows,cols,CvType.CV_8UC1);
-        List<Double> core=new ArrayList<>(),surround=new ArrayList<>();
-        try{
-            for(int y=0;y<rows;y++)for(int x=0;x<cols;x++){
-                double u=-radialExtent+2.0*radialExtent*y/(rows-1.0);
-                double v=-tangExtent+2.0*tangExtent*x/(cols-1.0);
-                double px=cx+ux*u+vx*v,py=cy+uy*u+vy*v;
-                Point p=map(ellipse,1.0,roll,px,py);
-                double value=sampleGray(gray,p.x,p.y);
-                if(!Double.isFinite(value))value=0.0;
-                patch.put(y,x,value);
-                boolean inCore=Math.abs(u)<=radialHalf&&Math.abs(v)<=tangHalf;
-                if(inCore)core.add(value);else surround.add(value);
-            }
-            if(core.isEmpty()||surround.isEmpty())return false;
-            Collections.sort(core);Collections.sort(surround);
-            double bg=percentileSorted(surround,0.50);
-            double p90=percentileSorted(core,0.90);
-            double contrast=p90-bg;
-            double brightThreshold=Math.max(150.0,bg+45.0);
-            int bright=0;for(double v:core)if(v>=brightThreshold)bright++;
-            double brightFraction=bright/(double)core.size();
-
-            double threshold=Math.max(150.0,Math.min(220.0,bg+45.0));
-            Mat bw=new Mat();
-            try{
-                Imgproc.threshold(patch,bw,threshold,255.0,Imgproc.THRESH_BINARY);
-                Mat labels=new Mat(),stats=new Mat(),centroids=new Mat();
-                try{
-                    int components=Imgproc.connectedComponentsWithStats(bw,labels,stats,centroids,8,CvType.CV_32S);
-                    double largest=0.0;
-                    for(int i=1;i<components;i++){
-                        double[] a=stats.get(i,Imgproc.CC_STAT_AREA);
-                        if(a!=null&&a.length>0)largest=Math.max(largest,a[0]);
-                    }
-                    double areaFraction=largest/Math.max(1.0,core.size());
-                    return p90>=165.0&&contrast>=35.0&&(brightFraction>=0.05||areaFraction>=0.025);
-                }finally{labels.release();stats.release();centroids.release();}
-            }finally{bw.release();}
-        }finally{patch.release();}
+        MinuteTrackIdentityGate.Evidence evidence=MinuteTrackIdentityGate.evaluate(gray,ellipse,roll);
+        return new Semantic(evidence.verdict==MinuteTrackIdentityGate.Verdict.PASS,evidence.dialInteriorMedian);
     }
 
     private static RotatedRect scaledEllipse(RotatedRect e,double scale){
@@ -436,14 +368,6 @@ final class MinuteTrackAcquisitionRescue {
         double d01=distance.get(y0+1,x0)[0],d11=distance.get(y0+1,x0+1)[0];
         double d=(d00*(1.0-fx)+d10*fx)*(1.0-fy)+(d01*(1.0-fx)+d11*fx)*fy;
         return Math.min(LOSS_CAP_PX,Math.max(0.0,d));
-    }
-
-    private static double sampleGray(Mat gray,double x,double y){
-        if(x<1||y<1||x>=gray.cols()-1||y>=gray.rows()-1)return Double.NaN;
-        int x0=(int)Math.floor(x),y0=(int)Math.floor(y);double fx=x-x0,fy=y-y0;
-        double[] a=gray.get(y0,x0),b=gray.get(y0,x0+1),c=gray.get(y0+1,x0),d=gray.get(y0+1,x0+1);
-        if(a==null||b==null||c==null||d==null)return Double.NaN;
-        return (a[0]*(1.0-fx)+b[0]*fx)*(1.0-fy)+(c[0]*(1.0-fx)+d[0]*fx)*fy;
     }
 
     private static double percentileSorted(List<Double> sorted,double q){

@@ -91,8 +91,22 @@ final class MinuteTrackFirstOverlay {
             double reproj=reprojectionError(H,expectedCard);
             double centerErr=Math.hypot(ellipse.center.x-seed.x,ellipse.center.y-seed.y)
                     /Math.max(1.0,dialRadiusPx);
+
+            // The three gates above are all self-consistency checks against the SAME candidate
+            // ellipse's own predicted tick grid: a wrong concentric ring (bezel insert, rehaut,
+            // crystal edge) can satisfy its own top-phase anchor and its own held-out ticks and
+            // still be nowhere near the real dial. When the candidate has also moved far from the
+            // legacy search seed, require identity evidence that does not depend on the pose
+            // fitter's self-consistency before trusting acceptance enough to block rescue.
+            boolean identityRequired=identityVerificationRequired(automaticAccepted,centerErr);
+            MinuteTrackIdentityGate.Evidence identity=identityRequired?
+                    MinuteTrackIdentityGate.evaluate(gray,ellipse,solvedRoll):null;
+            MinuteTrackIdentityGate.Verdict identityVerdict=identity==null?null:identity.verdict;
+            boolean vetoed=primaryVetoed(automaticAccepted,centerErr,identityVerdict);
+            boolean finalAccepted=finalAcceptance(automaticAccepted,centerErr,identityVerdict);
+
             double confidence=confidence(seed.quality,reproj,centerErr,axisRatio,
-                    acquisition.fitMedianPx,validation,automaticAccepted);
+                    acquisition.fitMedianPx,validation,finalAccepted);
 
             Bitmap overlay=renderNative(input,H,modelRef,overlayColor);
             Bitmap rectified=rectify(src,H,input);
@@ -109,6 +123,9 @@ final class MinuteTrackFirstOverlay {
                     "Final rotation correction: %+.2f° (bounded to ±%.2f°); final 12-axis error %.2f° (%s).\n"+
                     "Independent minute-track validation: %s; %d held-out ticks; median %.2f px (limit %.2f), p90 %.2f px (limit %.2f), inliers %.0f%% at %.2f px.\n"+
                     "Automatic decision gates: initial top-phase %s; final 12-axis %s; held-out minute track %s; outward ring advisory %s.\n"+
+                    "Primary geometry accepted (pre-identity-check): %s. Independent identity verification required: %s (centre displacement %.2f%% of dial radius vs %.0f%% suspicion threshold).\n"+
+                    "Independent identity evidence: %s%s. This check samples dial-interior darkness and 12/6/9 marker presence at the resolved pose; it never fits, moves or resizes the candidate.\n"+
+                    "Primary vetoed by identity gate: %s.\n"+
                     "Automatic master: %s. %s\n"+
                     "Pose residual: %.2f px. Confidence: %.0f%%.\n"+
                     "Projective refinement: %s.\n"+
@@ -134,7 +151,15 @@ final class MinuteTrackFirstOverlay {
                     validation.accepted?"PASS":"FAIL",
                     acquisition.boundaryConfirmed?"CONFIRMED":"NOT CONFIRMED",
                     automaticAccepted?"ACCEPTED":"REJECTED",
-                    automaticAccepted?"Safe to show automatically.":
+                    identityRequired?"YES":"NO",centerErr*100.0,
+                    SUSPICION_CENTER_DISPLACEMENT_FRACTION*100.0,
+                    identity==null?"NOT EVALUATED":identity.verdict.name(),
+                    identity==null?"":String.format(Locale.US,
+                            " (dial interior median %.1f, %d/3 markers found)",
+                            identity.dialInteriorMedian,identity.markersFound),
+                    vetoed?"YES":"NO",
+                    finalAccepted?"ACCEPTED":"REJECTED",
+                    finalAccepted?"Safe to show automatically.":
                             "Hidden from the main QC view; use Native Template for manual alignment.",
                     reproj,confidence*100.0,
                     refinement.diagnostics.accepted?"ACCEPTED":"REJECTED",
@@ -146,7 +171,7 @@ final class MinuteTrackFirstOverlay {
                     refinement.diagnostics.accepted?"NO":"YES");
 
             H.release();
-            return new PerspectiveGmtOverlay.Result(overlay,rectified,report,confidence,automaticAccepted);
+            return new PerspectiveGmtOverlay.Result(overlay,rectified,report,confidence,finalAccepted);
         }catch(Throwable t){
             return rejectedLegacyFallback(input,modelRef,overlayColor,
                     "Minute-track-first acquisition failed safely: "+t.getClass().getSimpleName()+".");
@@ -159,6 +184,38 @@ final class MinuteTrackFirstOverlay {
                                        boolean finalTopAccepted,
                                        boolean independentMinuteTrackAccepted){
         return acquisitionTopPhaseAccepted&&finalTopAccepted&&independentMinuteTrackAccepted;
+    }
+
+    // Existing zero-crossing of the centre-error term in confidence(): displacement beyond this
+    // fraction of dial radius already contributes zero to confidence. Reused here as the
+    // suspicion threshold so an accepted-but-badly-displaced candidate cannot block rescue
+    // without independent identity confirmation, rather than inventing an unrelated constant.
+    static final double SUSPICION_CENTER_DISPLACEMENT_FRACTION=0.22;
+
+    static boolean geometricallySuspicious(double centerDisplacementFraction){
+        return centerDisplacementFraction>SUSPICION_CENTER_DISPLACEMENT_FRACTION;
+    }
+
+    /** An already-rejected primary never needs identity evidence; rescue already gets to run. */
+    static boolean identityVerificationRequired(boolean automaticAccepted,
+                                                double centerDisplacementFraction){
+        return automaticAccepted&&geometricallySuspicious(centerDisplacementFraction);
+    }
+
+    /**
+     * A suspicious accepted primary is vetoed unless independent identity evidence strongly
+     * confirms it (PASS). AMBIGUOUS and FAIL both veto: neither is strong enough to let a
+     * large, unexplained centre displacement stand as an automatically-trusted pose.
+     */
+    static boolean primaryVetoed(boolean automaticAccepted,double centerDisplacementFraction,
+                                 MinuteTrackIdentityGate.Verdict identityVerdict){
+        if(!identityVerificationRequired(automaticAccepted,centerDisplacementFraction))return false;
+        return identityVerdict!=MinuteTrackIdentityGate.Verdict.PASS;
+    }
+
+    static boolean finalAcceptance(boolean automaticAccepted,double centerDisplacementFraction,
+                                   MinuteTrackIdentityGate.Verdict identityVerdict){
+        return automaticAccepted&&!primaryVetoed(automaticAccepted,centerDisplacementFraction,identityVerdict);
     }
 
     private static PerspectiveGmtOverlay.Result rejectedLegacyFallback(Bitmap input,String modelRef,
