@@ -7,10 +7,14 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 public class GmtMarkerQcRepairTest {
-    @Test public void twelveUsesTriangleCentreWhileBatonsUseMarkerRingCentre(){
-        assertEquals(Gmt126710BlnrMaster.TRI_CENTER_R,GmtMarkerQcRepair.expectedRadiusRatio(12),1e-12);
-        assertEquals(Gmt126710BlnrMaster.MARKER_CENTER_R,GmtMarkerQcRepair.expectedRadiusRatio(6),1e-12);
-        assertEquals(Gmt126710BlnrMaster.MARKER_CENTER_R,GmtMarkerQcRepair.expectedRadiusRatio(9),1e-12);
+    @Test public void markerDatumsAreShapeSpecificAndTriangleSeparatesVisualFromDetectionCentre(){
+        assertEquals(Gmt126710BlnrMaster.TRI_DETECTION_CENTER_R,GmtMarkerQcRepair.expectedRadiusRatio(12),1e-12);
+        assertEquals(Gmt126710BlnrMaster.BATON_CENTER_R,GmtMarkerQcRepair.expectedRadiusRatio(6),1e-12);
+        assertEquals(Gmt126710BlnrMaster.BATON_CENTER_R,GmtMarkerQcRepair.expectedRadiusRatio(9),1e-12);
+        assertEquals(Gmt126710BlnrMaster.TRI_CENTER_R,GmtMarkerQcRepair.visualRadiusRatio(12),1e-12);
+        assertEquals(Gmt126710BlnrMaster.BATON_CENTER_R,GmtMarkerQcRepair.visualRadiusRatio(6),1e-12);
+        assertTrue(Math.abs(Gmt126710BlnrMaster.TRI_DETECTION_CENTER_R-Gmt126710BlnrMaster.TRI_CENTER_R)>0.015);
+        assertTrue(Math.abs(Gmt126710BlnrMaster.ROUND_CENTER_R-Gmt126710BlnrMaster.BATON_CENTER_R)>0.03);
     }
 
     @Test public void radialSignIsPositiveForOutwardHighMarker(){
@@ -34,9 +38,10 @@ public class GmtMarkerQcRepairTest {
 
         String out=GmtMarkerQcRepair.rewriteReport(report,d);
 
-        assertTrue(out.contains("12 marker vs minute track: angular offset +0.04°, radial +1.35% R vs visual master, body rotation +0.62°"));
-        assertTrue(out.contains("9 marker vs minute track: angular offset -0.78°, radial +0.05% R vs visual master, body rotation -1.28°"));
+        assertTrue(out.contains("12 marker vs minute track: angular offset +0.04°, radial +1.35% R vs calibrated marker datum, body rotation +0.62°"));
+        assertTrue(out.contains("9 marker vs minute track: angular offset -0.78°, radial +0.05% R vs calibrated marker datum, body rotation -1.28°"));
         assertTrue(out.contains("positive = outward/high"));
+        assertTrue(out.contains("genuine-derived marker centroid datum"));
         assertFalse(out.contains("local position"));
         assertFalse(out.contains("-48.53°"));
         assertFalse(out.contains("1. 9 marker"));
