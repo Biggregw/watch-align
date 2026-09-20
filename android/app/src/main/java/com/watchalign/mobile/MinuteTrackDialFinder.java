@@ -14,9 +14,9 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Finds GMT dial geometry from the minute track first, then confirms the next
- * strong concentric boundary outward as the dial edge. The legacy dial detector
- * supplies only an approximate centre/search scale and cannot force the final radius.
+ * Finds GMT dial geometry from the minute track first, then validates the next
+ * strong concentric boundary outward as the dial edge. The minute track owns
+ * centre, scale and phase. The outward ring is validation evidence only.
  */
 final class MinuteTrackDialFinder {
     private static final double TRACK_R = Gmt126710BlnrMaster.MINUTE_TRACK_R;
@@ -24,6 +24,7 @@ final class MinuteTrackDialFinder {
     private static final double TICK_ANGULAR_HALF = Math.toRadians(0.34);
     private static final double LOSS_CAP_PX = 10.0;
     private static final int MAX_SHAPE_CANDIDATES = 14;
+    private static final double TOP_PHASE_LIMIT_DEG = 3.10;
 
     static final class Result {
         final RotatedRect dialEllipse;
@@ -34,11 +35,13 @@ final class MinuteTrackDialFinder {
         final double outerBoundaryP90Px;
         final int candidateCount;
         final boolean boundaryConfirmed;
+        final double topPhaseErrorDeg;
+        final boolean topPhaseAccepted;
         final boolean usable;
 
         Result(RotatedRect ellipse,double roll,double fit,double boundaryRadius,
                double boundaryMedian,double boundaryP90,int candidates,
-               boolean confirmed,boolean usable){
+               boolean confirmed,double topError,boolean topAccepted,boolean usable){
             this.dialEllipse=ellipse;
             this.rollDeg=roll;
             this.fitMedianPx=fit;
@@ -47,7 +50,18 @@ final class MinuteTrackDialFinder {
             this.outerBoundaryP90Px=boundaryP90;
             this.candidateCount=candidates;
             this.boundaryConfirmed=confirmed;
+            this.topPhaseErrorDeg=topError;
+            this.topPhaseAccepted=topAccepted;
             this.usable=usable;
+        }
+    }
+
+    static final class TopPhaseResult {
+        final double anchoredRollDeg;
+        final double errorDeg;
+        final boolean accepted;
+        TopPhaseResult(double roll,double error,boolean accepted){
+            this.anchoredRollDeg=roll;this.errorDeg=error;this.accepted=accepted;
         }
     }
 
@@ -93,12 +107,17 @@ final class MinuteTrackDialFinder {
 
             best=fineSearch(distance,best);
             RotatedRect trackBased=scaledEllipse(best.source,best.scale);
-            trackBased=refineCentre(distance,trackBased,best.roll);
-            double trackMedian=fitMedian(distance,trackBased,best.roll,false);
 
-            BoundaryResult boundary=findNextOuterBoundary(distance,trackBased,best.roll);
-            if(boundary==null)return new Result(trackBased,best.roll,trackMedian,Double.NaN,
-                    LOSS_CAP_PX,LOSS_CAP_PX,count,false,false);
+            // Minor ticks repeat every 6 degrees. QC photos are defined to be upright, so
+            // resolve that periodic ambiguity by declaring the tick nearest image-up to be 12.
+            TopPhaseResult topPhase=anchorToImageUp(trackBased,best.roll);
+            trackBased=refineCentre(distance,trackBased,topPhase.anchoredRollDeg);
+            topPhase=anchorToImageUp(trackBased,topPhase.anchoredRollDeg);
+            double trackMedian=fitMedian(distance,trackBased,topPhase.anchoredRollDeg,false);
+
+            BoundaryResult boundary=findNextOuterBoundary(distance,trackBased,topPhase.anchoredRollDeg);
+            if(boundary==null)return new Result(trackBased,topPhase.anchoredRollDeg,trackMedian,Double.NaN,
+                    LOSS_CAP_PX,LOSS_CAP_PX,count,false,topPhase.errorDeg,topPhase.accepted,false);
 
             double dialRadius=(Math.max(trackBased.size.width,trackBased.size.height)
                     +Math.min(trackBased.size.width,trackBased.size.height))/4.0;
@@ -108,19 +127,18 @@ final class MinuteTrackDialFinder {
                     &&boundary.median<=boundaryMedianLimit
                     &&boundary.p90<=boundaryP90Limit;
 
-            // The minute track establishes the initial scale. The first strong outward
-            // boundary is then promoted to canonical dial radius 1.0. Final independent
-            // holdout validation in PerspectiveGmtOverlay decides whether this move is safe.
-            RotatedRect finalEllipse=boundaryConfirmed?
-                    scaledEllipse(trackBased,boundary.radius):trackBased;
-            double finalMedian=fitMedian(distance,finalEllipse,best.roll,false);
+            // Scale is locked by the minute track. The outward ring validates the predicted
+            // dial edge but is never allowed to resize the master.
+            RotatedRect finalEllipse=finalEllipseFromTrack(trackBased,boundary.radius);
+            double finalMedian=fitMedian(distance,finalEllipse,topPhase.anchoredRollDeg,false);
             double finalRadius=(Math.max(finalEllipse.size.width,finalEllipse.size.height)
                     +Math.min(finalEllipse.size.width,finalEllipse.size.height))/4.0;
             double tickLimit=Math.max(2.2,finalRadius*0.020);
-            boolean usable=boundaryConfirmed&&finalMedian<=tickLimit;
+            boolean usable=topPhase.accepted&&boundaryConfirmed&&finalMedian<=tickLimit;
 
-            return new Result(finalEllipse,best.roll,finalMedian,boundary.radius,
-                    boundary.median,boundary.p90,count,boundaryConfirmed,usable);
+            return new Result(finalEllipse,topPhase.anchoredRollDeg,finalMedian,boundary.radius,
+                    boundary.median,boundary.p90,count,boundaryConfirmed,
+                    topPhase.errorDeg,topPhase.accepted,usable);
         }finally{
             distance.release();
         }
@@ -129,6 +147,47 @@ final class MinuteTrackDialFinder {
     /** Mathematical conversion used by diagnostics/tests. */
     static double expectedDialRadiusFromTrackRadius(double trackRadius){
         return trackRadius/TRACK_R;
+    }
+
+    /** The outward boundary is validation only and must not perturb minute-track scale. */
+    static RotatedRect finalEllipseFromTrack(RotatedRect trackBased,double ignoredBoundaryRadius){
+        if(trackBased==null)return null;
+        return new RotatedRect(new Point(trackBased.center.x,trackBased.center.y),
+                new Size(trackBased.size.width,trackBased.size.height),trackBased.angle);
+    }
+
+    /**
+     * Resolve the 6 degree periodic tick ambiguity using the QC-photo contract: the image is
+     * upright and the true 12 minute-track tick is the tick nearest image-up.
+     */
+    static TopPhaseResult anchorToImageUp(RotatedRect ellipse,double rollDeg){
+        if(ellipse==null)return new TopPhaseResult(rollDeg,180.0,false);
+        double bestRoll=rollDeg,bestError=Double.POSITIVE_INFINITY;
+        boolean bestUpper=false;
+        for(int k=-10;k<=10;k++){
+            double candidate=rollDeg+6.0*k;
+            Point p=map(ellipse,1.0,candidate,0.0,-1.0);
+            double dx=p.x-ellipse.center.x,dy=p.y-ellipse.center.y;
+            double len=Math.hypot(dx,dy);
+            if(len<1e-9)continue;
+            double dot=Math.max(-1.0,Math.min(1.0,(-dy)/len));
+            double error=Math.toDegrees(Math.acos(dot));
+            boolean upper=p.y<ellipse.center.y;
+            if(error<bestError-1e-9 ||
+                    (Math.abs(error-bestError)<=1e-9&&Math.abs(normalizeDegrees(candidate))<Math.abs(normalizeDegrees(bestRoll)))){
+                bestError=error;bestRoll=candidate;bestUpper=upper;
+            }
+        }
+        bestRoll=normalizeDegrees(bestRoll);
+        boolean accepted=bestUpper&&Double.isFinite(bestError)&&bestError<=TOP_PHASE_LIMIT_DEG;
+        return new TopPhaseResult(bestRoll,bestError,accepted);
+    }
+
+    private static double normalizeDegrees(double degrees){
+        double d=degrees%360.0;
+        if(d>180.0)d-=360.0;
+        if(d<=-180.0)d+=360.0;
+        return d;
     }
 
     private static List<ShapeCandidate> findConcentricShapes(Mat edges,double seedX,double seedY,double seedR){
@@ -253,8 +312,7 @@ final class MinuteTrackDialFinder {
 
     private static BoundaryResult findNextOuterBoundary(Mat distance,RotatedRect trackBased,double roll){
         BoundaryResult best=null;double bestObjective=Double.POSITIVE_INFINITY;
-        // The minute track is at 0.925R. Search only outside it, around the expected
-        // dial/rehaut boundary, so the track itself cannot be selected as the "next ring".
+        // The minute track is at 0.925R. Search only outside it around the predicted dial edge.
         for(double radius=0.960;radius<=1.040+1e-9;radius+=0.0025){
             List<Double> groups=new ArrayList<>();
             for(int block=0;block<24;block++){
