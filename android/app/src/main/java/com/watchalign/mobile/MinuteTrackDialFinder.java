@@ -206,11 +206,10 @@ final class MinuteTrackDialFinder {
                 MatOfPoint2f f=new MatOfPoint2f(points);
                 try{
                     RotatedRect e=Imgproc.fitEllipse(f);
-                    double major=Math.max(e.size.width,e.size.height);
-                    double minor=Math.min(e.size.width,e.size.height);
-                    if(major<minDiameter||major>maxDiameter||minor<minDiameter*0.70)continue;
-                    if(major<0.75*seedR||major>3.20*seedR)continue;
-                    double axisRatio=minor/Math.max(1.0,major);
+                    double a=Math.max(e.size.width,e.size.height),b=Math.min(e.size.width,e.size.height);
+                    if(a<minDiameter||a>maxDiameter||b<minDiameter*0.70)continue;
+                    if(a<0.75*seedR||a>3.20*seedR)continue;
+                    double axisRatio=b/Math.max(1.0,a);
                     if(axisRatio<0.66)continue;
                     double centreDistance=Math.hypot(e.center.x-seedX,e.center.y-seedY);
                     if(centreDistance>centreTolerance)continue;
@@ -261,8 +260,8 @@ final class MinuteTrackDialFinder {
             double lx=ca*dx+sa*dy,ly=-sa*dx+ca*dy;
             double nx=lx/rx,ny=ly/ry;
             double rho=Math.hypot(nx,ny);if(rho<0.82||rho>1.18)continue;
-            double a=Math.atan2(ny,nx);if(a<0)a+=2.0*Math.PI;
-            int bin=Math.min(bins-1,(int)Math.floor(a/(2.0*Math.PI)*bins));
+            double angle=Math.atan2(ny,nx);if(angle<0)angle+=2.0*Math.PI;
+            int bin=Math.min(bins-1,(int)Math.floor(angle/(2.0*Math.PI)*bins));
             if(!hit[bin]){hit[bin]=true;count++;}
         }
         return count/(double)bins;
@@ -312,7 +311,7 @@ final class MinuteTrackDialFinder {
 
     private static BoundaryResult findNextOuterBoundary(Mat distance,RotatedRect trackBased,double roll){
         BoundaryResult best=null;double bestObjective=Double.POSITIVE_INFINITY;
-        // The minute track is at 0.925R. Search only outside it around the predicted dial edge.
+        // Search only outside the minute track around the predicted dial edge.
         for(double radius=0.960;radius<=1.040+1e-9;radius+=0.0025){
             List<Double> groups=new ArrayList<>();
             for(int block=0;block<24;block++){
