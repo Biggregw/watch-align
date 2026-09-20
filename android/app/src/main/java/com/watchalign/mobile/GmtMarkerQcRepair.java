@@ -25,10 +25,10 @@ import java.util.regex.Pattern;
  *
  * Marker positions are NOT taken from WatchAlignCoreV7.measureMarkerSet. The legacy detector
  * averages bright pixels across a broad hour-sector annulus and can latch onto hands, minute
- * ticks or reflections. Instead, this class projects a small shape-specific ROI from the fixed
- * master and only measures a connected bright component that is geometrically plausible there.
- * If the component cannot be isolated, the marker is reported as not measurable rather than
- * emitting an extreme false value.
+ * ticks or reflections. Instead, this class projects a small shape-specific ROI from a
+ * genuine-derived detection datum and only measures a connected bright component that is
+ * geometrically plausible there. If the component cannot be isolated, the marker is reported
+ * as not measurable rather than emitting an extreme false value.
  */
 final class GmtMarkerQcRepair {
     static final class MarkerDiagnostic {
@@ -89,8 +89,21 @@ final class GmtMarkerQcRepair {
         return rewriteReport(report,diagnostics);
     }
 
+    /**
+     * Expected bright-component centroid used for radial QC. This is deliberately separate
+     * from the visual triangle anchor because a triangle's image centroid is not its geometric
+     * centre. 6/9 use their own baton centre rather than the round-marker centre.
+     */
     static double expectedRadiusRatio(int hour){
-        return hour==12?Gmt126710BlnrMaster.TRI_CENTER_R:Gmt126710BlnrMaster.MARKER_CENTER_R;
+        if(hour==12)return Gmt126710BlnrMaster.TRI_DETECTION_CENTER_R;
+        if(hour==6||hour==9)return Gmt126710BlnrMaster.BATON_CENTER_R;
+        return Gmt126710BlnrMaster.ROUND_CENTER_R;
+    }
+
+    static double visualRadiusRatio(int hour){
+        if(hour==12)return Gmt126710BlnrMaster.TRI_CENTER_R;
+        if(hour==6||hour==9)return Gmt126710BlnrMaster.BATON_CENTER_R;
+        return Gmt126710BlnrMaster.ROUND_CENTER_R;
     }
 
     static double radialOffsetPctR(double normalizedRadius,int hour){
@@ -112,7 +125,7 @@ final class GmtMarkerQcRepair {
             if(d!=null)block.append(detailLine(d)).append('\n');
         }
         block.append("Marker radial sign: positive = outward/high, negative = inward/low. ")
-                .append("Radial values are relative to the current visual master and are diagnostic only until genuine-cohort calibration is complete.\n");
+                .append("Radial values are relative to the current genuine-derived marker centroid datum and remain diagnostic until genuine-cohort calibration is complete.\n");
 
         if(out.contains("Extended QC checks\n")){
             out=out.replaceFirst("Extended QC checks\\n",
@@ -135,7 +148,7 @@ final class GmtMarkerQcRepair {
                 String.format(Locale.US,", body rotation %+.2f°",d.bodyRotationDeg):
                 ", body rotation unavailable (component isolation confidence low)";
         return String.format(Locale.US,
-                "%d marker vs minute track: angular offset %+.2f°, radial %+.2f%% R vs visual master%s%s",
+                "%d marker vs minute track: angular offset %+.2f°, radial %+.2f%% R vs calibrated marker datum%s%s",
                 d.hour,d.angularDeg,d.radialPctR,body,source);
     }
 
@@ -212,9 +225,10 @@ final class GmtMarkerQcRepair {
     }
 
     /**
-     * Isolate one marker inside a small ROI projected from the fixed master. The marker under
-     * test never moves the ROI or the pose. Shape/area/centroid bounds are detection sanity
-     * checks only; they intentionally cause a safe "not measurable" result on ambiguous images.
+     * Isolate one marker inside a small ROI projected from its genuine-derived detection datum.
+     * The marker under test never moves the ROI or the pose. Shape/area/centroid bounds are
+     * detection sanity checks only; they intentionally cause a safe "not measurable" result on
+     * ambiguous images.
      */
     private static Candidate measureProjectedMarker(Mat gray,RotatedRect ellipse,double roll,
                                                      double dialRadiusPx,int hour){
