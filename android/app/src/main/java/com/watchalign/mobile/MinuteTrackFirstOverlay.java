@@ -238,17 +238,17 @@ final class MinuteTrackFirstOverlay {
             drawProjectedCircle(c,H,Gmt126710BlnrMaster.MINUTE_TRACK_R,guide);
             for(int h:new int[]{1,2,4,5,7,8,10,11}){
                 double a=Gmt126710BlnrMaster.angleForHour(h);
-                drawCircleTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,
+                drawCircleTarget(c,H,Gmt126710BlnrMaster.ROUND_CENTER_R,
                         Gmt126710BlnrMaster.ROUND_OUTER_R,a,outer);
-                drawCircleTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,
+                drawCircleTarget(c,H,Gmt126710BlnrMaster.ROUND_CENTER_R,
                         Gmt126710BlnrMaster.ROUND_LUME_R,a,inner);
             }
             for(int h:new int[]{6,9}){
                 double a=Gmt126710BlnrMaster.angleForHour(h);
-                drawRectTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,
+                drawRectTarget(c,H,Gmt126710BlnrMaster.BATON_CENTER_R,
                         Gmt126710BlnrMaster.BATON_TANGENTIAL_HALF,
                         Gmt126710BlnrMaster.BATON_RADIAL_HALF,a,outer);
-                drawRectTarget(c,H,Gmt126710BlnrMaster.MARKER_CENTER_R,
+                drawRectTarget(c,H,Gmt126710BlnrMaster.BATON_CENTER_R,
                         Gmt126710BlnrMaster.BATON_LUME_TANGENTIAL_HALF,
                         Gmt126710BlnrMaster.BATON_LUME_RADIAL_HALF,a,inner);
             }
