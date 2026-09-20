@@ -1,0 +1,152 @@
+name: Build GMT acquisition validation corpus
+
+on:
+  push:
+    branches:
+      - research/acquisition-corpus-2026-09-20
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  corpus:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install fetch tools
+        run: pip install --disable-pip-version-check gallery-dl pillow requests
+      - name: Fetch and normalize corpus
+        shell: bash
+        run: |
+          cat > /tmp/fetch_corpus.py <<'PY'
+          from pathlib import Path
+          import csv, hashlib, os, subprocess, sys, requests
+          from PIL import Image, ImageOps
+
+          root=Path('acquisition-corpus')
+          root.mkdir(exist_ok=True)
+          sources=[]
+
+          # Replica QC sources. These are explicitly replica/factory-QC posts or their linked albums.
+          rep_urls=[
+            ('rep_pingfan_vsf_20260903','https://imgur.com/a/vsf-gmt-master-ii-126710-blnr-TPU7a4N'),
+            ('rep_chazing_vsf_20251219','https://imgur.com/a/yh2Ku3Q'),
+            ('rep_arf_20260427','https://imgur.com/gallery/126710-gmt-75lWJXD'),
+            ('rep_brucewayne_vsf_20260613','https://imgur.com/a/s2ITZZa'),
+            ('rep_tow_vsf_20260618','https://imgur.com/gallery/vsf-batgirl-qc-p3hHVMB'),
+            ('rep_tow_vsf_20260521','https://imgur.com/a/9mEDHmd'),
+            ('rep_andiot_vsf_20260905','https://imgur.com/a/CvKbysF'),
+            ('rep_angel_vsf_20260610','https://imgur.com/a/BdXlrpR'),
+            ('rep_angela_vsf_20260726','https://imgur.com/a/sh7PSsh'),
+            ('rep_ficotime_vsf_20260611','https://imgur.com/a/vsf-batgirl-oVwWMrC'),
+            ('rep_tow_vsf_20260427','https://imgur.com/a/tnOMZez'),
+            ('rep_reddit_20260907','https://www.reddit.com/r/RepTimeQC/comments/1w9ys66/qc_gmt_master_ii_126710_blnr_vsf_andiot_watches/'),
+            ('rep_reddit_20260920','https://www.reddit.com/r/RepTimeQC/comments/1wldksl/qc_vsf_gmt_master_ii_gl_or_rl/'),
+            ('rep_reddit_20260911','https://www.reddit.com/r/RepTimeQC/comments/1wd8pt1/2nd_qc_vsf_gmtmaster_ii_126710_blnr_batgirl/'),
+            ('rep_reddit_20260611','https://www.reddit.com/r/RepTimeQC/comments/1u2yufc/qc_vsf_gmtmaster_ii_126710_from_jtime_dd3285_v3/'),
+            ('rep_reddit_20260821','https://www.reddit.com/r/RepTimeQC/comments/1vun5pt/qc_vsf_v3_batgirl_126710blnr/'),
+          ]
+
+          # Genuine candidates from r/Watchexchange. Posts require timestamp/pictures and identify 126710BLNR.
+          # They are kept as market-genuine candidates, distinct from the first-party Rolex control.
+          gen_urls=[
+            ('gen_wex_20260914','https://www.reddit.com/r/Watchexchange/comments/1wg70ph/wts_rolex_gmtmaster_ii_126710blnr_batgirl_with/'),
+            ('gen_wex_20260814','https://www.reddit.com/r/Watchexchange/comments/1vo6xjq/wts_2026_rolex_gmtmaster_ii_batgirl_126710blnr/'),
+            ('gen_wex_20260811','https://www.reddit.com/r/Watchexchange/comments/1vlv149/wts_rolex_gmtmaster_ii_batgirl_126710blnr_with/'),
+            ('gen_wex_20260428','https://www.reddit.com/r/Watchexchange/comments/1sy2ot4/wts_rolex_gmtmaster_ii_batgirl_126710blnr/'),
+            ('gen_wex_20260828','https://www.reddit.com/r/Watchexchange/comments/1w0qaqf/wts_2026_rolex_gmtmaster_ii_batgirl_126710blnr/'),
+            ('gen_wex_20260804','https://www.reddit.com/r/Watchexchange/comments/1vfp1fp/wts_rolex_gmtmaster_ii_ref_126710blnr_batgirl/'),
+            ('gen_wex_20260531','https://www.reddit.com/r/Watchexchange/comments/1tt2j39/wts_rolex_gmt_master_ii_on_jubilee_batgirl/'),
+            ('gen_wex_20260316','https://www.reddit.com/r/Watchexchange/comments/1rvgkee/wts_2025_rolex_gmtmaster_ii_126710blnr_batgirl/'),
+            ('gen_wex_20260615','https://www.reddit.com/r/Watchexchange/comments/1u63dwf/wts_rolex_gmt_master_ii_batgirl_jubilee_bracelet/'),
+            ('gen_wex_20260807','https://www.reddit.com/r/Watchexchange/comments/1vi09kd/wts_2026_rolex_gmtmaster_ii_batgirl_126710blnr/'),
+            ('gen_wex_20260619','https://www.reddit.com/r/Watchexchange/comments/1u9zif6/wts_rolex_gmtmaster_ii_126710blnr_batgirl_full/'),
+            ('gen_wex_20260827','https://www.reddit.com/r/Watchexchange/comments/1vzx7uh/wts_rolex_gmtmaster_ii_126710blnr_batgirl_with/'),
+            ('gen_wex_20260322','https://imgur.com/gallery/U2XNblj'),
+            ('gen_wex_20260619b','https://imgur.com/a/K4gqk6U'),
+            ('gen_wex_20260914_album','https://imgur.com/a/vmbUDwy'),
+          ]
+
+          def run_gallery(kind,label,url):
+            dest=root/kind/label
+            dest.mkdir(parents=True,exist_ok=True)
+            cmd=['gallery-dl','--no-mtime','--range','1-8','-D',str(dest),url]
+            p=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=180)
+            (dest/'fetch.log').write_text(p.stdout,encoding='utf-8',errors='replace')
+            return p.returncode
+
+          for label,url in rep_urls:
+            rc=run_gallery('rep',label,url)
+            sources.append(('rep',label,url,rc))
+          for label,url in gen_urls:
+            rc=run_gallery('gen_candidate',label,url)
+            sources.append(('gen_candidate',label,url,rc))
+
+          # First-party exact-model Rolex catalogue image, the strongest genuine control.
+          rolex_url='https://media.rolex.com/image/upload/q_auto/f_jpg/t_v7-cover-majesty-landscape/c_limit,w_1920/v1/a677b2c664f6/catalogue/2026/upright-c/m126710blnr-0002'
+          d=root/'gen_official'/'rolex_126710blnr_2026'
+          d.mkdir(parents=True,exist_ok=True)
+          try:
+            r=requests.get(rolex_url,headers={'User-Agent':'Mozilla/5.0','Referer':'https://www.rolex.com/'},timeout=45)
+            r.raise_for_status()
+            (d/'official_00.jpg').write_bytes(r.content)
+            sources.append(('gen_official','rolex_126710blnr_2026',rolex_url,0))
+          except Exception as e:
+            (d/'fetch.log').write_text(str(e))
+            sources.append(('gen_official','rolex_126710blnr_2026',rolex_url,1))
+
+          # Normalize images and make duplicate-safe filenames. Keep source folders for watch independence.
+          valid_ext={'.jpg','.jpeg','.png','.webp','.bmp','.gif'}
+          manifest=[]
+          seen={}
+          for p in list(root.rglob('*')):
+            if not p.is_file() or p.suffix.lower() not in valid_ext: continue
+            try:
+              im=Image.open(p)
+              im.seek(0)
+              im=ImageOps.exif_transpose(im).convert('RGB')
+              if min(im.size)<180 or im.width*im.height<90000: continue
+              im.thumbnail((1600,1600),Image.Resampling.LANCZOS)
+              out=p.with_suffix('.jpg')
+              im.save(out,'JPEG',quality=90,optimize=True)
+              if out!=p:
+                try:p.unlink()
+                except:pass
+              data=out.read_bytes(); sha=hashlib.sha256(data).hexdigest()
+              if sha in seen:
+                out.unlink(missing_ok=True); continue
+              seen[sha]=str(out)
+              rel=out.relative_to(root)
+              parts=rel.parts
+              kind,label=parts[0],parts[1] if len(parts)>1 else ''
+              manifest.append((kind,label,str(rel),im.width,im.height,sha))
+            except Exception:
+              continue
+
+          with (root/'manifest.tsv').open('w',newline='',encoding='utf-8') as f:
+            w=csv.writer(f,delimiter='\t'); w.writerow(['class','source_id','path','width','height','sha256']); w.writerows(manifest)
+          with (root/'sources.tsv').open('w',newline='',encoding='utf-8') as f:
+            w=csv.writer(f,delimiter='\t'); w.writerow(['class','source_id','url','fetch_rc']); w.writerows(sources)
+          print('normalized images',len(manifest))
+          print('rep',sum(1 for x in manifest if x[0]=='rep'))
+          print('gen_candidate',sum(1 for x in manifest if x[0]=='gen_candidate'))
+          print('gen_official',sum(1 for x in manifest if x[0]=='gen_official'))
+          PY
+          python /tmp/fetch_corpus.py
+      - name: Summarize corpus
+        run: |
+          cat acquisition-corpus/sources.tsv
+          echo '--- manifest count ---'
+          wc -l acquisition-corpus/manifest.tsv
+          du -sh acquisition-corpus
+      - name: Upload corpus
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmt-acquisition-validation-corpus
+          path: acquisition-corpus/
+          if-no-files-found: error
+          retention-days: 7
