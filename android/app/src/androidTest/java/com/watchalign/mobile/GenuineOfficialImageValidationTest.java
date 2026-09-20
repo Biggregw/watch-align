@@ -71,6 +71,9 @@ public class GenuineOfficialImageValidationTest {
                     if (!rep.contains("VISUAL QC MASTER")) {
                         failures.add("GMT visual master report missing @ " + name + "\n" + rep);
                     }
+                    if (!r.perspectiveAccepted) {
+                        failures.add("GMT automatic pose rejected official genuine image @ " + name + "\n" + rep);
+                    }
                 } else {
                     if (!rep.startsWith("QC SUMMARY\nNo major defects detected.")) {
                         failures.add("summary flagged genuine image @ " + name + "\n" + rep);
