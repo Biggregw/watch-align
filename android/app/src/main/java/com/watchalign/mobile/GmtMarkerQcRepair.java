@@ -256,16 +256,18 @@ final class GmtMarkerQcRepair {
                     double areaNorm=area/Math.max(1.0,dialRadiusPx*dialRadiusPx);
                     if(areaNorm<minAreaNorm||areaNorm>maxAreaNorm)continue;
                     Moments m=Imgproc.moments(contour);
-                    if(!(m.m00>0.0))continue;
-                    Point center=new Point(x0+m.m10/m.m00,y0+m.m01/m.m00);
+                    double m00=m.get_m00();
+                    if(!(m00>0.0))continue;
+                    Point center=new Point(x0+m.get_m10()/m00,y0+m.get_m01()/m00);
                     Point local=basis.local(center.x,center.y);
                     if(Math.abs(local.x)>0.080||Math.abs(local.y)>0.060)continue;
 
-                    double trace=m.mu20+m.mu02;
-                    double disc=Math.sqrt(Math.max(0.0,(m.mu20-m.mu02)*(m.mu20-m.mu02)+4.0*m.mu11*m.mu11));
+                    double mu20=m.get_mu20(),mu02=m.get_mu02(),mu11=m.get_mu11();
+                    double trace=mu20+mu02;
+                    double disc=Math.sqrt(Math.max(0.0,(mu20-mu02)*(mu20-mu02)+4.0*mu11*mu11));
                     double l1=(trace+disc)/2.0,l2=Math.max(1e-9,(trace-disc)/2.0);
                     double anisotropy=l1/l2;
-                    double axis=Math.toDegrees(0.5*Math.atan2(2.0*m.mu11,m.mu20-m.mu02));
+                    double axis=Math.toDegrees(0.5*Math.atan2(2.0*mu11,mu20-mu02));
                     double expectedAxis=Math.toDegrees(Math.atan2(basis.ry,basis.rx));
                     double rotation=QcExtendedMath.smallestAxisError(axis,expectedAxis);
                     double minAnisotropy=hour==12?1.35:2.0;
