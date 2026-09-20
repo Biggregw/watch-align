@@ -43,7 +43,7 @@ public final class WatchAlignCoreV13 {
         String perspectiveReport=perspective==null&&canonicalGmt?"\n\nVISUAL QC MASTER\nUnavailable: minute-track-first acquisition could not establish reliable geometry. Use a clearer photo or precision dial-edge alignment.\n":perspective==null?"":perspective.report;
         String report;
         if(canonicalGmt){
-            String qcReport=geometryTrusted?ext.report:
+            String qcReport=geometryTrusted?GmtMarkerQcRepair.repair(watch,ext.report,modelRef):
                     "\n\nAUTOMATED QC CHECKS\nSuppressed because the automatic visual-master pose did not pass independent minute-track validation. Correct the photo or align the Native Template manually before relying on geometric QC.\n";
             report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nVISUAL INSPECTION MODE\n"
                     +"Minute-track-first pose provides the primary QC surface. Automated geometric findings are shown only when that pose passes independent validation.\n"
