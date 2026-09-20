@@ -27,6 +27,7 @@ import java.util.Locale;
  * Manual two-point alignment still delegates to PerspectiveGmtOverlay.
  */
 final class MinuteTrackFirstOverlay {
+    private static final double FINAL_TOP_PHASE_LIMIT_DEG=3.25;
 
     static PerspectiveGmtOverlay.Result build(Bitmap input,String modelRef,
                                               PerspectiveGmtOverlay.DialSeed manualSeed,
@@ -77,7 +78,11 @@ final class MinuteTrackFirstOverlay {
 
             MinuteTrackPoseValidator.ValidationResult validation=
                     MinuteTrackPoseValidator.validate(edges,H,dialRadiusPx);
-            boolean automaticAccepted=acquisition.usable&&validation.accepted;
+            double finalTopError=topPhaseErrorDeg(H);
+            boolean finalTopAccepted=Double.isFinite(finalTopError)&&finalTopError<=FINAL_TOP_PHASE_LIMIT_DEG
+                    &&canonicalTwelveIsAboveCentre(H);
+            boolean automaticAccepted=acquisition.usable&&acquisition.topPhaseAccepted
+                    &&finalTopAccepted&&validation.accepted;
 
             Point[] expectedCard=PerspectiveGmtOverlay.ellipseCardinalPoints(ellipse,solvedRoll);
             double reproj=reprojectionError(H,expectedCard);
@@ -92,12 +97,13 @@ final class MinuteTrackFirstOverlay {
                     Gmt126710BlnrMaster.ID:"canonical GMT fallback";
             String report=String.format(Locale.US,
                     "\n\nVISUAL QC MASTER\n"+
-                    "Pose source: MINUTE TRACK FIRST. The legacy detector supplies only an approximate centre/search scale; it cannot set the final dial radius.\n"+
+                    "Pose source: MINUTE TRACK FIRST. The legacy detector supplies only an approximate centre/search scale; it cannot set final geometry.\n"+
                     "Inspection geometry: %s. Red outlines are the fixed master; white outlines are lume references.\n"+
-                    "Minute-track acquisition: %d concentric ellipse candidates evaluated; minor-tick fit median %.2f px; solved roll %+.2f°.\n"+
-                    "Next outward ring: %s at canonical radius %.4f (expected 1.0000); boundary median %.2f px, p90 %.2f px. Track/dial master ratio %.4f.\n"+
+                    "Minute-track acquisition: %d concentric ellipse candidates evaluated; minor-tick fit median %.2f px; anchored roll %+.2f°. Minute track sets centre and scale.\n"+
+                    "Top-phase anchor: %s; canonical 12 axis %.2f° from image-up. QC photos are required to be upright with the 12 minute-track tick nearest the top.\n"+
+                    "Next outward ring: %s at canonical radius %.4f (expected 1.0000); boundary median %.2f px, p90 %.2f px. VALIDATION ONLY: it does not resize the master. Track/dial master ratio %.4f.\n"+
                     "Selected dial ellipse: %.1f × %.1f px; apparent tilt %.1f°; centre moved %.2f%% of dial radius from the legacy seed.\n"+
-                    "Final rotation correction: %+.2f°.\n"+
+                    "Final rotation correction: %+.2f° (bounded to ±%.2f°); final 12-axis error %.2f° (%s).\n"+
                     "Independent minute-track validation: %s; %d held-out ticks; median %.2f px (limit %.2f), p90 %.2f px (limit %.2f), inliers %.0f%% at %.2f px.\n"+
                     "Automatic master: %s. %s\n"+
                     "Pose residual: %.2f px. Confidence: %.0f%%.\n"+
@@ -108,10 +114,13 @@ final class MinuteTrackFirstOverlay {
                     "H0 fallback used: %s.\n"+
                     "If automatic validation rejects the pose, automated geometric QC is suppressed and Native Template remains available for manual move/resize/rotate.\n",
                     master,acquisition.candidateCount,acquisition.fitMedianPx,acquisition.rollDeg,
+                    acquisition.topPhaseAccepted?"ACCEPTED":"REJECTED",acquisition.topPhaseErrorDeg,
                     acquisition.boundaryConfirmed?"CONFIRMED":"NOT CONFIRMED",
                     acquisition.outerBoundaryRadius,acquisition.outerBoundaryMedianPx,
                     acquisition.outerBoundaryP90Px,Gmt126710BlnrMaster.MINUTE_TRACK_R,
                     major,minor,tiltDeg,centerErr*100.0,fine.deltaDeg,
+                    MinuteTrackPoseValidator.fineRotationLimitDeg(),finalTopError,
+                    finalTopAccepted?"ACCEPTED":"REJECTED",
                     validation.accepted?"ACCEPTED":"REJECTED",validation.holdoutTicks,
                     validation.medianPx,validation.medianLimitPx,
                     validation.p90Px,validation.p90LimitPx,
@@ -173,6 +182,19 @@ final class MinuteTrackFirstOverlay {
             sum+=Math.hypot(p.x-expected[i].x,p.y-expected[i].y);
         }
         return sum/4.0;
+    }
+
+    static double topPhaseErrorDeg(Mat H){
+        Point centre=project(H,0.0,0.0),twelve=project(H,0.0,-1.0);
+        double dx=twelve.x-centre.x,dy=twelve.y-centre.y,len=Math.hypot(dx,dy);
+        if(len<1e-9)return Double.POSITIVE_INFINITY;
+        double dot=Math.max(-1.0,Math.min(1.0,(-dy)/len));
+        return Math.toDegrees(Math.acos(dot));
+    }
+
+    static boolean canonicalTwelveIsAboveCentre(Mat H){
+        Point centre=project(H,0.0,0.0),twelve=project(H,0.0,-1.0);
+        return twelve.y<centre.y;
     }
 
     private static double confidence(double q,double reproj,double centerErr,double axisRatio,
