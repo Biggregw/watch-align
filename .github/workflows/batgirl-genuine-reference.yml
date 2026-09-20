@@ -54,18 +54,12 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            bash android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.GenuineBatgirlReferenceBuilderTest -Pandroid.injected.androidTest.leaveApksInstalled=true --stacktrace
-            echo '--- diagnostics: is the app still installed and where did it write? ---'
-            adb shell whoami
-            adb shell id
-            adb shell pm list packages | grep watchalign || echo 'package not found by pm list'
-            adb shell 'echo /sdcard/Android/data/com.watchalign.mobile/files/*'
-            adb shell ls -la /sdcard/Android/data/com.watchalign.mobile/ || echo 'no such dir: /sdcard/Android/data/com.watchalign.mobile/'
-            adb shell ls -la /sdcard/Android/data/com.watchalign.mobile/files/ || echo 'no such dir: .../files/'
-            adb shell find /sdcard/Android/data/com.watchalign.mobile -maxdepth 5 2>&1 || true
-            adb shell find /storage/emulated/0/Android/data/com.watchalign.mobile -maxdepth 5 2>&1 || true
-            adb shell run-as com.watchalign.mobile ls -la files/ 2>&1 || true
-            adb shell run-as com.watchalign.mobile find files/batgirl-reference -maxdepth 5 2>&1 || true
+            bash android/gradlew -p android :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            adb shell am instrument -w -e class com.watchalign.mobile.GenuineBatgirlReferenceBuilderTest com.watchalign.mobile.test/androidx.test.runner.AndroidJUnitRunner 2>&1 | tee instrument_output.txt
+            grep -q "OK (1 test)" instrument_output.txt
+            adb shell pm list packages | grep -q com.watchalign.mobile
             mkdir -p batgirl-reference-output
             adb pull /sdcard/Android/data/com.watchalign.mobile/files/batgirl-reference/. batgirl-reference-output/
 
