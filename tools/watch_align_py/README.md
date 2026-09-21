@@ -123,11 +123,40 @@ Gradle validation is blocked in the authoring sandbox: its network policy
 does not allow reaching `dl.google.com`, which Android Gradle Plugin
 resolution requires).
 
+## Fixed (2026-09-21): marker isolation used a fixed brightness threshold
+
+`marker_qc.py` measurement on a second real photo
+(`community-vsf-batgirl-crooked12-01.jpg`) isolated zero of the twelve hour
+markers even though pose acquisition succeeded. Root cause: the frozen-Java
+approach used a fixed absolute brightness threshold (150) to separate a
+marker's lume pixels from the dark dial background. That photo's overall
+exposure/lighting is dim enough that no marker's brightest pixels reach 150
+across the *entire* dial (max ~180, most top out ~150-165) — a whole-photo
+lighting difference, not a per-marker one, so every marker failed
+identically.
+
+**Fix**: `_measure_projected_marker` now computes a per-marker Otsu
+threshold on the local ROI instead of using a fixed constant, adapting to
+each photo's own contrast rather than assuming a fixed absolute exposure.
+Validated: the tilted photo (already working) went from 8/11 to 11/11
+markers measured with plausible near-zero offsets and no regression; the
+VSF Batgirl photo went from 0/11 to 4/11 (hours 4, 5, 7, 8).
+
+This is a deliberate Python-only improvement over the frozen Java
+reference — not ported back, per current architecture.
+
 ## Open items
 
-- `marker_qc.py` measurement on a second real photo
-  (`community-vsf-batgirl-crooked12-01.jpg`) currently fails to isolate any
-  of the 12 hour markers even though pose acquisition succeeds — not yet
-  root-caused.
-- No automated regression suite yet; validation so far is two real photos
-  run by hand via `run.py`.
+- VSF Batgirl photo: 7 of 12 markers (including hour 12 — the one the
+  r/RepTimeQC thread flagged as "slightly CW tilted / not aligning with
+  the crown") still fail isolation. For hour 12 specifically, the Otsu
+  mask *does* find a plausibly-shaped bright blob, but its centroid sits
+  ~0.11 dial-radius-units inward of the calibrated reference position,
+  outside the ±0.08 sanity window that guards against reporting nonsense.
+  Not yet resolved whether that's a real geometric signal (this triangle
+  genuinely sits further in than the genuine reference) or a calibration
+  mismatch for this particular triangle rendering — needs comparison
+  against a genuine-reference photo, not more threshold tuning.
+- No automated regression suite existed before 2026-09-21; see `tests/`
+  for the current pytest harness (pose + marker-count assertions against
+  real photo fixtures).

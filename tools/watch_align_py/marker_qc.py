@@ -216,16 +216,31 @@ def _measure_projected_marker(gray: np.ndarray, ellipse: RotatedRect, roll: floa
     if x1 <= x0 or y1 <= y0:
         return None
 
-    mask = np.zeros((y1 - y0 + 1, x1 - x0 + 1), dtype=np.uint8)
+    # Collect eligible pixels first so the bright/dark split can be set per-marker via
+    # Otsu on the local ROI, rather than a fixed absolute grey level. A fixed threshold
+    # (the original, frozen-Java approach) is calibrated to one photo's exposure: a real
+    # photo shot under duller/warmer lighting can have its brightest lume pixels top out
+    # well below that constant across every marker simultaneously, silently failing
+    # isolation on all twelve markers even though the pose and the ROI placement are both
+    # correct (confirmed 2026-09-21 on a real r/RepTimeQC photo -- see README). Otsu adapts
+    # to this photo's own local contrast instead of assuming a fixed absolute exposure.
+    eligible: List[tuple] = []
     for y in range(y0, y1 + 1):
         for x in range(x0, x1 + 1):
             local_x, local_y = basis.local(x, y)
             if local_x < radial_min or local_x > radial_max or abs(local_y) > tangent_half:
                 continue
-            v = float(gray[y, x])
-            if v < 150.0:
-                continue
-            mask[y - y0, x - x0] = 255
+            eligible.append((x, y, float(gray[y, x])))
+    if not eligible:
+        return None
+    values = np.array([v for _x, _y, v in eligible], dtype=np.uint8)
+    threshold, _ = cv2.threshold(values.reshape(-1, 1), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    mask = np.zeros((y1 - y0 + 1, x1 - x0 + 1), dtype=np.uint8)
+    for x, y, v in eligible:
+        if v < threshold:
+            continue
+        mask[y - y0, x - x0] = 255
 
     contours, _hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     best: Optional[_Candidate] = None

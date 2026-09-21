@@ -14,6 +14,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pipeline
+import marker_qc
 from run import decode_capped
 from fixtures_manifest import CASES
 
@@ -44,6 +45,16 @@ def test_fixture_pose(case):
         assert result.confidence >= case.expect_confidence_min, (
             f"{case.name}: confidence {result.confidence:.2f} below "
             f"expected minimum {case.expect_confidence_min}"
+        )
+
+    if case.expect_markers_measured_min is not None:
+        bgr = decode_capped(str(case.path))
+        markers = marker_qc.measure_from_bgr(bgr)
+        assert markers is not None, f"{case.name}: marker_qc.measure() returned None"
+        measured = sum(1 for d in markers if d is not None and d.measured)
+        assert measured >= case.expect_markers_measured_min, (
+            f"{case.name}: only {measured} markers measured, expected at least "
+            f"{case.expect_markers_measured_min}"
         )
 
 
