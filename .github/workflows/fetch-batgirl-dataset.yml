@@ -1,0 +1,84 @@
+name: Fetch Batgirl research dataset
+
+on:
+  push:
+    branches:
+      - research/batgirl-dataset-2026-09-21
+    paths:
+      - 'datasets/126710BLNR/**'
+      - '.github/workflows/fetch-batgirl-dataset.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-dataset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Fetch and normalise 126710BLNR sources
+        id: fetch
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python datasets/126710BLNR/fetch_images.py --clean 2>&1 | tee datasets/126710BLNR/fetch.log
+
+      - name: Summarise fetched corpus
+        if: always()
+        run: |
+          python - <<'PY'
+          import csv
+          from collections import Counter
+          from pathlib import Path
+
+          root = Path('datasets/126710BLNR')
+          resolved = root / 'resolved_images.csv'
+          if not resolved.exists():
+              print('resolved_images.csv was not produced')
+              raise SystemExit(0)
+          rows = list(csv.DictReader(resolved.open(encoding='utf-8')))
+          sources = {r['source_id'] for r in rows}
+          gen = {r['physical_watch_id'] for r in rows if r['class_label']=='gen' and r['provenance']=='gen_candidate'}
+          rep = {r['physical_watch_id'] for r in rows if r['class_label']=='rep'}
+          splits = Counter((r['class_label'], r['split']) for r in rows)
+          factories = Counter(r['factory'] for r in rows if r['class_label']=='rep')
+          dupes = sum(bool(r['possible_duplicate_of']) for r in rows)
+          print(f'images={len(rows)}')
+          print(f'populated_sources={len(sources)}')
+          print(f'independent_gen_candidates={len(gen)}')
+          print(f'independent_rep_watches={len(rep)}')
+          print(f'possible_duplicate_images={dupes}')
+          print('rows_by_class_split=', dict(splits))
+          print('rep_image_rows_by_factory=', dict(factories))
+          PY
+
+      - name: Upload temporary research corpus
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: batgirl-126710blnr-research-corpus
+          path: |
+            datasets/126710BLNR/manifest.csv
+            datasets/126710BLNR/resolved_images.csv
+            datasets/126710BLNR/fetch.log
+            datasets/126710BLNR/gen/**
+            datasets/126710BLNR/rep/**
+          if-no-files-found: warn
+          retention-days: 1
+
+      - name: Fail if fetch command failed
+        if: steps.fetch.outcome == 'failure'
+        run: exit 1
