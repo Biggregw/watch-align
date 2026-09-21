@@ -69,3 +69,6 @@ captures/
 # Keep versioned Android instrumentation-test fixtures available.
 !android/app/src/androidTest/assets/genuine/
 !android/app/src/androidTest/assets/genuine/**
+
+# Visual pose-audit renders (contain third-party source photos; CI-artifact only)
+pose_audit/

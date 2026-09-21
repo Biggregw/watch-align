@@ -1,0 +1,65 @@
+name: Batgirl visual pose audit
+
+# Renders diagnostic composites and review contact sheets for the current
+# engine's ACCEPTED poses, using the already-committed
+# datasets/126710BLNR/results/per_image_measurements.csv to know which
+# images were accepted. This is a read-only diagnostic tool: it never
+# changes any pose/QC threshold, master geometry, marker or classification
+# logic, and it never commits anything back to the repository (no images,
+# no CSVs) -- output goes only to the uploaded artifact -- so there is no
+# results-commit re-trigger loop to guard against here.
+on:
+  push:
+    branches:
+      - claude/batgirl-dataset-python-integration
+    paths:
+      - '.github/workflows/visual-pose-audit.yml'
+      - 'tools/watch_align_py/render_pose_audit.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visual-pose-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Install Watch Align Python engine dependencies
+        run: python -m pip install opencv-python-headless numpy
+
+      - name: Fetch and normalise 126710BLNR sources (ephemeral on this runner)
+        run: python datasets/126710BLNR/fetch_images.py --clean
+
+      - name: Render pose-audit composites and contact sheets
+        run: |
+          python tools/watch_align_py/render_pose_audit.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-dir pose_audit \
+            --suspicious "rep_cf_QsJT2wk:rep/calibration/rep_cf_QsJT2wk/image_06.jpg" \
+            --suspicious "rep_arf_8xahrjm:rep/validation/rep_arf_8xahrjm/image_02.jpg"
+
+      - name: Upload pose-audit artifact (renders only; no source images committed)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: batgirl-pose-audit
+          path: pose_audit/**
+          retention-days: 14
+          if-no-files-found: error
