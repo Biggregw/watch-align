@@ -8,16 +8,18 @@ Third-party photographs are deliberately **not committed** to the public reposit
 
 ## Current source set
 
-The initial manifest contains:
+The expanded manifest contains:
 
 - 1 first-party Rolex catalogue reference (`official`, split `reference`). This is a visual reference, not an independent physical-watch population sample.
-- 6 marketplace source-labelled genuine candidates (`gen_candidate`): 4 calibration watches and 2 held-out validation watches.
-- 15 explicitly replica-labelled QC watches (`rep_labelled`): 10 calibration watches and 5 held-out validation watches.
-- Replica factories represented include VSF, Clean and C+ Factory.
+- 11 marketplace source-labelled genuine candidates (`gen_candidate`): 6 calibration watches and 5 held-out validation watches.
+- 23 explicitly replica-labelled watches/QC batches (`rep_labelled`): 14 calibration watches and 9 held-out validation watches.
+- Replica factories represented include VSF, Clean, ARF and C+ Factory.
 
 The user's own known replica is intentionally **not** included. It should remain a blind validation case.
 
-One genuine-candidate source is a 126710BLNR on Oyster rather than Jubilee. It is retained because it is the exact reference and the dial/marker geometry is the same, but Batgirl-only experiments should filter `bracelet == Jubilee`. The manifest records bracelet explicitly so this cannot happen silently.
+Some exact-reference 126710BLNR sources use Oyster rather than Jubilee. They are retained because the dial and core marker geometry are the same reference, but Batgirl-only experiments should filter `bracelet == Jubilee`. The manifest records bracelet explicitly so this cannot happen silently.
+
+The source set intentionally includes both near-clean replica examples and examples with community-noted defects. This is important because a classifier that only learns from obviously bad replicas will not be useful on the better VSF, Clean or ARF examples that matter most in practice.
 
 ## Provenance rules
 
@@ -36,6 +38,8 @@ These labels are deliberately conservative. They describe source provenance, not
 Calibration and validation are split by `physical_watch_id`. The fetcher refuses a manifest in which one physical watch appears in more than one split.
 
 When computing distributions, aggregate measurements per physical watch before comparing classes. Do not give a ten-photo album ten times the statistical weight of a one-photo album.
+
+A repeated sale/listing of the same physical watch is a potential leakage risk even if it has a different URL. The fetcher therefore records exact SHA-256 hashes and a small perceptual hash and flags close visual duplicates for human review. Treat any suspected duplicate as one physical watch until proven otherwise.
 
 ## Fetching
 
@@ -65,6 +69,8 @@ rep/<split>/<source_id>/image_XX.jpg
 
 and creates `resolved_images.csv`, containing the local path, SHA-256, a small perceptual hash, dimensions and the original provenance fields. Exact duplicates are detected and close perceptual duplicates are flagged for review.
 
+Public image hosts can disappear or change. A source that fails to download should be reported as unavailable, not silently replaced with an unlabeled image from elsewhere. Any replacement source must be added to `manifest.csv` with its own provenance and physical-watch identity.
+
 ## What Claude should do first
 
 Before changing QC thresholds, use the Python engine in `tools/watch_align_py` to run acquisition/rectification across the corpus and produce a per-image measurement table. Then collapse repeated images to one robust record per `physical_watch_id`.
@@ -76,8 +82,11 @@ The first analysis should answer:
 3. Which candidate features have a genuine-candidate distribution that is visibly distinct from the replica distribution?
 4. Which proposed features overlap too heavily and therefore must **not** be used as defect evidence?
 5. Do held-out validation watches behave like the calibration results predict?
+6. Does a feature still separate classes after controlling for factory, bracelet and view angle, or is the apparent difference just a dataset artefact?
 
-Do not derive a hard "genuine" threshold from the six marketplace candidates alone. At this stage a result can support language such as "outside the observed/calibrated genuine-candidate range", not proof that a watch is counterfeit.
+Do not derive a hard "genuine" threshold from marketplace candidates alone. At this stage a result can support language such as "outside the observed/calibrated genuine-candidate range", not proof that a watch is counterfeit.
+
+The held-out validation split must stay untouched while feature selection and thresholds are being developed. Do not repeatedly tune against validation failures. If a validation example is pulled into calibration, replace it with a new independent validation watch and record that change explicitly.
 
 ## Candidate features
 
