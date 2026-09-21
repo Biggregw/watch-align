@@ -176,6 +176,12 @@ jobs:
             adb pull /sdcard/Android/data/com.watchalign.mobile/files/marker-calibration/. marker-calibration-output/
             echo '--- official first-party 126710BLNR marker calibration report ---'
             cat marker-calibration-output/official-126710blnr-marker-report.tsv
+            adb shell am instrument -w -e class com.watchalign.mobile.ProjectiveRefinementDiagnosticTest com.watchalign.mobile.test/androidx.test.runner.AndroidJUnitRunner 2>&1 | tee projective_diagnostic_instrument_output.txt
+            grep -q "OK (1 test)" projective_diagnostic_instrument_output.txt
+            mkdir -p projective-diagnostic-output
+            adb pull /sdcard/Android/data/com.watchalign.mobile/files/projective-diagnostic/. projective-diagnostic-output/
+            echo '--- projective refinement diagnostic report ---'
+            cat projective-diagnostic-output/projective-refinement-report.txt
       - name: Upload instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -185,5 +191,6 @@ jobs:
             android/app/build/reports/androidTests/connected/
             android/app/build/outputs/androidTest-results/connected/
             marker-calibration-output/
+            projective-diagnostic-output/
           if-no-files-found: warn
           retention-days: 14
