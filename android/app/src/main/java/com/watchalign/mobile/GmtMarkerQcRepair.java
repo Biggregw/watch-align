@@ -38,20 +38,29 @@ final class GmtMarkerQcRepair {
         final double bodyRotationDeg;
         final boolean minuteTrackAnchored;
         final boolean measured;
+        /** NaN except for hour 12: measured outward-base position vs the genuine reference, in %R. */
+        final double triangleOutwardDeltaPctR;
 
         MarkerDiagnostic(int hour,double angularDeg,double radialPctR,
                          double bodyRotationDeg,boolean minuteTrackAnchored){
-            this(hour,angularDeg,radialPctR,bodyRotationDeg,minuteTrackAnchored,true);
+            this(hour,angularDeg,radialPctR,bodyRotationDeg,minuteTrackAnchored,true,Double.NaN);
         }
 
         MarkerDiagnostic(int hour,double angularDeg,double radialPctR,
                          double bodyRotationDeg,boolean minuteTrackAnchored,boolean measured){
+            this(hour,angularDeg,radialPctR,bodyRotationDeg,minuteTrackAnchored,measured,Double.NaN);
+        }
+
+        MarkerDiagnostic(int hour,double angularDeg,double radialPctR,
+                         double bodyRotationDeg,boolean minuteTrackAnchored,boolean measured,
+                         double triangleOutwardDeltaPctR){
             this.hour=hour;
             this.angularDeg=angularDeg;
             this.radialPctR=radialPctR;
             this.bodyRotationDeg=bodyRotationDeg;
             this.minuteTrackAnchored=minuteTrackAnchored;
             this.measured=measured;
+            this.triangleOutwardDeltaPctR=triangleOutwardDeltaPctR;
         }
     }
 
@@ -70,11 +79,12 @@ final class GmtMarkerQcRepair {
 
     private static final class Candidate {
         final Point center;
-        final double radialLocal,tangentLocal,areaNorm,rotationDeg,anisotropy;
+        final double radialLocal,tangentLocal,areaNorm,rotationDeg,anisotropy,outwardExtentLocal;
         Candidate(Point center,double radial,double tangent,double area,
-                  double rotation,double anisotropy){
+                  double rotation,double anisotropy,double outwardExtentLocal){
             this.center=center;this.radialLocal=radial;this.tangentLocal=tangent;
             this.areaNorm=area;this.rotationDeg=rotation;this.anisotropy=anisotropy;
+            this.outwardExtentLocal=outwardExtentLocal;
         }
     }
 
@@ -108,6 +118,24 @@ final class GmtMarkerQcRepair {
 
     static double radialOffsetPctR(double normalizedRadius,int hour){
         return 100.0*(normalizedRadius-expectedRadiusRatio(hour));
+    }
+
+    /**
+     * How far outward the 12 triangle's own genuine reference base sits, in the detection ROI's
+     * local radial units, i.e. relative to {@link Gmt126710BlnrMaster#TRI_DETECTION_CENTER_R}.
+     * A validated genuine-vs-replica control study (see
+     * android/validation/gmt12_control_study/VALIDATION_REPORT.md) found this to be the most
+     * clearly separating GMT 12-marker metric: a triangle base sitting closer to the minute
+     * track than this reference is the "triangle crowds the minute track" defect.
+     */
+    static double expectedTriangleOutwardLocal(){
+        return (Gmt126710BlnrMaster.TRI_CENTER_R+Gmt126710BlnrMaster.TRI_BASE_OUTWARD)
+                -Gmt126710BlnrMaster.TRI_DETECTION_CENTER_R;
+    }
+
+    /** Positive = the measured triangle base sits further outward (closer to the minute track). */
+    static double triangleOutwardDeltaPctR(double measuredOutwardLocal){
+        return 100.0*(measuredOutwardLocal-expectedTriangleOutwardLocal());
     }
 
     static String rewriteReport(String report,MarkerDiagnostic[] diagnostics){
@@ -147,9 +175,13 @@ final class GmtMarkerQcRepair {
         String body=Double.isFinite(d.bodyRotationDeg)?
                 String.format(Locale.US,", body rotation %+.2f°",d.bodyRotationDeg):
                 ", body rotation unavailable (component isolation confidence low)";
+        String triangleNote=(d.hour==12&&Double.isFinite(d.triangleOutwardDeltaPctR))?
+                String.format(Locale.US,
+                        ", base-to-minute-track position %+.2f%% R vs genuine reference (positive = closer to the track)",
+                        d.triangleOutwardDeltaPctR):"";
         return String.format(Locale.US,
-                "%d marker vs minute track: angular offset %+.2f°, radial %+.2f%% R vs calibrated marker datum%s%s",
-                d.hour,d.angularDeg,d.radialPctR,body,source);
+                "%d marker vs minute track: angular offset %+.2f°, radial %+.2f%% R vs calibrated marker datum%s%s%s",
+                d.hour,d.angularDeg,d.radialPctR,body,triangleNote,source);
     }
 
     private static String renumberTopFindings(String report){
@@ -221,7 +253,9 @@ final class GmtMarkerQcRepair {
                 }
 
                 double body=(Math.abs(c.rotationDeg)<=12.0&&dialRadiusPx>=55.0)?c.rotationDeg:Double.NaN;
-                out[hour]=new MarkerDiagnostic(hour,angular,radial,body,true,true);
+                double outwardDelta=(hour==12&&Double.isFinite(c.outwardExtentLocal))?
+                        triangleOutwardDeltaPctR(c.outwardExtentLocal):Double.NaN;
+                out[hour]=new MarkerDiagnostic(hour,angular,radial,body,true,true,outwardDelta);
             }
             return out;
         }catch(Throwable ignored){return null;}
@@ -300,8 +334,9 @@ final class GmtMarkerQcRepair {
                             +1.5*Math.abs(areaNorm-targetAreaNorm);
                     if(score<bestScore){
                         bestScore=score;
+                        double outwardExtentLocal=hour==12?maxRadialLocal(contour,x0,y0,basis):Double.NaN;
                         best=new Candidate(center,local.x,local.y,areaNorm,
-                                isRoundMarker?Double.NaN:rotation,anisotropy);
+                                isRoundMarker?Double.NaN:rotation,anisotropy,outwardExtentLocal);
                     }
                 }
                 return best;
@@ -309,6 +344,16 @@ final class GmtMarkerQcRepair {
                 hierarchy.release();for(MatOfPoint c:contours)c.release();
             }
         }finally{mask.release();}
+    }
+
+    /** Farthest outward point of a detected contour along the ROI's radial axis. */
+    private static double maxRadialLocal(MatOfPoint contour,int x0,int y0,Basis basis){
+        double max=Double.NEGATIVE_INFINITY;
+        for(Point p:contour.toArray()){
+            double localX=basis.local(x0+p.x,y0+p.y).x;
+            if(localX>max)max=localX;
+        }
+        return max;
     }
 
     /** Projected radial/tangential basis in pixels per one normalized dial-radius unit. */

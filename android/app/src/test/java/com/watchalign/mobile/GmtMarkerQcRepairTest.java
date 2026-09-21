@@ -103,6 +103,34 @@ public class GmtMarkerQcRepairTest {
         assertFalse(out.contains("48.53"));
     }
 
+    @Test public void triangleOutwardDeltaIsZeroAtTheGenuineReferencePosition(){
+        // The genuine-reference outward-local value is derived from the same master constants
+        // GmtMarkerQcRepairTest.v5MarkerCentresMatchTheOfficialCatalogueCalibration pins, so a
+        // triangle measured exactly at that reference position must score as zero deviation.
+        assertEquals(0.0,GmtMarkerQcRepair.triangleOutwardDeltaPctR(
+                GmtMarkerQcRepair.expectedTriangleOutwardLocal()),1e-9);
+    }
+
+    @Test public void triangleOutwardDeltaIsPositiveWhenTheBaseSitsCloserToTheMinuteTrack(){
+        double closerToTrack=GmtMarkerQcRepair.expectedTriangleOutwardLocal()+0.01;
+        assertEquals(1.0,GmtMarkerQcRepair.triangleOutwardDeltaPctR(closerToTrack),1e-9);
+    }
+
+    @Test public void reportIncludesTriangleBaseToMinuteTrackPositionOnlyForMarker12(){
+        String report="Extended QC checks\n";
+        GmtMarkerQcRepair.MarkerDiagnostic[] d=new GmtMarkerQcRepair.MarkerDiagnostic[13];
+        d[12]=new GmtMarkerQcRepair.MarkerDiagnostic(12,0.04,1.35,0.62,true,true,2.86);
+        d[6]=new GmtMarkerQcRepair.MarkerDiagnostic(6,-0.22,-0.15,0.84,true);
+
+        String out=GmtMarkerQcRepair.rewriteReport(report,d);
+
+        assertTrue(out.contains("12 marker vs minute track: angular offset +0.04°, radial +1.35% R "
+                +"vs calibrated marker datum, body rotation +0.62°, base-to-minute-track position "
+                +"+2.86% R vs genuine reference (positive = closer to the track)"));
+        assertTrue(out.contains("6 marker vs minute track: angular offset -0.22°, radial -0.15% R "
+                +"vs calibrated marker datum, body rotation +0.84°\n"));
+    }
+
     @Test public void lowConfidenceOrientationCanRemainUnavailableWithoutDroppingPosition(){
         String report="Top QC findings: no material geometric deviation detected.\n\n"+
                 "Extended QC checks\n"+
