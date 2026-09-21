@@ -1,11 +1,28 @@
-# Watch Align — Python pose-acquisition port
+# Watch Align — Python Batgirl QC engine
 
-This is a faithful, line-by-line Python port (opencv-python + numpy) of the
-core deterministic GMT-dial pose-acquisition and measurement pipeline from
-the shipping Android app (`android/app/src/main/java/com/watchalign/mobile/`).
-It exists purely for **fast local iteration**: the Java/Android/Gradle/emulator
-round-trip takes minutes per change, this takes seconds. It is not a
-replacement for the app and is not built or shipped as part of it.
+**Status (2026-09-21): this Python implementation is now the primary,
+actively-developed Batgirl QC engine and the source of truth for the
+analysis algorithm.** The Android app under `android/` is frozen as a
+reference/legacy implementation: it is kept for parity checks and is not
+receiving further algorithm/QC changes while Python development is
+ongoing. New algorithm work, calibration, genuine-vs-replica comparison,
+diagnostics and batch testing all happen here. Nothing is ported back to
+Android, and no API/hosting layer is built, until this engine is proven
+stable against genuine and replica control sets.
+
+This started as a faithful, line-by-line Python port (opencv-python +
+numpy) of the deterministic GMT-dial pose-acquisition and measurement
+pipeline that existed in the Android app
+(`android/app/src/main/java/com/watchalign/mobile/`), originally built for
+fast local iteration (the Java/Android/Gradle/emulator round-trip takes
+minutes per change; this takes seconds). That origin is why file-by-file
+Java-source references appear below — they document where the ported
+logic came from and back Android's role as a parity reference, not an
+ongoing dependency.
+
+**Next milestone**: a reliable Python Batgirl QC engine that takes a
+126710BLNR image, analyses it, produces diagnostics/overlays, and can be
+validated against genuine and replica control sets. Not an APK.
 
 ## Why this exists
 
@@ -41,9 +58,23 @@ on-device UI.
 
 Usage:
 ```
-pip install opencv-python-headless numpy
+pip install -r requirements.txt
 python3 run.py /path/to/photo.jpg [more photos...]
 ```
+
+## Tests
+
+`tests/test_pipeline_fixtures.py` runs the pipeline against the real photo
+fixtures shared with the Android app (`android/app/src/androidTest/assets/debug/`)
+and pins the current known-good output as a regression baseline —
+`tests/fixtures_manifest.py` lists each case's expectations plus any
+independently-known human/community ground truth. Run with:
+```
+pytest tests/
+```
+When a deliberate algorithm change moves these numbers, update the manifest
+in the same commit and explain why; an unexplained change is a regression
+until proven otherwise.
 
 ## Fidelity notes
 
