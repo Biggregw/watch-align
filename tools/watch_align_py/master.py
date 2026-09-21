@@ -1,0 +1,35 @@
+"""Port of Gmt126710BlnrMaster.java. Same constants, same meaning."""
+import math
+
+ID = "126710BLNR-visual-master-v5"
+
+DIAL_EDGE_R = 1.000
+MINUTE_TRACK_R = 0.891
+
+ROUND_CENTER_R = 0.751
+BATON_CENTER_R = 0.687
+
+ROUND_OUTER_R = 0.070
+ROUND_LUME_R = 0.049
+
+BATON_RADIAL_HALF = 0.106
+BATON_TANGENTIAL_HALF = 0.044
+BATON_LUME_RADIAL_HALF = 0.077
+BATON_LUME_TANGENTIAL_HALF = 0.026
+
+TRI_CENTER_R = 0.719
+TRI_BASE_OUTWARD = 0.096
+TRI_APEX_INWARD = 0.154
+TRI_HALF_BASE = 0.083
+
+TRI_LUME_CENTER_R = 0.717
+TRI_LUME_BASE_OUTWARD = 0.071
+TRI_LUME_APEX_INWARD = 0.118
+TRI_LUME_HALF_BASE = 0.058
+
+TRI_DETECTION_CENTER_R = 0.739
+
+
+def angle_for_hour(hour: int) -> float:
+    """Canonical angle: 12=-90 deg, 3=0 deg, 6=90 deg, 9=180 deg."""
+    return math.radians(hour * 30.0 - 90.0)
