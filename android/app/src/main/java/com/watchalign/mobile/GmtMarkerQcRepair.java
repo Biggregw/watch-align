@@ -172,7 +172,7 @@ final class GmtMarkerQcRepair {
         return null;
     }
 
-    private static MarkerDiagnostic[] measure(Bitmap watch){
+    static MarkerDiagnostic[] measure(Bitmap watch){
         Mat rgba=new Mat(),bgr=new Mat(),gray=new Mat(),blur=new Mat(),edges=new Mat();
         try{
             Utils.bitmapToMat(watch,rgba);

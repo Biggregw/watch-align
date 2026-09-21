@@ -153,7 +153,16 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: cd android && bash ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.GenuineOfficialImageValidationTest --stacktrace
+          script: |
+            cd android && bash ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.GenuineOfficialImageValidationTest --stacktrace
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            adb shell am instrument -w -e class com.watchalign.mobile.OfficialMarkerCalibrationTest com.watchalign.mobile.test/androidx.test.runner.AndroidJUnitRunner 2>&1 | tee marker_calibration_instrument_output.txt
+            grep -q "OK (1 test)" marker_calibration_instrument_output.txt
+            mkdir -p marker-calibration-output
+            adb pull /sdcard/Android/data/com.watchalign.mobile/files/marker-calibration/. marker-calibration-output/
+            echo '--- official first-party 126710BLNR marker calibration report ---'
+            cat marker-calibration-output/official-126710blnr-marker-report.tsv
       - name: Upload instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -162,5 +171,6 @@ jobs:
           path: |
             android/app/build/reports/androidTests/connected/
             android/app/build/outputs/androidTest-results/connected/
+            marker-calibration-output/
           if-no-files-found: warn
           retention-days: 14
