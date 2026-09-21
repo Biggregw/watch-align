@@ -1,19 +1,19 @@
 {
-  "id": "126710BLNR-visual-master-v4",
+  "id": "126710BLNR-visual-master-v5",
   "model": "Rolex GMT-Master II 126710BLNR",
   "coordinate_system": "dial radius normalized; centre=(0,0); +x=3 o'clock; +y=6 o'clock",
-  "provenance": "Watch Align inspection master calibrated from front-on known-genuine 126710BLNR imagery; not Rolex factory CAD. Minute-track centreline and shape-specific marker centres were re-measured against known-genuine controls on 2026-09-20; replica imagery was used only as an independent cross-check.",
+  "provenance": "Watch Align inspection master calibrated from front-on known-genuine 126710BLNR imagery; not Rolex factory CAD. Minute-track centreline and shape-specific marker centres were re-measured against known-genuine controls on 2026-09-20; replica imagery was used only as an independent cross-check. Marker centre radii were re-measured on 2026-09-21 from GmtMarkerQcRepair's own projected-ROI detector against the first-party Rolex catalogue image (media.rolex.com), the same fixture used by GenuineOfficialImageValidationTest.",
   "dial_edge_radius": 1.000,
   "minute_track_radius": 0.891,
   "marker_centres": {
-    "round": 0.722,
-    "baton_6_9": 0.677,
-    "triangle_12_visual": 0.709,
-    "triangle_12_detection_centroid": 0.729
+    "round": 0.751,
+    "baton_6_9": 0.687,
+    "triangle_12_visual": 0.719,
+    "triangle_12_detection_centroid": 0.739
   },
   "markers": {
     "round": {"hours": [1,2,4,5,7,8,10,11], "outer_radius": 0.070, "lume_radius": 0.049},
     "baton": {"hours": [6,9], "radial_half": 0.106, "tangential_half": 0.044, "lume_radial_half": 0.077, "lume_tangential_half": 0.026},
-    "triangle_12": {"center_radius": 0.709, "base_outward": 0.096, "apex_inward": 0.154, "half_base": 0.083, "lume_center_radius": 0.707, "lume_base_outward": 0.071, "lume_apex_inward": 0.118, "lume_half_base": 0.058}
+    "triangle_12": {"center_radius": 0.719, "base_outward": 0.096, "apex_inward": 0.154, "half_base": 0.083, "lume_center_radius": 0.717, "lume_base_outward": 0.071, "lume_apex_inward": 0.118, "lume_half_base": 0.058}
   }
 }

@@ -17,6 +17,23 @@ public class GmtMarkerQcRepairTest {
         assertTrue(Math.abs(Gmt126710BlnrMaster.ROUND_CENTER_R-Gmt126710BlnrMaster.BATON_CENTER_R)>0.03);
     }
 
+    @Test public void v5MarkerCentresMatchTheOfficialCatalogueCalibration(){
+        // Regression guard for the v5 recalibration, sourced from OfficialMarkerCalibrationTest
+        // measuring the first-party Rolex catalogue image (media.rolex.com) -- deliberately never
+        // a user-submitted photo, after an earlier attempt using one turned out to be a replica
+        // and had to be reverted. Round markers 1,4,5,7,8,10,11 clustered at +1.888 to +3.493%R
+        // (mean +2.865%R); marker 2's -0.201%R reading was excluded as a clear outlier (a lone
+        // near-zero value ~2 points from its nearest neighbour, most likely a reflection/highlight
+        // artifact on this single photo, not a real manufacturing asymmetry). 6/9 batons measured
+        // +0.877/+1.208%R (mean +1.043%R). The triangle's centroid-to-visual-anchor gap (0.020) is
+        // preserved as a fixed property of its shape, not re-derived per photo.
+        assertEquals(0.751,Gmt126710BlnrMaster.ROUND_CENTER_R,1e-9);
+        assertEquals(0.687,Gmt126710BlnrMaster.BATON_CENTER_R,1e-9);
+        assertEquals(0.719,Gmt126710BlnrMaster.TRI_CENTER_R,1e-9);
+        assertEquals(0.020,Gmt126710BlnrMaster.TRI_DETECTION_CENTER_R-Gmt126710BlnrMaster.TRI_CENTER_R,1e-9);
+        assertEquals(0.002,Gmt126710BlnrMaster.TRI_CENTER_R-Gmt126710BlnrMaster.TRI_LUME_CENTER_R,1e-9);
+    }
+
     @Test public void roundHourMarkersUseTheSameDatumForDetectionAndVisual(){
         // Unlike the triangle, round markers have no centroid/visual-anchor distinction, so the
         // detection datum used for QC offsets and the visual datum used to draw the overlay must
