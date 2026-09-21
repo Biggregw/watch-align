@@ -115,6 +115,19 @@ jobs:
             android/SHA256SUMS-Android.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish manual test build
+        uses: softprops/action-gh-release@v2
+        if: github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main'
+        with:
+          tag_name: "dev-${{ github.ref_name }}"
+          name: "Watch Align Android dev build (${{ github.ref_name }})"
+          body: "Manual test build from commit ${{ github.sha }}. Not an official release -- overwritten each time this workflow is manually run from this branch. For phone-friendly sideloading only."
+          prerelease: true
+          files: |
+            android/WatchAlign-Android-${{ steps.version.outputs.version }}-arm64.apk
+            android/SHA256SUMS-Android.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   genuine-image-instrumentation:
     needs: build-android
