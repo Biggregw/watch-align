@@ -1,0 +1,32 @@
+name: Export Python workspace
+
+on:
+  push:
+    branches:
+      - experiment/projective-marker-normalization
+    paths:
+      - '.github/workflows/export-python-workspace.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload Python workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: watch-align-python-workspace
+          path: |
+            tools/watch_align_py/**
+            datasets/126710BLNR/results/**
+            datasets/126710BLNR/manifest.csv
+            datasets/126710BLNR/requirements.txt
+          retention-days: 2
+          if-no-files-found: error
