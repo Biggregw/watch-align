@@ -31,7 +31,9 @@ jobs:
       - name: Fetch and normalise 126710BLNR sources
         id: fetch
         continue-on-error: true
+        shell: bash
         run: |
+          set -o pipefail
           python datasets/126710BLNR/fetch_images.py --clean 2>&1 | tee datasets/126710BLNR/fetch.log
 
       - name: Summarise fetched corpus
