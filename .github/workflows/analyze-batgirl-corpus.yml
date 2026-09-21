@@ -1,12 +1,26 @@
 name: Analyze Batgirl research corpus
 
-# Manual dispatch only, deliberately. This job fetches third-party photos from
-# the public internet and then commits its own derived-results back to this
-# branch; if it were also push-triggered on datasets/126710BLNR/** (like the
-# fetch-only workflow), that results commit would trigger another run of
-# itself indefinitely. workflow_dispatch has no such feedback path, so no
-# extra path-filtering or actor guard is needed to stay loop-free.
+# This job fetches third-party photos from the public internet and then
+# commits its own derived results back to this branch, so the push trigger
+# below is deliberately an explicit file list rather than a directory glob:
+# it must never match datasets/126710BLNR/results/**, or the results commit
+# would trigger another run of itself indefinitely. workflow_dispatch alone
+# would be loop-proof too, but GitHub only allows dispatching a
+# workflow_dispatch workflow via the API once it has either run at least once
+# or lives on the repository's default branch -- this repo's default branch
+# (main) is intentionally not touched while Python is under active
+# development on a feature branch, so a scoped push trigger is what actually
+# registers this workflow and lets it run at all.
 on:
+  push:
+    branches:
+      - claude/batgirl-dataset-python-integration
+    paths:
+      - '.github/workflows/analyze-batgirl-corpus.yml'
+      - 'tools/watch_align_py/**'
+      - 'datasets/126710BLNR/manifest.csv'
+      - 'datasets/126710BLNR/fetch_images.py'
+      - 'datasets/126710BLNR/requirements.txt'
   workflow_dispatch:
 
 permissions:
