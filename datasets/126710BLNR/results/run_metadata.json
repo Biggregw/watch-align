@@ -1,0 +1,21 @@
+{
+  "timestamp_utc": "2026-09-21T18:13:48.005399+00:00",
+  "python_engine_git_commit": "0db73154f40a7cc32bb89ebb88a96c1ca5428ce2",
+  "python_version": "3.12.14",
+  "opencv_version": "5.0.0",
+  "numpy_version": "2.5.3",
+  "github_actions_workflow_run_id": "35631954142",
+  "manifest_path": "datasets/126710BLNR/manifest.csv",
+  "manifest_sha256": "ba4de985bda6bdff30420b35a8e65db15347370e8dc062ba9e29dd773348af7c",
+  "resolved_images_sha256": "90b966c8707db295b4ac9e7059cefd88784d59ddc7a9f4caa0d5ecfe4646629c",
+  "sources_attempted": 35,
+  "sources_populated": 31,
+  "images_analyzed": 252,
+  "independent_watches_analyzed": 31,
+  "failed_source_ids": [
+    "gen_wex_EZKpLku",
+    "gen_wex_I9FxPLn",
+    "gen_wex_KWfXz8G",
+    "rep_cf_17D8FaS"
+  ]
+}
