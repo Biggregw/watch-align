@@ -17,6 +17,29 @@ public class GmtMarkerQcRepairTest {
         assertTrue(Math.abs(Gmt126710BlnrMaster.ROUND_CENTER_R-Gmt126710BlnrMaster.BATON_CENTER_R)>0.03);
     }
 
+    @Test public void roundHourMarkersUseTheSameDatumForDetectionAndVisual(){
+        // Unlike the triangle, round markers have no centroid/visual-anchor distinction, so the
+        // detection datum used for QC offsets and the visual datum used to draw the overlay must
+        // be identical -- any recalibration of ROUND_CENTER_R applies to both directly.
+        for(int hour:new int[]{1,2,4,5,7,8,10,11}){
+            assertEquals(Gmt126710BlnrMaster.ROUND_CENTER_R,GmtMarkerQcRepair.expectedRadiusRatio(hour),1e-12);
+            assertEquals(Gmt126710BlnrMaster.ROUND_CENTER_R,GmtMarkerQcRepair.visualRadiusRatio(hour),1e-12);
+        }
+    }
+
+    @Test public void reportIncludesRoundHourMarkersAlongside12And6And9(){
+        String report="Extended QC checks\n2 marker vs minute track: position +99.0°, body rotation +99.0°\n";
+        GmtMarkerQcRepair.MarkerDiagnostic[] d=new GmtMarkerQcRepair.MarkerDiagnostic[13];
+        d[2]=new GmtMarkerQcRepair.MarkerDiagnostic(2,0.10,1.50,Double.NaN,true);
+        d[12]=new GmtMarkerQcRepair.MarkerDiagnostic(12,0.04,1.35,0.62,true);
+
+        String out=GmtMarkerQcRepair.rewriteReport(report,d);
+
+        assertTrue(out.contains("2 marker vs minute track: angular offset +0.10°, radial +1.50% R vs calibrated marker datum"));
+        assertTrue(out.contains("12 marker vs minute track: angular offset +0.04°, radial +1.35% R vs calibrated marker datum"));
+        assertFalse(out.contains("99.0"));
+    }
+
     @Test public void radialSignIsPositiveForOutwardHighMarker(){
         double expected=GmtMarkerQcRepair.expectedRadiusRatio(12);
         assertEquals(1.25,GmtMarkerQcRepair.radialOffsetPctR(expected+0.0125,12),1e-9);

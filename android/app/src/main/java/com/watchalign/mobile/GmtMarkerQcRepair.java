@@ -78,9 +78,9 @@ final class GmtMarkerQcRepair {
         }
     }
 
-    private static final Pattern DETAIL=Pattern.compile("(?m)^(12|6|9) marker vs minute track:.*$");
-    private static final Pattern TOP_MARKER=Pattern.compile("(?m)^\\d+\\. (12|6|9) marker (?:local position|angular offset).*?$");
-    private static final Pattern TOP_BODY=Pattern.compile("(?m)^\\d+\\. (12|6|9) marker body rotation .*?$");
+    private static final Pattern DETAIL=Pattern.compile("(?m)^(\\d{1,2}) marker vs minute track:.*$");
+    private static final Pattern TOP_MARKER=Pattern.compile("(?m)^\\d+\\. (\\d{1,2}) marker (?:local position|angular offset).*?$");
+    private static final Pattern TOP_BODY=Pattern.compile("(?m)^\\d+\\. (\\d{1,2}) marker body rotation .*?$");
 
     static String repair(Bitmap watch,String report,String modelRef){
         if(report==null||watch==null||!CanonicalGmtGeometryAnalyzer.supports(modelRef))return report;
@@ -120,7 +120,7 @@ final class GmtMarkerQcRepair {
         out=TOP_BODY.matcher(out).replaceAll("");
 
         StringBuilder block=new StringBuilder();
-        for(int h:new int[]{12,6,9}){
+        for(int h=1;h<=12;h++){
             MarkerDiagnostic d=find(diagnostics,h);
             if(d!=null)block.append(detailLine(d)).append('\n');
         }
@@ -194,7 +194,7 @@ final class GmtMarkerQcRepair {
                     +Math.min(ellipse.size.width,ellipse.size.height))/4.0;
 
             MarkerDiagnostic[] out=new MarkerDiagnostic[13];
-            for(int hour:new int[]{12,6,9}){
+            for(int hour=1;hour<=12;hour++){
                 Candidate c=measureProjectedMarker(gray,ellipse,roll,dialRadiusPx,hour);
                 if(c==null){
                     out[hour]=new MarkerDiagnostic(hour,Double.NaN,Double.NaN,Double.NaN,true,false);
@@ -281,17 +281,23 @@ final class GmtMarkerQcRepair {
                     double disc=Math.sqrt(Math.max(0.0,(mu20-mu02)*(mu20-mu02)+4.0*mu11*mu11));
                     double l1=(trace+disc)/2.0,l2=Math.max(1e-9,(trace-disc)/2.0);
                     double anisotropy=l1/l2;
+                    // Round hour markers (1,2,4,5,7,8,10,11) are approximately circular: they have
+                    // no well-defined principal axis, so an elongation/rotation check tuned for
+                    // the batons' long-axis shape is meaningless here and is skipped entirely.
+                    boolean isRoundMarker=hour!=12&&hour!=6&&hour!=9;
                     double axis=Math.toDegrees(0.5*Math.atan2(2.0*mu11,mu20-mu02));
                     double expectedAxis=Math.toDegrees(Math.atan2(basis.ry,basis.rx));
                     double rotation=QcExtendedMath.smallestAxisError(axis,expectedAxis);
-                    double minAnisotropy=hour==12?1.35:2.0;
-                    if(anisotropy<minAnisotropy||Math.abs(rotation)>25.0)continue;
+                    double minAnisotropy=hour==12?1.35:isRoundMarker?0.0:2.0;
+                    if(anisotropy<minAnisotropy)continue;
+                    if(!isRoundMarker&&Math.abs(rotation)>25.0)continue;
 
                     double score=4.0*Math.hypot(local.x,local.y)
                             +1.5*Math.abs(areaNorm-targetAreaNorm);
                     if(score<bestScore){
                         bestScore=score;
-                        best=new Candidate(center,local.x,local.y,areaNorm,rotation,anisotropy);
+                        best=new Candidate(center,local.x,local.y,areaNorm,
+                                isRoundMarker?Double.NaN:rotation,anisotropy);
                     }
                 }
                 return best;
