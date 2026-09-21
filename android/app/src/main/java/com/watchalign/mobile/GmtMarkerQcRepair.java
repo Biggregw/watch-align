@@ -195,6 +195,10 @@ final class GmtMarkerQcRepair {
 
             MarkerDiagnostic[] out=new MarkerDiagnostic[13];
             for(int hour=1;hour<=12;hour++){
+                // 3 o'clock has no applied hour marker on this model: the date window sits there
+                // instead. Measuring it anyway picks up the date numeral/aperture edge as a false
+                // "marker" (observed on a real photo: a spurious but plausible-looking blob).
+                if(hour==3)continue;
                 Candidate c=measureProjectedMarker(gray,ellipse,roll,dialRadiusPx,hour);
                 if(c==null){
                     out[hour]=new MarkerDiagnostic(hour,Double.NaN,Double.NaN,Double.NaN,true,false);

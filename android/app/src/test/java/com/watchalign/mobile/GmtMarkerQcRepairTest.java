@@ -17,6 +17,20 @@ public class GmtMarkerQcRepairTest {
         assertTrue(Math.abs(Gmt126710BlnrMaster.ROUND_CENTER_R-Gmt126710BlnrMaster.BATON_CENTER_R)>0.03);
     }
 
+    @Test public void v5MarkerCentresMatchTheRealPhotoCalibration(){
+        // Regression guard for the v5 recalibration: GmtMarkerQcRepair's own accurate measurement
+        // against a real, well-fit 126710BLNR photo (centre displacement 0.58%, 95% confidence)
+        // found round markers sitting a consistent ~+2.69%R further outward than the v4 value
+        // (0.722) across all 8 independently measured positions, and 6/9 batons ~+1.11%R further
+        // out. The triangle's centroid-to-visual-anchor gap (0.020) is preserved as a fixed
+        // property of its shape, not re-derived per photo.
+        assertEquals(0.749,Gmt126710BlnrMaster.ROUND_CENTER_R,1e-9);
+        assertEquals(0.688,Gmt126710BlnrMaster.BATON_CENTER_R,1e-9);
+        assertEquals(0.726,Gmt126710BlnrMaster.TRI_CENTER_R,1e-9);
+        assertEquals(0.020,Gmt126710BlnrMaster.TRI_DETECTION_CENTER_R-Gmt126710BlnrMaster.TRI_CENTER_R,1e-9);
+        assertEquals(0.002,Gmt126710BlnrMaster.TRI_CENTER_R-Gmt126710BlnrMaster.TRI_LUME_CENTER_R,1e-9);
+    }
+
     @Test public void roundHourMarkersUseTheSameDatumForDetectionAndVisual(){
         // Unlike the triangle, round markers have no centroid/visual-anchor distinction, so the
         // detection datum used for QC offsets and the visual datum used to draw the overlay must
