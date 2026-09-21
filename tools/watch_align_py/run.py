@@ -3,28 +3,9 @@ longest-side cap, run the ported pipeline, print its report plus marker diagnost
 import math
 import sys
 
-import cv2
-import numpy as np
-
 import marker_qc
 import pipeline
-
-
-def decode_capped(path: str) -> np.ndarray:
-    """Mirrors MainActivity.readBitmap / the androidTest decode() helper: decode at
-    full resolution, then if the longest side exceeds 1600px, scale down to exactly
-    1600 with bilinear filtering (matching Bitmap.createScaledBitmap(..., true))."""
-    raw = cv2.imread(path, cv2.IMREAD_COLOR)
-    if raw is None:
-        raise ValueError(f"could not decode {path}")
-    h, w = raw.shape[:2]
-    current_max = max(w, h)
-    if current_max <= 1600:
-        return raw
-    scale = 1600.0 / current_max
-    new_w = round(w * scale)
-    new_h = round(h * scale)
-    return cv2.resize(raw, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+from image_io import decode_capped
 
 
 def describe_markers(markers):

@@ -1,0 +1,115 @@
+name: Analyze Batgirl research corpus
+
+# Manual dispatch only, deliberately. This job fetches third-party photos from
+# the public internet and then commits its own derived-results back to this
+# branch; if it were also push-triggered on datasets/126710BLNR/** (like the
+# fetch-only workflow), that results commit would trigger another run of
+# itself indefinitely. workflow_dispatch has no such feedback path, so no
+# extra path-filtering or actor guard is needed to stay loop-free.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: analyze-batgirl-corpus-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Install Watch Align Python engine dependencies
+        run: python -m pip install opencv-python-headless numpy
+
+      - name: Fetch and normalise 126710BLNR sources (ephemeral on this runner)
+        id: fetch
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python datasets/126710BLNR/fetch_images.py --clean 2>&1 | tee datasets/126710BLNR/fetch.log
+
+      - name: Compute source attempt/populate/failure counts
+        id: counts
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import csv
+          from pathlib import Path
+
+          manifest_ids = set()
+          with open('datasets/126710BLNR/manifest.csv', newline='', encoding='utf-8') as f:
+              for row in csv.DictReader(f):
+                  manifest_ids.add(row['source_id'])
+
+          resolved_path = Path('datasets/126710BLNR/resolved_images.csv')
+          resolved_ids = set()
+          if resolved_path.exists():
+              with resolved_path.open(newline='', encoding='utf-8') as f:
+                  for row in csv.DictReader(f):
+                      resolved_ids.add(row['source_id'])
+
+          failed = sorted(manifest_ids - resolved_ids)
+          print(f"attempted={len(manifest_ids)}")
+          print(f"populated={len(resolved_ids)}")
+          print(f"failed={','.join(failed)}")
+          PY
+
+      - name: Run Python engine over the fetched corpus
+        if: always()
+        run: |
+          test -f datasets/126710BLNR/resolved_images.csv || { echo "no resolved_images.csv; fetch produced nothing"; exit 1; }
+          python tools/watch_align_py/analyze_corpus.py \
+            --resolved-csv datasets/126710BLNR/resolved_images.csv \
+            --out-dir datasets/126710BLNR/results \
+            --manifest-path datasets/126710BLNR/manifest.csv \
+            --workflow-run-id "${{ github.run_id }}" \
+            --sources-attempted "${{ steps.counts.outputs.attempted }}" \
+            --sources-populated "${{ steps.counts.outputs.populated }}" \
+            --failed-source-ids "${{ steps.counts.outputs.failed }}"
+
+      - name: Upload non-image debug artifacts (metadata only, no photos)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: batgirl-corpus-fetch-debug
+          path: |
+            datasets/126710BLNR/fetch.log
+            datasets/126710BLNR/resolved_images.csv
+          if-no-files-found: warn
+          retention-days: 1
+
+      - name: Commit derived results (no source images)
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add datasets/126710BLNR/results/per_image_measurements.csv \
+                  datasets/126710BLNR/results/per_watch_summary.csv \
+                  datasets/126710BLNR/results/run_metadata.json
+          if git diff --cached --quiet; then
+            echo "no result changes to commit"
+          else
+            git commit -m "research: Batgirl corpus analysis run ${{ github.run_id }}
+
+          Derived numeric/diagnostic results only; no third-party source
+          images are committed. See datasets/126710BLNR/results/README.md."
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+
+      - name: Fail if fetch command failed
+        if: steps.fetch.outcome == 'failure'
+        run: exit 1
