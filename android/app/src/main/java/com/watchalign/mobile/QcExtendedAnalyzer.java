@@ -140,12 +140,12 @@ final class QcExtendedAnalyzer {
                             "Date aperture vs local %02d-minute marker: %+4.2f° (%+4.2f marker divisions)%s%s\n",
                             minuteIndex,d.apertureAxisOffsetDeg,QcExtendedMath.minuteTrackUnits(d.apertureAxisOffsetDeg),
                             d.localTrackDetected?"":" [local marker not isolated; fitted dial axis used]",advisorySuffix));
-                    detail.append(String.format(Locale.US,"Date numeral centring in aperture: horizontal %+4.1f%%, vertical %+4.1f%%%s\n",d.xPct,d.yPct,advisorySuffix));
+                    detail.append(String.format(Locale.US,"Date numeral centring in aperture: horizontal %+4.1f%%, vertical %+4.1f%% (perspective-sensitive)%s\n",d.xPct,d.yPct,advisorySuffix));
 
                     if(axisSeverity>0)findings.add(new Finding(QcExtendedMath.findingPriority(axisSeverity,d.apertureAxisOffsetDeg)+30.0,
                             String.format(Locale.US,"Date aperture %+4.2f marker divisions from local %02d-minute reference%s",QcExtendedMath.minuteTrackUnits(d.apertureAxisOffsetDeg),minuteIndex,advisorySuffix)));
                     if(numeralSeverity>0){double mag=Math.max(Math.abs(d.xPct),Math.abs(d.yPct));findings.add(new Finding(QcExtendedMath.findingPriority(numeralSeverity,mag),
-                            String.format(Locale.US,"Date numeral off-centre: horizontal %+4.1f%%, vertical %+4.1f%%%s",d.xPct,d.yPct,advisorySuffix)));}
+                            String.format(Locale.US,"Date numeral off-centre: horizontal %+4.1f%%, vertical %+4.1f%% (perspective-sensitive)%s",d.xPct,d.yPct,advisorySuffix)));}
 
                     DateResult refDate=null; double refTilt=Double.NaN;
                     if(reference!=null) {
