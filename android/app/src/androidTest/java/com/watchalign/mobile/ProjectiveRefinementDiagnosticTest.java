@@ -24,9 +24,12 @@ import java.nio.charset.StandardCharsets;
 /**
  * Debug-only: investigates a suspected under-correction in the projective refinement
  * step (PerspectiveGmtOverlay/DialProjectiveRefiner) on a real, significantly tilted,
- * user-supplied genuine photo. Not a calibration source and not wired into any
- * production code path -- purely diagnostic, to capture the full VISUAL QC MASTER
- * report for offline comparison against the front-on official catalogue fixture.
+ * user-supplied genuine photo. Calls MinuteTrackRescueOverlay.build, the same entry
+ * point WatchAlignCoreV13 uses for the real automatic pose, so this reproduces the
+ * actual production report the app shows. Not a calibration source and not wired
+ * into any production code path itself -- purely diagnostic, to capture the full
+ * VISUAL QC MASTER report for offline comparison against the front-on official
+ * catalogue fixture.
  */
 @RunWith(AndroidJUnit4.class)
 public class ProjectiveRefinementDiagnosticTest {
@@ -40,16 +43,20 @@ public class ProjectiveRefinementDiagnosticTest {
 
         StringBuilder sb=new StringBuilder();
 
+        int overlayColor=android.graphics.Color.rgb(255,45,45);
+
         Bitmap tilted=decode(testContext,"debug/community-tilted-126710blnr-01.jpg");
         assertNotNull("tilted community fixture failed to decode",tilted);
-        PerspectiveGmtOverlay.Result tiltedResult=PerspectiveGmtOverlay.build(tilted,"126710BLNR");
+        PerspectiveGmtOverlay.Result tiltedResult=
+                MinuteTrackRescueOverlay.build(tilted,"126710BLNR",null,overlayColor);
         sb.append("=== TILTED COMMUNITY PHOTO ===\n");
         sb.append(tiltedResult==null?"build() returned null\n":tiltedResult.report);
         sb.append("\n");
 
         Bitmap frontOn=decode(testContext,"genuine/126710BLNR/official_00.jpg");
         assertNotNull("official catalogue fixture failed to decode",frontOn);
-        PerspectiveGmtOverlay.Result frontOnResult=PerspectiveGmtOverlay.build(frontOn,"126710BLNR");
+        PerspectiveGmtOverlay.Result frontOnResult=
+                MinuteTrackRescueOverlay.build(frontOn,"126710BLNR",null,overlayColor);
         sb.append("=== FRONT-ON OFFICIAL CATALOGUE PHOTO ===\n");
         sb.append(frontOnResult==null?"build() returned null\n":frontOnResult.report);
         sb.append("\n");
