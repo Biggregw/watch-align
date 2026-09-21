@@ -200,6 +200,16 @@ final class MinuteTrackDialFinder {
             double minDiameter=Math.max(70.0,minDim*0.10);
             double maxDiameter=minDim*0.94;
             double centreTolerance=Math.max(seedR*0.48,minDim*0.11);
+            // The legacy Hough-circle seed is only an approximate starting point and can itself
+            // be significantly mis-centred on a real photo (confirmed: >100px off on a genuine,
+            // only mildly tilted catalogue-style photo). A hard admission cutoff at centreTolerance
+            // silently discards the true, well-formed minute-track candidate whenever the seed is
+            // that far off, leaving only worse concentric contours to be selected -- producing a
+            // badly wrong pose (wrong apparent tilt, spurious rejection) despite a good photo.
+            // Keep centreTolerance as the ranking penalty's scale (still prefers candidates close
+            // to the seed) but admit candidates out to a wider radius so a mediocre seed cannot
+            // exclude the correct answer outright.
+            double centreToleranceAdmission=centreTolerance*2.2;
             for(MatOfPoint contour:contours){
                 if(contour.rows()<32)continue;
                 Point[] points=contour.toArray();
@@ -212,7 +222,7 @@ final class MinuteTrackDialFinder {
                     double axisRatio=b/Math.max(1.0,a);
                     if(axisRatio<0.66)continue;
                     double centreDistance=Math.hypot(e.center.x-seedX,e.center.y-seedY);
-                    if(centreDistance>centreTolerance)continue;
+                    if(centreDistance>centreToleranceAdmission)continue;
                     double coverage=angularCoverage(e,points,24);
                     if(coverage<0.28)continue;
                     double centrePenalty=centreDistance/Math.max(1.0,centreTolerance);
