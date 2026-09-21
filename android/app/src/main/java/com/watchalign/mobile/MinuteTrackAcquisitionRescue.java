@@ -168,7 +168,7 @@ final class MinuteTrackAcquisitionRescue {
 
                 Validation validation=validateHeldout(distance,ellipse,top.anchoredRollDeg);
                 if(!validation.accepted)continue;
-                Semantic semantic=semanticGate(gray,ellipse,top.anchoredRollDeg);
+                Semantic semantic=semanticGate(gray,edges,ellipse,top.anchoredRollDeg);
                 if(!semantic.accepted)continue;
 
                 Candidate c=new Candidate(ellipse,top.anchoredRollDeg,fine.shapeIndex,order,
@@ -330,8 +330,8 @@ final class MinuteTrackAcquisitionRescue {
     }
 
     /** Delegates to the shared independent identity gate; rescue keeps its strict all-three rule. */
-    private static Semantic semanticGate(Mat gray,RotatedRect ellipse,double roll){
-        MinuteTrackIdentityGate.Evidence evidence=MinuteTrackIdentityGate.evaluate(gray,ellipse,roll);
+    private static Semantic semanticGate(Mat gray,Mat edges,RotatedRect ellipse,double roll){
+        MinuteTrackIdentityGate.Evidence evidence=MinuteTrackIdentityGate.evaluate(gray,edges,ellipse,roll);
         return new Semantic(evidence.verdict==MinuteTrackIdentityGate.Verdict.PASS,evidence.dialInteriorMedian);
     }
 

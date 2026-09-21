@@ -100,7 +100,7 @@ final class MinuteTrackFirstOverlay {
             // fitter's self-consistency before trusting acceptance enough to block rescue.
             boolean identityRequired=identityVerificationRequired(automaticAccepted,centerErr);
             MinuteTrackIdentityGate.Evidence identity=identityRequired?
-                    MinuteTrackIdentityGate.evaluate(gray,ellipse,solvedRoll):null;
+                    MinuteTrackIdentityGate.evaluate(gray,edges,ellipse,solvedRoll):null;
             MinuteTrackIdentityGate.Verdict identityVerdict=identity==null?null:identity.verdict;
             boolean vetoed=primaryVetoed(automaticAccepted,centerErr,identityVerdict);
             boolean finalAccepted=finalAcceptance(automaticAccepted,centerErr,identityVerdict);
@@ -155,8 +155,8 @@ final class MinuteTrackFirstOverlay {
                     SUSPICION_CENTER_DISPLACEMENT_FRACTION*100.0,
                     identity==null?"NOT EVALUATED":identity.verdict.name(),
                     identity==null?"":String.format(Locale.US,
-                            " (dial interior median %.1f, %d/3 markers found)",
-                            identity.dialInteriorMedian,identity.markersFound),
+                            " (dial interior median %.1f, interior edge fraction %.3f, %d/3 markers found)",
+                            identity.dialInteriorMedian,identity.interiorEdgeFraction,identity.markersFound),
                     vetoed?"YES":"NO",
                     finalAccepted?"ACCEPTED":"REJECTED",
                     finalAccepted?"Safe to show automatically.":

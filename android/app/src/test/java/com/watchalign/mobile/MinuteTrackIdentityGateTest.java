@@ -62,10 +62,25 @@ public class MinuteTrackIdentityGateTest {
     @Test public void strongIdentityConfirmationLetsASuspiciousPrimaryStand(){
         // A large centre displacement can still be legitimate (e.g. genuine strong perspective).
         // If independent identity evidence strongly confirms the candidate (PASS), the primary
-        // must not be vetoed, preserving intended behaviour for a truly valid pose.
+        // must not be vetoed, preserving intended behaviour for a truly valid pose. Note this
+        // makes evaluate()'s own accuracy in producing that PASS verdict critical -- see
+        // interiorTextureThresholdIsASmallPositiveFraction below for the regression it guards.
         assertFalse(MinuteTrackFirstOverlay.primaryVetoed(
                 true,0.35,MinuteTrackIdentityGate.Verdict.PASS));
         assertTrue(MinuteTrackFirstOverlay.finalAcceptance(
                 true,0.35,MinuteTrackIdentityGate.Verdict.PASS));
+    }
+
+    @Test public void interiorTextureThresholdIsASmallPositiveFraction(){
+        // Regression guard for a real-photo false PASS: a wrong, out-of-frame concentric
+        // structure (observed: a presentation-box interior) sampled as dark with three
+        // coincidentally bright blobs, but its "dial interior" annulus had essentially no edge
+        // content (no hands, date window, printed text or lume). Darkness and marker blobs alone
+        // let that through; requiring nonzero interior texture is meant to reject it. This only
+        // pins the threshold to a sane small positive fraction -- the sampling itself needs
+        // native OpenCV and is exercised by instrumentation tests, not this pure JVM test.
+        double threshold=MinuteTrackIdentityGate.minInteriorEdgeFraction();
+        assertTrue("threshold must reject a textureless interior",threshold>0.0);
+        assertTrue("threshold must not demand near-total edge coverage",threshold<0.10);
     }
 }
