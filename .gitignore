@@ -72,3 +72,4 @@ captures/
 
 # Visual pose-audit renders (contain third-party source photos; CI-artifact only)
 pose_audit/
+radial_drift_visuals/

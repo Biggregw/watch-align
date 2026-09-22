@@ -1,0 +1,91 @@
+name: Radial drift root-cause diagnostics
+
+# Investigates WHY radial marker localisation moves with camera tilt. Read-only
+# with respect to pose acquisition, marker detection and master geometry: it
+# reconstructs the already-accepted ellipse/roll from the committed
+# per_image_measurements.csv and only adds new diagnostic measurements around
+# that already-accepted geometry, restricted to calibration-split accepted
+# images (validation stays held out per the research policy).
+#
+# Commits only the small, pure-numeric diagnostics CSV back to this branch
+# (no source images). The push trigger below is an explicit file list, never
+# datasets/126710BLNR/results/**, so that commit cannot retrigger this workflow.
+# Visual crops (contain source-photo content) go to the artifact only.
+on:
+  push:
+    branches:
+      - experiment/projective-marker-normalization
+    paths:
+      - '.github/workflows/radial-drift-diagnostics.yml'
+      - 'tools/watch_align_py/diagnose_radial_drift.py'
+      - 'tools/watch_align_py/render_radial_drift_examples.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: radial-drift-diagnostics-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Install Watch Align Python engine dependencies
+        run: python -m pip install opencv-python-headless numpy
+
+      - name: Fetch and normalise 126710BLNR sources (ephemeral on this runner)
+        run: python datasets/126710BLNR/fetch_images.py --clean
+
+      - name: Run radial-drift diagnostics (calibration split only)
+        run: |
+          python tools/watch_align_py/diagnose_radial_drift.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-csv datasets/126710BLNR/results/radial_drift_diagnostics.csv \
+            --split calibration
+
+      - name: Render tilt-pair visual examples (same watch, low vs high tilt)
+        run: |
+          python tools/watch_align_py/render_radial_drift_examples.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-dir radial_drift_visuals \
+            --min-spread 5
+
+      - name: Upload visual diagnostics artifact (renders only; no source images committed)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: radial-drift-visuals
+          path: radial_drift_visuals/**
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Commit derived diagnostics CSV (no source images)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add datasets/126710BLNR/results/radial_drift_diagnostics.csv
+          if git diff --cached --quiet; then
+            echo "no diagnostic changes to commit"
+          else
+            git commit -m "research: radial-drift diagnostics run ${{ github.run_id }}
+
+          Derived numeric diagnostics only (calibration split); no third-party
+          source images are committed."
+            git push origin HEAD:${{ github.ref_name }}
+          fi
