@@ -1,0 +1,95 @@
+name: Pose-library overlay experiment (calibration corpus)
+
+# Separate research direction from the multi-radius-homography experiment:
+# fits a physically-constrained 7-DOF pose (tilt magnitude/azimuth, camera
+# roll, perspective strength; scale+translation solved in closed form) via
+# a coarse-to-fine search scored only against minute-track ticks, then
+# rectifies and detects markers in canonical space using the SAME
+# downstream code as the multi-radius method (multi_radius_pose_solver.
+# rectify/detect_marker_in_rectified) -- isolating the comparison to "how
+# was the homography obtained." Calibration-split-only, read-only with
+# respect to production pose/marker/threshold code and master geometry.
+# Commits only the derived numeric CSV (no images) back to this branch;
+# visual overlays (source-photo content) go to the artifact only. The push
+# trigger is an explicit file list, never a results/output path, so the
+# results commit cannot retrigger this workflow.
+on:
+  push:
+    branches:
+      - experiment/pose-library-overlay
+    paths:
+      - '.github/workflows/pose-library-overlay-experiment.yml'
+      - 'tools/watch_align_py/pose_library.py'
+      - 'tools/watch_align_py/pose_library_measure.py'
+      - 'tools/watch_align_py/experiment_pose_library.py'
+      - 'tools/watch_align_py/render_pose_library_overlay.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pose-library-overlay-experiment-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  experiment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Install Watch Align Python engine dependencies
+        run: python -m pip install opencv-python-headless numpy scipy
+
+      - name: Fetch and normalise 126710BLNR sources (ephemeral on this runner)
+        run: python datasets/126710BLNR/fetch_images.py --clean
+
+      - name: Run pose-library overlay experiment (calibration split only)
+        run: |
+          python tools/watch_align_py/experiment_pose_library.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-csv datasets/126710BLNR/results/pose_library_experiment.csv \
+            --split calibration
+
+      - name: Render visual overlays (near-frontal/medium/highest-tilt spread)
+        run: |
+          python tools/watch_align_py/render_pose_library_overlay.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-dir pose_library_visuals \
+            --max-images 15
+
+      - name: Upload visual diagnostics artifact (renders only; no source images committed)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pose-library-overlay-visuals
+          path: pose_library_visuals/**
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Commit derived experiment CSV (no source images)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add datasets/126710BLNR/results/pose_library_experiment.csv
+          if git diff --cached --quiet; then
+            echo "no experiment changes to commit"
+          else
+            git commit -m "research: pose-library overlay experiment run ${{ github.run_id }}
+
+          Derived numeric diagnostics only (calibration split); no third-party
+          source images are committed."
+            git push origin HEAD:${{ github.ref_name }}
+          fi
