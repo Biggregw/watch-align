@@ -1,26 +1,78 @@
 # Camera2/intrinsics feasibility assessment - 2026-09-22
 
-## Read-only finding: there is no existing Camera2 capture path
+## Correction (2026-09-22, later same day)
 
-Grepped the whole `android/` tree for `Camera2`, `CameraManager`,
-`CameraCharacteristics`, `CameraDevice`, `CaptureRequest`,
-`ACTION_IMAGE_CAPTURE` — zero matches. `AndroidManifest.xml` declares no
-`CAMERA` permission and no camera `<uses-feature>`. `MainActivity.pickWatch()`
-/ `pickReferences()` use `Intent.ACTION_OPEN_DOCUMENT` (Storage Access
-Framework) to import an existing image file chosen by the user; the app
-never opens a camera session itself. This is a materially different starting
-point than "inspect the existing capture path and see what's already logged"
--- there is nothing logged today, and every image in the 252-image research
-corpus was sourced from Reddit/Imgur/marketplace listings, not captured
-through this app at all.
+The original version of this document concluded "there is no existing
+Camera2 capture path," based only on grepping the current experiment
+branch's `android/` tree. That conclusion was too narrow and has been
+corrected below (see "Where Camera2 capture code actually exists"). It was
+also written before an explicit product clarification from the project
+owner, which is decisive and is stated up front:
 
-This changes what "would Camera2 intrinsics help" means in practice: it can
-only ever help a **new, not-yet-built** in-app capture flow, for photos
-taken through it. It cannot retroactively help the current corpus, and it
-would not help any user who continues to import an existing gallery photo
-even after such a flow existed (the picker path would presumably remain
-available, and most of today's real-world QC photos -- including everything
-in the corpus -- come from exactly that path).
+> **Watch Align is NOT intended to require users to take the QC photo
+> in-app.** The normal use case is that the user receives QC photos from a
+> dealer and imports those existing images. Production input must be
+> assumed to be an arbitrary imported image: unknown camera/lens, unknown
+> focal length, unknown distance, unknown zoom/crop, EXIF possibly absent
+> or stripped. Only image pixels and known watch geometry are dependable.
+
+Consequently: **Camera2/capture-time metadata must never be an
+architectural dependency for the QC algorithm.** Everything below is
+documented for completeness (it answers a real question the project owner
+asked, and corrects a factual gap in the original answer), but none of it
+drives, or should drive, the Part B dial-geometry-recovery work. Part B is
+scoped entirely to what can be recovered from image pixels plus known watch
+geometry, with no assumption that any capture metadata will ever be
+present.
+
+## Three-way distinction
+
+1. **On the current experiment branches** (`experiment/dial-geometry-homography`,
+   `experiment/projective-marker-normalization`, and `main`): no Camera2
+   capture path exists. `AndroidManifest.xml` declares no `CAMERA`
+   permission and no camera `<uses-feature>`. `MainActivity.pickWatch()` /
+   `pickReferences()` use `Intent.ACTION_OPEN_DOCUMENT` (Storage Access
+   Framework) to import an existing image file chosen by the user; the app
+   never opens a camera session itself here. This part of the original
+   finding was correct as far as it went.
+
+2. **Elsewhere in repo history, unmerged:** a real, working Camera2
+   `ImageReader` still-capture implementation exists on four sibling
+   feature branches never merged to `main` --
+   `feature/android-gmt-triangle-reference-overlay` (most complete, 56-line
+   `CaptureActivity.java`), `feature/android-issue-10-product-hardening`,
+   `feature/gmt-triangle-reference-overlay`, and
+   `feature/issue-10-product-hardening` (all four also carry a
+   `CaptureHistoryExportDeviceTest.java`, plus sibling files
+   `CameraCaptureConfig.java`, `CaptureGuideView.java`,
+   `CaptureQualityAnalyzer.java`). `CaptureActivity.java` on the most
+   complete branch: selects the rear camera via `CameraCharacteristics`
+   (`LENS_FACING`, `REQUEST_AVAILABLE_CAPABILITIES` multi-cam check,
+   `SENSOR_INFO_ACTIVE_ARRAY_SIZE`, `LENS_INFO_MINIMUM_FOCUS_DISTANCE` --
+   all used only for camera-selection scoring, not persisted), reads
+   `SCALER_STREAM_CONFIGURATION_MAP` and `SENSOR_ORIENTATION` for stream
+   setup, optionally applies `CONTROL_ZOOM_RATIO_RANGE` zoom (<=1.5x), and
+   captures a full-resolution JPEG via `TEMPLATE_STILL_CAPTURE` +
+   `ImageReader`. It does **not** read or persist any of the
+   intrinsics-relevant fields -- `LENS_INTRINSIC_CALIBRATION`,
+   `LENS_DISTORTION`, `SENSOR_INFO_PHYSICAL_SIZE`,
+   `LENS_INFO_AVAILABLE_FOCAL_LENGTHS`, or `SCALER_CROP_REGION` -- anywhere
+   alongside the resulting photo. So even where a real capture path exists
+   in history, it was never wired up to log anything this feasibility
+   question actually needs; it would need extension, not just restoration,
+   before it could supply calibration-grade metadata. Per explicit
+   instruction, this code has not been merged, restored, or otherwise
+   touched -- this is a read-only historical finding.
+
+3. **What Camera2 could realistically provide if this path were restored
+   and extended:** answered in sections 1-5 below, technically unchanged
+   from the original assessment, now grounded in a real (if incomplete)
+   implementation rather than a hypothetical one.
+
+Even with item 2 corrected, item 3's answer is now explicitly **out of
+scope for the product**: the corpus, and real-world dealer QC photos in
+general, are always imported, not captured in-app, so no design should
+depend on this metadata being available.
 
 ## 1. Which Camera2 fields are available on typical modern Android devices?
 
@@ -128,11 +180,19 @@ metadata at all.
 
 ## Conclusion for Part A
 
-Camera2 metadata is real, would work as described, and would be a
-reasonable thing to log if/when an in-app capture flow is ever built -- but
-it is architecturally limited (capture-time only, never applies to the
-picker path or the existing corpus) and, per the Part B investigation below,
-is not the constraint actually missing from the current approach. It is not
-pursued further as an experiment here; Part B investigates the
-dial-geometry path directly, which is testable against the existing corpus
-today and does not depend on a product change to the capture flow.
+Camera2 metadata is real (an unmerged capture path already exists in repo
+history), would work roughly as described in sections 1-5, and would be a
+reasonable thing to log if that path were ever restored and extended for an
+optional in-app capture flow -- but it is **not a viable product
+dependency**: Watch Align's normal use case is importing existing dealer
+photos, not in-app capture, so any design that required or preferred
+Camera2 metadata would not work for the actual product. It is architecturally
+limited even on its own terms (capture-time only, never applies to the
+picker path or to any already-imported photo, including the entire existing
+corpus) and, per the Part B investigation below, is not the constraint
+actually missing from the current approach anyway. It is not pursued
+further as an experiment here and must not drive the Part B architecture.
+Part B investigates the dial-geometry path directly -- pixels plus known
+watch geometry only -- which is testable against the existing corpus today,
+works for the actual "import an arbitrary photo" product, and does not
+depend on any product change to the capture flow.
