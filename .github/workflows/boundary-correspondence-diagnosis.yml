@@ -1,0 +1,92 @@
+name: Boundary correspondence diagnosis
+
+# Calibration-split-only diagnostic (not the experiment itself): tests
+# whether the multi-radius homography's "boundary" correspondences (radius
+# ~1.0) are reliable observations of one coplanar dial circle, or are
+# locking onto different, non-coplanar physical structures (dial rim vs
+# rehaut vs crystal/bezel edge) and/or being mislabeled to the wrong
+# canonical radius. Read-only with respect to production pose/marker/
+# threshold code and the shipped multi_radius_pose_solver RANSAC threshold
+# (not changed here). Commits only small derived CSVs; per-window visual
+# crops (contain source-photo content) go to the artifact only. The push
+# trigger is an explicit file list, never a results/output path, so the
+# results commit cannot retrigger this workflow.
+on:
+  push:
+    branches:
+      - experiment/dial-geometry-homography
+    paths:
+      - '.github/workflows/boundary-correspondence-diagnosis.yml'
+      - 'tools/watch_align_py/diagnose_boundary_correspondences.py'
+      - 'tools/watch_align_py/render_boundary_window_crops.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: boundary-correspondence-diagnosis-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Install Watch Align Python engine dependencies
+        run: python -m pip install opencv-python-headless numpy
+
+      - name: Fetch and normalise 126710BLNR sources (ephemeral on this runner)
+        run: python datasets/126710BLNR/fetch_images.py --clean
+
+      - name: Run boundary correspondence diagnosis (calibration split only, all accepted images)
+        run: |
+          python tools/watch_align_py/diagnose_boundary_correspondences.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-summary-csv datasets/126710BLNR/results/boundary_diagnosis_summary.csv \
+            --out-detail-csv datasets/126710BLNR/results/boundary_diagnosis_detail.csv
+
+      - name: Render boundary search-window crops (low-tilt-favoured sample)
+        run: |
+          python tools/watch_align_py/render_boundary_window_crops.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-dir boundary_window_crops \
+            --max-images 15
+
+      - name: Upload visual diagnostics artifact (renders only; no source images committed)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boundary-correspondence-diagnosis-visuals
+          path: boundary_window_crops/**
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Commit derived diagnostic CSVs (no source images)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add datasets/126710BLNR/results/boundary_diagnosis_summary.csv \
+                  datasets/126710BLNR/results/boundary_diagnosis_detail.csv
+          if git diff --cached --quiet; then
+            echo "no diagnosis changes to commit"
+          else
+            git commit -m "research: boundary correspondence diagnosis run ${{ github.run_id }}
+
+          Derived numeric diagnostics only (calibration split); no third-party
+          source images are committed."
+            git push origin HEAD:${{ github.ref_name }}
+          fi
