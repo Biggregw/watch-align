@@ -53,9 +53,28 @@ LOSS_CAP_PX = 10.0
 TICK_RADIAL_HALF = 0.02
 TICK_TANGENTIAL_HALF_DEG = 1.0
 TICK_GRID_N = 9
-BOUNDARY_SEARCH_LO = 0.94
-BOUNDARY_SEARCH_HI = 1.08
+# Boundary window: a 2026-09-22 diagnostic (docs/research/
+# boundary-correspondence-diagnosis-2026-09-22.md) fit an independent,
+# well-behaved ticks-only homography and used it to check where boundary
+# correspondences actually land. Their implied canonical radius was
+# unimodal, angularly uniform, and flat across tilt (mean 1.011, median
+# 1.011, std 0.029, n=1924) -- i.e. consistent with one roughly-coplanar
+# circle, not a mixture of different physical structures around the
+# circumference. But the original window (0.94-1.08, half-width 0.07 -- 3.5x
+# wider than the tick window at the same grid density, so 3.5x coarser
+# sampling) was imprecise enough that only ~14% of boundary correspondences
+# survived RANSAC at the shipped 1.5px threshold (vs ~84% of ticks), and
+# every correspondence was labelled as exactly canonical radius 1.000
+# (DIAL_EDGE_R) regardless of where in that band it actually landed, a ~1%
+# systematic mislabel baked into every point. Narrowed to match the
+# empirical center (~1.01) with roughly half the old half-width, and
+# labelled at that empirical center instead of DIAL_EDGE_R -- both changes
+# confined to this experimental module; master.DIAL_EDGE_R (production
+# geometry) is untouched.
+BOUNDARY_SEARCH_LO = 0.975
+BOUNDARY_SEARCH_HI = 1.045
 BOUNDARY_RADIAL_HALF = (BOUNDARY_SEARCH_HI - BOUNDARY_SEARCH_LO) / 2.0
+BOUNDARY_LABEL_R = (BOUNDARY_SEARCH_LO + BOUNDARY_SEARCH_HI) / 2.0
 BOUNDARY_TANGENTIAL_HALF_DEG = 2.0
 BOUNDARY_GRID_N = 9
 BOUNDARY_ANGLES_N = 48
@@ -137,7 +156,7 @@ def extract_correspondences(edges: np.ndarray, ellipse: RotatedRect, roll: float
         if loc is None:
             continue
         img_x, img_y, n_px = loc
-        out.append(Correspondence("boundary", DIAL_EDGE_R * math.cos(angle), DIAL_EDGE_R * math.sin(angle),
+        out.append(Correspondence("boundary", BOUNDARY_LABEL_R * math.cos(angle), BOUNDARY_LABEL_R * math.sin(angle),
                                    img_x, img_y, n_px))
 
     return out
