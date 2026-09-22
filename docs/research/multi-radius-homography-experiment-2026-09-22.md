@@ -86,12 +86,70 @@ answered," not "rectify-then-detect doesn't work." No thresholds, master
 geometry, or production code were changed. Validation split remains
 untouched.
 
-## Suggested next step (not yet started)
+## Addendum 2026-09-22 (later same day): after fixing the boundary correspondence defect
 
-Diagnose the low inlier fraction before re-testing: inspect which specific
-correspondences RANSAC is rejecting on a handful of low-tilt images (where
-nearly everything should be an inlier) to determine whether it's a
-localization-precision issue, a RANSAC-threshold issue, or a systematic bug
-in a subset of tick/boundary angles (e.g. near the date window, crown, or
-dial text that could be corrupting local edge search in specific angular
-ranges).
+The suggested next step above was carried out. Full diagnosis in
+`boundary-correspondence-diagnosis-2026-09-22.md`: the low inlier fraction
+was almost entirely a boundary-correspondence problem (tick inlier fraction
+0.838, boundary 0.138), and the evidence pointed at localisation
+imprecision and a ~1% systematic radius mislabel -- not a genuinely
+different, non-coplanar physical structure. Fixed by narrowing the
+boundary search window (half-width 0.07 -> 0.035, same empirical centre)
+and labelling boundary correspondences at that empirical centre
+(`BOUNDARY_LABEL_R=1.01`) instead of `master.DIAL_EDGE_R`, confined to the
+experimental module. RANSAC threshold (1.5px) was not touched, per
+instruction.
+
+The fix worked as a fix: boundary inlier fraction rose from 0.138 to 0.318
+(mean), residual against the independent ticks-only reference fell from
+5.92px to 3.21px (mean), and the implied-radius std nearly halved (0.029 ->
+0.014) -- all confirming the localisation-precision diagnosis was correct.
+Boundary correspondences are still notably less reliable than ticks
+(31.8% inlier vs 84.3%), but are meaningfully better than before.
+
+Re-running the same within-watch repeatability comparison against the
+fixed solver's output
+(run [35715326976](https://github.com/Biggregw/watch-align/actions/runs/35715326976),
+commit `bdb7657`), now over 83 common watch/marker groups (up from 80, since
+the fix also let a few previously-undetected markers through):
+
+| metric | baseline mean std | new mean std | baseline median std | new median std | groups improved |
+|---|---|---|---|---|---|
+| radial_pct_r | 1.624 | 1.705 | 0.668 | 0.622 | 40/83 (48.2%) |
+| angular_deg | 0.816 | 0.898 | 0.537 | 0.689 | 48/83 (57.8%) |
+
+Closer to neutral than the pre-fix run (radial improved-group share rose
+41%->48%, angular 49%->58%, and angular now improves in a majority of
+groups), but still **not a clear win**: mean std is still slightly worse
+than baseline for both metrics, and the radial median (which did improve,
+0.668->0.622) tells a different story from the radial mean (still worse,
+1.624->1.705) -- a heavy-tailed distribution, not a uniform improvement.
+Inspecting the worst individual regressions shows a small number of
+specific watch/marker groups with large single-group blowups (e.g.
+`rep_cf_f71234_Sw2D1Bt` hour 8: baseline std 0.196 -> new std 3.174;
+`rep_vsf_KfRKFwA` hour 7: 0.339 -> 2.319) alongside many groups with small,
+genuine improvements -- consistent with occasional catastrophic single-
+image misdetections (likely in the rectified-space marker segmentation,
+not the homography fit itself, since the fit's own reprojection error
+stayed low) rather than a systematic bias affecting every image.
+
+## Conclusion after the fix
+
+The specific defect this addendum investigated (boundary correspondence
+reliability) was real, diagnosed correctly, and meaningfully improved --
+that hypothesis is confirmed. But fixing it did not flip the overall
+verdict: calibration-split within-watch repeatability is still roughly a
+wash against baseline (slightly negative on aggregate mean, mixed on
+median, a minority-to-bare-majority of groups improving depending on
+metric), not the "materially improves" result needed to retain/promote
+this candidate. This is the decision point the investigation was scoped to
+reach; per instruction, no further tuning was attempted past this point
+without checking in first. No thresholds, master geometry, or production
+code changed; validation split untouched.
+
+A plausible next lead, not yet investigated, is the handful of large
+single-group regressions above -- they look like occasional bad marker
+segmentation in rectified space on specific images, not a homography
+problem (reprojection error stayed low), and might be a smaller, more
+tractable target than the original "does rectify-then-detect work"
+question.
