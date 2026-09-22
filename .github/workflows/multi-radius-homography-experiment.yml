@@ -1,0 +1,89 @@
+name: Multi-radius dial homography experiment
+
+# Calibration-split-only experiment: fits a homography from minute-track tick
+# and dial-boundary point correspondences (never hour-marker positions), then
+# rectifies and detects markers in canonical space, compared against the
+# current ellipse-only baseline. Read-only with respect to production pose/
+# marker/threshold code. Commits only the derived numeric CSV (no images)
+# back to this branch; visual overlays (contain source-photo content) go to
+# the artifact only. The push trigger is an explicit file list, never a
+# results/output path, so the results commit cannot retrigger this workflow.
+on:
+  push:
+    branches:
+      - experiment/dial-geometry-homography
+    paths:
+      - '.github/workflows/multi-radius-homography-experiment.yml'
+      - 'tools/watch_align_py/multi_radius_pose_solver.py'
+      - 'tools/watch_align_py/experiment_multi_radius_homography.py'
+      - 'tools/watch_align_py/render_multi_radius_overlay.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: multi-radius-homography-experiment-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  experiment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Install Watch Align Python engine dependencies
+        run: python -m pip install opencv-python-headless numpy
+
+      - name: Fetch and normalise 126710BLNR sources (ephemeral on this runner)
+        run: python datasets/126710BLNR/fetch_images.py --clean
+
+      - name: Run multi-radius homography A/B experiment (calibration split only)
+        run: |
+          python tools/watch_align_py/experiment_multi_radius_homography.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-csv datasets/126710BLNR/results/multi_radius_homography_experiment.csv \
+            --split calibration
+
+      - name: Render visual overlays (highest-tilt calibration images first)
+        run: |
+          python tools/watch_align_py/render_multi_radius_overlay.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-dir multi_radius_visuals \
+            --max-images 15
+
+      - name: Upload visual diagnostics artifact (renders only; no source images committed)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multi-radius-homography-visuals
+          path: multi_radius_visuals/**
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Commit derived experiment CSV (no source images)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add datasets/126710BLNR/results/multi_radius_homography_experiment.csv
+          if git diff --cached --quiet; then
+            echo "no experiment changes to commit"
+          else
+            git commit -m "research: multi-radius homography experiment run ${{ github.run_id }}
+
+          Derived numeric diagnostics only (calibration split); no third-party
+          source images are committed."
+            git push origin HEAD:${{ github.ref_name }}
+          fi
