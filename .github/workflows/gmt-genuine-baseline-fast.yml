@@ -1,0 +1,56 @@
+name: GMT genuine marker baseline fast fallback
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research/gmt-baseline-fast-ci
+    paths:
+      - 'tools/research/run_gmt_genuine_baseline_fast.py'
+      - '.github/workflows/gmt-genuine-baseline-fast.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  baseline-fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Bring in frozen Stage 3 measurement tools
+        run: |
+          git fetch origin experiment/gmt-proportional-geometry-v1
+          git checkout origin/experiment/gmt-proportional-geometry-v1 -- tools/watch_align_py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install numpy opencv-python-headless pillow requests beautifulsoup4
+      - name: Run fast baseline
+        run: python tools/research/run_gmt_genuine_baseline_fast.py
+      - name: Show summary
+        if: always()
+        run: |
+          test -f docs/research/gmt-genuine-baseline-fast-results/summary.json && cat docs/research/gmt-genuine-baseline-fast-results/summary.json || true
+      - name: Commit results to fallback branch
+        run: |
+          git reset tools/watch_align_py || true
+          git checkout -- tools/watch_align_py || true
+          git config user.name 'watch-align-research-bot'
+          git config user.email 'watch-align-research-bot@users.noreply.github.com'
+          git add docs/research/gmt-genuine-baseline-fast-results
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'research: add fast genuine GMT baseline results'
+          git push origin HEAD:research/gmt-baseline-fast-ci
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmt-genuine-baseline-fast
+          path: docs/research/gmt-genuine-baseline-fast-results/**
+          if-no-files-found: warn
+          retention-days: 7
