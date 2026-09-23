@@ -1,17 +1,20 @@
 {
-  "manifest_sources": 7,
-  "sources_with_measurements": 2,
-  "sources_with_low_tilt": 1,
-  "all_measured_images": 2,
-  "low_tilt_images": 1,
-  "independent_low_tilt_watches": 1,
+  "manifest_sources": 15,
+  "sources_with_measurements": 6,
+  "sources_with_low_tilt": 4,
+  "all_measured_images": 6,
+  "low_tilt_images": 4,
+  "independent_low_tilt_watches": 4,
   "source_classes_low_tilt": [
-    "Watchfinder"
+    "Chrono24",
+    "IDWX",
+    "Watchfinder",
+    "XL Jewelers"
   ],
-  "date_detected_images": 2,
-  "date_spearman_abs_dx_vs_tilt": NaN,
-  "date_spearman_abs_dy_vs_tilt": NaN,
-  "date_spearman_offset_vs_tilt": NaN,
+  "date_detected_images": 6,
+  "date_spearman_abs_dx_vs_tilt": 0.48571428571428577,
+  "date_spearman_abs_dy_vs_tilt": 0.6571428571428573,
+  "date_spearman_offset_vs_tilt": 0.8285714285714287,
   "date_within_watch_centered_pearson_offset_vs_tilt": NaN,
-  "date_spearman_offset_vs_12_apex_simple_projective_disagreement": NaN
+  "date_spearman_offset_vs_12_apex_simple_projective_disagreement": -0.8999999999999998
 }

@@ -2,41 +2,41 @@
 
 Research-only empirical image distribution. It is not a Rolex factory tolerance and not an authenticity classifier.
 
-- Source manifest: **7** independent listed watches
-- Sources yielding at least one measurement: **2**
-- Sources yielding a <=10° image: **1**
-- <=10° measured images: **1**
-- Independent physical watches in primary baseline: **1**
-- Source classes represented: **Watchfinder**
+- Source manifest: **15** independent listed watches
+- Sources yielding at least one measurement: **6**
+- Sources yielding a <=10° image: **4**
+- <=10° measured images: **4**
+- Independent physical watches in primary baseline: **4**
+- Source classes represented: **Chrono24, IDWX, Watchfinder, XL Jewelers**
 
 ## Primary marker baselines (physical-watch medians, <=10°)
 
 | Feature | n watches | median | MAD | p10 | p90 |
 |---|---:|---:|---:|---:|---:|
-| `h12.stage3_apex_r_simple` | 1 | 0.5697 | 0.0000 | 0.5697 | 0.5697 |
-| `h12.stage3_centre_r_projective` | 1 | 0.7446 | 0.0000 | 0.7446 | 0.7446 |
-| `h12.stage3_base_r_projective` | 1 | 0.8122 | 0.0000 | 0.8122 | 0.8122 |
-| `h12.stage3_axis_incidence_canonical` | 1 | -0.0112 | 0.0000 | -0.0112 | -0.0112 |
-| `h12.stage3_centroid_tangential_offset_canonical` | 1 | 0.0008 | 0.0000 | 0.0008 | 0.0008 |
-| `h06.centre_r` | 1 | 0.6875 | 0.0000 | 0.6875 | 0.6875 |
-| `h06.centre_t` | 1 | 0.0055 | 0.0000 | 0.0055 | 0.0055 |
-| `h06.axis_residual_deg` | 1 | 1.1030 | 0.0000 | 1.1030 | 1.1030 |
-| `h06.radial_span` | 1 | 0.2588 | 0.0000 | 0.2588 | 0.2588 |
-| `h09.centre_r` | 1 | 0.6871 | 0.0000 | 0.6871 | 0.6871 |
-| `h09.centre_t` | 1 | 0.0064 | 0.0000 | 0.0064 | 0.0064 |
-| `h09.axis_residual_deg` | 1 | 0.3847 | 0.0000 | 0.3847 | 0.3847 |
-| `h09.radial_span` | 1 | 0.2502 | 0.0000 | 0.2502 | 0.2502 |
+| `h12.stage3_apex_r_simple` | 4 | 0.5537 | 0.0038 | 0.5493 | 0.5656 |
+| `h12.stage3_centre_r_projective` | 3 | 0.7398 | 0.0048 | 0.7351 | 0.7436 |
+| `h12.stage3_base_r_projective` | 3 | 0.8122 | 0.0015 | 0.8111 | 0.8174 |
+| `h12.stage3_axis_incidence_canonical` | 4 | -0.0039 | 0.0132 | -0.0194 | 0.0229 |
+| `h12.stage3_centroid_tangential_offset_canonical` | 4 | -0.0004 | 0.0048 | -0.0105 | 0.0059 |
+| `h06.centre_r` | 4 | 0.6798 | 0.0122 | 0.6453 | 0.6937 |
+| `h06.centre_t` | 4 | 0.0028 | 0.0024 | -0.0030 | 0.0053 |
+| `h06.axis_residual_deg` | 4 | 0.9058 | 0.7487 | -0.0635 | 5.2958 |
+| `h06.radial_span` | 4 | 0.2423 | 0.0145 | 0.1727 | 0.2576 |
+| `h09.centre_r` | 4 | 0.6792 | 0.0089 | 0.6447 | 0.6884 |
+| `h09.centre_t` | 4 | 0.0027 | 0.0049 | -0.0027 | 0.0094 |
+| `h09.axis_residual_deg` | 4 | 0.7844 | 0.3322 | 0.4252 | 1.9343 |
+| `h09.radial_span` | 4 | 0.2381 | 0.0168 | 0.1740 | 0.2567 |
 
 Full round-marker and shape-feature distributions are in `baseline_watch_level.csv`.
 
 ## Date-centering viewpoint hypothesis
 
-Date detector produced usable centring values on **2** measured images.
-- Spearman |date horizontal offset| vs tilt: **n/a**
-- Spearman |date vertical offset| vs tilt: **n/a**
-- Spearman total date offset vs tilt: **n/a**
+Date detector produced usable centring values on **6** measured images.
+- Spearman |date horizontal offset| vs tilt: **0.486**
+- Spearman |date vertical offset| vs tilt: **0.657**
+- Spearman total date offset vs tilt: **0.829**
 - Within-watch centred Pearson total date offset vs tilt: **n/a**
-- Spearman total date offset vs 12-apex simple/projective disagreement: **n/a**
+- Spearman total date offset vs 12-apex simple/projective disagreement: **-0.900**
 
 Interpretation rule: date centring may be a useful *supporting* frontalness signal only if the correlations are consistently positive and there are enough repeated views. It must not be treated as proof of perfect perspective because date-wheel print/position and cyclops optics can create or cancel apparent offsets.
 
