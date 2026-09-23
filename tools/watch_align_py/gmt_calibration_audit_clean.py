@@ -4,9 +4,12 @@
 feed into physical-watch-level population statistics: drops rows
 flagged as duplicate/near-duplicate views (same moment reshot/recropped,
 which would silently inflate within-watch repeatability if counted as a
-second independent observation) and rows with no local_path at all
+second independent observation), rows with no local_path at all
 (sources that produced zero fetched images -- already captured in the
-per-source funnel, nothing to measure here). Every dropped row stays
+per-source funnel, nothing to measure here), and rows with no tilt_deg
+(pose acquisition failed before a tilt could even be computed --
+analyze_gmt_proportional_calibration.py's per-watch tilt-range summary
+requires at least one row with a tilt value per physical_watch_id). Every dropped row stays
 fully visible in the raw audit CSV; this step only prepares the input
 analyze_gmt_proportional_calibration.py expects.
 """
@@ -18,7 +21,7 @@ from pathlib import Path
 
 def clean(in_csv: Path, out_csv: Path) -> None:
     rows = list(csv.DictReader(in_csv.open(newline="", encoding="utf-8")))
-    kept = [r for r in rows if r.get("local_path")
+    kept = [r for r in rows if r.get("local_path") and r.get("tilt_deg")
             and r.get("failure_category") != "duplicate/near-duplicate view"]
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = list(rows[0].keys()) if rows else []
