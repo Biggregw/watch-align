@@ -5,11 +5,16 @@ Repository-local fixtures are preferred when ``local_image_path`` is populated i
 control manifest. Reddit/gallery-dl is only a fallback. This makes the validation
 reproducible and allows known controls to run even when Reddit blocks CI datacenter IPs.
 Raw measurement remains separate from interpretation in analyze_replica_control_set.py.
+
+Rejected poses are not measured, but their gate diagnostics are persisted so a usable
+QC photograph cannot disappear behind a generic ``not accepted`` status. This does not
+relax or alter the frozen genuine-baseline measurement gates.
 """
 from __future__ import annotations
 
 import csv
 import importlib.util
+import math
 import shutil
 import subprocess
 import tempfile
@@ -80,10 +85,46 @@ def decode_local(path: Path):
     return m.cv2.cvtColor(m.np.array(raw), m.cv2.COLOR_RGB2BGR)
 
 
+def finite_or_blank(v):
+    try:
+        return float(v) if math.isfinite(float(v)) else ""
+    except (TypeError, ValueError):
+        return ""
+
+
+def pose_diagnostics(control_id: str, path: Path, res):
+    acq = getattr(res, "acquisition", None)
+    validation = getattr(res, "validation", None)
+    return {
+        "control_id": control_id,
+        "image_path": path.name,
+        "accepted": bool(getattr(res, "accepted", False)),
+        "reason": getattr(res, "reason", "") or "",
+        "confidence": finite_or_blank(getattr(res, "confidence", None)),
+        "tilt_deg": finite_or_blank(getattr(res, "tilt_deg", None)),
+        "automatic_accepted": bool(getattr(res, "automatic_accepted", False)),
+        "initial_top_phase_accepted": "" if acq is None else bool(acq.top_phase_accepted),
+        "initial_top_phase_error_deg": "" if acq is None else finite_or_blank(acq.top_phase_error_deg),
+        "final_top_accepted": bool(getattr(res, "final_top_accepted", False)),
+        "final_top_error_deg": finite_or_blank(getattr(res, "final_top_error_deg", None)),
+        "minute_track_validation_accepted": "" if validation is None else bool(validation.accepted),
+        "holdout_ticks": "" if validation is None else validation.holdout_ticks,
+        "validation_median_px": "" if validation is None else finite_or_blank(validation.median_px),
+        "validation_median_limit_px": "" if validation is None else finite_or_blank(validation.median_limit_px),
+        "validation_p90_px": "" if validation is None else finite_or_blank(validation.p90_px),
+        "validation_p90_limit_px": "" if validation is None else finite_or_blank(validation.p90_limit_px),
+        "validation_inlier_fraction": "" if validation is None else finite_or_blank(validation.inlier_fraction),
+        "center_err_fraction": finite_or_blank(getattr(res, "center_err", None)),
+        "identity_required": bool(getattr(res, "identity_required", False)),
+        "identity_verdict": "" if getattr(res, "identity", None) is None else res.identity.verdict.value,
+        "vetoed": bool(getattr(res, "vetoed", False)),
+    }
+
+
 def main() -> int:
     controls = read_controls()
     OUTDIR.mkdir(parents=True, exist_ok=True)
-    all_rows, source_rows = [], []
+    all_rows, source_rows, diagnostic_rows = [], [], []
     global_fp = set()
 
     with tempfile.TemporaryDirectory(prefix="watch-align-replica-controls-") as tmp:
@@ -116,6 +157,7 @@ def main() -> int:
                 except Exception as exc:
                     errors.append(f"pipeline:{type(exc).__name__}")
                     continue
+                diagnostic_rows.append(pose_diagnostics(control_id, path, res))
                 if res.reason or not res.accepted or res.acquisition is None:
                     errors.append(f"pose_rejected:{res.reason or 'not accepted'}")
                     continue
@@ -171,6 +213,7 @@ def main() -> int:
             })
 
     m.write_csv(OUTDIR / "control_status.csv", source_rows)
+    m.write_csv(OUTDIR / "pose_gate_diagnostics.csv", diagnostic_rows)
     if all_rows:
         m.write_csv(OUTDIR / "per_image_measurements.csv", all_rows)
     else:
