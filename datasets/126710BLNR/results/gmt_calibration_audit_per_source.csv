@@ -1,0 +1,7 @@
+source_id,physical_watch_id,manifest_max_images_cap,n_images_fetched,n_flagged_duplicate,n_passing_pose_gates,n_usable_round_marker_geometry,n_usable_triangle_segmentation,n_usable_simple_radial_features,n_usable_projective_radial_features,usable_for_calibration
+gen_wex_3KSuGhC,gen_wex_3KSuGhC,10,10,0,4,1,4,4,1,True
+gen_wex_EZKpLku,gen_wex_EZKpLku,10,0,0,0,0,0,0,0,False
+gen_wex_I9FxPLn,gen_wex_I9FxPLn,10,0,0,0,0,0,0,0,False
+gen_wex_K4gqk6U,gen_wex_K4gqk6U,10,1,0,0,0,0,0,0,False
+gen_wex_U2XNblj,gen_wex_U2XNblj,10,1,0,0,0,0,0,0,False
+gen_wex_e99gXKb,gen_wex_e99gXKb,10,10,0,3,2,3,3,2,True
