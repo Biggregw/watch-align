@@ -1,7 +1,10 @@
 source_id,physical_watch_id,manifest_max_images_cap,n_images_fetched,n_flagged_duplicate,n_passing_pose_gates,n_usable_round_marker_geometry,n_usable_triangle_segmentation,n_usable_simple_radial_features,n_usable_projective_radial_features,usable_for_calibration
 gen_1stdibs_j14512702,gen_1stdibs_j14512702,6,6,0,2,1,2,2,1,True
 gen_1stdibs_j15020852,gen_1stdibs_j15020852,6,4,0,3,2,3,3,2,True
+gen_1stdibs_j22086492,gen_1stdibs_j22086492,6,6,0,6,6,6,6,6,True
+gen_1stdibs_j22349682,gen_1stdibs_j22349682,6,6,5,5,4,5,5,4,True
 gen_1stdibs_j24782832,gen_1stdibs_j24782832,6,6,0,4,3,4,4,3,True
+gen_1stdibs_j26718002,gen_1stdibs_j26718002,6,6,0,3,3,3,3,3,True
 gen_bw_rlx9529,gen_bw_rlx9529,6,0,0,0,0,0,0,0,False
 gen_c24_id38542337,gen_c24_id38542337,6,0,0,0,0,0,0,0,False
 gen_c24_id40153835,gen_c24_id40153835,6,0,0,0,0,0,0,0,False
