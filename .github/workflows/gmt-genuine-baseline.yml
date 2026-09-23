@@ -39,8 +39,18 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install numpy opencv-python-headless pillow requests beautifulsoup4
 
+      - name: Bound dealer acquisition for first empirical batch
+        shell: bash
+        run: |
+          # Keep the research implementation unchanged in git while preventing a
+          # single slow dealer/gallery from consuming the entire Actions budget.
+          sed -i 's/MAX_IMAGES_PER_SOURCE = 8/MAX_IMAGES_PER_SOURCE = 3/' tools/research/build_gmt_genuine_baseline.py
+          sed -i 's/MAX_CANDIDATE_URLS = 80/MAX_CANDIDATE_URLS = 12/' tools/research/build_gmt_genuine_baseline.py
+          sed -i 's/timeout=35/timeout=8/g' tools/research/build_gmt_genuine_baseline.py
+          sed -i 's/timeout=30/timeout=8/g' tools/research/build_gmt_genuine_baseline.py
+
       - name: Build genuine-image marker baseline
-        run: python tools/research/build_gmt_genuine_baseline.py
+        run: python -u tools/research/build_gmt_genuine_baseline.py
 
       - name: Show summary
         if: always()
@@ -57,8 +67,9 @@ jobs:
       - name: Commit numerical research outputs
         shell: bash
         run: |
-          git reset tools/watch_align_py || true
-          git checkout -- tools/watch_align_py || true
+          # Do not commit the temporary CI-only acquisition bounds or frozen Stage 3 copy.
+          git reset tools/watch_align_py tools/research/build_gmt_genuine_baseline.py || true
+          git checkout -- tools/watch_align_py tools/research/build_gmt_genuine_baseline.py || true
           git config user.name 'watch-align-research-bot'
           git config user.email 'watch-align-research-bot@users.noreply.github.com'
           git add docs/research/gmt-genuine-baseline-results
@@ -66,7 +77,7 @@ jobs:
             echo 'No result changes to commit'
             exit 0
           fi
-          git commit -m 'research: add diverse genuine GMT marker baseline results'
+          git commit -m 'research: add bounded genuine GMT marker baseline results'
           git push origin HEAD:research/proportional-geometry-knowledge-base
 
       - name: Upload result artifact
