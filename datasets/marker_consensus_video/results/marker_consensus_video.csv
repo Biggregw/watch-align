@@ -1,0 +1,34 @@
+frame,pipeline_outcome,failure_reason,hour,tilt_deg,shape,segmented,confidence,area_norm,anisotropy,loo_outer_fit_ok,loo_outer_n_peers,loo_outer_residual_px,loo_outer_radial_px,loo_outer_tangential_px,angular_residual_deg,principal_axis_residual_deg,opposing_consistency_deg,clearance_px,clearance_normalized,verdict_state,verdict_message,z_angular,z_minute_track_clearance
+frame_01,rejected,,1,11.915,,0,,,,,,,,,,,,,,,,,
+frame_01,rejected,,2,11.915,,0,,,,,,,,,,,,,,,,,
+frame_01,rejected,,4,11.915,,0,,,,,,,,,,,,,,,,,
+frame_01,rejected,,5,11.915,,0,,,,,,,,,,,,,,,,,
+frame_01,rejected,,7,11.915,round,1,0.8241,0.01669,1.5568,0,3,,,,0.3708,,,27.2823,0.2526,NO_ISSUE,Marker 7: consistent with peer geometry on this photograph.,0.897,1.033
+frame_01,rejected,,8,11.915,round,1,0.8146,0.01635,1.7190,0,3,,,,0.6782,,,18.5215,0.2253,NO_ISSUE,Marker 8: consistent with peer geometry on this photograph.,0.219,0.247
+frame_01,rejected,,10,11.915,round,1,0.8167,0.01934,1.3446,0,3,,,,0.2474,,,15.2613,0.1874,NO_ISSUE,Marker 10: consistent with peer geometry on this photograph.,1.537,2.263
+frame_01,rejected,,11,11.915,round,1,0.3794,0.02284,3.4958,0,3,,,,0.8044,,,17.2676,0.2219,NO_ISSUE,Marker 11: consistent with peer geometry on this photograph.,0.876,0.353
+frame_01,rejected,,6,11.915,,0,,,,,,,,,,,,,,,,,
+frame_01,rejected,,9,11.915,baton,1,0.8126,0.02056,5.1261,,,,,,1.4014,-18.2636,,28.3531,0.3538,CLEAR_ANOMALY,"Marker 9: multiple independent signals show a clear geometric anomaly (strongest: minute_track_clearance, z=5.7). Review closely.",2.746,5.712
+frame_01,rejected,,12,11.915,,0,,,,,,,,,,,,,,,,,
+frame_02,rejected,,1,5.538,,0,,,,,,,,,,,,,,,,,
+frame_02,rejected,,2,5.538,round,1,0.4476,0.01016,3.6990,0,5,,,,0.9356,,-0.6104,19.1968,0.2259,NO_ISSUE,Marker 2: consistent with peer geometry on this photograph.,5.509,0.827
+frame_02,rejected,,4,5.538,,0,,,,,,,,,,,,,,,,,
+frame_02,rejected,,5,5.538,round,1,0.3750,0.00807,5.5151,0,5,,,,0.8133,,-0.5627,16.8829,0.2060,NO_ISSUE,Marker 5: consistent with peer geometry on this photograph.,4.405,1.025
+frame_02,rejected,,7,5.538,round,1,0.6942,0.01443,1.9804,0,5,,,,0.3751,,,25.4717,0.3092,NO_ISSUE,Marker 7: consistent with peer geometry on this photograph.,0.274,1.405
+frame_02,rejected,,8,5.538,round,1,0.7782,0.01642,1.7649,0,5,,,,0.3253,,-0.6104,29.2819,0.3599,NO_ISSUE,Marker 8: consistent with peer geometry on this photograph.,0.195,2.425
+frame_02,rejected,,10,5.538,round,1,0.7889,0.01696,1.6351,0,5,,,,0.2026,,,29.0227,0.3772,POSSIBLE_ISSUE,"Possible marker 10 position issue (minute_track_clearance deviates from peer consensus, z=2.8). Review highlighted area.",0.934,2.773
+frame_02,rejected,,11,5.538,round,1,0.7959,0.01689,1.6010,0,5,,,,0.2506,,-0.5627,19.0019,0.2395,NO_ISSUE,Marker 11: consistent with peer geometry on this photograph.,0.487,0.693
+frame_02,rejected,,6,5.538,,0,,,,,,,,,,,,,,,,,
+frame_02,rejected,,9,5.538,,0,,,,,,,,,,,,,,,,,
+frame_02,rejected,,12,5.538,,0,,,,,,,,,,,,,,,,,
+frame_03,rejected,,1,17.121,,0,,,,,,,,,,,,,,,,,
+frame_03,rejected,,2,17.121,,0,,,,,,,,,,,,,,,,,
+frame_03,rejected,,4,17.121,,0,,,,,,,,,,,,,,,,,
+frame_03,rejected,,5,17.121,round,1,0.8391,0.01838,1.4308,0,2,,,,-0.0094,,,25.8810,0.3724,INSUFFICIENT_CONFIDENCE,Not enough peer data to evaluate this marker on this photograph.,,
+frame_03,rejected,,7,17.121,round,1,0.4303,0.01124,3.0528,0,2,,,,0.7277,,,27.0333,0.4041,INSUFFICIENT_CONFIDENCE,Not enough peer data to evaluate this marker on this photograph.,,
+frame_03,rejected,,8,17.121,round,1,0.8520,0.02108,1.0927,0,2,,,,0.1418,,,20.0980,0.2931,INSUFFICIENT_CONFIDENCE,Not enough peer data to evaluate this marker on this photograph.,,
+frame_03,rejected,,10,17.121,,0,,,,,,,,,,,,,,,,,
+frame_03,rejected,,11,17.121,,0,,,,,,,,,,,,,,,,,
+frame_03,rejected,,6,17.121,,0,,,,,,,,,,,,,,,,,
+frame_03,rejected,,9,17.121,,0,,,,,,,,,,,,,,,,,
+frame_03,rejected,,12,17.121,,0,,,,,,,,,,,,,,,,,
