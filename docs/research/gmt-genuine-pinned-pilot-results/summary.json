@@ -1,0 +1,17 @@
+{
+  "manifest_sources": 7,
+  "sources_with_measurements": 2,
+  "sources_with_low_tilt": 1,
+  "all_measured_images": 2,
+  "low_tilt_images": 1,
+  "independent_low_tilt_watches": 1,
+  "source_classes_low_tilt": [
+    "Watchfinder"
+  ],
+  "date_detected_images": 2,
+  "date_spearman_abs_dx_vs_tilt": NaN,
+  "date_spearman_abs_dy_vs_tilt": NaN,
+  "date_spearman_offset_vs_tilt": NaN,
+  "date_within_watch_centered_pearson_offset_vs_tilt": NaN,
+  "date_spearman_offset_vs_12_apex_simple_projective_disagreement": NaN
+}
