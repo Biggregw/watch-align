@@ -8,10 +8,10 @@ import java.util.Map;
  * A loadable collection of {@link MetricBaseline}s for one watch model, keyed by
  * {@link MetricKey}.
  *
- * <p>This class defines the shape of the artifact; it does not populate one. No asset loader is
- * wired to it yet -- see the "Waiting for genuine baseline" list in
- * {@code docs/research/gmt-genuine-baseline-android-integration-design.md} for exactly what has
- * to exist first.</p>
+ * <p>This class defines the shape of the artifact. {@link GenuineReferenceProfileLoader} populates
+ * one from the versioned JSON asset in {@code assets/genuine-profiles/}; nothing in this package
+ * is referenced from any production QC report path yet -- see
+ * {@code docs/research/gmt-genuine-baseline-android-integration-design.md}.</p>
  *
  * <p>{@code sourceDescription} is free text recording provenance (e.g. a branch/commit and
  * population size) and must never be phrased as a manufacturing-tolerance or authenticity

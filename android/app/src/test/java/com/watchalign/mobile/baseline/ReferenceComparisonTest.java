@@ -44,4 +44,39 @@ public class ReferenceComparisonTest {
         try{new ReferenceComparison(KEY,0.5,null);fail("expected IllegalArgumentException");}
         catch(IllegalArgumentException expected){}
     }
+
+    @Test public void absoluteDeviationIsMagnitudeOfSignedDeviation(){
+        MetricBaseline baseline=new MetricBaseline(9,0.7382,0.0056,0.7240,0.7451,null,0.0,
+                ValidationStatus.PROMISING);
+        ReferenceComparison above=new ReferenceComparison(KEY,0.7509,baseline);
+        assertEquals(0.7509-0.7382,above.absoluteDeviation(),1e-12);
+        ReferenceComparison below=new ReferenceComparison(KEY,0.7250,baseline);
+        assertEquals(0.7382-0.7250,below.absoluteDeviation(),1e-12);
+    }
+
+    @Test public void madMultiplesDividesSignedDeviationByMad(){
+        MetricBaseline baseline=new MetricBaseline(9,0.7382,0.0056,0.7240,0.7451,null,0.0,
+                ValidationStatus.PROMISING);
+        ReferenceComparison c=new ReferenceComparison(KEY,0.7509,baseline);
+        assertEquals((0.7509-0.7382)/0.0056,c.madMultiples(),1e-9);
+    }
+
+    @Test public void madMultiplesIsNullWhenMadAtOrBelowInstabilityFloor(){
+        MetricBaseline atFloor=new MetricBaseline(9,0.7382,ReferenceComparison.MIN_MAD_FOR_NORMALISATION,
+                0.7240,0.7451,null,0.0,ValidationStatus.PROMISING);
+        ReferenceComparison c1=new ReferenceComparison(KEY,0.7509,atFloor);
+        assertNull(c1.madMultiples());
+
+        MetricBaseline zeroMad=new MetricBaseline(9,0.7382,0.0,0.7240,0.7451,null,0.0,
+                ValidationStatus.PROMISING);
+        ReferenceComparison c2=new ReferenceComparison(KEY,0.7509,zeroMad);
+        assertNull(c2.madMultiples());
+
+        MetricBaseline justAboveFloor=new MetricBaseline(9,0.7382,
+                ReferenceComparison.MIN_MAD_FOR_NORMALISATION*10,0.7240,0.7451,null,0.0,
+                ValidationStatus.PROMISING);
+        ReferenceComparison c3=new ReferenceComparison(KEY,0.7509,justAboveFloor);
+        assertEquals((0.7509-0.7382)/(ReferenceComparison.MIN_MAD_FOR_NORMALISATION*10),
+                c3.madMultiples(),1e-6);
+    }
 }
