@@ -55,17 +55,19 @@ def read_controls():
         return list(csv.DictReader(f))
 
 
-def fetch_via_gallery_dl(post_url: str, raw_dir: Path) -> str:
-    """Returns a page_status string; raises nothing -- caller inspects raw_dir."""
+def fetch_via_gallery_dl(post_url: str, raw_dir: Path) -> tuple[str, str]:
+    """Returns (page_status, log_tail) -- log_tail is gallery-dl's own error text (truncated),
+    preserved so a fetch failure's real cause is inspectable rather than just a return code."""
     if shutil.which("gallery-dl") is None:
-        return "gallery-dl_not_installed"
-    cmd = ["gallery-dl", "--no-mtime", "--range", f"1-{MAX_IMAGES_PER_CONTROL}", "-D", str(raw_dir), post_url]
+        return "gallery-dl_not_installed", ""
+    cmd = ["gallery-dl", "-v", "--no-mtime", "--range", f"1-{MAX_IMAGES_PER_CONTROL}", "-D", str(raw_dir), post_url]
     try:
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=240)
     except subprocess.TimeoutExpired:
-        return "gallery-dl_timeout"
+        return "gallery-dl_timeout", ""
     (raw_dir / "fetch.log").write_text(result.stdout, encoding="utf-8", errors="replace")
-    return "gallery_dl_ok" if result.returncode == 0 else f"gallery-dl_returncode_{result.returncode}"
+    status = "gallery_dl_ok" if result.returncode == 0 else f"gallery-dl_returncode_{result.returncode}"
+    return status, result.stdout[-800:]
 
 
 def local_image_candidates(raw_dir: Path):
@@ -103,7 +105,7 @@ def main() -> int:
             print(f"[{ci}/{len(controls)}] {control_id}: {page_url}")
             raw_dir = tmp_root / control_id
             raw_dir.mkdir(parents=True, exist_ok=True)
-            page_status = fetch_via_gallery_dl(page_url, raw_dir)
+            page_status, log_tail = fetch_via_gallery_dl(page_url, raw_dir)
             candidates = list(local_image_candidates(raw_dir))
 
             accepted = 0
@@ -173,6 +175,7 @@ def main() -> int:
                 "page_status": page_status, "candidate_files": len(candidates), "downloaded_images": downloaded,
                 "pose_accepted": pose_ok, "measured_images": accepted, "low_tilt_images": low_tilt,
                 "notes": ";".join(sorted(set(errors)))[:500],
+                "fetch_log_tail": log_tail.replace("\n", " | ")[:800],
             })
             print(f"  page_status={page_status} candidates={len(candidates)} downloaded={downloaded} "
                   f"pose={pose_ok} measured={accepted} low_tilt={low_tilt}")
