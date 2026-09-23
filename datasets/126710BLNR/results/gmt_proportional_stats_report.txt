@@ -1,0 +1,251 @@
+Total images in calibration run: 7
+Distinct physical_watch_id count: 2
+
+*** CALIBRATION SAMPLE WARNING: only 2 independent physical watch(es) available in the calibration-split gen_candidate pool. Per-feature spread statistics (MAD, p10/p90) below are literal descriptive numbers computed from this sample; they are NOT a validated estimate of the genuine population distribution at this sample size. This experiment should be read as a feasibility and method-validation result, not a statistically supported genuine profile. ***
+
+gen_wex_3KSuGhC: 4 image(s), tilt range [3.7, 20.7] deg
+gen_wex_e99gXKb: 3 image(s), tilt range [6.9, 12.1] deg
+
+==============================================================================
+PER-FEATURE STATISTICS (physical-watch-level medians as the population)
+==============================================================================
+
+-- apex_r_simple --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=0.5605269961672241 MAD=0.017396151336243004 p10=0.5466100750982298 p90=0.5744439172362186 min=0.5431308448309812 max=0.5779231475034672
+  within-watch repeatability (MAD across a watch's own images): [0.006456354005667575, 0.00625392331059571]
+  tilt correlation (image-level, Pearson r): -0.057498011342494014
+  <=10deg subgroup: n=5 median=0.551971414226954
+  >10deg subgroup:  n=2 median=0.5569162469396898
+
+-- centre_r_simple --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=0.6981897197226155 MAD=0.03927439383667264 p10=0.6667702046532774 p90=0.7296092347919536 min=0.6589153258859428 max=0.7374641135592881
+  within-watch repeatability (MAD across a watch's own images): [0.0008395581039778999, 0.009476373963543727]
+  tilt correlation (image-level, Pearson r): -0.2866739624646975
+  <=10deg subgroup: n=5 median=0.7359864704754111
+  >10deg subgroup:  n=2 median=0.6531038825092463
+
+-- base_r_simple --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=0.7591662552492049 MAD=0.028140669555678677 p10=0.736653719604662 p90=0.7816787908937479 min=0.7310255856935263 max=0.7873069248048836
+  within-watch repeatability (MAD across a watch's own images): [0.02253829640983035, 0.03588153393559734]
+  tilt correlation (image-level, Pearson r): -0.1684336704997626
+  <=10deg subgroup: n=5 median=0.7873069248048836
+  >10deg subgroup:  n=2 median=0.7105427790982362
+
+-- apex_to_base_span_simple --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=0.15464511130632214 MAD=0.03401477400562419 p10=0.12743329210182278 p90=0.1818569305108215 min=0.12063033730069794 max=0.18865988531194633
+  within-watch repeatability (MAD across a watch's own images): [0.023303440859231583, 0.017461704544952883]
+  tilt correlation (image-level, Pearson r): -0.11533000476183025
+  <=10deg subgroup: n=5 median=0.17323533906254496
+  >10deg subgroup:  n=2 median=0.15362653215854638
+
+-- base_to_minute_track_gap_simple --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=0.13183374475079507 MAD=0.028140669555678677 p10=0.10932120910625213 p90=0.154346280395338 min=0.10369307519511639 max=0.15997441430647374
+  within-watch repeatability (MAD across a watch's own images): [0.02253829640983035, 0.03588153393559734]
+  tilt correlation (image-level, Pearson r): 0.16843367049976263
+  <=10deg subgroup: n=5 median=0.10369307519511639
+  >10deg subgroup:  n=2 median=0.18045722090176386
+
+-- centre_to_minute_track_gap_simple --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=0.19281028027738456 MAD=0.03927439383667264 p10=0.16139076520804646 p90=0.22422979534672266 min=0.15353588644071192 max=0.2320846741140572
+  within-watch repeatability (MAD across a watch's own images): [0.0008395581039778999, 0.009476373963543727]
+  tilt correlation (image-level, Pearson r): 0.2866739624646975
+  <=10deg subgroup: n=5 median=0.1550135295245889
+  >10deg subgroup:  n=2 median=0.23789611749075373
+
+-- triangle_height_over_minute_track_r --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=0.18580850703433485 MAD=0.049886272880294596 p10=0.14589948873009917 p90=0.22571752533857053 min=0.13592223415404026 max=0.23569477991462945
+  within-watch repeatability (MAD across a watch's own images): [0.023099756659098164, 0.017561067499550165]
+  tilt correlation (image-level, Pearson r): -0.22546016219549483
+  <=10deg subgroup: n=5 median=0.24141534978618992
+  >10deg subgroup:  n=2 median=0.17416768834877952
+
+-- base_width_over_height --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=1.145034000446444 MAD=0.05928549603653965 p10=1.0976056036172124 p90=1.1924623972756758 min=1.0857485044099044 max=1.2043194964829838
+  within-watch repeatability (MAD across a watch's own images): [0.15713268437807026, 0.02985220545273326]
+  tilt correlation (image-level, Pearson r): -0.08382049765181523
+  <=10deg subgroup: n=5 median=1.1411375000361137
+  >10deg subgroup:  n=2 median=1.1322656053597062
+
+-- base_half_width_symmetry --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=1.605107258856629e-16 MAD=5.3886051675077885e-17 p10=1.174018845456006e-16 p90=2.0361956722572521e-16 min=1.0662467421058502e-16 max=2.143967775607408e-16
+  within-watch repeatability (MAD across a watch's own images): [1.5373857148415652e-16, 1.7882632788474148e-16]
+  tilt correlation (image-level, Pearson r): -0.5248481625595823
+  <=10deg subgroup: n=5 median=2.4684411366672393e-16
+  >10deg subgroup:  n=2 median=-1.1101682026612672e-16
+
+-- centroid_position_within_span --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=0.6585021207327092 MAD=0.006868645980563914 p10=0.6530072039482582 p90=0.6639970375171604 min=0.6516334747521453 max=0.6653707667132731
+  within-watch repeatability (MAD across a watch's own images): [0.037300840702603755, 0.006196967681081467]
+  tilt correlation (image-level, Pearson r): -0.5385162556350954
+  <=10deg subgroup: n=5 median=0.6653707667132731
+  >10deg subgroup:  n=2 median=0.6378951938143558
+
+-- centroid_tangential_offset_canonical --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=-0.04838708733581525 MAD=0.04130784086970742 p10=-0.08143336003158119 p90=-0.015340814640049312 min=-0.08969492820552268 max=-0.0070792464661078285
+  within-watch repeatability (MAD across a watch's own images): [0.012489299480343826, 0.020660709557815654]
+  tilt correlation (image-level, Pearson r): -0.8439152731822676
+  <=10deg subgroup: n=5 median=0.005302611670195301
+  >10deg subgroup:  n=2 median=-0.11826639280672857
+
+-- centroid_angular_offset_deg --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=-3.7445619645741903 MAD=3.1029050125166044 p10=-6.226885974587474 p90=-1.262237954560907 min=-6.847466977090795 max=-0.6416569520575863
+  within-watch repeatability (MAD across a watch's own images): [1.0876796559181872, 2.8256689416001777]
+  tilt correlation (image-level, Pearson r): -0.8587288830535097
+  <=10deg subgroup: n=5 median=0.41196856606700594
+  >10deg subgroup:  n=2 median=-10.257942104340078
+
+-- symmetry_axis_angular_deviation_deg --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=-3.7100844334224714 MAD=1.3734960863980759 p10=-4.808881302540932 p90=-2.6112875643040105 min=-5.083580519820547 max=-2.3365883470243953
+  within-watch repeatability (MAD across a watch's own images): [2.8058847167526904, 6.682973812847034]
+  tilt correlation (image-level, Pearson r): -0.4082986877726083
+  <=10deg subgroup: n=5 median=0.46248265553836504
+  >10deg subgroup:  n=2 median=-8.55031902316446
+
+-- base_line_angular_deviation_deg --
+  n_watches_with_value=2  n_images_with_value=7  measurement_failure_rate=0.0
+  watch-median-population: median=4.098688807260321 MAD=2.8778000518787463 p10=1.7964487657573236 p90=6.400928848763318 min=1.2208887553815744 max=6.976488859139067
+  within-watch repeatability (MAD across a watch's own images): [1.7571163646938803, 1.9407300975640265]
+  tilt correlation (image-level, Pearson r): 0.49012321834077993
+  <=10deg subgroup: n=5 median=-0.06397496518798935
+  >10deg subgroup:  n=2 median=6.183738360451432
+
+-- apex_r_projective --
+  n_watches_with_value=2  n_images_with_value=3  measurement_failure_rate=0.5714285714285714
+  watch-median-population: median=0.627378329995552 MAD=0.024826840106735304 p10=0.6075168579101637 p90=0.6472398020809402 min=0.6025514898888167 max=0.6522051701022873
+  within-watch repeatability (MAD across a watch's own images): [0.05964958796896447]
+  tilt correlation (image-level, Pearson r): 0.8659047705189908
+  <=10deg subgroup: n=3 median=0.6025514898888167
+  >10deg subgroup:  n=0 median=None
+
+-- centre_r_projective --
+  n_watches_with_value=2  n_images_with_value=3  measurement_failure_rate=0.5714285714285714
+  watch-median-population: median=0.745946405733904 MAD=0.002039520211908896 p10=0.7443147895643769 p90=0.7475780219034311 min=0.7439068855219951 max=0.7479859259458129
+  within-watch repeatability (MAD across a watch's own images): [0.008626310523427994]
+  tilt correlation (image-level, Pearson r): 0.7613940165554969
+  <=10deg subgroup: n=3 median=0.7439068855219951
+  >10deg subgroup:  n=0 median=None
+
+-- base_r_projective --
+  n_watches_with_value=2  n_images_with_value=3  measurement_failure_rate=0.5714285714285714
+  watch-median-population: median=0.7994056336719685 MAD=0.004914170497665182 p10=0.7954742972738365 p90=0.8033369700701006 min=0.7944914631743033 max=0.8043198041696337
+  within-watch repeatability (MAD across a watch's own images): [0.01706280590077003]
+  tilt correlation (image-level, Pearson r): -0.795603423751291
+  <=10deg subgroup: n=3 median=0.8043198041696337
+  >10deg subgroup:  n=0 median=None
+
+-- apex_to_base_span_projective --
+  n_watches_with_value=2  n_images_with_value=3  measurement_failure_rate=0.5714285714285714
+  watch-median-population: median=0.1720273036764165 MAD=0.029741010604400486 p10=0.1482344951928961 p90=0.1958201121599369 min=0.142286293072016 max=0.20176831428081698
+  within-watch repeatability (MAD across a watch's own images): [0.0767123938697345]
+  tilt correlation (image-level, Pearson r): -0.8520374311311495
+  <=10deg subgroup: n=3 median=0.20176831428081698
+  >10deg subgroup:  n=0 median=None
+
+-- base_to_minute_track_gap_projective --
+  n_watches_with_value=2  n_images_with_value=3  measurement_failure_rate=0.5714285714285714
+  watch-median-population: median=0.09159436632803153 MAD=0.004914170497665182 p10=0.08766302992989938 p90=0.09552570272616367 min=0.08668019583036635 max=0.09650853682569671
+  within-watch repeatability (MAD across a watch's own images): [0.01706280590077003]
+  tilt correlation (image-level, Pearson r): 0.795603423751291
+  <=10deg subgroup: n=3 median=0.08668019583036635
+  >10deg subgroup:  n=0 median=None
+
+-- centre_to_minute_track_gap_projective --
+  n_watches_with_value=2  n_images_with_value=3  measurement_failure_rate=0.5714285714285714
+  watch-median-population: median=0.145053594266096 MAD=0.002039520211908896 p10=0.14342197809656887 p90=0.1466852104356231 min=0.1430140740541871 max=0.14709311447800488
+  within-watch repeatability (MAD across a watch's own images): [0.008626310523427994]
+  tilt correlation (image-level, Pearson r): -0.7613940165554969
+  <=10deg subgroup: n=3 median=0.14709311447800488
+  >10deg subgroup:  n=0 median=None
+
+-- apex_r_projective_over_round_inner --
+  n_watches_with_value=2  n_images_with_value=3  measurement_failure_rate=0.5714285714285714
+  watch-median-population: median=0.9212603964692392 MAD=0.036456446559082645 p10=0.8920952392219731 p90=0.9504255537165054 min=0.8848039499101565 max=0.9577168430283218
+  within-watch repeatability (MAD across a watch's own images): [0.08759117176059389]
+  tilt correlation (image-level, Pearson r): 0.865904770518991
+  <=10deg subgroup: n=3 median=0.8848039499101565
+  >10deg subgroup:  n=0 median=None
+
+-- centre_r_projective_over_round_centre --
+  n_watches_with_value=2  n_images_with_value=3  measurement_failure_rate=0.5714285714285714
+  watch-median-population: median=0.9932708465165166 MAD=0.002715739296816122 p10=0.9910982550790638 p90=0.9954434379539696 min=0.9905551072197005 max=0.9959865858133328
+  within-watch repeatability (MAD across a watch's own images): [0.011486432121741608]
+  tilt correlation (image-level, Pearson r): 0.7613940165554987
+  <=10deg subgroup: n=3 median=0.9905551072197005
+  >10deg subgroup:  n=0 median=None
+
+-- base_r_projective_over_round_outer --
+  n_watches_with_value=2  n_images_with_value=3  measurement_failure_rate=0.5714285714285714
+  watch-median-population: median=0.9736974831570872 MAD=0.005985591349165875 p10=0.9689090100777545 p90=0.9784859562364199 min=0.9677118918079213 max=0.979683074506253
+  within-watch repeatability (MAD across a watch's own images): [0.02078295481214376]
+  tilt correlation (image-level, Pearson r): -0.7956034237512912
+  <=10deg subgroup: n=3 median=0.979683074506253
+  >10deg subgroup:  n=0 median=None
+
+==============================================================================
+SIMPLE vs PROJECTIVE RADIAL REPRESENTATION COMPARISON
+==============================================================================
+
+-- apex_r_simple  vs  apex_r_projective --
+  coverage: simple n=7/7  projective n=3/7 (projective requires >=5 round markers AND a well-conditioned fit -- strictly a subset)
+  simple spread:     MAD=0.016062067851041584
+  projective spread: MAD=0.00999590775549386
+  simple tilt-correlation:     -0.057498011342494014
+  projective tilt-correlation: 0.8659047705189908
+
+-- centre_r_simple  vs  centre_r_projective --
+  coverage: simple n=7/7  projective n=3/7 (projective requires >=5 round markers AND a well-conditioned fit -- strictly a subset)
+  simple spread:     MAD=0.011622886753393069
+  projective spread: MAD=0.004547270099610201
+  simple tilt-correlation:     -0.2866739624646975
+  projective tilt-correlation: 0.7613940165554969
+
+-- base_r_simple  vs  base_r_projective --
+  coverage: simple n=7/7  projective n=3/7 (projective requires >=5 round markers AND a well-conditioned fit -- strictly a subset)
+  simple spread:     MAD=0.04731314686762356
+  projective spread: MAD=0.007234464905439664
+  simple tilt-correlation:     -0.1684336704997626
+  projective tilt-correlation: -0.795603423751291
+
+-- apex_to_base_span_simple  vs  apex_to_base_span_projective --
+  coverage: simple n=7/7  projective n=3/7 (projective requires >=5 round markers AND a well-conditioned fit -- strictly a subset)
+  simple spread:     MAD=0.052605001761847014
+  projective spread: MAD=0.017230372660933524
+  simple tilt-correlation:     -0.11533000476183025
+  projective tilt-correlation: -0.8520374311311495
+
+-- base_to_minute_track_gap_simple  vs  base_to_minute_track_gap_projective --
+  coverage: simple n=7/7  projective n=3/7 (projective requires >=5 round markers AND a well-conditioned fit -- strictly a subset)
+  simple spread:     MAD=0.04731314686762356
+  projective spread: MAD=0.007234464905439664
+  simple tilt-correlation:     0.16843367049976263
+  projective tilt-correlation: 0.795603423751291
+
+-- centre_to_minute_track_gap_simple  vs  centre_to_minute_track_gap_projective --
+  coverage: simple n=7/7  projective n=3/7 (projective requires >=5 round markers AND a well-conditioned fit -- strictly a subset)
+  simple spread:     MAD=0.011622886753393069
+  projective spread: MAD=0.004547270099610201
+  simple tilt-correlation:     0.2866739624646975
+  projective tilt-correlation: -0.7613940165554969
+
+==============================================================================
+CORRELATION AMONG apex/centre/base RESIDUALS (translation vs shape-error cross-check)
+==============================================================================
+  corr(apex_r_simple, centre_r_simple) over n=7 images: 0.578977169489943
+  corr(centre_r_simple, base_r_simple) over n=7 images: 0.9227461857280691
+  corr(apex_r_simple, base_r_simple) over n=7 images: 0.28475192693155077
+  corr(apex_r_projective, centre_r_projective) over n=3 images: 0.983574831039206
+  corr(centre_r_projective, base_r_projective) over n=3 images: -0.9985129391348166
+  corr(apex_r_projective, base_r_projective) over n=3 images: -0.9919522401118811

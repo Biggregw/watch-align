@@ -1,0 +1,108 @@
+{
+  "profile_id": "126710BLNR-12-triangle-proportional-v1",
+  "status": "PROVISIONAL -- feasibility/method result, NOT a validated genuine profile",
+  "frozen_date": "2026-09-23",
+  "source_branch": "experiment/gmt-proportional-geometry-v1",
+  "calibration_population": {
+    "split": "calibration",
+    "class_label": "gen",
+    "provenance": "gen_candidate",
+    "physical_watch_ids": ["gen_wex_3KSuGhC", "gen_wex_e99gXKb"],
+    "n_physical_watches": 2,
+    "n_images": 7,
+    "warning": "Only 2 independent physical watches are available in this corpus's calibration gen_candidate pool. This is far below any sample size that supports a statistically validated genuine distribution. All bands below are literal descriptive statistics of this tiny sample, kept only because the experiment's own architecture requires a frozen artifact to demonstrate the pipeline end-to-end. Do not treat any band below as production-ready."
+  },
+  "not_authenticated_ground_truth": "gen_candidate means source-labelled genuine candidate only, per this project's standing rule. Not independently authenticated.",
+  "selected_core_features": [
+    {
+      "name": "apex_r_simple",
+      "definition": "12-triangle apex point, affine-normalised canonical radial coordinate along the independently-established 12 axis (axis_coords.canonical_axis_components, t_radial component).",
+      "coordinate_system": "canonical dial-radius units (same scale as master.MINUTE_TRACK_R=0.891, master.DIAL_EDGE_R=1.0); r=0 at dial centre.",
+      "calibration_median": 0.5605,
+      "robust_spread_mad": 0.0174,
+      "useful_central_range": [0.5257, 0.5953],
+      "p10_p90": [0.5466, 0.5744],
+      "supported_tilt_range_deg": [3.7, 20.7],
+      "confidence_requirements": "triangle_segmented=true; triangle_confidence heuristic reported alongside, no fixed cutoff applied yet.",
+      "minimum_peer_evidence": "none for this simple form (does not require the round-marker corridor).",
+      "known_limitations": "n=2 physical watches; within-watch MAD 0.0065/0.0063 (tight in this tiny sample, but not validated); tilt correlation in this sample was weak (r=-0.06) but n is too small to trust."
+    },
+    {
+      "name": "base_r_simple",
+      "definition": "12-triangle base-centre point, affine-normalised canonical radial coordinate along the 12 axis.",
+      "coordinate_system": "canonical dial-radius units, r=0 at dial centre.",
+      "calibration_median": 0.7592,
+      "robust_spread_mad": 0.0281,
+      "useful_central_range": [0.7030, 0.8154],
+      "p10_p90": [0.7367, 0.7817],
+      "supported_tilt_range_deg": [3.7, 20.7],
+      "confidence_requirements": "triangle_segmented=true.",
+      "minimum_peer_evidence": "none for this simple form.",
+      "known_limitations": "n=2 physical watches; correlated with centre_r_simple (r=0.92 in-sample) -- largely redundant with the retained-but-secondary centre_r_simple, kept separately for its direct overlay/physical meaning (base gate) rather than as independent statistical information."
+    },
+    {
+      "name": "centroid_tangential_offset_canonical",
+      "definition": "Signed tangential (perpendicular-to-axis) canonical displacement of the triangle's contour centroid from the nominal 12 axis. Positive = clockwise.",
+      "coordinate_system": "canonical dial-radius units, 0 = exactly on the nominal 12 axis.",
+      "calibration_median": -0.0484,
+      "robust_spread_mad": 0.0413,
+      "useful_central_range": [-0.1310, 0.0342],
+      "p10_p90": [-0.0814, -0.0153],
+      "supported_tilt_range_deg": [3.7, 20.7],
+      "confidence_requirements": "triangle_segmented=true.",
+      "minimum_peer_evidence": "none directly, but the axis itself depends on the affine ellipse+roll basis (established elsewhere as reliable for direction).",
+      "known_limitations": "n=2 physical watches; strong apparent tilt correlation in-sample (r=-0.84) that could reflect genuine tilt sensitivity of this specific measurement OR simply the tiny sample -- flagged as an open question, not resolved here. Directly addresses the most common community-reported 12-marker QC concern (left/right shift) per the refreshed shared research knowledge base."
+    },
+    {
+      "name": "symmetry_axis_angular_deviation_deg",
+      "definition": "Angular deviation (degrees) of the apex-to-base-centre line from the nominal 12 axis, in the canonical axis-aligned frame.",
+      "coordinate_system": "degrees, 0 = perfectly aligned with the nominal 12 axis.",
+      "calibration_median": -3.71,
+      "robust_spread_mad": 1.37,
+      "useful_central_range": [-6.46, 0.03],
+      "p10_p90": [-4.81, -2.61],
+      "supported_tilt_range_deg": [3.7, 20.7],
+      "confidence_requirements": "triangle_segmented=true; also report triangle_axis_agreement_deg (independent PCA cross-check) alongside as a segmentation-quality signal.",
+      "minimum_peer_evidence": "none directly (axis direction from the affine basis).",
+      "known_limitations": "WEAKEST of the retained features on available evidence: within-watch MAD was 2.8 and 6.7 degrees on the two calibration watches -- substantially noisier than the radial features. Retained provisionally because orientation is the most common community-reported 12-marker QC concern, but this feature needs materially more calibration data before its stated range should be trusted for anything beyond illustration."
+    },
+    {
+      "name": "base_width_over_height",
+      "definition": "Ratio of canonical base-corner-to-corner distance to canonical apex-to-base-centre distance (both distances computed in the 2D canonical (t_radial, t_tangential) plane around the 12 axis).",
+      "coordinate_system": "dimensionless ratio.",
+      "calibration_median": 1.145,
+      "robust_spread_mad": 0.0593,
+      "useful_central_range": [1.0264, 1.2636],
+      "p10_p90": [1.0976, 1.1925],
+      "supported_tilt_range_deg": [3.7, 20.7],
+      "confidence_requirements": "triangle_segmented=true.",
+      "minimum_peer_evidence": "none.",
+      "known_limitations": "n=2 physical watches; one watch's within-watch MAD (0.157) was much larger than the other's (0.030), suggesting this ratio may be more segmentation-sensitive on some photos than others -- not yet understood with this sample size."
+    }
+  ],
+  "secondary_reported_not_core": [
+    "centre_r_simple (redundant with base_r_simple, corr=0.92 in-sample; shown on overlay as the centre gate for human interpretability)",
+    "base_to_minute_track_gap_simple (deterministic transform of base_r_simple; shown on overlay per the local base-to-minute-track bracket requirement)",
+    "base_line_angular_deviation_deg (close call, not promoted to core to keep the profile compact)",
+    "apex_r_projective / centre_r_projective / base_r_projective and their minute-track-gap/round-marker-ratio derivatives (round-marker-corridor availability was only 3/7 images in this sample -- reported in parallel for future comparison once more calibration data exists, not yet promoted over the simple forms; see research write-up for the full simple-vs-projective comparison)"
+  ],
+  "rejected_features": [
+    {
+      "name": "base_half_width_symmetry",
+      "reason": "Tautologically ~0 (1e-16, floating-point noise) under the current segmentation method: base_centre is defined as the exact midpoint of the found left/right corners, so this quantity cannot express real asymmetry with the current corner-finding algorithm. Would need an independent asymmetry estimator (e.g. contour arc-length on each side) to be meaningful."
+    },
+    {
+      "name": "centroid_position_within_span",
+      "reason": "Fully determined by apex_r_simple, base_r_simple and centre_r_simple together -- redundant given those are already tracked."
+    },
+    {
+      "name": "apex_to_base_span_simple / apex_to_base_span_projective",
+      "reason": "Deterministic difference of two already-selected/reported features (base_r - apex_r); reportable as a derived quantity but not an independently selected feature."
+    }
+  ],
+  "explicit_non_definitions": {
+    "no_defect_thresholds": "This file defines expected genuine geometry BANDS only. It does not define, imply, or compute any pass/fail boundary.",
+    "no_authenticity_score": "This file makes no authenticity, GL/RL, factory, or combined-quality determination.",
+    "no_android_or_production_use": "Not wired into any production code path."
+  }
+}
