@@ -124,3 +124,18 @@ def invert_projective_1d(fit: ProjectiveFit, t_observed: float) -> Optional[floa
     if abs(denom) < 1e-6:
         return None
     return t_observed / denom
+
+
+def apply_projective_1d(fit: ProjectiveFit, r: float) -> Optional[float]:
+    """The forward direction, t(r) = a*r/(c*r+1): given a TRUE (projective-
+    corrected) canonical radius -- e.g. a frozen calibration-profile
+    median already expressed in projective units -- return this
+    particular image's own OBSERVED affine-canonical coordinate that
+    would correspond to it. Used only for rendering an expected-position
+    gate for a projective-normalised feature on one specific photo (each
+    photo has its own fitted a/c); never used to derive a measurement.
+    None if the fit is ill-conditioned at this r."""
+    denom = fit.c * r + 1.0
+    if abs(denom) < 1e-9:
+        return None
+    return fit.a * r / denom
