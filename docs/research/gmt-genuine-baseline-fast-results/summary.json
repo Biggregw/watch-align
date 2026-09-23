@@ -1,0 +1,19 @@
+{
+  "manifest_sources": 14,
+  "sources_with_measurements": 13,
+  "sources_with_low_tilt": 11,
+  "all_measured_images": 25,
+  "low_tilt_images": 20,
+  "independent_low_tilt_watches": 11,
+  "source_classes_low_tilt": [
+    "auction_house",
+    "established_dealer",
+    "rolex_cpo"
+  ],
+  "date_detected_images": 21,
+  "date_spearman_abs_dx_vs_tilt": 0.5116883116883117,
+  "date_spearman_abs_dy_vs_tilt": 0.32727272727272727,
+  "date_spearman_offset_vs_tilt": 0.42207792207792205,
+  "date_within_watch_centered_pearson_offset_vs_tilt": 0.7945394848618231,
+  "date_spearman_offset_vs_12_apex_simple_projective_disagreement": -0.29473684210526313
+}
