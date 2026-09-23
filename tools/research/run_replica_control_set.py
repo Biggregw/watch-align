@@ -9,6 +9,14 @@ Raw measurement remains separate from interpretation in analyze_replica_control_
 Rejected poses are not measured, but their gate diagnostics are persisted so a usable
 QC photograph cannot disappear behind a generic ``not accepted`` status. This does not
 relax or alter the frozen genuine-baseline measurement gates.
+
+Research-only identity-veto bypass (see ``research_identity_bypass_eligible`` below):
+a control explicitly marked ``provenance_verified`` in the manifest may still be measured
+when the ONLY reason the frozen pipeline did not accept its pose is the independent
+identity gate (i.e. every actual geometric pose gate -- tilt/top-phase/minute-track
+holdout -- already passed on its own frozen terms). This never modifies, weakens, or
+reimplements identity_gate.py or pipeline.py, never applies to Android production
+capture, is never granted globally, and never depends on a control's defect label.
 """
 from __future__ import annotations
 
@@ -20,6 +28,8 @@ import subprocess
 import tempfile
 from collections import defaultdict
 from pathlib import Path
+
+from research_identity_bypass import is_provenance_verified, research_identity_bypass_eligible  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 BASE = ROOT / "tools" / "research" / "build_gmt_genuine_baseline.py"
@@ -92,9 +102,12 @@ def finite_or_blank(v):
         return ""
 
 
-def pose_diagnostics(control_id: str, path: Path, res):
+def pose_diagnostics(control_id: str, path: Path, res, provenance_verified: bool = False):
     acq = getattr(res, "acquisition", None)
     validation = getattr(res, "validation", None)
+    automatic_accepted = bool(getattr(res, "automatic_accepted", False))
+    vetoed = bool(getattr(res, "vetoed", False))
+    bypass_eligible = research_identity_bypass_eligible(automatic_accepted, vetoed, provenance_verified)
     return {
         "control_id": control_id,
         "image_path": path.name,
@@ -117,7 +130,9 @@ def pose_diagnostics(control_id: str, path: Path, res):
         "center_err_fraction": finite_or_blank(getattr(res, "center_err", None)),
         "identity_required": bool(getattr(res, "identity_required", False)),
         "identity_verdict": "" if getattr(res, "identity", None) is None else res.identity.verdict.value,
-        "vetoed": bool(getattr(res, "vetoed", False)),
+        "vetoed": vetoed,
+        "provenance_verified": provenance_verified,
+        "research_identity_bypass_eligible": bypass_eligible,
     }
 
 
@@ -132,12 +147,14 @@ def main() -> int:
         for ci, ctrl in enumerate(controls, 1):
             control_id = ctrl["control_id"]
             page_url = (ctrl.get("reddit_post_url") or "").strip()
+            provenance_verified = is_provenance_verified(ctrl)
             raw_dir = tmp_root / control_id
             raw_dir.mkdir(parents=True, exist_ok=True)
             page_status, log_tail, candidates = acquire_candidates(ctrl, raw_dir)
             print(f"[{ci}/{len(controls)}] {control_id}: {page_status}; candidates={len(candidates)}")
 
             accepted = downloaded = pose_ok = low_tilt = 0
+            any_bypass_used = False
             errors = []
             for path in candidates:
                 if accepted >= MAX_IMAGES_PER_CONTROL:
@@ -157,10 +174,16 @@ def main() -> int:
                 except Exception as exc:
                     errors.append(f"pipeline:{type(exc).__name__}")
                     continue
-                diagnostic_rows.append(pose_diagnostics(control_id, path, res))
-                if res.reason or not res.accepted or res.acquisition is None:
+                diagnostic_rows.append(pose_diagnostics(control_id, path, res, provenance_verified))
+                bypass_used = research_identity_bypass_eligible(
+                    bool(getattr(res, "automatic_accepted", False)), bool(getattr(res, "vetoed", False)),
+                    provenance_verified)
+                if res.reason or res.acquisition is None or not (res.accepted or bypass_used):
                     errors.append(f"pose_rejected:{res.reason or 'not accepted'}")
                     continue
+                if bypass_used:
+                    errors.append("research_identity_bypass_used")
+                    any_bypass_used = True
 
                 pose_ok += 1
                 ellipse = res.acquisition.dial_ellipse
@@ -187,6 +210,7 @@ def main() -> int:
                     "image_index": accepted, "image_path": path.name, "page_status": page_status,
                     "tilt_deg": tilt, "pose_confidence": float(res.confidence),
                     "dial_radius_px": float(res.dial_radius_px), "n_markers_segmented": len(obs),
+                    "research_identity_bypass_used": bypass_used,
                 }
                 row.update(m.marker_features(obs, ellipse, roll, res.dial_radius_px))
                 try:
@@ -208,6 +232,8 @@ def main() -> int:
                 "local_image_path": ctrl.get("local_image_path", ""), "page_status": page_status,
                 "candidate_files": len(candidates), "downloaded_images": downloaded,
                 "pose_accepted": pose_ok, "measured_images": accepted, "low_tilt_images": low_tilt,
+                "provenance_verified": provenance_verified,
+                "research_identity_bypass_used": any_bypass_used,
                 "notes": ";".join(sorted(set(errors)))[:500],
                 "fetch_log_tail": str(log_tail).replace("\n", " | ")[:800],
             })
@@ -231,7 +257,8 @@ def main() -> int:
         cr = {"control_id": cid, "n_images_low_tilt": len(rows),
               "human_label": mr["human_label"], "label_strength": mr["label_strength"],
               "expected_primary_metric": mr["expected_primary_metric"],
-              "expected_supporting_metrics": mr["expected_supporting_metrics"]}
+              "expected_supporting_metrics": mr["expected_supporting_metrics"],
+              "research_identity_bypass_used": mr.get("research_identity_bypass_used", False)}
         cr.update(agg)
         control_rows.append(cr)
     if control_rows:

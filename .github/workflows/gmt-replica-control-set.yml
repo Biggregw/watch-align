@@ -12,6 +12,8 @@ on:
     paths:
       - '.github/workflows/gmt-replica-control-set.yml'
       - 'tools/research/run_replica_control_set.py'
+      - 'tools/research/research_identity_bypass.py'
+      - 'tools/research/analyze_replica_control_set.py'
       - 'docs/research/gmt-replica-ground-truth-control-set.csv'
 
 permissions:
@@ -45,10 +47,18 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install numpy opencv-python-headless pillow requests beautifulsoup4 "gallery-dl>=1.32.0"
+          python -m pip install numpy opencv-python-headless pillow requests beautifulsoup4 "gallery-dl>=1.32.0" pytest
+
+      - name: Test the identity-veto regression lock and research-only bypass decision
+        run: |
+          (cd tools/watch_align_py && python -m pytest tests/ -q)
+          python -m pytest tools/research/tests/ -q
 
       - name: Measure replica control set (blind, no threshold tuning)
         run: python -u tools/research/run_replica_control_set.py
+
+      - name: Run discrimination analysis against the frozen genuine profile
+        run: python -u tools/research/analyze_replica_control_set.py
 
       - name: Show summary
         if: always()
@@ -57,6 +67,10 @@ jobs:
           if [ -f docs/research/gmt-replica-control-set-results/control_status.csv ]; then
             echo '--- control status ---'
             cat docs/research/gmt-replica-control-set-results/control_status.csv
+          fi
+          if [ -f docs/research/gmt-replica-control-set-results/discrimination_analysis.csv ]; then
+            echo '--- discrimination analysis ---'
+            cat docs/research/gmt-replica-control-set-results/discrimination_analysis.csv
           fi
 
       - name: Commit numerical research outputs
