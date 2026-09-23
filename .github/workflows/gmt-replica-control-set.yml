@@ -1,0 +1,84 @@
+name: GMT replica control-set blind validation
+
+# Runs the frozen GMT measurement pipeline, blind, against the predeclared
+# RepTimeQC replica control set. Results are never folded into the genuine
+# baseline and never used to retune any measurement/threshold -- see
+# tools/research/run_replica_control_set.py's own docstring.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/gmt-genuine-baseline-integration
+    paths:
+      - '.github/workflows/gmt-replica-control-set.yml'
+      - 'tools/research/run_replica_control_set.py'
+      - 'docs/research/gmt-replica-ground-truth-control-set.csv'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gmt-replica-control-set-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bring in frozen Stage 3 Python measurement implementation
+        shell: bash
+        run: |
+          git fetch origin experiment/gmt-proportional-geometry-v1
+          git checkout origin/experiment/gmt-proportional-geometry-v1 -- tools/watch_align_py
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy opencv-python-headless pillow requests beautifulsoup4
+
+      - name: Measure replica control set (blind, no threshold tuning)
+        run: python -u tools/research/run_replica_control_set.py
+
+      - name: Show summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f docs/research/gmt-replica-control-set-results/control_status.csv ]; then
+            echo '--- control status ---'
+            cat docs/research/gmt-replica-control-set-results/control_status.csv
+          fi
+
+      - name: Commit numerical research outputs
+        shell: bash
+        run: |
+          git reset tools/watch_align_py || true
+          git checkout -- tools/watch_align_py || true
+          git config user.name 'watch-align-research-bot'
+          git config user.email 'watch-align-research-bot@users.noreply.github.com'
+          git add docs/research/gmt-replica-control-set-results
+          if git diff --cached --quiet; then
+            echo 'No result changes to commit'
+            exit 0
+          fi
+          git commit -m 'research: add blind replica control-set measurement results'
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmt-replica-control-set-results
+          path: docs/research/gmt-replica-control-set-results/**
+          if-no-files-found: warn
+          retention-days: 7
