@@ -1,0 +1,84 @@
+name: GMT proportional geometry -- calibration corpus audit (phase 2)
+
+# Calibration-corpus expansion / failure audit for
+# experiment/gmt-proportional-geometry-v1. Fetches ONLY the
+# calibration-split gen_candidate sources (never validation, never
+# replicas, never Android/production) and runs the frozen pose
+# pipeline + frozen gmt_proportional_features extraction over every
+# resolved image, producing a per-image and per-source usability/
+# failure audit. Commits only the derived numeric CSVs directly to
+# this branch -- no source images are committed.
+on:
+  push:
+    branches:
+      - experiment/gmt-proportional-geometry-v1
+    paths:
+      - '.github/workflows/gmt-calibration-audit.yml'
+      - 'tools/watch_align_py/gmt_calibration_audit.py'
+      - 'tools/watch_align_py/gmt_proportional_features.py'
+      - 'tools/watch_align_py/triangle_measurement.py'
+      - 'tools/watch_align_py/projective_radial.py'
+      - 'tools/watch_align_py/axis_coords.py'
+      - 'datasets/126710BLNR/manifest.csv'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gmt-calibration-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Install Watch Align Python engine dependencies
+        run: python -m pip install opencv-python-headless numpy
+
+      - name: Fetch ALL calibration gen_candidate sources (ephemeral on this runner)
+        id: fetch
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python datasets/126710BLNR/fetch_images.py --clean --split calibration --class gen 2>&1 | tee datasets/126710BLNR/fetch.log
+
+      - name: Run calibration corpus usability/failure audit
+        run: |
+          cd tools/watch_align_py
+          python gmt_calibration_audit.py --out-dir ../../datasets/126710BLNR/results
+
+      - name: Commit derived audit CSVs (no source images)
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add datasets/126710BLNR/results/gmt_calibration_audit_per_image.csv \
+                  datasets/126710BLNR/results/gmt_calibration_audit_per_source.csv
+          if git diff --cached --quiet; then
+            echo "no audit changes to commit"
+          else
+            git commit -m "research: GMT calibration corpus usability/failure audit ${{ github.run_id }}
+
+          Derived numeric per-image and per-source audit only (calibration-
+          split gen_candidate sources); no source images are committed.
+          Validation and replica rows are never read by this workflow."
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+
+      - name: Fail if fetch command failed entirely
+        if: steps.fetch.outcome == 'failure'
+        run: exit 1
