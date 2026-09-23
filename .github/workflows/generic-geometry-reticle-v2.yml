@@ -1,0 +1,70 @@
+name: Generic geometry reticle v2 -- official reference render
+
+# Renders the v2 generic geometry reticle (reticle_v2.py / render_
+# reticle_v2.py) on the single fixed first-party Rolex catalogue photo
+# (official_rolex_2026, provenance=official, split=reference -- not a
+# source-labelled gen_candidate), using the exact same code and
+# constants that were run locally on the user's own photo. Runs on a
+# runner because this repo's fetch_images.py only works there (the
+# interactive research sandbox's egress proxy blocks the corpus's image
+# hosts). Uploaded as a workflow artifact only; nothing committed to
+# git. This experiment is visual-geometry-only -- no defect logic, no
+# marker-12 interpretation, see reticle_v2.py's module docstring.
+on:
+  push:
+    branches:
+      - experiment/generic-geometry-reticle-v2
+    paths:
+      - '.github/workflows/generic-geometry-reticle-v2.yml'
+      - 'tools/watch_align_py/reticle_v2.py'
+      - 'tools/watch_align_py/reticle_v2_render.py'
+      - 'tools/watch_align_py/render_reticle_v2.py'
+      - 'tools/watch_align_py/dial_crop.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: generic-geometry-reticle-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  render-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Install Watch Align Python engine dependencies
+        run: python -m pip install opencv-python-headless numpy
+
+      - name: Fetch the fixed official reference photo (ephemeral on this runner)
+        run: |
+          python datasets/126710BLNR/fetch_images.py --clean --split reference \
+            --source official_rolex_2026
+
+      - name: Render v2 reticle on the official reference
+        run: |
+          python tools/watch_align_py/render_reticle_v2.py \
+            --image datasets/126710BLNR/gen/reference/official_rolex_2026/image_00.jpg \
+            --out-dir reticle_v2_reference_renders \
+            --label official_reference
+
+      - name: Upload reference render artifact (not committed to git)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reticle-v2-reference-renders
+          path: reticle_v2_reference_renders/**
+          retention-days: 7
+          if-no-files-found: error
