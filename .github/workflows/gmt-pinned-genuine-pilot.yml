@@ -1,0 +1,58 @@
+name: GMT pinned genuine pilot
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research/gmt-pinned-genuine-pilot
+    paths:
+      - 'docs/research/gmt-genuine-pinned-image-manifest.csv'
+      - 'tools/research/run_pinned_gmt_baseline.py'
+      - '.github/workflows/gmt-pinned-genuine-pilot.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Bring in frozen Stage 3 measurement implementation
+        run: |
+          git fetch origin experiment/gmt-proportional-geometry-v1
+          git checkout origin/experiment/gmt-proportional-geometry-v1 -- tools/watch_align_py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install numpy opencv-python-headless pillow requests beautifulsoup4
+      - name: Measure seven pinned independent genuine watches
+        run: python -u tools/research/run_pinned_gmt_baseline.py
+      - name: Show pilot results
+        if: always()
+        run: |
+          cat docs/research/gmt-genuine-pinned-pilot-results/summary.json 2>/dev/null || true
+          echo '--- source status ---'
+          cat docs/research/gmt-genuine-pinned-pilot-results/source_status.csv 2>/dev/null || true
+      - name: Commit numerical pilot outputs
+        run: |
+          git reset tools/watch_align_py || true
+          git checkout -- tools/watch_align_py || true
+          git config user.name 'watch-align-research-bot'
+          git config user.email 'watch-align-research-bot@users.noreply.github.com'
+          git add docs/research/gmt-genuine-pinned-pilot-results
+          if git diff --cached --quiet; then echo 'No result changes'; exit 0; fi
+          git commit -m 'research: add pinned genuine GMT pilot results'
+          git push origin HEAD:research/gmt-pinned-genuine-pilot
+      - name: Upload pilot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmt-pinned-genuine-pilot
+          path: docs/research/gmt-genuine-pinned-pilot-results/**
+          if-no-files-found: warn
+          retention-days: 7
