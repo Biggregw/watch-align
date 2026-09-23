@@ -117,6 +117,27 @@ def compute(gray: np.ndarray, ellipse, roll: float, dial_radius_px: float,
     # Angular features, all exact within the affine model (no projective
     # correction defined for tangential/angular quantities in this design
     # -- see module docstring).
+    #
+    # Incidence-first orientation features (Stage 3,
+    # experiment/gmt-proportional-geometry-v1 phase 3): per the
+    # reconciled research notes' guardrail that a marker's symmetry axis
+    # should be tested for whether it passes through the INDEPENDENTLY
+    # established dial centre, rather than only compared by raw angle.
+    # In this canonical (t_radial, t_tangential) frame the dial centre
+    # is exactly the origin by construction (axis_coords.
+    # canonical_axis_components maps it there), so the signed distance
+    # from the origin to the line through apex_pt/base_pt is the signed
+    # perpendicular (cross-product) distance, normalised by the
+    # apex-to-base canonical length so it is dimensionless like the
+    # other canonical ratios. A pure sideways (tangential) translation
+    # of the whole triangle changes this residual while leaving the
+    # axis *direction* (the existing angular-deviation feature) largely
+    # unchanged -- the two are complementary, not redundant.
+    feat["apex_tangential_offset_canonical"] = apex_t
+    feat["base_tangential_offset_canonical"] = base_t
+    feat["axis_incidence_canonical"] = (
+        (apex_r * base_t - base_r * apex_t) / height_canon if height_canon > 1e-9 else None
+    )
     feat["centroid_tangential_offset_canonical"] = centroid_t
     feat["centroid_angular_offset_deg"] = math.degrees(math.atan2(centroid_t, centroid_r)) if centroid_r else None
     sym_dr, sym_dt = base_r - apex_r, base_t - apex_t
