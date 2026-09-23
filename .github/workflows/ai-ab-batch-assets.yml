@@ -1,0 +1,78 @@
+name: Stage 1 AI A/B batch -- deterministic asset generation
+
+# Prepares the image assets for the blind Stage 1 AI reviewer batch
+# (experiment/generic-qc-reticle): fetches a fixed, pre-selected set of
+# calibration-split source photos (this repo's fetch_images.py only works
+# from a runner -- the interactive research sandbox's egress proxy blocks
+# the corpus's third-party image hosts), then for each photo produces a
+# full raw image, a full frozen Variant C reticle image, and a
+# deterministic dial crop of each (dial_crop.py -- a pure function of
+# Watch Align's own detected dial geometry, never of any marker or
+# suspected-defect location), plus the same 4 assets for a fixed list of
+# synthetic marker-rotation/displacement derivatives
+# (experiment_ai_ab_batch_assets.py). Uploads everything (images +
+# manifest with ground truth) as a workflow artifact only -- nothing here
+# is committed to git, since the assets are derived from third-party
+# source photos.
+on:
+  push:
+    branches:
+      - experiment/generic-qc-reticle
+    paths:
+      - '.github/workflows/ai-ab-batch-assets.yml'
+      - 'tools/watch_align_py/dial_crop.py'
+      - 'tools/watch_align_py/synth_defects.py'
+      - 'tools/watch_align_py/experiment_ai_ab_batch_assets.py'
+      - 'tools/watch_align_py/reticle.py'
+      - 'tools/watch_align_py/reticle_render.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-ab-batch-assets-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Install Watch Align Python engine dependencies
+        run: python -m pip install opencv-python-headless numpy
+
+      - name: Fetch the fixed base-source photos (ephemeral on this runner)
+        run: |
+          python datasets/126710BLNR/fetch_images.py --clean --split calibration \
+            --source rep_vsf_KfRKFwA --source gen_wex_3KSuGhC --source rep_cf_xK08a3L \
+            --source rep_arf_m304y61 --source rep_cf_bpdi5xV --source rep_vsf_sh7PSsh \
+            --source rep_cplus_wEYZOyK --source gen_wex_e99gXKb --source rep_cf_QsJT2wk
+
+      - name: Generate deterministic Stage 1 A/B batch assets
+        run: |
+          python tools/watch_align_py/experiment_ai_ab_batch_assets.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-dir ai_ab_batch_assets \
+            --manifest-csv ai_ab_batch_assets/manifest.csv
+
+      - name: Upload batch assets artifact (images + manifest; not committed to git)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-ab-batch-assets
+          path: ai_ab_batch_assets/**
+          retention-days: 7
+          if-no-files-found: error
