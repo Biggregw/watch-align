@@ -1,0 +1,91 @@
+{
+  "label": "official_reference",
+  "tilt_deg": 9.52740161701409,
+  "dial_radius_px": 192.30965904235816,
+  "diagnostics": {
+    "tilt_deg": 9.52740161701409,
+    "dial_radius_px": 192.30965904235816,
+    "n_round_segmented": 8,
+    "round_hours_contributing": [
+      1,
+      2,
+      4,
+      5,
+      7,
+      8,
+      10,
+      11
+    ],
+    "corridor_suppressed_reason": null,
+    "corridor_fit_residuals_px": {
+      "inner": 0.5373700595107401,
+      "centre": 0.4037464702680103,
+      "outer": 1.194375411642104
+    },
+    "triangle_segmented": true,
+    "triangle_confidence": 0.9746410259423139,
+    "triangle_solidity": 0.9555459646094088,
+    "triangle_axis_agreement_deg": 1.0143589623074405,
+    "triangle_n_contour_points": 140,
+    "apex_xy_px": [
+      536.0,
+      691.8
+    ],
+    "base_centre_xy_px": [
+      537.0,
+      644.0
+    ],
+    "base_left_xy_px": [
+      516.0,
+      644.0
+    ],
+    "base_right_xy_px": [
+      558.0,
+      644.0
+    ],
+    "centroid_xy_px": [
+      536.3164709424872,
+      660.3501957241795
+    ],
+    "projective_correspondences_available": true,
+    "projective_fit": {
+      "a": 0.8430155151492928,
+      "c": -0.1964214399181907,
+      "max_abs_residual_canon": 0.0010923216581161244,
+      "condition_ok": true,
+      "residuals_canon": {
+        "inner": 0.0005903158692384114,
+        "centre": 0.0010923216581161244,
+        "outer": 0.00050986120381602
+      }
+    }
+  },
+  "features": {
+    "apex_r_simple": 0.5646727894037439,
+    "centre_r_simple": 0.7293543813273456,
+    "base_r_simple": 0.8149710648422839,
+    "apex_to_base_span_simple": 0.25029827543854,
+    "base_to_minute_track_gap_simple": 0.07602893515771614,
+    "centre_to_minute_track_gap_simple": 0.16164561867265437,
+    "triangle_height_over_minute_track_r": 0.2809766530576169,
+    "base_width_over_height": 0.8663545207579764,
+    "base_half_width_symmetry": 0.0,
+    "centroid_position_within_span": 0.6579413766837513,
+    "apex_tangential_offset_canonical": -0.02157591410031348,
+    "base_tangential_offset_canonical": -0.01647739586338594,
+    "axis_incidence_canonical": 0.03307130841233098,
+    "centroid_tangential_offset_canonical": -0.01998477399643287,
+    "centroid_angular_offset_deg": -1.569548080691064,
+    "symmetry_axis_angular_deviation_deg": 1.1669404550232862,
+    "base_line_angular_deviation_deg": 0.03512832098755696,
+    "apex_r_projective": 0.5919440312308447,
+    "centre_r_projective": 0.7395030603268758,
+    "base_r_projective": 0.8124578846451436,
+    "apex_to_base_span_projective": 0.22051385341429885,
+    "base_to_minute_track_gap_projective": 0.07854211535485645,
+    "centre_to_minute_track_gap_projective": 0.15149693967312416,
+    "apex_r_projective_over_round_inner": 0.8692276523213578,
+    "centre_r_projective_over_round_centre": 0.984691158890647,
+    "base_r_projective_over_round_outer": 0.989595474598226
+  }
+}

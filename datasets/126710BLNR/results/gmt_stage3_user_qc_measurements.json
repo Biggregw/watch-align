@@ -1,0 +1,91 @@
+{
+  "label": "user_qc_dealer_photo",
+  "tilt_deg": 3.9371487551658486,
+  "dial_radius_px": 267.36232910156264,
+  "diagnostics": {
+    "tilt_deg": 3.9371487551658486,
+    "dial_radius_px": 267.36232910156264,
+    "n_round_segmented": 8,
+    "round_hours_contributing": [
+      1,
+      2,
+      4,
+      5,
+      7,
+      8,
+      10,
+      11
+    ],
+    "corridor_suppressed_reason": null,
+    "corridor_fit_residuals_px": {
+      "inner": 0.09751713671777337,
+      "centre": 0.35842666355250763,
+      "outer": 0.12400915415597101
+    },
+    "triangle_segmented": true,
+    "triangle_confidence": 0.8525055200922049,
+    "triangle_solidity": 0.8806179775280899,
+    "triangle_axis_agreement_deg": 1.9350921979169442,
+    "triangle_n_contour_points": 207,
+    "apex_xy_px": [
+      513.0,
+      626.8
+    ],
+    "base_centre_xy_px": [
+      511.5,
+      559.0
+    ],
+    "base_left_xy_px": [
+      481.0,
+      560.0
+    ],
+    "base_right_xy_px": [
+      542.0,
+      558.0
+    ],
+    "centroid_xy_px": [
+      511.313890787575,
+      581.4269765322397
+    ],
+    "projective_correspondences_available": true,
+    "projective_fit": {
+      "a": 0.8451531285402493,
+      "c": -0.20607392916394038,
+      "max_abs_residual_canon": 0.000642719125059199,
+      "condition_ok": true,
+      "residuals_canon": {
+        "inner": 0.0003584648038824634,
+        "centre": 0.000642719125059199,
+        "outer": 0.00029046433677493155
+      }
+    }
+  },
+  "features": {
+    "apex_r_simple": 0.5812237840392406,
+    "centre_r_simple": 0.7508093694111492,
+    "base_r_simple": 0.8345748774258864,
+    "apex_to_base_span_simple": 0.25335109338664585,
+    "base_to_minute_track_gap_simple": 0.056425122574113584,
+    "centre_to_minute_track_gap_simple": 0.14019063058885084,
+    "triangle_height_over_minute_track_r": 0.2843509000294236,
+    "base_width_over_height": 0.9020625323717102,
+    "base_half_width_symmetry": 1.821681893590766e-16,
+    "centroid_position_within_span": 0.6693698578718961,
+    "apex_tangential_offset_canonical": 0.001416433431518328,
+    "base_tangential_offset_canonical": -0.0002618260993738329,
+    "axis_incidence_canonical": -0.005266486210585897,
+    "centroid_tangential_offset_canonical": -0.002261234822343695,
+    "centroid_angular_offset_deg": -0.17255887494999134,
+    "symmetry_axis_angular_deviation_deg": -0.3795356882839566,
+    "base_line_angular_deviation_deg": 1.0142934942304318,
+    "apex_r_projective": 0.6023492582979785,
+    "centre_r_projective": 0.750902957940069,
+    "base_r_projective": 0.8205135297128312,
+    "apex_to_base_span_projective": 0.21816427141485273,
+    "base_to_minute_track_gap_projective": 0.07048647028716881,
+    "centre_to_minute_track_gap_projective": 0.140097042059931,
+    "apex_r_projective_over_round_inner": 0.8845069872217011,
+    "centre_r_projective_over_round_centre": 0.999870782876257,
+    "base_r_projective_over_round_outer": 0.9994074661544838
+  }
+}
