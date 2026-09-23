@@ -1,0 +1,68 @@
+name: Stage 2 genuine-reference ablation -- reference asset generation
+
+# Fetches the single fixed genuine-reference source (official_rolex_2026 --
+# first-party Rolex catalogue photo, provenance=official, split=reference,
+# not a source-labelled gen_candidate) and produces its full raw image and
+# a deterministic dial crop (dial_crop.py, same function as the Stage 1
+# query assets). This is the only genuine-reference image used anywhere in
+# Stage 2 -- fixed across all 23 scored examples, never swapped per defect.
+# Runs on a runner because this repo's fetch_images.py only works there
+# (the interactive research sandbox's egress proxy blocks the corpus's
+# image hosts). Uploaded as a workflow artifact only, nothing committed to
+# git (third-party/first-party source-photo content either way).
+on:
+  push:
+    branches:
+      - experiment/generic-qc-reticle
+    paths:
+      - '.github/workflows/ai-ab-stage2-reference-asset.yml'
+      - 'tools/watch_align_py/experiment_ai_ab_stage2_reference_asset.py'
+      - 'tools/watch_align_py/dial_crop.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-ab-stage2-reference-asset-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-reference-asset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Install Watch Align Python engine dependencies
+        run: python -m pip install opencv-python-headless numpy
+
+      - name: Fetch the fixed genuine-reference photo (ephemeral on this runner)
+        run: |
+          python datasets/126710BLNR/fetch_images.py --clean --split reference \
+            --source official_rolex_2026
+
+      - name: Generate reference assets (full raw + deterministic dial crop)
+        run: |
+          python tools/watch_align_py/experiment_ai_ab_stage2_reference_asset.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-dir ai_ab_stage2_reference_asset
+
+      - name: Upload reference asset artifact (not committed to git)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-ab-stage2-reference-asset
+          path: ai_ab_stage2_reference_asset/**
+          retention-days: 7
+          if-no-files-found: error
