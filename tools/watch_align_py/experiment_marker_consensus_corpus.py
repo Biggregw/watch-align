@@ -88,6 +88,9 @@ def run(per_image_csv: Path, images_root: Path, out_csv: Path, split_filter: str
                 out["loo_outer_fit_ok"] = "1" if loo.fit_ok else "0"
                 out["loo_outer_n_peers"] = loo.n_peers
                 out["loo_outer_residual_px"] = f"{loo.residual_px:.4f}" if loo.fit_ok else ""
+            in_sample = analysis.round_conics.get("outer")
+            if in_sample is not None and h in in_sample.in_sample_residuals_px:
+                out["in_sample_outer_residual_px"] = f"{in_sample.in_sample_residuals_px[h]:.4f}"
             ang = analysis.angular.get(h)
             if ang is not None:
                 out["angular_residual_deg"] = f"{ang.angular_residual_deg:.4f}"
