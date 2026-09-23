@@ -1,0 +1,78 @@
+name: GMT proportional geometry -- calibration run (12 triangle)
+
+# Runs gmt_proportional_features.compute() over the calibration-split
+# gen_candidate accepted images (the only population this experiment is
+# allowed to derive genuine 12-triangle geometry from -- no validation
+# watches, no replicas, no synthetic defects, no video frames). Commits
+# only the derived numeric CSV directly to this branch -- no images, so
+# no artifact/blob-storage transfer is needed for this step (unlike the
+# visual renders later in this experiment, which will need the usual
+# artifact + manual-download path since this sandbox's egress proxy
+# blocks both the corpus's image hosts and the artifact blob-storage
+# host).
+on:
+  push:
+    branches:
+      - experiment/gmt-proportional-geometry-v1
+    paths:
+      - '.github/workflows/gmt-proportional-calibration.yml'
+      - 'tools/watch_align_py/gmt_proportional_features.py'
+      - 'tools/watch_align_py/triangle_measurement.py'
+      - 'tools/watch_align_py/projective_radial.py'
+      - 'tools/watch_align_py/axis_coords.py'
+      - 'tools/watch_align_py/experiment_gmt_proportional_calibration.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gmt-proportional-calibration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Install Watch Align Python engine dependencies
+        run: python -m pip install opencv-python-headless numpy
+
+      - name: Fetch calibration gen_candidate sources (ephemeral on this runner)
+        run: |
+          python datasets/126710BLNR/fetch_images.py --clean --split calibration --class gen \
+            --source gen_wex_3KSuGhC --source gen_wex_e99gXKb
+
+      - name: Run GMT 12-triangle proportional-geometry calibration
+        run: |
+          python tools/watch_align_py/experiment_gmt_proportional_calibration.py \
+            --per-image-csv datasets/126710BLNR/results/per_image_measurements.csv \
+            --images-root datasets/126710BLNR \
+            --out-csv datasets/126710BLNR/results/gmt_proportional_calibration.csv \
+            --split calibration --class-label gen --provenance gen_candidate
+
+      - name: Commit derived calibration CSV (no source images)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add datasets/126710BLNR/results/gmt_proportional_calibration.csv
+          if git diff --cached --quiet; then
+            echo "no calibration changes to commit"
+          else
+            git commit -m "research: GMT 12-triangle proportional-geometry calibration run ${{ github.run_id }}
+
+          Derived numeric per-image features only (calibration-split
+          gen_candidate images); no source images are committed."
+            git push origin HEAD:${{ github.ref_name }}
+          fi
