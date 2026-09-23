@@ -1,31 +1,10 @@
 #!/usr/bin/env python3
-"""Run the frozen GMT measurement pipeline, blind, against the predeclared
-RepTimeQC replica control set (docs/research/gmt-replica-ground-truth-control-set.csv).
+"""Blind GMT replica-control measurement using the frozen genuine-baseline pipeline.
 
-Fetches via gallery-dl (reddit.com's own public JSON endpoints), the same
-tool datasets/126710BLNR/fetch_images.py already uses successfully for
-reddit/imgur sources in this project -- a first attempt using
-build_gmt_genuine_baseline.py's plain requests.get()-based generic page
-scraper got HTTP 403 from Reddit on every control (Reddit blocks
-unauthenticated generic scraping; gallery-dl's reddit extractor uses
-Reddit's own public post JSON, which is not blocked the same way).
-
-Feature computation (pose + marker_features + gpf.compute()) reuses
-build_gmt_genuine_baseline.py's functions unchanged, operating on the
-locally-downloaded image bytes rather than re-fetching over HTTP.
-
-Each control_id is one physical watch by construction (the control-set
-protocol already deduplicated albums/reposts of the same watch before
-assigning control_ids). Repeated images within one control's own source
-post are collapsed the same way build_gmt_genuine_baseline.py collapses
-repeated dealer-page images: per-image rows are kept in full, and a
-per-watch (here, per-control) median row is written separately -- image
-count must never be read as independent-watch count.
-
-This script does not compute deviation-from-genuine or a discrimination
-verdict; that is a separate, auditable step (analyze_replica_control_set.py)
-so the raw measurement is never mixed with the interpretation that consumes
-it.
+Repository-local fixtures are preferred when ``local_image_path`` is populated in the
+control manifest. Reddit/gallery-dl is only a fallback. This makes the validation
+reproducible and allows known controls to run even when Reddit blocks CI datacenter IPs.
+Raw measurement remains separate from interpretation in analyze_replica_control_set.py.
 """
 from __future__ import annotations
 
@@ -33,7 +12,6 @@ import csv
 import importlib.util
 import shutil
 import subprocess
-import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
@@ -55,9 +33,9 @@ def read_controls():
         return list(csv.DictReader(f))
 
 
-def fetch_via_gallery_dl(post_url: str, raw_dir: Path) -> tuple[str, str]:
-    """Returns (page_status, log_tail) -- log_tail is gallery-dl's own error text (truncated),
-    preserved so a fetch failure's real cause is inspectable rather than just a return code."""
+def fetch_via_gallery_dl(post_url: str, raw_dir: Path):
+    if not post_url:
+        return "no_remote_source", ""
     if shutil.which("gallery-dl") is None:
         return "gallery-dl_not_installed", ""
     cmd = ["gallery-dl", "-v", "--no-mtime", "--range", f"1-{MAX_IMAGES_PER_CONTROL}", "-D", str(raw_dir), post_url]
@@ -70,10 +48,24 @@ def fetch_via_gallery_dl(post_url: str, raw_dir: Path) -> tuple[str, str]:
     return status, result.stdout[-800:]
 
 
-def local_image_candidates(raw_dir: Path):
-    for path in sorted(raw_dir.rglob("*")):
-        if path.is_file() and path.suffix.lower() in VALID_EXT:
-            yield path
+def acquire_candidates(ctrl: dict, raw_dir: Path):
+    """Prefer immutable repository bytes. Fall back to remote acquisition only if absent."""
+    local_rel = (ctrl.get("local_image_path") or "").strip()
+    if local_rel:
+        local = (ROOT / local_rel).resolve()
+        try:
+            local.relative_to(ROOT.resolve())
+        except ValueError:
+            return "local_path_outside_repo", "", []
+        if not local.is_file():
+            return "local_fixture_missing", str(local_rel), []
+        if local.suffix.lower() not in VALID_EXT:
+            return "local_fixture_unsupported", str(local_rel), []
+        return "local_fixture_ok", str(local_rel), [local]
+
+    status, log_tail = fetch_via_gallery_dl((ctrl.get("reddit_post_url") or "").strip(), raw_dir)
+    candidates = [p for p in sorted(raw_dir.rglob("*")) if p.is_file() and p.suffix.lower() in VALID_EXT]
+    return status, log_tail, candidates
 
 
 def decode_local(path: Path):
@@ -85,43 +77,38 @@ def decode_local(path: Path):
     if min(raw.size) < 300 or raw.width * raw.height < 180_000:
         return None
     raw.thumbnail((1800, 1800), m.Image.Resampling.LANCZOS)
-    arr = m.cv2.cvtColor(m.np.array(raw), m.cv2.COLOR_RGB2BGR)
-    return arr
+    return m.cv2.cvtColor(m.np.array(raw), m.cv2.COLOR_RGB2BGR)
 
 
 def main() -> int:
     controls = read_controls()
     OUTDIR.mkdir(parents=True, exist_ok=True)
-
-    all_rows = []
-    source_rows = []
+    all_rows, source_rows = [], []
     global_fp = set()
 
     with tempfile.TemporaryDirectory(prefix="watch-align-replica-controls-") as tmp:
         tmp_root = Path(tmp)
         for ci, ctrl in enumerate(controls, 1):
             control_id = ctrl["control_id"]
-            page_url = ctrl["reddit_post_url"]
-            print(f"[{ci}/{len(controls)}] {control_id}: {page_url}")
+            page_url = (ctrl.get("reddit_post_url") or "").strip()
             raw_dir = tmp_root / control_id
             raw_dir.mkdir(parents=True, exist_ok=True)
-            page_status, log_tail = fetch_via_gallery_dl(page_url, raw_dir)
-            candidates = list(local_image_candidates(raw_dir))
+            page_status, log_tail, candidates = acquire_candidates(ctrl, raw_dir)
+            print(f"[{ci}/{len(controls)}] {control_id}: {page_status}; candidates={len(candidates)}")
 
-            accepted = 0
-            downloaded = 0
-            pose_ok = 0
-            low_tilt = 0
+            accepted = downloaded = pose_ok = low_tilt = 0
             errors = []
             for path in candidates:
                 if accepted >= MAX_IMAGES_PER_CONTROL:
                     break
                 bgr = decode_local(path)
                 if bgr is None:
+                    errors.append("decode_rejected")
                     continue
                 downloaded += 1
                 fp = m.image_fingerprint(bgr)
                 if fp in global_fp:
+                    errors.append("duplicate_image")
                     continue
                 global_fp.add(fp)
                 try:
@@ -132,6 +119,7 @@ def main() -> int:
                 if res.reason or not res.accepted or res.acquisition is None:
                     errors.append(f"pose_rejected:{res.reason or 'not accepted'}")
                     continue
+
                 pose_ok += 1
                 ellipse = res.acquisition.dial_ellipse
                 roll = res.solved_roll
@@ -145,6 +133,7 @@ def main() -> int:
                         o = None
                     if o is not None:
                         obs[h] = o
+
                 row = {
                     "control_id": control_id, "physical_watch_id": control_id,
                     "reference": ctrl.get("reference", ""), "factory": ctrl.get("factory", ""),
@@ -152,8 +141,9 @@ def main() -> int:
                     "label_strength": ctrl.get("label_strength", ""),
                     "expected_primary_metric": ctrl.get("expected_primary_metric", ""),
                     "expected_supporting_metrics": ctrl.get("expected_supporting_metrics", ""),
-                    "source_url": page_url, "image_index": accepted, "image_path": path.name,
-                    "page_status": page_status, "tilt_deg": tilt, "pose_confidence": float(res.confidence),
+                    "source_url": page_url, "local_image_path": ctrl.get("local_image_path", ""),
+                    "image_index": accepted, "image_path": path.name, "page_status": page_status,
+                    "tilt_deg": tilt, "pose_confidence": float(res.confidence),
                     "dial_radius_px": float(res.dial_radius_px), "n_markers_segmented": len(obs),
                 }
                 row.update(m.marker_features(obs, ellipse, roll, res.dial_radius_px))
@@ -168,17 +158,17 @@ def main() -> int:
                 accepted += 1
                 if tilt <= 10.0:
                     low_tilt += 1
+
             source_rows.append({
                 "control_id": control_id, "reference": ctrl.get("reference", ""),
                 "factory": ctrl.get("factory", ""), "human_label": ctrl.get("human_label", ""),
                 "label_strength": ctrl.get("label_strength", ""), "source_url": page_url,
-                "page_status": page_status, "candidate_files": len(candidates), "downloaded_images": downloaded,
+                "local_image_path": ctrl.get("local_image_path", ""), "page_status": page_status,
+                "candidate_files": len(candidates), "downloaded_images": downloaded,
                 "pose_accepted": pose_ok, "measured_images": accepted, "low_tilt_images": low_tilt,
                 "notes": ";".join(sorted(set(errors)))[:500],
-                "fetch_log_tail": log_tail.replace("\n", " | ")[:800],
+                "fetch_log_tail": str(log_tail).replace("\n", " | ")[:800],
             })
-            print(f"  page_status={page_status} candidates={len(candidates)} downloaded={downloaded} "
-                  f"pose={pose_ok} measured={accepted} low_tilt={low_tilt}")
 
     m.write_csv(OUTDIR / "control_status.csv", source_rows)
     if all_rows:
@@ -186,23 +176,19 @@ def main() -> int:
     else:
         (OUTDIR / "per_image_measurements.csv").write_text("", encoding="utf-8")
 
-    # Per-control (= per physical watch) median, <=10deg images only, matching
-    # the genuine baseline's own pose gate so replica-vs-genuine comparisons
-    # are not confounded by different tilt admixtures.
     low = [r for r in all_rows if m.finite(r.get("tilt_deg")) and float(r["tilt_deg"]) <= 10.0]
-    by_control = defaultdict(list)
-    meta = {}
+    by_control, meta = defaultdict(list), {}
     for r in low:
         by_control[r["control_id"]].append(r)
         meta[r["control_id"]] = r
     control_rows = []
     for cid, rows in sorted(by_control.items()):
         agg = m.median_dict(rows)
-        meta_row = meta[cid]
+        mr = meta[cid]
         cr = {"control_id": cid, "n_images_low_tilt": len(rows),
-              "human_label": meta_row["human_label"], "label_strength": meta_row["label_strength"],
-              "expected_primary_metric": meta_row["expected_primary_metric"],
-              "expected_supporting_metrics": meta_row["expected_supporting_metrics"]}
+              "human_label": mr["human_label"], "label_strength": mr["label_strength"],
+              "expected_primary_metric": mr["expected_primary_metric"],
+              "expected_supporting_metrics": mr["expected_supporting_metrics"]}
         cr.update(agg)
         control_rows.append(cr)
     if control_rows:
@@ -210,11 +196,11 @@ def main() -> int:
     else:
         (OUTDIR / "per_control_medians.csv").write_text("", encoding="utf-8")
 
-    n_with_any_measurement = sum(1 for r in source_rows if int(r["measured_images"]) > 0)
-    n_with_low_tilt = sum(1 for r in source_rows if int(r["low_tilt_images"]) > 0)
-    print(f"\ncontrols attempted: {len(controls)}")
-    print(f"controls with >=1 measured image: {n_with_any_measurement}")
-    print(f"controls with >=1 <=10deg image (usable for genuine-profile comparison): {n_with_low_tilt}")
+    n_measured = sum(int(r["measured_images"]) > 0 for r in source_rows)
+    n_low = sum(int(r["low_tilt_images"]) > 0 for r in source_rows)
+    print(f"controls attempted: {len(controls)}")
+    print(f"controls with >=1 measured image: {n_measured}")
+    print(f"controls with >=1 <=10deg image: {n_low}")
     return 0
 
 
