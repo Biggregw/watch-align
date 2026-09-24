@@ -2,6 +2,11 @@ name: GMT synthetic perturbation
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - research/stage3-perturbation-discontinuity-diagnostics
+    paths:
+      - '.github/workflows/gmt-synthetic-perturbation.yml'
 
 permissions:
   contents: read
