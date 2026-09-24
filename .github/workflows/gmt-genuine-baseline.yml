@@ -8,6 +8,7 @@ on:
     paths:
       - 'docs/research/gmt-genuine-baseline-source-manifest.csv'
       - 'tools/research/build_gmt_genuine_baseline.py'
+      - 'tools/validate_genuine_baseline.py'
       - '.github/workflows/gmt-genuine-baseline.yml'
 
 permissions:
@@ -52,12 +53,19 @@ jobs:
       - name: Build genuine-image marker baseline
         run: python -u tools/research/build_gmt_genuine_baseline.py
 
+      - name: Validate physical-watch baseline stability
+        run: python -u tools/validate_genuine_baseline.py
+
       - name: Show summary
         if: always()
         shell: bash
         run: |
           if [ -f docs/research/gmt-genuine-baseline-results/summary.json ]; then
             cat docs/research/gmt-genuine-baseline-results/summary.json
+          fi
+          if [ -f docs/research/gmt-genuine-baseline-results/BASELINE_VALIDATION.md ]; then
+            echo '--- stability validation ---'
+            cat docs/research/gmt-genuine-baseline-results/BASELINE_VALIDATION.md
           fi
           if [ -f docs/research/gmt-genuine-baseline-results/source_status.csv ]; then
             echo '--- source status ---'
@@ -77,10 +85,7 @@ jobs:
             echo 'No result changes to commit'
             exit 0
           fi
-          git commit -m 'research: add bounded genuine GMT marker baseline results'
-          # The shared research branch may receive sourcing commits while this relatively
-          # long measurement job is running. Rebase the generated-output commit onto the
-          # latest remote head before pushing instead of failing with a non-fast-forward.
+          git commit -m 'research: add genuine GMT baseline stability results'
           git pull --rebase origin research/proportional-geometry-knowledge-base
           git push origin HEAD:research/proportional-geometry-knowledge-base
 
