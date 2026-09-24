@@ -1,0 +1,224 @@
+{
+  "schema": "watch-align.genuine-gmt-baseline.v1",
+  "research_only": true,
+  "authenticity_classifier": false,
+  "unit_of_independence": "physical_watch",
+  "n_physical_watches": 10,
+  "stability_gates": {
+    "min_n": 8,
+    "max_loo_median_shift_in_baseline_mad": 0.75,
+    "max_loo_mad_relative_change": 0.6
+  },
+  "provisionally_frozen_features": {
+    "h12.stage3_apex_r_simple": {
+      "n": 10,
+      "median": 0.555641648918362,
+      "mad": 0.003540531781573375,
+      "status": "stable"
+    },
+    "h12.stage3_centre_r_projective": {
+      "n": 10,
+      "median": 0.7364485704033863,
+      "mad": 0.0024169812917246847,
+      "status": "stable"
+    },
+    "h12.stage3_base_r_projective": {
+      "n": 10,
+      "median": 0.8085121180675486,
+      "mad": 0.00452224778914867,
+      "status": "stable"
+    },
+    "h12.stage3_axis_incidence_canonical": {
+      "n": 10,
+      "median": -0.0017067894298872597,
+      "mad": 0.003880003247471543,
+      "status": "stable"
+    },
+    "h12.stage3_centroid_tangential_offset_canonical": {
+      "n": 10,
+      "median": -0.00028536796963017684,
+      "mad": 0.002359886848366525,
+      "status": "stable"
+    },
+    "h06.centre_r": {
+      "n": 10,
+      "median": 0.6880514044123887,
+      "mad": 0.004702282281696668,
+      "status": "stable"
+    },
+    "h06.centre_t": {
+      "n": 10,
+      "median": 0.0011016360953514245,
+      "mad": 0.006394005352537218,
+      "status": "stable"
+    },
+    "h06.axis_residual_deg": {
+      "n": 10,
+      "median": 0.4004344521160377,
+      "mad": 0.45502048315393395,
+      "status": "stable"
+    },
+    "h06.radial_span": {
+      "n": 10,
+      "median": 0.2423913601715199,
+      "mad": 0.013344554768313144,
+      "status": "stable"
+    },
+    "h09.centre_r": {
+      "n": 10,
+      "median": 0.6862243602481339,
+      "mad": 0.004058058432720668,
+      "status": "stable"
+    },
+    "h09.centre_t": {
+      "n": 10,
+      "median": 0.002831685554739177,
+      "mad": 0.005196606182423351,
+      "status": "stable"
+    },
+    "h09.axis_residual_deg": {
+      "n": 10,
+      "median": 0.14386662494109004,
+      "mad": 0.4977845284846225,
+      "status": "stable"
+    },
+    "h09.radial_span": {
+      "n": 10,
+      "median": 0.24947806342741655,
+      "mad": 0.006708595658911715,
+      "status": "stable"
+    }
+  },
+  "all_core_features": [
+    {
+      "feature": "h12.stage3_apex_r_simple",
+      "n": 10,
+      "median": 0.555641648918362,
+      "mad": 0.003540531781573375,
+      "loo_max_median_shift_mad": 0.403765723813428,
+      "loo_max_mad_relative_change": 0.4874855541372777,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.404 MAD; max MAD change=0.487x baseline MAD"
+    },
+    {
+      "feature": "h12.stage3_centre_r_projective",
+      "n": 10,
+      "median": 0.7364485704033863,
+      "mad": 0.0024169812917246847,
+      "loo_max_median_shift_mad": 0.1538000655870317,
+      "loo_max_mad_relative_change": 0.1925007102199429,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.154 MAD; max MAD change=0.193x baseline MAD"
+    },
+    {
+      "feature": "h12.stage3_base_r_projective",
+      "n": 10,
+      "median": 0.8085121180675486,
+      "mad": 0.00452224778914867,
+      "loo_max_median_shift_mad": 0.09065232310111807,
+      "loo_max_mad_relative_change": 0.1227163873752077,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.091 MAD; max MAD change=0.123x baseline MAD"
+    },
+    {
+      "feature": "h12.stage3_axis_incidence_canonical",
+      "n": 10,
+      "median": -0.0017067894298872597,
+      "mad": 0.003880003247471543,
+      "loo_max_median_shift_mad": 0.0773179074372839,
+      "loo_max_mad_relative_change": 0.19887331795284907,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.077 MAD; max MAD change=0.199x baseline MAD"
+    },
+    {
+      "feature": "h12.stage3_centroid_tangential_offset_canonical",
+      "n": 10,
+      "median": -0.00028536796963017684,
+      "mad": 0.002359886848366525,
+      "loo_max_median_shift_mad": 0.2329527404531816,
+      "loo_max_mad_relative_change": 0.4998378380732087,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.233 MAD; max MAD change=0.500x baseline MAD"
+    },
+    {
+      "feature": "h06.centre_r",
+      "n": 10,
+      "median": 0.6880514044123887,
+      "mad": 0.004702282281696668,
+      "loo_max_median_shift_mad": 0.02141035215395513,
+      "loo_max_mad_relative_change": 0.23366415665983148,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.021 MAD; max MAD change=0.234x baseline MAD"
+    },
+    {
+      "feature": "h06.centre_t",
+      "n": 10,
+      "median": 0.0011016360953514245,
+      "mad": 0.006394005352537218,
+      "loo_max_median_shift_mad": 0.2335551048448329,
+      "loo_max_mad_relative_change": 0.3449725068870278,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.234 MAD; max MAD change=0.345x baseline MAD"
+    },
+    {
+      "feature": "h06.axis_residual_deg",
+      "n": 10,
+      "median": 0.4004344521160377,
+      "mad": 0.45502048315393395,
+      "loo_max_median_shift_mad": 0.5792167997812572,
+      "loo_max_mad_relative_change": 0.4353235013260623,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.579 MAD; max MAD change=0.435x baseline MAD"
+    },
+    {
+      "feature": "h06.radial_span",
+      "n": 10,
+      "median": 0.2423913601715199,
+      "mad": 0.013344554768313144,
+      "loo_max_median_shift_mad": 0.1398047251104931,
+      "loo_max_mad_relative_change": 0.3220815525466711,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.140 MAD; max MAD change=0.322x baseline MAD"
+    },
+    {
+      "feature": "h09.centre_r",
+      "n": 10,
+      "median": 0.6862243602481339,
+      "mad": 0.004058058432720668,
+      "loo_max_median_shift_mad": 0.16579911528211969,
+      "loo_max_mad_relative_change": 0.307480022673229,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.166 MAD; max MAD change=0.307x baseline MAD"
+    },
+    {
+      "feature": "h09.centre_t",
+      "n": 10,
+      "median": 0.002831685554739177,
+      "mad": 0.005196606182423351,
+      "loo_max_median_shift_mad": 0.2658154768772756,
+      "loo_max_mad_relative_change": 0.27873112109852777,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.266 MAD; max MAD change=0.279x baseline MAD"
+    },
+    {
+      "feature": "h09.axis_residual_deg",
+      "n": 10,
+      "median": 0.14386662494109004,
+      "mad": 0.4977845284846225,
+      "loo_max_median_shift_mad": 0.14052175108087747,
+      "loo_max_mad_relative_change": 0.16662898004213675,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.141 MAD; max MAD change=0.167x baseline MAD"
+    },
+    {
+      "feature": "h09.radial_span",
+      "n": 10,
+      "median": 0.24947806342741655,
+      "mad": 0.006708595658911715,
+      "loo_max_median_shift_mad": 0.12555141998537866,
+      "loo_max_mad_relative_change": 0.15573135076550793,
+      "status": "stable",
+      "reason": "LOWO max median shift=0.126 MAD; max MAD change=0.156x baseline MAD"
+    }
+  ]
+}
