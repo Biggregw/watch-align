@@ -36,7 +36,7 @@ jobs:
           actual_blob="$(git rev-parse "$STAGE3_COMMIT:tools/watch_align_py/gmt_proportional_features.py")"
           test "$actual_blob" = "$STAGE3_MODULE_BLOB"
           git checkout "$STAGE3_COMMIT" -- tools/watch_align_py
-      - name: Apply research-only Stage 3 robustness fixes (pose-independent threshold)
+      - name: Apply research-only Stage 3 robustness fixes (centre-jitter invariant apex)
         run: python tools/research/apply_stage3_robustness_guardrails.py
       - name: Run deterministic input-geometry perturbations
         run: python -u tools/research/gmt_synthetic_perturbation_runner.py
