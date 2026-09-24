@@ -9,13 +9,19 @@ permissions:
 jobs:
   perturbation:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify pinned Stage 3 provenance
+      - name: Install research dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy opencv-python-headless pillow requests beautifulsoup4
+      - name: Bring in and verify pinned Stage 3 implementation
         shell: bash
         env:
           STAGE3_COMMIT: 8292512ddc427b80bb4534bd73a3f69a6a6d2905
@@ -24,13 +30,18 @@ jobs:
           git fetch origin "$STAGE3_COMMIT"
           actual_blob="$(git rev-parse "$STAGE3_COMMIT:tools/watch_align_py/gmt_proportional_features.py")"
           test "$actual_blob" = "$STAGE3_MODULE_BLOB"
-      - name: Run deterministic synthetic perturbations
-        run: python tools/research/gmt_synthetic_perturbation_runner.py
+          git checkout "$STAGE3_COMMIT" -- tools/watch_align_py
+      - name: Run deterministic input-geometry perturbations
+        run: python -u tools/research/gmt_synthetic_perturbation_runner.py
       - name: Show output
+        if: always()
         run: |
-          wc -l docs/research/gmt-genuine-baseline-results/synthetic-perturbation.csv
-          head -20 docs/research/gmt-genuine-baseline-results/synthetic-perturbation.csv
+          if [ -f docs/research/gmt-genuine-baseline-results/synthetic-perturbation.csv ]; then
+            wc -l docs/research/gmt-genuine-baseline-results/synthetic-perturbation.csv
+            head -20 docs/research/gmt-genuine-baseline-results/synthetic-perturbation.csv
+          fi
       - name: Upload experiment output
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gmt-synthetic-perturbation
