@@ -78,6 +78,10 @@ jobs:
             exit 0
           fi
           git commit -m 'research: add bounded genuine GMT marker baseline results'
+          # The shared research branch may receive sourcing commits while this relatively
+          # long measurement job is running. Rebase the generated-output commit onto the
+          # latest remote head before pushing instead of failing with a non-fast-forward.
+          git pull --rebase origin research/proportional-geometry-knowledge-base
           git push origin HEAD:research/proportional-geometry-knowledge-base
 
       - name: Upload result artifact
