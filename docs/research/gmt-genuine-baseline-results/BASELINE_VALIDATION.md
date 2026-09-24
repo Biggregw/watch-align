@@ -2,7 +2,7 @@
 
 > Research-only empirical image geometry. Not Rolex factory tolerance and not an authenticity classifier.
 
-Independent physical watches in input: **10**.
+Independent physical watches in input: **9**.
 
 ## Method
 
@@ -16,19 +16,19 @@ These are conservative engineering stability gates, not manufacturing tolerances
 
 | Feature | n | median | MAD | LOWO median shift / MAD | LOWO MAD change | status |
 |---|---:|---:|---:|---:|---:|---|
-| `h12.stage3_apex_r_simple` | 10 | 0.555642 | 0.00354053 | 0.403766 | 0.487486 | **stable** |
-| `h12.stage3_centre_r_projective` | 10 | 0.736449 | 0.00241698 | 0.1538 | 0.192501 | **stable** |
-| `h12.stage3_base_r_projective` | 10 | 0.808512 | 0.00452225 | 0.0906523 | 0.122716 | **stable** |
-| `h12.stage3_axis_incidence_canonical` | 10 | -0.00170679 | 0.00388 | 0.0773179 | 0.198873 | **stable** |
-| `h12.stage3_centroid_tangential_offset_canonical` | 10 | -0.000285368 | 0.00235989 | 0.232953 | 0.499838 | **stable** |
-| `h06.centre_r` | 10 | 0.688051 | 0.00470228 | 0.0214104 | 0.233664 | **stable** |
-| `h06.centre_t` | 10 | 0.00110164 | 0.00639401 | 0.233555 | 0.344973 | **stable** |
-| `h06.axis_residual_deg` | 10 | 0.400434 | 0.45502 | 0.579217 | 0.435324 | **stable** |
-| `h06.radial_span` | 10 | 0.242391 | 0.0133446 | 0.139805 | 0.322082 | **stable** |
-| `h09.centre_r` | 10 | 0.686224 | 0.00405806 | 0.165799 | 0.30748 | **stable** |
-| `h09.centre_t` | 10 | 0.00283169 | 0.00519661 | 0.265815 | 0.278731 | **stable** |
-| `h09.axis_residual_deg` | 10 | 0.143867 | 0.497785 | 0.140522 | 0.166629 | **stable** |
-| `h09.radial_span` | 10 | 0.249478 | 0.0067086 | 0.125551 | 0.155731 | **stable** |
+| `h12.stage3_apex_r_simple` | 9 | 0.557071 | 0.00467366 | 0.305872 | 0.319743 | **stable** |
+| `h12.stage3_centre_r_projective` | 9 | 0.73682 | 0.00213879 | 0.372045 | 0.263475 | **stable** |
+| `h12.stage3_base_r_projective` | 9 | 0.808922 | 0.0047872 | 0.0856351 | 0.234288 | **stable** |
+| `h12.stage3_axis_incidence_canonical` | 9 | -0.0014068 | 0.00368697 | 0.081366 | 0.177605 | **stable** |
+| `h12.stage3_centroid_tangential_offset_canonical` | 9 | -0.00083511 | 0.00227981 | 0.535124 | 0.477817 | **stable** |
+| `h06.centre_r` | 9 | 0.688152 | 0.00360353 | 0.119369 | 0.304911 | **stable** |
+| `h06.centre_t` | 9 | -0.000391716 | 0.00418825 | 0.356558 | 0.526653 | **stable** |
+| `h06.axis_residual_deg` | 9 | 0.136879 | 0.581416 | 0.453299 | 0.217393 | **stable** |
+| `h06.radial_span` | 9 | 0.244257 | 0.00904652 | 0.308704 | 0.475104 | **stable** |
+| `h09.centre_r` | 9 | 0.686897 | 0.00281029 | 0.295347 | 0.444002 | **stable** |
+| `h09.centre_t` | 9 | 0.00145035 | 0.00388239 | 0.355796 | 0.338509 | **stable** |
+| `h09.axis_residual_deg` | 9 | 0.0739171 | 0.440831 | 0.294518 | 0.287441 | **stable** |
+| `h09.radial_span` | 9 | 0.25032 | 0.00566386 | 0.328062 | 0.35129 | **stable** |
 
 ## Interpretation
 
