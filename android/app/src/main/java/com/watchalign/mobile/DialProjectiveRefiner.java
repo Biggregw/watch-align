@@ -19,8 +19,14 @@ final class DialProjectiveRefiner {
     private static final double LOSS_CAP_PX = 8.0;
 
     // Transform relative to H0: four linear nuisance terms, translation, h31 and h32.
+    // LIMIT[6]/LIMIT[7] is the absolute ceiling the projective search may never exceed,
+    // regardless of caller. The production caller (PerspectiveGmtOverlay) additionally
+    // narrows that ceiling to a tilt-derived bound via the projectiveLimit parameter below,
+    // so a near-frontal photo cannot have the optimiser manufacture a large keystone warp
+    // just because it marginally improves the tick-edge objective.
     private static final double[] LIMIT = {0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.32, 0.32};
     private static final double[] INITIAL_STEP = {0.025, 0.025, 0.025, 0.025, 0.02, 0.02, 0.055, 0.055};
+    private static final double MAX_PROJECTIVE_LIMIT = LIMIT[6];
 
     interface DistanceField {
         int width();
@@ -38,10 +44,12 @@ final class DialProjectiveRefiner {
         final double holdoutBefore;
         final double holdoutAfter;
         final double evaluatedHoldoutAfter;
+        final double projectiveLimit;
 
         Result(double[][] h, double[][] evaluatedHomography, boolean accepted,
                double fitBefore, double fitAfter, double evaluatedFitAfter,
-               double holdoutBefore, double holdoutAfter, double evaluatedHoldoutAfter) {
+               double holdoutBefore, double holdoutAfter, double evaluatedHoldoutAfter,
+               double projectiveLimit) {
             this.homography = h;
             this.evaluatedHomography = evaluatedHomography;
             this.accepted = accepted;
@@ -51,6 +59,7 @@ final class DialProjectiveRefiner {
             this.holdoutBefore = holdoutBefore;
             this.holdoutAfter = holdoutAfter;
             this.evaluatedHoldoutAfter = evaluatedHoldoutAfter;
+            this.projectiveLimit = projectiveLimit;
         }
     }
 
@@ -63,13 +72,24 @@ final class DialProjectiveRefiner {
         }
     }
 
+    /** Legacy unbounded entry point: retains the original full ±0.32 search range. */
     static MatResult refineWithDiagnostics(Mat edges, Mat h0) {
+        return refineWithDiagnostics(edges, h0, MAX_PROJECTIVE_LIMIT);
+    }
+
+    /**
+     * @param projectiveLimit maximum |h31|,|h32| the search may explore, clamped to the
+     *                        absolute ceiling MAX_PROJECTIVE_LIMIT. The caller derives this
+     *                        from how much perspective the fitted ellipse actually evidences,
+     *                        so a near-frontal photo cannot acquire a large keystone warp.
+     */
+    static MatResult refineWithDiagnostics(Mat edges, Mat h0, double projectiveLimit) {
         Mat inverted = new Mat();
         Mat distance = new Mat();
         try {
             Imgproc.threshold(edges, inverted, 0.0, 255.0, Imgproc.THRESH_BINARY_INV);
             Imgproc.distanceTransform(inverted, distance, Imgproc.DIST_L2, Imgproc.DIST_MASK_PRECISE);
-            Result result = refine(new MatDistanceField(distance), matrix(h0));
+            Result result = refine(new MatDistanceField(distance), matrix(h0), projectiveLimit);
             if (!result.accepted) return new MatResult(h0.clone(), result);
             Mat refined = new Mat(3, 3, CvType.CV_64F);
             refined.put(0, 0, flatten(result.homography));
@@ -80,20 +100,32 @@ final class DialProjectiveRefiner {
         }
     }
 
+    /** Legacy unbounded entry point: retains the original full ±0.32 search range. */
     static Result refine(DistanceField field, double[][] h0) {
+        return refine(field, h0, MAX_PROJECTIVE_LIMIT);
+    }
+
+    static Result refine(DistanceField field, double[][] h0, double projectiveLimit) {
+        double boundedLimit = clamp(Math.abs(projectiveLimit), 0.0, MAX_PROJECTIVE_LIMIT);
+        double[] limits = LIMIT.clone();
+        limits[6] = boundedLimit;
+        limits[7] = boundedLimit;
+
         double[] zero = new double[8];
         double fitBefore = evidenceScore(field, h0, false, true);
         double holdoutBefore = evidenceScore(field, h0, true, false);
         double[] best = zero.clone();
-        double bestObjective = objective(field, h0, best);
+        double bestObjective = objective(field, h0, best, limits);
         double[] step = INITIAL_STEP.clone();
 
         // Projective displacement can put H0 outside the basin of a pixel-scale
-        // edge loss. Seed the local search with a small bounded h31/h32 grid.
-        for (double p = -LIMIT[6]; p <= LIMIT[6] + 1e-9; p += 0.08) {
-            for (double q = -LIMIT[7]; q <= LIMIT[7] + 1e-9; q += 0.08) {
+        // edge loss. Seed the local search with a small bounded h31/h32 grid, sized to
+        // the caller-supplied (tilt-derived) limit rather than the full absolute ceiling.
+        double seedStep = Math.max(1e-6, Math.min(0.08, boundedLimit > 0 ? boundedLimit / 2.0 : 0.08));
+        for (double p = -limits[6]; p <= limits[6] + 1e-9; p += seedStep) {
+            for (double q = -limits[7]; q <= limits[7] + 1e-9; q += seedStep) {
                 double[] candidate = conicPreservingSeed(p, q);
-                double value = objective(field, h0, candidate);
+                double value = objective(field, h0, candidate, limits);
                 if (value < bestObjective) {
                     bestObjective = value;
                     best = candidate;
@@ -101,14 +133,15 @@ final class DialProjectiveRefiner {
             }
         }
         double coarseP = best[6], coarseQ = best[7];
-        for (double p = coarseP - 0.08; p <= coarseP + 0.08 + 1e-9; p += 0.02) {
-            for (double q = coarseQ - 0.08; q <= coarseQ + 0.08 + 1e-9; q += 0.02) {
-                if (Math.abs(p) > LIMIT[6] || Math.abs(q) > LIMIT[7]) continue;
+        double refineStep = Math.max(1e-6, seedStep / 4.0);
+        for (double p = coarseP - seedStep; p <= coarseP + seedStep + 1e-9; p += refineStep) {
+            for (double q = coarseQ - seedStep; q <= coarseQ + seedStep + 1e-9; q += refineStep) {
+                if (Math.abs(p) > limits[6] || Math.abs(q) > limits[7]) continue;
                 for (double rotation = -0.06; rotation <= 0.06 + 1e-9; rotation += 0.02) {
                     double[] candidate = conicPreservingSeed(p, q);
                     candidate[1] = rotation;
                     candidate[2] = -rotation;
-                    double value = objective(field, h0, candidate);
+                    double value = objective(field, h0, candidate, limits);
                     if (value < bestObjective) {
                         bestObjective = value;
                         best = candidate;
@@ -128,10 +161,10 @@ final class DialProjectiveRefiner {
                     double original = best[i];
                     double selected = original;
                     for (int direction : new int[]{-1, 1}) {
-                        double candidate = clamp(original + direction * step[i], -LIMIT[i], LIMIT[i]);
+                        double candidate = clamp(original + direction * step[i], -limits[i], limits[i]);
                         if (candidate == original) continue;
                         best[i] = candidate;
-                        double value = objective(field, h0, best);
+                        double value = objective(field, h0, best, limits);
                         if (value + 1e-9 < bestObjective) {
                             bestObjective = value;
                             selected = candidate;
@@ -153,14 +186,10 @@ final class DialProjectiveRefiner {
         boolean accepted = hasEvidence && improvesFit && improvesHoldout && finite(candidate);
         return new Result(accepted ? candidate : copy(h0), copy(candidate), accepted,
                 fitBefore, accepted ? fitAfter : fitBefore, fitAfter,
-                holdoutBefore, accepted ? holdoutAfter : holdoutBefore, holdoutAfter);
+                holdoutBefore, accepted ? holdoutAfter : holdoutBefore, holdoutAfter,
+                boundedLimit);
     }
 
-    /**
-     * Seeds the projective coordinates with zero affine nuisance. Composition
-     * constructs the corresponding normalized Lorentz boost, which maps the
-     * unit circle onto itself and stays on the fitted ellipse.
-     */
     private static double[] conicPreservingSeed(double p, double q) {
         return new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, p, q};
     }
@@ -177,20 +206,19 @@ final class DialProjectiveRefiner {
         };
     }
 
-    private static double objective(DistanceField field, double[][] h0, double[] p) {
+    private static double objective(DistanceField field, double[][] h0, double[] p, double[] limits) {
         double[][] h = compose(h0, p);
         if (!finite(h)) return Double.POSITIVE_INFINITY;
         double evidence = evidenceScore(field, h, false, true);
         double regularization = 0.0;
         for (int i = 0; i < p.length; i++) {
-            double normalized = p[i] / LIMIT[i];
+            double normalized = p[i] / limits[i];
             double weight = i < 6 ? 0.055 : 0.012;
             regularization += weight * normalized * normalized;
         }
         return evidence + regularization;
     }
 
-    /** fit ticks plus the outer boundary, or the disjoint holdout ticks. */
     private static double evidenceScore(DistanceField field, double[][] h,
                                         boolean holdout, boolean includeOuter) {
         List<Double> groups = new ArrayList<>();
@@ -205,9 +233,7 @@ final class DialProjectiveRefiner {
             }
         }
         for (int minute = 0; minute < 60; minute++) {
-            if (minute % 5 == 0) continue; // all twelve five-minute/hour-marker sectors
-            // Keep adjacent 6-degree structure in the fit set to avoid a 12-degree
-            // phase ambiguity. Every fourth minor tick is a distributed holdout.
+            if (minute % 5 == 0) continue;
             boolean thisHoldout = minute % 4 == 2;
             if (thisHoldout != holdout) continue;
             double angle = Math.toRadians(minute * 6.0 - 90.0);
@@ -219,7 +245,6 @@ final class DialProjectiveRefiner {
     private static double tickScore(DistanceField field, double[][] h, double angle) {
         double sum = 0.0;
         int count = 0;
-        // Score the two long edges and both ends of a narrow printed minor tick.
         for (double side : new double[]{-TICK_ANGULAR_HALF, TICK_ANGULAR_HALF}) {
             for (int i = 0; i < 4; i++) {
                 double r = TRACK_R - TICK_RADIAL_HALF + 2.0 * TICK_RADIAL_HALF * i / 3.0;
