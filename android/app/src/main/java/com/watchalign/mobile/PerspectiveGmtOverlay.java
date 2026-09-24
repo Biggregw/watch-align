@@ -64,15 +64,6 @@ final class PerspectiveGmtOverlay {
 
             RotatedRect detectedEllipse=detectedSeed==null?null:findDialEllipse(edges,detectedSeed);
             if(manualSeed==null&&detectedEllipse!=null){
-                // The circular-dial roll estimate (measureMarkerSet, in WatchAlignCoreV7) assumes
-                // markers are evenly spaced at 30 degree intervals in image space, which is only
-                // true for a perfectly frontal photo. Any real tilt warps that spacing unevenly,
-                // biasing the roll. Since roll seeds all four homography anchor points exactly
-                // (ellipseCardinalPoints -> homographyFromUnitSquare), that bias lands undiluted
-                // on whichever markers sit at those anchors (12 and 9 o'clock here) while getting
-                // smeared across the interpolated markers elsewhere. Re-measure roll in the fitted
-                // ellipse's own normalized frame, where marker spacing is genuinely uniform, and
-                // prefer that corrected estimate.
                 double correctedRoll=ellipseAwareRoll(gray,detectedEllipse,seed.rollDeg);
                 if(Double.isFinite(correctedRoll)&&Math.abs(correctedRoll)<=15.0){
                     seed=new DialSeed(seed.x,seed.y,seed.r,seed.quality,correctedRoll);
@@ -100,11 +91,6 @@ final class PerspectiveGmtOverlay {
                 ellipse=normalizeEllipseToOuterRadius(detectedEllipse,seed);
                 seedSource="fitted dial ellipse normalized to detected outer dial radius";
             }else{
-                // A clean frontal watch can still fail contour ellipse selection because hands,
-                // cyclops glare and bezel edges fragment the dial boundary. Do not throw away
-                // an otherwise valid dial seed. Use its centre/radius/roll as a conservative
-                // circular pose and mark the result as lower confidence so the user can refine
-                // it with Precision Align if necessary.
                 ellipse=new RotatedRect(new Point(seed.x,seed.y),new Size(seed.r*2.0,seed.r*2.0),0.0);
                 seedSource="detected dial seed with circular fallback";
                 perspectiveFallback=true;
@@ -119,7 +105,18 @@ final class PerspectiveGmtOverlay {
             Mat H0=homographyFromUnitSquare(card);
             if(H0==null||H0.empty())return null;
             double[] h0Values=matrixValues(H0);
-            DialProjectiveRefiner.MatResult refinement=DialProjectiveRefiner.refineWithDiagnostics(edges,H0);
+            // The fitted ellipse's own eccentricity already tells us roughly how tilted this
+            // photo is (tiltDeg above, from its axis ratio). A genuine additional projective
+            // (keystone) correction on top of that pose should scale with the tilt, not be a
+            // fixed ±0.32 allowance for every photo: a near-frontal dial (small tiltDeg) has
+            // little room for a real h31/h32 term, so the refiner is only allowed to search as
+            // far as the observed tilt justifies. This stops it from locking onto unrelated
+            // edge clutter (bezel numerals, hands, reflections, glare) by taking a large,
+            // implausible projective excursion that happens to shave a fraction of a pixel off
+            // the average tick-edge distance. Formula: 0.45*sin(tiltDeg), clamped to
+            // [0.015, 0.32]; for the ~4.1 degree reference case this gives ~0.032.
+            double projectiveLimit=Math.max(0.015,Math.min(0.32,0.45*Math.sin(Math.toRadians(tiltDeg))));
+            DialProjectiveRefiner.MatResult refinement=DialProjectiveRefiner.refineWithDiagnostics(edges,H0,projectiveLimit);
             Mat H=refinement.homography;
             H0.release();
 
@@ -138,6 +135,7 @@ final class PerspectiveGmtOverlay {
                     "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+.2f°.\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. Pose residual: %.2f px. Confidence: %.0f%%.\n"+
                     "Projective refinement: %s.\n"+
+                    "Perspective evidence from ellipse: apparent tilt %.1f° -> projective search bound ±%.6f (0.45*sin(tilt), clamped [0.015, 0.32]).\n"+
                     "H0 projective terms: h31=%+.6f, h32=%+.6f.\n"+
                     "Refined candidate terms: h31=%+.6f, h32=%+.6f.\n"+
                     "Fit evidence: %.4f before, %.4f after. Holdout evidence: %.4f before, %.4f after.\n"+
@@ -145,6 +143,7 @@ final class PerspectiveGmtOverlay {
                     "Use Native Template with opacity/blink and fine nudge. Automated QC checks remain available separately.\n",
                     seedSource,master,major,minor,tiltDeg,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0,
                     refinement.diagnostics.accepted?"ACCEPTED":"REJECTED",
+                    tiltDeg,refinement.diagnostics.projectiveLimit,
                     normalizedTerm(h0Values,6),normalizedTerm(h0Values,7),
                     normalizedTerm(refinement.diagnostics.evaluatedHomography,2,0),
                     normalizedTerm(refinement.diagnostics.evaluatedHomography,2,1),
@@ -157,14 +156,6 @@ final class PerspectiveGmtOverlay {
         finally{src.release();gray.release();blur.release();edges.release();}
     }
 
-    /**
-     * Re-measures marker angular offsets in the fitted ellipse's own normalized frame
-     * (undo tilt rotation, then divide by each axis's radius) instead of raw image-space
-     * angles around a plain circle. In that normalized frame a genuinely evenly-spaced
-     * dial maps back to even 30-degree spacing regardless of photo tilt, so the median
-     * offset from target is a much less biased estimate of true roll than the circular
-     * measurement in WatchAlignCoreV7.measureMarkerSet.
-     */
     private static double ellipseAwareRoll(Mat gray,RotatedRect ellipse,double fallbackRoll){
         double axis=Math.toRadians(ellipse.angle),ca=Math.cos(axis),sa=Math.sin(axis);
         double rx=Math.max(1e-6,ellipse.size.width/2.0),ry=Math.max(1e-6,ellipse.size.height/2.0);
@@ -299,7 +290,6 @@ final class PerspectiveGmtOverlay {
         return Math.max(0,Math.min(1,0.35*a+0.20*b+0.30*c+0.15*d));
     }
 
-    /** Returns only the transparent master graphics. The watch image is composited by the caller. */
     private static Bitmap renderNative(Bitmap source,Mat H,String modelRef,int overlayColor){
         Bitmap out=Bitmap.createBitmap(source.getWidth(),source.getHeight(),Bitmap.Config.ARGB_8888);Canvas c=new Canvas(out);
         float scale=Math.max(1f,Math.min(out.getWidth(),out.getHeight())/900f);
@@ -329,7 +319,6 @@ final class PerspectiveGmtOverlay {
         return out;
     }
 
-    /** Genuine 12 marker orientation: wide base toward rehaut, point toward hands. */
     private static void drawMasterTriangle(Canvas c,Mat H,Paint p,boolean lume){
         double a=Gmt126710BlnrMaster.angleForHour(12);
         double ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux;
