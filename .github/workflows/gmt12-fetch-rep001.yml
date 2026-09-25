@@ -1,0 +1,36 @@
+name: GMT12 fetch REP001 proof
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-rep001:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install gallery-dl
+        run: python -m pip install --disable-pip-version-check gallery-dl
+
+      - name: Fetch REP001 candidates
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p tools/research/validation/gmt12/action-downloads/REP001
+          gallery-dl --verbose \
+            -D tools/research/validation/gmt12/action-downloads/REP001 \
+            -i tools/research/validation/gmt12/gmt12_sources.txt
+          find tools/research/validation/gmt12/action-downloads/REP001 -type f -maxdepth 5 -print
+          test "$(find tools/research/validation/gmt12/action-downloads/REP001 -type f | wc -l)" -gt 0
+
+      - name: Upload REP001 candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmt12-rep001-candidates
+          path: tools/research/validation/gmt12/action-downloads/REP001/
+          if-no-files-found: error
+          retention-days: 7
