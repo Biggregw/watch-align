@@ -14,10 +14,17 @@ Usage:
         --runs 5
 
 Outputs into --out-dir:
-    measurements.csv      -- one row per run: landmark coords + ratios
-    measurements.json      -- same data, structured
-    determinism_check.json -- pass/fail + per-run comparison
-    overlay.png             -- diagnostic overlay from the FIRST run
+    measurements.csv        -- one row per run: landmark coords + ratios
+    measurements.json       -- same data, structured
+    determinism_check.json  -- pass/fail + per-run comparison
+    overlay.png              -- full-dial diagnostic overlay (search ROIs,
+                                 dial reference circle, all intermediate
+                                 geometry) from the FIRST run -- for detector
+                                 debugging, not human acceptance review.
+    acceptance_overlay.png   -- enlarged 11-1 o'clock crop showing ONLY the
+                                 final selected landmarks, each labelled with
+                                 its pixel coordinates, and nothing else --
+                                 the human acceptance-review image.
 
 Never writes the source image itself anywhere outside --out-dir/source
 (and that directory is expected to be gitignored/artifact-only -- see the
@@ -177,6 +184,110 @@ def render_overlay(bgr: np.ndarray, result: pal.PhaseAResult) -> np.ndarray:
     return img
 
 
+ACCEPTANCE_POINT_COLORS = {
+    "minute_track_60": (0, 200, 255),
+    "triangle_apex": (0, 0, 255),
+    "triangle_base_left": (0, 255, 0),
+    "triangle_base_right": (0, 255, 0),
+    "coronet": (255, 0, 255),
+}
+ACCEPTANCE_LABELS = {
+    "minute_track_60": "60/minute-track ref",
+    "triangle_apex": "triangle apex",
+    "triangle_base_left": "base left",
+    "triangle_base_right": "base right",
+    "coronet": "coronet (top ref)",
+}
+
+
+def render_acceptance_overlay(bgr: np.ndarray, result: pal.PhaseAResult, scale: float = 3.0) -> np.ndarray:
+    """A minimal, enlarged 11-1 o'clock crop for human acceptance review.
+
+    Shows ONLY the final selected physical landmarks (dial centre / local
+    12-axis, and the five named landmark points, each labelled with its
+    pixel coordinates) -- no search bands, candidate regions, ROIs, or any
+    other intermediate-detection geometry. A landmark that was not
+    confidently detected is drawn as an explicit "NOT DETECTED" label at
+    its search region instead of a fabricated point.
+    """
+    h, w = bgr.shape[:2]
+    if result.dial is None:
+        # Nothing to crop around; fail loudly rather than guess a region.
+        img = bgr.copy()
+        cv2.putText(img, "DIAL REFERENCE NOT DETECTED -- no landmark search possible",
+                    (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2, cv2.LINE_AA)
+        return img
+
+    d = result.dial
+    half_width = 0.42 * d.r
+    # From just outside the dial edge (minute-track side) down through the
+    # coronet, with a small margin on both ends.
+    y_positions = [lm.y for lm in result.landmarks.values() if lm.y is not None]
+    y_top = min([d.cy - 1.02 * d.r] + y_positions) - 0.06 * d.r
+    y_bottom = max([d.cy - 0.05 * d.r] + y_positions) + 0.06 * d.r
+
+    x0 = int(round(max(0, d.cx - half_width)))
+    x1 = int(round(min(w, d.cx + half_width)))
+    y0 = int(round(max(0, y_top)))
+    y1 = int(round(min(h, y_bottom)))
+    crop = bgr[y0:y1, x0:x1].copy()
+    if crop.size == 0:
+        raise ValueError("acceptance overlay crop is empty -- dial reference implausible")
+
+    enlarged = cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
+    eh, ew = enlarged.shape[:2]
+    thickness = max(1, round(min(eh, ew) / 350))
+    font_scale = max(0.5, min(eh, ew) / 900)
+
+    def to_crop(x, y):
+        return (x - x0) * scale, (y - y0) * scale
+
+    def put_text(text, x, y, color, thick_boost=2):
+        cv2.putText(enlarged, text, (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX,
+                    font_scale, (255, 255, 255), thickness + thick_boost, cv2.LINE_AA)
+        cv2.putText(enlarged, text, (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX,
+                    font_scale, color, thickness, cv2.LINE_AA)
+
+    def put_label_near_point(text, px, py, color, margin=10, above=True):
+        """Right-aligns the label to the LEFT of the point instead of
+        overflowing the crop's right edge; clamps vertically into frame.
+        above=False places the label below the point instead, so two nearby
+        points (e.g. the triangle's base-left/base-right corners) never
+        stack their labels on top of each other regardless of resolution."""
+        (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
+        x = px + 14
+        if x + tw > ew - margin:
+            x = px - 14 - tw
+        x = max(margin, min(x, ew - tw - margin))
+        y = (py - 14) if above else (py + th + 18)
+        y = max(th + margin, min(y, eh - margin))
+        put_text(text, x, y, color)
+
+    axis_color = (255, 180, 0)
+    axis_x, _ = to_crop(d.cx, d.cy)
+    cv2.line(enlarged, (int(axis_x), 0), (int(axis_x), eh), axis_color, thickness, cv2.LINE_AA)
+    put_label_near_point("dial centre / local 12-axis", axis_x, 26, axis_color)
+
+    y_cursor = eh - 16
+    for name in LANDMARK_NAMES:
+        lm = result.landmarks.get(name)
+        color = ACCEPTANCE_POINT_COLORS[name]
+        label = ACCEPTANCE_LABELS[name]
+        if lm is not None and lm.assessable and lm.x is not None:
+            cx, cy = to_crop(lm.x, lm.y)
+            cv2.drawMarker(enlarged, (int(cx), int(cy)), color, cv2.MARKER_CROSS,
+                            int(22 * scale / 3.0) + 10, thickness + 2)
+            cv2.circle(enlarged, (int(cx), int(cy)), 5, color, -1, cv2.LINE_AA)
+            put_label_near_point(f"{label} ({lm.x:.1f}, {lm.y:.1f})", cx, cy, color,
+                                  above=(name != "triangle_base_right"))
+        else:
+            reason = lm.reason if lm is not None else "no dial reference"
+            put_text(f"{label}: NOT DETECTED -- {reason}", 10, y_cursor, (0, 0, 255))
+            y_cursor -= int(26 * font_scale)
+
+    return enlarged
+
+
 def compare_runs(rows: list) -> dict:
     """Byte-for-byte-equivalent numeric comparison of every run against the
     first. Any difference is a determinism FAILURE -- per
@@ -228,6 +339,8 @@ def main() -> int:
     bgr0 = load_bgr(args.image)
     overlay = render_overlay(bgr0, first_result)
     cv2.imwrite(str(args.out_dir / "overlay.png"), overlay)
+    acceptance = render_acceptance_overlay(bgr0, first_result)
+    cv2.imwrite(str(args.out_dir / "acceptance_overlay.png"), acceptance)
 
     print(f"wrote {args.runs} runs to {args.out_dir}")
     print("determinism:", "PASS" if determinism["pass"] else "FAIL")

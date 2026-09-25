@@ -103,7 +103,25 @@ jobs:
             --out-dir docs/research/gmt-phase-a-results \
             --runs "$RUNS"
 
-      - name: Print overlay as small base64 JPEG (log-only, never committed)
+      - name: Print acceptance overlay as base64 PNG (log-only, never committed)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import base64
+          from pathlib import Path
+          p = Path("docs/research/gmt-phase-a-results/acceptance_overlay.png")
+          if not p.exists():
+              print("no acceptance_overlay.png produced")
+          else:
+              data = p.read_bytes()
+              b64 = base64.b64encode(data).decode("ascii")
+              print(f"### BEGIN acceptance_overlay bytes={len(data)}")
+              for i in range(0, len(b64), 200):
+                  print(b64[i:i+200])
+              print("### END acceptance_overlay")
+          PY
+
+      - name: Print full diagnostic overlay as small base64 JPEG (log-only, never committed)
         if: always()
         run: |
           python3 - <<'PY'
@@ -131,13 +149,14 @@ jobs:
               print("### END overlay_preview")
           PY
 
-      - name: Upload overlay + source image as artifact
+      - name: Upload overlays + source image as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gmt-phase-a-overlay
           path: |
             docs/research/gmt-phase-a-results/overlay.png
+            docs/research/gmt-phase-a-results/acceptance_overlay.png
             ${{ steps.harness.outputs.image_path }}
           if-no-files-found: warn
           retention-days: 7
