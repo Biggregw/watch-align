@@ -126,8 +126,6 @@ def _sequence(t,mid,r):
         if fit.max()>.24:continue
         axis=abs(x60f-mid)/pf
         if axis>.60:continue
-        # Minute inner endpoints around 12 are a local tangent. A quadratic y
-        # fit can turn one glare-shortened component into a large false slope.
         y0,yslope,ykeep=_robust_line(ak,oy)
         if ykeep.sum()<3:continue
         y59,y60,y1=y0-yslope,y0,y0+yslope
@@ -138,6 +136,30 @@ def _sequence(t,mid,r):
         score=float(np.mean(fit))+.25*axis+.08*ninf+.02*abs(yslope/max(pf,1))
         out.append((score,(x60f-pf,y59),(x60f,y60),(x60f+pf,y1),ninf))
     return min(out,key=lambda z:z[0]) if out else None
+
+
+def _circle_tangent_landmarks(l,c,rr,cx,cy):
+    """Regularise 59/60/1 inner endpoints onto the physical local dial tangent.
+
+    Glare can shorten an individual white tick and move its detected inner endpoint
+    several pixels radially. Using those three raw endpoint y values as an angular
+    reference can manufacture a large marker rotation. The minute positions are
+    fixed at 6-degree intervals, so once their x positions and the physical 60
+    endpoint are observed/reconstructed, the local 59-to-1 chord orientation is
+    constrained by the dial centre-to-60 radius. Preserve x and 60 y, and only
+    regularise the two neighbouring endpoint y coordinates.
+    """
+    dx=float(c[0]-cx); dy=float(c[1]-cy)
+    if abs(dy)<1e-6:
+        return l,c,rr
+    slope=-dx/dy
+    # Grossly oblique tangents indicate a bad circle/60 association. Do not turn
+    # that into a confident QC angle.
+    if abs(slope)>0.35:
+        return None
+    y_l=float(c[1] + slope*(l[0]-c[0]))
+    y_r=float(c[1] + slope*(rr[0]-c[0]))
+    return (float(l[0]),y_l), (float(c[0]),float(c[1])), (float(rr[0]),y_r)
 
 
 def _minute_ticks(gray,cx,cy,r,tl,tr):
@@ -152,9 +174,13 @@ def _minute_ticks(gray,cx,cy,r,tl,tr):
         s=_sequence(t,mid,r)
         if s:seq.append(s)
     if direct:
-        _,l,c,rr=min(direct,key=lambda z:z[0]);return Point(l[0],l[1]),Point(rr[0],rr[1]),Point(c[0],c[1]),False,0
+        _,l,c,rr=min(direct,key=lambda z:z[0]); reg=_circle_tangent_landmarks(l,c,rr,cx,cy)
+        if reg is not None:
+            l,c,rr=reg;return Point(*l),Point(*rr),Point(*c),False,0
     if seq:
-        _,l,c,rr,n=min(seq,key=lambda z:z[0]);return Point(*l),Point(*rr),Point(*c),True,n
+        _,l,c,rr,n=min(seq,key=lambda z:z[0]); reg=_circle_tangent_landmarks(l,c,rr,cx,cy)
+        if reg is not None:
+            l,c,rr=reg;return Point(*l),Point(*rr),Point(*c),True,n
     return None
 
 
