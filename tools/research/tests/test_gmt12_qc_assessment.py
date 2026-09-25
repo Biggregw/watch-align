@@ -11,9 +11,6 @@ from human_qc_geometry import Gmt12Geometry, Point
 
 
 def geometry_for_gap_ratio(ratio: float) -> Gmt12Geometry:
-    # Triangle top width is exactly 100 px.  59/1 inner ends define a horizontal
-    # local minute-track line y=100.  The triangle top is placed ratio*100 px
-    # below it, making the expected top-clearance ratio exact and transparent.
     y = 100.0 + ratio * 100.0
     return Gmt12Geometry(
         triangle_top_left=Point(100.0, y),
@@ -36,21 +33,31 @@ def test_obvious_too_small_top_gap_is_reported():
     assert a.status is Status.REFERENCE_DEVIATION
     assert a.measurements is not None
     assert abs(a.measurements.top_clearance_over_triangle_width - 0.04) < 1e-9
-    assert "below both verified genuine controls" in a.reason
+    assert "materially below" in a.reason
 
 
-def test_first_verified_genuine_anchor_is_not_a_deviation():
+def test_observed_bad_0121_gap_is_reported():
+    a = assess_detection(Detection(geometry_for_gap_ratio(0.121), 1.0, ""))
+    assert a.status is Status.REFERENCE_DEVIATION
+
+
+def test_observed_clean_0143_gap_is_not_called_defective():
+    a = assess_detection(Detection(geometry_for_gap_ratio(0.143), 1.0, ""))
+    assert a.status is Status.MEASURED
+
+
+def test_first_verified_genuine_anchor_is_measured():
     a = assess_detection(Detection(geometry_for_gap_ratio(0.149), 1.0, ""))
-    assert a.status is Status.WITHIN_CURRENT_REFERENCES
+    assert a.status is Status.MEASURED
 
 
-def test_second_verified_genuine_anchor_is_not_a_deviation():
+def test_second_verified_genuine_anchor_is_measured():
     a = assess_detection(Detection(geometry_for_gap_ratio(0.169), 1.0, ""))
-    assert a.status is Status.WITHIN_CURRENT_REFERENCES
+    assert a.status is Status.MEASURED
 
 
-def test_large_gap_is_also_reported_without_calling_it_rolex_tolerance():
+def test_large_gap_is_reported_without_calling_it_rolex_tolerance():
     a = assess_detection(Detection(geometry_for_gap_ratio(0.25), 1.0, ""))
     assert a.status is Status.REFERENCE_DEVIATION
-    assert "above both verified genuine controls" in a.reason
-    assert "not a Rolex tolerance verdict" in a.reason
+    assert "materially above" in a.reason
+    assert "not a Rolex tolerance" in a.reason
