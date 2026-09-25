@@ -115,38 +115,15 @@ jobs:
           else:
               data = p.read_bytes()
               b64 = base64.b64encode(data).decode("ascii")
+              # Printed LAST among the log-preview steps (see the commit
+              # message): job logs are fetched from this session with a
+              # front-truncating length cap, so the smallest and most
+              # important preview must be the last thing written to stdout,
+              # never earlier ones followed by something larger.
               print(f"### BEGIN acceptance_overlay bytes={len(data)}")
               for i in range(0, len(b64), 200):
                   print(b64[i:i+200])
               print("### END acceptance_overlay")
-          PY
-
-      - name: Print full diagnostic overlay as small base64 JPEG (log-only, never committed)
-        if: always()
-        run: |
-          python3 - <<'PY'
-          import base64
-          from pathlib import Path
-          from PIL import Image
-          from io import BytesIO
-          p = Path("docs/research/gmt-phase-a-results/overlay.png")
-          if not p.exists():
-              print("no overlay.png produced")
-          else:
-              # The full-resolution PNG (several MB) is too large to reliably
-              # round-trip through job logs -- downscale + re-encode as JPEG
-              # for log transmission only; the full-resolution PNG is still
-              # uploaded untouched as a build artifact in the next step.
-              im = Image.open(p).convert("RGB")
-              im.thumbnail((1100, 1100), Image.Resampling.LANCZOS)
-              buf = BytesIO()
-              im.save(buf, "JPEG", quality=85)
-              data = buf.getvalue()
-              b64 = base64.b64encode(data).decode("ascii")
-              print(f"### BEGIN overlay_preview bytes={len(data)} full_res_bytes={p.stat().st_size}")
-              for i in range(0, len(b64), 200):
-                  print(b64[i:i+200])
-              print("### END overlay_preview")
           PY
 
       - name: Upload overlays + source image as artifact
