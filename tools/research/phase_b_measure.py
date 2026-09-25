@@ -88,12 +88,21 @@ def main() -> int:
         print(f"[{i}/{len(rows)}] {label}: dial={'ok' if result.dial else 'FAIL'} "
               f"landmarks_assessable={n_assessable}/5")
 
+    existing_csv = OUTDIR / "per_image_measurements.csv"
+    if only_source and existing_csv.exists():
+        # A source-filtered run must not wipe out results for every OTHER
+        # already-measured source -- replace only this source_id's rows,
+        # keep everything else exactly as previously committed.
+        with existing_csv.open(newline="", encoding="utf-8") as f:
+            kept = [r for r in csv.DictReader(f) if r["source_id"] != only_source]
+        out_rows = kept + out_rows
+
     keys = []
     for r in out_rows:
         for k in r:
             if k not in keys:
                 keys.append(k)
-    with (OUTDIR / "per_image_measurements.csv").open("w", newline="", encoding="utf-8") as f:
+    with existing_csv.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=keys)
         w.writeheader()
         w.writerows(out_rows)
