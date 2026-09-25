@@ -38,6 +38,20 @@ A perspective-corrected image looking visually convincing is not success. The su
 
 Until the frontal gate passes, development effort should not be spent improving perspective correction for that feature.
 
+## Second principle: image suitability is an input contract, not a problem for the measurement engine to solve
+
+Watch Align's production QC flow only ever receives constrained, QC-style photographs: a user deliberately photographing a watch dial for inspection. Replica QC photographs of this kind are normally reasonably frontal, show the complete dial clearly, and expose the relevant markers -- that is the actual input population this system must serve, not arbitrary found photography.
+
+The intended pipeline is:
+
+QC-style image -> suitability/assessability gate -> physical landmark detection -> local dimensionless ratios -> genuine reference/tolerance comparison -> defect flagging
+
+An image outside the acceptable pose/visibility envelope -- auction photography, wrist shots, presentation-box shots, strongly oblique views, heavily cropped images, and similar -- is not a harder measurement problem to solve with more sophisticated geometry. It is an input the system must reject as "not assessable / retake photograph". Development effort must never be spent trying to rescue measurements from photographs Watch Align would never accept as a QC input in production; such images have value only as negative examples the suitability gate should reject.
+
+Perspective correction (see the first principle above) may eventually improve measurements *within* the accepted QC pose envelope. It must never be used to justify accepting photographs that would otherwise never be valid Watch Align QC inputs -- that would silently widen the input contract through the back door of "better correction" rather than through an evidenced decision about what pose envelope production actually needs to support.
+
+Practical consequence for image selection: when assembling any experimental corpus (frontal proof, genuine baseline, replica controls), judge each candidate image against this input contract first, independent of whether the measurement engine could technically produce some numbers on it. Reject unsuitable images explicitly, with a stated reason, rather than omitting them silently or spending effort trying to make them work.
+
 ## Governing rules
 
 1. Prefer local landmark ratios over absolute pixel distances.
@@ -51,6 +65,8 @@ Until the frontal gate passes, development effort should not be spent improving 
 9. Keep genuine manufacturing variation, measurement error and genuine-vs-replica separation as three distinct quantities.
 10. Do not treat repeated photographs of one physical watch as independent examples.
 11. Frontal landmark measurement is a hard gate. Perspective work cannot substitute for failure at this stage.
+12. Do not use perspective or projective correction to accept photographs outside the QC-representative pose envelope. That envelope is decided by evidence about what production QC input actually looks like, not by what correction can technically recover.
+13. Reject unsuitable candidate images explicitly, with a stated reason, rather than omitting them silently or spending effort trying to measure them. An unsuitable image is evidence for the suitability gate, not a measurement task.
 
 ## Required evidence for a QC feature
 

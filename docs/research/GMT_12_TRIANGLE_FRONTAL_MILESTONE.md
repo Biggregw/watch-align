@@ -33,6 +33,8 @@ Do not freeze all of these in advance. Implement the smallest useful set first a
 
 ## Phase A: deterministic single-image proof
 
+Image suitability is an input contract, not a problem for the measurement engine to solve (see `docs/architecture/QC_PRINCIPLES.md`'s second principle). Reject any candidate outside a realistic QC-photograph pose/visibility envelope explicitly, with a stated reason, rather than spending effort trying to measure it.
+
 Start with one high-quality, near-frontal genuine GMT image with clearly visible coronet, triangle and minute track.
 
 Requirements:
