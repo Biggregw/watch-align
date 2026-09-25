@@ -2,9 +2,11 @@ import math
 import os
 import sys
 
+import numpy as np
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from gmt12_auto_landmarks import _circle_tangent_landmarks
+from gmt12_auto_landmarks import _circle_tangent_landmarks, _trim_bezel_band
 from human_qc_geometry import Gmt12Geometry, Point, measure_gmt12
 
 
@@ -87,3 +89,45 @@ def test_lateral_translation_does_not_turn_into_rotation():
     m=measure_gmt12(_geometry_with_triangle_rotation(0.0,triangle_shift_x=12.0,watch_roll_deg=-5.0))
     assert math.isclose(m.rotation_deg,0.0,abs_tol=.05)
     assert abs(m.horizontal_offset_over_triangle_width) > .10
+
+
+def _band_with_bright_ring(h=109,w=392,ring_rows=(14,40),ring_frac=0.35,tick_frac=0.11):
+    """Synthetic minute-track search band shaped like the real failure: a
+    generous top margin reaches a bright metal bezel/rehaut ring before the
+    dark dial and its minute ticks. Row brightness is expressed directly as
+    the fraction of that row's pixels above the _trim_bezel_band '>140'
+    threshold, since that is the only signal the function reads."""
+    band=np.full((h,w),60,dtype=np.uint8)  # dark dial background everywhere
+    r0,r1=ring_rows
+    band[r0:r1,:int(w*ring_frac)]=200  # bright bezel ring rows
+    band[r1:,:int(w*tick_frac)]=200    # dimmer, narrower minute-tick evidence
+    return band
+
+
+def test_trim_bezel_band_skips_bright_metal_ring_above_ticks():
+    # Real failure shape: a bright bezel/rehaut ring inside a generously
+    # sized search band pulled the Otsu threshold high enough that the much
+    # thinner, dimmer minute ticks below it did not register at all (0-3
+    # tick candidates against ~9 physically visible ticks). Trimming the
+    # band past the ring recovered a full, direct 59/60/1 detection.
+    gray=np.zeros((200,500),dtype=np.uint8)
+    x0,y0,x1,y1=50,20,442,129
+    gray[y0:y1,x0:x1]=_band_with_bright_ring()
+    trimmed=_trim_bezel_band(gray,x0,y0,x1,y1)
+    assert trimmed>y0+30  # past the 14-40 bright ring, with margin
+    assert trimmed<y0+60  # but nowhere near the far (dial) end of the band
+
+
+def test_trim_bezel_band_leaves_band_untouched_without_a_bright_ring():
+    # No bezel content in the searched band at all (e.g. the margin above
+    # the triangle did not reach the bezel in this photo) -- must not trim
+    # away real, needed search area on a purely defensive assumption.
+    gray=np.full((200,500),60,dtype=np.uint8)
+    x0,y0,x1,y1=50,20,450,129
+    gray[y0:y1,x0+10:x0+30]=200  # a little tick-like brightness, not a ring
+    assert _trim_bezel_band(gray,x0,y0,x1,y1)==y0
+
+
+def test_trim_bezel_band_is_safe_on_a_short_band():
+    gray=np.zeros((60,200),dtype=np.uint8)
+    assert _trim_bezel_band(gray,10,10,190,18)==10

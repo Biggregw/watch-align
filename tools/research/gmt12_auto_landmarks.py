@@ -162,8 +162,44 @@ def _circle_tangent_landmarks(l,c,rr,cx,cy):
     return (float(l[0]),y_l), (float(c[0]),float(c[1])), (float(rr[0]),y_r)
 
 
+def _trim_bezel_band(gray,x0,y0,x1,y1):
+    """Trim the outer edge of a minute-track search band past any bright
+    metal bezel/rehaut ring it contains.
+
+    The band is sized generously (top-.20*r) so it does not miss ticks that
+    sit further from the triangle. On some photos that margin reaches far
+    enough out to include the bright bezel/rehaut ring above the dial. A
+    single Otsu threshold over the whole band is then dominated by that much
+    brighter region and can fail to separate the thinner, dimmer ticks from
+    the dark dial background underneath it -- not missing evidence, just
+    mis-thresholded evidence.
+
+    Row-wise fraction of near-white pixels (>140) is a bezel-vs-dial signal
+    robust to the bezel's curvature (it need not span the row's full width).
+    Only trim past a bright run found in the band's outer half, and only
+    when that run is a clear peak (>=0.20 bright-pixel fraction) relative to
+    the rest of the band -- otherwise the band has no significant bezel
+    content and is left untouched, so this never narrows a search that did
+    not need it.
+    """
+    h=y1-y0
+    if h<12:return y0
+    band=gray[y0:y1,x0:x1].astype(np.float32)
+    frac=(band>140).mean(axis=1)
+    peak=float(frac.max())
+    if peak<0.20:return y0
+    cutoff=0.5*peak
+    last_bright=-1
+    for i in range(h//2):
+        if frac[i]>=cutoff:last_bright=i
+    if last_bright<0:return y0
+    return y0+min(last_bright+3,h-1)
+
+
 def _minute_ticks(gray,cx,cy,r,tl,tr):
-    mid=(tl.x+tr.x)/2;top=(tl.y+tr.y)/2;x0=max(0,int(mid-.42*r));x1=min(gray.shape[1],int(mid+.42*r));y0=max(0,int(top-.20*r));y1=min(gray.shape[0],int(top+.035*r));p=gray[y0:y1,x0:x1]
+    mid=(tl.x+tr.x)/2;top=(tl.y+tr.y)/2;x0=max(0,int(mid-.42*r));x1=min(gray.shape[1],int(mid+.42*r));y0=max(0,int(top-.20*r));y1=min(gray.shape[0],int(top+.035*r))
+    y0=_trim_bezel_band(gray,x0,y0,x1,y1)
+    p=gray[y0:y1,x0:x1]
     if p.size==0:return None
     direct=[];seq=[]
     for m in _tick_masks(p):
