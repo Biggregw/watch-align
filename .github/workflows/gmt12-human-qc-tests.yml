@@ -1,0 +1,22 @@
+name: GMT12 human QC tests
+
+on:
+  push:
+    branches: [feature/gmt-human-qc-auto-landmarks]
+    paths:
+      - 'tools/research/gmt12_*.py'
+      - 'tools/research/human_qc_geometry.py'
+      - 'tools/research/tests/test_gmt12_*.py'
+      - '.github/workflows/gmt12-human-qc-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install numpy opencv-python-headless pytest
+      - run: pytest -q tools/research/tests/test_human_qc_geometry.py tools/research/tests/test_gmt12_qc_assessment.py tools/research/tests/test_gmt12_controlled_perturbations.py
