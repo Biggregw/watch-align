@@ -23,12 +23,20 @@ def _dial_circle(gray):
     must not casually override a much stronger accumulator rank: a small,
     off-dial circle sampling only the near-black area around the hands hub
     can score deceptively high on "darkness", and a well-centred photo isn't
-    guaranteed (nor is a mis-centred one wrong). A real failure observed with
-    the un-penalised formula: the correct dial circle was Hough's rank-0
-    candidate, but a smaller circle around the hands hub won the content
-    re-score by sampling purely black interior with no hands/index/text to
-    dilute it, and by sitting closer to the frame centre -- both are photo
-    framing coincidences, not evidence the circle is right.
+    guaranteed (nor is a mis-centred one wrong). Two independent real
+    failures observed with this same shape: the correct dial circle was
+    Hough's rank-0 candidate, but a smaller circle around the hands hub won
+    the content re-score by sampling purely black interior with no
+    hands/index/text to dilute it, and by sitting closer to the frame
+    centre. The second, larger-margin failure exposed *why* "closer to
+    frame centre" is not just an occasional coincidence but a structurally
+    weak signal for this specific confusion: the hands hub sits almost
+    exactly at the dial's own true centre by construction, so whenever the
+    watch is reasonably centred in the photo, a hands-hub circle is nearly
+    as close to the frame centre as the real dial circle is -- the distance
+    term cannot reliably tell them apart. The rank penalty is set well
+    above the largest verified real-photo margin observed for this
+    confusion, so a genuinely correct rank-0 circle is not overridden by it.
     """
     h,w=gray.shape[:2]; blur=cv2.GaussianBlur(gray,(7,7),1.4)
     cs=cv2.HoughCircles(blur,cv2.HOUGH_GRADIENT,1.2,min(h,w)*.25,param1=100,param2=35,minRadius=int(min(h,w)*.20),maxRadius=int(min(h,w)*.48))
@@ -52,7 +60,7 @@ def _pick_dial_circle(candidates):
     plain numbers instead of needing to coax cv2.HoughCircles into producing
     a specific ranking on a synthetic image."""
     if not candidates: return None
-    scored=[(r-.65*d+.80*dark-15.0*rank,x,y,r) for rank,x,y,r,dark,d in candidates]
+    scored=[(r-.65*d+.80*dark-40.0*rank,x,y,r) for rank,x,y,r,dark,d in candidates]
     _,x,y,r=max(scored); return x,y,r
 
 

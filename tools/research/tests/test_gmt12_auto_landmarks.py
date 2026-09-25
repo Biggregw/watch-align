@@ -174,6 +174,20 @@ def test_pick_dial_circle_still_lets_a_much_stronger_content_match_win():
     assert (x,y,r)==(300.0,300.0,400.0)
 
 
+def test_pick_dial_circle_prefers_hough_top_rank_on_a_larger_real_margin():
+    # A second, independent real failure of the same shape as the test
+    # above, but with a much larger pre-penalty margin (~33 points, vs
+    # under 2 for the first case) -- the rank-0 candidate is again visually
+    # confirmed correct (the real dial rim), while rank-1 is a smaller
+    # circle centred on the GMT hand's lume-ball/hub area. This is the case
+    # that exposed the coefficient=15.0 penalty as too weak in general, not
+    # just for near-ties.
+    correct=(0, 467.4, 988.2, 361.8, 229.0, 195.8)   # rank, x, y, r, dark, d
+    wrong=(1, 495.0, 1257.0, 349.7, 206.0, 97.9)
+    x,y,r=_pick_dial_circle([correct,wrong])
+    assert (x,y,r)==(467.4,988.2,361.8)
+
+
 def test_pick_dial_circle_empty_is_none():
     assert _pick_dial_circle([]) is None
 
