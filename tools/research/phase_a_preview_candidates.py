@@ -29,12 +29,17 @@ def main() -> int:
     with RESOLVED.open(newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
 
+    only_source = sys.argv[1] if len(sys.argv) > 1 else None
     seen_watches = set()
     for r in rows:
         wid = r["physical_watch_id"]
-        if wid in seen_watches:
-            continue
-        seen_watches.add(wid)
+        if only_source:
+            if r["source_id"] != only_source:
+                continue
+        else:
+            if wid in seen_watches:
+                continue
+            seen_watches.add(wid)
         path = ROOT / r["local_path"]
         if not path.is_file():
             print(f"### MISSING {wid} ({r['source_id']}): {path} not found")
@@ -46,15 +51,16 @@ def main() -> int:
             buf = BytesIO()
             im.save(buf, "JPEG", quality=72)
             data = buf.getvalue()
+        label = wid if not only_source else f"{wid}__{path.stem}"
         b64 = base64.b64encode(data).decode("ascii")
-        print(f"### BEGIN {wid} source={r['source_id']} provenance={r['provenance']} "
+        print(f"### BEGIN {label} source={r['source_id']} provenance={r['provenance']} "
               f"bracelet={r['bracelet']} orig_wh={r['width']}x{r['height']} "
               f"thumb_bytes={len(data)}")
         # Wrap for log readability; reassemble by concatenating BASE64 lines
-        # between BEGIN/END for this watch id.
+        # between BEGIN/END for this label.
         for i in range(0, len(b64), 200):
             print(b64[i:i + 200])
-        print(f"### END {wid}")
+        print(f"### END {label}")
     return 0
 
 

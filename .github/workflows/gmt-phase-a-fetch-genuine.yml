@@ -18,6 +18,11 @@ on:
       - 'datasets/126710BLNR/**'
       - '.github/workflows/gmt-phase-a-fetch-genuine.yml'
   workflow_dispatch:
+    inputs:
+      preview_source_id:
+        description: 'If set, fetch+preview ALL images for just this one source_id (image-selection drill-down)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -42,9 +47,15 @@ jobs:
         id: fetch
         continue-on-error: true
         shell: bash
+        env:
+          PREVIEW_SOURCE_ID: ${{ github.event.inputs.preview_source_id }}
         run: |
           set -o pipefail
-          python datasets/126710BLNR/fetch_images.py --clean --class gen 2>&1 | tee datasets/126710BLNR/fetch.log
+          if [ -n "$PREVIEW_SOURCE_ID" ]; then
+            python datasets/126710BLNR/fetch_images.py --clean --source "$PREVIEW_SOURCE_ID" 2>&1 | tee datasets/126710BLNR/fetch.log
+          else
+            python datasets/126710BLNR/fetch_images.py --clean --class gen 2>&1 | tee datasets/126710BLNR/fetch.log
+          fi
 
       - name: Summarise fetched corpus
         if: always()
@@ -69,7 +80,9 @@ jobs:
 
       - name: Print small base64 preview of one image per candidate watch
         if: always()
-        run: python3 tools/research/phase_a_preview_candidates.py
+        env:
+          PREVIEW_SOURCE_ID: ${{ github.event.inputs.preview_source_id }}
+        run: python3 tools/research/phase_a_preview_candidates.py "$PREVIEW_SOURCE_ID"
 
       - name: Upload genuine candidate artifact
         if: always()
