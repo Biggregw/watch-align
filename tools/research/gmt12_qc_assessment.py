@@ -1,13 +1,18 @@
 """Fail-closed assessment for the human-defined GMT 12 QC measurements.
 
-This is intentionally downstream of landmark detection and measurement.  It
-must never turn an unavailable measurement into a pass.
+Landmark detection and measurement happen upstream. Missing landmarks can
+never become a pass.
 
-The two genuine top-clearance values below are the currently verified control
-anchors (33459 and 33461).  They are reference observations, NOT Rolex factory
-tolerances.  Values outside them are reported as reference deviations so that
-we can validate the checker against real QC failures without pretending we
-have established manufacturing limits.
+The two genuine top-clearance values are verified observations, not Rolex
+factory tolerances. A small excursion beyond either observation is therefore
+not a defect. We keep the raw value and only flag a *strong* empirical
+reference deviation once it is separated from the observed genuine interval
+by a deliberately conservative margin.
+
+The margin is provisional validation policy, not a manufacturing tolerance.
+It exists to distinguish the clearly reduced-gap cases we are validating from
+normal measurement / watch-to-watch variation while more labelled examples
+are collected.
 """
 from __future__ import annotations
 
@@ -20,12 +25,15 @@ from human_qc_geometry import Gmt12Measurements, measure_gmt12
 
 GEN_TOP_CLEARANCE_LOW = 0.149
 GEN_TOP_CLEARANCE_HIGH = 0.169
+REFERENCE_MARGIN = 0.020
+STRONG_LOW = GEN_TOP_CLEARANCE_LOW - REFERENCE_MARGIN   # 0.129
+STRONG_HIGH = GEN_TOP_CLEARANCE_HIGH + REFERENCE_MARGIN # 0.189
 
 
 class Status(str, Enum):
     UNASSESSABLE = "UNASSESSABLE"
     REFERENCE_DEVIATION = "REFERENCE_DEVIATION"
-    WITHIN_CURRENT_REFERENCES = "WITHIN_CURRENT_REFERENCES"
+    MEASURED = "MEASURED"
 
 
 @dataclass(frozen=True)
@@ -36,13 +44,7 @@ class Assessment:
 
 
 def assess_detection(detection: Detection) -> Assessment:
-    """Assess a detector result, failing closed on any missing landmark.
-
-    A positive result is only possible after the physical triangle and the
-    59/60/1 minute ticks have all been observed and every agreed measurement
-    has been calculated.  Detector failure is therefore UNASSESSABLE, never a
-    silent pass.
-    """
+    """Assess a detector result without converting missing evidence to pass."""
     if detection.geometry is None:
         return Assessment(
             Status.UNASSESSABLE,
@@ -67,23 +69,25 @@ def assess_detection(detection: Detection) -> Assessment:
         return Assessment(Status.UNASSESSABLE, None, "one or more required 12-marker measurements are missing")
 
     gap = m.top_clearance_over_triangle_width
-    if gap < GEN_TOP_CLEARANCE_LOW:
+    if gap < STRONG_LOW:
         return Assessment(
             Status.REFERENCE_DEVIATION,
             m,
-            f"12 top clearance {gap:.3f} is below both verified genuine controls "
-            f"({GEN_TOP_CLEARANCE_LOW:.3f}-{GEN_TOP_CLEARANCE_HIGH:.3f}); this is a reference deviation, not a Rolex tolerance verdict",
+            f"12 top clearance {gap:.3f} is materially below the verified genuine observations "
+            f"({GEN_TOP_CLEARANCE_LOW:.3f}-{GEN_TOP_CLEARANCE_HIGH:.3f}); provisional strong-deviation boundary is <{STRONG_LOW:.3f}, not a Rolex tolerance",
         )
-    if gap > GEN_TOP_CLEARANCE_HIGH:
+    if gap > STRONG_HIGH:
         return Assessment(
             Status.REFERENCE_DEVIATION,
             m,
-            f"12 top clearance {gap:.3f} is above both verified genuine controls "
-            f"({GEN_TOP_CLEARANCE_LOW:.3f}-{GEN_TOP_CLEARANCE_HIGH:.3f}); this is a reference deviation, not a Rolex tolerance verdict",
+            f"12 top clearance {gap:.3f} is materially above the verified genuine observations "
+            f"({GEN_TOP_CLEARANCE_LOW:.3f}-{GEN_TOP_CLEARANCE_HIGH:.3f}); provisional strong-deviation boundary is >{STRONG_HIGH:.3f}, not a Rolex tolerance",
         )
 
     return Assessment(
-        Status.WITHIN_CURRENT_REFERENCES,
+        Status.MEASURED,
         m,
-        f"12 top clearance {gap:.3f} lies between the two currently verified genuine controls; other 12 metrics remain descriptive until separately calibrated",
+        f"12 geometry measured successfully; top clearance {gap:.3f}. Genuine observations "
+        f"are {GEN_TOP_CLEARANCE_LOW:.3f}-{GEN_TOP_CLEARANCE_HIGH:.3f}; no hard Rolex tolerance is inferred. "
+        "Centring, rotation and side asymmetry remain reported as raw diagnostics until calibrated.",
     )
