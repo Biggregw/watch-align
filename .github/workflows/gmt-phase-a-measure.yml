@@ -1,0 +1,158 @@
+name: GMT Phase A - frontal landmark measurement
+
+# Runs the Phase A research harness (tools/research/phase_a_harness.py) against
+# the selected frontal genuine-candidate image and commits ONLY the derived,
+# pixel-free measurement outputs (CSV/JSON/determinism check). The source
+# image and the diagnostic overlay (which embeds source pixels) are never
+# committed -- uploaded as a short-retention artifact and also printed as a
+# small base64 PNG in the job log for inspection without a direct artifact
+# download (see gmt-phase-a-fetch-genuine.yml's own commit message for why).
+#
+# See docs/architecture/QC_PRINCIPLES.md and
+# docs/research/GMT_12_TRIANGLE_FRONTAL_MILESTONE.md.
+on:
+  push:
+    branches:
+      - reset/local-landmark-ratio-qc
+    paths:
+      - 'tools/research/phase_a_landmarks.py'
+      - 'tools/research/phase_a_harness.py'
+      - '.github/workflows/gmt-phase-a-measure.yml'
+  workflow_dispatch:
+    inputs:
+      source_id:
+        description: 'Manifest source_id to fetch and measure'
+        required: true
+        default: 'gen_wex_3KSuGhC'
+      image_file:
+        description: 'Image filename within that source (e.g. image_04.jpg)'
+        required: true
+        default: 'image_04.jpg'
+      runs:
+        description: 'Number of repeated determinism-check runs'
+        required: false
+        default: '5'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gmt-phase-a-measure-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r datasets/126710BLNR/requirements.txt opencv-python-headless numpy
+
+      - name: Bring in seed_detector.py (dial-locator primitive only)
+        run: |
+          git fetch origin experiment/gmt-proportional-geometry-v1
+          git show origin/experiment/gmt-proportional-geometry-v1:tools/watch_align_py/seed_detector.py \
+            > tools/research/seed_detector.py
+
+      - name: Fetch the selected source image
+        env:
+          SOURCE_ID: ${{ github.event.inputs.source_id || 'gen_wex_3KSuGhC' }}
+        run: python3 datasets/126710BLNR/fetch_images.py --clean --source "$SOURCE_ID"
+
+      - name: Run Phase A harness
+        id: harness
+        env:
+          SOURCE_ID: ${{ github.event.inputs.source_id || 'gen_wex_3KSuGhC' }}
+          IMAGE_FILE: ${{ github.event.inputs.image_file || 'image_04.jpg' }}
+          RUNS: ${{ github.event.inputs.runs || '5' }}
+        run: |
+          python3 - <<'PY'
+          import csv, os
+          from pathlib import Path
+          resolved = Path("datasets/126710BLNR/resolved_images.csv")
+          rows = list(csv.DictReader(resolved.open(encoding="utf-8")))
+          image_file = os.environ["IMAGE_FILE"]
+          matches = [r for r in rows if Path(r["local_path"]).name == image_file]
+          if not matches:
+              raise SystemExit(f"no fetched row matches image_file={image_file!r}; rows={[r['local_path'] for r in rows]}")
+          row = matches[0]
+          Path("phase_a_image_path.txt").write_text(row["local_path"], encoding="utf-8")
+          Path("phase_a_watch_id.txt").write_text(row["physical_watch_id"], encoding="utf-8")
+          print("resolved image path:", row["local_path"])
+          print("physical_watch_id:", row["physical_watch_id"])
+          PY
+          IMAGE_PATH="datasets/126710BLNR/$(cat phase_a_image_path.txt)"
+          WATCH_ID="$(cat phase_a_watch_id.txt)"
+          echo "image_path=$IMAGE_PATH" >> "$GITHUB_OUTPUT"
+          PYTHONPATH=tools/research python3 tools/research/phase_a_harness.py \
+            --image "$IMAGE_PATH" \
+            --source-id "$SOURCE_ID" \
+            --physical-watch-id "$WATCH_ID" \
+            --out-dir docs/research/gmt-phase-a-results \
+            --runs "$RUNS"
+
+      - name: Print overlay as base64 PNG (log-only, never committed)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import base64
+          from pathlib import Path
+          p = Path("docs/research/gmt-phase-a-results/overlay.png")
+          if not p.exists():
+              print("no overlay.png produced")
+          else:
+              data = p.read_bytes()
+              b64 = base64.b64encode(data).decode("ascii")
+              print(f"### BEGIN overlay bytes={len(data)}")
+              for i in range(0, len(b64), 200):
+                  print(b64[i:i+200])
+              print("### END overlay")
+          PY
+
+      - name: Upload overlay + source image as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmt-phase-a-overlay
+          path: |
+            docs/research/gmt-phase-a-results/overlay.png
+            ${{ steps.harness.outputs.image_path }}
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Commit pixel-free measurement outputs
+        if: always()
+        shell: bash
+        run: |
+          rm -f tools/research/seed_detector.py
+          git config user.name 'watch-align-research-bot'
+          git config user.email 'watch-align-research-bot@users.noreply.github.com'
+          git add docs/research/gmt-phase-a-results/measurements.csv \
+                  docs/research/gmt-phase-a-results/measurements.json \
+                  docs/research/gmt-phase-a-results/determinism_check.json
+          if git diff --cached --quiet; then
+            echo 'No result changes to commit'
+            exit 0
+          fi
+          git commit -m 'research: add Phase A frontal landmark measurement results'
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Fail if determinism check failed
+        run: |
+          python3 -c "
+          import json, sys
+          d = json.load(open('docs/research/gmt-phase-a-results/determinism_check.json'))
+          sys.exit(0 if d.get('pass') else 1)
+          "
