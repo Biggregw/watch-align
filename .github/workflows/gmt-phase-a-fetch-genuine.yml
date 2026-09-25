@@ -1,0 +1,85 @@
+name: GMT Phase A - fetch genuine candidate corpus
+
+# Fetches only the genuine ("gen") sources from datasets/126710BLNR/manifest.csv
+# (the first-party Rolex catalogue reference plus source-labelled genuine
+# marketplace candidates) for Phase A frontal landmark selection -- see
+# docs/research/GMT_12_TRIANGLE_FRONTAL_MILESTONE.md. Replica sources are not
+# needed for Phase A and are skipped to keep this run small.
+#
+# The interactive dev sandbox's network egress cannot reach Reddit/Imgur/Rolex
+# directly; datasets/126710BLNR/FETCH_RESULTS.md documents that GitHub Actions
+# runners can. Fetched images are never committed (datasets/126710BLNR/.gitignore
+# excludes gen/, rep/ and resolved_images.csv) -- only the artifact, time-limited.
+on:
+  push:
+    branches:
+      - reset/local-landmark-ratio-qc
+    paths:
+      - 'datasets/126710BLNR/**'
+      - '.github/workflows/gmt-phase-a-fetch-genuine.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-genuine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dataset fetch dependencies
+        run: python -m pip install -r datasets/126710BLNR/requirements.txt
+
+      - name: Fetch genuine 126710BLNR sources only
+        id: fetch
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python datasets/126710BLNR/fetch_images.py --clean --class gen 2>&1 | tee datasets/126710BLNR/fetch.log
+
+      - name: Summarise fetched corpus
+        if: always()
+        run: |
+          python - <<'PY'
+          import csv
+          from pathlib import Path
+
+          resolved = Path('datasets/126710BLNR/resolved_images.csv')
+          if not resolved.exists():
+              print('resolved_images.csv was not produced')
+              raise SystemExit(0)
+          rows = list(csv.DictReader(resolved.open(encoding='utf-8')))
+          watches = {}
+          for r in rows:
+              watches.setdefault(r['physical_watch_id'], []).append(r)
+          print(f'images={len(rows)} independent_watches={len(watches)}')
+          for wid, imgs in sorted(watches.items()):
+              print(f'  {wid}: {len(imgs)} images, provenance={imgs[0]["provenance"]}, '
+                    f'bracelet={imgs[0]["bracelet"]}')
+          PY
+
+      - name: Upload genuine candidate artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmt-phase-a-genuine-candidates
+          path: |
+            datasets/126710BLNR/manifest.csv
+            datasets/126710BLNR/resolved_images.csv
+            datasets/126710BLNR/fetch.log
+            datasets/126710BLNR/gen/**
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Fail if fetch command failed
+        if: steps.fetch.outcome == 'failure'
+        run: exit 1
