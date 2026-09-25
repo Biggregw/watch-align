@@ -43,7 +43,7 @@ def main() -> int:
         print(
             f"### BEGIN {label} watch={row['physical_watch_id']} "
             f"provenance={row['provenance_class']} native={row['native_width']}x{row['native_height']} "
-            f"bytes={len(data)}"
+            f"bytes={len(data)} url={row['image_url']}"
         )
         for i in range(0, len(b64), 200):
             print(b64[i:i + 200])
