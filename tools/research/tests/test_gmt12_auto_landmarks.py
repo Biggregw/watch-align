@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from gmt12_auto_landmarks import (
     _circle_tangent_landmarks, _trim_bezel_band, _pick_dial_circle,
     _polygon_to_triangle_corners, _ticks, _direct, _sequence, _robust_line,
-    _first_regularized, _minute_ticks,
+    _first_regularized, _minute_ticks, _touches_roi_edge,
 )
 from human_qc_geometry import Gmt12Geometry, Point, measure_gmt12
 
@@ -373,3 +373,49 @@ def test_minute_ticks_end_to_end_direct_detection_on_synthetic_dial():
     assert math.isclose(m60.x,200.5,abs_tol=.5)
     assert math.isclose(mr.x,230.5,abs_tol=.5)
     assert inferred is False
+
+
+def test_touches_roi_edge_detects_a_clipped_component():
+    # Real failure shape: a bright blob (hour hand lume merged with the
+    # triangle's own lume along their whole shared edge) was clipped by the
+    # triangle search ROI, leaving a fragment whose "top edge" was actually
+    # just the ROI boundary -- not a physical edge -- but still looked like
+    # a plausible triangle and produced a fully fabricated measurement.
+    # Real coordinates from that failure: component bbox y:[750,807],
+    # roi y0=750 (touching), vs a real non-clipped triangle bbox from a
+    # different, correctly-working photo (roi y0=629, component y:[700,794]).
+    clipped=np.array([[536.0,750.0],[577.0,750.0],[550.0,807.0],[539.0,784.0]])
+    roi_clipped=(477,750,623,920)
+    assert bool(_touches_roi_edge(clipped,roi_clipped)) is True
+
+    not_clipped=np.array([[427.0,703.0],[507.0,700.0],[465.0,792.0],[470.0,750.0]])
+    roi_not_clipped=(402,629,532,879)
+    assert bool(_touches_roi_edge(not_clipped,roi_not_clipped)) is False
+
+
+def test_sequence_prefers_strong_axis_agreement_over_fewer_inferred_points():
+    # Real failure shape: with the old .25 axis weight, a poorly-anchored
+    # fit built almost entirely from far-out ticks (2-4 pitches from
+    # centre, only one point within one pitch of 60) beat a well-centred,
+    # visually-correct fit purely because it had one fewer inferred point
+    # -- axis agreement with the independently-detected triangle centre is
+    # a much stronger correctness signal than raw inferred-point count, but
+    # was weighted too weakly to ever win that trade-off. Real tick lists
+    # from the same photo/band (one from an untrimmed bezel-contaminated
+    # band, one from the trimmed band): the untrimmed list's best fit used
+    # to score lower (win) despite landing 15px off the true tick position;
+    # the trimmed list's best fit, landing almost exactly on the true
+    # position, must now win instead.
+    mid=467.0
+    r=361.8
+    t_untrimmed=[(346.0,713),(372.0,707),(398.0,678),(408.5,699),(503.5,695),
+                 (513.0,672),(568.0,708),(595.5,713)]
+    t_trimmed=[(346.0,713),(348.0,692),(366.5,686),(376.0,707),(396.0,677),
+               (407.5,699),(528.5,673),(566.0,683),(566.5,708),(595.5,713),
+               (596.0,696),(614.0,696)]
+
+    wrong=_sequence(t_untrimmed,mid,r)
+    correct=_sequence(t_trimmed,mid,r)
+    assert wrong is not None and correct is not None
+    assert correct[0]<wrong[0]   # trimmed (visually correct, y~690) now wins
+    assert math.isclose(correct[2][1],689.8,abs_tol=1.0)   # the true 60 y

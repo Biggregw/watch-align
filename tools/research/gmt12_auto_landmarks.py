@@ -95,11 +95,39 @@ def _triangle_candidate(gray,cx,cy,r):
     so an extra vertex from a hand crossing an edge is simply not among
     them. This does not loosen the shape-plausibility checks below in any
     way -- a genuinely non-triangular blob is still rejected by those.
+
+    Two further real failures, both traced to this ROI's top edge sitting
+    too close to the triangle's true top corners on a meaningful fraction
+    of real photos (confirmed directly: at the old cy-.72*r margin, 3 of 13
+    already-validated real photos had their triangle's true top edge
+    clipped by the ROI boundary -- the resulting fragment still happened to
+    look like a plausible, correctly-proportioned triangle and passed every
+    shape check, silently reporting a top edge roughly a third of the way
+    down the real shape instead of its actual top, and a materially wrong
+    clearance measurement, for photos that had previously been treated as
+    clean passes). The margin is now cy-.85*r, verified generously wide
+    enough to give every one of those photos' true top edge room to spare
+    while leaving the 9 photos that were never clipped unaffected (same
+    corners, same measurements).
+
+    Widening the margin alone is not enough for every case, though: when an
+    hour/GMT hand points at or near 12 at the moment of capture, its lume
+    can optically merge with the triangle's own lume along their whole
+    shared edge (not just cross it), producing one bright blob spanning
+    from the minute track down past the hands hub -- far taller than a
+    real triangle and correctly rejected by the size checks below once the
+    ROI is wide enough to reveal its true, implausible extent, rather than
+    clipping it into an accidentally plausible-looking fragment.
+    _touches_roi_edge is kept as a defence-in-depth safety net for any
+    remaining case where even this wider margin isn't enough: a candidate
+    that still reaches the ROI boundary is reported as UNASSESSABLE rather
+    than risk a repeat of the same silent-clipping failure at a new margin.
     """
     MAX_POLY_VERTICES=6
-    roi=(max(0,int(cx-.18*r)),max(0,int(cy-.72*r)),min(gray.shape[1],int(cx+.18*r)),min(gray.shape[0],int(cy-.30*r)))
+    roi=(max(0,int(cx-.18*r)),max(0,int(cy-.85*r)),min(gray.shape[1],int(cx+.18*r)),min(gray.shape[0],int(cy-.30*r)))
     out=[]
     for area,p in _bright_components(gray,roi):
+        if _touches_roi_edge(p,roi):continue
         xs,ys=float(np.ptp(p[:,0])),float(np.ptp(p[:,1]))
         if xs<.10*r or xs>.28*r or ys<.12*r or ys>.30*r:continue
         hull=cv2.convexHull(p.astype(np.float32).reshape(-1,1,2)); per=cv2.arcLength(hull,True)
@@ -111,6 +139,17 @@ def _triangle_candidate(gray,cx,cy,r):
         out.append((area,left,right,tip))
     if not out:return None
     _,l,rr,t=max(out,key=lambda z:z[0]);return Point(*map(float,l)),Point(*map(float,rr)),Point(*map(float,t))
+
+
+def _touches_roi_edge(p,roi):
+    """True if a bright component's bounding box reaches the search ROI's
+    boundary on any side -- evidence the shape was clipped by the ROI
+    itself rather than fully contained within it. Separated from
+    _triangle_candidate purely so this can be tested directly with plain
+    coordinates."""
+    x0,y0,x1,y1=roi
+    return (p[:,0].min()<=x0 or p[:,0].max()>=x1-1 or
+            p[:,1].min()<=y0 or p[:,1].max()>=y1-1)
 
 
 def _polygon_to_triangle_corners(poly,max_vertices,cx,r):
@@ -201,7 +240,20 @@ def _sequence(t,mid,r):
         if max(y59,y60,y1)-min(y59,y60,y1)>.055*r:continue
         observed=sum(int(np.any(ak==q)) for q in (-1,0,1));ninf=3-observed
         if ninf and len(ak)<4 and observed<2:continue
-        score=float(np.mean(fit))+.25*axis+.08*ninf+.02*abs(yslope/max(pf,1))
+        # axis agreement is a genuine independent geometric cross-check (x60f
+        # derived purely from tick spacing, compared against mid from the
+        # separately-detected triangle) -- a coincidentally-good tick-pitch
+        # fit is unlikely to also land close to mid by chance. ninf is only a
+        # data-completeness proxy. A real failure with the old .25 weight:
+        # a poorly-anchored fit built mostly from far-out, low-confidence
+        # ticks (ninf=2, axis=0.151, extrapolated over 2-4 pitches) beat a
+        # well-centred, visually-correct fit (ninf=3, axis=0.001) purely
+        # because one fewer inferred point (.08) outweighed a much larger
+        # axis disagreement (.25*0.151=.038) -- axis's weight was too small
+        # for its own bound (max .25*.60=.15) to ever dominate a single ninf
+        # step. Raised so a strong axis disagreement can outrank a smaller
+        # ninf difference, verified against this exact real failure.
+        score=float(np.mean(fit))+.80*axis+.08*ninf+.02*abs(yslope/max(pf,1))
         out.append((score,(x60f-pf,y59),(x60f,y60),(x60f+pf,y1),ninf))
     return min(out,key=lambda z:z[0]) if out else None
 
