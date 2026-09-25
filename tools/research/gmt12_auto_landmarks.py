@@ -12,20 +12,48 @@ class Detection:
 
 
 def _dial_circle(gray):
+    """Pick the seed dial circle from Hough's own candidates.
+
+    cv2.HoughCircles already returns candidates ordered by accumulator
+    strength (index 0 = the circle with the most consistent edge evidence in
+    the image), which is the most direct, purely geometric signal available
+    for "is this really a circle boundary." The content-based re-score below
+    (radius, darkness of the interior, closeness to the frame centre) is
+    still useful to break ties between similarly-strong candidates, but it
+    must not casually override a much stronger accumulator rank: a small,
+    off-dial circle sampling only the near-black area around the hands hub
+    can score deceptively high on "darkness", and a well-centred photo isn't
+    guaranteed (nor is a mis-centred one wrong). A real failure observed with
+    the un-penalised formula: the correct dial circle was Hough's rank-0
+    candidate, but a smaller circle around the hands hub won the content
+    re-score by sampling purely black interior with no hands/index/text to
+    dilute it, and by sitting closer to the frame centre -- both are photo
+    framing coincidences, not evidence the circle is right.
+    """
     h,w=gray.shape[:2]; blur=cv2.GaussianBlur(gray,(7,7),1.4)
     cs=cv2.HoughCircles(blur,cv2.HOUGH_GRADIENT,1.2,min(h,w)*.25,param1=100,param2=35,minRadius=int(min(h,w)*.20),maxRadius=int(min(h,w)*.48))
     if cs is None: return None
     out=[]
-    for x,y,r in cs[0]:
+    for rank,(x,y,r) in enumerate(cs[0]):
         x,y,r=map(float,(x,y,r)); containment=min(x,y,w-x,h-y)/max(r,1)
         if containment<.82: continue
         yy,xx=np.ogrid[:h,:w]; mask=(xx-x)**2+(yy-y)**2 < (.68*r)**2
         vals=gray[mask]
         if vals.size<100: continue
         dark=255-float(np.median(vals)); d=float(np.hypot(x-w/2,y-h/2))
-        out.append((r-.65*d+.80*dark,x,y,r))
-    if not out: return None
-    _,x,y,r=max(out); return x,y,r
+        out.append((rank,x,y,r,dark,d))
+    return _pick_dial_circle(out)
+
+
+def _pick_dial_circle(candidates):
+    """Score already-filtered (rank,x,y,r,dark,d) circle candidates and
+    return the winning (x,y,r), or None. Separated from _dial_circle purely
+    so the rank-vs-content-heuristic trade-off can be tested directly with
+    plain numbers instead of needing to coax cv2.HoughCircles into producing
+    a specific ranking on a synthetic image."""
+    if not candidates: return None
+    scored=[(r-.65*d+.80*dark-15.0*rank,x,y,r) for rank,x,y,r,dark,d in candidates]
+    _,x,y,r=max(scored); return x,y,r
 
 
 def _bright_components(gray,roi):
@@ -176,12 +204,30 @@ def _trim_bezel_band(gray,x0,y0,x1,y1):
 
     Row-wise fraction of near-white pixels (>140) is a bezel-vs-dial signal
     robust to the bezel's curvature (it need not span the row's full width).
-    Only trim past a bright run found in the band's outer half, and only
-    when that run is a clear peak (>=0.20 bright-pixel fraction) relative to
-    the rest of the band -- otherwise the band has no significant bezel
-    content and is left untouched, so this never narrows a search that did
-    not need it.
+    A real bezel/rehaut ring is many rows tall (spans a visible arc of the
+    ring). A single minute tick is only a few rows tall, but on a wide band
+    (spanning several tick positions either side of 60) its curved
+    neighbours can still make one row's bright-pixel fraction spike as high
+    as a real bezel row -- a real failure shape: a 3-row tick spike was
+    trimmed away as if it were bezel, discarding the very evidence the band
+    exists to find. Require a bright run of at least MIN_BEZEL_RUN_ROWS
+    contiguous rows before treating it as bezel, and only trim past a run
+    found in the band's outer half -- otherwise the band has no significant
+    bezel content and is left untouched, so this never narrows a search
+    that did not need it.
+
+    A bezel's brightness does not end cleanly at the row profile's cutoff
+    crossing: on a real photo, tick segmentation stayed unreliable for
+    roughly a further ten rows past that crossing (residual bezel/rehaut
+    edge influence still skewing the per-band Otsu/CLAHE threshold), then
+    became reliable again over a wide, stable range. TRIM_MARGIN_ROWS is set
+    inside that verified stable range rather than right at the crossing, and
+    _minute_ticks additionally still searches the untrimmed band alongside
+    this one, so an imperfect margin on some other photo degrades gracefully
+    to the pre-trim behaviour instead of silently losing evidence.
     """
+    MIN_BEZEL_RUN_ROWS=8
+    TRIM_MARGIN_ROWS=15
     h=y1-y0
     if h<12:return y0
     band=gray[y0:y1,x0:x1].astype(np.float32)
@@ -189,26 +235,42 @@ def _trim_bezel_band(gray,x0,y0,x1,y1):
     peak=float(frac.max())
     if peak<0.20:return y0
     cutoff=0.5*peak
-    last_bright=-1
-    for i in range(h//2):
-        if frac[i]>=cutoff:last_bright=i
-    if last_bright<0:return y0
-    return y0+min(last_bright+3,h-1)
+    run_end=-1;i=0
+    while i<h//2:
+        if frac[i]>=cutoff:
+            j=i
+            while j<h//2 and frac[j]>=cutoff:j+=1
+            if j-i>=MIN_BEZEL_RUN_ROWS:run_end=j-1
+            i=j
+        else:
+            i+=1
+    if run_end<0:return y0
+    return y0+min(run_end+TRIM_MARGIN_ROWS,h-1)
 
 
 def _minute_ticks(gray,cx,cy,r,tl,tr):
-    mid=(tl.x+tr.x)/2;top=(tl.y+tr.y)/2;x0=max(0,int(mid-.42*r));x1=min(gray.shape[1],int(mid+.42*r));y0=max(0,int(top-.20*r));y1=min(gray.shape[0],int(top+.035*r))
-    y0=_trim_bezel_band(gray,x0,y0,x1,y1)
-    p=gray[y0:y1,x0:x1]
-    if p.size==0:return None
+    mid=(tl.x+tr.x)/2;top=(tl.y+tr.y)/2;x0=max(0,int(mid-.42*r));x1=min(gray.shape[1],int(mid+.42*r));y0_full=max(0,int(top-.20*r));y1=min(gray.shape[0],int(top+.035*r))
+    y0_trim=_trim_bezel_band(gray,x0,y0_full,x1,y1)
+    # Search both the full band and, when a bright bezel run was found, the
+    # trimmed band, and pool candidates from whichever actually segments
+    # ticks cleanly. Trimming can itself land a few rows short of or past
+    # the mask/threshold pipeline's sweet spot for a clean direct triple
+    # (observed on a real image), so relying on the trimmed band alone can
+    # lose a result the untrimmed band would have found, and vice versa --
+    # pooling both keeps the existing direct-preferred / lowest-score
+    # selection below in charge, rather than trusting one exact boundary.
+    bands=[y0_full] if y0_trim==y0_full else [y0_full,y0_trim]
     direct=[];seq=[]
-    for m in _tick_masks(p):
-        t=_ticks(m,x0,y0,r)
-        if len(t)<3:continue
-        d=_direct(t,mid,r)
-        if d:direct.append(d)
-        s=_sequence(t,mid,r)
-        if s:seq.append(s)
+    for y0 in bands:
+        p=gray[y0:y1,x0:x1]
+        if p.size==0:continue
+        for m in _tick_masks(p):
+            t=_ticks(m,x0,y0,r)
+            if len(t)<3:continue
+            d=_direct(t,mid,r)
+            if d:direct.append(d)
+            s=_sequence(t,mid,r)
+            if s:seq.append(s)
     if direct:
         _,l,c,rr=min(direct,key=lambda z:z[0]); reg=_circle_tangent_landmarks(l,c,rr,cx,cy)
         if reg is not None:

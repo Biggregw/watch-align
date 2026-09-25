@@ -6,7 +6,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from gmt12_auto_landmarks import _circle_tangent_landmarks, _trim_bezel_band
+from gmt12_auto_landmarks import _circle_tangent_landmarks, _trim_bezel_band, _pick_dial_circle
 from human_qc_geometry import Gmt12Geometry, Point, measure_gmt12
 
 
@@ -131,3 +131,43 @@ def test_trim_bezel_band_leaves_band_untouched_without_a_bright_ring():
 def test_trim_bezel_band_is_safe_on_a_short_band():
     gray=np.zeros((60,200),dtype=np.uint8)
     assert _trim_bezel_band(gray,10,10,190,18)==10
+
+
+def test_trim_bezel_band_does_not_mistake_a_single_tick_spike_for_a_ring():
+    # Real failure shape: a search band with NO bezel content at all, but a
+    # single-row bright-fraction spike (adjacent minute ticks curving into
+    # the same row across a wide band) as tall as a real bezel row. Treating
+    # any tall spike as bezel discarded the very tick evidence being
+    # searched for. A run must be many rows tall, not one, to count.
+    gray=np.zeros((200,500),dtype=np.uint8)
+    x0,y0,x1,y1=50,20,442,129
+    band=np.full((109,392),0,dtype=np.uint8)   # dark everywhere...
+    band[38:39,:]=200                          # ...except a single bright row
+    gray[y0:y1,x0:x1]=band
+    assert _trim_bezel_band(gray,x0,y0,x1,y1)==y0
+
+
+def test_pick_dial_circle_prefers_hough_top_rank_near_ties():
+    # Real failure shape observed on a QC photo: the correct dial circle was
+    # Hough's own rank-0 (strongest accumulator) candidate, but a smaller,
+    # off-dial circle around the hands hub -- sampling purely black interior
+    # with no hands/index/text to dilute it, and sitting closer to the frame
+    # centre -- won the old un-penalised content re-score by a hair (457.0
+    # vs 455.1) despite being geometrically wrong (visually confirmed).
+    correct=(0, 545.0, 989.0, 393.0, 224.0, 181.0)   # rank, x, y, r, dark, d
+    wrong=(2, 597.0, 1273.0, 385.0, 185.0, 117.0)
+    x,y,r=_pick_dial_circle([correct,wrong])
+    assert (x,y,r)==(545.0,989.0,393.0)
+
+
+def test_pick_dial_circle_still_lets_a_much_stronger_content_match_win():
+    # The rank penalty breaks near-ties; it must not make Hough's rank an
+    # absolute override regardless of how much better another candidate is.
+    weak_top_rank=(0, 300.0, 300.0, 100.0, 50.0, 400.0)   # small, bright, far off-centre
+    much_better=(3, 300.0, 300.0, 400.0, 240.0, 5.0)      # large, dark, centred
+    x,y,r=_pick_dial_circle([weak_top_rank,much_better])
+    assert (x,y,r)==(300.0,300.0,400.0)
+
+
+def test_pick_dial_circle_empty_is_none():
+    assert _pick_dial_circle([]) is None
