@@ -1,0 +1,61 @@
+name: GMT Phase B - fetch genuine control set
+
+# Downloads candidate dial photographs for the Phase B genuine-reference
+# control set (datasets/gmt_phase_b_genuine/manifest.csv) and prints small
+# base64 previews to the job log for visual suitability review. No
+# measurement happens here -- see gmt-phase-b-measure.yml.
+#
+# See docs/architecture/QC_PRINCIPLES.md and
+# docs/research/GMT_12_TRIANGLE_FRONTAL_MILESTONE.md.
+on:
+  workflow_dispatch:
+    inputs:
+      source_id:
+        description: 'Limit to one manifest source_id (blank = all sources)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -q --upgrade pip
+          python -m pip install -q Pillow numpy requests beautifulsoup4
+
+      - name: Fetch candidate images
+        env:
+          SOURCE_ID: ${{ github.event.inputs.source_id }}
+        run: |
+          if [ -n "$SOURCE_ID" ]; then
+            python3 tools/research/phase_b_fetch_genuine.py "$SOURCE_ID"
+          else
+            python3 tools/research/phase_b_fetch_genuine.py
+          fi
+
+      - name: Upload candidate status (no pixels)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmt-phase-b-candidate-status
+          path: datasets/gmt_phase_b_genuine/candidate_status.csv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Print candidate previews as base64 JPEG (log-only, LAST STEP)
+        # Deliberately the final step -- see gmt-phase-a-measure.yml's own
+        # comment for why this must be the job's true last stdout output.
+        run: python3 tools/research/phase_b_preview_candidates.py
