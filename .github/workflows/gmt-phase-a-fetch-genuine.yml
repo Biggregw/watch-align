@@ -67,6 +67,10 @@ jobs:
                     f'bracelet={imgs[0]["bracelet"]}')
           PY
 
+      - name: Print small base64 preview of one image per candidate watch
+        if: always()
+        run: python3 tools/research/phase_a_preview_candidates.py
+
       - name: Upload genuine candidate artifact
         if: always()
         uses: actions/upload-artifact@v4
