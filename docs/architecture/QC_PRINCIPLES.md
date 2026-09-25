@@ -31,9 +31,23 @@ For the GMT 12 o'clock triangle, the first human-defined local reference is the 
 - the triangle centreline should intersect the centre of the 60/top-middle minute marker, providing a direct local horizontal-alignment check;
 - extending that same triangle centreline downward provides an independent physical check against a defined area of the Rolex coronet below the triangle.
 
+### GMT 12 triangle vertical-position rule
+
+The primary human judgement of whether the 12 triangle sits too high or too low is the visible clearance between the triangle's top edge and the inner/bottom ends of the minute markers immediately above it. An experienced reviewer can recognise whether this gap has the expected proportion without first referencing the coronet below.
+
+Therefore the primary machine formulation for vertical position should mimic that single local test:
+
+- detect the triangle top edge;
+- detect the local inner/bottom edge of the minute-track markers immediately above it;
+- measure the perpendicular/local vertical clearance between those two observed features;
+- normalise that clearance using an appropriate directly observed local scale so the result is dimensionless;
+- establish the genuine distribution before defining any numerical tolerance.
+
+The triangle-to-coronet gap may later be retained as secondary corroborating evidence, but it must not be made part of the primary vertical-position measurement merely because it is available. Additional geometry must demonstrate that it improves discrimination or reliability before being required.
+
 These are local physical relationships. They do not require a fitted dial centre, Hough-circle axis, canonical dial, homography, or other inferred global geometry. A global reference must not replace these directly observed neighbouring references unless an experiment demonstrates that the global reference is necessary and improves the QC measurement.
 
-The exact coronet target area and any numerical tolerances remain deliberately undefined until human review and genuine-reference evidence establish them. The rules above define what is being observed, not pass/fail thresholds.
+The exact coronet target area, the exact local normalising scale for vertical clearance, and any numerical tolerances remain deliberately undefined until human review and genuine-reference evidence establish them. The rules above define what is being observed, not pass/fail thresholds.
 
 ## First principle: frontal measurement before perspective
 
@@ -85,6 +99,7 @@ Practical consequence for image selection: when assembling any experimental corp
 13. Reject unsuitable candidate images explicitly, with a stated reason, rather than omitting them silently or spending effort trying to measure them. An unsuitable image is evidence for the suitability gate, not a measurement task.
 14. Define each QC feature from the human visual rule first. The mathematical formulation must express that rule, not redefine it for computational convenience.
 15. When a directly observed local datum can answer the QC question, do not substitute an inferred global datum merely because existing code already provides it.
+16. If a single local visual relationship is sufficient for the human QC judgement, treat that as the primary candidate measurement. Do not automatically combine additional landmarks into the metric; use them only if evidence shows that they add useful independent information.
 
 ## Required evidence for a QC feature
 
