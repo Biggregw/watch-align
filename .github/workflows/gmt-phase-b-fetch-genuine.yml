@@ -8,6 +8,14 @@ name: GMT Phase B - fetch genuine control set
 # See docs/architecture/QC_PRINCIPLES.md and
 # docs/research/GMT_12_TRIANGLE_FRONTAL_MILESTONE.md.
 on:
+  push:
+    branches:
+      - reset/local-landmark-ratio-qc
+    paths:
+      - 'datasets/gmt_phase_b_genuine/manifest.csv'
+      - 'tools/research/phase_b_fetch_genuine.py'
+      - 'tools/research/phase_b_preview_candidates.py'
+      - '.github/workflows/gmt-phase-b-fetch-genuine.yml'
   workflow_dispatch:
     inputs:
       source_id:
