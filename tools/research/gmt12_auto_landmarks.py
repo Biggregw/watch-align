@@ -40,11 +40,25 @@ def _dial_circle(gray: np.ndarray):
         minRadius=int(min(h, w) * .20), maxRadius=int(min(h, w) * .48))
     if circles is None:
         return None
-    # Prefer a large circle whose centre is near the horizontal image centre.
-    cs = circles[0]
-    score = lambda c: c[2] - .8 * abs(c[0] - w / 2.0)
-    x, y, r = max(cs, key=score)
-    return float(x), float(y), float(r)
+
+    # Hough returns many large non-dial circles on real watch photographs.
+    # A usable search seed must be substantially contained in the image and
+    # near the image centre in BOTH axes.  The previous score considered x
+    # only and therefore selected circles centred on the top/bottom border.
+    # This remains only a search-window seed, never QC evidence.
+    candidates = []
+    for c in circles[0]:
+        x, y, r = map(float, c)
+        containment = min(x, y, w - x, h - y) / max(r, 1.0)
+        if containment < .85:
+            continue
+        centre_distance = float(np.hypot(x - w / 2.0, y - h / 2.0))
+        score = r - .8 * centre_distance
+        candidates.append((score, x, y, r))
+    if not candidates:
+        return None
+    _, x, y, r = max(candidates, key=lambda z: z[0])
+    return x, y, r
 
 
 def _bright_components(gray: np.ndarray, roi):
@@ -52,8 +66,6 @@ def _bright_components(gray: np.ndarray, roi):
     patch = gray[y0:y1, x0:x1]
     if patch.size == 0:
         return []
-    # Lume/white printing is locally bright. Otsu keeps this independent of
-    # absolute exposure; opening removes isolated rehaut/reflection noise.
     _, bw = cv2.threshold(patch, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     bw = cv2.morphologyEx(bw, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
     contours, _ = cv2.findContours(bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -69,9 +81,6 @@ def _bright_components(gray: np.ndarray, roi):
 
 
 def _triangle_candidate(gray, cx, cy, r):
-    # Triangle lives directly below the minute track in a deliberately local
-    # top-centre window. Shape selection, not dial-centre geometry, determines
-    # its final physical corners.
     roi = (max(0, int(cx-.24*r)), max(0, int(cy-.88*r)),
            min(gray.shape[1], int(cx+.24*r)), min(gray.shape[0], int(cy-.43*r)))
     candidates = []
@@ -84,16 +93,12 @@ def _triangle_candidate(gray, cx, cy, r):
         poly = cv2.approxPolyDP(hull.reshape(-1,1,2), .055*peri, True).reshape(-1,2)
         if len(poly) < 3 or len(poly) > 6:
             continue
-        # Prefer centred, substantial, vertically-pointing components.
         mx, my = p.mean(axis=0)
         score = area - 2.0*abs(mx-cx) + .25*yspan
         candidates.append((score, p))
     if not candidates:
         return None
     p = max(candidates, key=lambda z:z[0])[1]
-
-    # Human convention: OUTER/top corners are the two extreme points nearest
-    # the minute track; inward tip is the deepest point toward dial centre.
     y_min, y_max = p[:,1].min(), p[:,1].max()
     outer = p[p[:,1] <= y_min + .28*(y_max-y_min)]
     if len(outer) < 2:
@@ -106,9 +111,6 @@ def _triangle_candidate(gray, cx, cy, r):
 
 
 def _minute_ticks(gray, cx, cy, r, tri_left: Point, tri_right: Point):
-    # Search only the local minute-track strip above the triangle. Components
-    # are selected by tick-like aspect and radial placement. We require the
-    # observed central 60 tick plus a neighbour on each side.
     roi = (max(0, int(cx-.24*r)), max(0, int(cy-.99*r)),
            min(gray.shape[1], int(cx+.24*r)), min(gray.shape[0], int(cy-.73*r)))
     ticks=[]
@@ -127,7 +129,6 @@ def _minute_ticks(gray, cx, cy, r, tri_left: Point, tri_right: Point):
     if not lefts or not rights:
         return None
     left=max(lefts,key=lambda t:t[0]); right=min(rights,key=lambda t:t[0])
-    # Inner ends are the points nearest the dial centre, i.e. largest y here.
     return (Point(left[0],left[1]), Point(right[0],right[1]),
             Point(central[0],central[1]))
 
@@ -149,8 +150,6 @@ def detect_gmt12(bgr: np.ndarray) -> Detection:
         return Detection(None,0.0,"60/neighbour minute ticks not all observed")
     ml,mr,m60=ticks
     g=Gmt12Geometry(tl,tr,tip,ml,mr,m60)
-    # Confidence is intentionally conservative until comparison against the
-    # human marks is quantified. It is assessability, not QC goodness.
     width=((tr.x-tl.x)**2+(tr.y-tl.y)**2)**.5
     centred=abs(((tl.x+tr.x)/2)-m60.x)/max(width,1.)
     conf=float(max(0.0,min(1.0,1.0-.5*centred)))
