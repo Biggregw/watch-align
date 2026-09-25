@@ -192,8 +192,7 @@ def _sequence(t,mid,r):
         y59,y60,y1=y0-yslope,y0,y0+yslope
         if max(y59,y60,y1)-min(y59,y60,y1)>.055*r:continue
         observed=sum(int(np.any(ak==q)) for q in (-1,0,1));ninf=3-observed
-        target_obs=3-ninf
-        if ninf and len(ak)<4 and target_obs<2:continue
+        if ninf and len(ak)<4 and observed<2:continue
         score=float(np.mean(fit))+.25*axis+.08*ninf+.02*abs(yslope/max(pf,1))
         out.append((score,(x60f-pf,y59),(x60f,y60),(x60f+pf,y1),ninf))
     return min(out,key=lambda z:z[0]) if out else None
@@ -253,16 +252,27 @@ def _trim_bezel_band(gray,x0,y0,x1,y1):
     crossing: on a real photo, tick segmentation stayed unreliable for
     roughly a further ten rows past that crossing (residual bezel/rehaut
     edge influence still skewing the per-band Otsu/CLAHE threshold), then
-    became reliable again over a wide, stable range. TRIM_MARGIN_ROWS is set
+    became reliable again over a wide, stable range. TRIM_MARGIN_FRAC is set
     inside that verified stable range rather than right at the crossing, and
     _minute_ticks additionally still searches the untrimmed band alongside
     this one, so an imperfect margin on some other photo degrades gracefully
     to the pre-trim behaviour instead of silently losing evidence.
+
+    Both thresholds are expressed as fractions of the band's own height
+    (not fixed pixel-row counts) so this scales with dial resolution instead
+    of staying calibrated to the one real photo it was tuned against. The
+    fractions were chosen to reproduce the originally-verified 8-row/15-row
+    behaviour exactly at that photo's band height (109 rows) -- a much
+    lower-resolution photo (few dozen rows) no longer risks a fixed margin
+    consuming most of the searchable band, and a much higher-resolution one
+    no longer risks a margin far too small to clear the bezel's influence.
     """
-    MIN_BEZEL_RUN_ROWS=8
-    TRIM_MARGIN_ROWS=15
+    MIN_BEZEL_RUN_FRAC=8/109
+    TRIM_MARGIN_FRAC=15/109
     h=y1-y0
     if h<12:return y0
+    MIN_BEZEL_RUN_ROWS=max(3,round(MIN_BEZEL_RUN_FRAC*h))
+    TRIM_MARGIN_ROWS=max(3,round(TRIM_MARGIN_FRAC*h))
     band=gray[y0:y1,x0:x1].astype(np.float32)
     frac=(band>140).mean(axis=1)
     peak=float(frac.max())
@@ -304,14 +314,33 @@ def _minute_ticks(gray,cx,cy,r,tl,tr):
             if d:direct.append(d)
             s=_sequence(t,mid,r)
             if s:seq.append(s)
-    if direct:
-        _,l,c,rr=min(direct,key=lambda z:z[0]); reg=_circle_tangent_landmarks(l,c,rr,cx,cy)
+    best=_first_regularized(direct,cx,cy)
+    if best is not None:
+        (l,c,rr),_=best;return Point(*l),Point(*rr),Point(*c),False,0
+    best=_first_regularized(seq,cx,cy)
+    if best is not None:
+        (l,c,rr),(n,)=best;return Point(*l),Point(*rr),Point(*c),True,n
+    return None
+
+
+def _first_regularized(candidates,cx,cy):
+    """Try circle-tangent regularisation on each candidate in ascending
+    score order, returning ((left,center,right), extra_fields) for the
+    first one that passes, or None if none do.
+
+    The single best-scored candidate within a family (direct or sequence)
+    can still fail _circle_tangent_landmarks on its own -- an oblique
+    circle/60 association -- even when a lower-ranked candidate from the
+    same family is perfectly good. Only stopping the family search once no
+    candidate passes (rather than giving up after the very first one)
+    avoids discarding a genuinely good direct detection in favour of a
+    weaker or absent sequence fallback purely because of how one candidate
+    happened to score on unrelated regularity/centring terms.
+    """
+    for score,l,c,rr,*rest in sorted(candidates,key=lambda z:z[0]):
+        reg=_circle_tangent_landmarks(l,c,rr,cx,cy)
         if reg is not None:
-            l,c,rr=reg;return Point(*l),Point(*rr),Point(*c),False,0
-    if seq:
-        _,l,c,rr,n=min(seq,key=lambda z:z[0]); reg=_circle_tangent_landmarks(l,c,rr,cx,cy)
-        if reg is not None:
-            l,c,rr=reg;return Point(*l),Point(*rr),Point(*c),True,n
+            return reg,tuple(rest)
     return None
 
 
