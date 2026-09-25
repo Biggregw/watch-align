@@ -19,6 +19,25 @@ Example for the GMT 12 o'clock triangle:
 
 Exact feature definitions and tolerances must come from evidence. The examples above are design examples, not frozen constants.
 
+## First principle: frontal measurement before perspective
+
+Perspective correction is downstream and is explicitly gated behind successful measurement of a high-quality, essentially frontal image.
+
+If Watch Align cannot repeatedly recover the correct physical landmark relationships from a well-aligned image, no perspective model can make the QC system trustworthy. Development must therefore prove the uncorrected frontal measurement system first.
+
+The mandatory order is:
+
+1. Perfect/frontal image measurement: reliably detect the required physical landmarks on carefully selected near-frontal images and calculate the simplest local ratios.
+2. Frontal repeatability: prove that the same image is deterministic and that multiple suitable images of the same physical watch give sufficiently consistent ratios.
+3. Genuine baseline: measure independent genuine watches to establish manufacturing variation for each proven ratio.
+4. Defect sensitivity: demonstrate that known replica defects or controlled geometric deviations move the relevant ratio by more than genuine variation plus measurement uncertainty.
+5. Perspective challenge: only after steps 1-4 pass, introduce progressively off-axis images and quantify how much the proven ratios deteriorate.
+6. Perspective correction: add correction only where step 5 shows a material problem, and accept the correction only if it restores the measurement towards the already-proven frontal reference.
+
+A perspective-corrected image looking visually convincing is not success. The success criterion is recovery of the validated physical landmark ratios.
+
+Until the frontal gate passes, development effort should not be spent improving perspective correction for that feature.
+
 ## Governing rules
 
 1. Prefer local landmark ratios over absolute pixel distances.
@@ -31,12 +50,14 @@ Exact feature definitions and tolerances must come from evidence. The examples a
 8. Do not rescue an unstable measurement by merely widening thresholds or suppressing inconvenient results. Diagnose the landmark detector or abandon that measurement formulation.
 9. Keep genuine manufacturing variation, measurement error and genuine-vs-replica separation as three distinct quantities.
 10. Do not treat repeated photographs of one physical watch as independent examples.
+11. Frontal landmark measurement is a hard gate. Perspective work cannot substitute for failure at this stage.
 
 ## Required evidence for a QC feature
 
 A feature is eligible for production QC only after all of the following are demonstrated:
 
 - Landmark definition: the physical points/edges being measured are explicit and reproducible.
+- Frontal measurement proof: the feature can be measured reliably without relying on perspective correction.
 - Genuine baseline: multiple independent genuine watches establish the feature's distribution.
 - Repeatability: the same physical watch under bounded realistic capture variation produces a sufficiently small measurement spread.
 - Discrimination: known replica defects or controlled geometric deviations produce changes distinguishable from genuine variation plus measurement error.
@@ -48,12 +69,13 @@ Repeated tests are required to validate a measurement system, not to compensate 
 
 For a local ratio feature, the expected development sequence is:
 
-1. Prove reliable landmark detection on representative images.
+1. Prove reliable landmark detection on representative frontal images.
 2. Define the simplest dimensionless ratio that expresses the physical relationship.
-3. Measure independent genuine watches.
-4. Repeat captures/perturbations to quantify measurement uncertainty.
+3. Prove frontal repeatability.
+4. Measure independent genuine watches.
 5. Test known replica defects or controlled deviations.
-6. Introduce additional pose correction only if step 4 proves it necessary and the correction measurably improves the result.
+6. Challenge the proven feature with perspective.
+7. Introduce pose correction only if the perspective challenge proves it necessary and the correction measurably recovers the frontal result.
 
 Complexity must earn its place through measured improvement.
 
@@ -61,9 +83,11 @@ Complexity must earn its place through measured improvement.
 
 The current Stage 3 proportional/projective research remains useful evidence, particularly because perturbation testing exposed detector and projective-fit discontinuities. It is not automatically the production architecture.
 
-The next GMT experiment should start from the simpler physical question:
+The immediate GMT milestone is:
 
-'Where does the 12 triangle sit, and what shape does it have, relative to directly observed neighbouring dial landmarks?'
+'Can Watch Align accurately and repeatably measure the 12-triangle relationships on a high-quality, essentially frontal GMT image without perspective correction?'
+
+Until that is demonstrated, GMT perspective/rectification development is paused for this QC feature.
 
 Candidate local relationships should include, where reliably detectable:
 
@@ -74,7 +98,7 @@ Candidate local relationships should include, where reliably detectable:
 - triangle base width relative to triangle height;
 - left/right symmetry and local 12-axis displacement.
 
-Global dial radius or rectification may remain useful as secondary evidence, but should not be the default denominator when a stronger local reference is available.
+The first implementation should use the minimum geometry necessary to locate and measure those landmarks. Global dial radius or rectification may later be evaluated as secondary evidence, but should not be the default denominator when a stronger local reference is available.
 
 ## What is explicitly not frozen
 
