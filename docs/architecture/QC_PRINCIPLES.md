@@ -19,6 +19,22 @@ Example for the GMT 12 o'clock triangle:
 
 Exact feature definitions and tolerances must come from evidence. The examples above are design examples, not frozen constants.
 
+## Human-defined QC geometry before mathematical formulation
+
+For each QC check, first document how an experienced human reviewer actually judges the physical defect from a representative QC photograph. Only then translate that visual rule into landmarks and the simplest measurement that expresses it. Do not start from an available mathematical primitive and subsequently try to interpret its output as a QC defect.
+
+For the GMT 12 o'clock triangle, the first human-defined local reference is the minute track immediately above the triangle:
+
+- imagine a local reference line through the inner/bottom ends of the minute markers above the triangle;
+- the triangle's top/base edge should be parallel to this local minute-track reference line;
+- equivalently, the triangle centreline should be perpendicular to that local reference line;
+- the triangle centreline should intersect the centre of the 60/top-middle minute marker, providing a direct local horizontal-alignment check;
+- extending that same triangle centreline downward provides an independent physical check against a defined area of the Rolex coronet below the triangle.
+
+These are local physical relationships. They do not require a fitted dial centre, Hough-circle axis, canonical dial, homography, or other inferred global geometry. A global reference must not replace these directly observed neighbouring references unless an experiment demonstrates that the global reference is necessary and improves the QC measurement.
+
+The exact coronet target area and any numerical tolerances remain deliberately undefined until human review and genuine-reference evidence establish them. The rules above define what is being observed, not pass/fail thresholds.
+
 ## First principle: frontal measurement before perspective
 
 Perspective correction is downstream and is explicitly gated behind successful measurement of a high-quality, essentially frontal image.
@@ -67,6 +83,8 @@ Practical consequence for image selection: when assembling any experimental corp
 11. Frontal landmark measurement is a hard gate. Perspective work cannot substitute for failure at this stage.
 12. Do not use perspective or projective correction to accept photographs outside the QC-representative pose envelope. That envelope is decided by evidence about what production QC input actually looks like, not by what correction can technically recover.
 13. Reject unsuitable candidate images explicitly, with a stated reason, rather than omitting them silently or spending effort trying to measure them. An unsuitable image is evidence for the suitability gate, not a measurement task.
+14. Define each QC feature from the human visual rule first. The mathematical formulation must express that rule, not redefine it for computational convenience.
+15. When a directly observed local datum can answer the QC question, do not substitute an inferred global datum merely because existing code already provides it.
 
 ## Required evidence for a QC feature
 
