@@ -6,7 +6,10 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from gmt12_auto_landmarks import _circle_tangent_landmarks, _trim_bezel_band, _pick_dial_circle
+from gmt12_auto_landmarks import (
+    _circle_tangent_landmarks, _trim_bezel_band, _pick_dial_circle,
+    _polygon_to_triangle_corners,
+)
 from human_qc_geometry import Gmt12Geometry, Point, measure_gmt12
 
 
@@ -171,3 +174,36 @@ def test_pick_dial_circle_still_lets_a_much_stronger_content_match_win():
 
 def test_pick_dial_circle_empty_is_none():
     assert _pick_dial_circle([]) is None
+
+
+def test_polygon_to_triangle_corners_survives_a_hand_crossing_an_edge():
+    # Real failure shape: a watch hand crossed the triangle's right edge in
+    # the photo, leaving the hull's polygon approximation with a 4th vertex
+    # along that edge instead of simplifying to a clean 3-vertex triangle
+    # (anti-aliasing/colour bleed at the hand's boundary, not a real
+    # corner). The detector reported no triangle at all even though the
+    # top-left, top-right and tip corners were still plainly the shape's
+    # three extreme points. cx/r below match the real photo's dial circle.
+    poly=np.array([[471.0,775.0],[520.0,776.0],[517.0,824.0],[503.0,855.0]])
+    corners=_polygon_to_triangle_corners(poly,6,497.4,448.68)
+    assert corners is not None
+    left,right,tip=corners
+    assert tuple(left)==(471.0,775.0)
+    assert tuple(right)==(520.0,776.0)
+    assert tuple(tip)==(503.0,855.0)   # the actual bottommost point, not the
+                                        # 3rd-smallest-y vertex (517,824)
+
+
+def test_polygon_to_triangle_corners_rejects_too_many_vertices():
+    # A genuinely non-triangular blob must still be rejected -- the vertex
+    # allowance exists for a handful of minor edge artefacts, not arbitrary
+    # shapes.
+    poly=np.array([[float(i),float(i%3)] for i in range(10)])
+    assert _polygon_to_triangle_corners(poly,6,0.0,100.0) is None
+
+
+def test_polygon_to_triangle_corners_rejects_implausible_shape():
+    # A 4-vertex polygon that isn't triangle-like (extreme width/height
+    # ratio) must still fail the existing plausibility checks.
+    poly=np.array([[0.0,0.0],[500.0,1.0],[10.0,3.0],[250.0,2.0]])
+    assert _polygon_to_triangle_corners(poly,6,250.0,1000.0) is None

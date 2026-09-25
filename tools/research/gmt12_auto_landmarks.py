@@ -70,6 +70,25 @@ def _bright_components(gray,roi):
 
 
 def _triangle_candidate(gray,cx,cy,r):
+    """Locate the physical 12-triangle's outer corners and tip.
+
+    A watch hand (hour/minute/GMT) crosses near 12 in a large fraction of
+    real photos -- there is no way to choose a photo moment that avoids it.
+    Where a hand's edge meets the triangle's bright silhouette, the convex
+    hull can pick up one extra vertex along that edge (anti-aliasing/colour
+    bleed at the boundary, not a real corner) instead of simplifying back to
+    a clean 3-vertex triangle -- a real failure: a hand crossing the right
+    edge left a 4-vertex hull and the detector reported no triangle at all,
+    although the top-left, top-right and tip corners were all still plainly
+    the shape's three extreme points. MAX_POLY_VERTICES allows a bounded
+    number of such minor extra vertices (still far short of an unrelated
+    blob's typical complexity) and always derives the landmarks from the
+    shape's own extremes (topmost two, then the single bottommost point),
+    so an extra vertex from a hand crossing an edge is simply not among
+    them. This does not loosen the shape-plausibility checks below in any
+    way -- a genuinely non-triangular blob is still rejected by those.
+    """
+    MAX_POLY_VERTICES=6
     roi=(max(0,int(cx-.18*r)),max(0,int(cy-.72*r)),min(gray.shape[1],int(cx+.18*r)),min(gray.shape[0],int(cy-.30*r)))
     out=[]
     for area,p in _bright_components(gray,roi):
@@ -78,15 +97,29 @@ def _triangle_candidate(gray,cx,cy,r):
         hull=cv2.convexHull(p.astype(np.float32).reshape(-1,1,2)); per=cv2.arcLength(hull,True)
         if per<=0:continue
         poly=cv2.approxPolyDP(hull,.03*per,True).reshape(-1,2)
-        if len(poly)!=3:continue
-        q=poly[np.argsort(poly[:,1])]; upper=q[:2]; tip=q[2]
-        left,right=sorted(upper,key=lambda z:float(z[0])); width=float(right[0]-left[0]); height=float(tip[1]-(left[1]+right[1])/2)
-        if width<=0 or height<=0 or not(.55<=width/height<=1.65):continue
-        mid=(float(left[0])+float(right[0]))/2
-        if abs(float(tip[0])-mid)>.22*width or abs(mid-cx)>.10*r:continue
+        corners=_polygon_to_triangle_corners(poly,MAX_POLY_VERTICES,cx,r)
+        if corners is None:continue
+        left,right,tip=corners
         out.append((area,left,right,tip))
     if not out:return None
     _,l,rr,t=max(out,key=lambda z:z[0]);return Point(*map(float,l)),Point(*map(float,rr)),Point(*map(float,t))
+
+
+def _polygon_to_triangle_corners(poly,max_vertices,cx,r):
+    """Derive (left,right,tip) triangle corners from a hull polygon, or None
+    if it isn't a plausible triangle. Separated from _triangle_candidate so
+    the vertex-count/extremes trade-off (see that function's docstring) can
+    be tested directly against a fixed polygon instead of needing to
+    reproduce a specific contour-extraction result from raw pixels."""
+    poly=np.asarray(poly)
+    if len(poly)<3 or len(poly)>max_vertices:return None
+    q=poly[np.argsort(poly[:,1])]; upper=q[:2]; tip=q[-1]
+    left,right=sorted(upper,key=lambda z:float(z[0]))
+    width=float(right[0]-left[0]); height=float(tip[1]-(left[1]+right[1])/2)
+    if width<=0 or height<=0 or not(.55<=width/height<=1.65):return None
+    mid=(float(left[0])+float(right[0]))/2
+    if abs(float(tip[0])-mid)>.22*width or abs(mid-cx)>.10*r:return None
+    return left,right,tip
 
 
 def _tick_masks(p):
