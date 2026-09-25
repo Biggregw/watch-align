@@ -174,12 +174,13 @@ def image_fingerprint(im: Image.Image) -> str:
 
 
 def main() -> int:
-    only_source = sys.argv[1] if len(sys.argv) > 1 else None
+    only_sources = [s for s in sys.argv[1].split(",") if s] if len(sys.argv) > 1 and sys.argv[1] else None
     sources = read_manifest()
-    if only_source:
-        sources = [s for s in sources if s["source_id"] == only_source]
+    if only_sources:
+        wanted = set(only_sources)
+        sources = [s for s in sources if s["source_id"] in wanted]
         if not sources:
-            print(f"no manifest row for source_id={only_source!r}")
+            print(f"no manifest rows for source_id(s)={only_sources!r}")
             return 1
 
     IMAGES_DIR.mkdir(parents=True, exist_ok=True)

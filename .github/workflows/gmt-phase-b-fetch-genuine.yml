@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       source_id:
-        description: 'Limit to one manifest source_id (blank = all sources)'
+        description: 'Limit to one manifest source_id (blank = all batches)'
         required: false
         default: ''
 
@@ -28,8 +28,52 @@ permissions:
 
 jobs:
   fetch:
+    # One job per small batch of sources, each with its OWN job log -- a
+    # single job covering all 25 sources produces a combined log too large
+    # for this environment's log-retrieval tooling to fetch in one piece
+    # (confirmed empirically: run 36125377460 truncated after ~9 sources).
+    # Splitting into small per-job batches keeps every job's log well under
+    # that ceiling with no truncation.
+    if: github.event.inputs.source_id == ''
+    strategy:
+      fail-fast: false
+      matrix:
+        batch:
+          - wf_441391,wf_435502,swe_77497,swe_74119
+          - swe_59259,swe_68784,swe_68351,swe_42335
+          - swe_75910,swe_79807,swe_68408,swe_60177
+          - soth_f83f,soth_a3e8,soth_1a0f,soth_6ae6
+          - soth_8ccb,soth_2019_lot6,soth_2021_lot224,soth_6456
+          - wos_cpo_40616911,bobs_185749,phillips_181407,phillips_ch080423_22
+          - bobs_175818
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -q --upgrade pip
+          python -m pip install -q Pillow numpy requests beautifulsoup4
+
+      - name: Fetch candidate images
+        run: python3 tools/research/phase_b_fetch_genuine.py "${{ matrix.batch }}"
+
+      - name: Print candidate previews as base64 JPEG (log-only, LAST STEP)
+        # Deliberately the final step -- see gmt-phase-a-measure.yml's own
+        # comment for why this must be the job's true last stdout output.
+        run: python3 tools/research/phase_b_preview_candidates.py
+
+  fetch_single:
+    if: github.event.inputs.source_id != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,23 +91,7 @@ jobs:
       - name: Fetch candidate images
         env:
           SOURCE_ID: ${{ github.event.inputs.source_id }}
-        run: |
-          if [ -n "$SOURCE_ID" ]; then
-            python3 tools/research/phase_b_fetch_genuine.py "$SOURCE_ID"
-          else
-            python3 tools/research/phase_b_fetch_genuine.py
-          fi
-
-      - name: Upload candidate status (no pixels)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gmt-phase-b-candidate-status
-          path: datasets/gmt_phase_b_genuine/candidate_status.csv
-          if-no-files-found: warn
-          retention-days: 7
+        run: python3 tools/research/phase_b_fetch_genuine.py "$SOURCE_ID"
 
       - name: Print candidate previews as base64 JPEG (log-only, LAST STEP)
-        # Deliberately the final step -- see gmt-phase-a-measure.yml's own
-        # comment for why this must be the job's true last stdout output.
         run: python3 tools/research/phase_b_preview_candidates.py
