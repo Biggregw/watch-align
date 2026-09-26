@@ -6,39 +6,44 @@ package com.watchalign.mobile;
  * This is a Watch Align calibrated inspection master, not Rolex factory CAD.
  */
 final class Gmt126710BlnrMaster {
-    static final String ID = "126710BLNR-visual-master-v4";
+    static final String ID = "126710BLNR-visual-master-v5";
+
+    // v5 geometry is measured, not hand-tuned: black-dial edge fitted with DialEdgeEllipseFit,
+    // then each applied marker's white-gold surround segmented on (a) the official front-on
+    // m126710blnr-0002 image and (b) an independent real photo. The two agree to ~0.005R.
+    // All three marker types share one outer circle at ~0.905R (triangle 0.902, dots 0.904,
+    // batons 0.908). v3/v4 drew every surround 25-35% undersized.
+    // White lume references are the surround inset by its measured width, ~0.022R.
 
     static final double DIAL_EDGE_R = 1.000;
     static final double MINUTE_TRACK_R = 0.925;
-    // Centre radius of the 6/9 batons. The triangle has its own TRI_CENTER_R.
-    static final double MARKER_CENTER_R = 0.755;
-    // Round markers sit further out than the batons (their outer edges share the
-    // marker ring, and they are shorter radially). v4: measured 0.814-0.819 (mean 0.816)
-    // on the official front-on m126710blnr-0002 image after fitting the black-dial
-    // edge; v3 drew them on the baton radius, about 0.06R (~14 px on a 230 px dial) too far in.
+
+    // 6/9 batons (MARKER_CENTER_R is their centre radius). Measured 0.754-0.762.
+    static final double MARKER_CENTER_R = 0.758;
+    // Round markers: measured centres 0.814-0.819 (official), 0.808-0.818 (photo).
     static final double ROUND_CENTER_R = 0.816;
 
-    // Applied marker outer body and inner lume references.
-    // Alpha28 enlarges the outer body to trace the applied white-gold surround rather than the lume only.
-    static final double ROUND_OUTER_R = 0.070;
-    static final double ROUND_LUME_R = 0.049;
+    // Round marker surround and lume radii. Measured surround 0.084-0.093.
+    static final double ROUND_OUTER_R = 0.088;
+    static final double ROUND_LUME_R = 0.066;
 
-    // 6/9 baton half dimensions: radial length, tangential width.
-    static final double BATON_RADIAL_HALF = 0.106;
-    static final double BATON_TANGENTIAL_HALF = 0.044;
-    static final double BATON_LUME_RADIAL_HALF = 0.077;
-    static final double BATON_LUME_TANGENTIAL_HALF = 0.026;
+    // 6/9 baton half dimensions: radial length, tangential width. Measured 0.152-0.157 / 0.060-0.063.
+    static final double BATON_RADIAL_HALF = 0.150;
+    static final double BATON_TANGENTIAL_HALF = 0.060;
+    static final double BATON_LUME_RADIAL_HALF = 0.128;
+    static final double BATON_LUME_TANGENTIAL_HALF = 0.038;
 
     // 12 triangle. Genuine orientation is BASE OUTWARD, APEX INWARD.
-    // Alpha28 shifts the body slightly inward and extends the apex so the outline traces the full applied marker.
-    static final double TRI_CENTER_R = 0.748;
-    static final double TRI_BASE_OUTWARD = 0.096;
-    static final double TRI_APEX_INWARD = 0.154;
-    static final double TRI_HALF_BASE = 0.083;
-    static final double TRI_LUME_CENTER_R = 0.746;
-    static final double TRI_LUME_BASE_OUTWARD = 0.071;
-    static final double TRI_LUME_APEX_INWARD = 0.118;
-    static final double TRI_LUME_HALF_BASE = 0.058;
+    // Measured surround: base 0.902 (both images), apex 0.599-0.603, half-base 0.120-0.126.
+    static final double TRI_CENTER_R = 0.750;
+    static final double TRI_BASE_OUTWARD = 0.152;
+    static final double TRI_APEX_INWARD = 0.150;
+    static final double TRI_HALF_BASE = 0.123;
+    // Lume: surround inset by 0.022R about the triangle's incentre.
+    static final double TRI_LUME_CENTER_R = 0.750;
+    static final double TRI_LUME_BASE_OUTWARD = 0.130;
+    static final double TRI_LUME_APEX_INWARD = 0.092;
+    static final double TRI_LUME_HALF_BASE = 0.090;
 
     static boolean supports(String modelRef) {
         return modelRef != null && modelRef.toUpperCase().contains("126710BLNR");

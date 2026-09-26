@@ -2,14 +2,45 @@
   "id": "126710BLNR-master-v1",
   "model": "Rolex GMT-Master II 126710BLNR",
   "coordinate_system": "dial radius normalized; centre=(0,0); +x=3 o'clock; +y=6 o'clock",
-  "provenance": "Watch Align one-off inspection master calibrated from front-on genuine 126710BLNR product imagery; not Rolex factory CAD",
-  "dial_edge_radius": 1.000,
+  "provenance": "Watch Align inspection master. v5 (alpha43): marker surrounds measured on the official front-on m126710blnr-0002 image and an independent photo after fitting the black-dial edge; not Rolex factory CAD",
+  "dial_edge_radius": 1.0,
   "minute_track_radius": 0.925,
-  "marker_center_radius": 0.755,
+  "marker_center_radius": 0.758,
   "markers": {
-    "round": {"hours": [1,2,4,5,7,8,10,11], "center_radius": 0.816, "radius": 0.061},
-    "baton": {"hours": [6,9], "radial_half": 0.092, "tangential_half": 0.037},
-    "triangle_12": {"center_radius": 0.770, "outward": 0.120, "inward": 0.090, "half_base": 0.078}
+    "round": {
+      "hours": [
+        1,
+        2,
+        4,
+        5,
+        7,
+        8,
+        10,
+        11
+      ],
+      "center_radius": 0.816,
+      "radius": 0.088
+    },
+    "baton": {
+      "hours": [
+        6,
+        9
+      ],
+      "center_radius": 0.758,
+      "radial_half": 0.15,
+      "tangential_half": 0.06
+    },
+    "triangle_12": {
+      "center_radius": 0.75,
+      "outward": 0.152,
+      "inward": 0.15,
+      "half_base": 0.123
+    }
   },
-  "date_aperture": {"x_inner": 0.535, "x_outer": 0.720, "y_top": -0.076, "y_bottom": 0.076}
+  "date_aperture": {
+    "x_inner": 0.535,
+    "x_outer": 0.72,
+    "y_top": -0.076,
+    "y_bottom": 0.076
+  }
 }

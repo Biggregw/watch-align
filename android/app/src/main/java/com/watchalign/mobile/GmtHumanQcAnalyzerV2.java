@@ -35,6 +35,16 @@ final class GmtHumanQcAnalyzerV2 {
             if(!dial.valid)return unavailable("wide-scale dial geometry could not be verified: "+dial.reason);
             double cx=dial.x,cy=dial.y,r=dial.r,q=dial.quality;
             if(!(r>20)||q<0.45)return unavailable("dial geometry confidence is too low for local 12-marker QC");
+            // Use the same edge-fitted centre as the visual master. The 12-marker axis is
+            // measured against centre -> 60 tick, so a few px of Hough centre error becomes
+            // roughly a degree of fake marker rotation.
+            DialEdgeEllipseFit.Fit edge=SafePerspectiveGmtOverlayV2.fitDialEdgeBgr(src,cx,cy,r);
+            String centreNote;
+            if(edge!=null){
+                centreNote=String.format(Locale.US,"Dial centre re-fitted to dial edge: %.1f, %.1f; radius %.1f px (moved %.1f px).",
+                        edge.cx,edge.cy,edge.meanRadius(),Math.hypot(edge.cx-cx,edge.cy-cy));
+                cx=edge.cx;cy=edge.cy;r=edge.meanRadius();
+            }else centreNote="Dial centre: UNREFINED Hough proposal (dial-edge re-fit unavailable).";
 
             GmtTwelveLandmarkAnalyzer.Result primary=GmtTwelveLandmarkAnalyzer.analyse(src,cx,cy,r);
             GmtTwelveLandmarkAnalyzer.Result twelve=primary;boolean recovered=false;
@@ -106,7 +116,8 @@ final class GmtHumanQcAnalyzerV2 {
             out.append("Perspective: ").append(pose.label).append(" - ").append(pose.reason).append(".\n");
 
             out.append("\nDiagnostics\n");
-            out.append(String.format(Locale.US,"Wide-scale GMT dial seed: centre %.1f, %.1f; radius %.1f px; quality %.2f.\n",cx,cy,r,q));
+            out.append(String.format(Locale.US,"Wide-scale GMT dial seed: centre %.1f, %.1f; radius %.1f px; quality %.2f.\n",dial.x,dial.y,dial.r,q));
+            out.append(centreNote).append("\n");
             out.append("The local minute track defines true 12; the triangle is measured against it and never used to straighten itself.\n");
             if(twelve.valid){
                 out.append(String.format(Locale.US,"Local minute frame: 59/60/01 RESOLVED (%s); track roll %+.2f°, pitch %.2f°, frame score %.1f%s.\n",

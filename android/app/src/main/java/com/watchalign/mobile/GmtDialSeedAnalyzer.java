@@ -115,6 +115,37 @@ final class GmtDialSeedAnalyzer {
                 best=new RadiusFit(r,b.strength,b.positiveFraction,b.coverage);
         }
         if(best==null)return null;
+        // The strongest dark-inside/bright-outside ring is not necessarily the dial. On a
+        // dark-bezel watch (126710BLNR, Submariner) the black ceramic insert meeting the
+        // bright case at ~1.4x the dial radius often wins, and the bezel numerals then pass
+        // the marker-ring test; a bright rehaut rim ~1.08x out can win too. The dial edge is the INNERMOST ring that is consistently
+        // dark-inside/bright-outside all the way round. Printed markers and ticks cannot
+        // fake that: they are bright at only a few angles, so the median contrast stays ~0.
+        {
+            double floor=Math.max(.045,.30*best.boundary);
+            int lo=(int)Math.max(minR,Math.round(.55*best.r)),top=(int)Math.round(.95*best.r);
+            RadiusFit inner=null;
+            Boundary prev=null,cur=null;
+            for(int r=lo;r<=top;r+=2){
+                Boundary b=signedBoundary(g,cx,cy,r);
+                if(cur!=null&&prev!=null&&cur.coverage>=.55&&cur.strength>=floor&&cur.positiveFraction>=.56
+                        &&cur.strength>=prev.strength&&cur.strength>=b.strength){
+                    inner=new RadiusFit(r-2,cur.strength,cur.positiveFraction,cur.coverage);
+                    break;
+                }
+                prev=cur;cur=b;
+            }
+            if(inner!=null){
+                // Climb to the top of this ring's peak before the 1 px refinement below.
+                RadiusFit peak=inner;
+                for(int r=(int)Math.round(inner.r)+2;r<=top+4;r+=2){
+                    Boundary b=signedBoundary(g,cx,cy,r);
+                    if(b.coverage<.55||b.strength<=peak.boundary)break;
+                    peak=new RadiusFit(r,b.strength,b.positiveFraction,b.coverage);
+                }
+                best=peak;
+            }
+        }
         // One-pixel refinement around the coarse winner.
         RadiusFit fine=best;
         int lo=(int)Math.max(minR,Math.round(best.r)-3),fh=(int)Math.min(hi,Math.round(best.r)+3);

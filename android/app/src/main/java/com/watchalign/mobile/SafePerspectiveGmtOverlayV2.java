@@ -164,6 +164,17 @@ final class SafePerspectiveGmtOverlayV2 {
         }
     }
 
+    /** Edge-fits the dial from a BGR image, using the same blur as the overlay path. */
+    static DialEdgeEllipseFit.Fit fitDialEdgeBgr(Mat bgr,double x,double y,double r){
+        Mat gray=new Mat(),blur=new Mat();
+        try{
+            Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);
+            Imgproc.GaussianBlur(gray,blur,new Size(5,5),1.2);
+            return fitDialEdge(blur,new PerspectiveGmtOverlay.DialSeed(x,y,r,1.0,0.0));
+        }catch(Throwable t){return null;}
+        finally{gray.release();blur.release();}
+    }
+
     private static DialEdgeEllipseFit.Fit fitDialEdge(Mat blurredGray,PerspectiveGmtOverlay.DialSeed seed){
         try{
             final int w=blurredGray.cols(),h=blurredGray.rows();
