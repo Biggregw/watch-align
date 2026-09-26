@@ -6,9 +6,10 @@ import org.opencv.imgproc.Imgproc;
 
 /**
  * GMT-specific dial seed detector that tolerates close crops/screenshots where the
- * dial can occupy far more than half the image width. The legacy detector was
- * tuned to a much smaller 10.5-28% radius band and can therefore lock onto the
- * hour-marker ring instead of the actual dial edge on close crops.
+ * dial can occupy far more than half the image width. The detector deliberately
+ * avoids an absolute image-scale prior: screenshots and crops can place the same
+ * physical dial at very different pixel radii. Selection is driven by the dark
+ * dial, the 12-marker ring and the persistent outer boundary instead.
  */
 final class GmtDialSeedAnalyzer {
     static final class Result {
@@ -33,10 +34,9 @@ final class GmtDialSeedAnalyzer {
             for(int i=0;i<circles.cols();i++){
                 double[] c=circles.get(0,i);if(c==null||c.length<3)continue;
                 Candidate q=score(gray,c[0],c[1],c[2],min);
-                if(q!=null&&(best==null||q.score>best.score))best=q;
+                if(q!=null&&(best==null||better(q,best)))best=q;
             }
             if(best==null){
-                // CLAHE second pass is useful for compressed web screenshots.
                 Mat eq=new Mat(),c2=new Mat();
                 try{
                     Imgproc.createCLAHE(2.4,new Size(8,8)).apply(gray,eq);
@@ -45,7 +45,7 @@ final class GmtDialSeedAnalyzer {
                     for(int i=0;i<c2.cols();i++){
                         double[] c=c2.get(0,i);if(c==null||c.length<3)continue;
                         Candidate q=score(eq,c[0],c[1],c[2],min);
-                        if(q!=null&&(best==null||q.score>best.score))best=q;
+                        if(q!=null&&(best==null||better(q,best)))best=q;
                     }
                 }finally{c2.release();eq.release();}
             }
@@ -55,8 +55,23 @@ final class GmtDialSeedAnalyzer {
     }
 
     private static final class Candidate{
-        final double x,y,r,score;
-        Candidate(double x,double y,double r,double s){this.x=x;this.y=y;this.r=r;score=s;}
+        final double x,y,r,score,centre;
+        final int markerHits;
+        Candidate(double x,double y,double r,double s,double centre,int hits){
+            this.x=x;this.y=y;this.r=r;score=s;this.centre=centre;markerHits=hits;
+        }
+    }
+
+    private static boolean better(Candidate a,Candidate b){
+        // Primary decision is evidence score. For effectively tied candidates,
+        // favour the one supported by more hour sectors, then the one whose
+        // centre is more plausible. Never favour a radius merely because it is
+        // closer to some assumed fraction of the screenshot dimensions.
+        if(a.score>b.score+0.004)return true;
+        if(b.score>a.score+0.004)return false;
+        if(a.markerHits!=b.markerHits)return a.markerHits>b.markerHits;
+        if(Math.abs(a.centre-b.centre)>0.01)return a.centre<b.centre;
+        return a.score>b.score;
     }
 
     private static Candidate score(Mat g,double cx,double cy,double r,int min){
@@ -76,10 +91,13 @@ final class GmtDialSeedAnalyzer {
         double markerFit=Math.min(1,hits/10.0);
         double edgeFit=Math.min(1,edge/.16);
         double centreFit=1-Math.min(1,centre/.50);
-        // Very weak scale prior only. Close crops are intentionally allowed.
-        double scaleFit=1-Math.min(1,Math.abs(rn-.27)/.23);
-        double score=.31*markerFit+.25*darkFit+.22*edgeFit+.12*centreFit+.10*scaleFit;
-        return new Candidate(cx,cy,r,score);
+
+        // No absolute radius/scale term. Alpha37's weak preference for r≈0.27
+        // of the image width was enough to make a close-cropped screenshot pick
+        // an inner ring even when the true outer dial had stronger 12-sector and
+        // centre evidence. Human inspection has no such screenshot-scale prior.
+        double score=.34*markerFit+.26*darkFit+.20*edgeFit+.20*centreFit;
+        return new Candidate(cx,cy,r,score,centre,hits);
     }
 
     private static int markerHits(Mat g,double cx,double cy,double r){
