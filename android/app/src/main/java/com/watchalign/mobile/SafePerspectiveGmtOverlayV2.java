@@ -45,12 +45,17 @@ final class SafePerspectiveGmtOverlayV2 {
                     GmtTwelveLandmarkAnalyzer.Result rec=GmtTwelveRecoveryAnalyzer.analyse(bgr,seed.x,seed.y,seed.r,localFrame.reason);
                     if(rec.valid){localFrame=rec;rollRecovered=true;}
                 }
-                if(localFrame.valid&&Double.isFinite(localFrame.trackRollClockDeg)&&Math.abs(localFrame.trackRollClockDeg)<=18.0){
+                boolean stableLocalRoll=localFrame.valid&&localFrame.detectorStable
+                        &&Double.isFinite(localFrame.minuteFrameScore)&&localFrame.minuteFrameScore>=10.0
+                        &&Double.isFinite(localFrame.trackRollClockDeg)&&Math.abs(localFrame.trackRollClockDeg)<=18.0;
+                if(stableLocalRoll){
                     seed=new PerspectiveGmtOverlay.DialSeed(seed.x,seed.y,seed.r,seed.quality,localFrame.trackRollClockDeg);
-                    rollSource=String.format(Locale.US,"local detected 60-minute tick%s (frame score %.1f)",rollRecovered?" recovered":"",localFrame.minuteFrameScore);
+                    rollSource=String.format(Locale.US,"trusted local detected 60-minute tick%s (frame score %.1f)",rollRecovered?" recovered":"",localFrame.minuteFrameScore);
                 }else{
                     seed=new PerspectiveGmtOverlay.DialSeed(seed.x,seed.y,seed.r,seed.quality,0.0);
-                    rollSource="uncorrected image roll because local 59/60/01 frame was unresolved";
+                    rollSource=localFrame!=null&&localFrame.valid
+                            ?String.format(Locale.US,"uncorrected image roll because local 59/60/01 frame is low confidence (score %.1f)",localFrame.minuteFrameScore)
+                            :"uncorrected image roll because local 59/60/01 frame was unresolved";
                 }
             }else rollSource="manual precision-alignment roll";
 
@@ -72,6 +77,18 @@ final class SafePerspectiveGmtOverlayV2 {
             double major=Math.max(ellipse.size.width,ellipse.size.height),minor=Math.min(ellipse.size.width,ellipse.size.height);
             double axisRatio=minor/Math.max(1.0,major);
             double tiltDeg=Math.toDegrees(Math.acos(Math.max(0.0,Math.min(1.0,axisRatio))));
+
+            // A fixed 2D master should not be shown when perspective is so severe
+            // that an ellipse-only H0 cannot preserve the internal dial relationships.
+            // The real dealer test that triggered this gate measured about 27 degrees
+            // and produced an obviously false overlay. Human/rehaut QC can still run.
+            if(manualSeed==null&&!perspectiveFallback&&tiltDeg>=15.0){
+                String report=String.format(Locale.US,
+                        "\n\nVISUAL QC MASTER\nWithheld: fitted dial ellipse implies %.1f° apparent tilt, beyond the safe range for the fixed 2D master. %s. Use a squarer QC photo for the master overlay; human rehaut/perspective analysis can still run.\n",
+                        tiltDeg,rollSource);
+                return new PerspectiveGmtOverlay.Result(null,null,report,0.0);
+            }
+
             Point[] card=(Point[])call("ellipseCardinalPoints",new Class[]{RotatedRect.class,double.class},ellipse,seed.rollDeg);
             h0=(Mat)call("homographyFromUnitSquare",new Class[]{Point[].class},(Object)card);
             if(h0==null||h0.empty())return null;
@@ -83,10 +100,8 @@ final class SafePerspectiveGmtOverlayV2 {
             double centerErr=Math.hypot(ellipse.center.x-seed.x,ellipse.center.y-seed.y)/Math.max(1.0,seed.r);
             double confidence=((Number)call("confidence",new Class[]{double.class,double.class,double.class,double.class},seed.quality,reproj,centerErr,axisRatio)).doubleValue();
             if(perspectiveFallback)confidence*=0.70;
-            if(manualSeed==null&&(localFrame==null||!localFrame.valid))confidence*=0.82;
+            if(manualSeed==null&&(localFrame==null||!localFrame.valid||!localFrame.detectorStable))confidence*=0.82;
 
-            // Do not show a confidently-looking master from a weak automatic pose.
-            // Manual precision alignment is still allowed because the user supplied the dial edge.
             if(manualSeed==null&&confidence<0.52)return new PerspectiveGmtOverlay.Result(null,null,
                     String.format(Locale.US,"\n\nVISUAL QC MASTER\nWithheld: automatic dial pose confidence %.0f%% is too low for a trustworthy fixed-master overlay. The human 12-marker analysis can still run independently.\n",confidence*100.0),confidence);
 
