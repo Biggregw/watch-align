@@ -72,30 +72,32 @@ public class GmtHumanQcMathTest {
         assertEquals(GmtHumanQcMath.Attention.CLEAR,r.attention);
     }
 
-    @Test public void localSectorTopWiderThanBottomMeansInflatedAt12() {
+    @Test public void realGapEnhancingPoseBottomRehautWiderMeansInflatedAt12() {
         GmtRehautSectorAnalyzer.Result s=new GmtRehautSectorAnalyzer.Result(
-                12.0,9.0,7.0,9.0,0.8,0.8,0.8,0.8);
+                24.0,20.0,29.0,20.0,0.8,0.8,0.8,0.8);
         assertEquals(GmtHumanQcMath.GapTrend.INFLATED,s.gapTrendAt12());
-        assertTrue(s.verticalAsymmetry>0.10);
+        assertTrue(s.verticalAsymmetry<-0.075);
     }
 
-    @Test public void localSectorTopNarrowerThanBottomMeansCompressedAt12() {
+    @Test public void oppositePoseTopRehautWiderMeansCompressedAt12() {
         GmtRehautSectorAnalyzer.Result s=new GmtRehautSectorAnalyzer.Result(
-                7.0,9.0,12.0,9.0,0.8,0.8,0.8,0.8);
+                29.0,20.0,24.0,20.0,0.8,0.8,0.8,0.8);
         assertEquals(GmtHumanQcMath.GapTrend.COMPRESSED,s.gapTrendAt12());
+        assertTrue(s.verticalAsymmetry>0.075);
     }
 
-    @Test public void localSectorNearSymmetryIsNeutral() {
+    @Test public void realStraightBaselineRemainsNeutral() {
         GmtRehautSectorAnalyzer.Result s=new GmtRehautSectorAnalyzer.Result(
-                10.0,10.0,9.5,10.0,0.8,0.8,0.8,0.8);
+                24.0,20.0,22.0,16.0,1.0,1.0,0.95,1.0);
         assertEquals(GmtHumanQcMath.GapTrend.NEUTRAL,s.gapTrendAt12());
+        assertEquals(0.043478,s.verticalAsymmetry,0.001);
     }
 
     @Test public void noisyGlobalRehautDoesNotHideStrongLocalSectors() {
         GmtRehautPoseAnalyzer.Result global=new GmtRehautPoseAnalyzer.Result(
                 12,6,5,13,9,0.33,0.44,0.33,0.44,0.70,45,0.28,0.33,0.41,100,108);
         GmtRehautSectorAnalyzer.Result sectors=new GmtRehautSectorAnalyzer.Result(
-                12.0,10.0,6.0,10.0,0.8,0.8,0.8,0.8);
+                6.0,10.0,12.0,10.0,0.8,0.8,0.8,0.8);
         GmtEllipsePoseAnalyzer.Result ellipse=new GmtEllipsePoseAnalyzer.Result(0.992,7.3,130.0,0.0,1.0);
         GmtHumanQcMath.PoseDecision p=GmtHumanPosePolicy.classify(global,sectors,ellipse,78.0);
         assertEquals(GmtHumanQcMath.PoseLabel.CORRECTABLE,p.label);
