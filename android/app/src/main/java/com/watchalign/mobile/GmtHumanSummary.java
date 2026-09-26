@@ -55,6 +55,7 @@ final class GmtHumanSummary {
     static String gapLine(Input in){
         if(!in.twelveValid)return "could not be measured on this photo (12 triangle or minute track not found). This is not a pass.";
         String v=Double.isFinite(in.observedGap)?String.format(Locale.US," Measured %.2f; genuine photos tested so far read %s.",in.observedGap,GENUINE_GAP_SEEN):"";
+        if(!in.stableFrame)v+=" The 12 marker could only be measured with low confidence on this photo, so treat this with caution.";
         switch(in.gap){
             case CLEAR: return "normal. Clear space between the triangle and the minute track."+v;
             case CHECK:
@@ -70,7 +71,7 @@ final class GmtHumanSummary {
         if(!in.twelveValid)return "could not be measured on this photo. This is not a pass.";
         String sp=Double.isFinite(in.spacing59)&&Double.isFinite(in.spacing01)
                 ?String.format(Locale.US," (rotation %+.1f°, space to 59 tick %.2f vs 01 tick %.2f)",in.rotationDeg,in.spacing59,in.spacing01):"";
-        String caution=in.stableFrame?"":" The minute track at 12 was not locked reliably, so treat this with caution.";
+        String caution=in.stableFrame?"":" The 12 marker could only be measured with low confidence on this photo, so treat this with caution.";
         switch(in.alignment){
             case CLEAR: return "straight and centred. No visible rotation, even spacing either side."+sp+caution;
             case CHECK: return "possibly slightly rotated or off-centre. Look closely; a hand touching the triangle can cause this."+sp+caution;

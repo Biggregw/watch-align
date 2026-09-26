@@ -98,8 +98,8 @@ final class GmtTwelveRecoveryAnalyzer {
     private static Hint photometricHint(Mat g,double cx,double cy,double r){
         double best=-Double.MAX_VALUE,bestA=Double.NaN;
         for(double a=-22;a<=22;a+=.25){
-            double[] vals=new double[40];int n=0;
-            for(double rf=.46;rf<=.88;rf+=.012){
+            double[] vals=new double[64];int n=0;
+            for(double rf=.46;rf<=.88&&n<vals.length;rf+=.012){
                 double c=samplePolar(g,cx,cy,r*rf,a);
                 double l=samplePolar(g,cx,cy,r*rf,a-1.4),rr=samplePolar(g,cx,cy,r*rf,a+1.4);
                 if(!Double.isFinite(c)||!Double.isFinite(l)||!Double.isFinite(rr))continue;
@@ -215,8 +215,10 @@ final class GmtTwelveRecoveryAnalyzer {
         return new Triangle(left,right,tip,score);
     }
 
+    // Sample buffers are sized with headroom and bounded in the loop: the 0.82-0.995 step-0.007
+    // scan yields 25 samples, which overflowed the old 24-slot buffer on nearly every photo.
     private static double tickScore(Mat g,double cx,double cy,double r,double a){
-        double[]v=new double[24];int n=0;for(double rf=.82;rf<=.995;rf+=.007){double c=samplePolar(g,cx,cy,r*rf,a),l=samplePolar(g,cx,cy,r*rf,a-.72),rr=samplePolar(g,cx,cy,r*rf,a+.72);if(!Double.isFinite(c)||!Double.isFinite(l)||!Double.isFinite(rr))continue;v[n++]=c-(l+rr)*.5+Math.max(0,c-130)*.08;}
+        double[]v=new double[64];int n=0;for(double rf=.82;rf<=.995&&n<v.length;rf+=.007){double c=samplePolar(g,cx,cy,r*rf,a),l=samplePolar(g,cx,cy,r*rf,a-.72),rr=samplePolar(g,cx,cy,r*rf,a+.72);if(!Double.isFinite(c)||!Double.isFinite(l)||!Double.isFinite(rr))continue;v[n++]=c-(l+rr)*.5+Math.max(0,c-130)*.08;}
         if(n<6)return -100;Arrays.sort(v,0,n);int take=Math.max(4,n/3);double s=0;for(int i=n-take;i<n;i++)s+=v[i];return s/take;
     }
     private static Point tickInner(Mat g,double cx,double cy,double r,double a){
