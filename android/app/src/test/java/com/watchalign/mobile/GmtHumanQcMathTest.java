@@ -32,7 +32,7 @@ public class GmtHumanQcMathTest {
 
     @Test public void inflatedPerspectiveMakesLowGapStrongerEvidence() {
         GmtHumanQcMath.ClearanceDecision r=GmtHumanQcMath.assessLowClearance(
-                0.115,1.04,GmtHumanQcMath.PoseLabel.GOOD);
+                GmtHumanQcMath.LOW_CLEARANCE_ATTENTION*0.89,1.04,GmtHumanQcMath.PoseLabel.GOOD);
         assertEquals(GmtHumanQcMath.Attention.STRONG,r.attention);
         assertEquals(GmtHumanQcMath.GapTrend.INFLATED,r.trend);
         assertTrue(r.correctedEstimate<r.observedGap);
@@ -40,7 +40,7 @@ public class GmtHumanQcMathTest {
 
     @Test public void compressedPerspectiveMakesLowGapAmbiguous() {
         GmtHumanQcMath.ClearanceDecision r=GmtHumanQcMath.assessLowClearance(
-                0.115,0.96,GmtHumanQcMath.PoseLabel.CORRECTABLE);
+                GmtHumanQcMath.LOW_CLEARANCE_ATTENTION*0.89,0.96,GmtHumanQcMath.PoseLabel.CORRECTABLE);
         assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
         assertEquals(GmtHumanQcMath.GapTrend.COMPRESSED,r.trend);
         assertTrue(r.correctedEstimate>r.observedGap);
@@ -55,13 +55,13 @@ public class GmtHumanQcMathTest {
 
     @Test public void favourableRehautCanStrengthenEvenWhenPhotoNeedsRetake() {
         GmtHumanQcMath.ClearanceDecision r=GmtDirectionalClearancePolicy.assess(
-                0.080,Double.NaN,GmtHumanQcMath.GapTrend.INFLATED,GmtHumanQcMath.PoseLabel.RETAKE);
+                GmtHumanQcMath.LOW_CLEARANCE_ATTENTION*0.62,Double.NaN,GmtHumanQcMath.GapTrend.INFLATED,GmtHumanQcMath.PoseLabel.RETAKE);
         assertEquals(GmtHumanQcMath.Attention.STRONG,r.attention);
     }
 
     @Test public void compressedRehautDoesNotOverstateSmallGap() {
         GmtHumanQcMath.ClearanceDecision r=GmtDirectionalClearancePolicy.assess(
-                0.080,1.00,GmtHumanQcMath.GapTrend.COMPRESSED,GmtHumanQcMath.PoseLabel.CORRECTABLE);
+                GmtHumanQcMath.LOW_CLEARANCE_ATTENTION*0.62,1.00,GmtHumanQcMath.GapTrend.COMPRESSED,GmtHumanQcMath.PoseLabel.CORRECTABLE);
         assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
         assertEquals(GmtHumanQcMath.GapTrend.COMPRESSED,r.trend);
     }

@@ -23,10 +23,10 @@ final class GmtHumanSummary {
         boolean overlayDrawn;
     }
 
-    // Reference only, for the reader: what genuine photos tested so far have measured
-    // with this same gap definition (field photo 0.175-0.180, official image 0.140).
+    // Reference only, for the reader: what genuine images have measured on the same
+    // outer-edge gap definition (official renders 0.086-0.096, real BLNR photo 0.084).
     // Not a decision boundary; decisions come from GmtHumanQcMath.
-    static final String GENUINE_GAP_SEEN = "about 0.14–0.18";
+    static final String GENUINE_GAP_SEEN = "about 0.085–0.095";
 
     private GmtHumanSummary(){}
 
@@ -63,7 +63,7 @@ final class GmtHumanSummary {
                     return "looks small, but the photo angle may be making it look smaller. Check by eye or retake straight-on."+v;
                 return "small. The triangle sits closer to the minute track than expected. Check by eye."+v;
             case STRONG: return "very small or touching. The triangle is right up against the minute track."+v;
-            default: return "could not be judged reliably on this photo."+v;
+            default: return "could not be judged reliably on this photo.";
         }
     }
 
@@ -76,7 +76,7 @@ final class GmtHumanSummary {
             case CLEAR: return "straight and centred. No visible rotation, even spacing either side."+sp+caution;
             case CHECK: return "possibly slightly rotated or off-centre. Look closely; a hand touching the triangle can cause this."+sp+caution;
             case STRONG: return "visibly rotated or off-centre."+sp+caution;
-            default: return "could not be judged reliably on this photo."+caution;
+            default: return "could not be judged reliably on this photo.";
         }
     }
 
@@ -90,8 +90,11 @@ final class GmtHumanSummary {
         if(in.pose==GmtHumanQcMath.PoseLabel.RETAKE)
             return items.isEmpty()?"Bottom line: nothing flagged, but the photo is too angled to rely on that. Retake straight-on."
                     :"Bottom line: flagged "+join(items)+", but the photo is too angled to be sure. Retake straight-on.";
-        if(items.isEmpty())return "Bottom line: nothing flagged at 12. Still compare the red outlines with the markers by eye.";
-        return "Bottom line: "+items.size()+(items.size()==1?" thing":" things")+" to check: "+join(items)+".";
+        if(items.isEmpty())return in.stableFrame?"Bottom line: nothing flagged at 12. Still compare the red outlines with the markers by eye."
+                :"Bottom line: nothing flagged, but the 12 marker was only measured with low confidence. A clearer photo with the hands away from 12 would help.";
+        String line="Bottom line: "+items.size()+(items.size()==1?" thing":" things")+" to check: "+join(items)+".";
+        if(!in.stableFrame)line+=" Measured with low confidence, so confirm by eye or with a clearer photo with the hands away from 12.";
+        return line;
     }
 
     private static String join(List<String> items){

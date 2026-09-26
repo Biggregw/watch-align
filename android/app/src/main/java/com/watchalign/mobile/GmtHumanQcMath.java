@@ -49,10 +49,17 @@ final class GmtHumanQcMath {
         }
     }
 
-    // Provisional research attention boundary inherited from the validated GMT12
-    // work. It is NOT a Rolex tolerance and is intentionally only used on the low
-    // side. A slightly large gap is not treated as a defect by this layer.
-    static final double LOW_CLEARANCE_ATTENTION = 0.129;
+    // Provisional attention boundary for the 12 gap measured on the triangle surround's
+    // OUTER edge (alpha48). NOT a Rolex tolerance; only used on the low side, a large gap
+    // is never a defect here.
+    // Genuine evidence so far: 11 official Rolex renders of 8 GMT-Master II references
+    // 0.086-0.096, one real genuine 126710BLNR photo 0.084. Edge location is +/-0.5 px on
+    // a ~50 px triangle (~+/-0.01). 0.070 sits clearly below every genuine reading.
+    // No replica has yet been measured cleanly on this definition, so re-derive this from
+    // labelled genuine and replica photos before treating it as more than a prompt to look.
+    // (The old 0.129 was set on the contour gap, which followed the lume on some photos
+    // and the outer surround on others.)
+    static final double LOW_CLEARANCE_ATTENTION = 0.070;
 
     static PoseDecision classifyPose(double minWidthOverMean,
                                      double edgeCoverage,

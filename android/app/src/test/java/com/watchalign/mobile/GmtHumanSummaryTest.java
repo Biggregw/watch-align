@@ -70,4 +70,14 @@ public class GmtHumanSummaryTest {
         assertTrue(s, s.contains("12 gap: small"));
         assertTrue(s, s.contains("low confidence"));
     }
+
+    @Test public void lowConfidenceFlagsSayHowToConfirm() {
+        GmtHumanSummary.Input in = base();
+        in.stableFrame = false; in.pose = GmtHumanQcMath.PoseLabel.CORRECTABLE;
+        in.gap = GmtHumanQcMath.Attention.UNASSESSABLE; in.alignment = GmtHumanQcMath.Attention.CHECK;
+        in.rotationDeg = 8.4; in.spacing59 = 0.07; in.spacing01 = 0.32;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("Bottom line: 1 thing to check: the 12 marker alignment. Measured with low confidence"));
+        assertTrue(s, s.contains("12 gap: could not be judged reliably on this photo.\n"));
+    }
 }

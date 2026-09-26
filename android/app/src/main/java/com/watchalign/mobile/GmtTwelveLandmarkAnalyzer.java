@@ -79,25 +79,22 @@ final class GmtTwelveLandmarkAnalyzer {
             // hull vertices can sit on the lume where the surround is dim, which fakes a
             // tilted base, a swung axis and unequal 59/01 gaps. The minute frame bounds the
             // base search so the ticks above it cannot be mistaken for the edge.
-            Triangle contour=tri;
             Triangle refined=refineTriangle(enhanced,tri,frame,r);
+            boolean outerEdge=false;
             if(refined!=null){
                 MinuteFrame again=minuteFrame(enhanced,cx,cy,r,refined);
-                if(again!=null){tri=refined;frame=again;}
+                if(again!=null){tri=refined;frame=again;outerEdge=true;}
             }
 
             Point baseMid=mid(tri.left,tri.right);
             double width=dist(tri.left,tri.right);
             if(width<=1e-9)return new Result("triangle top edge is degenerate");
 
-            // Clearance keeps the contour definition its LOW_CLEARANCE_ATTENTION boundary was
-            // calibrated on. The refined outer-edge base sits ~1.5 px further out, which would
-            // shift every gap by ~0.04 and needs its own genuine baseline before it can be used.
-            // Orientation, centring and 59/01 spacing are relative and use the refined corners.
-            Point contourMid=mid(contour.left,contour.right);
-            double contourWidth=dist(contour.left,contour.right);
-            if(contourWidth<=1e-9)return new Result("triangle top edge is degenerate");
-            double gap=Math.abs(pointLineDistance(contourMid,frame.left,frame.right))/contourWidth;
+            // Clearance is measured on the surround's outer edge (alpha48). The thresholded
+            // contour followed the lume on some photos and the outer surround on others, so
+            // the same watch could read 0.18 or 0.12. When the outer edge cannot be fitted the
+            // contour gap is still reported, but the result is marked low confidence below.
+            double gap=Math.abs(pointLineDistance(baseMid,frame.left,frame.right))/width;
 
             // True local 12 is centre -> detected 60 tick. Use that radial axis for
             // centring and whole-marker orientation. The marker cannot define itself.
@@ -117,7 +114,7 @@ final class GmtTwelveLandmarkAnalyzer {
             double left=dist(tri.left,frame.left)/width;
             double right=dist(tri.right,frame.right)/width;
             double side=right-left;
-            boolean stable=frame.score>=5.0 && frame.pitchDeg>=5.35 && frame.pitchDeg<=6.65 && frame.inferred<=1;
+            boolean stable=outerEdge && frame.score>=5.0 && frame.pitchDeg>=5.35 && frame.pitchDeg<=6.65 && frame.inferred<=1;
 
             return new Result(gap,horiz,axisErr,edgeErr,left,right,side,width,
                     frame.rollDeg,frame.pitchDeg,frame.score,frame.inferred,stable);
@@ -188,7 +185,10 @@ final class GmtTwelveLandmarkAnalyzer {
                     Triangle t=triangleFromHull(g,cx,cy);
                     if(t==null)continue;
                     double w=dist(t.left,t.right),h=dist(mid(t.left,t.right),t.tip);
-                    if(w<.09*r||w>.29*r||h<.10*r||h>.30*r)continue;
+                    // Size plausibility only. The physical 126710 triangle surround measures ~0.25r
+                    // wide and ~0.30r tall, so the old .29r/.30r caps rejected the real marker
+                    // whenever the contour followed the outer surround (126711CHNR field photo).
+                    if(w<.09*r||w>.32*r||h<.10*r||h>.36*r)continue;
                     double ratio=w/h;if(ratio<.55||ratio>1.75)continue;
                     double centreErr=Math.abs(clockAngle(cx,cy,mid(t.left,t.right).x,mid(t.left,t.right).y));
                     double score=area-.30*area*Math.min(1.0,centreErr/18.0)-.12*area*Math.abs(ratio-1.05);
