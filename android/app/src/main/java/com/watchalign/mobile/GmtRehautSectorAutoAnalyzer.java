@@ -16,10 +16,19 @@ import java.util.List;
  * sector-median radial gradient profile, then refines that pair ray-by-ray.
  * It exists specifically for screenshots/reflections where the global rehaut
  * model fails but a human can still plainly compare visible rehaut at 12/3/6/9.
+ *
+ * Alpha36 deliberately excludes the central few degrees of each cardinal sector.
+ * At 12 that avoids the triangle/minute tick itself contaminating the radial edge
+ * profile; at 3/6/9 it similarly reduces hour-marker/cyclops contamination. A
+ * small radius-scale sweep is also allowed because a screenshot can make the
+ * circular dial seed slightly too small or large while still preserving useful
+ * local rehaut evidence.
  */
 final class GmtRehautSectorAutoAnalyzer {
-    private static final int HALF_ARC=18;
+    private static final int HALF_ARC=24;
+    private static final int CENTRAL_EXCLUDE=6;
     private static final int STEP=2;
+    private static final double[] RADIUS_SCALES={1.00,0.95,1.05,0.90,1.10};
 
     static GmtRehautSectorAnalyzer.Result analyse(Mat bgr,double cx,double cy,double dialR,double watchTwelveClockDeg){
         if(bgr==null||bgr.empty()||!(dialR>25))
@@ -29,18 +38,32 @@ final class GmtRehautSectorAutoAnalyzer {
             if(bgr.channels()==1)bgr.copyTo(gray); else Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);
             Imgproc.GaussianBlur(gray,gray,new Size(5,5),0);
 
-            Sector s12=sector(gray,cx,cy,dialR,watchTwelveClockDeg);
-            Sector s3 =sector(gray,cx,cy,dialR,watchTwelveClockDeg+90.0);
-            Sector s6 =sector(gray,cx,cy,dialR,watchTwelveClockDeg+180.0);
-            Sector s9 =sector(gray,cx,cy,dialR,watchTwelveClockDeg+270.0);
-            if(!s12.valid||!s3.valid||!s6.valid||!s9.valid){
-                return new GmtRehautSectorAnalyzer.Result(String.format(java.util.Locale.US,
-                        "independent sector recovery incomplete (12 %s, 3 %s, 6 %s, 9 %s)",
-                        s12.valid?"ok":"x",s3.valid?"ok":"x",s6.valid?"ok":"x",s9.valid?"ok":"x"));
+            GmtRehautSectorAnalyzer.Result best=null;
+            double bestScore=-Double.MAX_VALUE;
+            String bestFailure="independent sector recovery could not constrain all cardinal sectors";
+            for(double scale:RADIUS_SCALES){
+                double rr=dialR*scale;
+                Sector s12=sector(gray,cx,cy,rr,watchTwelveClockDeg);
+                Sector s3 =sector(gray,cx,cy,rr,watchTwelveClockDeg+90.0);
+                Sector s6 =sector(gray,cx,cy,rr,watchTwelveClockDeg+180.0);
+                Sector s9 =sector(gray,cx,cy,rr,watchTwelveClockDeg+270.0);
+                if(!s12.valid||!s3.valid||!s6.valid||!s9.valid){
+                    if(Math.abs(scale-1.0)<1e-9){
+                        bestFailure=String.format(java.util.Locale.US,
+                                "independent sector recovery incomplete (12 %s, 3 %s, 6 %s, 9 %s)",
+                                s12.valid?"ok":"x",s3.valid?"ok":"x",s6.valid?"ok":"x",s9.valid?"ok":"x");
+                    }
+                    continue;
+                }
+                GmtRehautSectorAnalyzer.Result candidate=new GmtRehautSectorAnalyzer.Result(
+                        s12.width,s3.width,s6.width,s9.width,
+                        s12.coverage,s3.coverage,s6.coverage,s9.coverage);
+                double meanCoverage=(s12.coverage+s3.coverage+s6.coverage+s9.coverage)/4.0;
+                double coherence=Double.isFinite(candidate.minOverMean)?candidate.minOverMean:0.0;
+                double score=meanCoverage+0.10*coherence-0.30*Math.abs(scale-1.0);
+                if(score>bestScore){bestScore=score;best=candidate;}
             }
-            return new GmtRehautSectorAnalyzer.Result(
-                    s12.width,s3.width,s6.width,s9.width,
-                    s12.coverage,s3.coverage,s6.coverage,s9.coverage);
+            return best!=null?best:new GmtRehautSectorAnalyzer.Result(bestFailure);
         }finally{gray.release();}
     }
 
@@ -49,9 +72,11 @@ final class GmtRehautSectorAutoAnalyzer {
         Sector(boolean v,double w,double c){valid=v;width=w;coverage=c;}
     }
 
+    private static boolean useRay(int d){return Math.abs(d)>CENTRAL_EXCLUDE;}
+
     private static Sector sector(Mat gray,double cx,double cy,double dialR,double targetClock){
-        int r0=Math.max(3,(int)Math.floor(.70*dialR));
-        int r1=(int)Math.ceil(1.08*dialR);
+        int r0=Math.max(3,(int)Math.floor(.68*dialR));
+        int r1=(int)Math.ceil(1.10*dialR);
         double frameR=Math.min(Math.min(cx,cy),Math.min(gray.cols()-1.0-cx,gray.rows()-1.0-cy));
         r1=Math.min(r1,(int)Math.floor(frameR-2));
         if(r1-r0<12)return new Sector(false,Double.NaN,0);
@@ -59,29 +84,34 @@ final class GmtRehautSectorAutoAnalyzer {
         int nR=r1-r0+1;
         double[] profile=new double[nR];
         int[] count=new int[nR];
+        int rays=0;
         for(int d=-HALF_ARC;d<=HALF_ARC;d+=STEP){
+            if(!useRay(d))continue;
+            rays++;
             double a=norm360(targetClock+d),t=Math.toRadians(a),sx=Math.sin(t),sy=-Math.cos(t);
             for(int r=r0+1;r<r1;r++){
                 double g=gradient(gray,cx,cy,sx,sy,r);
                 if(Double.isFinite(g)){profile[r-r0]+=g;count[r-r0]++;}
             }
         }
+        if(rays<6)return new Sector(false,Double.NaN,0);
         for(int i=0;i<nR;i++)if(count[i]>0)profile[i]/=count[i];
 
         Pair seed=bestPair(profile,r0,dialR);
         if(!seed.valid)return new Sector(false,Double.NaN,0);
 
         double sep=seed.outer-seed.inner;
-        int win=Math.max(3,(int)Math.round(.38*sep));
+        int win=Math.max(3,(int)Math.round(.42*sep));
         List<Double> widths=new ArrayList<>();int total=0;
         for(int d=-HALF_ARC;d<=HALF_ARC;d+=STEP){
+            if(!useRay(d))continue;
             total++;
             double a=norm360(targetClock+d),t=Math.toRadians(a),sx=Math.sin(t),sy=-Math.cos(t);
             Edge ei=bestEdge(gray,cx,cy,sx,sy,seed.inner,win,r0,r1);
             Edge eo=bestEdge(gray,cx,cy,sx,sy,seed.outer,win,r0,r1);
-            if(!ei.valid||!eo.valid||ei.strength<2.5||eo.strength<2.5)continue;
+            if(!ei.valid||!eo.valid||ei.strength<2.3||eo.strength<2.3)continue;
             double w=eo.radius-ei.radius;
-            if(w<=1||w<.45*sep||w>2.1*sep)continue;
+            if(w<=1||w<.40*sep||w>2.25*sep)continue;
             widths.add(w);
         }
         if(widths.size()<5)return new Sector(false,Double.NaN,widths.size()/(double)Math.max(1,total));
@@ -102,23 +132,21 @@ final class GmtRehautSectorAutoAnalyzer {
 
     private static Pair bestPair(double[] p,int r0,double dialR){
         List<Integer> peaks=new ArrayList<>();
-        double max=0;
         for(int i=2;i<p.length-2;i++){
-            max=Math.max(max,p[i]);
-            if(p[i]>=p[i-1]&&p[i]>=p[i+1]&&p[i]>=2.5)peaks.add(i+r0);
+            if(p[i]>=p[i-1]&&p[i]>=p[i+1]&&p[i]>=2.3)peaks.add(i+r0);
         }
         if(peaks.size()<2)return new Pair(false,-1,-1,Double.NaN);
         Pair best=new Pair(false,-1,-1,-Double.MAX_VALUE);
         for(int a=0;a<peaks.size();a++)for(int b=a+1;b<peaks.size();b++){
             int inner=peaks.get(a),outer=peaks.get(b);double sep=outer-inner;
-            if(sep<.025*dialR||sep>.15*dialR)continue;
+            if(sep<.020*dialR||sep>.18*dialR)continue;
             double mid=(inner+outer)*.5/dialR;
-            if(mid<.76||mid>1.035)continue;
+            if(mid<.72||mid>1.08)continue;
             double gi=p[inner-r0],go=p[outer-r0];
             double sepTarget=.075*dialR;
             double sepPenalty=Math.abs(sep-sepTarget)/Math.max(1.0,sepTarget);
             double centrePenalty=Math.abs(mid-.90);
-            double score=gi+go-2.0*sepPenalty-8.0*centrePenalty;
+            double score=gi+go-1.8*sepPenalty-6.5*centrePenalty;
             if(score>best.score)best=new Pair(true,inner,outer,score);
         }
         return best;
