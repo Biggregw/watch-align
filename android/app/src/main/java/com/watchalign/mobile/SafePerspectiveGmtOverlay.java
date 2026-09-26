@@ -1,7 +1,6 @@
 package com.watchalign.mobile;
 
 import android.graphics.Bitmap;
-import android.graphics.Color;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
@@ -14,22 +13,22 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 
 /**
- * Safety wrapper around PerspectiveGmtOverlay.
+ * Safe GMT pose/rectification wrapper.
  *
- * The image and fixed master are rendered with the ellipse-derived H0 only.
- * Bounded projective refinement may still run for research diagnostics, but its
- * h31/h32 candidate is never applied to pixels or QC master geometry. This
- * prevents a conic-preserving projective transform from making the outer dial
- * look circular while shearing the internal marker relationships.
+ * The image and fixed master are rendered with ellipse-derived H0 only. Projective
+ * refinement remains diagnostic. Automatic roll is now defined by the local 60
+ * minute tick, not by the old all-marker brightness estimator, so a crooked 12
+ * marker cannot be rotated straight and hands/cyclops cannot bias the frame.
  */
 final class SafePerspectiveGmtOverlay {
     static PerspectiveGmtOverlay.Result build(Bitmap input,String modelRef,
                                               PerspectiveGmtOverlay.DialSeed manualSeed,
                                               int overlayColor) {
         if(input==null||!PerspectiveGmtOverlay.supports(modelRef))return null;
-        Mat src=new Mat(),gray=new Mat(),blur=new Mat(),edges=new Mat(),h0=null,diagnosticH=null;
+        Mat src=new Mat(),bgr=new Mat(),gray=new Mat(),blur=new Mat(),edges=new Mat(),h0=null,diagnosticH=null;
         try{
             Utils.bitmapToMat(input,src);
+            Imgproc.cvtColor(src,bgr,Imgproc.COLOR_RGBA2BGR);
             Imgproc.cvtColor(src,gray,Imgproc.COLOR_RGBA2GRAY);
             Imgproc.GaussianBlur(gray,blur,new Size(5,5),1.2);
             Imgproc.Canny(blur,edges,55,145);
@@ -39,14 +38,25 @@ final class SafePerspectiveGmtOverlay {
             PerspectiveGmtOverlay.DialSeed seed=manualSeed!=null?manualSeed:detectedSeed;
             if(seed==null||!(seed.r>40))return null;
 
+            String rollSource;
+            GmtTwelveLandmarkAnalyzer.Result localFrame=null;
+            if(manualSeed==null){
+                localFrame=GmtTwelveLandmarkAnalyzer.analyse(bgr,seed.x,seed.y,seed.r);
+                if(localFrame.valid&&Double.isFinite(localFrame.trackRollClockDeg)&&Math.abs(localFrame.trackRollClockDeg)<=18.0){
+                    seed=new PerspectiveGmtOverlay.DialSeed(seed.x,seed.y,seed.r,seed.quality,localFrame.trackRollClockDeg);
+                    rollSource=String.format(Locale.US,"local detected 60-minute tick (frame score %.1f)",localFrame.minuteFrameScore);
+                }else{
+                    // Do not fall back to the old all-marker roll. Leaving image roll
+                    // unchanged is safer than inventing an upright dial from biased cues.
+                    seed=new PerspectiveGmtOverlay.DialSeed(seed.x,seed.y,seed.r,seed.quality,0.0);
+                    rollSource="uncorrected image roll because local 59/60/01 frame was unresolved";
+                }
+            }else{
+                rollSource="manual precision-alignment roll";
+            }
+
             RotatedRect detectedEllipse=detectedSeed==null?null:(RotatedRect)
                     call("findDialEllipse",new Class[]{Mat.class,PerspectiveGmtOverlay.DialSeed.class},edges,detectedSeed);
-            if(manualSeed==null&&detectedEllipse!=null){
-                double correctedRoll=((Number)call("ellipseAwareRoll",
-                        new Class[]{Mat.class,RotatedRect.class,double.class},gray,detectedEllipse,seed.rollDeg)).doubleValue();
-                if(Double.isFinite(correctedRoll)&&Math.abs(correctedRoll)<=15.0)
-                    seed=new PerspectiveGmtOverlay.DialSeed(seed.x,seed.y,seed.r,seed.quality,correctedRoll);
-            }
 
             RotatedRect ellipse;
             String seedSource;
@@ -85,13 +95,12 @@ final class SafePerspectiveGmtOverlay {
             DialProjectiveRefiner.MatResult refinement=DialProjectiveRefiner.refineWithDiagnostics(edges,h0);
             diagnosticH=refinement.homography;
 
-            // Critical safety rule: diagnostics may inspect the candidate, but only
-            // H0 is allowed to render the master or resample the watch image.
             double reproj=((Number)call("reprojectionError",new Class[]{Mat.class,Point[].class},h0,(Object)card)).doubleValue();
             double centerErr=Math.hypot(ellipse.center.x-seed.x,ellipse.center.y-seed.y)/Math.max(1.0,seed.r);
             double confidence=((Number)call("confidence",
                     new Class[]{double.class,double.class,double.class,double.class},seed.quality,reproj,centerErr,axisRatio)).doubleValue();
             if(perspectiveFallback)confidence*=0.65;
+            if(manualSeed==null&&(localFrame==null||!localFrame.valid))confidence*=0.80;
 
             Bitmap overlay=(Bitmap)call("renderNative",
                     new Class[]{Bitmap.class,Mat.class,String.class,int.class},input,h0,modelRef,overlayColor);
@@ -101,17 +110,17 @@ final class SafePerspectiveGmtOverlay {
             String master=Gmt126710BlnrMaster.supports(modelRef)?Gmt126710BlnrMaster.ID:"canonical GMT fallback";
             String report=String.format(Locale.US,
                     "\n\nVISUAL QC MASTER\n"+
-                    "Pose source: %s. Assisted points use the dial edge, not hour markers, so marker QC is not fitted away.\n"+
+                    "Pose source: %s. Dial edge establishes scale/perspective; 12-marker geometry is not fitted away.\n"+
+                    "Roll source: %s. Applied roll %+.2f°.\n"+
                     "Inspection geometry: %s. Red outlines are the fixed master; white outlines are lume references.\n"+
-                    "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°; dial roll %+.2f°.\n"+
+                    "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°.\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. H0 pose residual: %.2f px. Confidence: %.0f%%.\n"+
                     "SAFE RECTIFICATION: ellipse-derived H0 only. Projective h31/h32 refinement is DIAGNOSTIC ONLY and is not applied to the watch image or master overlay.\n"+
                     "H0 projective terms: h31=%+.6f, h32=%+.6f.\n"+
                     "Diagnostic projective candidate: %s; h31=%+.6f, h32=%+.6f.\n"+
                     "Diagnostic fit evidence: %.4f before, %.4f after. Holdout: %.4f before, %.4f after.\n"+
-                    "Applied homography: H0 (projective candidate ignored regardless of diagnostic acceptance).\n"+
-                    "Use Native Template with opacity/blink and fine nudge. Automated QC checks remain available separately.\n",
-                    seedSource,master,major,minor,tiltDeg,seed.rollDeg,centerErr*100.0,reproj,confidence*100.0,
+                    "Applied homography: H0 (projective candidate ignored regardless of diagnostic acceptance).\n",
+                    seedSource,rollSource,seed.rollDeg,master,major,minor,tiltDeg,centerErr*100.0,reproj,confidence*100.0,
                     normalizedTerm(h0Values,6),normalizedTerm(h0Values,7),
                     refinement.diagnostics.accepted?"ACCEPTED FOR RESEARCH":"REJECTED",
                     normalizedTerm(refinement.diagnostics.evaluatedHomography,2,0),
@@ -123,7 +132,7 @@ final class SafePerspectiveGmtOverlay {
         finally{
             if(diagnosticH!=null)diagnosticH.release();
             if(h0!=null)h0.release();
-            src.release();gray.release();blur.release();edges.release();
+            src.release();bgr.release();gray.release();blur.release();edges.release();
         }
     }
 
