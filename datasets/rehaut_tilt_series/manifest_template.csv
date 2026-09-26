@@ -1,0 +1,8 @@
+image_id,image_path,watch_id,pitch_deg,yaw_deg,roll_deg,series_role,notes
+front_00,front_00.jpg,SAME_WATCH,0,0,0,baseline,Near-frontal reference
+pitch_up_05,pitch_up_05.jpg,SAME_WATCH,5,0,0,tilt,Camera/watch pitch +5 deg
+pitch_up_10,pitch_up_10.jpg,SAME_WATCH,10,0,0,tilt,Camera/watch pitch +10 deg
+pitch_down_05,pitch_down_05.jpg,SAME_WATCH,-5,0,0,tilt,Camera/watch pitch -5 deg
+yaw_right_05,yaw_right_05.jpg,SAME_WATCH,0,5,0,tilt,Camera/watch yaw +5 deg
+yaw_left_05,yaw_left_05.jpg,SAME_WATCH,0,-5,0,tilt,Camera/watch yaw -5 deg
+diag_up_right_07,diag_up_right_07.jpg,SAME_WATCH,5,5,0,tilt,Combined pitch/yaw
