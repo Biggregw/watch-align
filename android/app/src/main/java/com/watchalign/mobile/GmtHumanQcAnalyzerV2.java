@@ -39,14 +39,22 @@ final class GmtHumanQcAnalyzerV2 {
             GmtTwelveLandmarkAnalyzer.Result primary=GmtTwelveLandmarkAnalyzer.analyse(src,cx,cy,r);
             GmtTwelveLandmarkAnalyzer.Result twelve=primary;boolean recovered=false;
             if(!primary.valid){twelve=GmtTwelveRecoveryAnalyzer.analyse(src,cx,cy,r,primary.reason);recovered=twelve.valid;}
-            double roll=twelve.valid?twelve.trackRollClockDeg:0.0;
 
-            GmtRehautPoseAnalyzer.Result rehaut=GmtRehautPoseAnalyzer.analyse(src,cx,cy,r,roll);
+            // A numerically resolved 59/60/01 frame is not automatically trustworthy.
+            // Alpha39 showed a real dealer photo where the frame score was only 3.2 and
+            // the inferred roll was +19.9 degrees. Feeding that roll into rehaut sectors
+            // rotated the meaning of 12/3/6/9. Use local roll only when the landmark
+            // detector itself says it is stable and the frame score clears a modest floor.
+            boolean stableFrame=twelve.valid&&twelve.detectorStable
+                    &&Double.isFinite(twelve.minuteFrameScore)&&twelve.minuteFrameScore>=10.0;
+            double poseRoll=stableFrame?twelve.trackRollClockDeg:0.0;
+
+            GmtRehautPoseAnalyzer.Result rehaut=GmtRehautPoseAnalyzer.analyse(src,cx,cy,r,poseRoll);
             GmtRehautSectorAnalyzer.Result sectors;boolean selfSeeded=false;
             if(rehaut.valid){
-                sectors=GmtRehautSectorAnalyzer.analyse(src,cx,cy,rehaut.innerSeedPx,rehaut.outerSeedPx,roll);
-                if(!sectors.valid){sectors=GmtRehautSectorAutoAnalyzer.analyse(src,cx,cy,r,roll);selfSeeded=sectors.valid;}
-            }else{sectors=GmtRehautSectorAutoAnalyzer.analyse(src,cx,cy,r,roll);selfSeeded=sectors.valid;}
+                sectors=GmtRehautSectorAnalyzer.analyse(src,cx,cy,rehaut.innerSeedPx,rehaut.outerSeedPx,poseRoll);
+                if(!sectors.valid){sectors=GmtRehautSectorAutoAnalyzer.analyse(src,cx,cy,r,poseRoll);selfSeeded=sectors.valid;}
+            }else{sectors=GmtRehautSectorAutoAnalyzer.analyse(src,cx,cy,r,poseRoll);selfSeeded=sectors.valid;}
             GmtEllipsePoseAnalyzer.Result ellipse=GmtEllipsePoseAnalyzer.analyse(src,cx,cy,r);
 
             double disagreement=Double.NaN;
@@ -58,14 +66,31 @@ final class GmtHumanQcAnalyzerV2 {
             GmtHumanQcMath.GapTrend rehautTrend=sectors.gapTrendAt12();
             if(twelve.valid){
                 rotation=GmtHumanQcMath.assessRotation(twelve.wholeAxisErrorDeg,twelve.topEdgeErrorDeg,twelve.sideAsymmetry,
-                        twelve.triangleWidthPx,pose.label,twelve.detectorStable);
+                        twelve.triangleWidthPx,pose.label,stableFrame);
                 double scale=ellipse.valid?GmtHumanQcMath.normalizedClearancePerspectiveScale(
-                        ellipse.axisRatio,ellipse.minorAxisClockDeg,twelve.trackRollClockDeg):Double.NaN;
+                        ellipse.axisRatio,ellipse.minorAxisClockDeg,poseRoll):Double.NaN;
                 clearance=GmtDirectionalClearancePolicy.assess(twelve.topClearance,scale,rehautTrend,pose.label);
-                if(recovered&&!twelve.detectorStable&&clearance.attention==GmtHumanQcMath.Attention.STRONG)
+
+                // Fine spacing must fail closed when 59/60/01 or the triangle is unstable.
+                // Keep a concern if one is visible, but never let unstable landmarks issue
+                // a CLEAR or a precise STRONG verdict.
+                if(!stableFrame){
+                    if(clearance.attention==GmtHumanQcMath.Attention.CLEAR){
+                        clearance=new GmtHumanQcMath.ClearanceDecision(
+                                GmtHumanQcMath.Attention.UNASSESSABLE,clearance.trend,
+                                clearance.observedGap,clearance.correctedEstimate,clearance.perspectiveScale,
+                                "local minute/triangle landmarks are low confidence, so fine 12 clearance cannot be cleared from this photo");
+                    }else if(clearance.attention==GmtHumanQcMath.Attention.STRONG){
+                        clearance=new GmtHumanQcMath.ClearanceDecision(
+                                GmtHumanQcMath.Attention.CHECK,clearance.trend,
+                                clearance.observedGap,clearance.correctedEstimate,clearance.perspectiveScale,
+                                "one-sided evidence supports concern, but local landmarks are low confidence and cannot support a STRONG verdict; "+clearance.reason);
+                    }
+                }else if(recovered&&!twelve.detectorStable&&clearance.attention==GmtHumanQcMath.Attention.STRONG){
                     clearance=new GmtHumanQcMath.ClearanceDecision(GmtHumanQcMath.Attention.CHECK,clearance.trend,
                             clearance.observedGap,clearance.correctedEstimate,clearance.perspectiveScale,
                             "recovered low-resolution landmarks support concern, but confidence is insufficient for a STRONG verdict; "+clearance.reason);
+                }
             }else{
                 rotation=new GmtHumanQcMath.RotationDecision(GmtHumanQcMath.Attention.UNASSESSABLE,Double.NaN,Double.NaN,Double.NaN,Double.NaN,false,false,
                         "local 12-marker landmarks unavailable: "+twelve.reason);
@@ -75,10 +100,10 @@ final class GmtHumanQcAnalyzerV2 {
 
             StringBuilder out=new StringBuilder("\n\nHUMAN 12-MARKER QC\n");
             if(twelve.valid){
-                out.append("12 marker: ").append(clearance.attention).append(" — ").append(clearanceSummary(clearance)).append("\n");
-                out.append("Alignment: ").append(rotation.attention).append(" — ").append(rotationSummary(rotation)).append("\n");
-            }else out.append("12 marker: UNASSESSABLE — local minute-track/triangle landmarks were not verified; no pass is inferred.\n");
-            out.append("Perspective: ").append(pose.label).append(" — ").append(pose.reason).append(".\n");
+                out.append("12 marker: ").append(clearance.attention).append(" - ").append(clearanceSummary(clearance)).append("\n");
+                out.append("Alignment: ").append(rotation.attention).append(" - ").append(rotationSummary(rotation)).append("\n");
+            }else out.append("12 marker: UNASSESSABLE - local minute-track/triangle landmarks were not verified; no pass is inferred.\n");
+            out.append("Perspective: ").append(pose.label).append(" - ").append(pose.reason).append(".\n");
 
             out.append("\nDiagnostics\n");
             out.append(String.format(Locale.US,"Wide-scale GMT dial seed: centre %.1f, %.1f; radius %.1f px; quality %.2f.\n",cx,cy,r,q));
@@ -86,8 +111,10 @@ final class GmtHumanQcAnalyzerV2 {
             if(twelve.valid){
                 out.append(String.format(Locale.US,"Local minute frame: 59/60/01 RESOLVED (%s); track roll %+.2f°, pitch %.2f°, frame score %.1f%s.\n",
                         recovered?"recovered from compressed/low-resolution landmarks":"primary physical-landmark path",
-                        twelve.trackRollClockDeg,twelve.tickPitchDeg,twelve.minuteFrameScore,twelve.detectorStable?"":"; LOW CONFIDENCE"));
-            }else out.append("Local minute frame: UNRESOLVED — ").append(twelve.reason).append(".\n");
+                        twelve.trackRollClockDeg,twelve.tickPitchDeg,twelve.minuteFrameScore,stableFrame?"":"; LOW CONFIDENCE"));
+            }else out.append("Local minute frame: UNRESOLVED - ").append(twelve.reason).append(".\n");
+            out.append(String.format(Locale.US,"Pose-sector orientation: %+.2f° (%s).\n",poseRoll,
+                    stableFrame?"trusted local 60-minute frame":"image axes used because local minute frame is low confidence"));
 
             if(sectors.valid){
                 out.append(String.format(Locale.US,"Local rehaut sectors (%s): 12 %.1f px (%.2f cov), 3 %.1f (%.2f), 6 %.1f (%.2f), 9 %.1f (%.2f); V %+5.3f, H %+5.3f, min/mean %.3f; 12-gap direction %s.\n",
@@ -98,7 +125,7 @@ final class GmtHumanQcAnalyzerV2 {
             if(rehaut.valid){
                 out.append(String.format(Locale.US,"Global rehaut diagnostic: V %+5.3f, H %+5.3f; minimum/mean %.3f; harmonic %.3f; coverage %.2f; fit residual %.3f%s.\n",
                         rehaut.watchVerticalAsymmetry,rehaut.watchHorizontalAsymmetry,rehaut.minWidthOverMean,rehaut.firstHarmonicStrength,
-                        rehaut.edgeCoverage,rehaut.fitResidual,rehaut.fitResidual>0.16?" — noisy, not allowed to veto local sector evidence":""));
+                        rehaut.edgeCoverage,rehaut.fitResidual,rehaut.fitResidual>0.16?" - noisy, not allowed to veto local sector evidence":""));
             }else out.append("Global rehaut diagnostic: unavailable (").append(rehaut.reason).append(").\n");
             if(ellipse.valid){
                 out.append(String.format(Locale.US,"Planar cue: ellipse ratio %.4f, equivalent tilt %.1f°, minor axis %.1f° clock%s.\n",
@@ -119,7 +146,9 @@ final class GmtHumanQcAnalyzerV2 {
                         twelve.horizontalOffset,twelve.leftClearance,twelve.rightClearance));
             }
 
-            if(twelve.valid&&(rotation.attention==GmtHumanQcMath.Attention.CHECK||rotation.attention==GmtHumanQcMath.Attention.STRONG
+            if(!stableFrame&&twelve.valid)
+                out.append("Recommended action: use a squarer or clearer photo before clearing fine 12-marker geometry; directional rehaut evidence may still be informative.\n");
+            else if(twelve.valid&&(rotation.attention==GmtHumanQcMath.Attention.CHECK||rotation.attention==GmtHumanQcMath.Attention.STRONG
                     ||clearance.attention==GmtHumanQcMath.Attention.CHECK||clearance.attention==GmtHumanQcMath.Attention.STRONG))
                 out.append("Recommended action: inspect the highlighted 12-marker relationship closely.\n");
             else if(!twelve.valid)out.append("Recommended action: inspect manually or use a clearer/original image; unresolved local landmarks are not a pass.\n");
@@ -127,7 +156,7 @@ final class GmtHumanQcAnalyzerV2 {
             else out.append("Recommended action: no human-attention condition was resolved in the local 12-marker relationships.\n");
 
             return new Result(out.toString(),pose.label,rotation.attention,clearance.attention,
-                    twelve.valid?twelve.trackRollClockDeg:Double.NaN,twelve.valid);
+                    stableFrame?twelve.trackRollClockDeg:Double.NaN,stableFrame);
         }catch(Throwable t){return unavailable("human GMT QC failed closed: "+t.getClass().getSimpleName());}
         finally{src.release();}
     }
@@ -147,7 +176,7 @@ final class GmtHumanQcAnalyzerV2 {
         return "alignment could not be assessed reliably";
     }
     private static Result unavailable(String reason){
-        return new Result("\n\nHUMAN 12-MARKER QC\nUNASSESSABLE — "+reason+". No pass is inferred from missing evidence.\n",
+        return new Result("\n\nHUMAN 12-MARKER QC\nUNASSESSABLE - "+reason+". No pass is inferred from missing evidence.\n",
                 GmtHumanQcMath.PoseLabel.UNASSESSABLE,GmtHumanQcMath.Attention.UNASSESSABLE,
                 GmtHumanQcMath.Attention.UNASSESSABLE,Double.NaN,false);
     }
