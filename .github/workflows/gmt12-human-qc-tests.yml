@@ -2,11 +2,16 @@ name: GMT12 human QC tests
 
 on:
   push:
-    branches: [feature/gmt-human-qc-auto-landmarks]
+    branches:
+      - feature/gmt-human-qc-auto-landmarks
+      - research/rehaut-perspective
     paths:
       - 'tools/research/gmt12_*.py'
+      - 'tools/research/gmt_rehaut_perspective.py'
+      - 'tools/research/gmt_hybrid_pose.py'
       - 'tools/research/human_qc_geometry.py'
       - 'tools/research/tests/test_gmt12_*.py'
+      - 'tools/research/tests/test_gmt_hybrid_pose.py'
       - '.github/workflows/gmt12-human-qc-tests.yml'
   workflow_dispatch:
 
@@ -19,4 +24,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install numpy opencv-python-headless pytest
-      - run: pytest -q tools/research/tests/test_human_qc_geometry.py tools/research/tests/test_gmt12_qc_assessment.py tools/research/tests/test_gmt12_controlled_perturbations.py tools/research/tests/test_gmt12_auto_landmarks.py
+      - run: pytest -q tools/research/tests/test_human_qc_geometry.py tools/research/tests/test_gmt12_qc_assessment.py tools/research/tests/test_gmt12_controlled_perturbations.py tools/research/tests/test_gmt12_auto_landmarks.py tools/research/tests/test_gmt_hybrid_pose.py
