@@ -4,20 +4,27 @@ import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.Arrays;
+
 /**
- * GMT-specific dial seed detector that tolerates close crops/screenshots where the
- * dial can occupy far more than half the image width. The detector deliberately
- * avoids an absolute image-scale prior: screenshots and crops can place the same
- * physical dial at very different pixel radii. Selection is driven by the dark
- * dial, the 12-marker ring and the persistent outer boundary instead.
+ * GMT-specific black-dial seed detector.
+ *
+ * Hough circles are used only to propose plausible centres. Their radius is NOT
+ * trusted because close screenshots often make the stronger bezel/rehaut circle
+ * win. For every proposed centre we re-scan radius and look for the physical dial
+ * boundary itself: a persistent DARK-INSIDE -> BRIGHT-OUTSIDE radial transition.
+ * This is scale-free and distinguishes the black dial edge from later bezel edges.
  */
 final class GmtDialSeedAnalyzer {
     static final class Result {
         final boolean valid;
-        final double x,y,r,quality;
+        final double x,y,r,quality,boundaryStrength,boundaryCoverage;
+        final int markerHits;
         final String reason;
-        Result(String reason){valid=false;x=y=r=quality=Double.NaN;this.reason=reason;}
-        Result(double x,double y,double r,double q){valid=true;this.x=x;this.y=y;this.r=r;quality=q;reason="";}
+        Result(String reason){valid=false;x=y=r=quality=boundaryStrength=boundaryCoverage=Double.NaN;markerHits=0;this.reason=reason;}
+        Result(double x,double y,double r,double q,double boundary,double coverage,int hits){
+            valid=true;this.x=x;this.y=y;this.r=r;quality=q;boundaryStrength=boundary;boundaryCoverage=coverage;markerHits=hits;reason="";
+        }
     }
 
     static Result analyse(Mat bgr){
@@ -33,7 +40,7 @@ final class GmtDialSeedAnalyzer {
             Candidate best=null;
             for(int i=0;i<circles.cols();i++){
                 double[] c=circles.get(0,i);if(c==null||c.length<3)continue;
-                Candidate q=score(gray,c[0],c[1],c[2],min);
+                Candidate q=scoreCentre(gray,c[0],c[1],min,minR,maxR);
                 if(q!=null&&(best==null||better(q,best)))best=q;
             }
             if(best==null){
@@ -44,60 +51,105 @@ final class GmtDialSeedAnalyzer {
                     Imgproc.HoughCircles(eq,c2,Imgproc.HOUGH_GRADIENT,1.10,min/10.0,112,21,minR,maxR);
                     for(int i=0;i<c2.cols();i++){
                         double[] c=c2.get(0,i);if(c==null||c.length<3)continue;
-                        Candidate q=score(eq,c[0],c[1],c[2],min);
+                        Candidate q=scoreCentre(eq,c[0],c[1],min,minR,maxR);
                         if(q!=null&&(best==null||better(q,best)))best=q;
                     }
                 }finally{c2.release();eq.release();}
             }
-            if(best==null)return new Result("wide-scale GMT dial boundary not found");
-            return new Result(best.x,best.y,best.r,Math.max(0,Math.min(1,best.score)));
+            if(best==null)return new Result("physical dark-to-rehaut dial boundary not found");
+            return new Result(best.x,best.y,best.r,clamp01(best.score),best.boundary,best.coverage,best.markerHits);
         }finally{circles.release();blur.release();gray.release();}
     }
 
+    private static final class RadiusFit{
+        final double r,boundary,positiveFraction,coverage;
+        RadiusFit(double r,double b,double p,double c){this.r=r;boundary=b;positiveFraction=p;coverage=c;}
+    }
+    private static final class Boundary{
+        final double strength,positiveFraction,coverage;
+        Boundary(double s,double p,double c){strength=s;positiveFraction=p;coverage=c;}
+    }
     private static final class Candidate{
-        final double x,y,r,score,centre;
+        final double x,y,r,score,boundary,coverage;
         final int markerHits;
-        Candidate(double x,double y,double r,double s,double centre,int hits){
-            this.x=x;this.y=y;this.r=r;score=s;this.centre=centre;markerHits=hits;
+        Candidate(double x,double y,double r,double score,double boundary,double coverage,int hits){
+            this.x=x;this.y=y;this.r=r;this.score=score;this.boundary=boundary;this.coverage=coverage;markerHits=hits;
         }
     }
 
-    private static boolean better(Candidate a,Candidate b){
-        // Primary decision is evidence score. For effectively tied candidates,
-        // favour the one supported by more hour sectors, then the one whose
-        // centre is more plausible. Never favour a radius merely because it is
-        // closer to some assumed fraction of the screenshot dimensions.
-        if(a.score>b.score+0.004)return true;
-        if(b.score>a.score+0.004)return false;
-        if(a.markerHits!=b.markerHits)return a.markerHits>b.markerHits;
-        if(Math.abs(a.centre-b.centre)>0.01)return a.centre<b.centre;
-        return a.score>b.score;
-    }
-
-    private static Candidate score(Mat g,double cx,double cy,double r,int min){
-        double rn=r/min;if(rn<.10||rn>.46)return null;
+    private static Candidate scoreCentre(Mat g,double cx,double cy,int min,int minR,int maxR){
         double nx=cx/g.cols(),ny=cy/g.rows();
-        if(nx<.06||nx>.94||ny<.05||ny>.94)return null;
-        double centre=Math.hypot(nx-.5,ny-.48);if(centre>.50)return null;
+        if(nx<.04||nx>.96||ny<.04||ny>.96)return null;
+
+        RadiusFit fit=refineRadius(g,cx,cy,minR,maxR);
+        if(fit==null||fit.boundary<.045||fit.coverage<.55||fit.positiveFraction<.56)return null;
+        double r=fit.r;
 
         double core=darkFraction(g,cx,cy,r*.56);
         double wide=darkFraction(g,cx,cy,r*.88);
         double ann=annulusDark(g,cx,cy,r*.61,r*.88);
         int hits=markerHits(g,cx,cy,r);
-        double edge=ringEdge(g,cx,cy,r);
-        if(core<.42||wide<.34||ann<.30||hits<6||edge<.035)return null;
+        if(core<.42||wide<.34||ann<.30||hits<6)return null;
 
-        double darkFit=Math.min(1,(.45*core+.30*wide+.25*ann)/.68);
-        double markerFit=Math.min(1,hits/10.0);
-        double edgeFit=Math.min(1,edge/.16);
-        double centreFit=1-Math.min(1,centre/.50);
+        double darkFit=clamp01((.45*core+.30*wide+.25*ann)/.68);
+        double markerFit=clamp01(hits/10.0);
+        double boundaryFit=clamp01((fit.boundary-.035)/.19);
+        double polarityFit=clamp01((fit.positiveFraction-.50)/.38);
 
-        // No absolute radius/scale term. Alpha37's weak preference for r≈0.27
-        // of the image width was enough to make a close-cropped screenshot pick
-        // an inner ring even when the true outer dial had stronger 12-sector and
-        // centre evidence. Human inspection has no such screenshot-scale prior.
-        double score=.34*markerFit+.26*darkFit+.20*edgeFit+.20*centreFit;
-        return new Candidate(cx,cy,r,score,centre,hits);
+        // No image-size or image-centre preference. Cropping is irrelevant.
+        // The physical dial boundary and the repeating marker ring carry the vote.
+        double score=.35*boundaryFit+.31*markerFit+.22*darkFit+.12*polarityFit;
+        return new Candidate(cx,cy,r,score,fit.boundary,fit.coverage,hits);
+    }
+
+    private static RadiusFit refineRadius(Mat g,double cx,double cy,int minR,int maxR){
+        int border=(int)Math.floor(Math.min(Math.min(cx,g.cols()-1.0-cx),Math.min(cy,g.rows()-1.0-cy)))-3;
+        int hi=Math.min(maxR,border>minR?border:maxR);
+        if(hi<=minR+8)return null;
+        RadiusFit best=null;
+        for(int r=minR;r<=hi;r+=2){
+            Boundary b=signedBoundary(g,cx,cy,r);
+            if(b.coverage<.55)continue;
+            double merit=b.strength+0.055*b.positiveFraction;
+            if(best==null||merit>best.boundary+0.055*best.positiveFraction)
+                best=new RadiusFit(r,b.strength,b.positiveFraction,b.coverage);
+        }
+        if(best==null)return null;
+        // One-pixel refinement around the coarse winner.
+        RadiusFit fine=best;
+        int lo=(int)Math.max(minR,Math.round(best.r)-3),fh=(int)Math.min(hi,Math.round(best.r)+3);
+        for(int r=lo;r<=fh;r++){
+            Boundary b=signedBoundary(g,cx,cy,r);if(b.coverage<.55)continue;
+            double merit=b.strength+0.055*b.positiveFraction;
+            if(merit>fine.boundary+0.055*fine.positiveFraction)
+                fine=new RadiusFit(r,b.strength,b.positiveFraction,b.coverage);
+        }
+        return fine;
+    }
+
+    /** Median signed radial contrast. Positive means dark inside and brighter outside. */
+    private static Boundary signedBoundary(Mat g,double cx,double cy,double r){
+        double delta=Math.max(3.0,Math.min(10.0,r*.025));
+        double[] diff=new double[72];int n=0,pos=0,valid=0;
+        for(int deg=0;deg<360;deg+=5){
+            double a=Math.toRadians(deg),co=Math.cos(a),si=Math.sin(a);
+            int xi=(int)Math.round(cx+co*(r-delta)),yi=(int)Math.round(cy+si*(r-delta));
+            int xo=(int)Math.round(cx+co*(r+delta)),yo=(int)Math.round(cy+si*(r+delta));
+            if(!inside(g,xi,yi)||!inside(g,xo,yo))continue;
+            double[] vi=g.get(yi,xi),vo=g.get(yo,xo);if(vi==null||vo==null)continue;
+            double d=(vo[0]-vi[0])/255.0;diff[n++]=d;valid++;if(d>.025)pos++;
+        }
+        if(n<24)return new Boundary(Double.NEGATIVE_INFINITY,0,n/72.0);
+        double[] used=Arrays.copyOf(diff,n);Arrays.sort(used);
+        double med=n%2==1?used[n/2]:(used[n/2-1]+used[n/2])*.5;
+        return new Boundary(med,pos/(double)n,n/72.0);
+    }
+
+    private static boolean better(Candidate a,Candidate b){
+        if(a.score>b.score+.004)return true;if(b.score>a.score+.004)return false;
+        if(Math.abs(a.boundary-b.boundary)>.010)return a.boundary>b.boundary;
+        if(a.markerHits!=b.markerHits)return a.markerHits>b.markerHits;
+        return a.coverage>b.coverage;
     }
 
     private static int markerHits(Mat g,double cx,double cy,double r){
@@ -131,19 +183,7 @@ final class GmtDialSeedAnalyzer {
         for(int y=y0;y<=y1;y+=step)for(int x=x0;x<=x1;x+=step){double q=Math.hypot(x-cx,y-cy);if(q<ri||q>ro)continue;double[]v=g.get(y,x);if(v==null)continue;n++;if(v[0]<145)d++;}
         return n>0?d/(double)n:0;
     }
-    private static double ringEdge(Mat g,double cx,double cy,double r){
-        double sum=0;int n=0;
-        for(int deg=0;deg<360;deg+=5){double a=Math.toRadians(deg),best=0;
-            for(double f=.93;f<=1.07;f+=.02){
-                int xi=(int)Math.round(cx+Math.cos(a)*r*(f-.02)),yi=(int)Math.round(cy+Math.sin(a)*r*(f-.02));
-                int xo=(int)Math.round(cx+Math.cos(a)*r*(f+.02)),yo=(int)Math.round(cy+Math.sin(a)*r*(f+.02));
-                if(!inside(g,xi,yi)||!inside(g,xo,yo))continue;
-                double[]vi=g.get(yi,xi),vo=g.get(yo,xo);if(vi!=null&&vo!=null)best=Math.max(best,Math.abs(vo[0]-vi[0])/255.0);
-            }
-            if(best>0){sum+=best;n++;}
-        }
-        return n>0?sum/n:0;
-    }
     private static boolean inside(Mat m,int x,int y){return x>=0&&y>=0&&x<m.cols()&&y<m.rows();}
+    private static double clamp01(double v){return Math.max(0,Math.min(1,v));}
     private GmtDialSeedAnalyzer(){}
 }
