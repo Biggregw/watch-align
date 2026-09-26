@@ -105,10 +105,15 @@ def _triangle_candidate(gray,cx,cy,r):
     shape check, silently reporting a top edge roughly a third of the way
     down the real shape instead of its actual top, and a materially wrong
     clearance measurement, for photos that had previously been treated as
-    clean passes). The margin is now cy-.85*r, verified generously wide
-    enough to give every one of those photos' true top edge room to spare
-    while leaving the 9 photos that were never clipped unaffected (same
-    corners, same measurements).
+    clean passes). Widening the margin to cy-.85*r fixed those, but a
+    smaller-dial photo then hit a second, subtler variant: its true,
+    correct, complete triangle top edge landed by pixel-rounding
+    coincidence exactly on that boundary, so the (correct) candidate was
+    rejected as if clipped, purely because "touches the edge" doesn't
+    distinguish a 1px graze from genuine truncation. The margin is now
+    cy-.90*r -- confirmed to give that photo 16px of real headroom (not
+    just a relocated coincidence) while every previously-verified photo's
+    corners and measurements are unchanged.
 
     Widening the margin alone is not enough for every case, though: when an
     hour/GMT hand points at or near 12 at the moment of capture, its lume
@@ -124,7 +129,7 @@ def _triangle_candidate(gray,cx,cy,r):
     than risk a repeat of the same silent-clipping failure at a new margin.
     """
     MAX_POLY_VERTICES=6
-    roi=(max(0,int(cx-.18*r)),max(0,int(cy-.85*r)),min(gray.shape[1],int(cx+.18*r)),min(gray.shape[0],int(cy-.30*r)))
+    roi=(max(0,int(cx-.18*r)),max(0,int(cy-.90*r)),min(gray.shape[1],int(cx+.18*r)),min(gray.shape[0],int(cy-.30*r)))
     out=[]
     for area,p in _bright_components(gray,roi):
         if _touches_roi_edge(p,roi):continue

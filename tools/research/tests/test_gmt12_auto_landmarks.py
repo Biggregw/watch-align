@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from gmt12_auto_landmarks import (
     _circle_tangent_landmarks, _trim_bezel_band, _pick_dial_circle,
     _polygon_to_triangle_corners, _ticks, _direct, _sequence, _robust_line,
-    _first_regularized, _minute_ticks, _touches_roi_edge,
+    _first_regularized, _minute_ticks, _touches_roi_edge, _triangle_candidate,
 )
 from human_qc_geometry import Gmt12Geometry, Point, measure_gmt12
 
@@ -419,3 +419,25 @@ def test_sequence_prefers_strong_axis_agreement_over_fewer_inferred_points():
     assert wrong is not None and correct is not None
     assert correct[0]<wrong[0]   # trimmed (visually correct, y~690) now wins
     assert math.isclose(correct[2][1],689.8,abs_tol=1.0)   # the true 60 y
+
+
+def test_triangle_candidate_survives_a_true_top_edge_grazing_the_old_margin():
+    # Real failure shape: at the old ROI top margin (cy-.85*r), a real photo's
+    # correct, complete triangle top edge landed by pixel-rounding coincidence
+    # exactly on the ROI boundary -- _touches_roi_edge then rejected a
+    # perfectly good detection as if it had been clipped, purely because a
+    # 1px graze looks identical to genuine truncation. The margin is now
+    # cy-.90*r, giving this exact real geometry (cx,cy,r and triangle corners
+    # from that photo) real headroom instead of landing exactly on the edge.
+    cx,cy,r=573.0,1068.6,315.48
+    left,right,tip=(536,802),(608,801),(571,893)
+    gray=np.zeros((1200,1080),dtype=np.uint8)
+    pts=np.array([left,right,tip],dtype=np.int32)
+    cv2.fillConvexPoly(gray,pts,255)
+
+    result=_triangle_candidate(gray,cx,cy,r)
+    assert result is not None
+    l,rr,t=result
+    assert math.isclose(l.x,536,abs_tol=2) and math.isclose(l.y,802,abs_tol=2)
+    assert math.isclose(rr.x,608,abs_tol=2) and math.isclose(rr.y,801,abs_tol=2)
+    assert math.isclose(t.x,571,abs_tol=2) and math.isclose(t.y,893,abs_tol=2)
