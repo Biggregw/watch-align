@@ -76,6 +76,20 @@ The same signal can later gate poor photos. Candidate diagnostics already expose
 
 Do not set thresholds from the current small sample. Derive GOOD/CORRECTABLE/REJECT limits from a controlled same-watch tilt series by finding the point where corrected GMT12 measurements stop returning to the same physical geometry.
 
+## Controlled-series work started
+Added `tools/research/run_rehaut_tilt_series.py` plus `datasets/rehaut_tilt_series/manifest_template.csv`. The runner records the rehaut V/H signal and the existing raw GMT12 measurements in the same CSV for each image. It deliberately keeps unknown or failed measurements as UNASSESSABLE rather than fabricating a value.
+
+Added `tools/research/fit_rehaut_pose_bias.py` to fit the measured same-watch change in raw top clearance against V/H after enough controlled images exist. It reports in-sample and leave-one-out error and expresses correction as the fitted pose bias relative to V=H=0. This is research-only and does not feed production QC.
+
+### Same-watch uncontrolled pilot already available
+Two existing Sep-9 Batgirl photographs are definitely the same physical watch and give materially different pose signals:
+
+- `31235`: V=-0.1849, H=+0.0674, harmonic=0.1968, min/mean=0.809, coverage=0.311, fit residual=0.080.
+- `31245`: V=-0.0255, H=+0.1115, harmonic=0.1143, min/mean=0.811, coverage=0.285, fit residual=0.051.
+- `31253`: edge pair could not be constrained, correctly remaining UNASSESSABLE in this provisional prototype.
+
+These are not a calibrated tilt series because their camera angles are unknown, but the same unchanged watch moving from V≈-0.185 to V≈-0.025 is useful evidence that the rehaut signal is responding to capture pose.
+
 ## Next experiment
 Photograph one unchanged GMT at known progressively increasing up/down, left/right and diagonal angles. For every image record:
 
