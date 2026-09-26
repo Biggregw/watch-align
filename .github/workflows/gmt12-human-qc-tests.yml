@@ -24,4 +24,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install numpy opencv-python-headless pytest
-      - run: pytest -q tools/research/tests/test_human_qc_geometry.py tools/research/tests/test_gmt12_qc_assessment.py tools/research/tests/test_gmt12_controlled_perturbations.py tools/research/tests/test_gmt12_auto_landmarks.py tools/research/tests/test_gmt_hybrid_pose.py
+      - run: pytest -q tools/research/tests/test_human_qc_geometry.py tools/research/tests/test_gmt12_qc_assessment.py tools/research/tests/test_gmt12_controlled_perturbations.py tools/research/tests/test_gmt12_auto_landmarks.py tools/research/tests/test_gmt_hybrid_pose.py tools/research/tests/test_gmt12_directional_clearance.py
