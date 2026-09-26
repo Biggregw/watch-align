@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha33: local-minute-frame human GMT12 QC with safe ellipse rectification. */
+/** Alpha34: human GMT12 QC with local rehaut sectors and safe ellipse rectification. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha33";
+    public static final String CORE_VERSION="1.3.0-alpha34";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -32,8 +32,6 @@ public final class WatchAlignCoreV13 {
         WatchAlignCoreV11.AnalysisResult base=WatchAlignCoreV11.analyse(watch,primary,modelRef);
         boolean canonicalGmt=CanonicalGmtGeometryAnalyzer.supports(modelRef);
 
-        // Legacy extended analysis is retained for non-GMT models and developer
-        // diagnostics, but is no longer part of the user-facing GMT verdict.
         QcExtendedAnalyzer.Result ext=QcExtendedAnalyzer.analyse(watch,primary,modelRef);
         Bitmap guide=QcGuideRenderer.render(watch);
         Bitmap combined=canonicalGmt?guide:QcOverlayComposer.compose(watch,guide,ext.annotated);
@@ -47,7 +45,7 @@ public final class WatchAlignCoreV13 {
         String report;
         if(canonicalGmt){
             report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nHUMAN-FIRST GMT INSPECTION\n"
-                    +"The 59/60/01 minute track defines local 12. The triangle is then checked for gap, centring, rotation and side-spacing symmetry. Rehaut and ellipse are pose cues only. Legacy all-marker QC numbers are hidden from the GMT verdict.\n"
+                    +"The 59/60/01 minute track defines local 12. The triangle is checked for gap, centring, rotation and side-spacing symmetry. Local 12/3/6/9 rehaut visibility supplies directional perspective even when the full 360° rehaut fit is noisy. Legacy all-marker QC numbers remain hidden from the GMT verdict.\n"
                     +perspectiveReport
                     +(human==null?"":human.report);
         }else{
