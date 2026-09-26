@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha36: human GMT12 QC with occlusion-tolerant rehaut sectors and stronger screenshot recovery. */
+/** Alpha37: human GMT12 QC with wide-scale dial seeding for close crops/screenshots. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha36";
+    public static final String CORE_VERSION="1.3.0-alpha37";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -38,14 +38,14 @@ public final class WatchAlignCoreV13 {
 
         PerspectiveGmtOverlay.DialSeed manualSeed=InspectionImageStore.hasManualSeed?
                 new PerspectiveGmtOverlay.DialSeed(InspectionImageStore.manualCx,InspectionImageStore.manualCy,InspectionImageStore.manualR,0.98,InspectionImageStore.manualRoll):null;
-        PerspectiveGmtOverlay.Result perspective=canonicalGmt?SafePerspectiveGmtOverlay.build(watch,modelRef,manualSeed,android.graphics.Color.rgb(255,45,45)):null;
+        PerspectiveGmtOverlay.Result perspective=canonicalGmt?SafePerspectiveGmtOverlayV2.build(watch,modelRef,manualSeed,android.graphics.Color.rgb(255,45,45)):null;
         String perspectiveReport=perspective==null&&canonicalGmt?"\n\nVISUAL QC MASTER\nUnavailable: a stable dial pose could not be fitted. Use a clearer photo or precision dial-edge alignment.\n":perspective==null?"":perspective.report;
-        GmtHumanQcAnalyzer.Result human=canonicalGmt?GmtHumanQcAnalyzer.analyse(watch,modelRef):null;
+        GmtHumanQcAnalyzerV2.Result human=canonicalGmt?GmtHumanQcAnalyzerV2.analyse(watch,modelRef):null;
 
         String report;
         if(canonicalGmt){
             report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nHUMAN-FIRST GMT INSPECTION\n"
-                    +"The 59/60/01 minute track defines local 12. The triangle is checked for gap, centring, rotation and side-spacing symmetry. Local 12/3/6/9 rehaut visibility supplies directional perspective and can self-seed when the full 360° rehaut fit fails. Alpha36 excludes the cardinal marker itself from local rehaut edge estimation and strengthens physical-triangle recovery for compressed screenshots without using legacy QC as the verdict.\n"
+                    +"The 59/60/01 minute track defines local 12. The triangle is checked for gap, centring, rotation and side-spacing symmetry. Alpha37 uses a GMT-specific wide-scale dial seed so close crops cannot silently lock onto the hour-marker ring. The fixed master is withheld when automatic pose confidence is too low.\n"
                     +perspectiveReport
                     +(human==null?"":human.report);
         }else{
