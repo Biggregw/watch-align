@@ -7,7 +7,7 @@
   "minute_track_radius": 0.925,
   "marker_center_radius": 0.755,
   "markers": {
-    "round": {"hours": [1,2,4,5,7,8,10,11], "radius": 0.061},
+    "round": {"hours": [1,2,4,5,7,8,10,11], "center_radius": 0.816, "radius": 0.061},
     "baton": {"hours": [6,9], "radial_half": 0.092, "tangential_half": 0.037},
     "triangle_12": {"center_radius": 0.770, "outward": 0.120, "inward": 0.090, "half_base": 0.078}
   },

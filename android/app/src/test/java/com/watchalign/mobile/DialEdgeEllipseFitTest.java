@@ -75,6 +75,35 @@ public class DialEdgeEllipseFitTest {
         }
     }
 
+    /** Photo-like case from alpha41 field test: the rehaut is dark grey (a weak dial edge),
+     *  and its outer rim is a bright line about 0.12R further out whose centre is shifted by
+     *  parallax. Picking the outermost edge per ray mixed the two edges and the fit was
+     *  rejected as noisy; it must lock onto the dark-dial edge the master is scaled to. */
+    @Test public void locksOntoDialEdgeNotBrightRehautRimWhenRehautIsDark() {
+        final double cx = 540.0, cy = 700.0, r = 230.0;
+        final Random rnd = new Random(11);
+        DialEdgeEllipseFit.Intensity img = (x, y) -> {
+            double rn = Math.hypot(x - cx, y - cy) / r;
+            double rim = Math.hypot(x - cx, y - (cy + 7.0)) / r;   // parallax-shifted rim
+            double clock = Math.toDegrees(Math.atan2(x - cx, -(y - cy)));
+            if (clock < 0) clock += 360;
+            double v;
+            if (rn < 1.0) {
+                v = 18;
+                double tickPhase = Math.abs(((clock + 3.0) % 6.0) - 3.0);
+                if (rn > 0.90 && rn < 0.97 && tickPhase < 0.6) v = 230;
+            } else if (rim < 1.105) v = 62 + 10 * Math.sin(Math.toRadians(clock * 9));  // engraved dark rehaut
+            else if (rim < 1.135) v = 225;                                              // bright rim
+            else v = 70;                                                               // bezel insert
+            return v + rnd.nextGaussian() * 4.0;
+        };
+        DialEdgeEllipseFit.Fit f = DialEdgeEllipseFit.fit(img, W, H, cx - 6.0, cy + 8.0, r);
+        assertNotNull(f);
+        assertEquals(cx, f.cx, 0.6);
+        assertEquals(cy, f.cy, 0.6);
+        assertEquals(r, f.meanRadius(), 1.0);
+    }
+
     @Test public void rejectsImageWithoutDialBoundary() {
         DialEdgeEllipseFit.Intensity flat = (x, y) -> 120.0;
         assertNull(DialEdgeEllipseFit.fit(flat, W, H, 540, 700, 250));

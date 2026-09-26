@@ -17,9 +17,9 @@ import java.util.List;
  * re-centred on that Hough centre, so the whole fixed master was drawn with a
  * translation error that nothing downstream measured or corrected.
  *
- * This class casts rays from the seed centre, finds the outermost persistent
- * dark-to-bright transition on each ray, and fits an ellipse to those points with
- * iterative outlier trimming. It is pure Java so it can be unit tested without
+ * This class casts rays from the seed centre, collects the dark-to-bright
+ * transitions on each ray, picks the one that agrees with the seed circle and then
+ * the evolving ellipse, and fits an ellipse with iterative outlier trimming. It is pure Java so it can be unit tested without
  * the native OpenCV library.
  */
 final class DialEdgeEllipseFit {
@@ -49,6 +49,7 @@ final class DialEdgeEllipseFit {
     static Fit fit(Intensity img, int width, int height, double seedX, double seedY, double seedR){
         if(img==null||!(seedR>20)||!Double.isFinite(seedX)||!Double.isFinite(seedY))return null;
         List<double[]> pts=new ArrayList<>();
+        List<double[][]> cands=new ArrayList<>();   // per ray: every qualifying edge candidate
         double step=0.5;
         double r0=0.86*seedR, r1=1.14*seedR;
         int n=(int)Math.floor((r1-r0)/step)+1;
@@ -74,50 +75,60 @@ final class DialEdgeEllipseFit {
                 if(s[i]>sMax)sMax=s[i];
             }
             if(!(sMax>=MIN_CONTRAST))continue;
-            // Outermost strong local maximum: the dial edge, not a printed minute tick
-            // or hand tip that starts a little further in.
-            double thr=Math.max(MIN_CONTRAST,0.55*sMax);
-            int pick=-1;
-            for(int i=w+1;i<n-w-1;i++){
-                if(s[i]>=thr&&s[i]>=s[i-1]&&s[i]>=s[i+1])pick=i;
+            // Every strong local maximum is a candidate: the dial edge, printed minute ticks
+            // or hand tips just inside it, and the rehaut's outer rim just outside it. The
+            // right one is chosen per ray by agreement with the evolving ellipse below.
+            // Low relative bar: on a dark rehaut the dial edge can be far weaker than the
+            // rim beyond it. Agreement with the seed circle, not strength, picks the edge.
+            double thr=Math.max(MIN_CONTRAST,0.20*sMax);
+            List<Double> radii=new ArrayList<>();
+            int i=w+1;
+            while(i<n-w-1){
+                if(s[i]>=thr&&s[i]>=s[i-1]&&s[i]>=s[i+1]){
+                    // Noise can leave a spurious local maximum on the flank of an edge peak;
+                    // climb to the top of the peak it belongs to and skip the rest of it.
+                    int pk=i;
+                    int lo=Math.max(w+1,i-w/2),hi=Math.min(n-w-2,i+w/2);
+                    for(int j=lo;j<=hi;j++)if(s[j]>s[pk])pk=j;
+                    double num=s[pk-1]-s[pk+1], den=s[pk-1]-2*s[pk]+s[pk+1];
+                    double sub=Math.abs(den)>1e-9?Math.max(-0.5,Math.min(0.5,0.5*num/den)):0.0;
+                    double rr=r0+(pk+sub)*step;
+                    if(radii.isEmpty()||Math.abs(rr-radii.get(radii.size()-1))>0.5*w*step)radii.add(rr);
+                    i=Math.max(i+1,hi+1);
+                }else i++;
             }
-            if(pick<0)continue;
-            // Noise can leave a spurious local maximum on the outer flank of the edge peak;
-            // climb to the top of the peak it belongs to.
-            int lo=Math.max(w+1,pick-w/2),hi=Math.min(n-w-2,pick+w/2);
-            for(int i=lo;i<=hi;i++)if(s[i]>s[pick])pick=i;
-            double num=s[pick-1]-s[pick+1], den=s[pick-1]-2*s[pick]+s[pick+1];
-            double sub=Math.abs(den)>1e-9?Math.max(-0.5,Math.min(0.5,0.5*num/den)):0.0;
-            double rr=r0+(pick+sub)*step;
-            pts.add(new double[]{seedX+ca*rr,seedY+sa*rr});
+            if(radii.isEmpty())continue;
+            double[][] c=new double[radii.size()][];
+            for(int j=0;j<c.length;j++)c[j]=new double[]{seedX+ca*radii.get(j),seedY+sa*radii.get(j)};
+            cands.add(c);
         }
-        if(pts.size()<0.4*RAYS)return null;
+        if(cands.size()<0.4*RAYS)return null;
 
-        double[] e=null;boolean[] keep=new boolean[pts.size()];Arrays.fill(keep,true);
-        double rms=Double.NaN;int used=pts.size();
-        for(int iter=0;iter<5;iter++){
-            e=fitConic(pts,keep,seedX,seedY,seedR);
-            if(e==null)return null;
-            double[] res=new double[pts.size()];
-            for(int i=0;i<pts.size();i++)res[i]=radialResidual(e,pts.get(i)[0],pts.get(i)[1]);
-            double[] abs=new double[pts.size()];
-            for(int i=0;i<abs.length;i++)abs[i]=Math.abs(res[i]);
-            double[] sorted=abs.clone();Arrays.sort(sorted);
-            double mad=sorted[sorted.length/2];
-            double lim=Math.max(1.0,3.0*1.4826*mad);
-            boolean changed=false;used=0;double ss=0;
-            for(int i=0;i<abs.length;i++){
-                boolean k=abs[i]<=lim;
-                if(k!=keep[i])changed=true;
-                keep[i]=k;
-                if(k){used++;ss+=res[i]*res[i];}
-            }
-            rms=used>0?Math.sqrt(ss/used):Double.NaN;
-            if(used<0.4*RAYS)return null;
-            if(!changed&&iter>0)break;
-        }
-        e=fitConic(pts,keep,seedX,seedY,seedR);
+        double[] rmsOut=new double[1];int[] usedOut=new int[1];
+        // Start from the circle near the seed that the most rays agree on. The seed radius has
+        // already been measured on the signed dark-dial-to-rehaut edge, which is the edge the
+        // master is normalised to, so the search stays within +/-8% of it. Taking the
+        // outermost edge instead let the rehaut's bright outer rim (about 0.12R further out,
+        // and parallax-shifted) win wherever it was brighter than the dial edge.
+        double[] e=consensusCircle(cands,seedX,seedY,seedR);
         if(e==null)return null;
+        double[] gates={0.05*seedR,0.035*seedR,Math.max(3.0,0.025*seedR),Math.max(3.0,0.025*seedR)};
+        for(int round=0;round<gates.length;round++){
+            List<double[]> next=new ArrayList<>();
+            for(double[][] c:cands){
+                double[] best=null;double bestAbs=Double.POSITIVE_INFINITY;
+                for(double[] q:c){
+                    double r=Math.abs(radialResidual(e,q[0],q[1]));
+                    if(r<bestAbs){bestAbs=r;best=q;}
+                }
+                if(best!=null&&bestAbs<=gates[round])next.add(best);
+            }
+            if(next.size()<0.4*RAYS)return null;
+            double[] e2=trimmedFit(next,seedX,seedY,seedR,rmsOut,usedOut);
+            if(e2==null)return null;
+            e=e2;pts=next;
+        }
+        double rms=rmsOut[0];int used=usedOut[0];
         double cx=e[0],cy=e[1],a=e[2],b=e[3];
         double ratio=Math.min(a,b)/Math.max(a,b), mean=Math.sqrt(a*b);
         if(ratio<0.72)return null;
@@ -125,6 +136,71 @@ final class DialEdgeEllipseFit {
         if(Math.hypot(cx-seedX,cy-seedY)>0.20*seedR)return null;
         if(!(rms<=Math.max(1.5,0.012*seedR)))return null;
         return new Fit(cx,cy,a,b,e[4],used,RAYS,rms);
+    }
+
+    /**
+     * Circle Hough over the per-ray candidates: centre within 0.08R of the seed, radius
+     * within 8% of it. Returns {cx, cy, r, r, 0} or null when no circle has clear support.
+     */
+    static double[] consensusCircle(List<double[][]> cands,double sx,double sy,double sr){
+        int total=0;for(double[][] c:cands)total+=c.length;
+        double[] px=new double[total],py=new double[total];
+        int k=0;for(double[][] c:cands)for(double[] q:c){px[k]=q[0];py[k]=q[1];k++;}
+        double stepC=Math.max(1.0,sr/220.0), span=0.08*sr;
+        double binW=Math.max(1.5,0.008*sr), rLo=0.92*sr, rHi=1.08*sr;
+        int nb=(int)Math.ceil((rHi-rLo)/binW)+1;
+        int[] hist=new int[nb];
+        int best=-1;double bx=sx,by=sy,br=sr;
+        int steps=(int)Math.floor(span/stepC);
+        for(int iy=-steps;iy<=steps;iy++){
+            for(int ix=-steps;ix<=steps;ix++){
+                double cx=sx+ix*stepC, cy=sy+iy*stepC;
+                Arrays.fill(hist,0);
+                for(int i=0;i<total;i++){
+                    double r=Math.hypot(px[i]-cx,py[i]-cy);
+                    if(r<rLo||r>=rHi)continue;
+                    hist[(int)((r-rLo)/binW)]++;
+                }
+                for(int b=0;b<nb;b++){
+                    int v=hist[b]+(b>0?hist[b-1]:0)+(b+1<nb?hist[b+1]:0);
+                    if(v>best){best=v;bx=cx;by=cy;br=rLo+(b+0.5)*binW;}
+                }
+            }
+        }
+        if(best<0.3*RAYS)return null;
+        return new double[]{bx,by,br,br,0.0};
+    }
+
+    /** Conic fit with iterative MAD trimming. Returns the ellipse, or null. */
+    private static double[] trimmedFit(List<double[]> pts,double ox,double oy,double scale,double[] rmsOut,int[] usedOut){
+        boolean[] keep=new boolean[pts.size()];Arrays.fill(keep,true);
+        double[] e=null;
+        for(int iter=0;iter<5;iter++){
+            e=fitConic(pts,keep,ox,oy,scale);
+            if(e==null)return null;
+            double[] abs=new double[pts.size()],res=new double[pts.size()];
+            for(int i=0;i<pts.size();i++){res[i]=radialResidual(e,pts.get(i)[0],pts.get(i)[1]);abs[i]=Math.abs(res[i]);}
+            double[] sorted=abs.clone();Arrays.sort(sorted);
+            double mad=sorted[sorted.length/2];
+            double lim=Math.max(1.0,3.0*1.4826*mad);
+            boolean changed=false;int used=0;double ss=0;
+            for(int i=0;i<abs.length;i++){
+                boolean k=abs[i]<=lim;
+                if(k!=keep[i])changed=true;
+                keep[i]=k;
+                if(k){used++;ss+=res[i]*res[i];}
+            }
+            rmsOut[0]=used>0?Math.sqrt(ss/used):Double.NaN;usedOut[0]=used;
+            if(used<0.4*RAYS)return null;
+            if(!changed&&iter>0)break;
+        }
+        e=fitConic(pts,keep,ox,oy,scale);
+        if(e==null)return null;
+        // Final residuals for the returned ellipse.
+        int used=0;double ss=0;
+        for(int i=0;i<pts.size();i++)if(keep[i]){double r=radialResidual(e,pts.get(i)[0],pts.get(i)[1]);ss+=r*r;used++;}
+        rmsOut[0]=used>0?Math.sqrt(ss/used):Double.NaN;usedOut[0]=used;
+        return e;
     }
 
     /**

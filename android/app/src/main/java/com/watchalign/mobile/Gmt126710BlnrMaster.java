@@ -6,11 +6,17 @@ package com.watchalign.mobile;
  * This is a Watch Align calibrated inspection master, not Rolex factory CAD.
  */
 final class Gmt126710BlnrMaster {
-    static final String ID = "126710BLNR-visual-master-v3";
+    static final String ID = "126710BLNR-visual-master-v4";
 
     static final double DIAL_EDGE_R = 1.000;
     static final double MINUTE_TRACK_R = 0.925;
+    // Centre radius of the 6/9 batons. The triangle has its own TRI_CENTER_R.
     static final double MARKER_CENTER_R = 0.755;
+    // Round markers sit further out than the batons (their outer edges share the
+    // marker ring, and they are shorter radially). v4: measured 0.814-0.819 (mean 0.816)
+    // on the official front-on m126710blnr-0002 image after fitting the black-dial
+    // edge; v3 drew them on the baton radius, about 0.06R (~14 px on a 230 px dial) too far in.
+    static final double ROUND_CENTER_R = 0.816;
 
     // Applied marker outer body and inner lume references.
     // Alpha28 enlarges the outer body to trace the applied white-gold surround rather than the lume only.
