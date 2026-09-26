@@ -75,11 +75,29 @@ final class GmtTwelveLandmarkAnalyzer {
             MinuteFrame frame=minuteFrame(enhanced,cx,cy,r,tri);
             if(frame==null)return new Result("59/60/01 minute-track frame not sufficiently constrained");
 
+            // Re-measure the triangle's corners on the surround's outer edge. The contour's
+            // hull vertices can sit on the lume where the surround is dim, which fakes a
+            // tilted base, a swung axis and unequal 59/01 gaps. The minute frame bounds the
+            // base search so the ticks above it cannot be mistaken for the edge.
+            Triangle contour=tri;
+            Triangle refined=refineTriangle(enhanced,tri,frame,r);
+            if(refined!=null){
+                MinuteFrame again=minuteFrame(enhanced,cx,cy,r,refined);
+                if(again!=null){tri=refined;frame=again;}
+            }
+
             Point baseMid=mid(tri.left,tri.right);
             double width=dist(tri.left,tri.right);
             if(width<=1e-9)return new Result("triangle top edge is degenerate");
 
-            double gap=Math.abs(pointLineDistance(baseMid,frame.left,frame.right))/width;
+            // Clearance keeps the contour definition its LOW_CLEARANCE_ATTENTION boundary was
+            // calibrated on. The refined outer-edge base sits ~1.5 px further out, which would
+            // shift every gap by ~0.04 and needs its own genuine baseline before it can be used.
+            // Orientation, centring and 59/01 spacing are relative and use the refined corners.
+            Point contourMid=mid(contour.left,contour.right);
+            double contourWidth=dist(contour.left,contour.right);
+            if(contourWidth<=1e-9)return new Result("triangle top edge is degenerate");
+            double gap=Math.abs(pointLineDistance(contourMid,frame.left,frame.right))/contourWidth;
 
             // True local 12 is centre -> detected 60 tick. Use that radial axis for
             // centring and whole-marker orientation. The marker cannot define itself.
@@ -184,6 +202,30 @@ final class GmtTwelveLandmarkAnalyzer {
             for(Mat m:masks)m.release();
             hierarchy.release();patch.release();
         }
+    }
+
+    /** Corners from lines fitted to the surround's outer edges; null keeps the contour corners. */
+    private static Triangle refineTriangle(Mat gray,Triangle tri,MinuteFrame frame,double r){
+        try{
+            final int w=gray.cols(),h=gray.rows();
+            if(gray.channels()!=1||w<8||h<8)return null;
+            final byte[] px=new byte[w*h];
+            gray.get(0,0,px);
+            DialEdgeEllipseFit.Intensity img=(x,y)->{
+                int x0=(int)Math.floor(x),y0=(int)Math.floor(y);
+                double fx=x-x0,fy=y-y0;int i=y0*w+x0;
+                double a=px[i]&0xff,b=px[i+1]&0xff,c=px[i+w]&0xff,d=px[i+w+1]&0xff;
+                return (a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy;
+            };
+            double[][] q=TriangleEdgeRefiner.refine(img,w,h,
+                    new double[]{tri.left.x,tri.left.y},new double[]{tri.right.x,tri.right.y},
+                    new double[]{tri.tip.x,tri.tip.y},
+                    new double[]{frame.left.x,frame.left.y},new double[]{frame.right.x,frame.right.y},r);
+            if(q==null)return null;
+            Point l=new Point(q[0][0],q[0][1]),rt=new Point(q[1][0],q[1][1]),t=new Point(q[2][0],q[2][1]);
+            if(l.x>rt.x){Point z=l;l=rt;rt=z;}
+            return new Triangle(l,rt,t);
+        }catch(Throwable t){return null;}
     }
 
     private static Triangle triangleFromHull(Point[] q,double cx,double cy){
