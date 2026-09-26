@@ -46,14 +46,32 @@ final class GmtHumanQcAnalyzer {
             double cx=num(dial,"x"),cy=num(dial,"y"),r=num(dial,"r"),q=num(dial,"quality");
             if(!(r>20)||q<0.52)return unavailable("dial geometry confidence is too low for local 12-marker QC");
 
-            // Human pipeline first: the local minute track establishes true 12.
-            GmtTwelveLandmarkAnalyzer.Result twelve=GmtTwelveLandmarkAnalyzer.analyse(src,cx,cy,r);
+            // Human pipeline first. Try the strict physical-landmark path, then a
+            // conservative screenshot/compression recovery path. The recovery may
+            // use the legacy marker detector only as a localisation hint; it never
+            // uses the old global roll or old QC verdict as the alignment reference.
+            GmtTwelveLandmarkAnalyzer.Result primary=GmtTwelveLandmarkAnalyzer.analyse(src,cx,cy,r);
+            GmtTwelveLandmarkAnalyzer.Result twelve=primary;
+            boolean twelveRecovered=false;
+            if(!primary.valid){
+                twelve=GmtTwelveRecoveryAnalyzer.analyse(src,cx,cy,r,primary.reason);
+                twelveRecovered=twelve.valid;
+            }
             double roll=twelve.valid?twelve.trackRollClockDeg:0.0;
 
             GmtRehautPoseAnalyzer.Result rehaut=GmtRehautPoseAnalyzer.analyse(src,cx,cy,r,roll);
-            GmtRehautSectorAnalyzer.Result sectors=rehaut.valid
-                    ?GmtRehautSectorAnalyzer.analyse(src,cx,cy,rehaut.innerSeedPx,rehaut.outerSeedPx,roll)
-                    :new GmtRehautSectorAnalyzer.Result("global rehaut edge seeds unavailable");
+            GmtRehautSectorAnalyzer.Result sectors;
+            boolean sectorsSelfSeeded=false;
+            if(rehaut.valid){
+                sectors=GmtRehautSectorAnalyzer.analyse(src,cx,cy,rehaut.innerSeedPx,rehaut.outerSeedPx,roll);
+                if(!sectors.valid){
+                    sectors=GmtRehautSectorAutoAnalyzer.analyse(src,cx,cy,r,roll);
+                    sectorsSelfSeeded=sectors.valid;
+                }
+            }else{
+                sectors=GmtRehautSectorAutoAnalyzer.analyse(src,cx,cy,r,roll);
+                sectorsSelfSeeded=sectors.valid;
+            }
             GmtEllipsePoseAnalyzer.Result ellipse=GmtEllipsePoseAnalyzer.analyse(src,cx,cy,r);
 
             double disagreement=Double.NaN;
@@ -74,6 +92,14 @@ final class GmtHumanQcAnalyzer {
                         :Double.NaN;
                 clearance=GmtDirectionalClearancePolicy.assess(
                         twelve.topClearance,perspectiveScale,rehautGapTrend,pose.label);
+                // A recovered contour is allowed to highlight a problem, but an
+                // unstable recovered landmark must not manufacture a STRONG verdict.
+                if(twelveRecovered&&!twelve.detectorStable&&clearance.attention==GmtHumanQcMath.Attention.STRONG){
+                    clearance=new GmtHumanQcMath.ClearanceDecision(
+                            GmtHumanQcMath.Attention.CHECK,clearance.trend,clearance.observedGap,
+                            clearance.correctedEstimate,clearance.perspectiveScale,
+                            "recovered low-resolution landmarks support concern, but confidence is insufficient for a STRONG verdict; "+clearance.reason);
+                }
             }else{
                 rotation=new GmtHumanQcMath.RotationDecision(
                         GmtHumanQcMath.Attention.UNASSESSABLE,Double.NaN,Double.NaN,Double.NaN,Double.NaN,
@@ -90,7 +116,7 @@ final class GmtHumanQcAnalyzer {
                 out.append("Alignment: ").append(rotation.attention).append(" — ")
                         .append(rotationHumanSummary(rotation,twelve)).append("\n");
             }else{
-                out.append("12 marker: UNASSESSABLE — local minute-track landmarks were not verified; no pass is inferred.\n");
+                out.append("12 marker: UNASSESSABLE — local minute-track/triangle landmarks were not verified; no pass is inferred.\n");
             }
             out.append("Perspective: ").append(pose.label).append(" — ").append(pose.reason).append(".\n");
 
@@ -98,7 +124,8 @@ final class GmtHumanQcAnalyzer {
             out.append("The local minute track defines true 12; the triangle is measured against it and never used to straighten itself.\n");
             if(twelve.valid){
                 out.append(String.format(Locale.US,
-                        "Local minute frame: 59/60/01 RESOLVED; track roll %+.2f°, pitch %.2f°, frame score %.1f%s.\n",
+                        "Local minute frame: 59/60/01 RESOLVED (%s); track roll %+.2f°, pitch %.2f°, frame score %.1f%s.\n",
+                        twelveRecovered?"recovered from compressed/low-resolution landmarks":"primary physical-landmark path",
                         twelve.trackRollClockDeg,twelve.tickPitchDeg,twelve.minuteFrameScore,
                         twelve.detectorStable?"":"; LOW CONFIDENCE"));
             }else{
@@ -107,7 +134,8 @@ final class GmtHumanQcAnalyzer {
 
             if(sectors.valid){
                 out.append(String.format(Locale.US,
-                        "Local rehaut sectors: 12 %.1f px (%.2f cov), 3 %.1f (%.2f), 6 %.1f (%.2f), 9 %.1f (%.2f); V %+5.3f, H %+5.3f, min/mean %.3f; 12-gap direction %s.\n",
+                        "Local rehaut sectors (%s): 12 %.1f px (%.2f cov), 3 %.1f (%.2f), 6 %.1f (%.2f), 9 %.1f (%.2f); V %+5.3f, H %+5.3f, min/mean %.3f; 12-gap direction %s.\n",
+                        sectorsSelfSeeded?"self-seeded":"global-edge-seeded",
                         sectors.width12,sectors.coverage12,sectors.width3,sectors.coverage3,
                         sectors.width6,sectors.coverage6,sectors.width9,sectors.coverage9,
                         sectors.verticalAsymmetry,sectors.horizontalAsymmetry,sectors.minOverMean,
@@ -150,7 +178,7 @@ final class GmtHumanQcAnalyzer {
                     ||clearance.attention==GmtHumanQcMath.Attention.CHECK||clearance.attention==GmtHumanQcMath.Attention.STRONG)){
                 out.append("Recommended action: inspect the highlighted 12-marker relationship closely.\n");
             }else if(!twelve.valid){
-                out.append("Recommended action: inspect manually or retake more clearly; unresolved local landmarks are not a pass.\n");
+                out.append("Recommended action: inspect manually or use a clearer/original image; unresolved local landmarks are not a pass.\n");
             }else if(pose.label==GmtHumanQcMath.PoseLabel.RETAKE){
                 out.append("Recommended action: retake more square-on before relying on fine spacing magnitude; visible one-sided evidence remains highlighted.\n");
             }else{
