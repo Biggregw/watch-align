@@ -10,7 +10,7 @@ import java.util.List;
 
 /** Alpha40: human GMT12 QC with real-image rehaut direction calibration and stricter pose gating. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha44";
+    public static final String CORE_VERSION="1.3.0-alpha45";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -44,8 +44,11 @@ public final class WatchAlignCoreV13 {
 
         String report;
         if(canonicalGmt){
-            report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nHUMAN-FIRST GMT INSPECTION\n"
-                    +"The 59/60/01 minute track defines local 12 and the triangle is checked independently for gap, centring, rotation and side-spacing symmetry. Alpha40 keeps the physical black-dial boundary from Alpha39, withholds the fixed master when automatic ellipse tilt is too severe, and refuses to let a low-confidence minute frame rotate the rehaut sectors or silently clear fine 12-marker geometry. Rehaut direction is now calibrated from the real straight-on and angled QC tests: greater 6-side visibility than 12 indicates a 12-gap-inflating view, greater 12-side visibility indicates compression, and a dead band keeps mild straight-on imbalance neutral.\n"
+            GmtHumanSummary.Input sum=human!=null&&human.summary!=null?human.summary:new GmtHumanSummary.Input();
+            sum.overlayDrawn=perspective!=null&&perspective.nativeOverlay!=null;
+            report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\n"
+                    +GmtHumanSummary.build(sum)
+                    +"\n\nDETAILS\nThe 59/60/01 minute track defines local 12 and the triangle is checked against it for gap, centring, rotation and 59/01 spacing. The dial centre and scale come from the physical black-dial edge; the red master is fixed 126710BLNR geometry measured from genuine images.\n"
                     +perspectiveReport
                     +(human==null?"":human.report);
         }else{

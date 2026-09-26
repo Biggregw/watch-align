@@ -17,10 +17,15 @@ final class GmtHumanQcAnalyzerV2 {
         final GmtHumanQcMath.Attention clearanceAttention;
         final double localTrackRollDeg;
         final boolean localFrameValid;
+        final GmtHumanSummary.Input summary;
         Result(String report,GmtHumanQcMath.PoseLabel pose,GmtHumanQcMath.Attention rotation,
                GmtHumanQcMath.Attention clearance,double roll,boolean valid){
+            this(report,pose,rotation,clearance,roll,valid,new GmtHumanSummary.Input());
+        }
+        Result(String report,GmtHumanQcMath.PoseLabel pose,GmtHumanQcMath.Attention rotation,
+               GmtHumanQcMath.Attention clearance,double roll,boolean valid,GmtHumanSummary.Input summary){
             this.report=report;poseLabel=pose;rotationAttention=rotation;clearanceAttention=clearance;
-            localTrackRollDeg=roll;localFrameValid=valid;
+            localTrackRollDeg=roll;localFrameValid=valid;this.summary=summary;
         }
     }
 
@@ -166,8 +171,16 @@ final class GmtHumanQcAnalyzerV2 {
             else if(pose.label==GmtHumanQcMath.PoseLabel.RETAKE)out.append("Recommended action: retake more square-on before relying on fine spacing magnitude; visible one-sided evidence remains highlighted.\n");
             else out.append("Recommended action: no human-attention condition was resolved in the local 12-marker relationships.\n");
 
+            GmtHumanSummary.Input sum=new GmtHumanSummary.Input();
+            sum.pose=pose.label;sum.twelveValid=twelve.valid;sum.stableFrame=stableFrame;
+            sum.gap=clearance.attention;sum.gapTrend=clearance.trend;
+            sum.observedGap=twelve.valid?twelve.topClearance:Double.NaN;
+            sum.alignment=rotation.attention;
+            sum.rotationDeg=twelve.valid?twelve.wholeAxisErrorDeg:Double.NaN;
+            sum.spacing59=twelve.valid?twelve.leftClearance:Double.NaN;
+            sum.spacing01=twelve.valid?twelve.rightClearance:Double.NaN;
             return new Result(out.toString(),pose.label,rotation.attention,clearance.attention,
-                    stableFrame?twelve.trackRollClockDeg:Double.NaN,stableFrame);
+                    stableFrame?twelve.trackRollClockDeg:Double.NaN,stableFrame,sum);
         }catch(Throwable t){return unavailable("human GMT QC failed closed: "+t.getClass().getSimpleName());}
         finally{src.release();}
     }
