@@ -46,6 +46,61 @@ public class GmtHumanQcMathTest {
         assertTrue(r.correctedEstimate>r.observedGap);
     }
 
+    @Test public void challengeImageStyleSmallGapPlusFavourableRehautIsStrong() {
+        GmtHumanQcMath.ClearanceDecision r=GmtDirectionalClearancePolicy.assess(
+                0.066,1.001,GmtHumanQcMath.GapTrend.INFLATED,GmtHumanQcMath.PoseLabel.CORRECTABLE);
+        assertEquals(GmtHumanQcMath.Attention.STRONG,r.attention);
+        assertEquals(GmtHumanQcMath.GapTrend.INFLATED,r.trend);
+    }
+
+    @Test public void favourableRehautCanStrengthenEvenWhenPhotoNeedsRetake() {
+        GmtHumanQcMath.ClearanceDecision r=GmtDirectionalClearancePolicy.assess(
+                0.080,Double.NaN,GmtHumanQcMath.GapTrend.INFLATED,GmtHumanQcMath.PoseLabel.RETAKE);
+        assertEquals(GmtHumanQcMath.Attention.STRONG,r.attention);
+    }
+
+    @Test public void compressedRehautDoesNotOverstateSmallGap() {
+        GmtHumanQcMath.ClearanceDecision r=GmtDirectionalClearancePolicy.assess(
+                0.080,1.00,GmtHumanQcMath.GapTrend.COMPRESSED,GmtHumanQcMath.PoseLabel.CORRECTABLE);
+        assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
+        assertEquals(GmtHumanQcMath.GapTrend.COMPRESSED,r.trend);
+    }
+
+    @Test public void favourablePerspectiveDoesNotCreateLargeGapDefect() {
+        GmtHumanQcMath.ClearanceDecision r=GmtDirectionalClearancePolicy.assess(
+                0.220,1.00,GmtHumanQcMath.GapTrend.INFLATED,GmtHumanQcMath.PoseLabel.CORRECTABLE);
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,r.attention);
+    }
+
+    @Test public void localSectorTopWiderThanBottomMeansInflatedAt12() {
+        GmtRehautSectorAnalyzer.Result s=new GmtRehautSectorAnalyzer.Result(
+                12.0,9.0,7.0,9.0,0.8,0.8,0.8,0.8);
+        assertEquals(GmtHumanQcMath.GapTrend.INFLATED,s.gapTrendAt12());
+        assertTrue(s.verticalAsymmetry>0.10);
+    }
+
+    @Test public void localSectorTopNarrowerThanBottomMeansCompressedAt12() {
+        GmtRehautSectorAnalyzer.Result s=new GmtRehautSectorAnalyzer.Result(
+                7.0,9.0,12.0,9.0,0.8,0.8,0.8,0.8);
+        assertEquals(GmtHumanQcMath.GapTrend.COMPRESSED,s.gapTrendAt12());
+    }
+
+    @Test public void localSectorNearSymmetryIsNeutral() {
+        GmtRehautSectorAnalyzer.Result s=new GmtRehautSectorAnalyzer.Result(
+                10.0,10.0,9.5,10.0,0.8,0.8,0.8,0.8);
+        assertEquals(GmtHumanQcMath.GapTrend.NEUTRAL,s.gapTrendAt12());
+    }
+
+    @Test public void noisyGlobalRehautDoesNotHideStrongLocalSectors() {
+        GmtRehautPoseAnalyzer.Result global=new GmtRehautPoseAnalyzer.Result(
+                12,6,5,13,9,0.33,0.44,0.33,0.44,0.70,45,0.28,0.33,0.41,100,108);
+        GmtRehautSectorAnalyzer.Result sectors=new GmtRehautSectorAnalyzer.Result(
+                12.0,10.0,6.0,10.0,0.8,0.8,0.8,0.8);
+        GmtEllipsePoseAnalyzer.Result ellipse=new GmtEllipsePoseAnalyzer.Result(0.992,7.3,130.0,0.0,1.0);
+        GmtHumanQcMath.PoseDecision p=GmtHumanPosePolicy.classify(global,sectors,ellipse,78.0);
+        assertEquals(GmtHumanQcMath.PoseLabel.CORRECTABLE,p.label);
+    }
+
     @Test public void largeGapIsNotTreatedAsDefect() {
         GmtHumanQcMath.ClearanceDecision r=GmtHumanQcMath.assessLowClearance(
                 0.220,1.00,GmtHumanQcMath.PoseLabel.GOOD);
@@ -71,8 +126,6 @@ public class GmtHumanQcMathTest {
     }
 
     @Test public void localPerspectiveScaleShowsHorizontalTiltInflatesRadialGap() {
-        // Minor axis at 3 o'clock compresses tangential marker width more than
-        // the 12-o'clock radial gap, so normalized gap appears larger.
         double s=GmtHumanQcMath.normalizedClearancePerspectiveScale(0.96,90.0,0.0);
         assertTrue(s>1.0);
     }
