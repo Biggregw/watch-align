@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha38: human GMT12 QC with scale-neutral wide dial seeding for close crops/screenshots. */
+/** Alpha39: human GMT12 QC with physical dark-to-rehaut dial-edge radius refinement. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha38";
+    public static final String CORE_VERSION="1.3.0-alpha39";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -45,7 +45,7 @@ public final class WatchAlignCoreV13 {
         String report;
         if(canonicalGmt){
             report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nHUMAN-FIRST GMT INSPECTION\n"
-                    +"The 59/60/01 minute track defines local 12. The triangle is checked for gap, centring, rotation and side-spacing symmetry. Alpha38 removes the screenshot-scale preference from the wide GMT dial detector, so a close crop is selected from marker-ring, boundary and centre evidence rather than an assumed image-size ratio. The fixed master is withheld when automatic pose confidence is too low.\n"
+                    +"The 59/60/01 minute track defines local 12. The triangle is checked for gap, centring, rotation and side-spacing symmetry. Alpha39 uses Hough circles only to propose the dial centre, then independently re-finds the physical black-dial boundary from the persistent dark-inside to bright-rehaut transition. Bezel/rehaut circles therefore cannot set the master scale merely because their edge is stronger. The fixed master is withheld when automatic pose confidence is too low.\n"
                     +perspectiveReport
                     +(human==null?"":human.report);
         }else{
