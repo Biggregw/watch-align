@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha34: human GMT12 QC with local rehaut sectors and safe ellipse rectification. */
+/** Alpha35: human GMT12 QC with self-seeded rehaut sectors and screenshot recovery. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha34";
+    public static final String CORE_VERSION="1.3.0-alpha35";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -45,7 +45,7 @@ public final class WatchAlignCoreV13 {
         String report;
         if(canonicalGmt){
             report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nHUMAN-FIRST GMT INSPECTION\n"
-                    +"The 59/60/01 minute track defines local 12. The triangle is checked for gap, centring, rotation and side-spacing symmetry. Local 12/3/6/9 rehaut visibility supplies directional perspective even when the full 360° rehaut fit is noisy. Legacy all-marker QC numbers remain hidden from the GMT verdict.\n"
+                    +"The 59/60/01 minute track defines local 12. The triangle is checked for gap, centring, rotation and side-spacing symmetry. Local 12/3/6/9 rehaut visibility supplies directional perspective and can now self-seed when the full 360° rehaut fit fails. Compressed/screenshot images get a conservative local-landmark recovery path rather than silently falling back to legacy QC.\n"
                     +perspectiveReport
                     +(human==null?"":human.report);
         }else{
