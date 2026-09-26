@@ -36,6 +36,17 @@ final class SafePerspectiveGmtOverlayV2 {
             PerspectiveGmtOverlay.DialSeed seed=manualSeed!=null?manualSeed:autoSeed;
             if(seed==null||!(seed.r>40))return null;
 
+            // The automatic seed centre is a raw HoughCircles centre, which usually belongs to the
+            // strongest concentric circle (case/bezel/crystal). Those sit above the dial, so parallax
+            // displaces their centre from the dial's. Re-measure centre and ellipse from the physical
+            // dial edge before anything (roll, pose, master) is built on it.
+            double houghX=seed.x,houghY=seed.y,houghR=seed.r;
+            DialEdgeEllipseFit.Fit edgeFit=null;
+            if(manualSeed==null){
+                edgeFit=fitDialEdge(blur,seed);
+                if(edgeFit!=null)seed=new PerspectiveGmtOverlay.DialSeed(edgeFit.cx,edgeFit.cy,edgeFit.meanRadius(),seed.quality,0.0);
+            }
+
             String rollSource;
             GmtTwelveLandmarkAnalyzer.Result localFrame=null;
             boolean rollRecovered=false;
@@ -59,19 +70,36 @@ final class SafePerspectiveGmtOverlayV2 {
                 }
             }else rollSource="manual precision-alignment roll";
 
-            RotatedRect detectedEllipse=(RotatedRect)call("findDialEllipse",
-                    new Class[]{Mat.class,PerspectiveGmtOverlay.DialSeed.class},edges,seed);
             RotatedRect ellipse;
             String seedSource;
             boolean perspectiveFallback=false;
-            if(detectedEllipse!=null){
+            double centerErr;
+            String centreNote;
+            RotatedRect detectedEllipse=edgeFit!=null?null:(RotatedRect)call("findDialEllipse",
+                    new Class[]{Mat.class,PerspectiveGmtOverlay.DialSeed.class},edges,seed);
+            if(edgeFit!=null){
+                ellipse=new RotatedRect(new Point(edgeFit.cx,edgeFit.cy),new Size(2.0*edgeFit.axisA,2.0*edgeFit.axisB),edgeFit.angleDeg);
+                seedSource="wide-scale GMT dial seed, centre and ellipse re-fitted to the physical dial edge";
+                double shift=Math.hypot(edgeFit.cx-houghX,edgeFit.cy-houghY);
+                centerErr=0.0;
+                centreNote=String.format(Locale.US,"Dial centre: re-fitted to dial edge (%d/%d edge points, RMS %.2f px). Moved %.1f px (%.2f%% of radius) from the Hough proposal %.1f, %.1f; radius %.1f → %.1f px.",
+                        edgeFit.points,edgeFit.rays,edgeFit.rmsPx,shift,100.0*shift/Math.max(1.0,houghR),houghX,houghY,houghR,edgeFit.meanRadius());
+            }else if(detectedEllipse!=null){
+                // Measured before normalisation re-centres the ellipse on the seed; the old
+                // post-normalisation value was always 0.00% and could never flag a bad centre.
+                centerErr=Math.hypot(detectedEllipse.center.x-seed.x,detectedEllipse.center.y-seed.y)/Math.max(1.0,seed.r);
                 ellipse=(RotatedRect)call("normalizeEllipseToOuterRadius",
                         new Class[]{RotatedRect.class,PerspectiveGmtOverlay.DialSeed.class},detectedEllipse,seed);
                 seedSource=manualSeed!=null?"manual dial-edge seed with fitted perspective ellipse":"wide-scale GMT dial seed with fitted perspective ellipse";
+                centreNote=manualSeed!=null?"Dial centre: from manual 12/6 dial-edge taps.":
+                        "Dial centre: UNREFINED Hough proposal (dial-edge re-fit unavailable for this photo).";
             }else{
                 ellipse=new RotatedRect(new Point(seed.x,seed.y),new Size(seed.r*2.0,seed.r*2.0),0.0);
                 seedSource=manualSeed!=null?"manual dial-edge seed with circular fallback":"wide-scale GMT dial seed with circular fallback";
                 perspectiveFallback=true;
+                centerErr=0.0;
+                centreNote=manualSeed!=null?"Dial centre: from manual 12/6 dial-edge taps.":
+                        "Dial centre: UNREFINED Hough proposal (dial-edge re-fit unavailable for this photo).";
             }
 
             double major=Math.max(ellipse.size.width,ellipse.size.height),minor=Math.min(ellipse.size.width,ellipse.size.height);
@@ -97,7 +125,6 @@ final class SafePerspectiveGmtOverlayV2 {
             DialProjectiveRefiner.MatResult refinement=DialProjectiveRefiner.refineWithDiagnostics(edges,h0);
             diagnosticH=refinement.homography;
             double reproj=((Number)call("reprojectionError",new Class[]{Mat.class,Point[].class},h0,(Object)card)).doubleValue();
-            double centerErr=Math.hypot(ellipse.center.x-seed.x,ellipse.center.y-seed.y)/Math.max(1.0,seed.r);
             double confidence=((Number)call("confidence",new Class[]{double.class,double.class,double.class,double.class},seed.quality,reproj,centerErr,axisRatio)).doubleValue();
             if(perspectiveFallback)confidence*=0.70;
             if(manualSeed==null&&(localFrame==null||!localFrame.valid||!localFrame.detectorStable))confidence*=0.82;
@@ -114,6 +141,7 @@ final class SafePerspectiveGmtOverlayV2 {
                     "Roll source: %s. Applied roll %+.2f°.\n"+
                     "Inspection geometry: %s. Red outlines are the fixed master; white outlines are lume references.\n"+
                     "Dial seed: centre %.1f, %.1f; radius %.1f px; seed quality %.2f.\n"+
+                    "%s\n"+
                     "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°.\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. H0 pose residual: %.2f px. Confidence: %.0f%%.\n"+
                     "SAFE RECTIFICATION: ellipse-derived H0 only. Projective h31/h32 refinement is DIAGNOSTIC ONLY and is not applied to the watch image or master overlay.\n"+
@@ -121,7 +149,7 @@ final class SafePerspectiveGmtOverlayV2 {
                     "Diagnostic projective candidate: %s; h31=%+.6f, h32=%+.6f.\n"+
                     "Diagnostic fit evidence: %.4f before, %.4f after. Holdout: %.4f before, %.4f after.\n"+
                     "Applied homography: H0 (projective candidate ignored regardless of diagnostic acceptance).\n",
-                    seedSource,rollSource,seed.rollDeg,master,seed.x,seed.y,seed.r,seed.quality,
+                    seedSource,rollSource,seed.rollDeg,master,seed.x,seed.y,seed.r,seed.quality,centreNote,
                     major,minor,tiltDeg,centerErr*100.0,reproj,confidence*100.0,
                     normalizedTerm(h0Values,6),normalizedTerm(h0Values,7),
                     refinement.diagnostics.accepted?"ACCEPTED FOR RESEARCH":"REJECTED",
@@ -134,6 +162,23 @@ final class SafePerspectiveGmtOverlayV2 {
             if(diagnosticH!=null)diagnosticH.release();if(h0!=null)h0.release();
             src.release();bgr.release();gray.release();blur.release();edges.release();
         }
+    }
+
+    private static DialEdgeEllipseFit.Fit fitDialEdge(Mat blurredGray,PerspectiveGmtOverlay.DialSeed seed){
+        try{
+            final int w=blurredGray.cols(),h=blurredGray.rows();
+            if(w<8||h<8||blurredGray.channels()!=1)return null;
+            final byte[] px=new byte[w*h];
+            blurredGray.get(0,0,px);
+            DialEdgeEllipseFit.Intensity img=(x,y)->{
+                int x0=(int)Math.floor(x),y0=(int)Math.floor(y);
+                double fx=x-x0,fy=y-y0;
+                int i=y0*w+x0;
+                double a=px[i]&0xff,b=px[i+1]&0xff,c=px[i+w]&0xff,d=px[i+w+1]&0xff;
+                return (a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy;
+            };
+            return DialEdgeEllipseFit.fit(img,w,h,seed.x,seed.y,seed.r);
+        }catch(Throwable t){return null;}
     }
 
     private static Object call(String name,Class<?>[] types,Object...args)throws Exception{
