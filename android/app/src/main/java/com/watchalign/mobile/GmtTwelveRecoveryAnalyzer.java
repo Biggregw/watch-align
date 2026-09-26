@@ -22,6 +22,12 @@ import java.util.List;
  * of the 12 marker. It does NOT supply the rotation or verdict. The recovered
  * 59/60/01 minute ticks define true 12, and a separately detected physical
  * triangle is then measured against that local frame.
+ *
+ * Alpha36 keeps the strict contour path first, but adds a second physically
+ * constrained contour pass for compressed screenshots where the triangle outline
+ * is fragmented by antialiasing. The relaxed pass is still tied to the recovered
+ * 60-minute axis, radial band, triangle proportions and bilateral symmetry, so it
+ * may surface a concern but cannot silently define its own straight reference.
  */
 final class GmtTwelveRecoveryAnalyzer {
     private static final class Hint { final double angle,radius; Hint(double a,double r){angle=a;radius=r;} }
@@ -29,7 +35,10 @@ final class GmtTwelveRecoveryAnalyzer {
         final Point left,center,right; final double roll,pitch,score; final int inferred;
         Frame(Point l,Point c,Point r,double a,double p,double s,int i){left=l;center=c;right=r;roll=a;pitch=p;score=s;inferred=i;}
     }
-    private static final class Triangle { final Point left,right,tip; final double score; Triangle(Point l,Point r,Point t,double s){left=l;right=r;tip=t;score=s;} }
+    private static final class Triangle {
+        final Point left,right,tip; final double score;
+        Triangle(Point l,Point r,Point t,double s){left=l;right=r;tip=t;score=s;}
+    }
 
     static GmtTwelveLandmarkAnalyzer.Result analyse(Mat bgr,double cx,double cy,double r,String primaryReason){
         if(bgr==null||bgr.empty()||!(r>20))return new GmtTwelveLandmarkAnalyzer.Result(primaryReason);
@@ -79,7 +88,7 @@ final class GmtTwelveRecoveryAnalyzer {
             for(Object m:(List<?>)markers){
                 if((int)Math.round(num(m,"hour"))!=12)continue;
                 double a=global+num(m,"angular"),rr=num(m,"radius");
-                a=wrap180(a);if(Math.abs(a)>24||!(rr>.40*r&&rr<.95*r))return null;
+                a=wrap180(a);if(Math.abs(a)>24||!(rr>.36*r&&rr<.98*r))return null;
                 return new Hint(a,rr);
             }
         }catch(Throwable ignored){}
@@ -88,9 +97,9 @@ final class GmtTwelveRecoveryAnalyzer {
 
     private static Hint photometricHint(Mat g,double cx,double cy,double r){
         double best=-Double.MAX_VALUE,bestA=Double.NaN;
-        for(double a=-20;a<=20;a+=.25){
-            double[] vals=new double[36];int n=0;
-            for(double rf=.50;rf<=.84;rf+=.012){
+        for(double a=-22;a<=22;a+=.25){
+            double[] vals=new double[40];int n=0;
+            for(double rf=.46;rf<=.88;rf+=.012){
                 double c=samplePolar(g,cx,cy,r*rf,a);
                 double l=samplePolar(g,cx,cy,r*rf,a-1.4),rr=samplePolar(g,cx,cy,r*rf,a+1.4);
                 if(!Double.isFinite(c)||!Double.isFinite(l)||!Double.isFinite(rr))continue;
@@ -99,13 +108,13 @@ final class GmtTwelveRecoveryAnalyzer {
             if(n<8)continue;Arrays.sort(vals,0,n);double s=0;int take=Math.max(5,n/4);for(int i=n-take;i<n;i++)s+=vals[i];s/=take;
             if(s>best){best=s;bestA=a;}
         }
-        if(!Double.isFinite(bestA)||best<40)return null;
+        if(!Double.isFinite(bestA)||best<36)return null;
         return new Hint(bestA,.68*r);
     }
 
     private static Frame minuteFrame(Mat g,double cx,double cy,double r,double hint){
         double best=-Double.MAX_VALUE,bestA=Double.NaN,bestP=Double.NaN;
-        for(double a=hint-4.0;a<=hint+4.0;a+=.10)for(double p=5.25;p<=6.75;p+=.10){
+        for(double a=hint-4.5;a<=hint+4.5;a+=.10)for(double p=5.20;p<=6.80;p+=.10){
             double s0=tickScore(g,cx,cy,r,a),s1=tickScore(g,cx,cy,r,a-p),s2=tickScore(g,cx,cy,r,a+p);
             double s3=tickScore(g,cx,cy,r,a-2*p),s4=tickScore(g,cx,cy,r,a+2*p);
             double bg=(tickScore(g,cx,cy,r,a-.5*p)+tickScore(g,cx,cy,r,a+.5*p))*.5;
@@ -114,7 +123,7 @@ final class GmtTwelveRecoveryAnalyzer {
         }
         if(!Double.isFinite(bestA))return null;
         double ca=bestA,cp=bestP;
-        for(double a=ca-.20;a<=ca+.20;a+=.025)for(double p=cp-.15;p<=cp+.15;p+=.025){
+        for(double a=ca-.25;a<=ca+.25;a+=.025)for(double p=cp-.18;p<=cp+.18;p+=.025){
             double s0=tickScore(g,cx,cy,r,a),s1=tickScore(g,cx,cy,r,a-p),s2=tickScore(g,cx,cy,r,a+p);
             double bg=(tickScore(g,cx,cy,r,a-.5*p)+tickScore(g,cx,cy,r,a+.5*p))*.5;
             double score=1.30*s0+s1+s2-.35*Math.abs(s1-s2)-.90*bg-.18*Math.abs(a-hint);
@@ -122,7 +131,7 @@ final class GmtTwelveRecoveryAnalyzer {
         }
         double s59=tickScore(g,cx,cy,r,bestA-bestP),s60=tickScore(g,cx,cy,r,bestA),s01=tickScore(g,cx,cy,r,bestA+bestP);
         double bg=(tickScore(g,cx,cy,r,bestA-.5*bestP)+tickScore(g,cx,cy,r,bestA+.5*bestP))*.5;
-        double frame=((s59+s60+s01)/3.0)-bg;if(!Double.isFinite(frame)||frame<1.4)return null;
+        double frame=((s59+s60+s01)/3.0)-bg;if(!Double.isFinite(frame)||frame<1.25)return null;
         int inf=0;Point p59=tickInner(g,cx,cy,r,bestA-bestP);if(p59==null){p59=polar(cx,cy,.915*r,bestA-bestP);inf++;}
         Point p60=tickInner(g,cx,cy,r,bestA);if(p60==null){p60=polar(cx,cy,.915*r,bestA);inf++;}
         Point p01=tickInner(g,cx,cy,r,bestA+bestP);if(p01==null){p01=polar(cx,cy,.915*r,bestA+bestP);inf++;}
@@ -131,62 +140,88 @@ final class GmtTwelveRecoveryAnalyzer {
     }
 
     private static Triangle triangle(Mat g,double cx,double cy,double r,double frameAngle,double hintRadius){
-        int x0=Math.max(0,(int)Math.floor(cx-.38*r)),x1=Math.min(g.cols(),(int)Math.ceil(cx+.38*r));
-        int y0=Math.max(0,(int)Math.floor(cy-1.02*r)),y1=Math.min(g.rows(),(int)Math.ceil(cy-.20*r));
-        if(x1<=x0||y1<=y0)return null;Rect roi=new Rect(x0,y0,x1-x0,y1-y0);Mat patch=g.submat(roi);
+        int x0=Math.max(0,(int)Math.floor(cx-.44*r)),x1=Math.min(g.cols(),(int)Math.ceil(cx+.44*r));
+        int y0=Math.max(0,(int)Math.floor(cy-1.08*r)),y1=Math.min(g.rows(),(int)Math.ceil(cy-.12*r));
+        if(x1<=x0||y1<=y0)return null;
+        Rect roi=new Rect(x0,y0,x1-x0,y1-y0);Mat patch=g.submat(roi);
         List<Mat> masks=new ArrayList<>();
+        Mat closeKernel=Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE,new Size(3,3));
         try{
-            Mat o=new Mat();Imgproc.threshold(patch,o,0,255,Imgproc.THRESH_BINARY|Imgproc.THRESH_OTSU);masks.add(o);
-            for(int th:new int[]{135,155,175,195}){Mat m=new Mat();Imgproc.threshold(patch,m,th,255,Imgproc.THRESH_BINARY);masks.add(m);}
-            Mat can=new Mat();Imgproc.Canny(patch,can,45,120);Mat k=Imgproc.getStructuringElement(Imgproc.MORPH_RECT,new Size(2,2));Imgproc.dilate(can,can,k);k.release();masks.add(can);
-            Triangle best=null;double bestScore=-Double.MAX_VALUE;
+            Mat o=new Mat();Imgproc.threshold(patch,o,0,255,Imgproc.THRESH_BINARY|Imgproc.THRESH_OTSU);Imgproc.morphologyEx(o,o,Imgproc.MORPH_CLOSE,closeKernel);masks.add(o);
+            for(int th:new int[]{120,140,160,180,200}){
+                Mat m=new Mat();Imgproc.threshold(patch,m,th,255,Imgproc.THRESH_BINARY);Imgproc.morphologyEx(m,m,Imgproc.MORPH_CLOSE,closeKernel);masks.add(m);
+            }
+            Mat can=new Mat();Imgproc.Canny(patch,can,38,115);Mat k=Imgproc.getStructuringElement(Imgproc.MORPH_RECT,new Size(2,2));Imgproc.dilate(can,can,k);k.release();masks.add(can);
+
+            Triangle bestStrict=null,bestRelaxed=null;double strictScore=-Double.MAX_VALUE,relaxedScore=-Double.MAX_VALUE;
             for(Mat mask:masks){
                 List<MatOfPoint> cs=new ArrayList<>();Mat hier=new Mat();Mat m=mask.clone();
                 try{
                     Imgproc.findContours(m,cs,hier,Imgproc.RETR_LIST,Imgproc.CHAIN_APPROX_NONE);
                     for(MatOfPoint c:cs){
-                        double area=Math.abs(Imgproc.contourArea(c));if(area<8||area>.14*Math.PI*r*r)continue;
+                        double area=Math.abs(Imgproc.contourArea(c));if(area<6||area>.18*Math.PI*r*r)continue;
                         Point[] raw=c.toArray();if(raw.length<4)continue;
                         Point[] pts=new Point[raw.length];for(int i=0;i<raw.length;i++)pts[i]=new Point(raw[i].x+x0,raw[i].y+y0);
-                        Triangle t=fromContour(pts,cx,cy,r,frameAngle,hintRadius,area);if(t!=null&&t.score>bestScore){best=t;bestScore=t.score;}
+                        Triangle strict=fromContour(pts,cx,cy,r,frameAngle,hintRadius,area,false);
+                        if(strict!=null&&strict.score>strictScore){bestStrict=strict;strictScore=strict.score;}
+                        if(strict==null){
+                            Triangle relaxed=fromContour(pts,cx,cy,r,frameAngle,hintRadius,area,true);
+                            if(relaxed!=null&&relaxed.score>relaxedScore){bestRelaxed=relaxed;relaxedScore=relaxed.score;}
+                        }
                     }
                 }finally{for(MatOfPoint c:cs)c.release();hier.release();m.release();}
             }
-            return best;
-        }finally{for(Mat m:masks)m.release();patch.release();}
+            if(bestStrict!=null)return bestStrict;
+            // A relaxed contour is only admitted when it still has positive
+            // physical evidence after the extra relaxed-pass penalty.
+            return bestRelaxed!=null&&bestRelaxed.score>=0.15?bestRelaxed:null;
+        }finally{
+            closeKernel.release();
+            for(Mat m:masks)m.release();
+            patch.release();
+        }
     }
 
-    private static Triangle fromContour(Point[] q,double cx,double cy,double r,double angle,double hintR,double area){
+    private static Triangle fromContour(Point[] q,double cx,double cy,double r,double angle,double hintR,double area,boolean relaxed){
         double a=Math.toRadians(angle),ox=Math.sin(a),oy=-Math.cos(a),tx=Math.cos(a),ty=Math.sin(a);
         double minR=Double.POSITIVE_INFINITY,maxR=-Double.MAX_VALUE,sumR=0,sumT=0;
         for(Point p:q){double dx=p.x-cx,dy=p.y-cy,rr=dx*ox+dy*oy,tt=dx*tx+dy*ty;minR=Math.min(minR,rr);maxR=Math.max(maxR,rr);sumR+=rr;sumT+=tt;}
         double centroidR=sumR/q.length,centroidT=sumT/q.length;
-        if(centroidR<.45*r||centroidR>.88*r||Math.abs(centroidT)>.18*r)return null;
-        double depth=maxR-minR;if(depth<.06*r||depth>.38*r)return null;
+        double minCentroid=(relaxed?.40:.45)*r,maxCentroid=(relaxed?.92:.88)*r,maxTangential=(relaxed?.24:.18)*r;
+        if(centroidR<minCentroid||centroidR>maxCentroid||Math.abs(centroidT)>maxTangential)return null;
+        double depth=maxR-minR;
+        if(depth<(relaxed?.045:.06)*r||depth>(relaxed?.43:.38)*r)return null;
         Point tip=null,left=null,right=null;double bestTip=Double.POSITIVE_INFINITY,minT=Double.POSITIVE_INFINITY,maxT=-Double.MAX_VALUE;
         for(Point p:q){double dx=p.x-cx,dy=p.y-cy,rr=dx*ox+dy*oy,tt=dx*tx+dy*ty;
             double tipCost=rr+0.35*Math.abs(tt-centroidT);if(tipCost<bestTip){bestTip=tipCost;tip=p;}
-            if(rr>=minR+.62*depth){if(tt<minT){minT=tt;left=p;}if(tt>maxT){maxT=tt;right=p;}}
+            if(rr>=minR+(relaxed?.58:.62)*depth){if(tt<minT){minT=tt;left=p;}if(tt>maxT){maxT=tt;right=p;}}
         }
         if(tip==null||left==null||right==null||left==right)return null;
-        double w=dist(left,right),h=dist(mid(left,right),tip);if(w<.055*r||w>.38*r||h<.055*r||h>.38*r)return null;
-        double ratio=w/h;if(ratio<.38||ratio>2.35)return null;
-        Point base=mid(left,right);double ba=wrap180(clock(cx,cy,base.x,base.y)-angle);if(Math.abs(ba)>9.0)return null;
+        double w=dist(left,right),h=dist(mid(left,right),tip);
+        double minWH=(relaxed?.045:.055)*r,maxWH=(relaxed?.42:.38)*r;
+        if(w<minWH||w>maxWH||h<minWH||h>maxWH)return null;
+        double ratio=w/h;if(ratio<(relaxed?.30:.38)||ratio>(relaxed?2.80:2.35))return null;
+        Point base=mid(left,right);double ba=wrap180(clock(cx,cy,base.x,base.y)-angle);if(Math.abs(ba)>(relaxed?12.0:9.0))return null;
         double sym=Math.abs(((tip.x-cx)*tx+(tip.y-cy)*ty)-(((base.x-cx)*tx+(base.y-cy)*ty)))/Math.max(1.0,w);
-        if(sym>.42)return null;
+        if(sym>(relaxed?.55:.42))return null;
         double hintPenalty=Double.isFinite(hintR)?Math.abs(centroidR-hintR)/Math.max(1.0,r):0;
-        double score=5.0*(area/(.02*Math.PI*r*r)) - 5.0*Math.abs(ba)/9.0 - 5.0*sym - 3.0*hintPenalty - 1.5*Math.abs(ratio-1.05);
+        double score=5.0*(area/(.02*Math.PI*r*r))
+                - (relaxed?4.0:5.0)*Math.abs(ba)/(relaxed?12.0:9.0)
+                - (relaxed?4.0:5.0)*sym
+                - (relaxed?1.8:3.0)*hintPenalty
+                - 1.5*Math.abs(ratio-1.05)
+                - (relaxed?0.45:0.0);
         if(left.x>right.x){Point z=left;left=right;right=z;}
         return new Triangle(left,right,tip,score);
     }
 
     private static double tickScore(Mat g,double cx,double cy,double r,double a){
-        double[]v=new double[24];int n=0;for(double rf=.84;rf<=.985;rf+=.007){double c=samplePolar(g,cx,cy,r*rf,a),l=samplePolar(g,cx,cy,r*rf,a-.72),rr=samplePolar(g,cx,cy,r*rf,a+.72);if(!Double.isFinite(c)||!Double.isFinite(l)||!Double.isFinite(rr))continue;v[n++]=c-(l+rr)*.5+Math.max(0,c-130)*.08;}
+        double[]v=new double[24];int n=0;for(double rf=.82;rf<=.995;rf+=.007){double c=samplePolar(g,cx,cy,r*rf,a),l=samplePolar(g,cx,cy,r*rf,a-.72),rr=samplePolar(g,cx,cy,r*rf,a+.72);if(!Double.isFinite(c)||!Double.isFinite(l)||!Double.isFinite(rr))continue;v[n++]=c-(l+rr)*.5+Math.max(0,c-130)*.08;}
         if(n<6)return -100;Arrays.sort(v,0,n);int take=Math.max(4,n/3);double s=0;for(int i=n-take;i<n;i++)s+=v[i];return s/take;
     }
     private static Point tickInner(Mat g,double cx,double cy,double r,double a){
-        final int N=76;double[]s=new double[N],rad=new double[N];int best=-1;double bv=-1e9;for(int i=0;i<N;i++){double rf=.82+i*(.18/(N-1));rad[i]=rf*r;double c=samplePolar(g,cx,cy,rad[i],a),l=samplePolar(g,cx,cy,rad[i],a-.72),rr=samplePolar(g,cx,cy,rad[i],a+.72);if(!Double.isFinite(c)||!Double.isFinite(l)||!Double.isFinite(rr)){s[i]=-999;continue;}s[i]=c-(l+rr)*.5+Math.max(0,c-135)*.05;if(s[i]>bv){bv=s[i];best=i;}}
-        if(best<0||bv<6)return null;double th=Math.max(4,bv*.35);int inner=best;while(inner>0&&s[inner-1]>=th)inner--;return polar(cx,cy,rad[inner],a);
+        final int N=80;double[]s=new double[N],rad=new double[N];int best=-1;double bv=-1e9;for(int i=0;i<N;i++){double rf=.80+i*(.205/(N-1));rad[i]=rf*r;double c=samplePolar(g,cx,cy,rad[i],a),l=samplePolar(g,cx,cy,rad[i],a-.72),rr=samplePolar(g,cx,cy,rad[i],a+.72);if(!Double.isFinite(c)||!Double.isFinite(l)||!Double.isFinite(rr)){s[i]=-999;continue;}s[i]=c-(l+rr)*.5+Math.max(0,c-135)*.05;if(s[i]>bv){bv=s[i];best=i;}}
+        if(best<0||bv<5.5)return null;double th=Math.max(3.5,bv*.33);int inner=best;while(inner>0&&s[inner-1]>=th)inner--;return polar(cx,cy,rad[inner],a);
     }
     private static Point polar(double cx,double cy,double rr,double a){double t=Math.toRadians(a);return new Point(cx+Math.sin(t)*rr,cy-Math.cos(t)*rr);}
     private static double samplePolar(Mat g,double cx,double cy,double rr,double a){Point p=polar(cx,cy,rr,a);return bilinear(g,p.x,p.y);}
