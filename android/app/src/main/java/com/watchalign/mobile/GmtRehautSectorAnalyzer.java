@@ -48,11 +48,16 @@ final class GmtRehautSectorAnalyzer {
 
         GmtHumanQcMath.GapTrend gapTrendAt12(){
             if(!verticalReliable())return GmtHumanQcMath.GapTrend.UNKNOWN;
-            // Empirical one-sided cue used only for direction, never as the correction
-            // magnitude. More visible rehaut at 12 than 6 means the photographed pose
-            // is tending to make the local 12-side separation look more generous.
-            if(verticalAsymmetry>=0.10)return GmtHumanQcMath.GapTrend.INFLATED;
-            if(verticalAsymmetry<=-0.10)return GmtHumanQcMath.GapTrend.COMPRESSED;
+            // Direction only, never a numeric correction. For a recessed dial the
+            // far-side rehaut wall is more visible. If the 6-side wall is wider than
+            // the 12-side wall (negative V), the camera is nearer 12 and local
+            // perspective tends to make the normalized 12-side radial gap look more
+            // generous. The opposite sign tends to compress it. A straight-on real
+            // baseline measured V=+0.043, while the earlier gap-enhancing QC pose was
+            // about V=-0.094, so Alpha40 uses a deliberately modest dead band.
+            final double directionalThreshold=0.075;
+            if(verticalAsymmetry<=-directionalThreshold)return GmtHumanQcMath.GapTrend.INFLATED;
+            if(verticalAsymmetry>= directionalThreshold)return GmtHumanQcMath.GapTrend.COMPRESSED;
             return GmtHumanQcMath.GapTrend.NEUTRAL;
         }
     }
