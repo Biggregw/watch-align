@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Alpha30: visual-first GMT inspection with precision assisted alignment and visible QC results. */
+/** Alpha31: visual-first GMT inspection plus rehaut-aware human 12-marker QC. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha30";
+    public static final String CORE_VERSION="1.3.0-alpha31";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -36,12 +36,14 @@ public final class WatchAlignCoreV13 {
                 new PerspectiveGmtOverlay.DialSeed(InspectionImageStore.manualCx,InspectionImageStore.manualCy,InspectionImageStore.manualR,0.98,InspectionImageStore.manualRoll):null;
         PerspectiveGmtOverlay.Result perspective=canonicalGmt?PerspectiveGmtOverlay.build(watch,modelRef,manualSeed,android.graphics.Color.rgb(255,45,45)):null;
         String perspectiveReport=perspective==null&&canonicalGmt?"\n\nVISUAL QC MASTER\nUnavailable: a stable dial ellipse could not be fitted. Use a clearer photo or precision dial-edge alignment.\n":perspective==null?"":perspective.report;
+        GmtHumanQcAnalyzer.Result human=canonicalGmt?GmtHumanQcAnalyzer.analyse(watch,modelRef):null;
         String report;
         if(canonicalGmt){
             report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\nVISUAL INSPECTION MODE\n"
                     +"Projected model master provides the primary QC surface. Automated QC findings are also available from View QC checks.\n"
                     +perspectiveReport
-                    +ext.report;
+                    +ext.report
+                    +(human==null?"":human.report);
         }else{
             String baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;
             String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)+ext.report+baselineReport+"\nInterpretation: non-GMT models continue to use the existing reference-distribution diagnostics.";
