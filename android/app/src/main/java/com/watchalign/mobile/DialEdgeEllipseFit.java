@@ -47,6 +47,15 @@ final class DialEdgeEllipseFit {
 
     /** Returns null when the boundary is not clear enough to trust. */
     static Fit fit(Intensity img, int width, int height, double seedX, double seedY, double seedR){
+        return fit(img,width,height,seedX,seedY,seedR,0.08);
+    }
+
+    /**
+     * @param window consensus search half-width as a fraction of seedR (centre and radius).
+     *               0.08 by default; a narrow window (e.g. 0.03) around an independently
+     *               estimated circle excludes a competing ring such as a bright rehaut rim.
+     */
+    static Fit fit(Intensity img, int width, int height, double seedX, double seedY, double seedR, double window){
         if(img==null||!(seedR>20)||!Double.isFinite(seedX)||!Double.isFinite(seedY))return null;
         List<double[]> pts=new ArrayList<>();
         List<double[][]> cands=new ArrayList<>();   // per ray: every qualifying edge candidate
@@ -110,9 +119,12 @@ final class DialEdgeEllipseFit {
         // master is normalised to, so the search stays within +/-8% of it. Taking the
         // outermost edge instead let the rehaut's bright outer rim (about 0.12R further out,
         // and parallax-shifted) win wherever it was brighter than the dial edge.
-        double[] e=consensusCircle(cands,seedX,seedY,seedR);
+        double[] e=consensusCircle(cands,seedX,seedY,seedR,window);
         if(e==null)return null;
         double[] gates={0.05*seedR,0.035*seedR,Math.max(3.0,0.025*seedR),Math.max(3.0,0.025*seedR)};
+        // A narrow window must stay narrow through refinement, or a competing ring just
+        // outside it (a bright rehaut rim) is re-admitted by the wider default gates.
+        for(int g=0;g<gates.length;g++)gates[g]=Math.min(gates[g],Math.max(2.0,window*seedR));
         for(int round=0;round<gates.length;round++){
             List<double[]> next=new ArrayList<>();
             for(double[][] c:cands){
@@ -143,11 +155,14 @@ final class DialEdgeEllipseFit {
      * within 8% of it. Returns {cx, cy, r, r, 0} or null when no circle has clear support.
      */
     static double[] consensusCircle(List<double[][]> cands,double sx,double sy,double sr){
+        return consensusCircle(cands,sx,sy,sr,0.08);
+    }
+    static double[] consensusCircle(List<double[][]> cands,double sx,double sy,double sr,double window){
         int total=0;for(double[][] c:cands)total+=c.length;
         double[] px=new double[total],py=new double[total];
         int k=0;for(double[][] c:cands)for(double[] q:c){px[k]=q[0];py[k]=q[1];k++;}
-        double stepC=Math.max(1.0,sr/220.0), span=0.08*sr;
-        double binW=Math.max(1.5,0.008*sr), rLo=0.92*sr, rHi=1.08*sr;
+        double stepC=Math.max(1.0,sr/220.0), span=window*sr;
+        double binW=Math.max(1.5,0.008*sr), rLo=(1.0-window)*sr, rHi=(1.0+window)*sr;
         int nb=(int)Math.ceil((rHi-rLo)/binW)+1;
         int[] hist=new int[nb];
         int best=-1;double bx=sx,by=sy,br=sr;

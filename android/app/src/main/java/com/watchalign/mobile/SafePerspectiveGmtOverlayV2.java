@@ -42,8 +42,40 @@ final class SafePerspectiveGmtOverlayV2 {
             // dial edge before anything (roll, pose, master) is built on it.
             double houghX=seed.x,houghY=seed.y,houghR=seed.r;
             DialEdgeEllipseFit.Fit edgeFit=null;
+            String arbitrationNote="";
             if(manualSeed==null){
                 edgeFit=fitDialEdge(blur,seed);
+                // Arbitration (alpha51): where reflection lifts the dial towards the rehaut's
+                // grey, the true dial edge can fall below contrast on one side and the fit takes
+                // the bright rehaut rim there instead (field Pepsi photo: dial fitted ~4% too big,
+                // centre ~6 px high). The round markers imply their own circle. If it disagrees,
+                // re-fit the dial edge in a narrow window around it and keep that only if it is
+                // clean and agrees much better. Geometry still comes from the dial edge.
+                if(edgeFit!=null&&Gmt126710BlnrMaster.supports(modelRef)){
+                    DialEdgeEllipseFit.Intensity ii=intensityOf(blur);
+                    MarkerConsensusShift.Implied imp=MarkerConsensusShift.impliedCircle(ii,blur.cols(),blur.rows(),edgeFit.cx,edgeFit.cy,edgeFit.meanRadius());
+                    if(imp!=null){
+                        double r0=edgeFit.meanRadius();
+                        double dis0=Math.hypot(edgeFit.cx-imp.cx,edgeFit.cy-imp.cy)+Math.abs(r0-imp.r);
+                        if(dis0>0.015*r0){
+                            DialEdgeEllipseFit.Fit alt=DialEdgeEllipseFit.fit(ii,blur.cols(),blur.rows(),imp.cx,imp.cy,imp.r,0.03);
+                            double dis1=alt==null?Double.POSITIVE_INFINITY:Math.hypot(alt.cx-imp.cx,alt.cy-imp.cy)+Math.abs(alt.meanRadius()-imp.r);
+                            if(alt!=null&&dis1<0.7*dis0){
+                                arbitrationNote=String.format(Locale.US," Dial edge re-fitted around the circle the round markers imply (%d markers): the first fit disagreed by %.1f px and was taking a competing ring; the re-fit disagrees by %.1f px.",imp.used,dis0,dis1);
+                                edgeFit=alt;
+                            }else if(imp.used>=7&&imp.rmsPx<=0.012*r0&&dis0<=0.06*r0){
+                                // The dial edge cannot be recovered on one side (below contrast) but
+                                // the round markers agree tightly. Take centre and size from them,
+                                // keep the dial fit's tilt and shape. Batons and the triangle are not
+                                // used here, so they remain an independent check against the dots.
+                                double k=imp.r/r0;
+                                edgeFit=new DialEdgeEllipseFit.Fit(imp.cx,imp.cy,edgeFit.axisA*k,edgeFit.axisB*k,edgeFit.angleDeg,
+                                        edgeFit.points,edgeFit.rays,edgeFit.rmsPx);
+                                arbitrationNote=String.format(Locale.US," Dial edge not recoverable all round (a competing rehaut ring on one side), so the template's centre and size come from the %d round markers, which agree to %.1f px; the dial-edge fit differed by %.1f px. Tilt and shape still come from the dial edge; batons and the 12 triangle are checked independently.",imp.used,imp.rmsPx,dis0);
+                            }else arbitrationNote=String.format(Locale.US," Round markers imply a circle %.1f px from the dial-edge fit; neither a narrow re-fit nor the markers were conclusive, so the dial-edge fit is kept.",dis0);
+                        }
+                    }
+                }
                 if(edgeFit!=null)seed=new PerspectiveGmtOverlay.DialSeed(edgeFit.cx,edgeFit.cy,edgeFit.meanRadius(),seed.quality,0.0);
             }
 
@@ -84,6 +116,7 @@ final class SafePerspectiveGmtOverlayV2 {
                 centerErr=0.0;
                 centreNote=String.format(Locale.US,"Dial centre: re-fitted to dial edge (%d/%d edge points, RMS %.2f px). Moved %.1f px (%.2f%% of radius) from the Hough proposal %.1f, %.1f; radius %.1f → %.1f px.",
                         edgeFit.points,edgeFit.rays,edgeFit.rmsPx,shift,100.0*shift/Math.max(1.0,houghR),houghX,houghY,houghR,edgeFit.meanRadius());
+                centreNote+=arbitrationNote;
             }else if(detectedEllipse!=null){
                 // Measured before normalisation re-centres the ellipse on the seed; the old
                 // post-normalisation value was always 0.00% and could never flag a bad centre.
@@ -132,8 +165,24 @@ final class SafePerspectiveGmtOverlayV2 {
             if(manualSeed==null&&confidence<0.52)return new PerspectiveGmtOverlay.Result(null,null,
                     String.format(Locale.US,"\n\nVISUAL QC MASTER\nWithheld: automatic dial pose confidence %.0f%% is too low for a trustworthy fixed-master overlay. The human 12-marker analysis can still run independently.\n",confidence*100.0),confidence);
 
-            Bitmap overlay=(Bitmap)call("renderNative",new Class[]{Bitmap.class,Mat.class,String.class,int.class},input,h0,modelRef,overlayColor);
-            Bitmap rectified=(Bitmap)call("rectify",new Class[]{Mat.class,Mat.class,Bitmap.class},src,h0,input);
+            // Correct the ellipse-centre bias of close, tilted photos from where the round
+            // markers actually are (translation only, capped, outliers kept visible).
+            Mat hDraw=h0;
+            String markerNote="Marker consensus: not measured (no fixed master for this model).";
+            if(Gmt126710BlnrMaster.supports(modelRef)){
+                MarkerConsensusShift.Result ms=MarkerConsensusShift.measure(intensityOf(blur),blur.cols(),blur.rows(),h0Values,seed.r);
+                if(ms.applied){
+                    double[] hv=h0Values.clone();
+                    for(int c=0;c<3;c++){hv[c]+=ms.dx*hv[6+c];hv[3+c]+=ms.dy*hv[6+c];}
+                    hDraw=new Mat(3,3,org.opencv.core.CvType.CV_64F);hDraw.put(0,0,hv);
+                    markerNote=String.format(Locale.US,"Marker consensus: template moved %.1f px (%.1f%% of radius) to where %d/%d round markers agree (spread %.1f px). Corrects the ellipse-centre bias of close, tilted photos; markers that disagree are not fitted.",
+                            Math.hypot(ms.dx,ms.dy),100.0*Math.hypot(ms.dx,ms.dy)/Math.max(1.0,seed.r),ms.used,ms.found,ms.spreadPx);
+                }else markerNote="Marker consensus: not applied - "+ms.note+".";
+            }
+
+            Bitmap overlay=(Bitmap)call("renderNative",new Class[]{Bitmap.class,Mat.class,String.class,int.class},input,hDraw,modelRef,overlayColor);
+            Bitmap rectified=(Bitmap)call("rectify",new Class[]{Mat.class,Mat.class,Bitmap.class},src,hDraw,input);
+            if(hDraw!=h0)hDraw.release();
             String master=Gmt126710BlnrMaster.supports(modelRef)?Gmt126710BlnrMaster.ID:"canonical GMT fallback";
             String report=String.format(Locale.US,
                     "\n\nVISUAL QC MASTER\n"+
@@ -142,6 +191,7 @@ final class SafePerspectiveGmtOverlayV2 {
                     "Inspection geometry: %s. Red outlines are the fixed master; white outlines are lume references.\n"+
                     "Dial seed: centre %.1f, %.1f; radius %.1f px; seed quality %.2f.\n"+
                     "%s\n"+
+                    "%s\n"+
                     "Ellipse axes: %.1f × %.1f px; apparent tilt %.1f°.\n"+
                     "Dial-centre agreement: %.2f%% of dial radius. H0 pose residual: %.2f px. Confidence: %.0f%%.\n"+
                     "SAFE RECTIFICATION: ellipse-derived H0 only. Projective h31/h32 refinement is DIAGNOSTIC ONLY and is not applied to the watch image or master overlay.\n"+
@@ -149,7 +199,7 @@ final class SafePerspectiveGmtOverlayV2 {
                     "Diagnostic projective candidate: %s; h31=%+.6f, h32=%+.6f.\n"+
                     "Diagnostic fit evidence: %.4f before, %.4f after. Holdout: %.4f before, %.4f after.\n"+
                     "Applied homography: H0 (projective candidate ignored regardless of diagnostic acceptance).\n",
-                    seedSource,rollSource,seed.rollDeg,master,seed.x,seed.y,seed.r,seed.quality,centreNote,
+                    seedSource,rollSource,seed.rollDeg,master,seed.x,seed.y,seed.r,seed.quality,centreNote,markerNote,
                     major,minor,tiltDeg,centerErr*100.0,reproj,confidence*100.0,
                     normalizedTerm(h0Values,6),normalizedTerm(h0Values,7),
                     refinement.diagnostics.accepted?"ACCEPTED FOR RESEARCH":"REJECTED",
@@ -173,6 +223,20 @@ final class SafePerspectiveGmtOverlayV2 {
             return fitDialEdge(blur,new PerspectiveGmtOverlay.DialSeed(x,y,r,1.0,0.0));
         }catch(Throwable t){return null;}
         finally{gray.release();blur.release();}
+    }
+
+    /** Bilinear intensity accessor over a single-channel 8-bit Mat. */
+    static DialEdgeEllipseFit.Intensity intensityOf(Mat gray){
+        final int w=gray.cols(),h=gray.rows();
+        final byte[] px=new byte[w*h];
+        gray.get(0,0,px);
+        return (x,y)->{
+            int x0=(int)Math.floor(x),y0=(int)Math.floor(y);
+            if(x0<0||y0<0||x0+1>=w||y0+1>=h)return 0.0;
+            double fx=x-x0,fy=y-y0;int i=y0*w+x0;
+            double a=px[i]&0xff,b=px[i+1]&0xff,c=px[i+w]&0xff,d=px[i+w+1]&0xff;
+            return (a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy;
+        };
     }
 
     private static DialEdgeEllipseFit.Fit fitDialEdge(Mat blurredGray,PerspectiveGmtOverlay.DialSeed seed){
