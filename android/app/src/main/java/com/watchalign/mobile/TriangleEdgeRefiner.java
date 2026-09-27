@@ -50,6 +50,7 @@ final class TriangleEdgeRefiner {
     }
     private static final double MIN_SPAN = 40.0;   // marker-to-dial contrast, grey levels
 
+    static boolean DEBUG=Boolean.getBoolean("wa.refine.debug");
     private TriangleEdgeRefiner(){}
 
     /**
@@ -84,9 +85,12 @@ final class TriangleEdgeRefiner {
         double[] base=fitSide(img,w,h,left,right,gx,gy,dialR,0.12,0.88,0.045,tickA,tickB,band);
         double[] rs=fitSide(img,w,h,right,tip,gx,gy,dialR,0.10,0.75,0.035,null,null,band);
         double[] ls=fitSide(img,w,h,tip,left,gx,gy,dialR,0.25,0.90,0.035,null,null,band);
+        if(DEBUG)System.err.printf("refine band=%s base=%s rs=%s ls=%s%n",band,base!=null,rs!=null,ls!=null);
         if(base==null||rs==null||ls==null)return null;
         double[] l=intersect(ls,base), r=intersect(base,rs), t=intersect(rs,ls);
         if(l==null||r==null||t==null)return null;
+        if(DEBUG)System.err.printf("  apex %.2f square %.2f dL %.2f dR %.2f dT %.2f lim %.2f width %.1f%n",apexAngleDeg(l,r,t),squarenessDeg(l,r,t),
+                Math.hypot(l[0]-left[0],l[1]-left[1]),Math.hypot(r[0]-right[0],r[1]-right[1]),Math.hypot(t[0]-tip[0],t[1]-tip[1]),0.06*dialR,Math.hypot(r[0]-l[0],r[1]-l[1]));
         // Shape check (alpha53): the applied 12 triangle has a fixed apex angle, ~44.3 deg
         // (half-base 0.123R, height 0.302R). Correct fits on genuine and replica photos
         // measure 43.5-44.9 deg. A side fitted to an inner bevel line instead of the outer

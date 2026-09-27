@@ -9,8 +9,7 @@ public class Six{
  String crops=null;
  for(String f:a){
   if(f.startsWith("-crops=")){crops=f.substring(7);new File(crops).mkdirs();continue;}
-  BufferedImage raw=ImageIO.read(new File(f));if(raw==null)continue;BufferedImage argb=new BufferedImage(raw.getWidth(),raw.getHeight(),BufferedImage.TYPE_INT_ARGB);argb.getGraphics().drawImage(raw,0,0,null);
-  Bitmap b=new Bitmap(argb);int max=Math.max(b.getWidth(),b.getHeight());if(max>1600){float s=1600f/max;b=Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true);}
+  Bitmap b=Load.photo(f);if(b==null)continue;
   GmtHumanQcAnalyzerV2.Result h=GmtHumanQcAnalyzerV2.analyse(b,"126710BLNR");
   var x=h.six;String n=f.replaceAll(".*/(rep|gen|e2e)/","$1/");
   if(x==null||!x.valid){System.out.printf("%-58s SIX none (%s) | 12gap %.3f%n",n,x==null?"null":x.reason,h.summary.observedGap);continue;}

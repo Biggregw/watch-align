@@ -3,8 +3,7 @@ import android.graphics.Bitmap;
 import javax.imageio.ImageIO;import java.io.File;import java.awt.*;import java.awt.geom.*;import java.awt.image.BufferedImage;
 public class AxisViz{public static void main(String[] a)throws Exception{
  nu.pattern.OpenCV.loadLocally();
- BufferedImage raw=ImageIO.read(new File(a[0]));BufferedImage argb=new BufferedImage(raw.getWidth(),raw.getHeight(),BufferedImage.TYPE_INT_ARGB);argb.getGraphics().drawImage(raw,0,0,null);
- Bitmap b=new Bitmap(argb);int max=Math.max(b.getWidth(),b.getHeight());if(max>1600){float s=1600f/max;b=Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true);}
+ Bitmap b=Load.photo(a[0]);
  GmtHumanQcAnalyzerV2.Result h=GmtHumanQcAnalyzerV2.analyse(b,"126710BLNR");
  var d=h.drawing;var g=d.twelve;double cx=d.dialCx,cy=d.dialCy;
  double mx=(g.triLeft[0]+g.triRight[0])/2,my=(g.triLeft[1]+g.triRight[1])/2,w=Math.hypot(g.triRight[0]-g.triLeft[0],g.triRight[1]-g.triLeft[1]);

@@ -4,8 +4,7 @@ import javax.imageio.ImageIO;import java.io.File;import java.awt.image.BufferedI
 public class Apex{public static void main(String[] a)throws Exception{
  nu.pattern.OpenCV.loadLocally();
  for(String f:a){
-  BufferedImage raw=ImageIO.read(new File(f));BufferedImage argb=new BufferedImage(raw.getWidth(),raw.getHeight(),BufferedImage.TYPE_INT_ARGB);argb.getGraphics().drawImage(raw,0,0,null);
-  Bitmap b=new Bitmap(argb);int max=Math.max(b.getWidth(),b.getHeight());if(max>1600){float s=1600f/max;b=Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true);}
+  Bitmap b=Load.photo(f);if(b==null)continue;
   GmtHumanQcAnalyzerV2.Result h=GmtHumanQcAnalyzerV2.analyse(b,"126710BLNR");var g=h.drawing.twelve;
   if(g==null){System.out.println(f+" no triangle");continue;}
   double al=Math.toDegrees(Math.atan2(g.triLeft[1]-g.triTip[1],g.triLeft[0]-g.triTip[0])),ar=Math.toDegrees(Math.atan2(g.triRight[1]-g.triTip[1],g.triRight[0]-g.triTip[0]));

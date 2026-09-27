@@ -58,6 +58,9 @@ public class EmulatorPhotoRunTest {
             String stem = name.replaceAll("\\.[^.]+$", "");
             try {
                 Bitmap watch = load(test, "e2e/" + name);
+                // The exact working image the analysis sees, lossless, so the desktop harness
+                // can be checked against the device decode pixel for pixel.
+                try (FileOutputStream o = new FileOutputStream(new File(out, stem + "_working.png"))) { watch.compress(Bitmap.CompressFormat.PNG, 100, o); }
                 long t0 = System.nanoTime();
                 WatchAlignCoreV13.AnalysisResult r = WatchAlignCoreV13.analyse(watch, Collections.<Bitmap>emptyList(), "126710BLNR");
                 long ms = (System.nanoTime() - t0) / 1_000_000;

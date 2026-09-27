@@ -4,14 +4,9 @@ import javax.imageio.ImageIO;import java.io.File;
 public class E2E{
  public static void main(String[] a)throws Exception{
   nu.pattern.OpenCV.loadLocally();org.opencv.core.Core.setNumThreads(1);
-  java.awt.image.BufferedImage raw=ImageIO.read(new File(a[0]));
-  java.awt.image.BufferedImage argb=new java.awt.image.BufferedImage(raw.getWidth(),raw.getHeight(),java.awt.image.BufferedImage.TYPE_INT_ARGB);
-  argb.getGraphics().drawImage(raw,0,0,null);
-  Bitmap b=new Bitmap(argb);
-  // Same working-size rule as MainActivity.decode: longest side capped at 1600.
-  int max=Math.max(b.getWidth(),b.getHeight());
-  if(max>1600){float s=1600f/max;b=Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true);}
-  System.out.println("input "+raw.getWidth()+"x"+raw.getHeight()+" -> working "+b.getWidth()+"x"+b.getHeight());
+  // Same decode and working-size rule as MainActivity.decode (see Load).
+  Bitmap b=Load.photo(a[0]);
+  System.out.println("working "+b.getWidth()+"x"+b.getHeight());
   String model="126710BLNR";
   WatchAlignCoreV13.AnalysisResult full=null;
   GmtHumanQcAnalyzerV2.Result h=GmtHumanQcAnalyzerV2.analyse(b,model);

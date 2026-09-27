@@ -15,10 +15,7 @@ public class Batch{
    if(li%nsh!=ksh)continue;
    String[] f=lines.get(li).split(",",-1);String rel=f[iPath];File img=base.resolve(rel).toFile();if(!img.exists())continue;
    try{
-    java.awt.image.BufferedImage raw=ImageIO.read(img);if(raw==null)continue;
-    java.awt.image.BufferedImage argb=new java.awt.image.BufferedImage(raw.getWidth(),raw.getHeight(),java.awt.image.BufferedImage.TYPE_INT_ARGB);argb.getGraphics().drawImage(raw,0,0,null);
-    Bitmap b=new Bitmap(argb);int max=Math.max(b.getWidth(),b.getHeight());
-    if(max>1600){float s=1600f/max;b=Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true);}
+    Bitmap b=Load.photo(img.getPath());if(b==null)continue;
     GmtHumanQcAnalyzerV2.Result h=GmtHumanQcAnalyzerV2.analyse(b,"126710BLNR");
     GmtHumanSummary.Input s=h.summary;boolean tw=h.drawing!=null&&h.drawing.twelve!=null;
     double triPx=tw?Math.hypot(h.drawing.twelve.triRight[0]-h.drawing.twelve.triLeft[0],h.drawing.twelve.triRight[1]-h.drawing.twelve.triLeft[1]):Double.NaN;
