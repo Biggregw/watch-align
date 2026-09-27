@@ -30,6 +30,17 @@ final class TriangleEdgeRefiner {
     static final int SAMPLES = 30;
     static final double EXPECTED_APEX_DEG = 44.3;
     static final double APEX_TOLERANCE_DEG = 2.0;
+    static final double SQUARENESS_TOLERANCE_DEG = 2.5;
+
+    /** Deviation from 90 deg between the base and the base-midpoint-to-tip line, degrees. */
+    static double squarenessDeg(double[] left,double[] right,double[] tip){
+        double mx=(left[0]+right[0])/2,my=(left[1]+right[1])/2;
+        double ax=Math.toDegrees(Math.atan2(tip[1]-my,tip[0]-mx)),bx=Math.toDegrees(Math.atan2(right[1]-left[1],right[0]-left[0]));
+        double d=ax-bx-90.0;
+        while(d>180)d-=360;while(d<-180)d+=360;
+        if(d>90)d-=180;if(d<-90)d+=180;
+        return d;
+    }
 
     /** Angle at the tip between the two sides, degrees. */
     static double apexAngleDeg(double[] left,double[] right,double[] tip){
@@ -64,6 +75,10 @@ final class TriangleEdgeRefiner {
         // edge bends the outline (field VSF photo: 47.9-49.1 deg) and flips the rotation
         // sign, so such fits are rejected rather than reported.
         if(Math.abs(apexAngleDeg(l,r,t)-EXPECTED_APEX_DEG)>APEX_TOLERANCE_DEG)return null;
+        // The triangle is symmetric, so its base is square to its centre line. A base fitted
+        // partly to the inner lume edge (shadowed surround on one side) tilts without changing
+        // the apex angle (field 126710GRNR photo: 5.5 deg out). Correct fits: within +/-1.8 deg.
+        if(Math.abs(squarenessDeg(l,r,t))>SQUARENESS_TOLERANCE_DEG)return null;
         double lim=0.06*dialR;
         if(Math.hypot(l[0]-left[0],l[1]-left[1])>lim)return null;
         if(Math.hypot(r[0]-right[0],r[1]-right[1])>lim)return null;

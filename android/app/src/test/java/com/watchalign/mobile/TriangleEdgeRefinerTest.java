@@ -87,4 +87,12 @@ public class TriangleEdgeRefinerTest {
         double bent = TriangleEdgeRefiner.apexAngleDeg(l, r, bentTip);
         org.junit.Assert.assertTrue("bent " + bent, Math.abs(bent - TriangleEdgeRefiner.EXPECTED_APEX_DEG) > TriangleEdgeRefiner.APEX_TOLERANCE_DEG);
     }
+
+    @Test public void baseMustBeSquareToTheCentreLine() {
+        double[] l = {-0.123, 0}, r = {0.123, 0}, t = {0, 0.302};
+        assertEquals(0.0, TriangleEdgeRefiner.squarenessDeg(l, r, t), 0.01);
+        // Field 126710GRNR fit: left corner ~2 px low on a 53 px triangle -> ~5.5 deg out.
+        double[] lowLeft = {-0.123, 0.022};
+        org.junit.Assert.assertTrue(Math.abs(TriangleEdgeRefiner.squarenessDeg(lowLeft, r, t)) > TriangleEdgeRefiner.SQUARENESS_TOLERANCE_DEG);
+    }
 }
