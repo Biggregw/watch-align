@@ -80,4 +80,28 @@ public class GmtHumanSummaryTest {
         assertTrue(s, s.contains("Bottom line: 1 thing to check: the 12 marker alignment. Measured with low confidence"));
         assertTrue(s, s.contains("12 gap: could not be judged reliably on this photo.\n"));
     }
+
+    /** alpha48 field report on a replica: 0.06 on a ~55 px triangle is within a pixel of the limit. */
+    @Test public void resolutionLimitedGapSaysTooCloseToCallNotTouching() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.CORRECTABLE;
+        in.gap = GmtHumanQcMath.Attention.UNASSESSABLE; in.gapResolutionLimited = true;
+        in.observedGap = 0.062; in.pxPerGap = 1.0 / 55.0; in.gapPx = 0.062 * 55.0;
+        in.alignment = GmtHumanQcMath.Attention.CLEAR; in.rotationDeg = 0.2; in.spacing59 = 0.15; in.spacing01 = 0.15;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("12 gap: too close to call at this photo's resolution. Measured 0.06"));
+        assertTrue(s, s.contains("1 pixel is 0.018 of gap"));
+        assertTrue(s, s.contains("too close to call at this resolution; a closer photo would settle it."));
+        assertFalse(s, s.contains("touching"));
+    }
+
+    @Test public void strongGapOnlySaysTouchingUnderAPixel() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD; in.gap = GmtHumanQcMath.Attention.STRONG;
+        in.observedGap = 0.03; in.gapPx = 3.0; in.pxPerGap = 0.01;
+        in.alignment = GmtHumanQcMath.Attention.CLEAR;
+        assertFalse(GmtHumanSummary.build(in).contains("touching"));
+        in.observedGap = 0.01; in.gapPx = 0.6;
+        assertTrue(GmtHumanSummary.build(in).contains("touching or almost touching"));
+    }
 }

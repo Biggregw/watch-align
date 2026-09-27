@@ -21,6 +21,8 @@ final class GmtHumanSummary {
         double rotationDeg=Double.NaN;
         double spacing59=Double.NaN, spacing01=Double.NaN;
         boolean overlayDrawn;
+        boolean gapResolutionLimited;
+        double gapPx=Double.NaN, pxPerGap=Double.NaN;
     }
 
     // Reference only, for the reader: what genuine images have measured on the same
@@ -56,13 +58,22 @@ final class GmtHumanSummary {
         if(!in.twelveValid)return "could not be measured on this photo (12 triangle or minute track not found). This is not a pass.";
         String v=Double.isFinite(in.observedGap)?String.format(Locale.US," Measured %.2f; genuine photos tested so far read %s.",in.observedGap,GENUINE_GAP_SEEN):"";
         if(!in.stableFrame)v+=" The 12 marker could only be measured with low confidence on this photo, so treat this with caution.";
+        if(in.gapResolutionLimited){
+            String px=Double.isFinite(in.pxPerGap)?String.format(Locale.US," Here 1 pixel is %.3f of gap, so the difference is within a pixel.",in.pxPerGap):"";
+            return String.format(Locale.US,"too close to call at this photo's resolution. Measured %.2f; genuine images tested so far read %s, and the attention level is %.2f.",
+                    in.observedGap,GENUINE_GAP_SEEN,GmtHumanQcMath.LOW_CLEARANCE_ATTENTION)+px
+                    +" Take a closer photo so the dial fills more of the frame.";
+        }
         switch(in.gap){
             case CLEAR: return "normal. Clear space between the triangle and the minute track."+v;
             case CHECK:
                 if(in.gapTrend==GmtHumanQcMath.GapTrend.COMPRESSED)
                     return "looks small, but the photo angle may be making it look smaller. Check by eye or retake straight-on."+v;
                 return "small. The triangle sits closer to the minute track than expected. Check by eye."+v;
-            case STRONG: return "very small or touching. The triangle is right up against the minute track."+v;
+            case STRONG:
+                if(Double.isFinite(in.gapPx)&&in.gapPx<1.0)
+                    return "touching or almost touching the minute track."+v;
+                return "clearly small, and the photo angle would make it look bigger rather than smaller. Check by eye."+v;
             default: return "could not be judged reliably on this photo.";
         }
     }
@@ -87,14 +98,15 @@ final class GmtHumanSummary {
         if(gapFlag)items.add("the gap at 12");
         if(alignFlag)items.add("the 12 marker alignment");
         if(!in.twelveValid)return "Bottom line: the 12 marker could not be checked on this photo. Try a clearer, straight-on photo with the hands away from 12.";
+        String closer=in.gapResolutionLimited?" The gap at 12 is too close to call at this resolution; a closer photo would settle it.":"";
         if(in.pose==GmtHumanQcMath.PoseLabel.RETAKE)
             return items.isEmpty()?"Bottom line: nothing flagged, but the photo is too angled to rely on that. Retake straight-on."
                     :"Bottom line: flagged "+join(items)+", but the photo is too angled to be sure. Retake straight-on.";
-        if(items.isEmpty())return in.stableFrame?"Bottom line: nothing flagged at 12. Still compare the red outlines with the markers by eye."
-                :"Bottom line: nothing flagged, but the 12 marker was only measured with low confidence. A clearer photo with the hands away from 12 would help.";
+        if(items.isEmpty())return (in.stableFrame?"Bottom line: nothing flagged at 12."+(closer.isEmpty()?" Still compare the red outlines with the markers by eye.":closer)
+                :"Bottom line: nothing flagged, but the 12 marker was only measured with low confidence. A clearer photo with the hands away from 12 would help."+closer);
         String line="Bottom line: "+items.size()+(items.size()==1?" thing":" things")+" to check: "+join(items)+".";
         if(!in.stableFrame)line+=" Measured with low confidence, so confirm by eye or with a clearer photo with the hands away from 12.";
-        return line;
+        return line+closer;
     }
 
     private static String join(List<String> items){

@@ -10,6 +10,8 @@ import java.util.Locale;
 
 /** Human-first GMT QC using the wide-scale GMT dial seed shared with the visual master. */
 final class GmtHumanQcAnalyzerV2 {
+    /** Combined base-edge and tick-end location uncertainty, pixels. */
+    static final double GAP_PX_UNCERTAINTY = 0.75;
     static final class Result {
         final String report;
         final GmtHumanQcMath.PoseLabel poseLabel;
@@ -113,6 +115,26 @@ final class GmtHumanQcAnalyzerV2 {
                         Double.NaN,Double.NaN,Double.NaN,"local 12-marker landmarks unavailable: "+twelve.reason);
             }
 
+            // Resolution gate (alpha50). The gap is a fraction of the triangle width, so one
+            // pixel is 1/width of gap: ~0.018 on a 55 px triangle, which is the whole spread
+            // between genuine readings (~0.085) and the attention level (0.070). Edge and
+            // tick-end location together are good to about GAP_PX_UNCERTAINTY px. A verdict
+            // either way is only given when it survives that; otherwise "too close to call".
+            boolean gapResolutionLimited=false;
+            if(twelve.valid&&Double.isFinite(twelve.topClearance)&&twelve.triangleWidthPx>0&&twelve.topClearance>0){
+                double u=GAP_PX_UNCERTAINTY/twelve.triangleWidthPx;
+                double g=twelve.topClearance, lim=GmtHumanQcMath.LOW_CLEARANCE_ATTENTION;
+                boolean flagged=clearance.attention==GmtHumanQcMath.Attention.CHECK||clearance.attention==GmtHumanQcMath.Attention.STRONG;
+                boolean clear=clearance.attention==GmtHumanQcMath.Attention.CLEAR;
+                if((flagged&&g+u>=lim)||(clear&&g-u<lim)){
+                    gapResolutionLimited=true;
+                    clearance=new GmtHumanQcMath.ClearanceDecision(GmtHumanQcMath.Attention.UNASSESSABLE,clearance.trend,
+                            clearance.observedGap,clearance.correctedEstimate,clearance.perspectiveScale,
+                            String.format(Locale.US,"observed %.3f is within the ±%.2f px measurement uncertainty (±%.3f at this resolution, triangle %.0f px wide) of the %.3f attention level; too close to call, a closer photo is needed",
+                                    g,GAP_PX_UNCERTAINTY,u,twelve.triangleWidthPx,lim));
+                }
+            }
+
             StringBuilder out=new StringBuilder("\n\nHUMAN 12-MARKER QC\n");
             if(twelve.valid){
                 out.append("12 marker: ").append(clearance.attention).append(" - ").append(clearanceSummary(clearance)).append("\n");
@@ -175,6 +197,9 @@ final class GmtHumanQcAnalyzerV2 {
             sum.pose=pose.label;sum.twelveValid=twelve.valid;sum.stableFrame=stableFrame;
             sum.gap=clearance.attention;sum.gapTrend=clearance.trend;
             sum.observedGap=twelve.valid?twelve.topClearance:Double.NaN;
+            sum.gapResolutionLimited=gapResolutionLimited;
+            sum.gapPx=twelve.valid&&twelve.triangleWidthPx>0?twelve.topClearance*twelve.triangleWidthPx:Double.NaN;
+            sum.pxPerGap=twelve.valid&&twelve.triangleWidthPx>0?1.0/twelve.triangleWidthPx:Double.NaN;
             sum.alignment=rotation.attention;
             sum.rotationDeg=twelve.valid?twelve.wholeAxisErrorDeg:Double.NaN;
             sum.spacing59=twelve.valid?twelve.leftClearance:Double.NaN;
@@ -187,10 +212,11 @@ final class GmtHumanQcAnalyzerV2 {
 
     private static String clearanceSummary(GmtHumanQcMath.ClearanceDecision c){
         if(c.attention==GmtHumanQcMath.Attention.STRONG&&c.trend==GmtHumanQcMath.GapTrend.INFLATED)return "gap is present but slightly small, and the photo angle is helping it look larger; inspect closely";
-        if(c.attention==GmtHumanQcMath.Attention.STRONG)return "very small or touching clearance is strongly indicated; inspect closely";
+        if(c.attention==GmtHumanQcMath.Attention.STRONG)return "clearly small clearance is indicated; inspect closely";
         if(c.attention==GmtHumanQcMath.Attention.CHECK&&c.trend==GmtHumanQcMath.GapTrend.COMPRESSED)return "gap looks slightly small, but perspective may be making it look worse; inspect or compare with a squarer photo";
         if(c.attention==GmtHumanQcMath.Attention.CHECK)return "gap is present but appears slightly smaller than expected; inspect closely";
         if(c.attention==GmtHumanQcMath.Attention.CLEAR)return "no low-clearance issue is resolved; a slightly large gap is not treated as a defect";
+        if(c.reason!=null&&c.reason.contains("too close to call"))return "too close to call at this resolution; take a closer photo";
         return "clearance could not be assessed reliably";
     }
     private static String rotationSummary(GmtHumanQcMath.RotationDecision r){

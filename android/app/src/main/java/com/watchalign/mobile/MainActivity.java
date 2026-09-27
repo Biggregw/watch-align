@@ -58,7 +58,7 @@ public class MainActivity extends Activity {
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         TextView h1=text("Watch Align",28,Color.WHITE);root.addView(h1);
         root.addView(text("GMT-Master II dial check · "+WatchAlignCoreV13.CORE_VERSION,13,MUTED));
-        root.addView(text("Use a sharp, straight-on photo with the whole dial in frame and the hands away from 12.",13,MUTED));
+        root.addView(text("Use a sharp, straight-on photo with the dial filling as much of the frame as possible and the hands away from 12.",13,MUTED));
 
         for(ModelCatalog.Profile p:ModelCatalog.all())if(CanonicalGmtGeometryAnalyzer.supports(p.code))models.add(p);
         List<String> labels=new ArrayList<>();for(ModelCatalog.Profile p:models)labels.add(p.label);

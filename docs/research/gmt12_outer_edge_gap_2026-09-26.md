@@ -43,3 +43,17 @@ triangle, i.e. about ±0.01 in gap.
 after allowing ~0.01 measurement noise. No replica has been measured cleanly on this
 definition yet. Re-derive from labelled originals (not screenshots), with the hands away
 from 12, before treating the boundary as more than a prompt to look.
+
+## Resolution limit (2026-09-27, alpha50)
+The gap is a fraction of triangle width, so 1 px = 1/width of gap: ~0.018 on a 55 px
+triangle. The whole spread between genuine readings (~0.085) and the attention level
+(0.070) is under one pixel at typical phone-photo framing. A second replica photo
+(126710BLNR on Oyster, sideways tilt, triangle ~55 px) read 0.062 with a clear 3-4 px
+visible gap; the old report called it "very small or touching".
+
+`GmtHumanQcAnalyzerV2` now applies `GAP_PX_UNCERTAINTY = 0.75` px (base-edge line fit
+plus tick-end location). A small-gap flag is only kept if gap + 0.75/width is still below
+the attention level, and "normal" only if gap − 0.75/width is still above it; otherwise
+the result is "too close to call at this resolution". "Touching" is only reported when
+the gap is under 1 px. Getting a verdict needs the triangle ≳ 100 px wide (dial filling
+the frame), where 1 px ≈ 0.01.
