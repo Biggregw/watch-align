@@ -1,0 +1,12 @@
+image,vertical_asymmetry,horizontal_asymmetry,harmonic_strength,min_width_over_mean,fit_residual,experimental_label,label_basis
+34094,-0.039,0.046,0.060,0.906,0.030,GOOD,near-frontal rehaut profile
+34095,-0.066,0.044,0.079,0.904,0.030,GOOD,near-frontal rehaut profile
+34096,0.254,0.076,0.266,0.630,0.045,CORRECTABLE,moderate rehaut compression and directional asymmetry
+34097,-0.034,0.052,0.062,0.901,0.032,GOOD,near-frontal rehaut profile
+34098,-0.024,0.066,0.070,0.895,0.020,GOOD,near-frontal rehaut profile
+34099,0.373,0.116,0.391,0.528,0.180,RETAKE,rehaut fit unstable with strong directional asymmetry
+34100,-0.032,0.064,0.072,0.903,0.036,GOOD,near-frontal rehaut profile
+34101,-0.340,0.249,0.422,0.231,0.129,RETAKE,visible rehaut collapses to 23 percent of mean width
+34102,-0.109,-0.113,0.157,0.474,0.068,RETAKE,visible rehaut collapses below 50 percent of mean width
+34103,0.000,0.092,0.092,0.876,0.025,GOOD,near-frontal rehaut profile
+34104,-0.011,0.048,0.050,0.920,0.025,GOOD,near-frontal rehaut profile

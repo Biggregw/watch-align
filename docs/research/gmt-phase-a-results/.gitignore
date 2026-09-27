@@ -1,0 +1,5 @@
+overlay.png
+*.jpg
+*.jpeg
+*.png
+!/.gitignore

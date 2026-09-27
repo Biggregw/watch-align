@@ -65,11 +65,18 @@ public class GenuineOfficialImageValidationTest {
                 }
 
                 if (visualFirstGmt) {
-                    if (!rep.contains("VISUAL INSPECTION MODE")) {
-                        failures.add("GMT visual-inspection report mode missing @ " + name + "\n" + rep);
+                    // Current GMT report contract (alpha45+): plain-English summary first, the
+                    // measured 12-marker section below. A genuine official image must not be
+                    // flagged at 12. (The old "VISUAL INSPECTION MODE" / "VISUAL QC MASTER"
+                    // sections no longer exist.)
+                    if (!rep.contains("SUMMARY\n")) {
+                        failures.add("GMT summary missing @ " + name + "\n" + rep);
                     }
-                    if (!rep.contains("VISUAL QC MASTER")) {
-                        failures.add("GMT visual master report missing @ " + name + "\n" + rep);
+                    if (!rep.contains("HUMAN 12-MARKER QC")) {
+                        failures.add("GMT 12-marker section missing @ " + name + "\n" + rep);
+                    }
+                    if (!rep.contains("Bottom line: nothing flagged at 12")) {
+                        failures.add("genuine official image flagged at 12 @ " + name + "\n" + rep);
                     }
                 } else {
                     if (!rep.startsWith("QC SUMMARY\nNo major defects detected.")) {

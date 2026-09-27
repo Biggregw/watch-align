@@ -69,3 +69,7 @@ captures/
 # Keep versioned Android instrumentation-test fixtures available.
 !android/app/src/androidTest/assets/genuine/
 !android/app/src/androidTest/assets/genuine/**
+tools/desktop-harness/.cache/
+datasets/126710BLNR/gen/
+datasets/126710BLNR/rep/
+datasets/126710BLNR/resolved_images.csv

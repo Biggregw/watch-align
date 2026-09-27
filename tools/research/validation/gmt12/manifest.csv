@@ -1,0 +1,2 @@
+id,image_locator,watch_family,rep_confirmed,independent_watch,notes
+REP001,images/REP001.url,GMT-Master II 126710GRNR,yes,yes,Blind validation example; do not assume any defect before detector run

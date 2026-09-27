@@ -4,6 +4,12 @@
 - Never change production code unless the task explicitly requires it.
 - Never change AGP, Gradle, SDK, Java, or dependency versions merely to make the Copilot environment work.
 - Preserve the existing native Android Java/OpenCV architecture unless explicitly instructed otherwise.
+- For new QC work, read `docs/architecture/QC_PRINCIPLES.md` first and treat it as the governing design direction.
+- Prefer directly observed local landmark ratios for marker QC. Do not introduce global rectification, conic fitting, projective correction or other additional geometry unless evidence shows it materially improves the specific measurement's repeatability or pose invariance.
+- Every proposed QC feature must state the physical landmark relationship it measures and the visible defect it is intended to detect.
+- Keep genuine-watch variation, measurement/repeatability error and genuine-vs-replica separation distinct in analysis and reporting.
+- A feature must fail closed as not-assessable when its landmark/detection uncertainty is too high for the intended tolerance.
+- Do not treat historical Stage 3/projective experiments as mandatory production architecture. Preserve their evidence, but re-justify each component before reuse.
 - Before claiming a geometry or mathematical bug, provide numerical proof.
 - For QC logic changes, create a deterministic failing test before modifying implementation wherever practical.
 - Never widen tolerances simply to make tests pass.

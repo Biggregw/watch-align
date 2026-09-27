@@ -1,0 +1,4 @@
+images/*
+!images/.gitkeep
+candidate_status.csv
+accepted_resolved.csv
