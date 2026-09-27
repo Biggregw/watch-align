@@ -28,6 +28,15 @@ import java.util.List;
  */
 final class TriangleEdgeRefiner {
     static final int SAMPLES = 30;
+    static final double EXPECTED_APEX_DEG = 44.3;
+    static final double APEX_TOLERANCE_DEG = 2.0;
+
+    /** Angle at the tip between the two sides, degrees. */
+    static double apexAngleDeg(double[] left,double[] right,double[] tip){
+        double a1=Math.atan2(left[1]-tip[1],left[0]-tip[0]),a2=Math.atan2(right[1]-tip[1],right[0]-tip[0]);
+        double d=Math.abs(Math.toDegrees(a1-a2));
+        return d>180?360-d:d;
+    }
     private static final double MIN_SPAN = 40.0;   // marker-to-dial contrast, grey levels
 
     private TriangleEdgeRefiner(){}
@@ -49,6 +58,12 @@ final class TriangleEdgeRefiner {
         if(base==null||rs==null||ls==null)return null;
         double[] l=intersect(ls,base), r=intersect(base,rs), t=intersect(rs,ls);
         if(l==null||r==null||t==null)return null;
+        // Shape check (alpha53): the applied 12 triangle has a fixed apex angle, ~44.3 deg
+        // (half-base 0.123R, height 0.302R). Correct fits on genuine and replica photos
+        // measure 43.5-44.9 deg. A side fitted to an inner bevel line instead of the outer
+        // edge bends the outline (field VSF photo: 47.9-49.1 deg) and flips the rotation
+        // sign, so such fits are rejected rather than reported.
+        if(Math.abs(apexAngleDeg(l,r,t)-EXPECTED_APEX_DEG)>APEX_TOLERANCE_DEG)return null;
         double lim=0.06*dialR;
         if(Math.hypot(l[0]-left[0],l[1]-left[1])>lim)return null;
         if(Math.hypot(r[0]-right[0],r[1]-right[1])>lim)return null;

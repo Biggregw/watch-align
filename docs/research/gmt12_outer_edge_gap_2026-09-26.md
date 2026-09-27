@@ -80,3 +80,12 @@ touching the ticks, 71 px triangle); other Clean/VSF 0.084–0.129. One false ha
 Real genuine outer-edge gaps now: 0.084 (user), 0.103, 0.103, 0.106 (r/Watchexchange).
 Replica gaps where measurable: 0.040, 0.067, 0.084, 0.086–0.088, 0.097–0.129. A small gap
 is a flaw on some replicas, not a general tell; 0.070 catches the clear cases.
+
+## Community-feedback comparison (2026-09-27, alpha53)
+Three r/RepTimeQC threads read by the user (screenshots), compared with the app:
+
+| watch | community | app |
+|---|---|---|
+| VSF p3hHVMB | mod: "slight CW cant" (owner thought CCW) | +1.63/+1.68 deg on two photos = CW; top edge level; whole photo tilted ~0.9 deg CCW explains the owner's impression. **Agrees with mod.** |
+| VSF 7s6PyXJ | "mini clockwise tilt, smidge left of centre"; 6 bar well left (RL) | alpha52: -1.3/-1.8 deg (CCW) **wrong**: the left side's dark bevel made the fit take the inner line, bending the outline (apex 47.9-49.1 deg vs 43.5-44.9 on correct fits). alpha53 rejects fits whose apex is >2 deg from 44.3 deg; falls back to low confidence reading +2.3/+3.3 deg (CW). **Now agrees, low confidence.** |
+| Clean bpdi5xV | RL for unusual dial font; index alignment "looks good"; gap not mentioned | gap 0.040 STRONG. Side-by-side with genuine at the same scale shows a visibly shallower band (~half) and longer ticks. Community and app both find the dial off, for different visible reasons. |

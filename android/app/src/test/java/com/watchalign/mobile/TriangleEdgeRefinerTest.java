@@ -77,4 +77,14 @@ public class TriangleEdgeRefinerTest {
         DialEdgeEllipseFit.Intensity flat = (x, y) -> 40.0;
         assertNull(TriangleEdgeRefiner.refine(flat, W, H, L, RT, T, null, null, R));
     }
+
+    @Test public void apexAngleMatchesTheRealMarkerAndFlagsABentFit() {
+        // Real 12 triangle (half-base 0.123R, height 0.302R) ~44.3 deg; the field fit that
+        // took an inner bevel line on one side measured ~49 deg and is rejected.
+        double[] l = {-0.123, 0}, r = {0.123, 0}, t = {0, 0.302};
+        assertEquals(44.3, TriangleEdgeRefiner.apexAngleDeg(l, r, t), 0.2);
+        double[] bentTip = {0.03, 0.27};
+        double bent = TriangleEdgeRefiner.apexAngleDeg(l, r, bentTip);
+        org.junit.Assert.assertTrue("bent " + bent, Math.abs(bent - TriangleEdgeRefiner.EXPECTED_APEX_DEG) > TriangleEdgeRefiner.APEX_TOLERANCE_DEG);
+    }
 }
