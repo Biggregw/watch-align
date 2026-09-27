@@ -12,6 +12,8 @@ import java.util.Locale;
 final class GmtHumanQcAnalyzerV2 {
     /** Combined base-edge and tick-end location uncertainty, pixels. */
     static final double GAP_PX_UNCERTAINTY = 0.75;
+    /** Below this triangle width (px) a pixel is >= 0.025 of gap and landmarks are unreliable. */
+    static final double MIN_TRIANGLE_PX = 40.0;
     static final class Result {
         final String report;
         final GmtHumanQcMath.PoseLabel poseLabel;
@@ -120,6 +122,32 @@ final class GmtHumanQcAnalyzerV2 {
                         Double.NaN,Double.NaN,Double.NaN,"local 12-marker landmarks unavailable: "+twelve.reason);
             }
 
+            // Size and hand gates (alpha52). Field set: every wrong 12-marker result had a
+            // triangle under ~35 px or a hand beside the triangle.
+            boolean tooSmall=false,handAtTwelve=false;
+            if(twelve.valid&&Double.isFinite(twelve.triangleWidthPx)&&twelve.triangleWidthPx<MIN_TRIANGLE_PX){
+                tooSmall=true;
+                String why=String.format(Locale.US,"the 12 triangle is only %.0f px wide in this photo (minimum %.0f); too small to measure",twelve.triangleWidthPx,MIN_TRIANGLE_PX);
+                rotation=new GmtHumanQcMath.RotationDecision(GmtHumanQcMath.Attention.UNASSESSABLE,rotation.axisErrorDeg,rotation.baseErrorDeg,
+                        rotation.sideAsymmetry,rotation.visibleRisePx,false,false,why);
+                clearance=new GmtHumanQcMath.ClearanceDecision(GmtHumanQcMath.Attention.UNASSESSABLE,clearance.trend,clearance.observedGap,
+                        clearance.correctedEstimate,clearance.perspectiveScale,why);
+            }else if(twelve.valid&&twelve.geometry!=null){
+                Mat g8=new Mat();
+                try{
+                    Imgproc.cvtColor(src,g8,Imgproc.COLOR_BGR2GRAY);Imgproc.GaussianBlur(g8,g8,new org.opencv.core.Size(5,5),1.2);
+                    HandIntrusion.Result hi=HandIntrusion.measure(intensityOf(g8),g8.cols(),g8.rows(),cx,cy,r,twelve.geometry);
+                    if(hi.present){
+                        handAtTwelve=true;
+                        String why=String.format(Locale.US,"a hand is next to the 12 marker (%.0f%% of the surrounding dial is marker-bright); it corrupts the triangle outline and tick detection",100*hi.brightFraction);
+                        rotation=new GmtHumanQcMath.RotationDecision(GmtHumanQcMath.Attention.UNASSESSABLE,rotation.axisErrorDeg,rotation.baseErrorDeg,
+                                rotation.sideAsymmetry,rotation.visibleRisePx,false,false,why);
+                        clearance=new GmtHumanQcMath.ClearanceDecision(GmtHumanQcMath.Attention.UNASSESSABLE,clearance.trend,clearance.observedGap,
+                                clearance.correctedEstimate,clearance.perspectiveScale,why);
+                    }
+                }finally{g8.release();}
+            }
+
             // Resolution gate (alpha50). The gap is a fraction of the triangle width, so one
             // pixel is 1/width of gap: ~0.018 on a 55 px triangle, which is the whole spread
             // between genuine readings (~0.085) and the attention level (0.070). Edge and
@@ -204,6 +232,7 @@ final class GmtHumanQcAnalyzerV2 {
             sum.gap=clearance.attention;sum.gapTrend=clearance.trend;
             sum.observedGap=twelve.valid?twelve.topClearance:Double.NaN;
             sum.gapResolutionLimited=gapResolutionLimited;
+            sum.tooSmall=tooSmall;sum.handAtTwelve=handAtTwelve;sum.trianglePx=twelve.valid?twelve.triangleWidthPx:Double.NaN;
             sum.gapPx=twelve.valid&&twelve.triangleWidthPx>0?twelve.topClearance*twelve.triangleWidthPx:Double.NaN;
             sum.pxPerGap=twelve.valid&&twelve.triangleWidthPx>0?1.0/twelve.triangleWidthPx:Double.NaN;
             sum.alignment=rotation.attention;
@@ -239,6 +268,19 @@ final class GmtHumanQcAnalyzerV2 {
         if(r.attention==GmtHumanQcMath.Attention.CLEAR)return "no rotation is resolved strongly enough to be visible at this image scale";
         return "alignment could not be assessed reliably";
     }
+    static DialEdgeEllipseFit.Intensity intensityOf(Mat gray){
+        final int w=gray.cols(),h=gray.rows();
+        final byte[] px=new byte[w*h];
+        gray.get(0,0,px);
+        return (x,y)->{
+            int x0=(int)Math.floor(x),y0=(int)Math.floor(y);
+            if(x0<0||y0<0||x0+1>=w||y0+1>=h)return 0.0;
+            double fx=x-x0,fy=y-y0;int i=y0*w+x0;
+            double a=px[i]&0xff,b=px[i+1]&0xff,c=px[i+w]&0xff,d=px[i+w+1]&0xff;
+            return (a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy;
+        };
+    }
+
     private static Result unavailable(String reason){
         return new Result("\n\nHUMAN 12-MARKER QC\nUNASSESSABLE - "+reason+". No pass is inferred from missing evidence.\n",
                 GmtHumanQcMath.PoseLabel.UNASSESSABLE,GmtHumanQcMath.Attention.UNASSESSABLE,

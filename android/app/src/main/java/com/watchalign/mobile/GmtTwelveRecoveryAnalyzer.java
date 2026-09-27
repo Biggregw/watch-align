@@ -201,6 +201,10 @@ final class GmtTwelveRecoveryAnalyzer {
         double minWH=(relaxed?.045:.055)*r,maxWH=(relaxed?.42:.38)*r;
         if(w<minWH||w>maxWH||h<minWH||h>maxWH)return null;
         double ratio=w/h;if(ratio<(relaxed?.30:.38)||ratio>(relaxed?2.80:2.35))return null;
+        // Shape check (alpha52): the blob must fill the triangle made from its corners; a
+        // round hour marker gives a ratio near 3 and was being accepted as the 12 triangle.
+        double triArea=Math.abs((right.x-left.x)*(tip.y-left.y)-(tip.x-left.x)*(right.y-left.y))/2.0;
+        if(!(triArea>1)||area/triArea<0.80||area/triArea>(relaxed?1.35:1.25))return null;
         Point base=mid(left,right);double ba=wrap180(clock(cx,cy,base.x,base.y)-angle);if(Math.abs(ba)>(relaxed?12.0:9.0))return null;
         double sym=Math.abs(((tip.x-cx)*tx+(tip.y-cy)*ty)-(((base.x-cx)*tx+(base.y-cy)*ty)))/Math.max(1.0,w);
         if(sym>(relaxed?.55:.42))return null;

@@ -22,13 +22,16 @@ final class GmtHumanSummary {
         double spacing59=Double.NaN, spacing01=Double.NaN;
         boolean overlayDrawn;
         boolean gapResolutionLimited;
+        boolean tooSmall, handAtTwelve;
+        double trianglePx=Double.NaN;
         double gapPx=Double.NaN, pxPerGap=Double.NaN;
     }
 
     // Reference only, for the reader: what genuine images have measured on the same
-    // outer-edge gap definition (official renders 0.086-0.096, real BLNR photo 0.084).
+    // outer-edge gap definition (official renders 0.086-0.096; real genuine photos 0.084,
+    // 0.103, 0.103, 0.106 from the user and r/Watchexchange listings).
     // Not a decision boundary; decisions come from GmtHumanQcMath.
-    static final String GENUINE_GAP_SEEN = "about 0.085–0.095";
+    static final String GENUINE_GAP_SEEN = "about 0.085–0.105";
 
     private GmtHumanSummary(){}
 
@@ -58,6 +61,8 @@ final class GmtHumanSummary {
         if(!in.twelveValid)return "could not be measured on this photo (12 triangle or minute track not found). This is not a pass.";
         String v=Double.isFinite(in.observedGap)?String.format(Locale.US," Measured %.2f; genuine photos tested so far read %s.",in.observedGap,GENUINE_GAP_SEEN):"";
         if(!in.stableFrame)v+=" The 12 marker could only be measured with low confidence on this photo, so treat this with caution.";
+        if(in.tooSmall)return String.format(Locale.US,"not measured: the 12 triangle is only %.0f px wide in this photo. Take a closer photo so the dial fills more of the frame.",in.trianglePx);
+        if(in.handAtTwelve)return "not judged: a hand is next to the 12 marker. Retake with the hands away from 12.";
         if(in.gapResolutionLimited){
             String px=Double.isFinite(in.pxPerGap)?String.format(Locale.US," Here 1 pixel is %.3f of gap, so the difference is within a pixel.",in.pxPerGap):"";
             return String.format(Locale.US,"too close to call at this photo's resolution. Measured %.2f; genuine images tested so far read %s, and the attention level is %.2f.",
@@ -80,6 +85,8 @@ final class GmtHumanSummary {
 
     static String alignmentLine(Input in){
         if(!in.twelveValid)return "could not be measured on this photo. This is not a pass.";
+        if(in.tooSmall)return "not measured: the 12 triangle is too small in this photo.";
+        if(in.handAtTwelve)return "not judged: a hand is next to the 12 marker.";
         String sp=Double.isFinite(in.spacing59)&&Double.isFinite(in.spacing01)
                 ?String.format(Locale.US," (rotation %+.1f°, space to 59 tick %.2f vs 01 tick %.2f)",in.rotationDeg,in.spacing59,in.spacing01):"";
         String caution=in.stableFrame?"":" The 12 marker could only be measured with low confidence on this photo, so treat this with caution.";
@@ -98,6 +105,8 @@ final class GmtHumanSummary {
         if(gapFlag)items.add("the gap at 12");
         if(alignFlag)items.add("the 12 marker alignment");
         if(!in.twelveValid)return "Bottom line: the 12 marker could not be checked on this photo. Try a clearer, straight-on photo with the hands away from 12.";
+        if(in.twelveValid&&in.tooSmall)return "Bottom line: the 12 marker is too small in this photo to check. Take a closer photo so the dial fills more of the frame.";
+        if(in.twelveValid&&in.handAtTwelve)return "Bottom line: a hand is covering the area around the 12 marker, so it could not be checked. Retake with the hands away from 12.";
         String closer=in.gapResolutionLimited?" The gap at 12 is too close to call at this resolution; a closer photo would settle it.":"";
         if(in.pose==GmtHumanQcMath.PoseLabel.RETAKE)
             return items.isEmpty()?"Bottom line: nothing flagged, but the photo is too angled to rely on that. Retake straight-on."

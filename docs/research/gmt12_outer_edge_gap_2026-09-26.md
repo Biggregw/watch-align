@@ -57,3 +57,26 @@ the attention level, and "normal" only if gap − 0.75/width is still above it; 
 the result is "too close to call at this resolution". "Touching" is only reported when
 the gap is under 1 px. Getting a verdict needs the triangle ≳ 100 px wide (dial filling
 the frame), where 1 px ≈ 0.01.
+
+## Field set run (2026-09-27, alpha51 → alpha52)
+Corpus: `datasets/126710BLNR` manifest fetched from Imgur (31/35 sources, 252 images;
+8 marketplace genuine candidates, 22 labelled replicas). App analysis code run on desktop
+OpenCV 4.9 at the phone's 1600 px working size.
+
+Run 1 (alpha51, first photo of 8 genuine + 12 replica watches): 14/20 found a triangle.
+7 correct, 1 correctly low-confidence, 6 wrong — all false alarms:
+round hour dot accepted as the triangle (2), GMT arrowhead merged with the triangle (1),
+tick frame thrown off beside a GMT hand on 25–34 px triangles (3, false STRONG).
+
+alpha52 fixes: triangle shape check (blob area / corner-triangle area 0.80–1.25),
+MIN_TRIANGLE_PX = 40, HandIntrusion wedge check (±14°, 0.66–0.92R, >3% marker-bright).
+Re-run of the same 20: all 6 errors now "too small" or rejected; the 7 correct unchanged.
+
+Run 2 (alpha52, 20 new photos): no false alarms. Verdicts given on 7:
+genuine 1TDYtpN gap 0.103 clear; Clean bpdi5xV gap **0.040 STRONG** (base visibly almost
+touching the ticks, 71 px triangle); other Clean/VSF 0.084–0.129. One false hand flag
+(crown logo inside the wedge) fixed by moving the wedge's inner edge from 0.55R to 0.66R.
+
+Real genuine outer-edge gaps now: 0.084 (user), 0.103, 0.103, 0.106 (r/Watchexchange).
+Replica gaps where measurable: 0.040, 0.067, 0.084, 0.086–0.088, 0.097–0.129. A small gap
+is a flaw on some replicas, not a general tell; 0.070 catches the clear cases.

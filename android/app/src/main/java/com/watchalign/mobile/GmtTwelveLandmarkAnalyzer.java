@@ -199,6 +199,11 @@ final class GmtTwelveLandmarkAnalyzer {
                     for(int i=0;i<q.length;i++)g[i]=new Point(q[i].x+x0,q[i].y+y0);
                     Triangle t=triangleFromHull(g,cx,cy);
                     if(t==null)continue;
+                    // Shape check (alpha52): the blob must actually fill the triangle made from
+                    // its corners. A round hour marker gives ~3x (its triangle is much smaller
+                    // than the disc); field sets had dots accepted as the 12 triangle.
+                    double triArea=Math.abs((t.right.x-t.left.x)*(t.tip.y-t.left.y)-(t.tip.x-t.left.x)*(t.right.y-t.left.y))/2.0;
+                    if(!(triArea>1)||area/triArea<0.80||area/triArea>1.25)continue;
                     double w=dist(t.left,t.right),h=dist(mid(t.left,t.right),t.tip);
                     // Size plausibility only. The physical 126710 triangle surround measures ~0.25r
                     // wide and ~0.30r tall, so the old .29r/.30r caps rejected the real marker
