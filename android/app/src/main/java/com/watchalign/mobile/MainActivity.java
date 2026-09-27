@@ -204,12 +204,12 @@ public class MainActivity extends Activity {
                 preview.setImageBitmap(r.perspectiveOverlay!=null?composeOverlay(watchBitmap,r.perspectiveOverlay):watchBitmap);
                 String sum=summaryOf(r.report);
                 summaryText.setText(sum!=null?sum:"Summary unavailable. Open Full results.");
-                boolean autoFailed=r.perspectiveOverlay==null||r.report.contains("Dial centre: UNREFINED");
+                boolean autoFailed=!r.twelveMeasured||r.report.contains("Dial centre: UNREFINED");
                 boolean manual=InspectionImageStore.hasManualSeed;
                 manualButton.setVisibility(autoFailed||manual?View.VISIBLE:View.GONE);
-                status.setText(r.perspectiveOverlay!=null
-                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. Red outlines show where a genuine dial's markers should be.")
-                        :"Done, but no template could be drawn for this photo. Try Align dial edge by hand below, or a clearer photo.");
+                status.setText(r.twelveMeasured
+                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. The overlay shows what was measured at 12.")
+                        :"Done, but the 12 marker could not be measured on this photo. Try Align dial edge by hand below, or a clearer photo.");
                 resultsButton.setEnabled(true);exportButton.setEnabled(true);inspectButton.setEnabled(r.perspectiveOverlay!=null);
             });
         }catch(Throwable t){runOnUiThread(()->{lastResult=null;setResultButtons(false);checkButton.setEnabled(true);manualButton.setVisibility(View.VISIBLE);

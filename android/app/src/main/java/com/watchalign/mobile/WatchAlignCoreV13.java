@@ -10,13 +10,16 @@ import java.util.List;
 
 /** Alpha40: human GMT12 QC with real-image rehaut direction calibration and stricter pose gating. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha50";
+    public static final String CORE_VERSION="1.3.0-alpha51";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
         public final String report;
         public final double registrationConfidence,perspectiveConfidence;
-        AnalysisResult(Bitmap a,Bitmap r,Bitmap al,Bitmap po,Bitmap rect,String rep,double c,double pc){annotated=a;reference=r;aligned=al;perspectiveOverlay=po;rectified=rect;report=rep;registrationConfidence=c;perspectiveConfidence=pc;}
+        /** True when the 12 marker was located and measured (overlay has its elements). */
+        public final boolean twelveMeasured;
+        AnalysisResult(Bitmap a,Bitmap r,Bitmap al,Bitmap po,Bitmap rect,String rep,double c,double pc){this(a,r,al,po,rect,rep,c,pc,false);}
+        AnalysisResult(Bitmap a,Bitmap r,Bitmap al,Bitmap po,Bitmap rect,String rep,double c,double pc,boolean twelve){annotated=a;reference=r;aligned=al;perspectiveOverlay=po;rectified=rect;report=rep;registrationConfidence=c;perspectiveConfidence=pc;twelveMeasured=twelve;}
         public Bitmap overlay(float alpha){
             if(reference==null||aligned==null)return annotated;
             Bitmap out=Bitmap.createBitmap(reference.getWidth(),reference.getHeight(),Bitmap.Config.ARGB_8888);
@@ -38,18 +41,20 @@ public final class WatchAlignCoreV13 {
 
         PerspectiveGmtOverlay.DialSeed manualSeed=InspectionImageStore.hasManualSeed?
                 new PerspectiveGmtOverlay.DialSeed(InspectionImageStore.manualCx,InspectionImageStore.manualCy,InspectionImageStore.manualR,0.98,InspectionImageStore.manualRoll):null;
-        PerspectiveGmtOverlay.Result perspective=canonicalGmt?SafePerspectiveGmtOverlayV2.build(watch,modelRef,manualSeed,android.graphics.Color.rgb(255,45,45)):null;
-        String perspectiveReport=perspective==null&&canonicalGmt?"\n\nVISUAL QC MASTER\nUnavailable: a stable dial pose could not be fitted. Use a clearer photo or precision dial-edge alignment.\n":perspective==null?"":perspective.report;
-        GmtHumanQcAnalyzerV2.Result human=canonicalGmt?GmtHumanQcAnalyzerV2.analyse(watch,modelRef):null;
+        // Overlay = what the analysis measured (alpha51). The fixed predicted template is no
+        // longer drawn: it could disagree with the measurements when the dial edge was hard
+        // to fit, and a full measured template will be built up check by check instead.
+        GmtHumanQcAnalyzerV2.Result human=canonicalGmt?GmtHumanQcAnalyzerV2.analyse(watch,modelRef,manualSeed):null;
+        Bitmap measured=human!=null?MeasuredOverlayRenderer.render(watch,human.drawing):null;
+        boolean twelveMeasured=human!=null&&human.drawing!=null&&human.drawing.twelve!=null;
 
         String report;
         if(canonicalGmt){
             GmtHumanSummary.Input sum=human!=null&&human.summary!=null?human.summary:new GmtHumanSummary.Input();
-            sum.overlayDrawn=perspective!=null&&perspective.nativeOverlay!=null;
+            sum.overlayDrawn=twelveMeasured;
             report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\n"
                     +GmtHumanSummary.build(sum)
-                    +"\n\nDETAILS\nThe 59/60/01 minute track defines local 12 and the triangle is checked against it for gap, centring, rotation and 59/01 spacing. The dial centre and scale come from the physical black-dial edge; the red master is fixed 126710BLNR geometry measured from genuine images.\n"
-                    +perspectiveReport
+                    +"\n\nDETAILS\nThe 59/60/01 minute track defines local 12 and the triangle is checked against it for gap, centring, rotation and 59/01 spacing. The dial centre and scale come from the physical black-dial edge. The overlay shows only what was measured: the dial edge (faint ring), the detected 12 triangle, the 59/60/01 tick ends, the gap and the 59/01 spacing, coloured green (clear), amber (check), red (strong) or grey (not judged).\n"
                     +(human==null?"":human.report);
         }else{
             String baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;
@@ -57,9 +62,8 @@ public final class WatchAlignCoreV13 {
             report=QcSummaryFormatter.prependSummary(detail);
         }
         return new AnalysisResult(combined,base.reference,base.aligned,
-                perspective==null?null:perspective.nativeOverlay,
-                perspective==null?null:perspective.rectified,
-                report,base.registrationConfidence,perspective==null?0.0:perspective.confidence);
+                measured,null,
+                report,base.registrationConfidence,twelveMeasured?1.0:0.0,twelveMeasured);
     }
     private WatchAlignCoreV13(){}
 }

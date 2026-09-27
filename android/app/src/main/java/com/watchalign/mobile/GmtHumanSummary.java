@@ -38,8 +38,8 @@ final class GmtHumanSummary {
         s.append("12 gap: ").append(gapLine(in)).append("\n");
         s.append("12 alignment: ").append(alignmentLine(in)).append("\n");
         s.append("Overlay: ").append(in.overlayDrawn
-                ?"red outlines are fitted to this dial. Compare them with the real markers by eye, especially the 12 triangle and the 6 and 9 batons."
-                :"not drawn for this photo, so there is no visual template to compare against.").append("\n");
+                ?"shows what was measured at 12: the detected triangle, the 59/60/01 tick ends, the gap and the spacing either side, coloured green (clear), amber (check) or red. Zoom in with Inspect overlay to see them against the watch."
+                :"nothing at 12 could be measured, so only the dial edge is shown.").append("\n");
         s.append("\n").append(bottomLine(in)).append("\n");
         s.append("This flags things to look at closely. It does not prove a watch is genuine or fake.\n");
         return s.toString();
@@ -102,7 +102,7 @@ final class GmtHumanSummary {
         if(in.pose==GmtHumanQcMath.PoseLabel.RETAKE)
             return items.isEmpty()?"Bottom line: nothing flagged, but the photo is too angled to rely on that. Retake straight-on."
                     :"Bottom line: flagged "+join(items)+", but the photo is too angled to be sure. Retake straight-on.";
-        if(items.isEmpty())return (in.stableFrame?"Bottom line: nothing flagged at 12."+(closer.isEmpty()?" Still compare the red outlines with the markers by eye.":closer)
+        if(items.isEmpty())return (in.stableFrame?"Bottom line: nothing flagged at 12."+(closer.isEmpty()?" Other markers are not checked yet, so look over the rest of the dial by eye.":closer)
                 :"Bottom line: nothing flagged, but the 12 marker was only measured with low confidence. A clearer photo with the hands away from 12 would help."+closer);
         String line="Bottom line: "+items.size()+(items.size()==1?" thing":" things")+" to check: "+join(items)+".";
         if(!in.stableFrame)line+=" Measured with low confidence, so confirm by eye or with a clearer photo with the hands away from 12.";

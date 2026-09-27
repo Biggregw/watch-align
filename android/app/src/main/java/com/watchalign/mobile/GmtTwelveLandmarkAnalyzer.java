@@ -32,6 +32,8 @@ final class GmtTwelveLandmarkAnalyzer {
         final double leftClearance,rightClearance,sideAsymmetry,triangleWidthPx;
         final double trackRollClockDeg,tickPitchDeg,minuteFrameScore;
         final int inferredMinutePoints;
+        /** Measured image points for drawing, or null (e.g. recovery path). */
+        Geometry geometry;
         Result(String reason){
             valid=false;detectorStable=false;this.reason=reason;
             topClearance=horizontalOffset=wholeAxisErrorDeg=topEdgeErrorDeg=Double.NaN;
@@ -45,6 +47,15 @@ final class GmtTwelveLandmarkAnalyzer {
             topClearance=gap;horizontalOffset=horiz;wholeAxisErrorDeg=axis;topEdgeErrorDeg=edge;
             leftClearance=left;rightClearance=right;sideAsymmetry=side;triangleWidthPx=width;
             trackRollClockDeg=roll;tickPitchDeg=pitch;minuteFrameScore=frameScore;inferredMinutePoints=inferred;
+        }
+    }
+
+    /** Image-space landmarks the 12-marker measurements were taken from. */
+    static final class Geometry {
+        final double[] triLeft,triRight,triTip,tick59,tick60,tick01;
+        final boolean outerEdge;
+        Geometry(double[] l,double[] r,double[] t,double[] a,double[] c,double[] b,boolean outer){
+            triLeft=l;triRight=r;triTip=t;tick59=a;tick60=c;tick01=b;outerEdge=outer;
         }
     }
 
@@ -116,8 +127,12 @@ final class GmtTwelveLandmarkAnalyzer {
             double side=right-left;
             boolean stable=outerEdge && frame.score>=5.0 && frame.pitchDeg>=5.35 && frame.pitchDeg<=6.65 && frame.inferred<=1;
 
-            return new Result(gap,horiz,axisErr,edgeErr,left,right,side,width,
+            Result res=new Result(gap,horiz,axisErr,edgeErr,left,right,side,width,
                     frame.rollDeg,frame.pitchDeg,frame.score,frame.inferred,stable);
+            res.geometry=new Geometry(new double[]{tri.left.x,tri.left.y},new double[]{tri.right.x,tri.right.y},
+                    new double[]{tri.tip.x,tri.tip.y},new double[]{frame.left.x,frame.left.y},
+                    new double[]{frame.center.x,frame.center.y},new double[]{frame.right.x,frame.right.y},outerEdge);
+            return res;
         }catch(Throwable t){
             return new Result("12 local geometry failed: "+t.getClass().getSimpleName());
         }finally{

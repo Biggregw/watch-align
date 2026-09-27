@@ -20,6 +20,7 @@ final class GmtHumanQcAnalyzerV2 {
         final double localTrackRollDeg;
         final boolean localFrameValid;
         final GmtHumanSummary.Input summary;
+        MeasuredOverlayRenderer.Drawing drawing=new MeasuredOverlayRenderer.Drawing();
         Result(String report,GmtHumanQcMath.PoseLabel pose,GmtHumanQcMath.Attention rotation,
                GmtHumanQcMath.Attention clearance,double roll,boolean valid){
             this(report,pose,rotation,clearance,roll,valid,new GmtHumanSummary.Input());
@@ -31,16 +32,20 @@ final class GmtHumanQcAnalyzerV2 {
         }
     }
 
-    static Result analyse(Bitmap watch,String modelRef){
+    static Result analyse(Bitmap watch,String modelRef){return analyse(watch,modelRef,null);}
+
+    /** @param manual hand-aligned dial (12/6 dial-edge taps), used instead of the automatic seed */
+    static Result analyse(Bitmap watch,String modelRef,PerspectiveGmtOverlay.DialSeed manual){
         if(!CanonicalGmtGeometryAnalyzer.supports(modelRef))return new Result("",GmtHumanQcMath.PoseLabel.UNASSESSABLE,
                 GmtHumanQcMath.Attention.UNASSESSABLE,GmtHumanQcMath.Attention.UNASSESSABLE,Double.NaN,false);
         if(watch==null)return unavailable("watch image missing");
         Mat src=new Mat();
         try{
             Utils.bitmapToMat(watch,src);Imgproc.cvtColor(src,src,Imgproc.COLOR_RGBA2BGR);
-            GmtDialSeedAnalyzer.Result dial=GmtDialSeedAnalyzer.analyse(src);
-            if(!dial.valid)return unavailable("wide-scale dial geometry could not be verified: "+dial.reason);
-            double cx=dial.x,cy=dial.y,r=dial.r,q=dial.quality;
+            GmtDialSeedAnalyzer.Result dial=manual!=null?null:GmtDialSeedAnalyzer.analyse(src);
+            if(manual==null&&!dial.valid)return unavailable("wide-scale dial geometry could not be verified: "+dial.reason);
+            double cx=manual!=null?manual.x:dial.x,cy=manual!=null?manual.y:dial.y,r=manual!=null?manual.r:dial.r,q=manual!=null?0.98:dial.quality;
+            double seedX=cx,seedY=cy,seedR=r;
             if(!(r>20)||q<0.45)return unavailable("dial geometry confidence is too low for local 12-marker QC");
             // Use the same edge-fitted centre as the visual master. The 12-marker axis is
             // measured against centre -> 60 tick, so a few px of Hough centre error becomes
@@ -143,7 +148,8 @@ final class GmtHumanQcAnalyzerV2 {
             out.append("Perspective: ").append(pose.label).append(" - ").append(pose.reason).append(".\n");
 
             out.append("\nDiagnostics\n");
-            out.append(String.format(Locale.US,"Wide-scale GMT dial seed: centre %.1f, %.1f; radius %.1f px; quality %.2f.\n",dial.x,dial.y,dial.r,q));
+            out.append(String.format(Locale.US,"%s: centre %.1f, %.1f; radius %.1f px; quality %.2f.\n",
+                    manual!=null?"Hand-aligned dial (12/6 dial-edge taps)":"Wide-scale GMT dial seed",seedX,seedY,seedR,q));
             out.append(centreNote).append("\n");
             out.append("The local minute track defines true 12; the triangle is measured against it and never used to straighten itself.\n");
             if(twelve.valid){
@@ -204,8 +210,16 @@ final class GmtHumanQcAnalyzerV2 {
             sum.rotationDeg=twelve.valid?twelve.wholeAxisErrorDeg:Double.NaN;
             sum.spacing59=twelve.valid?twelve.leftClearance:Double.NaN;
             sum.spacing01=twelve.valid?twelve.rightClearance:Double.NaN;
-            return new Result(out.toString(),pose.label,rotation.attention,clearance.attention,
+            Result res=new Result(out.toString(),pose.label,rotation.attention,clearance.attention,
                     stableFrame?twelve.trackRollClockDeg:Double.NaN,stableFrame,sum);
+            MeasuredOverlayRenderer.Drawing dr=res.drawing;
+            if(edge!=null){dr.dialCx=edge.cx;dr.dialCy=edge.cy;dr.dialA=edge.axisA;dr.dialB=edge.axisB;dr.dialAngleDeg=edge.angleDeg;}
+            else{dr.dialCx=cx;dr.dialCy=cy;dr.dialA=r;dr.dialB=r;}
+            if(twelve.valid&&twelve.geometry!=null){
+                dr.twelve=twelve.geometry;dr.gap=clearance.attention;dr.alignment=rotation.attention;
+                dr.gapValue=twelve.topClearance;dr.spacing59=twelve.leftClearance;dr.spacing01=twelve.rightClearance;
+            }
+            return res;
         }catch(Throwable t){return unavailable("human GMT QC failed closed: "+t.getClass().getSimpleName());}
         finally{src.release();}
     }
