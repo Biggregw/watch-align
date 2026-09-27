@@ -141,6 +141,28 @@ jobs:
           test -s app/src/androidTest/assets/genuine/124060/official_00.jpg
           grep -q 'rolex' app/src/androidTest/assets/genuine/126710BLNR/sources.tsv
           grep -q 'rolex' app/src/androidTest/assets/genuine/124060/sources.tsv
+      - name: Set up Python (emulator photo run)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch photos for the emulator photo run
+        continue-on-error: true
+        shell: bash
+        working-directory: .
+        run: |
+          python -m pip install -q -r datasets/126710BLNR/requirements.txt
+          python datasets/126710BLNR/fetch_images.py --clean \
+            --source gen_wex_3KSuGhC --source gen_wex_1TDYtpN --source gen_wex_e99gXKb \
+            --source rep_vsf_7s6PyXJ --source rep_vsf_p3hHVMB --source rep_cf_bpdi5xV --source rep_cf_6I00d8w || true
+          D=android/app/src/androidTest/assets/e2e; mkdir -p "$D"
+          cp android/app/src/androidTest/assets/genuine/126710BLNR/official_00.jpg "$D/gen_official_render.jpg" || true
+          for f in gen/calibration/gen_wex_3KSuGhC/image_00 gen/calibration/gen_wex_3KSuGhC/image_02 gen/calibration/gen_wex_3KSuGhC/image_04 \
+                   gen/validation/gen_wex_1TDYtpN/image_01 gen/validation/gen_wex_1TDYtpN/image_05 gen/calibration/gen_wex_e99gXKb/image_08 \
+                   rep/validation/rep_vsf_7s6PyXJ/image_02 rep/validation/rep_vsf_p3hHVMB/image_00 rep/calibration/rep_cf_bpdi5xV/image_00 \
+                   rep/calibration/rep_cf_6I00d8w/image_01; do
+            src="datasets/126710BLNR/$f.jpg"; [ -s "$src" ] && cp "$src" "$D/$(basename $(dirname $f))_$(basename $f).jpg"
+          done
+          ls -la "$D"
       - name: Enable KVM permissions
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -153,7 +175,9 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: cd android && bash ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.GenuineOfficialImageValidationTest --stacktrace
+          script: |
+            cd android && bash ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.GenuineOfficialImageValidationTest,com.watchalign.mobile.EmulatorPhotoRunTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace || (cd android && mkdir -p e2e-out && adb exec-out run-as com.watchalign.mobile tar cf - files/e2e > e2e-out/e2e.tar; exit 1)
+            cd android && mkdir -p e2e-out && adb exec-out run-as com.watchalign.mobile tar cf - files/e2e > e2e-out/e2e.tar && tar xf e2e-out/e2e.tar -C e2e-out && ls -la e2e-out/files/e2e && cat e2e-out/files/e2e/summaries.txt
       - name: Upload instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -162,5 +186,13 @@ jobs:
           path: |
             android/app/build/reports/androidTests/connected/
             android/app/build/outputs/androidTest-results/connected/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload emulator photo run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-photo-run
+          path: android/e2e-out/
           if-no-files-found: warn
           retention-days: 14
