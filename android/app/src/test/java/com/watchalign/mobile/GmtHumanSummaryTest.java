@@ -243,4 +243,14 @@ public class GmtHumanSummaryTest {
         in.gap = GmtHumanQcMath.Attention.STRONG; in.observedGap = 0.031;
         assertTrue(GmtHumanSummary.build(in), GmtHumanSummary.build(in).contains("2 things to check: the gap at 12 and the 12 marker position (off-centre)."));
     }
+
+    /** Emulator, bpdi5xV image_00 (alpha57): printed "offset NaN to NaN". */
+    @Test public void sixNotFoundAgainHasNoNaN() {
+        GmtHumanSummary.Input in = base();
+        in.sixValid = true; in.sixStable = true; in.sixUnstable = true; in.sixAttention = GmtHumanQcMath.Attention.UNASSESSABLE;
+        in.sixCentring = 0.05; in.sixRotationDeg = -0.6; in.sixWidthPx = 29;
+        String s = GmtHumanSummary.sixLine(in);
+        assertFalse(s, s.contains("NaN"));
+        assertTrue(s, s.contains("not found again when the photo is resized slightly"));
+    }
 }

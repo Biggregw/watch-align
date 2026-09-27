@@ -141,8 +141,10 @@ final class GmtHumanSummary {
         String side=in.sixCentring>0?"right (towards the 29 tick)":"left (towards the 31 tick)";
         String nums=String.format(Locale.US," (offset %+.2f of its width, rotation %+.1f°)",in.sixCentring,in.sixRotationDeg);
         if(in.sixUnstable&&in.sixAttention!=GmtHumanQcMath.Attention.CHECK)
-            return String.format(Locale.US,"not judged: the reading changes when the photo is resized slightly (offset %+.2f to %+.2f of its width), so it can't be trusted on this photo.",
-                    in.sixCentringMin,in.sixCentringMax);
+            return Double.isFinite(in.sixCentringMax)
+                    ?String.format(Locale.US,"not judged: the reading changes when the photo is resized slightly (offset %+.2f to %+.2f of its width), so it can't be trusted on this photo.",
+                            in.sixCentringMin,in.sixCentringMax)
+                    :"not judged: the baton is not found again when the photo is resized slightly, so the reading can't be trusted on this photo.";
         String why=in.sixLowReason==null||in.sixLowReason.isEmpty()?"":" ("+in.sixLowReason+")";
         String caution=in.sixStable?"":" Measured with low confidence"+why+", so treat this with caution.";
         String what;
