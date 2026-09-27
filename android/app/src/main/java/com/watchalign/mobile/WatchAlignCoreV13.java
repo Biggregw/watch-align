@@ -10,7 +10,7 @@ import java.util.List;
 
 /** Alpha40: human GMT12 QC with real-image rehaut direction calibration and stricter pose gating. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha54";
+    public static final String CORE_VERSION="1.3.0-alpha55";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -18,6 +18,8 @@ public final class WatchAlignCoreV13 {
         public final double registrationConfidence,perspectiveConfidence;
         /** True when the 12 marker was located and measured (overlay has its elements). */
         public final boolean twelveMeasured;
+        /** Enlarged 12-marker (and 6-baton, when measured) close-ups with status strips, or null. */
+        public Bitmap twelveCloseUp;
         AnalysisResult(Bitmap a,Bitmap r,Bitmap al,Bitmap po,Bitmap rect,String rep,double c,double pc){this(a,r,al,po,rect,rep,c,pc,false);}
         AnalysisResult(Bitmap a,Bitmap r,Bitmap al,Bitmap po,Bitmap rect,String rep,double c,double pc,boolean twelve){annotated=a;reference=r;aligned=al;perspectiveOverlay=po;rectified=rect;report=rep;registrationConfidence=c;perspectiveConfidence=pc;twelveMeasured=twelve;}
         public Bitmap overlay(float alpha){
@@ -35,7 +37,8 @@ public final class WatchAlignCoreV13 {
         WatchAlignCoreV11.AnalysisResult base=WatchAlignCoreV11.analyse(watch,primary,modelRef);
         boolean canonicalGmt=CanonicalGmtGeometryAnalyzer.supports(modelRef);
 
-        QcExtendedAnalyzer.Result ext=QcExtendedAnalyzer.analyse(watch,primary,modelRef);
+        // The extended (non-GMT) analysis is only shown for non-GMT models; skip its cost here.
+        QcExtendedAnalyzer.Result ext=canonicalGmt?null:QcExtendedAnalyzer.analyse(watch,primary,modelRef);
         Bitmap guide=QcGuideRenderer.render(watch);
         Bitmap combined=canonicalGmt?guide:QcOverlayComposer.compose(watch,guide,ext.annotated);
 
@@ -61,9 +64,11 @@ public final class WatchAlignCoreV13 {
             String detail=base.report.replace("1.3.0-alpha11",CORE_VERSION)+ext.report+baselineReport+"\nInterpretation: non-GMT models continue to use the existing reference-distribution diagnostics.";
             report=QcSummaryFormatter.prependSummary(detail);
         }
-        return new AnalysisResult(combined,base.reference,base.aligned,
+        AnalysisResult res=new AnalysisResult(combined,base.reference,base.aligned,
                 measured,null,
                 report,base.registrationConfidence,twelveMeasured?1.0:0.0,twelveMeasured);
+        if(human!=null&&human.drawing!=null)res.twelveCloseUp=MeasuredOverlayRenderer.closeUp(watch,measured,human.drawing,540);
+        return res;
     }
     private WatchAlignCoreV13(){}
 }

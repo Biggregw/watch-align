@@ -104,4 +104,73 @@ public class GmtHumanSummaryTest {
         in.observedGap = 0.01; in.gapPx = 0.6;
         assertTrue(GmtHumanSummary.build(in).contains("touching or almost touching"));
     }
+
+    /** r/RepTimeQC p3hHVMB: point leans clockwise, top edge level -> "skewed", not "rotated". */
+    @Test public void pointLeaningWithLevelTopEdgeIsCalledSkewed() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.alignment = GmtHumanQcMath.Attention.CHECK; in.rotationDeg = 1.63; in.baseTiltDeg = 0.2;
+        in.spacing59 = 0.15; in.spacing01 = 0.16;
+        String s = GmtHumanSummary.alignmentLine(in);
+        assertTrue(s, s.contains("skewed: the point leans clockwise by about 1.6° but the top edge is level"));
+    }
+
+    @Test public void wholeTriangleTurnedIsCalledRotated() {
+        GmtHumanSummary.Input in = base();
+        in.alignment = GmtHumanQcMath.Attention.STRONG; in.rotationDeg = -2.4; in.baseTiltDeg = -2.1;
+        String s = GmtHumanSummary.alignmentLine(in);
+        assertTrue(s, s.contains("rotated: the whole triangle is turned anticlockwise by about 2.4°"));
+    }
+
+    @Test public void unevenSpacingWithoutLeanIsCalledOffCentre() {
+        GmtHumanSummary.Input in = base();
+        in.alignment = GmtHumanQcMath.Attention.CHECK; in.rotationDeg = 0.3; in.baseTiltDeg = 0.1;
+        in.spacing59 = 0.10; in.spacing01 = 0.19;
+        String s = GmtHumanSummary.alignmentLine(in);
+        assertTrue(s, s.contains("off-centre: the triangle sits closer to the 59 tick than the 01 tick"));
+    }
+
+    @Test public void sixBatonOffToTheLeftIsNamed() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.alignment = GmtHumanQcMath.Attention.CLEAR;
+        in.sixValid = true; in.sixStable = true; in.sixAttention = GmtHumanQcMath.Attention.CHECK;
+        in.sixOffCentre = true; in.sixCentring = -0.14; in.sixRotationDeg = 0.3; in.sixWidthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("6 baton: possibly off-centre: it sits to the left (towards the 31 tick)"));
+        assertTrue(s, s.contains("Bottom line: 1 thing to check: the 6 baton position."));
+    }
+
+    @Test public void clearTwelveAndSixSaysBoth() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.alignment = GmtHumanQcMath.Attention.CLEAR;
+        in.sixValid = true; in.sixStable = true; in.sixAttention = GmtHumanQcMath.Attention.CLEAR;
+        in.sixCentring = 0.01; in.sixRotationDeg = -0.1; in.sixWidthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("6 baton: centred between the 29 and 31 ticks and straight"));
+        assertTrue(s, s.contains("Bottom line: nothing flagged at 12 or 6."));
+    }
+
+    @Test public void threeFlagsAreListed() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CHECK; in.observedGap = 0.05;
+        in.alignment = GmtHumanQcMath.Attention.CHECK; in.rotationDeg = 1.2;
+        in.sixValid = true; in.sixStable = true; in.sixAttention = GmtHumanQcMath.Attention.STRONG;
+        in.sixRotated = true; in.sixCentring = 0.0; in.sixRotationDeg = 3.4; in.sixWidthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("3 things to check: the gap at 12, the 12 marker alignment and the 6 baton position."));
+        assertTrue(s, s.contains("6 baton: visibly rotated clockwise."));
+    }
+
+    @Test public void sixNotFoundIsNeverAPass() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.alignment = GmtHumanQcMath.Attention.CLEAR;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("6 baton: not measured"));
+        assertTrue(s, s.contains("Bottom line: nothing flagged at 12."));
+        assertTrue(s, s.contains("The 6 baton could not be judged here"));
+    }
 }

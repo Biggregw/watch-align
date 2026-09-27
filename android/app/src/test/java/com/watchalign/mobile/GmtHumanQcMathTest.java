@@ -24,6 +24,12 @@ public class GmtHumanQcMathTest {
         assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
     }
 
+    @Test public void implausiblyLargeRotationIsAMisdetectionNotAFlag() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(
+                -25.9,-20.0,0.3,82.0,GmtHumanQcMath.PoseLabel.CORRECTABLE,false);
+        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,r.attention);
+    }
+
     @Test public void poorPoseDoesNotSilentlyClearSubtleRotation() {
         GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(
                 1.4,1.2,0.04,42.0,GmtHumanQcMath.PoseLabel.RETAKE,true);

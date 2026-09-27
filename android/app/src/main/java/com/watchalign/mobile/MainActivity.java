@@ -46,7 +46,7 @@ public class MainActivity extends Activity {
     private final List<ModelCatalog.Profile> models=new ArrayList<>();
     private Bitmap watchBitmap;
     private WatchAlignCoreV13.AnalysisResult lastResult;
-    private ImageView preview;
+    private ImageView preview,closeUpView;
     private TextView status,summaryText;
     private Spinner model;
     private Button checkButton,resultsButton,inspectButton,exportButton,manualButton;
@@ -70,6 +70,10 @@ public class MainActivity extends Activity {
 
         status=text("Choose a watch photo to begin.",14,MUTED);root.addView(status,lp(-1,-2,10));
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(BG);root.addView(preview,lp(-1,-2,10));
+        closeUpView=new ImageView(this);closeUpView.setAdjustViewBounds(true);closeUpView.setScaleType(ImageView.ScaleType.FIT_CENTER);closeUpView.setVisibility(View.GONE);
+        closeUpView.setOnClickListener(v->{if(lastResult!=null&&lastResult.twelveCloseUp!=null){InspectionImageStore.set(lastResult.twelveCloseUp,"Close-up");startActivity(new Intent(this,FullscreenInspectActivity.class));}});
+        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,-2);cp.topMargin=dp(8);cp.gravity=android.view.Gravity.CENTER_HORIZONTAL;
+        root.addView(closeUpView,cp);
 
         LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
         inspectButton=smallButton("Inspect overlay");resultsButton=smallButton("Full results");exportButton=smallButton("Export card");
@@ -128,6 +132,13 @@ public class MainActivity extends Activity {
             android.graphics.Rect dst=new android.graphics.Rect(0,0,w,imgH);
             c.drawBitmap(display,src,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
         }
+        // 12 close-up inset, top-right, so the card shows the measured marker at a readable size.
+        if(result.twelveCloseUp!=null&&imgH>0){
+            int inset=Math.min(result.twelveCloseUp.getWidth()>result.twelveCloseUp.getHeight()*1.3?600:360,imgH/2);
+            int insetH=Math.round(inset*result.twelveCloseUp.getHeight()/(float)result.twelveCloseUp.getWidth());
+            android.graphics.Rect dst=new android.graphics.Rect(w-inset-16,16,w-16,16+insetH);
+            c.drawBitmap(result.twelveCloseUp,null,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
+        }
         int y=imgH+60;
         c.drawText("WATCH ALIGN · QC CARD",margin,y,pHeader);y+=50;
         for(String l:lines){if(!l.isEmpty())c.drawText(l,margin,y,pText);y+=lineH;}
@@ -174,7 +185,7 @@ public class MainActivity extends Activity {
         try{
             if(request==PICK_WATCH&&data.getData()!=null){
                 InspectionImageStore.clearManualSeed();watchBitmap=readBitmap(data.getData());lastResult=null;
-                preview.setImageBitmap(watchBitmap);summaryText.setText("");setResultButtons(false);manualButton.setVisibility(View.GONE);
+                preview.setImageBitmap(watchBitmap);closeUpView.setVisibility(View.GONE);summaryText.setText("");setResultButtons(false);manualButton.setVisibility(View.GONE);
                 checkButton.setEnabled(true);status.setText("Photo ready. Tap Check watch.");
             }
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
@@ -196,19 +207,20 @@ public class MainActivity extends Activity {
         if(models.isEmpty()){status.setText("No supported model is available.");return;}
         ModelCatalog.Profile profile=models.get(Math.max(0,model.getSelectedItemPosition()));
         summaryText.setText("");setResultButtons(false);checkButton.setEnabled(false);Bitmap watch=watchBitmap;
-        status.setText("Checking… fitting the dial, drawing the template and measuring the 12 marker.");
+        status.setText("Checking… fitting the dial and measuring the 12 marker.");
         worker.submit(()->{try{
             WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,Collections.<Bitmap>emptyList(),profile.code);
             runOnUiThread(()->{
                 lastResult=r;checkButton.setEnabled(true);
                 preview.setImageBitmap(r.perspectiveOverlay!=null?composeOverlay(watchBitmap,r.perspectiveOverlay):watchBitmap);
+                closeUpView.setImageBitmap(r.twelveCloseUp);closeUpView.setVisibility(r.twelveCloseUp!=null?View.VISIBLE:View.GONE);
                 String sum=summaryOf(r.report);
                 summaryText.setText(sum!=null?sum:"Summary unavailable. Open Full results.");
                 boolean autoFailed=!r.twelveMeasured||r.report.contains("Dial centre: UNREFINED");
                 boolean manual=InspectionImageStore.hasManualSeed;
                 manualButton.setVisibility(autoFailed||manual?View.VISIBLE:View.GONE);
                 status.setText(r.twelveMeasured
-                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. The overlay shows what was measured at 12.")
+                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. The overlay shows what was measured at 12; tap the close-up to enlarge it.")
                         :"Done, but the 12 marker could not be measured on this photo. Try Align dial edge by hand below, or a clearer photo.");
                 resultsButton.setEnabled(true);exportButton.setEnabled(true);inspectButton.setEnabled(r.perspectiveOverlay!=null);
             });

@@ -23,6 +23,7 @@ final class GmtHumanQcAnalyzerV2 {
         final boolean localFrameValid;
         final GmtHumanSummary.Input summary;
         MeasuredOverlayRenderer.Drawing drawing=new MeasuredOverlayRenderer.Drawing();
+        GmtSixLandmarkAnalyzer.Result six;
         Result(String report,GmtHumanQcMath.PoseLabel pose,GmtHumanQcMath.Attention rotation,
                GmtHumanQcMath.Attention clearance,double roll,boolean valid){
             this(report,pose,rotation,clearance,roll,valid,new GmtHumanSummary.Input());
@@ -52,7 +53,7 @@ final class GmtHumanQcAnalyzerV2 {
             // Use the same edge-fitted centre as the visual master. The 12-marker axis is
             // measured against centre -> 60 tick, so a few px of Hough centre error becomes
             // roughly a degree of fake marker rotation.
-            DialEdgeEllipseFit.Fit edge=SafePerspectiveGmtOverlayV2.fitDialEdgeBgr(src,cx,cy,r);
+            DialEdgeEllipseFit.Fit edge=DialEdgeFitter.fitBgr(src,cx,cy,r);
             String centreNote;
             if(edge!=null){
                 centreNote=String.format(Locale.US,"Dial centre re-fitted to dial edge: %.1f, %.1f; radius %.1f px (moved %.1f px).",
@@ -139,7 +140,9 @@ final class GmtHumanQcAnalyzerV2 {
                     HandIntrusion.Result hi=HandIntrusion.measure(intensityOf(g8),g8.cols(),g8.rows(),cx,cy,r,twelve.geometry);
                     if(hi.present){
                         handAtTwelve=true;
-                        String why=String.format(Locale.US,"a hand is next to the 12 marker (%.0f%% of the surrounding dial is marker-bright); it corrupts the triangle outline and tick detection",100*hi.brightFraction);
+                        String why=hi.brightFraction>HandIntrusion.MAX_BRIGHT_FRACTION
+                                ?String.format(Locale.US,"a hand is next to the 12 marker (%.0f%% of the surrounding dial is marker-bright); it corrupts the triangle outline and tick detection",100*hi.brightFraction)
+                                :"a thin hand crosses the 12 marker area; it corrupts the triangle outline and tick detection";
                         rotation=new GmtHumanQcMath.RotationDecision(GmtHumanQcMath.Attention.UNASSESSABLE,rotation.axisErrorDeg,rotation.baseErrorDeg,
                                 rotation.sideAsymmetry,rotation.visibleRisePx,false,false,why);
                         clearance=new GmtHumanQcMath.ClearanceDecision(GmtHumanQcMath.Attention.UNASSESSABLE,clearance.trend,clearance.observedGap,
@@ -166,6 +169,38 @@ final class GmtHumanQcAnalyzerV2 {
                             String.format(Locale.US,"observed %.3f is within the ±%.2f px measurement uncertainty (±%.3f at this resolution, triangle %.0f px wide) of the %.3f attention level; too close to call, a closer photo is needed",
                                     g,GAP_PX_UNCERTAINTY,u,twelve.triangleWidthPx,lim));
                 }
+            }
+
+            // 6 o'clock baton (alpha55): measured on the same fitted dial, gated the same way.
+            GmtSixLandmarkAnalyzer.Result six=GmtSixLandmarkAnalyzer.analyse(src,cx,cy,r);
+            // Orientation check: the 6 baton must sit opposite the 12 marker. On a photo turned
+            // well off upright the "bottom" baton is the 3 or 9. With no 12 found the dial's
+            // orientation is unknown, so the 6 can only be reported with low confidence.
+            if(six.valid){
+                if(twelve.valid&&twelve.geometry!=null){
+                    double a12=Math.atan2(twelve.geometry.tick60[1]-cy,twelve.geometry.tick60[0]-cx);
+                    double[] m6={(six.geometry.tick31[0]+six.geometry.tick29[0])/2,(six.geometry.tick31[1]+six.geometry.tick29[1])/2};
+                    double a6=Math.atan2(m6[1]-cy,m6[0]-cx);
+                    double d=Math.toDegrees(a6-a12);while(d>180)d-=360;while(d<=-180)d+=360;
+                    if(Math.abs(Math.abs(d)-180)>8.0)six=new GmtSixLandmarkAnalyzer.Result("the marker found at the bottom is not opposite the 12 marker (photo turned?)");
+                }else six=six.lowConfidence();
+            }
+            GmtHumanQcMath.SixDecision sixDecision=six.valid
+                    ?GmtHumanQcMath.assessSix(six.centring,six.rotationDeg,six.widthPx,six.lengthPx,pose.label,six.stable)
+                    :new GmtHumanQcMath.SixDecision(GmtHumanQcMath.Attention.UNASSESSABLE,false,false,false,six.reason);
+            boolean handAtSix=false;
+            if(six.valid&&!sixDecision.tooSmall){
+                Mat g8=new Mat();
+                try{
+                    Imgproc.cvtColor(src,g8,Imgproc.COLOR_BGR2GRAY);Imgproc.GaussianBlur(g8,g8,new org.opencv.core.Size(5,5),1.2);
+                    GmtSixLandmarkAnalyzer.Geometry sg=six.geometry;
+                    HandIntrusion.Result hi=HandIntrusion.measure(intensityOf(g8),g8.cols(),g8.rows(),cx,cy,r,sg.polygon(),sg.tick31,sg.tick30,sg.tick29);
+                    if(hi.present){
+                        handAtSix=true;
+                        sixDecision=new GmtHumanQcMath.SixDecision(GmtHumanQcMath.Attention.UNASSESSABLE,false,false,false,
+                                "a hand is next to the 6 baton; it corrupts the outline and tick detection");
+                    }
+                }finally{g8.release();}
             }
 
             StringBuilder out=new StringBuilder("\n\nHUMAN 12-MARKER QC\n");
@@ -227,7 +262,17 @@ final class GmtHumanQcAnalyzerV2 {
             else if(pose.label==GmtHumanQcMath.PoseLabel.RETAKE)out.append("Recommended action: retake more square-on before relying on fine spacing magnitude; visible one-sided evidence remains highlighted.\n");
             else out.append("Recommended action: no human-attention condition was resolved in the local 12-marker relationships.\n");
 
+            out.append("\nHUMAN 6-MARKER QC\n");
+            if(six.valid){
+                out.append("6 baton: ").append(sixDecision.attention).append(" - ").append(sixDecision.reason).append("\n");
+                out.append(String.format(Locale.US,"6 geometry: centring %+.3f of baton width (+ = towards 29 tick, viewer's right); rotation %+.2f° (+ = clockwise); gap to 29-31 tick line %.3f of width; baton %.0f px wide; %s.\n",
+                        six.centring,six.rotationDeg,six.gap,six.widthPx,six.stable?"outer edges fitted":"low confidence"));
+            }else out.append("6 baton: UNASSESSABLE - ").append(six.reason).append("\n");
+
             GmtHumanSummary.Input sum=new GmtHumanSummary.Input();
+            sum.sixValid=six.valid;sum.sixAttention=sixDecision.attention;sum.sixTooSmall=sixDecision.tooSmall;sum.handAtSix=handAtSix;
+            sum.sixStable=six.stable;sum.sixCentring=six.centring;sum.sixRotationDeg=six.rotationDeg;sum.sixGap=six.gap;
+            sum.sixOffCentre=sixDecision.offCentre;sum.sixRotated=sixDecision.rotated;sum.sixWidthPx=six.widthPx;
             sum.pose=pose.label;sum.twelveValid=twelve.valid;sum.stableFrame=stableFrame;
             sum.gap=clearance.attention;sum.gapTrend=clearance.trend;
             sum.observedGap=twelve.valid?twelve.topClearance:Double.NaN;
@@ -237,10 +282,12 @@ final class GmtHumanQcAnalyzerV2 {
             sum.pxPerGap=twelve.valid&&twelve.triangleWidthPx>0?1.0/twelve.triangleWidthPx:Double.NaN;
             sum.alignment=rotation.attention;
             sum.rotationDeg=twelve.valid?twelve.wholeAxisErrorDeg:Double.NaN;
+            sum.baseTiltDeg=twelve.valid?twelve.topEdgeErrorDeg:Double.NaN;
             sum.spacing59=twelve.valid?twelve.leftClearance:Double.NaN;
             sum.spacing01=twelve.valid?twelve.rightClearance:Double.NaN;
             Result res=new Result(out.toString(),pose.label,rotation.attention,clearance.attention,
                     stableFrame?twelve.trackRollClockDeg:Double.NaN,stableFrame,sum);
+            res.six=six;
             MeasuredOverlayRenderer.Drawing dr=res.drawing;
             if(edge!=null){dr.dialCx=edge.cx;dr.dialCy=edge.cy;dr.dialA=edge.axisA;dr.dialB=edge.axisB;dr.dialAngleDeg=edge.angleDeg;}
             else{dr.dialCx=cx;dr.dialCy=cy;dr.dialA=r;dr.dialB=r;}
@@ -248,6 +295,14 @@ final class GmtHumanQcAnalyzerV2 {
                 dr.twelve=twelve.geometry;dr.gap=clearance.attention;dr.alignment=rotation.attention;
                 dr.gapValue=twelve.topClearance;dr.spacing59=twelve.leftClearance;dr.spacing01=twelve.rightClearance;
             }
+            if(six.valid){
+                dr.six=six.geometry;dr.sixAttention=sixDecision.attention;dr.sixCentring=six.centring;
+                dr.sixNotJudged=sixDecision.tooSmall?"6 baton too small":handAtSix?"a hand is at 6":null;
+            }
+            dr.notJudged=tooSmall?"12 triangle too small in this photo"
+                    :handAtTwelve?"a hand is at 12"
+                    :!twelve.valid?"12 marker not found"
+                    :null;
             return res;
         }catch(Throwable t){return unavailable("human GMT QC failed closed: "+t.getClass().getSimpleName());}
         finally{src.release();}

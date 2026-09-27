@@ -328,6 +328,20 @@ final class GmtTwelveLandmarkAnalyzer {
         return new MinuteFrame(left,p60,right,bestA,bestP,frameScore,inferred);
     }
 
+    /**
+     * The three minute ticks either side of a marker at the top of the image, for other
+     * markers analysed on a rotated image (the 6 baton, alpha55). ox,oy is the marker's
+     * outer-end midpoint. Returns {left, centre, right, {roll, pitch, score, inferred}}
+     * with left/right in image order, or null.
+     */
+    static double[][] tickFrameNear(Mat gray,double cx,double cy,double r,double ox,double oy){
+        Point o=new Point(ox,oy);
+        MinuteFrame f=minuteFrame(gray,cx,cy,r,new Triangle(o,o,new Point(cx,cy)));
+        if(f==null)return null;
+        return new double[][]{{f.left.x,f.left.y},{f.center.x,f.center.y},{f.right.x,f.right.y},
+                {f.rollDeg,f.pitchDeg,f.score,f.inferred}};
+    }
+
     private static double tickAngleScore(Mat gray,double cx,double cy,double r,double clockDeg){
         double[] vals=new double[20];int n=0;
         for(double rf=.855;rf<=.975+1e-9;rf+=.007){

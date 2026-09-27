@@ -60,6 +60,7 @@ final class GmtHumanQcMath {
     // (The old 0.129 was set on the contour gap, which followed the lume on some photos
     // and the outer surround on others.)
     static final double LOW_CLEARANCE_ATTENTION = 0.070;
+    static final double MAX_PLAUSIBLE_ROTATION_DEG = 8.0;
 
     static PoseDecision classifyPose(double minWidthOverMean,
                                      double edgeCoverage,
@@ -178,6 +179,12 @@ final class GmtHumanQcMath {
         if (!Double.isFinite(wholeAxisErrorDeg) || !Double.isFinite(markerWidthPx) || markerWidthPx <= 0)
             return new RotationDecision(Attention.UNASSESSABLE,wholeAxisErrorDeg,topEdgeErrorDeg,sideClearanceAsymmetry,Double.NaN,false,false,"whole-marker orientation is not resolved");
 
+        // A factory marker is never turned by more than a few degrees. Readings far beyond
+        // that (genuine 1TDYtpN photos: -11 and -26 deg on a steeply angled, foreshortened
+        // dial) are a misdetected triangle or tick frame, not a rotation to show anyone.
+        if (Math.abs(wholeAxisErrorDeg)>MAX_PLAUSIBLE_ROTATION_DEG)
+            return new RotationDecision(Attention.UNASSESSABLE,wholeAxisErrorDeg,topEdgeErrorDeg,sideClearanceAsymmetry,Double.NaN,false,false,
+                    String.format(java.util.Locale.US,"a %.0f° reading is far outside any real marker rotation; the 12 landmarks were not found correctly on this photo",wholeAxisErrorDeg));
         double rise=Math.abs(Math.tan(Math.toRadians(wholeAxisErrorDeg))*markerWidthPx);
         double a=Math.abs(wholeAxisErrorDeg);
         boolean axisVisible=a>=1.0 && rise>=0.55;
@@ -220,6 +227,46 @@ final class GmtHumanQcMath {
         }
         return new RotationDecision(Attention.CLEAR,wholeAxisErrorDeg,topEdgeErrorDeg,sideClearanceAsymmetry,rise,baseCorroborates,spacingCorroborates,
                 "no marker rotation is resolved strongly enough to be visible at this image scale");
+    }
+
+    // ---- 6 o'clock baton (alpha55) ----------------------------------------------------
+    // Centring is the baton's sideways offset from the 30-tick radial line as a fraction of
+    // its width; rotation is its axis against that line. Provisional levels: see
+    // docs/research/gmt_fix_list_2026-09-27.md (section 5) for the genuine spread they sit outside.
+    static final double SIX_CENTRING_CHECK = 0.10, SIX_CENTRING_STRONG = 0.20;
+    static final double SIX_ROTATION_CHECK_DEG = 2.0, SIX_ROTATION_STRONG_DEG = 3.5;
+    /** Below this baton width (px) a pixel is more than 0.05 of centring. */
+    static final double MIN_BATON_PX = 20.0;
+
+    static final class SixDecision {
+        final Attention attention;final boolean offCentre,rotated,tooSmall;final String reason;
+        SixDecision(Attention a,boolean off,boolean rot,boolean small,String why){attention=a;offCentre=off;rotated=rot;tooSmall=small;reason=why;}
+    }
+
+    static SixDecision assessSix(double centring,double rotationDeg,double widthPx,double lengthPx,
+                                 PoseLabel pose,boolean stable){
+        if(!Double.isFinite(centring)||!Double.isFinite(rotationDeg)||!(widthPx>0))
+            return new SixDecision(Attention.UNASSESSABLE,false,false,false,"6 baton not measured");
+        if(widthPx<MIN_BATON_PX)
+            return new SixDecision(Attention.UNASSESSABLE,false,false,true,
+                    String.format(java.util.Locale.US,"the 6 baton is only %.0f px wide in this photo (minimum %.0f)",widthPx,MIN_BATON_PX));
+        if(Math.abs(rotationDeg)>MAX_PLAUSIBLE_ROTATION_DEG||Math.abs(centring)>0.6)
+            return new SixDecision(Attention.UNASSESSABLE,false,false,false,"the 6 reading is far outside any real marker error; the baton or ticks were not found correctly");
+        double c=Math.abs(centring),offPx=c*widthPx;
+        double a=Math.abs(rotationDeg),rise=Math.abs(Math.tan(Math.toRadians(rotationDeg)))*(lengthPx>0?lengthPx:2.5*widthPx);
+        // A verdict must survive the pixel: offsets and rises under ~1 px are not called.
+        boolean off=c>=SIX_CENTRING_CHECK&&offPx>=1.0, offStrong=c>=SIX_CENTRING_STRONG&&offPx>=2.0;
+        boolean rot=a>=SIX_ROTATION_CHECK_DEG&&rise>=1.0, rotStrong=a>=SIX_ROTATION_STRONG_DEG&&rise>=2.0;
+        boolean poor=pose==PoseLabel.RETAKE||pose==PoseLabel.UNASSESSABLE;
+        if(!stable||poor){
+            if(offStrong||rotStrong)return new SixDecision(Attention.CHECK,offStrong,rotStrong,false,
+                    "a clear offset is visible but the 6 landmarks or the photo angle are not reliable enough for a firm verdict");
+            return new SixDecision(Attention.UNASSESSABLE,false,false,false,
+                    poor?"photo too angled to clear the 6 baton":"6 landmarks measured with low confidence");
+        }
+        if(offStrong||rotStrong)return new SixDecision(Attention.STRONG,off,rot,false,"6 baton visibly off-centre or rotated");
+        if(off||rot)return new SixDecision(Attention.CHECK,off,rot,false,"6 baton possibly off-centre or rotated");
+        return new SixDecision(Attention.CLEAR,false,false,false,"6 baton centred and straight at this image scale");
     }
 
     static double wrap90(double deg) {

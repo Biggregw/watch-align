@@ -61,11 +61,29 @@ final class TriangleEdgeRefiner {
     static double[][] refine(DialEdgeEllipseFit.Intensity img,int w,int h,
                              double[] left,double[] right,double[] tip,
                              double[] tickA,double[] tickB,double dialR){
+        // First the calibrated definition (half of the full marker contrast). Only when that
+        // fit fails the shape checks, retry with each profile's outermost bright band setting
+        // its own level (alpha55): this recovers a shadowed surround without moving the gap
+        // readings of photos that were already measured.
+        double[][] q=refine(img,w,h,left,right,tip,tickA,tickB,dialR,false);
+        if(q!=null)return q;
+        lastUsedBand=true;
+        q=refine(img,w,h,left,right,tip,tickA,tickB,dialR,true);
+        return q;
+    }
+
+    /** True when the last successful refine needed the outer-band level (diagnostics only). */
+    static volatile boolean lastUsedBand;
+
+    static double[][] refine(DialEdgeEllipseFit.Intensity img,int w,int h,
+                             double[] left,double[] right,double[] tip,
+                             double[] tickA,double[] tickB,double dialR,boolean band){
+        if(!band)lastUsedBand=false;
         if(img==null||!(dialR>20))return null;
         double gx=(left[0]+right[0]+tip[0])/3.0, gy=(left[1]+right[1]+tip[1])/3.0;
-        double[] base=fitSide(img,w,h,left,right,gx,gy,dialR,0.12,0.88,0.045,tickA,tickB);
-        double[] rs=fitSide(img,w,h,right,tip,gx,gy,dialR,0.10,0.75,0.035,null,null);
-        double[] ls=fitSide(img,w,h,tip,left,gx,gy,dialR,0.25,0.90,0.035,null,null);
+        double[] base=fitSide(img,w,h,left,right,gx,gy,dialR,0.12,0.88,0.045,tickA,tickB,band);
+        double[] rs=fitSide(img,w,h,right,tip,gx,gy,dialR,0.10,0.75,0.035,null,null,band);
+        double[] ls=fitSide(img,w,h,tip,left,gx,gy,dialR,0.25,0.90,0.035,null,null,band);
         if(base==null||rs==null||ls==null)return null;
         double[] l=intersect(ls,base), r=intersect(base,rs), t=intersect(rs,ls);
         if(l==null||r==null||t==null)return null;
@@ -90,6 +108,12 @@ final class TriangleEdgeRefiner {
     static double[] fitSide(DialEdgeEllipseFit.Intensity img,int w,int h,double[] a,double[] b,
                             double gx,double gy,double dialR,double t0,double t1,double outFrac,
                             double[] stopA,double[] stopB){
+        return fitSide(img,w,h,a,b,gx,gy,dialR,t0,t1,outFrac,stopA,stopB,false);
+    }
+
+    static double[] fitSide(DialEdgeEllipseFit.Intensity img,int w,int h,double[] a,double[] b,
+                            double gx,double gy,double dialR,double t0,double t1,double outFrac,
+                            double[] stopA,double[] stopB,boolean band){
         double ux=b[0]-a[0], uy=b[1]-a[1], len=Math.hypot(ux,uy);
         if(len<4)return null;
         ux/=len;uy/=len;
@@ -128,7 +152,8 @@ final class TriangleEdgeRefiner {
             double bg=Double.POSITIVE_INFINITY;
             for(int i=n-tail;i<n;i++)bg=Math.min(bg,v[i]);
             if(!(peak-bg>=MIN_SPAN))continue;
-            double level=0.5*(peak+bg);
+            double level=band?edgeLevel(v,peak,bg,step,dialR):0.5*(peak+bg);
+            if(Double.isNaN(level))continue;
             int cross=-1;
             for(int i=0;i<n-1;i++)if(v[i]>=level&&v[i+1]<level)cross=i;   // outermost crossing
             if(cross<0)continue;
@@ -143,6 +168,35 @@ final class TriangleEdgeRefiner {
         if(Math.abs(line[2]*ux+line[3]*uy)<Math.cos(Math.toRadians(12)))return null;
         return line;
     }
+
+    /**
+     * Half-level for the outer edge of one profile (inside to outside), or NaN.
+     *
+     * The level is set from the brightness of the OUTERMOST bright band, not the whole
+     * profile. Where the metal surround is shadowed it can be much dimmer than the lume
+     * inside it; half of the lume level then sits above the surround and the edge falls
+     * onto the lume boundary (the inner line), bending or tilting the fit (field photos
+     * 7s6PyXJ and 126710GRNR, alpha53/54). Finding the outermost point above a quarter of
+     * the contrast first, then taking the brightest value just inside it, makes a dim
+     * surround set its own half-level. Where the surround is as bright as the lume the
+     * level is unchanged. Used only as a fallback (see refine), because on a normally lit
+     * surround it sits slightly further out and would shift calibrated gap readings.
+     */
+    static double edgeLevel(double[] v,double peak,double bg,double step,double dialR){
+        double low=bg+LOW_FRACTION*(peak-bg);
+        int outer=-1;
+        for(int i=0;i<v.length-1;i++)if(v[i]>=low&&v[i+1]<low)outer=i;
+        if(outer<0)return Double.NaN;
+        int win=(int)Math.round(Math.max(3.0,BAND_WIDTH_R*dialR)/step);
+        double local=Double.NEGATIVE_INFINITY;
+        for(int i=Math.max(0,outer-win);i<=outer;i++)local=Math.max(local,v[i]);
+        if(!(local-bg>=MIN_BAND_SPAN))return Double.NaN;
+        return Math.min(0.5*(peak+bg),0.5*(local+bg));
+    }
+
+    static final double LOW_FRACTION = 0.25;
+    static final double BAND_WIDTH_R = 0.02;       // how far inside the outer band to look for its brightness
+    private static final double MIN_BAND_SPAN = 25.0;
 
     /** PCA line with MAD trimming. Returns {px, py, dx, dy} or null. */
     static double[] robustLine(List<double[]> pts,double dialR){

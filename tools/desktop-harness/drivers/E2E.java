@@ -3,7 +3,7 @@ import android.graphics.Bitmap;
 import javax.imageio.ImageIO;import java.io.File;
 public class E2E{
  public static void main(String[] a)throws Exception{
-  nu.pattern.OpenCV.loadLocally();
+  nu.pattern.OpenCV.loadLocally();org.opencv.core.Core.setNumThreads(1);
   java.awt.image.BufferedImage raw=ImageIO.read(new File(a[0]));
   java.awt.image.BufferedImage argb=new java.awt.image.BufferedImage(raw.getWidth(),raw.getHeight(),java.awt.image.BufferedImage.TYPE_INT_ARGB);
   argb.getGraphics().drawImage(raw,0,0,null);
@@ -24,4 +24,6 @@ public class E2E{
    java.awt.image.BufferedImage comp=new java.awt.image.BufferedImage(b.getWidth(),b.getHeight(),java.awt.image.BufferedImage.TYPE_INT_ARGB);
    java.awt.Graphics2D g2=comp.createGraphics();g2.drawImage(b.img,0,0,null);g2.drawImage(measured.img,0,0,null);g2.dispose();
    ImageIO.write(comp,"png",new File(a[1].replace(".png","_comp.png")));}
+  Bitmap cu=MeasuredOverlayRenderer.closeUp(b,measured,h.drawing,540);
+  if(cu!=null)ImageIO.write(cu.img,"png",new File(a[1].replace(".png","_12.png")));
  }}

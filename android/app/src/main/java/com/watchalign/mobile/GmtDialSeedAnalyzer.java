@@ -36,7 +36,7 @@ final class GmtDialSeedAnalyzer {
             int min=Math.min(bgr.cols(),bgr.rows());
             int minR=Math.max(24,(int)Math.round(min*0.10));
             int maxR=Math.max(minR+8,(int)Math.round(min*0.46));
-            Imgproc.HoughCircles(blur,circles,Imgproc.HOUGH_GRADIENT,1.10,min/10.0,115,23,minR,maxR);
+            hough(blur,circles,min,115,23,minR,maxR);
             Candidate best=null;
             for(int i=0;i<circles.cols();i++){
                 double[] c=circles.get(0,i);if(c==null||c.length<3)continue;
@@ -48,7 +48,7 @@ final class GmtDialSeedAnalyzer {
                 try{
                     Imgproc.createCLAHE(2.4,new Size(8,8)).apply(gray,eq);
                     Imgproc.GaussianBlur(eq,eq,new Size(7,7),0);
-                    Imgproc.HoughCircles(eq,c2,Imgproc.HOUGH_GRADIENT,1.10,min/10.0,112,21,minR,maxR);
+                    hough(eq,c2,min,112,21,minR,maxR);
                     for(int i=0;i<c2.cols();i++){
                         double[] c=c2.get(0,i);if(c==null||c.length<3)continue;
                         Candidate q=scoreCentre(eq,c[0],c[1],min,minR,maxR);
@@ -59,6 +59,34 @@ final class GmtDialSeedAnalyzer {
             if(best==null)return new Result("physical dark-to-rehaut dial boundary not found");
             return new Result(best.x,best.y,best.r,clamp01(best.score),best.boundary,best.coverage,best.markerHits);
         }finally{circles.release();blur.release();gray.release();}
+    }
+
+    /** Hough proposals only need to be near the dial; every candidate is re-scored and
+     *  its radius re-fitted at full resolution below, and the edge fit then refines the
+     *  centre. At full working size (up to 1600 px) the CLAHE fallback on a busy photo took
+     *  minutes (alpha54 field set: 2 min at 800 px, ~10 s at 480 px on the worst photo),
+     *  so proposals are found at <= HOUGH_MAX_SIDE px. */
+    static final int HOUGH_MAX_SIDE = 480;
+
+    private static void hough(Mat img,Mat circles,int min,double p1,double p2,int minR,int maxR){
+        double s=Math.min(1.0,HOUGH_MAX_SIDE/(double)min);
+        if(s>=0.999){Imgproc.HoughCircles(img,circles,Imgproc.HOUGH_GRADIENT,1.10,min/10.0,p1,p2,minR,maxR);return;}
+        Mat small=new Mat();
+        try{
+            Imgproc.resize(img,small,new Size(Math.round(img.cols()*s),Math.round(img.rows()*s)),0,0,Imgproc.INTER_AREA);
+            Mat c=new Mat();
+            try{
+                Imgproc.HoughCircles(small,c,Imgproc.HOUGH_GRADIENT,1.10,min*s/10.0,p1,p2,
+                        (int)Math.max(8,Math.round(minR*s)),(int)Math.round(maxR*s));
+                if(c.cols()==0){c.copyTo(circles);return;}
+                Mat out=new Mat(1,c.cols(),c.type());
+                for(int i=0;i<c.cols();i++){
+                    double[] v=c.get(0,i);
+                    out.put(0,i,v[0]/s,v[1]/s,v[2]/s);
+                }
+                out.copyTo(circles);out.release();
+            }finally{c.release();}
+        }finally{small.release();}
     }
 
     private static final class RadiusFit{

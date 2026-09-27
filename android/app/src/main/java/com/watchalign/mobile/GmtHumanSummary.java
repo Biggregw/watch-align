@@ -19,19 +19,24 @@ final class GmtHumanSummary {
         double observedGap=Double.NaN;
         GmtHumanQcMath.Attention alignment=GmtHumanQcMath.Attention.UNASSESSABLE;
         double rotationDeg=Double.NaN;
+        double baseTiltDeg=Double.NaN;   // top edge vs the 59-01 tick line, same sign as rotationDeg
         double spacing59=Double.NaN, spacing01=Double.NaN;
         boolean overlayDrawn;
         boolean gapResolutionLimited;
         boolean tooSmall, handAtTwelve;
         double trianglePx=Double.NaN;
         double gapPx=Double.NaN, pxPerGap=Double.NaN;
+        // 6 o'clock baton (alpha55)
+        boolean sixValid,sixStable,sixTooSmall,handAtSix,sixOffCentre,sixRotated;
+        GmtHumanQcMath.Attention sixAttention=GmtHumanQcMath.Attention.UNASSESSABLE;
+        double sixCentring=Double.NaN,sixRotationDeg=Double.NaN,sixGap=Double.NaN,sixWidthPx=Double.NaN;
     }
 
     // Reference only, for the reader: what genuine images have measured on the same
-    // outer-edge gap definition (official renders 0.086-0.096; real genuine photos 0.084,
-    // 0.103, 0.103, 0.106 from the user and r/Watchexchange listings).
-    // Not a decision boundary; decisions come from GmtHumanQcMath.
-    static final String GENUINE_GAP_SEEN = "about 0.085–0.105";
+    // outer-edge gap definition. Official renders 0.087-0.095; real genuine photos 0.081,
+    // 0.083, 0.090, 0.099, 0.102, 0.107 (user's dealer photo and r/Watchexchange listings,
+    // alpha55 corpus run). Not a decision boundary; decisions come from GmtHumanQcMath.
+    static final String GENUINE_GAP_SEEN = "about 0.08–0.11";
 
     private GmtHumanSummary(){}
 
@@ -40,8 +45,11 @@ final class GmtHumanSummary {
         s.append("Photo: ").append(photoLine(in)).append("\n");
         s.append("12 gap: ").append(gapLine(in)).append("\n");
         s.append("12 alignment: ").append(alignmentLine(in)).append("\n");
-        s.append("Overlay: ").append(in.overlayDrawn
-                ?"shows what was measured at 12: the detected triangle, the 59/60/01 tick ends, the gap and the spacing either side, coloured green (clear), amber (check) or red. Zoom in with Inspect overlay to see them against the watch."
+        s.append("6 baton: ").append(sixLine(in)).append("\n");
+        s.append("Overlay: ").append(in.overlayDrawn&&(in.tooSmall||in.handAtTwelve)
+                ?"shows the 12 triangle that was found, grey and dashed because it was not judged. The close-up shows it enlarged."
+                :in.overlayDrawn
+                ?"shows what was measured at 12: the detected triangle, the 59/60/01 tick ends, the gap and the spacing either side, coloured green (clear), amber (check) or red. The close-ups show them enlarged; Inspect overlay zooms the whole photo."
                 :"nothing at 12 could be measured, so only the dial edge is shown.").append("\n");
         s.append("\n").append(bottomLine(in)).append("\n");
         s.append("This flags things to look at closely. It does not prove a watch is genuine or fake.\n");
@@ -92,9 +100,57 @@ final class GmtHumanSummary {
         String caution=in.stableFrame?"":" The 12 marker could only be measured with low confidence on this photo, so treat this with caution.";
         switch(in.alignment){
             case CLEAR: return "straight and centred. No visible rotation, even spacing either side."+sp+caution;
-            case CHECK: return "possibly slightly rotated or off-centre. Look closely; a hand touching the triangle can cause this."+sp+caution;
-            case STRONG: return "visibly rotated or off-centre."+sp+caution;
+            case CHECK: return "possibly "+describe(in)+". Look closely; a hand touching the triangle can cause this."+sp+caution;
+            case STRONG: return "visibly "+describe(in)+"."+sp+caution;
             default: return "could not be judged reliably on this photo.";
+        }
+    }
+
+    static String sixLine(Input in){
+        if(!in.sixValid)return "not measured on this photo (baton or minute track at 6 not found, often because a hand covers it).";
+        if(in.sixTooSmall)return String.format(Locale.US,"not measured: the baton is only %.0f px wide in this photo.",in.sixWidthPx);
+        if(in.handAtSix)return "not judged: a hand is next to the 6 baton.";
+        String side=in.sixCentring>0?"right (towards the 29 tick)":"left (towards the 31 tick)";
+        String nums=String.format(Locale.US," (offset %+.2f of its width, rotation %+.1f°)",in.sixCentring,in.sixRotationDeg);
+        String caution=in.sixStable?"":" Measured with low confidence, so treat this with caution.";
+        String what;
+        if(in.sixOffCentre&&in.sixRotated)what="off-centre to the "+side+" and rotated "+(in.sixRotationDeg>0?"clockwise":"anticlockwise");
+        else if(in.sixOffCentre)what="off-centre: it sits to the "+side;
+        else if(in.sixRotated)what="rotated "+(in.sixRotationDeg>0?"clockwise":"anticlockwise");
+        else what="off-centre or rotated";
+        switch(in.sixAttention){
+            case CLEAR: return "centred between the 29 and 31 ticks and straight."+nums;
+            case CHECK: return "possibly "+what+". Look closely."+nums+caution;
+            case STRONG: return "visibly "+what+"."+nums+caution;
+            default: return "could not be judged reliably on this photo."+nums+caution;
+        }
+    }
+
+    enum AlignmentKind { TURNED, TIP_LEANS, OFF_CENTRE, UNCLEAR }
+
+    /**
+     * What kind of misalignment the numbers describe. People describe these differently:
+     * a triangle whose point leans but whose top edge is level looks "skewed", not
+     * "rotated" (r/RepTimeQC p3hHVMB: owner saw CCW, moderator saw a CW cant; the app
+     * measured the point leaning CW with a level top edge).
+     */
+    static AlignmentKind kind(Input in){
+        double a=in.rotationDeg,b=in.baseTiltDeg;
+        boolean axis=Double.isFinite(a)&&Math.abs(a)>=1.0;
+        if(axis&&Double.isFinite(b)&&Math.abs(b)>=0.75&&Math.signum(a)==Math.signum(b))return AlignmentKind.TURNED;
+        if(axis&&Double.isFinite(b)&&Math.abs(b)<0.75)return AlignmentKind.TIP_LEANS;
+        if(Double.isFinite(in.spacing59)&&Double.isFinite(in.spacing01)&&Math.abs(in.spacing01-in.spacing59)>=0.06)return AlignmentKind.OFF_CENTRE;
+        if(axis)return AlignmentKind.TURNED;
+        return AlignmentKind.UNCLEAR;
+    }
+
+    static String describe(Input in){
+        String dir=Double.isFinite(in.rotationDeg)?(in.rotationDeg>0?"clockwise":"anticlockwise"):"";
+        switch(kind(in)){
+            case TURNED: return String.format(Locale.US,"rotated: the whole triangle is turned %s by about %.1f°, top edge included",dir,Math.abs(in.rotationDeg));
+            case TIP_LEANS: return String.format(Locale.US,"skewed: the point leans %s by about %.1f° but the top edge is level",dir,Math.abs(in.rotationDeg));
+            case OFF_CENTRE: return "off-centre: the triangle sits closer to the "+(in.spacing59<in.spacing01?"59":"01")+" tick than the "+(in.spacing59<in.spacing01?"01":"59")+" tick";
+            default: return "rotated or off-centre";
         }
     }
 
@@ -102,16 +158,20 @@ final class GmtHumanSummary {
         List<String> items=new ArrayList<>();
         boolean gapFlag=in.twelveValid&&(in.gap==GmtHumanQcMath.Attention.CHECK||in.gap==GmtHumanQcMath.Attention.STRONG);
         boolean alignFlag=in.twelveValid&&(in.alignment==GmtHumanQcMath.Attention.CHECK||in.alignment==GmtHumanQcMath.Attention.STRONG);
+        boolean sixFlag=in.sixValid&&(in.sixAttention==GmtHumanQcMath.Attention.CHECK||in.sixAttention==GmtHumanQcMath.Attention.STRONG);
         if(gapFlag)items.add("the gap at 12");
         if(alignFlag)items.add("the 12 marker alignment");
-        if(!in.twelveValid)return "Bottom line: the 12 marker could not be checked on this photo. Try a clearer, straight-on photo with the hands away from 12.";
-        if(in.twelveValid&&in.tooSmall)return "Bottom line: the 12 marker is too small in this photo to check. Take a closer photo so the dial fills more of the frame.";
-        if(in.twelveValid&&in.handAtTwelve)return "Bottom line: a hand is covering the area around the 12 marker, so it could not be checked. Retake with the hands away from 12.";
+        if(sixFlag)items.add("the 6 baton position");
+        String six6=sixFlag?" Separately, check the 6 baton position.":"";
+        if(!in.twelveValid)return "Bottom line: the 12 marker could not be checked on this photo. Try a clearer, straight-on photo with the hands away from 12."+six6;
+        if(in.twelveValid&&in.tooSmall)return "Bottom line: the 12 marker is too small in this photo to check. Take a closer photo so the dial fills more of the frame."+six6;
+        if(in.twelveValid&&in.handAtTwelve)return "Bottom line: a hand is covering the area around the 12 marker, so it could not be checked. Retake with the hands away from 12."+six6;
         String closer=in.gapResolutionLimited?" The gap at 12 is too close to call at this resolution; a closer photo would settle it.":"";
         if(in.pose==GmtHumanQcMath.PoseLabel.RETAKE)
             return items.isEmpty()?"Bottom line: nothing flagged, but the photo is too angled to rely on that. Retake straight-on."
                     :"Bottom line: flagged "+join(items)+", but the photo is too angled to be sure. Retake straight-on.";
-        if(items.isEmpty())return (in.stableFrame?"Bottom line: nothing flagged at 12."+(closer.isEmpty()?" Other markers are not checked yet, so look over the rest of the dial by eye.":closer)
+        boolean sixClear=in.sixValid&&in.sixAttention==GmtHumanQcMath.Attention.CLEAR;
+        if(items.isEmpty())return (in.stableFrame?"Bottom line: nothing flagged at 12"+(sixClear?" or 6":"")+"."+(closer.isEmpty()?(sixClear?" The other markers are not checked yet, so look over the rest of the dial by eye.":" The 6 baton could not be judged here and the other markers are not checked yet, so look over the rest of the dial by eye."):closer)
                 :"Bottom line: nothing flagged, but the 12 marker was only measured with low confidence. A clearer photo with the hands away from 12 would help."+closer);
         String line="Bottom line: "+items.size()+(items.size()==1?" thing":" things")+" to check: "+join(items)+".";
         if(!in.stableFrame)line+=" Measured with low confidence, so confirm by eye or with a clearer photo with the hands away from 12.";
@@ -119,6 +179,7 @@ final class GmtHumanSummary {
     }
 
     private static String join(List<String> items){
-        return items.size()==1?items.get(0):items.get(0)+" and "+items.get(1);
+        if(items.size()==1)return items.get(0);
+        return String.join(", ",items.subList(0,items.size()-1))+" and "+items.get(items.size()-1);
     }
 }

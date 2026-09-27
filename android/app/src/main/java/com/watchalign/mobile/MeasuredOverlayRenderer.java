@@ -27,8 +27,15 @@ final class MeasuredOverlayRenderer {
         GmtHumanQcMath.Attention gap=GmtHumanQcMath.Attention.UNASSESSABLE;
         GmtHumanQcMath.Attention alignment=GmtHumanQcMath.Attention.UNASSESSABLE;
         double gapValue=Double.NaN, spacing59=Double.NaN, spacing01=Double.NaN;
+        /** Why the 12 marker was not judged, or null when it was. Drawn grey and dashed. */
+        String notJudged;
+        // 6 o'clock baton (alpha55)
+        GmtSixLandmarkAnalyzer.Geometry six;
+        GmtHumanQcMath.Attention sixAttention=GmtHumanQcMath.Attention.UNASSESSABLE;
+        double sixCentring=Double.NaN;
+        String sixNotJudged;
 
-        boolean hasAnything(){return Double.isFinite(dialCx)||twelve!=null;}
+        boolean hasAnything(){return Double.isFinite(dialCx)||twelve!=null||six!=null;}
     }
 
     private MeasuredOverlayRenderer(){}
@@ -56,11 +63,22 @@ final class MeasuredOverlayRenderer {
             c.drawPath(p,ring);
         }
 
+        drawSix(c,d);
+
         GmtTwelveLandmarkAnalyzer.Geometry g=d.twelve;
         if(g==null)return out;
         double width=Math.hypot(g.triRight[0]-g.triLeft[0],g.triRight[1]-g.triLeft[1]);
         float lw=(float)Math.max(1.0,width/40.0);
         int alignCol=colour(d.alignment), gapCol=colour(d.gap);
+
+        if(d.notJudged!=null){
+            // Not judged: only the outline that was found, grey and dashed, so it is never
+            // read as a verdict. No brackets or numbers.
+            Paint nj=stroke(UNKNOWN,lw,220);
+            double[][] pts={g.triLeft,g.triRight,g.triTip};
+            for(int i=0;i<3;i++)dashed(c,pts[i],pts[(i+1)%3],width/8.0,nj);
+            return out;
+        }
 
         // Detected triangle, coloured by the alignment verdict.
         Paint tri=stroke(alignCol,lw,235);
@@ -102,6 +120,153 @@ final class MeasuredOverlayRenderer {
         if(Double.isFinite(d.spacing01))
             label(c,String.format(Locale.US,"%.2f",d.spacing01),(float)(g.triRight[0]+width*0.25),(float)(g.triRight[1]+width*0.35),ts,alignCol);
         return out;
+    }
+
+    /** 6 baton outline, 31/29 tick ends and the reference midway between them. */
+    private static void drawSix(Canvas c,Drawing d){
+        GmtSixLandmarkAnalyzer.Geometry s=d.six;
+        if(s==null)return;
+        double w=Math.hypot(s.outerRight[0]-s.outerLeft[0],s.outerRight[1]-s.outerLeft[1]);
+        float lw=(float)Math.max(1.0,w/16.0);
+        double[][] p=s.polygon();
+        if(d.sixNotJudged!=null){
+            Paint nj=stroke(UNKNOWN,lw,220);
+            for(int i=0;i<4;i++)dashed(c,p[i],p[(i+1)%4],w/4.0,nj);
+            return;
+        }
+        int col=colour(d.sixAttention);
+        Paint o=stroke(col,lw,235);
+        Path path=new Path();path.moveTo((float)p[0][0],(float)p[0][1]);
+        for(int i=1;i<4;i++)path.lineTo((float)p[i][0],(float)p[i][1]);
+        path.close();c.drawPath(path,o);
+        Paint tick=stroke(TICK,Math.max(1f,lw*0.8f),230);
+        c.drawLine((float)s.tick31[0],(float)s.tick31[1],(float)s.tick29[0],(float)s.tick29[1],tick);
+        Paint dot=fill(TICK,230);float dr=(float)Math.max(1.5,w/12.0);
+        for(double[] q:new double[][]{s.tick31,s.tick29})c.drawCircle((float)q[0],(float)q[1],dr,dot);
+        // Where the baton's centre line should meet the track: midway between the 29 and 31
+        // ticks (the coronet sits there, there is no 30 tick). A short tick-coloured stub
+        // inward from that point, and a dot at the baton's measured outer-end centre, show
+        // any sideways offset directly.
+        double mx=(s.outerLeft[0]+s.outerRight[0])/2,my=(s.outerLeft[1]+s.outerRight[1])/2;
+        double ix=(s.innerLeft[0]+s.innerRight[0])/2,iy=(s.innerLeft[1]+s.innerRight[1])/2;
+        double ax=ix-mx,ay=iy-my,al=Math.hypot(ax,ay);
+        if(al>1e-9){ax/=al;ay/=al;
+            double rx=(s.tick31[0]+s.tick29[0])/2,ry=(s.tick31[1]+s.tick29[1])/2;
+            c.drawLine((float)rx,(float)ry,(float)(rx+ax*w*0.9),(float)(ry+ay*w*0.9),tick);}
+        c.drawCircle((float)mx,(float)my,dr,fill(col,240));
+        if(Double.isFinite(d.sixCentring)){
+            float ts=(float)Math.max(9.0,w*0.55);
+            label(c,String.format(Locale.US,"%+.2f",d.sixCentring),(float)(s.outerRight[0]+w*0.4),(float)(my+w*0.2),ts,col);
+        }
+    }
+
+    /** Worst verdict colour at 12, or grey when not judged. */
+    static int statusColour(Drawing d){
+        if(d.notJudged!=null||d.twelve==null)return UNKNOWN;
+        GmtHumanQcMath.Attention a=d.gap,b=d.alignment;
+        if(a==GmtHumanQcMath.Attention.STRONG||b==GmtHumanQcMath.Attention.STRONG)return STRONG;
+        if(a==GmtHumanQcMath.Attention.CHECK||b==GmtHumanQcMath.Attention.CHECK)return CHECK;
+        if(a==GmtHumanQcMath.Attention.CLEAR&&b==GmtHumanQcMath.Attention.CLEAR)return CLEAR;
+        return UNKNOWN;
+    }
+
+    static String statusText(Drawing d){
+        if(d.notJudged!=null)return "12 NOT JUDGED: "+d.notJudged;
+        if(d.twelve==null)return "12 NOT JUDGED: 12 marker not found";
+        int c=statusColour(d);
+        if(c==STRONG)return "12: CHECK CLOSELY";
+        if(c==CHECK)return "12: WORTH A LOOK";
+        if(c==CLEAR)return "12: NOTHING FLAGGED";
+        if(d.alignment==GmtHumanQcMath.Attention.CLEAR)return "12: NOTHING FLAGGED · GAP NOT CALLED";
+        if(d.gap==GmtHumanQcMath.Attention.CLEAR)return "12: GAP CLEAR · ALIGNMENT NOT CALLED";
+        return "12: NOT CALLED (LOW CONFIDENCE)";
+    }
+
+    /**
+     * Close-ups of the 12 marker and, when measured, the 6 baton, side by side: photo plus
+     * overlay, enlarged, each with a status strip. Returns null when there is nothing to frame.
+     */
+    static Bitmap closeUp(Bitmap watch,Bitmap overlay,Drawing d,int size){
+        if(watch==null||d==null)return null;
+        Bitmap a=panel12(watch,overlay,d,size);
+        Bitmap b=d.six!=null?panel6(watch,overlay,d,size):null;
+        if(a==null)return b;
+        if(b==null)return a;
+        int gap=Math.max(6,size/40);
+        Bitmap out=Bitmap.createBitmap(a.getWidth()+gap+b.getWidth(),Math.max(a.getHeight(),b.getHeight()),Bitmap.Config.ARGB_8888);
+        Canvas c=new Canvas(out);c.drawColor(Color.rgb(12,16,22));
+        c.drawBitmap(a,0,0,null);c.drawBitmap(b,a.getWidth()+gap,0,null);
+        return out;
+    }
+
+    private static Bitmap panel12(Bitmap watch,Bitmap overlay,Drawing d,int size){
+        double cx,cy,half;
+        GmtTwelveLandmarkAnalyzer.Geometry g=d.twelve;
+        if(g!=null){
+            double w=Math.hypot(g.triRight[0]-g.triLeft[0],g.triRight[1]-g.triLeft[1]);
+            cx=(g.triLeft[0]+g.triRight[0]+g.triTip[0]+g.tick60[0])/4;
+            cy=(g.triLeft[1]+g.triRight[1]+g.triTip[1]+g.tick60[1])/4;
+            half=Math.max(20,1.9*w);                   // room for the gap and spacing labels
+        }else if(Double.isFinite(d.dialCx)&&Double.isFinite(d.dialB)){
+            double r=Math.max(d.dialA,d.dialB);
+            cx=d.dialCx;cy=d.dialCy-0.78*r;half=Math.max(20,0.30*r);
+        }else return null;
+        boolean dashedBorder=d.notJudged!=null||g==null;
+        return panel(watch,overlay,cx,cy,half,size,statusColour(d),statusText(d),dashedBorder);
+    }
+
+    private static Bitmap panel6(Bitmap watch,Bitmap overlay,Drawing d,int size){
+        GmtSixLandmarkAnalyzer.Geometry s=d.six;
+        double w=Math.hypot(s.outerRight[0]-s.outerLeft[0],s.outerRight[1]-s.outerLeft[1]);
+        double cx=(s.outerLeft[0]+s.outerRight[0]+s.innerLeft[0]+s.innerRight[0]+2*s.tick30[0])/6;
+        double cy=(s.outerLeft[1]+s.outerRight[1]+s.innerLeft[1]+s.innerRight[1]+2*s.tick30[1])/6;
+        double half=Math.max(20,2.6*w);
+        int col;String text;
+        if(d.sixNotJudged!=null){col=UNKNOWN;text="6 NOT JUDGED: "+d.sixNotJudged;}
+        else{
+            col=colour(d.sixAttention);
+            text=d.sixAttention==GmtHumanQcMath.Attention.STRONG?"6: CHECK CLOSELY"
+                    :d.sixAttention==GmtHumanQcMath.Attention.CHECK?"6: WORTH A LOOK"
+                    :d.sixAttention==GmtHumanQcMath.Attention.CLEAR?"6: NOTHING FLAGGED"
+                    :"6: NOT CALLED (LOW CONFIDENCE)";
+        }
+        return panel(watch,overlay,cx,cy,half,size,col,text,d.sixNotJudged!=null);
+    }
+
+    private static Bitmap panel(Bitmap watch,Bitmap overlay,double cx,double cy,double half,int size,int col,String text,boolean dashedBorder){
+        int side=(int)Math.round(2*half);
+        side=Math.min(side,Math.min(watch.getWidth(),watch.getHeight()));
+        int x0=(int)Math.round(cx-side/2.0),y0=(int)Math.round(cy-side/2.0);
+        x0=Math.max(0,Math.min(watch.getWidth()-side,x0));y0=Math.max(0,Math.min(watch.getHeight()-side,y0));
+        Bitmap crop=Bitmap.createBitmap(side,side,Bitmap.Config.ARGB_8888);
+        Canvas cc=new Canvas(crop);
+        cc.drawBitmap(Bitmap.createBitmap(watch,x0,y0,side,side),0,0,null);
+        if(overlay!=null)cc.drawBitmap(Bitmap.createBitmap(overlay,x0,y0,side,side),0,0,null);
+        int strip=Math.max(24,size/8);
+        Bitmap out=Bitmap.createBitmap(size,size+strip,Bitmap.Config.ARGB_8888);
+        Canvas c=new Canvas(out);
+        c.drawColor(Color.rgb(12,16,22));
+        c.drawBitmap(Bitmap.createScaledBitmap(crop,size,size,true),0,0,null);
+        float bw=Math.max(2f,size/120f);
+        Paint border=stroke(col,bw,255);
+        if(dashedBorder){
+            double[][] cs={{bw/2,bw/2},{size-bw/2,bw/2},{size-bw/2,size+strip-bw/2},{bw/2,size+strip-bw/2}};
+            for(int i=0;i<4;i++)dashed(c,cs[i],cs[(i+1)%4],size/24.0,border);
+        }else c.drawRect(bw/2,bw/2,size-bw/2,size+strip-bw/2,border);
+        Paint t=new Paint(Paint.ANTI_ALIAS_FLAG);t.setColor(col);t.setTextSize(strip*0.45f);t.setFakeBoldText(true);
+        while(t.measureText(text)>size-3*bw-8&&t.getTextSize()>8)t.setTextSize(t.getTextSize()-1);
+        c.drawText(text,bw+6,size+strip*0.66f,t);
+        return out;
+    }
+
+    private static void dashed(Canvas c,double[] a,double[] b,double dash,Paint p){
+        double len=Math.hypot(b[0]-a[0],b[1]-a[1]);if(len<1e-9)return;
+        dash=Math.max(2,dash);
+        for(double s=0;s<len;s+=2*dash){
+            double e=Math.min(len,s+dash);
+            c.drawLine((float)(a[0]+(b[0]-a[0])*s/len),(float)(a[1]+(b[1]-a[1])*s/len),
+                    (float)(a[0]+(b[0]-a[0])*e/len),(float)(a[1]+(b[1]-a[1])*e/len),p);
+        }
     }
 
     static double[] footOnLine(double px,double py,double[] a,double[] b){
