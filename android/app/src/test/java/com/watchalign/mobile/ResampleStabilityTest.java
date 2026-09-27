@@ -49,4 +49,9 @@ public class ResampleStabilityTest {
     @Test public void rotationCrossingTheVisibleLevelIsUnstable() {
         assertFalse(r(59.4, 0.09, 0.09, 0.5, 1.7, true).resampleRotStable());
     }
+
+    /** Emulator, 6I00d8w image_01: 0.074 to 0.148 on 45 px. 0.074 is within a pixel of 0.070. */
+    @Test public void readingsJustAboveTheLimitDoNotCountAsClear() {
+        assertFalse(r(45.4, 0.074, 0.148, 0, 0, true).resampleGapStable());
+    }
 }

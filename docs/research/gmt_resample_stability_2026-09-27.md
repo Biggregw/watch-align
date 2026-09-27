@@ -55,9 +55,14 @@ measurements found the same kind of edge (outer edge or not) and either of these
 
 - it moved by at most 1 px at the marker. For rotation this means tip travel,
   `tan(Δ) × 1.23 × width`.
-- every reading is on the same side of the level where a verdict starts: a gap of at
-  least 0.070, or a rotation under 1.0°. The movement then can't change what the user is
-  told.
+- every reading is on the same side of the level where a verdict starts, so the
+  movement can't change what the user is told:
+  - a gap that clears 0.070 by more than a pixel. The emulator's 6I00d8w reading of
+    0.074 to 0.148 doesn't qualify, because 0.074 is within a pixel of the limit.
+  - a rotation under 1.0°.
+
+When a reading is withheld, the bottom line never says "nothing flagged at 12". It says
+"nothing flagged, but the 12 … reading changes when the photo is resized slightly".
 
 **An unstable reading gets no verdict.** The summary says "not judged: the reading
 changes when the photo is resized slightly", with the range. A concern that every

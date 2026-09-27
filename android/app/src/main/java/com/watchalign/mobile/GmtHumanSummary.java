@@ -186,8 +186,7 @@ final class GmtHumanSummary {
         boolean sixClear0=in.sixValid&&in.sixAttention==GmtHumanQcMath.Attention.CLEAR;
         boolean bothUnstable=in.gapUnstable&&in.rotUnstable;
         boolean anyUnstable=in.gapUnstable||in.rotUnstable;
-        boolean clearElsewhere=(in.gapUnstable?true:in.gap==GmtHumanQcMath.Attention.CLEAR)&&(in.rotUnstable?true:in.alignment==GmtHumanQcMath.Attention.CLEAR);
-        if(anyUnstable&&in.pose!=GmtHumanQcMath.PoseLabel.RETAKE&&(bothUnstable||!items.isEmpty()||clearElsewhere)){
+        if(anyUnstable&&in.pose!=GmtHumanQcMath.PoseLabel.RETAKE){
             String what=bothUnstable?"the 12 reading":in.gapUnstable?"the 12 gap reading":"the 12 rotation reading";
             String unstable=what+" changes when the photo is resized slightly, so it isn't a reliable measurement here";
             if(items.isEmpty())return "Bottom line: nothing flagged, but "+unstable+". A closer, sharper, straight-on photo with the hands away from 12 usually fixes this."

@@ -210,4 +210,16 @@ public class GmtHumanSummaryTest {
         assertTrue(s, s.contains("12 alignment: not judged: the reading changes when the photo is resized slightly (it read between +0.5° and +1.7°)"));
         assertTrue(s, s.contains("Bottom line: nothing flagged, but the 12 rotation reading changes when the photo is resized slightly"));
     }
+
+    /** Emulator, 6I00d8w image_01: gap too close to call and rotation withheld is not "nothing flagged at 12". */
+    @Test public void withheldRotationWithUnresolvedGapIsNotAPass() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.CORRECTABLE;
+        in.gap = GmtHumanQcMath.Attention.UNASSESSABLE; in.observedGap = 0.074; in.gapResolutionLimited = true; in.pxPerGap = 0.022;
+        in.alignment = GmtHumanQcMath.Attention.UNASSESSABLE; in.rotationDeg = -1.17;
+        in.rotUnstable = true; in.gapMin = 0.074; in.gapMax = 0.148; in.rotMin = -1.17; in.rotMax = 0.19;
+        String s = GmtHumanSummary.build(in);
+        assertFalse(s, s.contains("nothing flagged at 12"));
+        assertTrue(s, s.contains("Bottom line: nothing flagged, but the 12 rotation reading changes when the photo is resized slightly"));
+    }
 }

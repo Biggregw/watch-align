@@ -57,7 +57,9 @@ final class GmtTwelveLandmarkAnalyzer {
             if(!stabilityRun)return true;
             if(!stabilitySameEdge||!Double.isFinite(gapMax))return false;
             if((gapMax-gapMin)*triangleWidthPx<=MAX_RESAMPLE_SHIFT_PX)return true;
-            return gapMin>=GmtHumanQcMath.LOW_CLEARANCE_ATTENTION;
+            // Every reading must clear the limit by more than a pixel; a reading within a pixel
+            // of it is "too close to call" anyway (emulator, 6I00d8w image_01: 0.074 to 0.148).
+            return gapMin>=GmtHumanQcMath.LOW_CLEARANCE_ATTENTION+MAX_RESAMPLE_SHIFT_PX/triangleWidthPx;
         }
         boolean resampleRotStable(){
             if(!stabilityRun)return true;

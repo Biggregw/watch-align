@@ -54,7 +54,7 @@ JAVA_HOME=<jdk17> sh ./gradlew --no-daemon -q \
   :app:testDebugUnitTest :app:assembleDebug
 ```
 
-- 155 JVM unit tests, all passing.
+- 157 JVM unit tests, all passing.
 - `:app:compileDebugAndroidTestJavaSource` compiles the on-device test
   (`GenuineOfficialImageValidationTest`). It needs network access for
   androidx.test, so **don't pass `--offline`** for it. Only check the result of the
