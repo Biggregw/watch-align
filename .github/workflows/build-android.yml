@@ -176,8 +176,10 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            cd android && bash ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.GenuineOfficialImageValidationTest,com.watchalign.mobile.EmulatorPhotoRunTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace || (cd android && mkdir -p e2e-out && adb exec-out run-as com.watchalign.mobile tar cf - files/e2e > e2e-out/e2e.tar; exit 1)
-            cd android && mkdir -p e2e-out && adb exec-out run-as com.watchalign.mobile tar cf - files/e2e > e2e-out/e2e.tar && tar xf e2e-out/e2e.tar -C e2e-out && ls -la e2e-out/files/e2e && cat e2e-out/files/e2e/summaries.txt
+            cd android && bash ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.GenuineOfficialImageValidationTest,com.watchalign.mobile.EmulatorPhotoRunTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace; echo $? > /tmp/connected_exit
+            mkdir -p android/e2e-out && adb exec-out run-as com.watchalign.mobile tar cf - files/e2e > android/e2e-out/e2e.tar; tar xf android/e2e-out/e2e.tar -C android/e2e-out || true
+            cat android/e2e-out/files/e2e/summaries.txt || true
+            exit $(cat /tmp/connected_exit)
       - name: Upload instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v4

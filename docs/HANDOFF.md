@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-27, alpha55)
+# Watch Align: handoff notes (updated 2026-09-27, alpha56)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -28,14 +28,14 @@ yet**, and the summary says so.
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha55"`, `versionCode 13055` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha56"`, `versionCode 13056` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
 | Branch | State |
 |---|---|
 | `main` | Has alpha49–54 (PR #24, merged 2026-09-27). |
-| `feature/gmt-qc-fix-list` | alpha55: the whole fix list below. PR **#25** into `main`. |
+| `feature/gmt-qc-fix-list` | alpha55 (the whole fix list below) and alpha56 (resize check, emulator photo run). PR **#25** into `main`. |
 | `experiment/template-marker-consensus-shelved` | A shelved experiment: it fitted a template from marker consensus to fix a Pepsi overlay offset. The user rejected this in favour of the measured overlay, so it is **kept for reference only and should not be merged**. |
 
 The `gh` CLI isn't installed, but the GitHub API works through the proxy, so use curl
@@ -54,15 +54,26 @@ JAVA_HOME=<jdk17> sh ./gradlew --no-daemon -q \
   :app:testDebugUnitTest :app:assembleDebug
 ```
 
-- 128 JVM unit tests, all passing.
+- 155 JVM unit tests, all passing.
 - `:app:compileDebugAndroidTestJavaSource` compiles the on-device test
   (`GenuineOfficialImageValidationTest`). It needs network access for
   androidx.test, so **don't pass `--offline`** for it. Only check the result of the
   compile you actually ran before pushing: a previous session pushed after an
   offline compile failure.
-- The device test runs in CI (`.github/workflows/build-android.yml`). It fetches
-  official fixtures with `fetch_genuine_fixtures.py` and asserts that the report
-  contains `SUMMARY`, `HUMAN 12-MARKER QC` and `Bottom line: nothing flagged at 12`.
+- The device tests run in CI (`.github/workflows/build-android.yml`) on an Android 15
+  x86_64 emulator, on every push to a PR into `main`. This workspace can't run an
+  emulator (no KVM).
+  - `GenuineOfficialImageValidationTest` fetches official fixtures with
+    `fetch_genuine_fixtures.py`. It asserts that the report contains `SUMMARY`,
+    `HUMAN 12-MARKER QC` and `Bottom line: nothing flagged at 12`.
+  - `EmulatorPhotoRunTest` (alpha56) runs every photo in `androidTest/assets/e2e/`
+    through the Check-button path. CI fetches about 10 corpus photos into that folder
+    first; it is git-ignored, and third-party photos are never committed. CI then pulls
+    each report, the timing, the close-ups, the overlay and the lossless working image
+    with `run-as`, and uploads them as the `emulator-photo-run` artifact. Download it
+    through the Actions API.
+  - To run a new photo on the emulator, add its path to the "Fetch photos for the
+    emulator photo run" step.
 
 ### Delivering an APK to the user
 
@@ -92,8 +103,18 @@ tools/desktop-harness/run.sh Apex photo1.jpg photo2.jpg ...    # apex angle / sq
 - The first run downloads the openpnp jar (about 110 MB) into `.cache/`, which is
   gitignored. Maven Central sometimes rate-limits this with a 429. The script detects
   that and stops; retry later.
-- Use the harness to reproduce any screenshot the user sends. Its output matches the
-  phone.
+- Since alpha56 the drivers load photos through `drivers/Load.java`, which works like
+  `MainActivity.decode`: libjpeg decode, `inSampleSize` as DCT scaling, and a bilinear
+  reduction to 1600 px. `-Dwa.load=imageio` gives the old loader.
+- Use the harness to reproduce any screenshot the user sends, but it will not match the
+  phone to the grey level. The decoders differ by about 0.3–0.5 grey levels on average,
+  and before alpha56 that was enough to flip borderline 12 readings. For an exact
+  reproduction, analyse the phone's own working image (`*_working.png` from the
+  emulator run) with `Perturb`, which reads PNGs as they are.
+- `Perturb photo.jpg`: the same photo under six near-identical loads. It prints how far
+  the 12 and 6 readings move, and the resize-check range.
+- `PixCmp device_working.png photo.jpg`: pixel difference between the device's decode
+  and the harness loaders.
 
 ## 5. Data
 
@@ -157,6 +178,13 @@ alpha55 additions to this pipeline:
 - The 6 baton runs through `GmtSixLandmarkAnalyzer` on the image turned 180°.
 - The dial-edge helper now lives in `DialEdgeFitter`; the old overlay classes are gone.
 
+alpha56: the **resize check** (`GmtTwelveLandmarkAnalyzer.measureStability`). The 12 is
+measured again at 94% and 88% scale. A gap or rotation that moves by more than about
+1 px at the marker, and could change the verdict, is withheld. So is one where a
+re-measurement found a different edge. A concern that every scale agrees on is kept as
+CHECK. `docs/research/gmt_resample_stability_2026-09-27.md` has the evidence: no
+genuine reading changed, and 8 replica readings were withheld.
+
 ## 7. What's been validated
 
 These results are recorded in `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -190,7 +218,12 @@ Open items:
   mode; the driver also prints the 6 columns.
 - Possible next markers: 9 and 3 (the date window at 3 needs different handling), and
   the round markers.
-- The phone's speed after the Hough change hasn't been measured on a device.
+- Emulator timing (CI, x86_64, no GPU): 4–29 s per photo with alpha55. The resize
+  check adds two 12-only re-measurements. The user's phone hasn't been timed.
+- The 6 baton has no resize check yet. 7s6PyXJ image_02's 6 reading flips between
+  CHECK and "not judged" across loads.
+- When the edge fit fails, the "too small" gate measures the lume contour, about 80% of
+  the outer width. A 43 px triangle can then read "too small at 34 px".
 
 ## 9. Working with this user (Greg)
 

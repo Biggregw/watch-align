@@ -127,14 +127,14 @@ final class GmtHumanQcAnalyzerV2 {
             // Resampling check (alpha56). The same photo decoded on the phone and on the desktop
             // differs by well under one grey level, yet one photo read gap 0.07 on one and 0.14
             // on the other. A reading that moves by more than about a pixel when the photo is
-            // resized by 6% is not a measurement of the watch, so it gets no verdict. A concern
+            // reduced by 6-12% is not a measurement of the watch, so it gets no verdict. A concern
             // is kept (as CHECK) only when every re-measurement agrees on it.
             boolean gapUnstable=twelve.valid&&!recovered&&!twelve.resampleGapStable();
             boolean rotUnstable=twelve.valid&&!recovered&&!twelve.resampleRotStable();
             String moved=Double.isFinite(twelve.gapMax)
-                    ?String.format(Locale.US,"the 12 reading moves when the photo is resized by 6%% (gap %.2f to %.2f, rotation %+.1f° to %+.1f°), so it is not a reliable measurement on this photo",
+                    ?String.format(Locale.US,"the 12 reading moves when the photo is reduced by 6%% and 12%% (gap %.2f to %.2f, rotation %+.1f° to %+.1f°), so it is not a reliable measurement on this photo",
                             twelve.gapMin,twelve.gapMax,twelve.rotMin,twelve.rotMax)
-                    :"the 12 marker is not found again when the photo is resized by 6%, so the reading is not reliable on this photo";
+                    :"the 12 marker is not found again when the photo is reduced by 6% or 12%, so the reading is not reliable on this photo";
             if(gapUnstable){
                 boolean concern=clearance.attention==GmtHumanQcMath.Attention.CHECK||clearance.attention==GmtHumanQcMath.Attention.STRONG;
                 boolean allSmall=Double.isFinite(twelve.gapMax)&&twelve.gapMax<GmtHumanQcMath.LOW_CLEARANCE_ATTENTION;
@@ -280,10 +280,10 @@ final class GmtHumanQcAnalyzerV2 {
                         twelve.horizontalOffset,twelve.leftClearance,twelve.rightClearance));
                 if(twelve.stabilityRun)
                     out.append(Double.isFinite(twelve.gapMax)
-                            ?String.format(Locale.US,"12 resize check (±6%%): gap %.3f to %.3f (%.1f px), rotation %+.2f° to %+.2f°, %s edge; gap %s, rotation %s.\n",
+                            ?String.format(Locale.US,"12 resize check (94%%, 88%%): gap %.3f to %.3f (%.1f px), rotation %+.2f° to %+.2f°, %s edge; gap %s, rotation %s.\n",
                                     twelve.gapMin,twelve.gapMax,(twelve.gapMax-twelve.gapMin)*twelve.triangleWidthPx,twelve.rotMin,twelve.rotMax,
                                     twelve.stabilitySameEdge?"same":"different",gapUnstable?"UNSTABLE":"stable",rotUnstable?"UNSTABLE":"stable")
-                            :"12 resize check (±6%): the marker was not found again at another scale; readings UNSTABLE.\n");
+                            :"12 resize check (94%, 88%): the marker was not found again at another scale; readings UNSTABLE.\n");
             }
 
             if(!stableFrame&&twelve.valid)

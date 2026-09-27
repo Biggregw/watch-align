@@ -20,8 +20,8 @@ public class Perturb{
   String out=System.getProperty("wa.cu");
   if(out!=null)try{Bitmap m=MeasuredOverlayRenderer.render(b,h.drawing);Bitmap cu=MeasuredOverlayRenderer.closeUp(b,m,h.drawing,400);
    if(cu!=null)ImageIO.write(cu.img,"png",new File(out+"/"+(n++)+"_"+tag.replace(' ','_').replaceAll("[()]","")+".png"));}catch(Exception e){throw new RuntimeException(e);}
-  return String.format(java.util.Locale.US,"  %-22s %4dx%-4d pose %-12s 12 %-5s st %-5s gap %.3f %-12s tri %.1fpx rot %+.2f %-12s band %-5s | 6 %-12s c %+.3f r %+.2f",
-   tag,b.getWidth(),b.getHeight(),s.pose,s.twelveValid,s.stableFrame,s.observedGap,s.gap,s.trianglePx,s.rotationDeg,s.alignment,TriangleEdgeRefiner.lastUsedBand,s.sixAttention,s.sixCentring,s.sixRotationDeg);}
+  return String.format(java.util.Locale.US,"  %-22s %4dx%-4d pose %-12s 12 %-5s st %-5s gap %.3f %-12s tri %.1fpx rot %+.2f %-12s band %-5s | 6 %-12s c %+.3f r %+.2f | rs gap %.3f-%.3f rot %+.2f..%+.2f same %s",
+   tag,b.getWidth(),b.getHeight(),s.pose,s.twelveValid,s.stableFrame,s.observedGap,s.gap,s.trianglePx,s.rotationDeg,s.alignment,TriangleEdgeRefiner.lastUsedBand,s.sixAttention,s.sixCentring,s.sixRotationDeg,s.gapMin,s.gapMax,s.rotMin,s.rotMax,s.stabilitySameEdge);}
  public static void main(String[] a)throws Exception{
   nu.pattern.OpenCV.loadLocally();
   for(String f:a){

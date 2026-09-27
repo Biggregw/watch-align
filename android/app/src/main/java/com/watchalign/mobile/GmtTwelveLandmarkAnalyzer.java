@@ -45,21 +45,25 @@ final class GmtTwelveLandmarkAnalyzer {
         double gapMin=Double.NaN,gapMax=Double.NaN,rotMin=Double.NaN,rotMax=Double.NaN;
 
         /**
-         * Gap and rotation are judged separately: each is stable when resizing the photo by
-         * a few percent moves it by at most about a pixel at the marker and every
-         * re-measurement found the same kind of edge. On the corpus, stable readings moved
-         * at most 0.6 px and unstable ones 1.4 px or more
-         * (docs/research/gmt_resample_stability_2026-09-27.md).
+         * Gap and rotation are judged separately. Each is stable when every re-measurement
+         * found the same kind of edge and either the reading moved by at most about a pixel
+         * at the marker, or every reading falls on the same side of the level where a
+         * verdict starts (gap 0.070, rotation 1.0°), so the movement cannot change what the
+         * user is told. On the corpus, stable readings moved at most 0.6 px and unstable
+         * ones 1.4 px or more (docs/research/gmt_resample_stability_2026-09-27.md). A
+         * concern with a large spread still counts as unstable, so it is capped at CHECK.
          */
         boolean resampleGapStable(){
             if(!stabilityRun)return true;
             if(!stabilitySameEdge||!Double.isFinite(gapMax))return false;
-            return (gapMax-gapMin)*triangleWidthPx<=MAX_RESAMPLE_SHIFT_PX;
+            if((gapMax-gapMin)*triangleWidthPx<=MAX_RESAMPLE_SHIFT_PX)return true;
+            return gapMin>=GmtHumanQcMath.LOW_CLEARANCE_ATTENTION;
         }
         boolean resampleRotStable(){
             if(!stabilityRun)return true;
             if(!stabilitySameEdge||!Double.isFinite(rotMax))return false;
-            return Math.tan(Math.toRadians(rotMax-rotMin))*MARKER_HEIGHT_OVER_WIDTH*triangleWidthPx<=MAX_RESAMPLE_SHIFT_PX;
+            if(Math.tan(Math.toRadians(rotMax-rotMin))*MARKER_HEIGHT_OVER_WIDTH*triangleWidthPx<=MAX_RESAMPLE_SHIFT_PX)return true;
+            return Math.max(Math.abs(rotMin),Math.abs(rotMax))<ROTATION_VISIBLE_DEG;
         }
         Result(String reason){
             valid=false;detectorStable=false;this.reason=reason;
@@ -167,8 +171,12 @@ final class GmtTwelveLandmarkAnalyzer {
         }
     }
 
-    /** Scales the photo is re-measured at for the stability check. */
-    static final double[] STABILITY_SCALES = {0.94, 1.06};
+    /**
+     * Scales the photo is re-measured at for the stability check. Both are reductions: an
+     * enlargement only interpolates pixels that were never captured, and on the official
+     * render at full size a 106% copy read 1.3° where every reduction read 0.2-0.5°.
+     */
+    static final double[] STABILITY_SCALES = {0.94, 0.88};
 
     /**
      * Re-measures the 12 marker on the same photo resized by a few percent (alpha56).
@@ -177,12 +185,14 @@ final class GmtTwelveLandmarkAnalyzer {
      * only by about one grey level and a sub-pixel of resampling, could give very different
      * 12 results on one photo (rep_cf_6I00d8w image_01: gap 0.07 vs 0.14, triangle 43 vs 34
      * px). The edge fit had several near-equal answers there, and a tiny change picked a
-     * different one. A real measurement barely moves when the photo is resized by 6%; an
+     * different one. A real measurement barely moves when the photo is reduced by 6-12%; an
      * unstable one jumps. The result stores how far the readings moved, so the analyzer can
      * treat a jumpy reading as low confidence instead of giving a verdict.
      */
     /** Marker height (0.302R) over base width (0.246R), to turn an angle change into tip travel. */
     static final double MARKER_HEIGHT_OVER_WIDTH = 1.23;
+    /** Rotation below which no rotation is flagged (the axis test in GmtHumanQcMath.assessRotation). */
+    static final double ROTATION_VISIBLE_DEG = 1.0;
     /** Largest movement of the gap line or triangle tip under resizing still treated as noise. */
     static final double MAX_RESAMPLE_SHIFT_PX = 1.0;
 
