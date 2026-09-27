@@ -6,13 +6,15 @@ package com.watchalign.mobile;
  * This is a Watch Align calibrated inspection master, not Rolex factory CAD.
  */
 final class Gmt126710BlnrMaster {
-    static final String ID = "126710BLNR-visual-master-v5";
+    // Unique name: older research branches also used "visual-master-v5" for a different,
+    // earlier template, so reports from those builds looked like this one.
+    static final String ID = "126710BLNR-measured-master-2026-09-26";
 
-    // v5 geometry is measured, not hand-tuned: black-dial edge fitted with DialEdgeEllipseFit,
+    // This geometry is measured, not hand-tuned: black-dial edge fitted with DialEdgeEllipseFit,
     // then each applied marker's white-gold surround segmented on (a) the official front-on
     // m126710blnr-0002 image and (b) an independent real photo. The two agree to ~0.005R.
     // All three marker types share one outer circle at ~0.905R (triangle 0.902, dots 0.904,
-    // batons 0.908). v3/v4 drew every surround 25-35% undersized.
+    // batons 0.908). The earlier visual-master-v3/v4 drew every surround 25-35% undersized.
     // White lume references are the surround inset by its measured width, ~0.022R.
 
     static final double DIAL_EDGE_R = 1.000;
