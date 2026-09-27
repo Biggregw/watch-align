@@ -34,6 +34,33 @@ final class GmtTwelveLandmarkAnalyzer {
         final int inferredMinutePoints;
         /** Measured image points for drawing, or null (e.g. recovery path). */
         Geometry geometry;
+        /**
+         * Resampling check (alpha56, see measureStability): the largest change in gap and
+         * in axis rotation when the same photo is measured at slightly different scales,
+         * and whether every re-measurement found the same kind of edge. NaN/false until run.
+         */
+        double stabilityGapSpread=Double.NaN,stabilityRotSpreadDeg=Double.NaN;
+        boolean stabilityRun,stabilitySameEdge;
+        /** Range of gap and axis rotation over the original and re-measured scales. */
+        double gapMin=Double.NaN,gapMax=Double.NaN,rotMin=Double.NaN,rotMax=Double.NaN;
+
+        /**
+         * Gap and rotation are judged separately: each is stable when resizing the photo by
+         * a few percent moves it by at most about a pixel at the marker and every
+         * re-measurement found the same kind of edge. On the corpus, stable readings moved
+         * at most 0.6 px and unstable ones 1.4 px or more
+         * (docs/research/gmt_resample_stability_2026-09-27.md).
+         */
+        boolean resampleGapStable(){
+            if(!stabilityRun)return true;
+            if(!stabilitySameEdge||!Double.isFinite(gapMax))return false;
+            return (gapMax-gapMin)*triangleWidthPx<=MAX_RESAMPLE_SHIFT_PX;
+        }
+        boolean resampleRotStable(){
+            if(!stabilityRun)return true;
+            if(!stabilitySameEdge||!Double.isFinite(rotMax))return false;
+            return Math.tan(Math.toRadians(rotMax-rotMin))*MARKER_HEIGHT_OVER_WIDTH*triangleWidthPx<=MAX_RESAMPLE_SHIFT_PX;
+        }
         Result(String reason){
             valid=false;detectorStable=false;this.reason=reason;
             topClearance=horizontalOffset=wholeAxisErrorDeg=topEdgeErrorDeg=Double.NaN;
@@ -138,6 +165,47 @@ final class GmtTwelveLandmarkAnalyzer {
         }finally{
             enhanced.release();gray.release();
         }
+    }
+
+    /** Scales the photo is re-measured at for the stability check. */
+    static final double[] STABILITY_SCALES = {0.94, 1.06};
+
+    /**
+     * Re-measures the 12 marker on the same photo resized by a few percent (alpha56).
+     *
+     * The emulator run showed that the phone's decoder and the desktop harness, which differ
+     * only by about one grey level and a sub-pixel of resampling, could give very different
+     * 12 results on one photo (rep_cf_6I00d8w image_01: gap 0.07 vs 0.14, triangle 43 vs 34
+     * px). The edge fit had several near-equal answers there, and a tiny change picked a
+     * different one. A real measurement barely moves when the photo is resized by 6%; an
+     * unstable one jumps. The result stores how far the readings moved, so the analyzer can
+     * treat a jumpy reading as low confidence instead of giving a verdict.
+     */
+    /** Marker height (0.302R) over base width (0.246R), to turn an angle change into tip travel. */
+    static final double MARKER_HEIGHT_OVER_WIDTH = 1.23;
+    /** Largest movement of the gap line or triangle tip under resizing still treated as noise. */
+    static final double MAX_RESAMPLE_SHIFT_PX = 1.0;
+
+    static void measureStability(Mat bgr,double cx,double cy,double r,Result res){
+        if(res==null||!res.valid||bgr==null||bgr.empty())return;
+        double dg=0,dr=0;boolean same=true;
+        double gMin=res.topClearance,gMax=res.topClearance,rMin=res.wholeAxisErrorDeg,rMax=res.wholeAxisErrorDeg;
+        boolean outer=res.geometry!=null&&res.geometry.outerEdge;
+        for(double s:STABILITY_SCALES){
+            Mat m=new Mat();
+            try{
+                Imgproc.resize(bgr,m,new Size(Math.round(bgr.cols()*s),Math.round(bgr.rows()*s)),0,0,Imgproc.INTER_LINEAR);
+                Result q=analyse(m,cx*s,cy*s,r*s);
+                if(!q.valid){same=false;dg=Double.POSITIVE_INFINITY;dr=Double.POSITIVE_INFINITY;continue;}
+                if((q.geometry!=null&&q.geometry.outerEdge)!=outer)same=false;
+                dg=Math.max(dg,Math.abs(q.topClearance-res.topClearance));
+                dr=Math.max(dr,Math.abs(q.wholeAxisErrorDeg-res.wholeAxisErrorDeg));
+                gMin=Math.min(gMin,q.topClearance);gMax=Math.max(gMax,q.topClearance);
+                rMin=Math.min(rMin,q.wholeAxisErrorDeg);rMax=Math.max(rMax,q.wholeAxisErrorDeg);
+            }finally{m.release();}
+        }
+        res.stabilityRun=true;res.stabilitySameEdge=same;res.stabilityGapSpread=dg;res.stabilityRotSpreadDeg=dr;
+        if(Double.isFinite(dg)){res.gapMin=gMin;res.gapMax=gMax;res.rotMin=rMin;res.rotMax=rMax;}
     }
 
     /** Backward-compatible overload. Legacy global roll is intentionally ignored. */

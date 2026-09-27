@@ -173,4 +173,41 @@ public class GmtHumanSummaryTest {
         assertTrue(s, s.contains("Bottom line: nothing flagged at 12."));
         assertTrue(s, s.contains("The 6 baton could not be judged here"));
     }
+
+    /** rep_cf_6I00d8w image_01 (alpha56): the gap read 0.07 on the phone and 0.14 on the desktop. */
+    @Test public void readingThatMovesWithResizingIsNotJudged() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.CORRECTABLE;
+        in.gap = GmtHumanQcMath.Attention.UNASSESSABLE; in.observedGap = 0.074;
+        in.alignment = GmtHumanQcMath.Attention.UNASSESSABLE; in.rotationDeg = -1.2;
+        in.gapUnstable = true; in.rotUnstable = true; in.gapMin = 0.074; in.gapMax = 0.226; in.rotMin = -1.5; in.rotMax = -0.7;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("12 gap: not judged: the reading changes when the photo is resized slightly (it read between 0.07 and 0.23)"));
+        assertTrue(s, s.contains("12 alignment: not judged: the reading changes when the photo is resized slightly"));
+        assertTrue(s, s.contains("Bottom line: nothing flagged, but the 12 reading changes when the photo is resized slightly"));
+        assertFalse(s, s.contains("nothing flagged at 12"));
+    }
+
+    @Test public void agreedConcernSurvivesButIsQualified() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CHECK; in.observedGap = 0.050;
+        in.alignment = GmtHumanQcMath.Attention.UNASSESSABLE;
+        in.gapUnstable = true; in.rotUnstable = true; in.gapMin = 0.045; in.gapMax = 0.062; in.rotMin = -0.2; in.rotMax = 1.9;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("12 gap: small in every re-measurement (it read between 0.05 and 0.06)"));
+        assertTrue(s, s.contains("Bottom line: 1 thing to check: the gap at 12. The 12 reading changes when the photo is resized slightly"));
+    }
+
+    @Test public void onlyTheUnstablePartIsWithheld() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.observedGap = 0.091;
+        in.alignment = GmtHumanQcMath.Attention.UNASSESSABLE; in.rotationDeg = 1.65;
+        in.rotUnstable = true; in.gapMin = 0.088; in.gapMax = 0.092; in.rotMin = 0.5; in.rotMax = 1.7;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("12 gap: normal."));
+        assertTrue(s, s.contains("12 alignment: not judged: the reading changes when the photo is resized slightly (it read between +0.5° and +1.7°)"));
+        assertTrue(s, s.contains("Bottom line: nothing flagged, but the 12 rotation reading changes when the photo is resized slightly"));
+    }
 }

@@ -26,6 +26,10 @@ final class GmtHumanSummary {
         boolean tooSmall, handAtTwelve;
         double trianglePx=Double.NaN;
         double gapPx=Double.NaN, pxPerGap=Double.NaN;
+        // Resampling check on the 12 (alpha56)
+        boolean stabilityRun,stabilitySameEdge,gapUnstable,rotUnstable;
+        double gapMin=Double.NaN,gapMax=Double.NaN,rotMin=Double.NaN,rotMax=Double.NaN;
+        double stabilityGapSpread=Double.NaN,stabilityRotSpreadDeg=Double.NaN;
         // 6 o'clock baton (alpha55)
         boolean sixValid,sixStable,sixTooSmall,handAtSix,sixOffCentre,sixRotated;
         GmtHumanQcMath.Attention sixAttention=GmtHumanQcMath.Attention.UNASSESSABLE;
@@ -71,6 +75,12 @@ final class GmtHumanSummary {
         if(!in.stableFrame)v+=" The 12 marker could only be measured with low confidence on this photo, so treat this with caution.";
         if(in.tooSmall)return String.format(Locale.US,"not measured: the 12 triangle is only %.0f px wide in this photo. Take a closer photo so the dial fills more of the frame.",in.trianglePx);
         if(in.handAtTwelve)return "not judged: a hand is next to the 12 marker. Retake with the hands away from 12.";
+        if(in.gapUnstable){
+            String range=Double.isFinite(in.gapMax)?String.format(Locale.US," (it read between %.2f and %.2f)",in.gapMin,in.gapMax):"";
+            if(in.gap==GmtHumanQcMath.Attention.CHECK)
+                return "small in every re-measurement"+range+", but the edges are hard to pin down on this photo. Check by eye.";
+            return "not judged: the reading changes when the photo is resized slightly"+range+", so the edges can't be pinned down on this photo. A closer, sharper, straight-on photo usually fixes this.";
+        }
         if(in.gapResolutionLimited){
             String px=Double.isFinite(in.pxPerGap)?String.format(Locale.US," Here 1 pixel is %.3f of gap, so the difference is within a pixel.",in.pxPerGap):"";
             return String.format(Locale.US,"too close to call at this photo's resolution. Measured %.2f; genuine images tested so far read %s, and the attention level is %.2f.",
@@ -95,9 +105,15 @@ final class GmtHumanSummary {
         if(!in.twelveValid)return "could not be measured on this photo. This is not a pass.";
         if(in.tooSmall)return "not measured: the 12 triangle is too small in this photo.";
         if(in.handAtTwelve)return "not judged: a hand is next to the 12 marker.";
+        if(in.rotUnstable&&in.alignment!=GmtHumanQcMath.Attention.CHECK){
+            String range=Double.isFinite(in.rotMax)?String.format(Locale.US," (it read between %+.1f° and %+.1f°)",in.rotMin,in.rotMax):"";
+            return "not judged: the reading changes when the photo is resized slightly"+range+", so it can't be trusted on this photo.";
+        }
         String sp=Double.isFinite(in.spacing59)&&Double.isFinite(in.spacing01)
                 ?String.format(Locale.US," (rotation %+.1f°, space to 59 tick %.2f vs 01 tick %.2f)",in.rotationDeg,in.spacing59,in.spacing01):"";
-        String caution=in.stableFrame?"":" The 12 marker could only be measured with low confidence on this photo, so treat this with caution.";
+        String caution=in.rotUnstable
+                ?String.format(Locale.US," It read %+.1f° to %+.1f° as the photo was resized slightly, so treat the exact angle with caution.",in.rotMin,in.rotMax)
+                :in.stableFrame?"":" The 12 marker could only be measured with low confidence on this photo, so treat this with caution.";
         switch(in.alignment){
             case CLEAR: return "straight and centred. No visible rotation, even spacing either side."+sp+caution;
             case CHECK: return "possibly "+describe(in)+". Look closely; a hand touching the triangle can cause this."+sp+caution;
@@ -166,7 +182,19 @@ final class GmtHumanSummary {
         if(!in.twelveValid)return "Bottom line: the 12 marker could not be checked on this photo. Try a clearer, straight-on photo with the hands away from 12."+six6;
         if(in.twelveValid&&in.tooSmall)return "Bottom line: the 12 marker is too small in this photo to check. Take a closer photo so the dial fills more of the frame."+six6;
         if(in.twelveValid&&in.handAtTwelve)return "Bottom line: a hand is covering the area around the 12 marker, so it could not be checked. Retake with the hands away from 12."+six6;
-        String closer=in.gapResolutionLimited?" The gap at 12 is too close to call at this resolution; a closer photo would settle it.":"";
+        String closer=in.gapResolutionLimited&&!in.gapUnstable?" The gap at 12 is too close to call at this resolution; a closer photo would settle it.":"";
+        boolean sixClear0=in.sixValid&&in.sixAttention==GmtHumanQcMath.Attention.CLEAR;
+        boolean bothUnstable=in.gapUnstable&&in.rotUnstable;
+        boolean anyUnstable=in.gapUnstable||in.rotUnstable;
+        boolean clearElsewhere=(in.gapUnstable?true:in.gap==GmtHumanQcMath.Attention.CLEAR)&&(in.rotUnstable?true:in.alignment==GmtHumanQcMath.Attention.CLEAR);
+        if(anyUnstable&&in.pose!=GmtHumanQcMath.PoseLabel.RETAKE&&(bothUnstable||!items.isEmpty()||clearElsewhere)){
+            String what=bothUnstable?"the 12 reading":in.gapUnstable?"the 12 gap reading":"the 12 rotation reading";
+            String unstable=what+" changes when the photo is resized slightly, so it isn't a reliable measurement here";
+            if(items.isEmpty())return "Bottom line: nothing flagged, but "+unstable+". A closer, sharper, straight-on photo with the hands away from 12 usually fixes this."
+                    +(sixClear0?" The 6 baton is centred and straight.":"");
+            return "Bottom line: "+items.size()+(items.size()==1?" thing":" things")+" to check: "+join(items)+". "
+                    +Character.toUpperCase(unstable.charAt(0))+unstable.substring(1)+", so confirm by eye.";
+        }
         if(in.pose==GmtHumanQcMath.PoseLabel.RETAKE)
             return items.isEmpty()?"Bottom line: nothing flagged, but the photo is too angled to rely on that. Retake straight-on."
                     :"Bottom line: flagged "+join(items)+", but the photo is too angled to be sure. Retake straight-on.";

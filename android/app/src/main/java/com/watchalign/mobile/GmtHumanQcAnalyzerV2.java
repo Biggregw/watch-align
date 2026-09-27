@@ -64,6 +64,7 @@ final class GmtHumanQcAnalyzerV2 {
             GmtTwelveLandmarkAnalyzer.Result primary=GmtTwelveLandmarkAnalyzer.analyse(src,cx,cy,r);
             GmtTwelveLandmarkAnalyzer.Result twelve=primary;boolean recovered=false;
             if(!primary.valid){twelve=GmtTwelveRecoveryAnalyzer.analyse(src,cx,cy,r,primary.reason);recovered=twelve.valid;}
+            else GmtTwelveLandmarkAnalyzer.measureStability(src,cx,cy,r,primary);
 
             // A numerically resolved 59/60/01 frame is not automatically trustworthy.
             // Alpha39 showed a real dealer photo where the frame score was only 3.2 and
@@ -121,6 +122,32 @@ final class GmtHumanQcAnalyzerV2 {
                         "local 12-marker landmarks unavailable: "+twelve.reason);
                 clearance=new GmtHumanQcMath.ClearanceDecision(GmtHumanQcMath.Attention.UNASSESSABLE,GmtHumanQcMath.GapTrend.UNKNOWN,
                         Double.NaN,Double.NaN,Double.NaN,"local 12-marker landmarks unavailable: "+twelve.reason);
+            }
+
+            // Resampling check (alpha56). The same photo decoded on the phone and on the desktop
+            // differs by well under one grey level, yet one photo read gap 0.07 on one and 0.14
+            // on the other. A reading that moves by more than about a pixel when the photo is
+            // resized by 6% is not a measurement of the watch, so it gets no verdict. A concern
+            // is kept (as CHECK) only when every re-measurement agrees on it.
+            boolean gapUnstable=twelve.valid&&!recovered&&!twelve.resampleGapStable();
+            boolean rotUnstable=twelve.valid&&!recovered&&!twelve.resampleRotStable();
+            String moved=Double.isFinite(twelve.gapMax)
+                    ?String.format(Locale.US,"the 12 reading moves when the photo is resized by 6%% (gap %.2f to %.2f, rotation %+.1f° to %+.1f°), so it is not a reliable measurement on this photo",
+                            twelve.gapMin,twelve.gapMax,twelve.rotMin,twelve.rotMax)
+                    :"the 12 marker is not found again when the photo is resized by 6%, so the reading is not reliable on this photo";
+            if(gapUnstable){
+                boolean concern=clearance.attention==GmtHumanQcMath.Attention.CHECK||clearance.attention==GmtHumanQcMath.Attention.STRONG;
+                boolean allSmall=Double.isFinite(twelve.gapMax)&&twelve.gapMax<GmtHumanQcMath.LOW_CLEARANCE_ATTENTION;
+                clearance=new GmtHumanQcMath.ClearanceDecision(concern&&allSmall?GmtHumanQcMath.Attention.CHECK:GmtHumanQcMath.Attention.UNASSESSABLE,
+                        clearance.trend,clearance.observedGap,clearance.correctedEstimate,clearance.perspectiveScale,
+                        (concern&&allSmall?"small in every re-measurement, but ":"")+moved);
+            }
+            if(rotUnstable){
+                boolean concern=rotation.attention==GmtHumanQcMath.Attention.CHECK||rotation.attention==GmtHumanQcMath.Attention.STRONG;
+                boolean allTurned=Double.isFinite(twelve.rotMin)&&(twelve.rotMin>=1.0||twelve.rotMax<=-1.0);
+                rotation=new GmtHumanQcMath.RotationDecision(concern&&allTurned?GmtHumanQcMath.Attention.CHECK:GmtHumanQcMath.Attention.UNASSESSABLE,
+                        rotation.axisErrorDeg,rotation.baseErrorDeg,rotation.sideAsymmetry,rotation.visibleRisePx,rotation.baseCorroborates,rotation.spacingCorroborates,
+                        (concern&&allTurned?"turned the same way in every re-measurement, but ":"")+moved);
             }
 
             // Size and hand gates (alpha52). Field set: every wrong 12-marker result had a
@@ -251,6 +278,12 @@ final class GmtHumanQcAnalyzerV2 {
                 out.append(", decision trend ").append(clearance.trend.name().toLowerCase(Locale.US)).append(". ").append(clearance.reason).append(".\n");
                 out.append(String.format(Locale.US,"Human geometry: centring %+5.3f; 59-side spacing %.3f; 01-side spacing %.3f.\n",
                         twelve.horizontalOffset,twelve.leftClearance,twelve.rightClearance));
+                if(twelve.stabilityRun)
+                    out.append(Double.isFinite(twelve.gapMax)
+                            ?String.format(Locale.US,"12 resize check (±6%%): gap %.3f to %.3f (%.1f px), rotation %+.2f° to %+.2f°, %s edge; gap %s, rotation %s.\n",
+                                    twelve.gapMin,twelve.gapMax,(twelve.gapMax-twelve.gapMin)*twelve.triangleWidthPx,twelve.rotMin,twelve.rotMax,
+                                    twelve.stabilitySameEdge?"same":"different",gapUnstable?"UNSTABLE":"stable",rotUnstable?"UNSTABLE":"stable")
+                            :"12 resize check (±6%): the marker was not found again at another scale; readings UNSTABLE.\n");
             }
 
             if(!stableFrame&&twelve.valid)
@@ -274,6 +307,9 @@ final class GmtHumanQcAnalyzerV2 {
             sum.sixStable=six.stable;sum.sixCentring=six.centring;sum.sixRotationDeg=six.rotationDeg;sum.sixGap=six.gap;
             sum.sixOffCentre=sixDecision.offCentre;sum.sixRotated=sixDecision.rotated;sum.sixWidthPx=six.widthPx;
             sum.pose=pose.label;sum.twelveValid=twelve.valid;sum.stableFrame=stableFrame;
+            sum.gapUnstable=gapUnstable;sum.rotUnstable=rotUnstable;sum.gapMin=twelve.gapMin;sum.gapMax=twelve.gapMax;sum.rotMin=twelve.rotMin;sum.rotMax=twelve.rotMax;
+            sum.stabilityRun=twelve.stabilityRun;sum.stabilitySameEdge=twelve.stabilitySameEdge;
+            sum.stabilityGapSpread=twelve.stabilityGapSpread;sum.stabilityRotSpreadDeg=twelve.stabilityRotSpreadDeg;
             sum.gap=clearance.attention;sum.gapTrend=clearance.trend;
             sum.observedGap=twelve.valid?twelve.topClearance:Double.NaN;
             sum.gapResolutionLimited=gapResolutionLimited;
