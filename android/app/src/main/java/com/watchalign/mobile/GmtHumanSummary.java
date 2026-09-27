@@ -34,6 +34,9 @@ final class GmtHumanSummary {
         boolean sixValid,sixStable,sixTooSmall,handAtSix,sixOffCentre,sixRotated;
         GmtHumanQcMath.Attention sixAttention=GmtHumanQcMath.Attention.UNASSESSABLE;
         double sixCentring=Double.NaN,sixRotationDeg=Double.NaN,sixGap=Double.NaN,sixWidthPx=Double.NaN;
+        /** Why the 6 was measured with low confidence (alpha57), or empty. */
+        String sixLowReason="";
+        boolean sixUnstable;double sixCentringMin=Double.NaN,sixCentringMax=Double.NaN;
     }
 
     // Reference only, for the reader: what genuine images have measured on the same
@@ -115,12 +118,21 @@ final class GmtHumanSummary {
                 ?String.format(Locale.US," It read %+.1f° to %+.1f° as the photo was resized slightly, so treat the exact angle with caution.",in.rotMin,in.rotMax)
                 :in.stableFrame?"":" The 12 marker could only be measured with low confidence on this photo, so treat this with caution.";
         switch(in.alignment){
-            case CLEAR: return "straight and centred. No visible rotation, even spacing either side."+sp+caution;
+            case CLEAR:{
+                double asym=Double.isFinite(in.spacing59)&&Double.isFinite(in.spacing01)?Math.abs(in.spacing01-in.spacing59):0;
+                String spacing=asym<EVEN_SPACING?"even spacing either side"
+                        :asym<GmtHumanQcMath.OFF_CENTRE_CHECK?"spacing either side slightly uneven, within what genuine photos show"
+                        :"spacing either side uneven, but not consistently enough to flag";
+                return "straight and centred. No visible rotation, "+spacing+"."+sp+caution;
+            }
             case CHECK: return "possibly "+describe(in)+". Look closely; a hand touching the triangle can cause this."+sp+caution;
             case STRONG: return "visibly "+describe(in)+"."+sp+caution;
             default: return "could not be judged reliably on this photo.";
         }
     }
+
+    /** Largest 59/01 spacing difference still described as even (half the genuine spread). */
+    static final double EVEN_SPACING = 0.025;
 
     static String sixLine(Input in){
         if(!in.sixValid)return "not measured on this photo (baton or minute track at 6 not found, often because a hand covers it).";
@@ -128,7 +140,11 @@ final class GmtHumanSummary {
         if(in.handAtSix)return "not judged: a hand is next to the 6 baton.";
         String side=in.sixCentring>0?"right (towards the 29 tick)":"left (towards the 31 tick)";
         String nums=String.format(Locale.US," (offset %+.2f of its width, rotation %+.1f°)",in.sixCentring,in.sixRotationDeg);
-        String caution=in.sixStable?"":" Measured with low confidence, so treat this with caution.";
+        if(in.sixUnstable&&in.sixAttention!=GmtHumanQcMath.Attention.CHECK)
+            return String.format(Locale.US,"not judged: the reading changes when the photo is resized slightly (offset %+.2f to %+.2f of its width), so it can't be trusted on this photo.",
+                    in.sixCentringMin,in.sixCentringMax);
+        String why=in.sixLowReason==null||in.sixLowReason.isEmpty()?"":" ("+in.sixLowReason+")";
+        String caution=in.sixStable?"":" Measured with low confidence"+why+", so treat this with caution.";
         String what;
         if(in.sixOffCentre&&in.sixRotated)what="off-centre to the "+side+" and rotated "+(in.sixRotationDeg>0?"clockwise":"anticlockwise");
         else if(in.sixOffCentre)what="off-centre: it sits to the "+side;
@@ -138,7 +154,8 @@ final class GmtHumanSummary {
             case CLEAR: return "centred between the 29 and 31 ticks and straight."+nums;
             case CHECK: return "possibly "+what+". Look closely."+nums+caution;
             case STRONG: return "visibly "+what+"."+nums+caution;
-            default: return "could not be judged reliably on this photo."+nums+caution;
+            default: return in.sixStable?"could not be judged reliably on this photo."+nums
+                    :"not judged: "+(why.isEmpty()?"the 6 landmarks were measured with low confidence":in.sixLowReason)+"."+nums;
         }
     }
 
@@ -155,6 +172,7 @@ final class GmtHumanSummary {
         boolean axis=Double.isFinite(a)&&Math.abs(a)>=1.0;
         if(axis&&Double.isFinite(b)&&Math.abs(b)>=0.75&&Math.signum(a)==Math.signum(b))return AlignmentKind.TURNED;
         if(axis&&Double.isFinite(b)&&Math.abs(b)<0.75)return AlignmentKind.TIP_LEANS;
+        if(axis&&!Double.isFinite(b))return AlignmentKind.TURNED;   // no top-edge reading: describe the measured turn
         if(Double.isFinite(in.spacing59)&&Double.isFinite(in.spacing01)&&Math.abs(in.spacing01-in.spacing59)>=0.06)return AlignmentKind.OFF_CENTRE;
         if(axis)return AlignmentKind.TURNED;
         return AlignmentKind.UNCLEAR;
@@ -176,7 +194,7 @@ final class GmtHumanSummary {
         boolean alignFlag=in.twelveValid&&(in.alignment==GmtHumanQcMath.Attention.CHECK||in.alignment==GmtHumanQcMath.Attention.STRONG);
         boolean sixFlag=in.sixValid&&(in.sixAttention==GmtHumanQcMath.Attention.CHECK||in.sixAttention==GmtHumanQcMath.Attention.STRONG);
         if(gapFlag)items.add("the gap at 12");
-        if(alignFlag)items.add("the 12 marker alignment");
+        if(alignFlag)items.add(kind(in)==AlignmentKind.OFF_CENTRE?"the 12 marker position (off-centre)":"the 12 marker alignment");
         if(sixFlag)items.add("the 6 baton position");
         String six6=sixFlag?" Separately, check the 6 baton position.":"";
         if(!in.twelveValid)return "Bottom line: the 12 marker could not be checked on this photo. Try a clearer, straight-on photo with the hands away from 12."+six6;

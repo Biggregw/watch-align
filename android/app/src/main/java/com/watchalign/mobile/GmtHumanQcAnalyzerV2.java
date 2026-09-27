@@ -150,6 +150,20 @@ final class GmtHumanQcAnalyzerV2 {
                         (concern&&allTurned?"turned the same way in every re-measurement, but ":"")+moved);
             }
 
+            // Off-centre at 12 (alpha57). Uneven 59/01 spacing only ever corroborated a rotation,
+            // so a triangle shifted sideways with no rotation was reported "straight and
+            // centred" (user photo: spacing 0.084 vs 0.156). Flag it on its own when it is well
+            // outside the genuine spread, visible in pixels and the same at every resize scale.
+            if(twelve.valid&&!recovered&&rotation.attention==GmtHumanQcMath.Attention.CLEAR){
+                GmtHumanQcMath.Attention oc=GmtHumanQcMath.assessOffCentre(twelve.sideAsymmetry,twelve.asymMin,twelve.asymMax,
+                        twelve.triangleWidthPx,pose.label,stableFrame);
+                if(oc==GmtHumanQcMath.Attention.CHECK||oc==GmtHumanQcMath.Attention.STRONG)
+                    rotation=new GmtHumanQcMath.RotationDecision(oc,rotation.axisErrorDeg,rotation.baseErrorDeg,rotation.sideAsymmetry,
+                            rotation.visibleRisePx,rotation.baseCorroborates,true,
+                            String.format(Locale.US,"no rotation, but the triangle sits off-centre: 59-side spacing %.3f vs 01-side %.3f (difference %.3f, %.1f px); genuine photos so far differ by at most 0.04",
+                                    twelve.leftClearance,twelve.rightClearance,Math.abs(twelve.sideAsymmetry),Math.abs(twelve.sideAsymmetry)*twelve.triangleWidthPx));
+            }
+
             // Size and hand gates (alpha52). Field set: every wrong 12-marker result had a
             // triangle under ~35 px or a hand beside the triangle.
             boolean tooSmall=false,handAtTwelve=false;
@@ -210,11 +224,28 @@ final class GmtHumanQcAnalyzerV2 {
                     double a6=Math.atan2(m6[1]-cy,m6[0]-cx);
                     double d=Math.toDegrees(a6-a12);while(d>180)d-=360;while(d<=-180)d+=360;
                     if(Math.abs(Math.abs(d)-180)>8.0)six=new GmtSixLandmarkAnalyzer.Result("the marker found at the bottom is not opposite the 12 marker (photo turned?)");
-                }else six=six.lowConfidence();
+                }else six=six.lowConfidence("the 12 marker was not found, so the dial orientation is unknown");
             }
+            if(six.valid&&six.stable)GmtSixLandmarkAnalyzer.measureStability(src,cx,cy,r,six);
             GmtHumanQcMath.SixDecision sixDecision=six.valid
                     ?GmtHumanQcMath.assessSix(six.centring,six.rotationDeg,six.widthPx,six.lengthPx,pose.label,six.stable)
                     :new GmtHumanQcMath.SixDecision(GmtHumanQcMath.Attention.UNASSESSABLE,false,false,false,six.reason);
+            // Resize check on the 6 (alpha57), same rule as the 12: a reading that moves enough
+            // to change the verdict is withheld; a concern every scale agrees on stays CHECK.
+            boolean sixUnstable=six.valid&&six.stable&&!six.resampleStable();
+            if(sixUnstable&&!sixDecision.tooSmall){
+                boolean concern=sixDecision.attention==GmtHumanQcMath.Attention.CHECK||sixDecision.attention==GmtHumanQcMath.Attention.STRONG;
+                boolean agreed=Double.isFinite(six.centringMax)&&(
+                        (sixDecision.offCentre&&Math.min(Math.abs(six.centringMin),Math.abs(six.centringMax))>=GmtHumanQcMath.SIX_CENTRING_CHECK&&Math.signum(six.centringMin)==Math.signum(six.centringMax))
+                        ||(sixDecision.rotated&&Math.min(Math.abs(six.rotMin),Math.abs(six.rotMax))>=GmtHumanQcMath.SIX_ROTATION_CHECK_DEG&&Math.signum(six.rotMin)==Math.signum(six.rotMax)));
+                String sixMoved=Double.isFinite(six.centringMax)
+                        ?String.format(Locale.US,"the 6 reading moves when the photo is reduced by 6%% and 12%% (offset %+.2f to %+.2f, rotation %+.1f° to %+.1f°)",
+                                six.centringMin,six.centringMax,six.rotMin,six.rotMax)
+                        :"the 6 baton is not found again when the photo is reduced by 6% or 12%";
+                sixDecision=new GmtHumanQcMath.SixDecision(concern&&agreed?GmtHumanQcMath.Attention.CHECK:GmtHumanQcMath.Attention.UNASSESSABLE,
+                        concern&&agreed&&sixDecision.offCentre,concern&&agreed&&sixDecision.rotated,false,
+                        (concern&&agreed?"agreed at every scale, but ":"")+sixMoved);
+            }
             boolean handAtSix=false;
             if(six.valid&&!sixDecision.tooSmall){
                 Mat g8=new Mat();
@@ -299,12 +330,18 @@ final class GmtHumanQcAnalyzerV2 {
             if(six.valid){
                 out.append("6 baton: ").append(sixDecision.attention).append(" - ").append(sixDecision.reason).append("\n");
                 out.append(String.format(Locale.US,"6 geometry: centring %+.3f of baton width (+ = towards 29 tick, viewer's right); rotation %+.2f° (+ = clockwise); gap to 29-31 tick line %.3f of width; baton %.0f px wide; %s.\n",
-                        six.centring,six.rotationDeg,six.gap,six.widthPx,six.stable?"outer edges fitted":"low confidence"));
+                        six.centring,six.rotationDeg,six.gap,six.widthPx,six.stable?"outer edges fitted":"low confidence: "+six.lowReason));
+                out.append(String.format(Locale.US,"6 fit detail: long edges %.1f° from parallel; ticks score %.1f, pitch %.2f°, %.0f inferred.\n",
+                        six.parallelDeg,six.tickScore,six.tickPitchDeg,six.ticksInferred));
+                if(six.stabilityRun)out.append(Double.isFinite(six.centringMax)
+                        ?String.format(Locale.US,"6 resize check (94%%, 88%%): offset %+.3f to %+.3f, rotation %+.2f° to %+.2f°, %s edge; %s.\n",
+                                six.centringMin,six.centringMax,six.rotMin,six.rotMax,six.stabilitySameEdge?"same":"different",sixUnstable?"UNSTABLE":"stable")
+                        :"6 resize check (94%, 88%): the baton was not found again at another scale; UNSTABLE.\n");
             }else out.append("6 baton: UNASSESSABLE - ").append(six.reason).append("\n");
 
             GmtHumanSummary.Input sum=new GmtHumanSummary.Input();
             sum.sixValid=six.valid;sum.sixAttention=sixDecision.attention;sum.sixTooSmall=sixDecision.tooSmall;sum.handAtSix=handAtSix;
-            sum.sixStable=six.stable;sum.sixCentring=six.centring;sum.sixRotationDeg=six.rotationDeg;sum.sixGap=six.gap;
+            sum.sixStable=six.stable;sum.sixLowReason=six.lowReason;sum.sixUnstable=sixUnstable;sum.sixCentringMin=six.centringMin;sum.sixCentringMax=six.centringMax;sum.sixCentring=six.centring;sum.sixRotationDeg=six.rotationDeg;sum.sixGap=six.gap;
             sum.sixOffCentre=sixDecision.offCentre;sum.sixRotated=sixDecision.rotated;sum.sixWidthPx=six.widthPx;
             sum.pose=pose.label;sum.twelveValid=twelve.valid;sum.stableFrame=stableFrame;
             sum.gapUnstable=gapUnstable;sum.rotUnstable=rotUnstable;sum.gapMin=twelve.gapMin;sum.gapMax=twelve.gapMax;sum.rotMin=twelve.rotMin;sum.rotMax=twelve.rotMax;

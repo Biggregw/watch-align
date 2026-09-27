@@ -170,6 +170,31 @@ final class GmtHumanQcMath {
      * Sensitive human-review rotation rule. Whole-marker symmetry axis is primary;
      * top-edge angle and 59/01 side spacing are corroborating cues.
      */
+    // ---- Off-centre 12 triangle (alpha57) ----------------------------------------------
+    // Spacing asymmetry = 01-side spacing minus 59-side spacing, each as a fraction of the
+    // triangle width. Genuine stable readings so far: -0.021 to +0.040 (official render,
+    // 3KSuGhC, e99gXKb, vmbUDwy, 1TDYtpN); see docs/research/gmt12_offcentre_2026-09-27.md.
+    // The levels sit 1.5x and 3x outside that spread, and must also be a visible distance.
+    static final double OFF_CENTRE_CHECK = 0.06, OFF_CENTRE_STRONG = 0.12;
+    static final double OFF_CENTRE_CHECK_PX = 2.0, OFF_CENTRE_STRONG_PX = 3.0;
+
+    /**
+     * Whether the triangle sits visibly closer to one of the 59/01 ticks with no rotation to
+     * explain it. asymMin/asymMax are the resize-check range (NaN when not run); a verdict
+     * needs every re-measurement past the same level on the same side.
+     */
+    static Attention assessOffCentre(double asym,double asymMin,double asymMax,double widthPx,PoseLabel pose,boolean stable){
+        if(!Double.isFinite(asym)||!(widthPx>0)||!stable)return Attention.UNASSESSABLE;
+        if(pose==PoseLabel.RETAKE||pose==PoseLabel.UNASSESSABLE)return Attention.UNASSESSABLE;
+        double lo=Double.isFinite(asymMin)?Math.min(Math.abs(asymMin),Math.abs(asymMax)):Math.abs(asym);
+        boolean sameSide=!Double.isFinite(asymMin)||Math.signum(asymMin)==Math.signum(asymMax);
+        double a=Math.abs(asym);
+        if(sameSide&&a>=OFF_CENTRE_STRONG&&lo>=OFF_CENTRE_STRONG&&a*widthPx>=OFF_CENTRE_STRONG_PX)return Attention.STRONG;
+        if(sameSide&&a>=OFF_CENTRE_CHECK&&lo>=OFF_CENTRE_CHECK&&a*widthPx>=OFF_CENTRE_CHECK_PX)return Attention.CHECK;
+        if(a>=OFF_CENTRE_CHECK)return Attention.UNASSESSABLE;   // past the level but not consistently or not visibly
+        return Attention.CLEAR;
+    }
+
     static RotationDecision assessRotation(double wholeAxisErrorDeg,
                                            double topEdgeErrorDeg,
                                            double sideClearanceAsymmetry,

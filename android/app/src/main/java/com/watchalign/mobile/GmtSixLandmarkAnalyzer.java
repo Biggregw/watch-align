@@ -47,7 +47,35 @@ final class GmtSixLandmarkAnalyzer {
         Result(double gap,double centring,double rot,double width,double length,boolean stable,Geometry g){
             valid=true;reason="";this.gap=gap;this.centring=centring;rotationDeg=rot;widthPx=width;lengthPx=length;this.stable=stable;geometry=g;
         }
-        Result lowConfidence(){return valid?new Result(gap,centring,rotationDeg,widthPx,lengthPx,false,geometry):this;}
+        /** Resize check (alpha57): ranges over the original and 94%/88% re-measurements. */
+        boolean stabilityRun,stabilitySameEdge;
+        double centringMin=Double.NaN,centringMax=Double.NaN,rotMin=Double.NaN,rotMax=Double.NaN;
+
+        /**
+         * Same rule as the 12 (GmtTwelveLandmarkAnalyzer.Result.resampleGapStable): stable when
+         * the same edge was found at every scale and each reading either moved by at most about
+         * a pixel or stayed below the level where a verdict starts.
+         */
+        boolean resampleStable(){
+            if(!stabilityRun)return true;
+            if(!stabilitySameEdge||!Double.isFinite(centringMax)||!Double.isFinite(rotMax))return false;
+            boolean c=(centringMax-centringMin)*widthPx<=GmtTwelveLandmarkAnalyzer.MAX_RESAMPLE_SHIFT_PX
+                    ||Math.max(Math.abs(centringMin),Math.abs(centringMax))<GmtHumanQcMath.SIX_CENTRING_CHECK;
+            boolean t=Math.tan(Math.toRadians(rotMax-rotMin))*lengthPx<=GmtTwelveLandmarkAnalyzer.MAX_RESAMPLE_SHIFT_PX
+                    ||Math.max(Math.abs(rotMin),Math.abs(rotMax))<GmtHumanQcMath.SIX_ROTATION_CHECK_DEG;
+            return c&&t;
+        }
+
+        /** Why a measured baton is low confidence (alpha57), or "" when stable. */
+        String lowReason="";
+        /** Diagnostics: long-side parallelism of the edge fit, tick frame score/pitch/inferred count. */
+        double parallelDeg=Double.NaN,tickScore=Double.NaN,tickPitchDeg=Double.NaN,ticksInferred=Double.NaN;
+        Result lowConfidence(String why){
+            if(!valid)return this;
+            Result x=new Result(gap,centring,rotationDeg,widthPx,lengthPx,false,geometry);
+            x.lowReason=lowReason.isEmpty()?why:lowReason;x.parallelDeg=parallelDeg;x.tickScore=tickScore;x.tickPitchDeg=tickPitchDeg;x.ticksInferred=ticksInferred;
+            return x;
+        }
     }
 
     // Plausible baton size, dial radii (measured master: half-length 0.150R, half-width 0.060R).
@@ -76,11 +104,13 @@ final class GmtSixLandmarkAnalyzer {
             if(frame==null)return new Result("29/30/31 minute-track frame not sufficiently constrained");
 
             boolean outerEdge=false;
-            double[][] refined=refine(enh,rect,frame,r);
+            String[] why={""};double[] par={Double.NaN};
+            double[][] refined=refine(enh,rect,frame,r,why,par);
             if(refined!=null){
                 double[] om2=mid(refined[1],refined[2]);
                 double[][] again=GmtTwelveLandmarkAnalyzer.tickFrameNear(enh,fx,fy,r,om2[0],om2[1]);
                 if(again!=null){rect=refined;frame=again;outerEdge=true;}
+                else why[0]="the minute ticks were not found again around the fitted baton";
             }
 
             // Back to the original image: p -> (W-1-x, H-1-y).
@@ -114,9 +144,17 @@ final class GmtSixLandmarkAnalyzer {
             double rot=wrap90(Math.toDegrees(axis-Math.atan2(uy,ux)));
 
             double pitch=frame[3][1],score=frame[3][2],inferred=frame[3][3];
-            boolean stable=outerEdge&&score>=5.0&&pitch>=5.35&&pitch<=6.65&&inferred<=1;
+            boolean stable=outerEdge&&score>=MIN_TICK_SCORE&&pitch>=MIN_TICK_PITCH_DEG&&pitch<=MAX_TICK_PITCH_DEG&&inferred<=MAX_TICKS_INFERRED;
             Geometry g=new Geometry(ol,or,il,ir,t31,t30,t29,outerEdge);
-            return new Result(gap,centring,rot,width,length,stable,g);
+            Result res=new Result(gap,centring,rot,width,length,stable,g);
+            res.parallelDeg=par[0];res.tickScore=score;res.tickPitchDeg=pitch;res.ticksInferred=inferred;
+            if(!stable){
+                res.lowReason=!outerEdge?(why[0].isEmpty()?"the baton's edges could not be fitted cleanly":why[0])
+                        :inferred>MAX_TICKS_INFERRED?"the 29 and 31 ticks could not both be seen"
+                        :score<MIN_TICK_SCORE?"the minute ticks either side of the 6 are faint"
+                        :"the tick spacing at 6 does not match the minute track";
+            }
+            return res;
         }catch(Throwable t){
             return new Result("6 marker analysis failed: "+t.getClass().getSimpleName());
         }finally{flipped.release();gray.release();enh.release();}
@@ -188,7 +226,48 @@ final class GmtSixLandmarkAnalyzer {
     }
 
     /** Long sides and outer end re-fitted on the outer edge; null keeps the rough rectangle. */
-    private static double[][] refine(Mat gray,double[][] q,double[][] frame,double r){
+    // Tick-frame confidence, the same test as the 12 (GmtTwelveLandmarkAnalyzer.analyse).
+    static final double MIN_TICK_SCORE=5.0, MIN_TICK_PITCH_DEG=5.35, MAX_TICK_PITCH_DEG=6.65, MAX_TICKS_INFERRED=1;
+
+    /** Re-measures the 6 at the 12's resize-check scales and records the ranges (alpha57). */
+    static void measureStability(Mat bgr,double cx,double cy,double r,Result res){
+        if(res==null||!res.valid||bgr==null||bgr.empty())return;
+        boolean same=true;
+        double cMin=res.centring,cMax=res.centring,rMin=res.rotationDeg,rMax=res.rotationDeg;
+        boolean outer=res.geometry!=null&&res.geometry.outerEdge;
+        for(double s:GmtTwelveLandmarkAnalyzer.STABILITY_SCALES){
+            Mat m=new Mat();
+            try{
+                Imgproc.resize(bgr,m,new Size(Math.round(bgr.cols()*s),Math.round(bgr.rows()*s)),0,0,Imgproc.INTER_LINEAR);
+                Result q=analyse(m,cx*s,cy*s,r*s);
+                if(!q.valid){same=false;cMin=cMax=rMin=rMax=Double.NaN;break;}
+                if((q.geometry!=null&&q.geometry.outerEdge)!=outer)same=false;
+                cMin=Math.min(cMin,q.centring);cMax=Math.max(cMax,q.centring);
+                rMin=Math.min(rMin,q.rotationDeg);rMax=Math.max(rMax,q.rotationDeg);
+            }finally{m.release();}
+        }
+        res.stabilityRun=true;res.stabilitySameEdge=same;
+        res.centringMin=cMin;res.centringMax=cMax;res.rotMin=rMin;res.rotMax=rMax;
+    }
+
+    /**
+     * Calibrated edge level first; when that fit fails, retry with the outer-band level, as the
+     * 12 does (TriangleEdgeRefiner.refine). A dim or shadowed stretch of surround on one long
+     * side drops that side's edge onto the lume, and the two sides then fit 3-5 deg apart
+     * (user photo, date 4: 4.2 deg; with the band level 0.3 deg). Genuine batons fit within
+     * 1.6 deg either way.
+     */
+    private static double[][] refine(Mat gray,double[][] q,double[][] frame,double r,String[] why,double[] parOut){
+        double[][] a=refine(gray,q,frame,r,why,parOut,false);
+        if(a!=null)return a;
+        String firstWhy=why[0];double firstPar=parOut[0];
+        double[][] b=refine(gray,q,frame,r,why,parOut,true);
+        if(b!=null){why[0]="";return b;}
+        why[0]=firstWhy;parOut[0]=firstPar;
+        return null;
+    }
+
+    private static double[][] refine(Mat gray,double[][] q,double[][] frame,double r,String[] why,double[] parOut,boolean band){
         try{
             final int w=gray.cols(),h=gray.rows();
             final byte[] px=new byte[w*h];gray.get(0,0,px);
@@ -198,15 +277,23 @@ final class GmtSixLandmarkAnalyzer {
                 return (a*(1-ffx)+b*ffx)*(1-ffy)+(c*(1-ffx)+d*ffx)*ffy;
             };
             double gx=(q[0][0]+q[1][0]+q[2][0]+q[3][0])/4,gy=(q[0][1]+q[1][1]+q[2][1]+q[3][1])/4;
-            double[] left=TriangleEdgeRefiner.fitSide(img,w,h,q[0],q[1],gx,gy,r,0.15,0.85,0.035,null,null);
-            double[] right=TriangleEdgeRefiner.fitSide(img,w,h,q[3],q[2],gx,gy,r,0.15,0.85,0.035,null,null);
-            double[] end=TriangleEdgeRefiner.fitSide(img,w,h,q[1],q[2],gx,gy,r,0.15,0.85,0.045,frame[0],frame[2]);
-            double[] inner=TriangleEdgeRefiner.fitSide(img,w,h,q[0],q[3],gx,gy,r,0.15,0.85,0.035,null,null);
+            double[] left=TriangleEdgeRefiner.fitSide(img,w,h,q[0],q[1],gx,gy,r,0.15,0.85,0.035,null,null,band);
+            double[] right=TriangleEdgeRefiner.fitSide(img,w,h,q[3],q[2],gx,gy,r,0.15,0.85,0.035,null,null,band);
+            double[] end=TriangleEdgeRefiner.fitSide(img,w,h,q[1],q[2],gx,gy,r,0.15,0.85,0.045,frame[0],frame[2],band);
+            double[] inner=TriangleEdgeRefiner.fitSide(img,w,h,q[0],q[3],gx,gy,r,0.15,0.85,0.035,null,null,band);
             if(DEBUG)System.err.println("six refine: left="+(left!=null)+" right="+(right!=null)+" end="+(end!=null)+" inner="+(inner!=null));
-            if(left==null||right==null||end==null)return null;
+            if(left==null||right==null||end==null){
+                why[0]=left==null||right==null?"a long side of the baton could not be traced, often because a hand or a shadow is next to it"
+                        :"the outer end of the baton could not be traced";
+                return null;
+            }
             double par=Math.toDegrees(Math.acos(Math.min(1,Math.abs(left[2]*right[2]+left[3]*right[3]))));
             if(DEBUG)System.err.printf("six refine: parallel %.2f%n",par);
-            if(par>PARALLEL_TOLERANCE_DEG)return null;
+            parOut[0]=par;
+            if(par>PARALLEL_TOLERANCE_DEG){
+                why[0]=String.format(java.util.Locale.US,"the baton's two long edges fitted %.1f° apart instead of parallel, usually because a hand or a shadow is next to it",par);
+                return null;
+            }
             double ax=left[2]+Math.signum(left[2]*right[2]+left[3]*right[3])*right[2],ay=left[3]+Math.signum(left[2]*right[2]+left[3]*right[3])*right[3];
             double sq=Math.toDegrees(Math.acos(Math.min(1,Math.abs(ax*end[2]+ay*end[3])/Math.hypot(ax,ay))));
             if(DEBUG)System.err.printf("six refine: square %.2f%n",90-sq);
@@ -218,13 +305,13 @@ final class GmtSixLandmarkAnalyzer {
             if(inner!=null)inner=new double[]{inner[0],inner[1],-ay/an,ax/an};
             double[] ol=TriangleEdgeRefiner.intersect(left,end),or=TriangleEdgeRefiner.intersect(right,end);
             double[] il=inner!=null?TriangleEdgeRefiner.intersect(left,inner):null,ir=inner!=null?TriangleEdgeRefiner.intersect(right,inner):null;
-            if(ol==null||or==null)return null;
+            if(ol==null||or==null){why[0]="the baton's corners could not be located";return null;}
             if(il==null||ir==null){il=q[0];ir=q[3];}
             double lim=0.06*r;
-            if(Math.hypot(ol[0]-q[1][0],ol[1]-q[1][1])>lim||Math.hypot(or[0]-q[2][0],or[1]-q[2][1])>lim)return null;
+            if(Math.hypot(ol[0]-q[1][0],ol[1]-q[1][1])>lim||Math.hypot(or[0]-q[2][0],or[1]-q[2][1])>lim){why[0]="the fitted baton edges moved too far from the detected baton";return null;}
             if(Math.hypot(il[0]-q[0][0],il[1]-q[0][1])>lim||Math.hypot(ir[0]-q[3][0],ir[1]-q[3][1])>lim){il=q[0];ir=q[3];}
             return new double[][]{il,ol,or,ir};
-        }catch(Throwable t){return null;}
+        }catch(Throwable t){why[0]="the baton edge fit failed";return null;}
     }
 
     private static double[] back(double[] p,int W,int H){return new double[]{W-1-p[0],H-1-p[1]};}

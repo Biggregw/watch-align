@@ -43,6 +43,8 @@ final class GmtTwelveLandmarkAnalyzer {
         boolean stabilityRun,stabilitySameEdge;
         /** Range of gap and axis rotation over the original and re-measured scales. */
         double gapMin=Double.NaN,gapMax=Double.NaN,rotMin=Double.NaN,rotMax=Double.NaN;
+        /** Range of the 59/01 spacing asymmetry (01 minus 59) over the same scales (alpha57). */
+        double asymMin=Double.NaN,asymMax=Double.NaN;
 
         /**
          * Gap and rotation are judged separately. Each is stable when every re-measurement
@@ -202,6 +204,7 @@ final class GmtTwelveLandmarkAnalyzer {
         if(res==null||!res.valid||bgr==null||bgr.empty())return;
         double dg=0,dr=0;boolean same=true;
         double gMin=res.topClearance,gMax=res.topClearance,rMin=res.wholeAxisErrorDeg,rMax=res.wholeAxisErrorDeg;
+        double aMin=res.sideAsymmetry,aMax=res.sideAsymmetry;
         boolean outer=res.geometry!=null&&res.geometry.outerEdge;
         for(double s:STABILITY_SCALES){
             Mat m=new Mat();
@@ -214,10 +217,11 @@ final class GmtTwelveLandmarkAnalyzer {
                 dr=Math.max(dr,Math.abs(q.wholeAxisErrorDeg-res.wholeAxisErrorDeg));
                 gMin=Math.min(gMin,q.topClearance);gMax=Math.max(gMax,q.topClearance);
                 rMin=Math.min(rMin,q.wholeAxisErrorDeg);rMax=Math.max(rMax,q.wholeAxisErrorDeg);
+                aMin=Math.min(aMin,q.sideAsymmetry);aMax=Math.max(aMax,q.sideAsymmetry);
             }finally{m.release();}
         }
         res.stabilityRun=true;res.stabilitySameEdge=same;res.stabilityGapSpread=dg;res.stabilityRotSpreadDeg=dr;
-        if(Double.isFinite(dg)){res.gapMin=gMin;res.gapMax=gMax;res.rotMin=rMin;res.rotMax=rMax;}
+        if(Double.isFinite(dg)){res.gapMin=gMin;res.gapMax=gMax;res.rotMin=rMin;res.rotMax=rMax;res.asymMin=aMin;res.asymMax=aMax;}
     }
 
     /** Backward-compatible overload. Legacy global roll is intentionally ignored. */

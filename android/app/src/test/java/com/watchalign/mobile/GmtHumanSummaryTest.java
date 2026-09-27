@@ -222,4 +222,25 @@ public class GmtHumanSummaryTest {
         assertFalse(s, s.contains("nothing flagged at 12"));
         assertTrue(s, s.contains("Bottom line: nothing flagged, but the 12 rotation reading changes when the photo is resized slightly"));
     }
+
+    /** User photo (alpha57): 0.084 vs 0.156 was described as "even spacing either side". */
+    @Test public void unevenSpacingIsNeverCalledEven() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.alignment = GmtHumanQcMath.Attention.CLEAR; in.rotationDeg = 0.2; in.spacing59 = 0.14; in.spacing01 = 0.18;
+        String s = GmtHumanSummary.alignmentLine(in);
+        assertFalse(s, s.contains("even spacing"));
+        assertTrue(s, s.contains("slightly uneven, within what genuine photos show"));
+    }
+
+    @Test public void offCentreFlagIsNamed() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.alignment = GmtHumanQcMath.Attention.CHECK; in.rotationDeg = 0.53; in.baseTiltDeg = -0.42;
+        in.spacing59 = 0.084; in.spacing01 = 0.156;
+        String s = GmtHumanSummary.alignmentLine(in);
+        assertTrue(s, s.contains("possibly off-centre: the triangle sits closer to the 59 tick than the 01 tick"));
+        in.gap = GmtHumanQcMath.Attention.STRONG; in.observedGap = 0.031;
+        assertTrue(GmtHumanSummary.build(in), GmtHumanSummary.build(in).contains("2 things to check: the gap at 12 and the 12 marker position (off-centre)."));
+    }
 }

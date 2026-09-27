@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-27, alpha56)
+# Watch Align: handoff notes (updated 2026-09-27, alpha57)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -28,14 +28,14 @@ yet**, and the summary says so.
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha56"`, `versionCode 13056` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha57"`, `versionCode 13057` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
 | Branch | State |
 |---|---|
 | `main` | Has alpha49–54 (PR #24, merged 2026-09-27). |
-| `feature/gmt-qc-fix-list` | alpha55 (the whole fix list below) and alpha56 (resize check, emulator photo run). PR **#25** into `main`. |
+| `feature/gmt-qc-fix-list` | alpha55 (the whole fix list below) and alpha56 (resize check, emulator photo run) and alpha57 (off-centre 12, 6 confidence reasons, band fallback and resize check for the 6). PR **#25** into `main`. |
 | `experiment/template-marker-consensus-shelved` | A shelved experiment: it fitted a template from marker consensus to fix a Pepsi overlay offset. The user rejected this in favour of the measured overlay, so it is **kept for reference only and should not be merged**. |
 
 The `gh` CLI isn't installed, but the GitHub API works through the proxy, so use curl
@@ -54,7 +54,7 @@ JAVA_HOME=<jdk17> sh ./gradlew --no-daemon -q \
   :app:testDebugUnitTest :app:assembleDebug
 ```
 
-- 157 JVM unit tests, all passing.
+- 165 JVM unit tests, all passing.
 - `:app:compileDebugAndroidTestJavaSource` compiles the on-device test
   (`GenuineOfficialImageValidationTest`). It needs network access for
   androidx.test, so **don't pass `--offline`** for it. Only check the result of the
@@ -185,6 +185,17 @@ re-measurement found a different edge. A concern that every scale agrees on is k
 CHECK. `docs/research/gmt_resample_stability_2026-09-27.md` has the evidence: no
 genuine reading changed, and 8 replica readings were withheld.
 
+alpha57 additions:
+
+- An **off-centre 12** check (`GmtHumanQcMath.assessOffCentre`). It flags uneven 59/01
+  spacing when there is no rotation: CHECK at 0.06 and STRONG at 0.12, set against a
+  genuine maximum of 0.04.
+- The 6 now gives a **reason when it is low confidence**, and retries the **edge fit with
+  the band level**, as the 12 does.
+- The 6 has its own **resize check**.
+
+`docs/research/gmt12_offcentre_2026-09-27.md` has the evidence.
+
 ## 7. What's been validated
 
 These results are recorded in `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -220,8 +231,8 @@ Open items:
   the round markers.
 - Emulator timing (CI, x86_64, no GPU): 4–29 s per photo with alpha55. The resize
   check adds two 12-only re-measurements. The user's phone hasn't been timed.
-- The 6 baton has no resize check yet. 7s6PyXJ image_02's 6 reading flips between
-  CHECK and "not judged" across loads.
+- The off-centre levels rest on 5 genuine photos. Add more genuine straight-on photos
+  with the hands away from 12.
 - When the edge fit fails, the "too small" gate measures the lume contour, about 80% of
   the outer width. A 43 px triangle can then read "too small at 34 px".
 
