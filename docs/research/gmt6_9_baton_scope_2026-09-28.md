@@ -328,6 +328,53 @@ same distance from the minute markers at every hour" idea, is the most
 promising remaining direction but is unimplemented -- it needs 6 to be
 reliable enough first to not just flag itself).
 
+### Update 2026-09-28: added a second signal (tick-width consistency) -- aggregate numbers look great, but a documented false-positive proves that alone isn't enough
+
+Same session, same day. Added a second, purely-internal check alongside
+the reference-pitch one: `_direct`/`_sequence` now also reject a candidate
+triple whose 3 points have inconsistent stroke width (max/min > 2.0).
+Real ticks are one uniform printed width; three visually-confirmed genuine
+12-o'clock triples measured width spread 1.07-1.40. Verified against the
+still-bad img20/img23 cases: the underlying candidate demonstrably changed
+(img23's reason shifted from "1 inferred" to "2 inferred") -- real
+rejection was happening, not a no-op.
+
+**Re-ran the reference-pitch check across every real photo with both this
+fix in place.** Result, at the population level, looks excellent: all 13
+photos with a usable 12-o'clock reference now cluster tightly at
+ratio 0.87-1.14 (previously split into a 7-photo genuine cluster at
+0.87-1.04 and a 4-photo bad cluster at 0.50-0.76 -- that bad cluster is
+now gone entirely).
+
+**But: visually re-checking img20 and img23 specifically (both now report
+excellent ratios, 1.010 and 1.020) shows the landmarks are STILL sitting
+on "SWISS MADE" text, not the real ticks.** The width-consistency check
+changed which specific text/punctuation grouping got picked, but a
+different one still passes both checks with a near-perfect pitch AND
+width match. This is the important, sobering finding of this update:
+**a near-1.0 pitch ratio is necessary but not sufficient evidence of a
+correct reading for this failure class.** The aggregate statistics improved
+a great deal and that is real progress (the worst, most obviously-wrong
+cases are gone), but do not read "ratio close to 1.0 across many photos"
+as proof the text-contamination problem is solved -- it demonstrably is
+not, on at least these 2 confirmed cases, and there is no way to tell
+from the ratio alone which passing photos are genuinely correct and which
+are a lucky-looking wrong answer.
+
+**Where this leaves things:** two independent, real, evidenced signals
+(pitch-vs-reference, width-consistency) are now layered in, and both are
+kept (neither should be reverted -- they demonstrably reject real bad
+candidates and improved the overall distribution). Genuinely solving the
+remaining cases likely needs something structurally different, not a
+third threshold on the same kind of per-candidate shape statistic --
+candidates: (a) explicit text-region exclusion (the printed brand text is
+in a fixed, learnable radial band relative to the marker, distinguishable
+from ticks by being far more numerous/dense candidates in a tight arc, or
+by OCR); (b) the still-unimplemented cross-position consistency check
+(compare 6's actual measured clearance against 9's on the same photo --
+now much more viable than before this update, since 9 is reliably clean
+and 6's false positives are at least less numerous).
+
 ## Explicit non-goals for this scope
 
 - No perspective/tilt correction.
