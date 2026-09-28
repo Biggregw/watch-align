@@ -55,6 +55,7 @@ final class GmtHumanSummary {
         s.append("12 gap: ").append(gapLine(in)).append("\n");
         s.append("12 alignment: ").append(alignmentLine(in)).append("\n");
         s.append("6 baton: ").append(sixLine(in)).append("\n");
+        in.nine.angled=poorPose(in);
         s.append("9 baton: ").append(batonLine(in.nine)).append("\n");
         s.append("Overlay: ").append(in.overlayDrawn&&(in.tooSmall||in.handAtTwelve)
                 ?"shows the 12 triangle that was found, grey and dashed because it was not judged. The close-up shows it enlarged."
@@ -141,6 +142,8 @@ final class GmtHumanSummary {
     static final class Baton {
         final String label;final int before,after;
         boolean valid,stable,tooSmall,hand,offCentre,rotated,unstable;
+        /** The photo is rated too angled (or its angle unknown), which withholds a clear verdict. */
+        boolean angled;
         GmtHumanQcMath.Attention attention=GmtHumanQcMath.Attention.UNASSESSABLE;
         double centring=Double.NaN,rotationDeg=Double.NaN,gap=Double.NaN,widthPx=Double.NaN,centringMin=Double.NaN,centringMax=Double.NaN,rotMin=Double.NaN,rotMax=Double.NaN;
         String lowReason="";
@@ -154,11 +157,14 @@ final class GmtHumanSummary {
         b.valid=in.sixValid;b.stable=in.sixStable;b.tooSmall=in.sixTooSmall;b.hand=in.handAtSix;
         b.offCentre=in.sixOffCentre;b.rotated=in.sixRotated;b.unstable=in.sixUnstable;b.attention=in.sixAttention;
         b.centring=in.sixCentring;b.rotationDeg=in.sixRotationDeg;b.gap=in.sixGap;b.widthPx=in.sixWidthPx;
+        b.angled=poorPose(in);
         b.centringMin=in.sixCentringMin;b.centringMax=in.sixCentringMax;b.rotMin=in.sixRotMin;b.rotMax=in.sixRotMax;b.lowReason=in.sixLowReason;
         return b;
     }
 
     static String sixLine(Input in){return batonLine(six(in));}
+
+    static boolean poorPose(Input in){return in.pose==GmtHumanQcMath.PoseLabel.RETAKE||in.pose==GmtHumanQcMath.PoseLabel.UNASSESSABLE;}
 
     /**
      * Which way "towards the before tick" is for the viewer: at 6 the 29 tick is on the right;
@@ -195,7 +201,8 @@ final class GmtHumanSummary {
             case CLEAR: return "centred between the "+b.before+" and "+b.after+" ticks and straight."+nums;
             case CHECK: return "possibly "+what+". Look closely."+nums+caution;
             case STRONG: return "visibly "+what+"."+nums+caution;
-            default: return b.stable?"could not be judged reliably on this photo."+nums
+            default: return b.angled&&b.stable?"not judged: the photo angle is too steep to clear the baton from this photo."+nums
+                    :b.stable?"could not be judged reliably on this photo."+nums
                     :"not judged: "+(why.isEmpty()?"the "+L+" landmarks were measured with low confidence":b.lowReason)+"."+nums;
         }
     }

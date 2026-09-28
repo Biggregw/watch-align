@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-28, alpha59)
+# Watch Align: handoff notes (updated 2026-09-28, alpha60)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -28,7 +28,7 @@ yet**, and the summary says so.
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha59"`, `versionCode 13059` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha60"`, `versionCode 13060` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
@@ -54,7 +54,7 @@ JAVA_HOME=<jdk17> sh ./gradlew --no-daemon -q \
   :app:testDebugUnitTest :app:assembleDebug
 ```
 
-- 171 JVM unit tests, all passing.
+- 177 JVM unit tests, all passing.
 - `:app:compileDebugAndroidTestJavaSource` compiles the on-device test
   (`GenuineOfficialImageValidationTest`). It needs network access for
   androidx.test, so **don't pass `--offline`** for it. Only check the result of the
@@ -204,6 +204,10 @@ takes the app from 5 false flags to 0 (`docs/research/gmt12_axis_reference_2026-
 alpha59: the **9 o'clock baton** is checked with the same code as the 6, using a 90°
 turn instead of 180° (`GmtSixLandmarkAnalyzer.Position`). No genuine 9 is flagged
 (`docs/research/gmt9_baton_2026-09-28.md`).
+
+alpha60: the **photo-angle rating and gap-direction cue get the resize check**. The rating
+is the median over the photo and its 94% and 88% copies, and the gap direction is used
+only when all three copies agree (`docs/research/gmt_pose_stability_2026-09-28.md`).
 
 **Scope:** the deliverable is the Android app. The desktop harness only runs the app's
 Java code for fast testing. The Python tools in `tools/research/` (branch

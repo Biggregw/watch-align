@@ -89,9 +89,39 @@ final class GmtHumanQcAnalyzerV2 {
             if(rehaut.valid&&ellipse.valid&&rehaut.firstHarmonicStrength>=0.08)
                 disagreement=axisDisagreement(rehaut.widestClockDeg,ellipse.minorAxisClockDeg);
             GmtHumanQcMath.PoseDecision pose=GmtHumanPosePolicy.classify(rehaut,sectors,ellipse,disagreement);
+            GmtHumanQcMath.GapTrend rehautTrend=sectors.gapTrendAt12();
+            // Resize check on the photo-angle rating and the gap-direction cue (alpha60). Both
+            // come from how wide the rehaut ring looks around the dial, and on a borderline photo
+            // a sub-grey-level loading difference flipped the rating between "slight angle" and
+            // "too angled" (user's ARF Pepsi photo: 1 of 6 near-identical loads). "Too angled"
+            // withholds the 6 and 9 and reverses the gap wording, so the rating is taken as the
+            // median over the photo and its 94% and 88% copies, and the gap direction is used only
+            // when all three agree.
+            String poseNote="";
+            {
+                GmtHumanQcMath.PoseLabel[] labels={pose.label,null,null};
+                GmtHumanQcMath.GapTrend[] trends={rehautTrend,null,null};
+                double[] sc=GmtTwelveLandmarkAnalyzer.STABILITY_SCALES;
+                for(int k=0;k<sc.length;k++){
+                    Mat m=new Mat();
+                    try{
+                        Imgproc.resize(src,m,new org.opencv.core.Size(Math.round(src.cols()*sc[k]),Math.round(src.rows()*sc[k])),0,0,Imgproc.INTER_LINEAR);
+                        PoseAt pq=poseAt(m,cx*sc[k],cy*sc[k],r*sc[k],poseRoll);
+                        labels[k+1]=pq.pose.label;trends[k+1]=pq.trend;
+                    }finally{m.release();}
+                }
+                GmtHumanQcMath.PoseLabel med=medianPose(labels);
+                if(med!=pose.label){
+                    poseNote=String.format(Locale.US," Angle rating across the resize check: %s / %s / %s; using %s.",labels[0],labels[1],labels[2],med);
+                    pose=new GmtHumanQcMath.PoseDecision(med,pose.reason+" (rating differed between the photo and its resized copies; the median is used)");
+                }
+                if(!(trends[0]==trends[1]&&trends[1]==trends[2])&&rehautTrend!=GmtHumanQcMath.GapTrend.UNKNOWN){
+                    poseNote+=String.format(Locale.US," Gap direction cue across the resize check: %s / %s / %s; not used.",trends[0],trends[1],trends[2]);
+                    rehautTrend=GmtHumanQcMath.GapTrend.UNKNOWN;
+                }
+            }
             GmtHumanQcMath.RotationDecision rotation;
             GmtHumanQcMath.ClearanceDecision clearance;
-            GmtHumanQcMath.GapTrend rehautTrend=sectors.gapTrendAt12();
             if(twelve.valid){
                 rotation=GmtHumanQcMath.assessRotation(twelve.wholeAxisErrorDeg,twelve.topEdgeErrorDeg,twelve.sideAsymmetry,
                         twelve.triangleWidthPx,pose.label,stableFrame);
@@ -236,7 +266,7 @@ final class GmtHumanQcAnalyzerV2 {
                 out.append("12 marker: ").append(clearance.attention).append(" - ").append(clearanceSummary(clearance)).append("\n");
                 out.append("Alignment: ").append(rotation.attention).append(" - ").append(rotationSummary(rotation)).append("\n");
             }else out.append("12 marker: UNASSESSABLE - local minute-track/triangle landmarks were not verified; no pass is inferred.\n");
-            out.append("Perspective: ").append(pose.label).append(" - ").append(pose.reason).append(".\n");
+            out.append("Perspective: ").append(pose.label).append(" - ").append(pose.reason).append(".").append(poseNote).append("\n");
 
             out.append("\nDiagnostics\n");
             out.append(String.format(Locale.US,"%s: centre %.1f, %.1f; radius %.1f px; quality %.2f.\n",
@@ -470,5 +500,38 @@ final class GmtHumanQcAnalyzerV2 {
                 ?String.format(Locale.US,"%s resize check (94%%, 88%%): offset %+.3f to %+.3f, rotation %+.2f° to %+.2f°, %s edge; %s.\n",
                         L,b.centringMin,b.centringMax,b.rotMin,b.rotMax,b.stabilitySameEdge?"same":"different",o.unstable?"UNSTABLE":"stable")
                 :L+" resize check (94%, 88%): the baton was not found again at another scale; UNSTABLE.\n");
+    }
+
+    /** Photo-angle rating and gap-direction cue at one scale (used by the resize check). */
+    static final class PoseAt {GmtHumanQcMath.PoseDecision pose;GmtHumanQcMath.GapTrend trend;}
+
+    static PoseAt poseAt(Mat src,double cx,double cy,double r,double poseRoll){
+        GmtRehautPoseAnalyzer.Result rehaut=GmtRehautPoseAnalyzer.analyse(src,cx,cy,r,poseRoll);
+        GmtRehautSectorAnalyzer.Result sectors;
+        if(rehaut.valid){
+            sectors=GmtRehautSectorAnalyzer.analyse(src,cx,cy,rehaut.innerSeedPx,rehaut.outerSeedPx,poseRoll);
+            if(!sectors.valid)sectors=GmtRehautSectorAutoAnalyzer.analyse(src,cx,cy,r,poseRoll);
+        }else sectors=GmtRehautSectorAutoAnalyzer.analyse(src,cx,cy,r,poseRoll);
+        GmtEllipsePoseAnalyzer.Result ellipse=GmtEllipsePoseAnalyzer.analyse(src,cx,cy,r);
+        double disagreement=Double.NaN;
+        if(rehaut.valid&&ellipse.valid&&rehaut.firstHarmonicStrength>=0.08)
+            disagreement=axisDisagreement(rehaut.widestClockDeg,ellipse.minorAxisClockDeg);
+        PoseAt o=new PoseAt();
+        o.pose=GmtHumanPosePolicy.classify(rehaut,sectors,ellipse,disagreement);
+        o.trend=sectors.gapTrendAt12();
+        return o;
+    }
+
+    /**
+     * Median of three angle ratings, ordered GOOD < CORRECTABLE < RETAKE. UNASSESSABLE ratings
+     * are left out when at least two others exist; with fewer the first rating stands.
+     */
+    static GmtHumanQcMath.PoseLabel medianPose(GmtHumanQcMath.PoseLabel[] labels){
+        java.util.List<GmtHumanQcMath.PoseLabel> v=new java.util.ArrayList<>();
+        for(GmtHumanQcMath.PoseLabel l:labels)if(l!=null&&l!=GmtHumanQcMath.PoseLabel.UNASSESSABLE)v.add(l);
+        if(v.size()<2)return labels[0];
+        java.util.Collections.sort(v);
+        if(v.size()==2)return v.get(0)==v.get(1)?v.get(0):GmtHumanQcMath.PoseLabel.CORRECTABLE;
+        return v.get(1);
     }
 }

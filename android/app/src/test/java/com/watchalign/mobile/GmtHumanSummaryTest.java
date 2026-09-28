@@ -276,4 +276,14 @@ public class GmtHumanSummaryTest {
         assertTrue(s, s.contains("Bottom line: nothing flagged at 12, 6 or 9."));
         assertTrue(s, s.contains("9 baton: centred between the 44 and 46 ticks and straight."));
     }
+
+    /** alpha60: a baton withheld only because the photo is too angled says so. */
+    @Test public void batonWithheldForAngleSaysSo() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.RETAKE;
+        in.nine.valid = true; in.nine.stable = true; in.nine.attention = GmtHumanQcMath.Attention.UNASSESSABLE;
+        in.nine.centring = -0.05; in.nine.rotationDeg = -0.4; in.nine.widthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("9 baton: not judged: the photo angle is too steep to clear the baton from this photo."));
+    }
 }
