@@ -298,6 +298,38 @@ def test_direct_finds_the_real_59_60_1_triple():
     assert rr==(536.5,792,3.0,13.0,22.0)
 
 
+def test_direct_rejects_a_triple_with_inconsistent_tick_widths():
+    # Real failure shape (126710BLRO-family 6-o'clock "SWISS MADE" text
+    # sitting at the same radius as the true ticks): individual letter/
+    # punctuation fragments can independently pass every other _direct
+    # check (regularity, axis, y-spread) while having wildly different
+    # stroke widths from each other, unlike three instances of one printed
+    # tick design. Same real tick list as the test above, but with the
+    # true 60 candidate's width swapped for an implausible one (20 vs its
+    # 59/1 neighbours' 3) -- the otherwise-identical, otherwise-winning
+    # triple must now be rejected.
+    bad_width_ticks=[t if t[0]!=508.0 else (508.0,791,20.0,15.0,46.0) for t in _REAL_TICKS_IMG11]
+    assert _direct(bad_width_ticks,_MID_IMG11,_R_IMG11) is None
+
+
+def test_sequence_rejects_inconsistent_widths_among_the_used_points():
+    # Same principle as the _direct test above, applied to _sequence: an
+    # observed point near the -1/0/+1 evaluation offsets with an
+    # implausible width relative to its neighbours must reject the
+    # candidate, not just its own fit-quality/axis checks. A minimal,
+    # single-pitch-option synthetic list (rather than the full real 9-tick
+    # list, whose many alternative i/j/steps combinations let _sequence
+    # route around the corrupted point via an unrelated half-pitch fit --
+    # itself a real, separate finding, caught by the reference_pitch check
+    # instead when both run together in the full pipeline) isolates the
+    # width check specifically: only one viable pitch exists here at all.
+    mid=300.0;r=400.0
+    good=[(260.0,500,4.0,14.0,40.0),(300.0,500,4.0,14.0,40.0),(340.0,500,4.0,14.0,40.0)]
+    bad=[(260.0,500,4.0,14.0,40.0),(300.0,500,20.0,14.0,200.0),(340.0,500,4.0,14.0,40.0)]
+    assert _sequence(good,mid,r) is not None
+    assert _sequence(bad,mid,r) is None
+
+
 def test_sequence_reconstructs_60_from_surrounding_evidence_when_missing():
     # Real regression case for the "reconstruct poorly-defined ticks from
     # good ones" capability: drop the actual 60 candidate entirely and
@@ -447,11 +479,15 @@ def test_sequence_prefers_strong_axis_agreement_over_fewer_inferred_points():
     # position, must now win instead.
     mid=467.0
     r=361.8
-    t_untrimmed=[(346.0,713),(372.0,707),(398.0,678),(408.5,699),(503.5,695),
-                 (513.0,672),(568.0,708),(595.5,713)]
-    t_trimmed=[(346.0,713),(348.0,692),(366.5,686),(376.0,707),(396.0,677),
-               (407.5,699),(528.5,673),(566.0,683),(566.5,708),(595.5,713),
-               (596.0,696),(614.0,696)]
+    # Uniform width (index 2) on every entry: this test targets axis-vs-
+    # ninf scoring specifically, orthogonal to _TICK_WIDTH_CONSISTENCY_RATIO
+    # (a real signal, but a different one -- see that constant's docstring),
+    # so it must not itself trigger the width check.
+    t_untrimmed=[(346.0,713,5.0),(372.0,707,5.0),(398.0,678,5.0),(408.5,699,5.0),(503.5,695,5.0),
+                 (513.0,672,5.0),(568.0,708,5.0),(595.5,713,5.0)]
+    t_trimmed=[(346.0,713,5.0),(348.0,692,5.0),(366.5,686,5.0),(376.0,707,5.0),(396.0,677,5.0),
+               (407.5,699,5.0),(528.5,673,5.0),(566.0,683,5.0),(566.5,708,5.0),(595.5,713,5.0),
+               (596.0,696,5.0),(614.0,696,5.0)]
 
     wrong=_sequence(t_untrimmed,mid,r)
     correct=_sequence(t_trimmed,mid,r)

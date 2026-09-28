@@ -191,6 +191,22 @@ def _ticks(mask,x0,y0,r):
     return sorted(out)
 
 
+# Real ticks are printed at one uniform stroke width; three real photos'
+# genuine, visually-confirmed 12-o'clock triples measured width spread
+# (max/min) of 1.07-1.40, and their widths individually clustered within a
+# triple (e.g. 3,5,3 or 4,5,4). A real failure at 6 o'clock (126710BLRO-
+# family "SWISS MADE" text sitting at the same radius as the true ticks)
+# showed candidates built from individual letter/punctuation fragments with
+# far more varied stroke widths within the same triple -- some fragments
+# (a thin letter stroke, a printed dot) coincidentally have plausible
+# fill-ratio/pitch on their own, so neither of those signals alone caught
+# it, but three DIFFERENT glyphs are very unlikely to also share one
+# consistent width the way one printed tick design does. 2.0 sits with
+# real margin above the largest genuine spread observed (1.40) and below
+# the failure case's.
+_TICK_WIDTH_CONSISTENCY_RATIO = 2.0
+
+
 def _direct(t,mid,r):
     out=[]
     for i in range(1,len(t)-1):
@@ -200,6 +216,8 @@ def _direct(t,mid,r):
         if reg>.30 or axis>.45:continue
         ys=max(l[1],c[1],rr[1])-min(l[1],c[1],rr[1])
         if ys>.055*r:continue
+        widths=(l[2],c[2],rr[2])
+        if max(widths)>_TICK_WIDTH_CONSISTENCY_RATIO*min(widths):continue
         out.append((reg+.35*axis+.20*ys/r,l,c,rr))
     return min(out,key=lambda z:z[0]) if out else None
 
@@ -220,7 +238,7 @@ def _robust_line(k,y):
 
 def _sequence(t,mid,r):
     if len(t)<3:return None
-    xs=np.array([q[0] for q in t]);ys=np.array([q[1] for q in t]);out=[]
+    xs=np.array([q[0] for q in t]);ys=np.array([q[1] for q in t]);ws=np.array([q[2] for q in t]);out=[]
     for i in range(len(xs)):
       for j in range(i+1,len(xs)):
        dx=xs[j]-xs[i]
@@ -229,9 +247,9 @@ def _sequence(t,mid,r):
         if pitch<=.025*r or pitch>.11*r:continue
         x60=xs[i]+round((mid-xs[i])/pitch)*pitch; kk=np.rint((xs-x60)/pitch).astype(int);use=np.abs(kk)<=5
         if use.sum()<3:continue
-        ak,ox,oy=kk[use],xs[use],ys[use];res=np.abs(ox-(x60+ak*pitch));inn=res<=.22*pitch
+        ak,ox,oy,ow=kk[use],xs[use],ys[use],ws[use];res=np.abs(ox-(x60+ak*pitch));inn=res<=.22*pitch
         if inn.sum()<3:continue
-        ak,ox,oy=ak[inn],ox[inn],oy[inn]
+        ak,ox,oy,ow=ak[inn],ox[inn],oy[inn],ow[inn]
         if not ((np.any(ak<0) and np.any(ak>0)) or (np.any(ak==0) and (np.any(ak<0) or np.any(ak>0)))):continue
         A=np.column_stack([np.ones(len(ak)),ak.astype(float)]);beta=np.linalg.lstsq(A,ox,rcond=None)[0];x60f,pf=map(float,beta)
         if pf<=.025*r or pf>.11*r:continue
@@ -243,6 +261,12 @@ def _sequence(t,mid,r):
         if ykeep.sum()<3:continue
         y59,y60,y1=y0-yslope,y0,y0+yslope
         if max(y59,y60,y1)-min(y59,y60,y1)>.055*r:continue
+        # See _TICK_WIDTH_CONSISTENCY_RATIO's docstring (above _direct): the
+        # same text-vs-tick width-consistency check, applied here to
+        # whichever of the -1/0/+1 evaluation points were actually observed
+        # (an inferred point has no width of its own to check).
+        near_widths=ow[np.abs(ak)<=1]
+        if len(near_widths)>=2 and max(near_widths)>_TICK_WIDTH_CONSISTENCY_RATIO*min(near_widths):continue
         observed=sum(int(np.any(ak==q)) for q in (-1,0,1));ninf=3-observed
         if ninf and len(ak)<4 and observed<2:continue
         # axis agreement is a genuine independent geometric cross-check (x60f
