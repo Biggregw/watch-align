@@ -144,10 +144,18 @@ final class GmtTwelveLandmarkAnalyzer {
 
             // True local 12 is centre -> detected 60 tick. Use that radial axis for
             // centring and whole-marker orientation. The marker cannot define itself.
-            double ux=cx-frame.center.x,uy=cy-frame.center.y;
-            double un=Math.hypot(ux,uy);
-            if(un<=1e-9)return new Result("60-minute radial axis is degenerate");
-            ux/=un;uy/=un;
+            // Local 12 axis: square to the 59-01 tick chord, pointing inward (alpha58). It used
+            // to be the line from the fitted dial centre to the 60 tick, but that line swings
+            // with any error in the centre fit: on genuine Phillips 126710BLRO photos it sat
+            // 0.7-4.2 deg off the chord's square and read straight triangles as turned 1.4-4.5
+            // deg. The 6 baton already used this local reference (alpha55).
+            double ux,uy;
+            {
+                double kx=frame.right.x-frame.left.x,ky=frame.right.y-frame.left.y,kn=Math.hypot(kx,ky);
+                if(kn<=1e-9)return new Result("59-01 tick chord is degenerate");
+                ux=-ky/kn;uy=kx/kn;
+                if((cx-frame.center.x)*ux+(cy-frame.center.y)*uy<0){ux=-ux;uy=-uy;}
+            }
             double vx=-uy,vy=ux;
             double dx=baseMid.x-frame.center.x,dy=baseMid.y-frame.center.y;
             double horiz=(dx*vx+dy*vy)/width;

@@ -61,6 +61,8 @@ final class GmtHumanQcMath {
     // and the outer surround on others.)
     static final double LOW_CLEARANCE_ATTENTION = 0.070;
     static final double MAX_PLAUSIBLE_ROTATION_DEG = 8.0;
+    /** A lean with no matching top-edge tilt is only flagged from here (alpha58; genuine max 1.4). */
+    static final double SKEW_ONLY_MIN_DEG = 2.0;
 
     static PoseDecision classifyPose(double minWidthOverMean,
                                      double edgeCoverage,
@@ -237,6 +239,13 @@ final class GmtHumanQcMath {
                     "pose is too oblique to silently clear a subtle rotation");
         }
 
+        // A turned triangle turns its top edge with it. A leaning point with a level top edge
+        // is a shape or perspective effect: genuine Phillips 126710BLRO photos read up to 1.4 deg
+        // that way (alpha58). Without the top edge, the lean must clear that spread.
+        if (axisVisible && !baseCorroborates && a<SKEW_ONLY_MIN_DEG) {
+            return new RotationDecision(Attention.CLEAR,wholeAxisErrorDeg,topEdgeErrorDeg,sideClearanceAsymmetry,rise,baseCorroborates,spacingCorroborates,
+                    String.format(java.util.Locale.US,"the point leans %.1f° but the top edge is level; genuine photos show up to 1.4° of this from the camera angle",a));
+        }
         if (axisVisible && (baseCorroborates || spacingCorroborates)) {
             boolean strong=a>=3.0 || rise>=1.5 || spacingStrong;
             return new RotationDecision(strong?Attention.STRONG:Attention.CHECK,wholeAxisErrorDeg,topEdgeErrorDeg,sideClearanceAsymmetry,rise,baseCorroborates,spacingCorroborates,

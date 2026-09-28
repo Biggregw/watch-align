@@ -142,4 +142,20 @@ public class GmtHumanQcMathTest {
         double s=GmtHumanQcMath.normalizedClearancePerspectiveScale(0.96,0.0,0.0);
         assertTrue(s<1.0);
     }
+
+    /** alpha58: genuine Phillips Pepsi photos lean up to 1.4 deg with a level top edge. */
+    @Test public void smallLeanWithLevelTopEdgeIsNotFlagged() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(1.39,-0.66,-0.057,70.0,GmtHumanQcMath.PoseLabel.CORRECTABLE,true);
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,r.attention);
+    }
+
+    @Test public void largeLeanWithLevelTopEdgeIsStillChecked() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(2.4,0.2,0.07,70.0,GmtHumanQcMath.PoseLabel.GOOD,true);
+        assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
+    }
+
+    @Test public void smallTurnWithMatchingTopEdgeIsChecked() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(1.2,1.0,0.0,70.0,GmtHumanQcMath.PoseLabel.GOOD,true);
+        assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
+    }
 }

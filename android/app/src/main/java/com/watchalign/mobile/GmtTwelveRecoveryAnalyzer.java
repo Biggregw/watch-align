@@ -59,9 +59,12 @@ final class GmtTwelveRecoveryAnalyzer {
             if(width<=1)return new GmtTwelveLandmarkAnalyzer.Result(primaryReason+"; recovery triangle width degenerate");
             double gap=Math.abs(pointLineDistance(base,frame.left,frame.right))/width;
 
-            double ux=cx-frame.center.x,uy=cy-frame.center.y,un=Math.hypot(ux,uy);
-            if(un<=1e-9)return new GmtTwelveLandmarkAnalyzer.Result(primaryReason+"; recovery 60 axis degenerate");
-            ux/=un;uy/=un;double vx=-uy,vy=ux;
+            // Local axis square to the 59-01 chord, as in GmtTwelveLandmarkAnalyzer (alpha58).
+            double kx=frame.right.x-frame.left.x,ky=frame.right.y-frame.left.y,kn=Math.hypot(kx,ky);
+            if(kn<=1e-9)return new GmtTwelveLandmarkAnalyzer.Result(primaryReason+"; recovery 59-01 chord degenerate");
+            double ux=-ky/kn,uy=kx/kn;
+            if((cx-frame.center.x)*ux+(cy-frame.center.y)*uy<0){ux=-ux;uy=-uy;}
+            double vx=-uy,vy=ux;
             double dx=base.x-frame.center.x,dy=base.y-frame.center.y;
             double horiz=(dx*vx+dy*vy)/width;
             double axisErr=wrap90(Math.toDegrees(Math.atan2(tri.tip.y-base.y,tri.tip.x-base.x)-Math.atan2(uy,ux)));
