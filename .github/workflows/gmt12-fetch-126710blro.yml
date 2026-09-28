@@ -1,0 +1,55 @@
+name: GMT12 fetch + measure 126710BLRO genuine sources
+
+# Fetches direct-URL genuine dial photos listed in
+# tools/research/validation/gmt12/126710blro_sources.csv (auction-house and
+# dealer listings, not social-media scraping) and runs them through the
+# CURRENT detector (gmt12_auto_landmarks.py + gmt12_qc_assessment.py), not
+# the frozen Phase A/B pipeline. This runner's network path is separate from
+# the interactive sandbox's egress proxy, which blocks these CDN hosts.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-and-measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -q --upgrade pip
+          python -m pip install -q requests Pillow numpy opencv-python-headless
+
+      - name: Fetch source images
+        run: |
+          python3 tools/research/validation/gmt12/fetch_direct.py \
+            tools/research/validation/gmt12/126710blro_sources.csv \
+            tools/research/validation/gmt12/action-downloads/126710blro
+
+      - name: Run current detector + assessment, print previews (LAST STEP)
+        # Deliberately the job's final stdout-producing step: keeps result
+        # lines and base64 previews together at the end of the log.
+        run: |
+          python3 tools/research/validation/gmt12/measure_manifest.py \
+            tools/research/validation/gmt12/126710blro_sources.csv \
+            tools/research/validation/gmt12/action-downloads/126710blro
+
+      - name: Upload downloaded images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmt12-126710blro-images
+          path: tools/research/validation/gmt12/action-downloads/126710blro/
+          if-no-files-found: warn
+          retention-days: 7
