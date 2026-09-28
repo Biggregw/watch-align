@@ -77,7 +77,12 @@ final class GmtSixLandmarkAnalyzer {
          */
         boolean resampleStable(){
             if(!stabilityRun)return true;
-            if(!stabilitySameEdge||!Double.isFinite(centringMax)||!Double.isFinite(rotMax))return false;
+            if(!Double.isFinite(centringMax)||!Double.isFinite(rotMax))return false;
+            // A different edge kind at one scale (outer surround against the band fallback) still
+            // can't change the verdict when every reading is below both check levels (alpha61:
+            // WOS CPO 6 batons read offset -0.01..+0.02 and rotation -0.7..+0.6 and were withheld).
+            if(!stabilitySameEdge)return Math.max(Math.abs(centringMin),Math.abs(centringMax))<GmtHumanQcMath.SIX_CENTRING_CHECK
+                    &&Math.max(Math.abs(rotMin),Math.abs(rotMax))<GmtHumanQcMath.SIX_ROTATION_CHECK_DEG;
             boolean c=(centringMax-centringMin)*widthPx<=GmtTwelveLandmarkAnalyzer.MAX_RESAMPLE_SHIFT_PX
                     ||Math.max(Math.abs(centringMin),Math.abs(centringMax))<GmtHumanQcMath.SIX_CENTRING_CHECK;
             boolean t=Math.tan(Math.toRadians(rotMax-rotMin))*lengthPx<=GmtTwelveLandmarkAnalyzer.MAX_RESAMPLE_SHIFT_PX
@@ -86,6 +91,8 @@ final class GmtSixLandmarkAnalyzer {
         }
 
         Position position=Position.SIX;
+        /** The 12's clock angle this was measured with (for the resize check), or NaN. */
+        double twelveClockDeg=Double.NaN;
         /** Why a measured baton is low confidence (alpha57), or "" when stable. */
         String lowReason="";
         /** Diagnostics: long-side parallelism of the edge fit, tick frame score/pitch/inferred count. */
@@ -108,13 +115,20 @@ final class GmtSixLandmarkAnalyzer {
 
     static Result analyse(Mat bgr,double cx,double cy,double r){return analyse(bgr,cx,cy,r,Position.SIX);}
 
-    static Result analyse(Mat bgr,double cx,double cy,double r,Position pos){
-        Result res=analyseTurned(bgr,cx,cy,r,pos);
-        res.position=pos;
+    static Result analyse(Mat bgr,double cx,double cy,double r,Position pos){return analyse(bgr,cx,cy,r,pos,Double.NaN);}
+
+    /**
+     * @param twelveClockDeg clock angle of the 12's 60 tick about (cx,cy), or NaN. When given and
+     *        no baton-shaped outline is found (a hand lying along the baton merges with it), the
+     *        baton's edges are searched for where the minute ticks say it must be (alpha61).
+     */
+    static Result analyse(Mat bgr,double cx,double cy,double r,Position pos,double twelveClockDeg){
+        Result res=analyseTurned(bgr,cx,cy,r,pos,twelveClockDeg);
+        res.position=pos;res.twelveClockDeg=twelveClockDeg;
         return res;
     }
 
-    private static Result analyseTurned(Mat bgr,double cx,double cy,double r,Position pos){
+    private static Result analyseTurned(Mat bgr,double cx,double cy,double r,Position pos,double twelveClockDeg){
         if(bgr==null||bgr.empty()||!(r>20))return new Result("invalid dial seed");
         Mat flipped=new Mat(),gray=new Mat(),enh=new Mat();
         try{
@@ -129,6 +143,17 @@ final class GmtSixLandmarkAnalyzer {
             clahe.apply(gray,enh);
 
             double[][] rect=batonCandidate(enh,fx,fy,r);
+            // Turned so the baton is at the top: its clock angle there equals the 12's in the
+            // original (180 deg flip for the 6 adds 180; 90 deg CW for the 9 adds 90).
+            boolean fromTicks=false;
+            if(rect==null&&Double.isFinite(twelveClockDeg)){rect=priorFromTicks(enh,fx,fy,r,twelveClockDeg);fromTicks=rect!=null;
+                if(DEBUG&&rect!=null){
+                    Mat dbg=new Mat();Imgproc.cvtColor(enh,dbg,Imgproc.COLOR_GRAY2BGR);
+                    for(int i=0;i<4;i++)Imgproc.line(dbg,new Point(rect[i][0],rect[i][1]),new Point(rect[(i+1)%4][0],rect[(i+1)%4][1]),new org.opencv.core.Scalar(0,0,255),1);
+                    int x0=(int)Math.max(0,fx-0.4*r),y0=(int)Math.max(0,fy-1.05*r),x1=(int)Math.min(W,fx+0.4*r),y1=(int)Math.min(H,fy-0.45*r);
+                    org.opencv.imgcodecs.Imgcodecs.imwrite(System.getProperty("wa.six.dbgdir","/tmp")+"/prior_"+pos+"_"+System.nanoTime()+".png",dbg.submat(y0,y1,x0,x1));dbg.release();
+                }
+            }
             if(rect==null)return new Result(pos.label+" baton not found");
             // rect = {innerLeft, outerLeft, outerRight, innerRight} in the flipped image
             double[] om=mid(rect[1],rect[2]);
@@ -138,6 +163,9 @@ final class GmtSixLandmarkAnalyzer {
             boolean outerEdge=false;
             String[] why={""};double[] par={Double.NaN};
             double[][] refined=refine(enh,rect,frame,r,why,par);
+            // A baton placed from the ticks is only a search window: without traced edges there
+            // is nothing measured.
+            if(fromTicks&&refined==null)return new Result(pos.label+" baton outline not found where the minute ticks put it, usually because a hand lies along it");
             if(refined!=null){
                 double[] om2=mid(refined[1],refined[2]);
                 double[][] again=GmtTwelveLandmarkAnalyzer.tickFrameNear(enh,fx,fy,r,om2[0],om2[1]);
@@ -220,6 +248,8 @@ final class GmtSixLandmarkAnalyzer {
                     double rad=Math.hypot(mx-cx,my-cy)/r;
                     double ang=Math.toDegrees(Math.atan2(mx-cx,cy-my));
                     if(rad<.62||rad>.88||Math.abs(ang)>15)continue;
+                    if(DEBUG){Point[] dv=new Point[4];rr.points(dv);double d1=Math.hypot(dv[1].x-dv[0].x,dv[1].y-dv[0].y),d2=Math.hypot(dv[2].x-dv[1].x,dv[2].y-dv[1].y);
+                        System.err.printf(java.util.Locale.US,"cand area %.0f rad %.2f ang %.1f len %.3f wid %.3f fill %.2f%n",area,rad,ang,Math.max(d1,d2)/r,Math.min(d1,d2)/r,area/(d1*d2));}
                     Point[] v=new Point[4];rr.points(v);
                     for(Point p:v){p.x+=x0;p.y+=y0;}
                     // Long axis and its direction relative to the radial line.
@@ -242,6 +272,28 @@ final class GmtSixLandmarkAnalyzer {
             }
             return best;
         }finally{for(Mat m:masks)m.release();patch.release();}
+    }
+
+    /**
+     * Rough baton rectangle from the minute ticks either side of it (alpha61), used as the
+     * search window when no outline passed the shape tests. The tick chord gives the local frame,
+     * so this follows perspective and dial-centre error: outer end just inside the tick line,
+     * length 0.30 and width 0.12 dial radii (measured master 0.304-0.314 / 0.120-0.126).
+     */
+    private static double[][] priorFromTicks(Mat enh,double cx,double cy,double r,double clockDeg){
+        double t=Math.toRadians(clockDeg);
+        double ox=cx+Math.sin(t)*0.908*r,oy=cy-Math.cos(t)*0.908*r;
+        double[][] f=GmtTwelveLandmarkAnalyzer.tickFrameNear(enh,cx,cy,r,ox,oy);
+        if(f==null||f[3][3]>MAX_TICKS_INFERRED)return null;
+        double mx=(f[0][0]+f[2][0])/2,my=(f[0][1]+f[2][1])/2;
+        double ux=f[2][0]-f[0][0],uy=f[2][1]-f[0][1],un=Math.hypot(ux,uy);if(un<1e-6)return null;
+        ux/=un;uy/=un;
+        double nx=-uy,ny=ux;if(nx*(cx-mx)+ny*(cy-my)<0){nx=-nx;ny=-ny;}
+        double om=0.012*r,len=0.30*r,hw=0.06*r;
+        double oX=mx+nx*om,oY=my+ny*om,iX=oX+nx*len,iY=oY+ny*len;
+        double[][] q={{iX-ux*hw,iY-uy*hw},{oX-ux*hw,oY-uy*hw},{oX+ux*hw,oY+uy*hw},{iX+ux*hw,iY+uy*hw}};
+        if(q[1][0]>q[2][0]){double[] z=q[0];q[0]=q[3];q[3]=z;z=q[1];q[1]=q[2];q[2]=z;}
+        return q;
     }
 
     /** Orders rectangle corners as {innerLeft, outerLeft, outerRight, innerRight} (image left/right). */
@@ -275,7 +327,7 @@ final class GmtSixLandmarkAnalyzer {
             Mat m=new Mat();
             try{
                 Imgproc.resize(bgr,m,new Size(Math.round(bgr.cols()*s),Math.round(bgr.rows()*s)),0,0,Imgproc.INTER_LINEAR);
-                Result q=analyse(m,cx*s,cy*s,r*s,res.position);
+                Result q=analyse(m,cx*s,cy*s,r*s,res.position,res.twelveClockDeg);
                 if(!q.valid){same=false;cMin=cMax=rMin=rMax=Double.NaN;break;}
                 if((q.geometry!=null&&q.geometry.outerEdge)!=outer)same=false;
                 cMin=Math.min(cMin,q.centring);cMax=Math.max(cMax,q.centring);

@@ -41,4 +41,14 @@ public class SixDecisionTest {
         assertEquals(GmtHumanQcMath.Attention.CHECK, d(0.0, 2.0, 30, true).attention);
         assertEquals(GmtHumanQcMath.Attention.STRONG, d(0.0, 3.5, 30, true).attention);
     }
+
+    /** alpha61: a different edge kind at one resize scale doesn't withhold a clear baton. */
+    @Test public void edgeChangeBelowTheLevelsIsStable() {
+        GmtSixLandmarkAnalyzer.Result b = new GmtSixLandmarkAnalyzer.Result(0.15, 0.0, -0.7, 30, 75, true, null);
+        b.stabilityRun = true; b.stabilitySameEdge = false;
+        b.centringMin = -0.01; b.centringMax = 0.02; b.rotMin = -0.7; b.rotMax = 0.6;
+        org.junit.Assert.assertTrue(b.resampleStable());
+        b.rotMax = 2.3;                                    // crosses the rotation level
+        org.junit.Assert.assertFalse(b.resampleStable());
+    }
 }

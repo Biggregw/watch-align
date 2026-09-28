@@ -466,7 +466,9 @@ final class GmtHumanQcAnalyzerV2 {
     private static BatonOutcome measureBaton(GmtSixLandmarkAnalyzer.Position pos,Mat src,double cx,double cy,double r,
                                              GmtTwelveLandmarkAnalyzer.Result twelve,GmtHumanQcMath.PoseLabel pose){
         BatonOutcome o=new BatonOutcome(pos);
-        GmtSixLandmarkAnalyzer.Result b=GmtSixLandmarkAnalyzer.analyse(src,cx,cy,r,pos);
+        double twelveClock=twelve.valid&&twelve.geometry!=null
+                ?Math.toDegrees(Math.atan2(twelve.geometry.tick60[0]-cx,cy-twelve.geometry.tick60[1])):Double.NaN;
+        GmtSixLandmarkAnalyzer.Result b=GmtSixLandmarkAnalyzer.analyse(src,cx,cy,r,pos,twelveClock);
         String L=pos.label;
         if(b.valid){
             if(twelve.valid&&twelve.geometry!=null){
@@ -476,7 +478,7 @@ final class GmtHumanQcAnalyzerV2 {
                 double d=Math.toDegrees(am-a12)-pos.angleFromTwelveDeg;while(d>180)d-=360;while(d<=-180)d+=360;
                 if(Math.abs(d)>8.0)b=new GmtSixLandmarkAnalyzer.Result("the marker found at "+L+" is not where the "+L+" baton should be relative to the 12 marker (photo turned?)");
             }else b=b.lowConfidence("the 12 marker was not found, so the dial orientation is unknown");
-            b.position=pos;
+            b.position=pos;b.twelveClockDeg=twelveClock;
         }
         if(b.valid&&b.stable)GmtSixLandmarkAnalyzer.measureStability(src,cx,cy,r,b);
         GmtHumanQcMath.SixDecision dec=b.valid
