@@ -46,6 +46,16 @@ public class MainActivity extends Activity {
 
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private final List<ModelCatalog.Profile> models=new ArrayList<>();
+    /** Model profiles offered in the (hidden) selector: only the generic GMT-Master II. */
+    static List<ModelCatalog.Profile> offeredModels(){
+        List<ModelCatalog.Profile> out=new ArrayList<>();
+        ModelCatalog.Profile generic=ModelCatalog.byCode(GENERIC_GMT_CODE);
+        if(generic!=null&&CanonicalGmtGeometryAnalyzer.supports(generic.code))out.add(generic);
+        return out;
+    }
+
+    /** The one model profile the app checks (generic GMT-Master II). */
+    static final String GENERIC_GMT_CODE="126710BLNR";
     private Bitmap watchBitmap;
     /** The photo as picked, for the full-resolution dial crop (alpha61). */
     private Uri watchUri;
@@ -64,15 +74,16 @@ public class MainActivity extends Activity {
         root.addView(text("Rolex GMT-Master II dial check · "+WatchAlignCoreV13.CORE_VERSION,13,MUTED));
         root.addView(text("Use a sharp, straight-on photo with the dial filling as much of the frame as possible and the hands away from 12.",13,MUTED));
 
-        for(ModelCatalog.Profile p:ModelCatalog.all())if(CanonicalGmtGeometryAnalyzer.supports(p.code))models.add(p);
-        // One generic GMT-Master II check (alpha61): the user doesn't want the app to tell the
-        // references apart, and the dial layout is the same on every current GMT-Master II
-        // (126710BLNR/BLRO/GRNR, 126711CHNR, 126713GRNR, 126715CHNR, 126718GRNR, 126720VTNR were
-        // all tested). The spinner stays for the non-GMT models the catalog still defines, but is
-        // hidden while only the GMT check is offered.
+        // One generic GMT-Master II check (alpha61, the user's decision). Before this, every catalog
+        // profile starting 126710 was offered (BLNR, BLRO, GRNR), so the dropdown still showed three
+        // entries. Only the generic profile is offered now and the dropdown is hidden. Its internal
+        // code stays 126710BLNR, whose measured master geometry is assumed to hold for the other
+        // current references (genuine photos of each have been run, most only a few; see
+        // docs/HANDOFF.md). The date side (3, or 9 on the Sprite) is read from the photo (GmtDialLayout).
+        models.addAll(offeredModels());
         List<String> labels=new ArrayList<>();for(ModelCatalog.Profile p:models)labels.add(p.label);
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,labels));root.addView(model,lp(-1,dp(54),10));
-        if(models.size()<=1)model.setVisibility(View.GONE);
+        model.setVisibility(View.GONE);
 
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         checkButton=button("Check watch");checkButton.setBackgroundColor(ACCENT);checkButton.setTextColor(Color.rgb(4,32,42));

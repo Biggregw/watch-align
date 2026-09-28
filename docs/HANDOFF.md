@@ -243,10 +243,29 @@ the 20 Phillips genuine photos (off-centre 0.080; skew +2.2°). Both were then d
 - A lean with a level top edge must clear 2° at every resize scale to stay a concern.
 
 **One generic GMT check (user's decision, 2026-09-28):** the app doesn't tell GMT-Master II
-references apart. The model dropdown is hidden, the screen and report say "Rolex GMT-Master
-II", and the internal model code stays `126710BLNR`. All current references share the dial
-layout and have been tested: BLNR, BLRO, GRNR, CHNR, 126713/126715/126718 and VTNR. A
-per-model list or a bezel check is not wanted.
+references apart. Only the generic profile is offered (`MainActivity.offeredModels`), the model
+dropdown is hidden, the screen and report say "Rolex GMT-Master II", and the internal model code
+stays `126710BLNR`. A per-model list or a bezel check is not wanted.
+
+The date side is read from the photo (`GmtDialLayout`): the date is at 3 with a baton at 9, or at
+9 with a baton at 3 on the mirrored 126720VTNR Sprite. See
+`docs/research/gmt_generic_layout_2026-09-28.md`.
+
+**What the regression corpus actually covers.** It assumes the other references share the
+126710BLNR master geometry; it has not measured them separately.
+
+| reference | genuine photos |
+|---|---|
+| 126710BLNR | the bulk: Reddit sets, the official render, Phillips, WOS |
+| 126710BLRO | 10 Phillips Pepsi, 12 WOS, 2 Phillips |
+| 126711CHNR | 10 |
+| 126715CHNR | 6 |
+| 126710GRNR | 2 |
+| 126718GRNR | 2 |
+| 126713GRNR | 1 (official render only) |
+| 126720VTNR | 5; only the official render gives a readable 3 baton |
+
+All replica photos are 126710BLNR.
 
 **Scope:** the deliverable is the Android app. The desktop harness only runs the app's
 Java code for fast testing. The Python tools in `tools/research/` (branch

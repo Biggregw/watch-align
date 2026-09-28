@@ -39,6 +39,8 @@ final class GmtHumanSummary {
         boolean sixUnstable;double sixCentringMin=Double.NaN,sixCentringMax=Double.NaN,sixRotMin=Double.NaN,sixRotMax=Double.NaN;
         /** 9 o'clock baton (alpha59). The 6 keeps its own fields above for compatibility. */
         Baton nine=new Baton("9",44,46);
+        /** Date side read from the photo (alpha61); the side baton above is at 3 when the date is at 9. */
+        GmtDialLayout.Layout layout=GmtDialLayout.Layout.DATE_AT_3;
         /** Round hour markers (alpha61), with their verdicts; empty when not measured. */
         List<GmtRoundMarkerAnalyzer.Marker> round=new ArrayList<>();
         /** No readable dial in the photo (alpha61): the summary says only that. */
@@ -68,12 +70,12 @@ final class GmtHumanSummary {
         s.append("12 alignment: ").append(alignmentLine(in)).append("\n");
         s.append("6 baton: ").append(sixLine(in)).append("\n");
         in.nine.angled=poorPose(in);
-        s.append("9 baton: ").append(batonLine(in.nine)).append("\n");
+        s.append(in.nine.label).append(" baton: ").append(batonLine(in.nine)).append("\n");
         s.append("Round markers: ").append(roundLine(in)).append("\n");
         s.append("Overlay: ").append(in.overlayDrawn&&(in.tooSmall||in.handAtTwelve)
                 ?"shows the 12 triangle that was found, grey and dashed because it was not judged. The close-up shows it enlarged."
                 :in.overlayDrawn
-                ?"shows what was measured: at 12 the detected triangle, the 59/60/01 tick ends, the gap and the spacing either side; at 6 and 9 the baton outline and its neighbouring ticks; each round marker's outline and the ticks either side. Each is coloured green (clear), amber (check) or red. The close-ups show them enlarged; Inspect overlay zooms the whole photo."
+                ?"shows what was measured: at 12 the detected triangle, the 59/60/01 tick ends, the gap and the spacing either side; at 6 and "+in.nine.label+" the baton outline and its neighbouring ticks; each round marker's outline and the ticks either side. Each is coloured green (clear), amber (check) or red. The close-ups show them enlarged; Inspect overlay zooms the whole photo."
                 :"nothing at 12 could be measured, so only the dial edge is shown.").append("\n");
         s.append("\n").append(bottomLine(in)).append("\n");
         s.append("This flags things to look at closely. It does not prove a watch is genuine or fake.\n");
@@ -92,9 +94,14 @@ final class GmtHumanSummary {
         for(int h=12,k=0;k<12;k++,h=h%12+1){
             String st;
             if(h==12)st=twelveStatus(in);
-            else if(h==3)st="date window (not a marker)";
             else if(h==6)st=batonStatus(six);
-            else if(h==9)st=batonStatus(in.nine);
+            else if(h==3||h==9){
+                // One of 3 and 9 is the date window. Which one is read from the photo (126720VTNR
+                // Sprite: date at 9); when it couldn't be told, the side not measured isn't named.
+                int dateAt=in.layout==GmtDialLayout.Layout.DATE_AT_9?9:in.layout==GmtDialLayout.Layout.DATE_AT_3?3:0;
+                if(String.valueOf(h).equals(in.nine.label))st=batonStatus(in.nine);
+                else st=dateAt==h?"date window (not a marker)":"not checked (date side not determined)";
+            }
             else{GmtRoundMarkerAnalyzer.Marker m=round.get(h);st=m==null?"not measured":roundStatus(m);}
             parts.add(h+" "+st);
         }
@@ -247,6 +254,7 @@ final class GmtHumanSummary {
      */
     private static String side(Baton b,boolean towardsBefore){
         if("9".equals(b.label))return towardsBefore?"low (towards the "+b.before+" tick)":"high (towards the "+b.after+" tick)";
+        if("3".equals(b.label))return towardsBefore?"high (towards the "+b.before+" tick)":"low (towards the "+b.after+" tick)";
         return towardsBefore?"right (towards the "+b.before+" tick)":"left (towards the "+b.after+" tick)";
     }
 
@@ -256,8 +264,9 @@ final class GmtHumanSummary {
         if(b.tooSmall)return String.format(Locale.US,"not measured: the baton is only %.0f px wide in this photo.",Math.floor(b.widthPx));
         if(b.hand)return "not judged: a hand is next to the "+L+" baton.";
         boolean towardsBefore=b.centring>0;
-        String sideWord="9".equals(L)?(towardsBefore?"sits low":"sits high"):"sits to the "+side(b,towardsBefore);
-        String where="9".equals(L)?side(b,towardsBefore):side(b,towardsBefore);
+        boolean vertical="9".equals(L)||"3".equals(L);   // at 3 and 9 an offset is up or down
+        String sideWord=vertical?"sits "+side(b,towardsBefore):"sits to the "+side(b,towardsBefore);
+        String where=side(b,towardsBefore);
         String nums=String.format(Locale.US," (offset %+.2f of its width, rotation %+.1f°)",b.centring,b.rotationDeg);
         if(b.unstable&&b.attention!=GmtHumanQcMath.Attention.CHECK)
             return Double.isFinite(b.centringMax)
@@ -268,8 +277,8 @@ final class GmtHumanSummary {
         String caution=b.stable?"":" Measured with low confidence"+why+", so treat this with caution.";
         String what;
         String turn=b.rotationDeg>0?"clockwise":"anticlockwise";
-        if(b.offCentre&&b.rotated)what="off-centre, "+("9".equals(L)?where:"to the "+where)+", and rotated "+turn;
-        else if(b.offCentre)what="off-centre: it "+("9".equals(L)?"sits "+where:sideWord);
+        if(b.offCentre&&b.rotated)what="off-centre, "+(vertical?where:"to the "+where)+", and rotated "+turn;
+        else if(b.offCentre)what="off-centre: it "+sideWord;
         else if(b.rotated)what="rotated "+turn;
         else what="off-centre or rotated";
         switch(b.attention){

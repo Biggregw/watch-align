@@ -32,11 +32,13 @@ final class GmtSixLandmarkAnalyzer {
     /**
      * Which baton (alpha59: 6 and 9). The image is turned so the baton sits at the top, where
      * the 12 triangle normally is: 180 degrees for the 6 (a point reflection), 90 degrees
-     * clockwise for the 9. Both are exact pixel moves with no resampling. The 3 is left out:
-     * the date window sits there.
+     * clockwise for the 9, 90 degrees anticlockwise for the 3. All are exact pixel moves with no
+     * resampling. Only one of 3 and 9 is a baton: the date window takes the other (GmtDialLayout).
      */
     enum Position {
-        SIX("6",29,30,31,180.0), NINE("9",44,45,46,-90.0);
+        SIX("6",29,30,31,180.0), NINE("9",44,45,46,-90.0),
+        /** The baton at 3 on a date-at-9 dial (126720VTNR Sprite), turned 90 deg anticlockwise (alpha61). */
+        THREE("3",14,15,16,90.0);
         final String label;final int before,centre,after;
         /** Where the marker sits relative to the 12, degrees clockwise in image coordinates. */
         final double angleFromTwelveDeg;
@@ -133,11 +135,14 @@ final class GmtSixLandmarkAnalyzer {
         Mat flipped=new Mat(),gray=new Mat(),enh=new Mat();
         try{
             if(pos==Position.NINE)Core.rotate(bgr,flipped,Core.ROTATE_90_CLOCKWISE);
+            else if(pos==Position.THREE)Core.rotate(bgr,flipped,Core.ROTATE_90_COUNTERCLOCKWISE);
             else Core.flip(bgr,flipped,-1);
             final int W=flipped.cols(),H=flipped.rows();
             // Dial centre in the turned image. 180: (x,y)->(W-1-x,H-1-y). 90 CW: (x,y)->(Horig-1-y,x)
             // and the turned width W equals the original height.
-            final double fx=pos==Position.NINE?W-1-cy:W-1-cx,fy=pos==Position.NINE?cx:H-1-cy;
+            // 90 CCW: (x,y)->(y,Worig-1-x), and the turned height H equals the original width.
+            final double fx=pos==Position.NINE?W-1-cy:pos==Position.THREE?cy:W-1-cx,
+                    fy=pos==Position.NINE?cx:pos==Position.THREE?H-1-cx:H-1-cy;
             Imgproc.cvtColor(flipped,gray,Imgproc.COLOR_BGR2GRAY);
             CLAHE clahe=Imgproc.createCLAHE(2.0,new Size(8,8));
             clahe.apply(gray,enh);
@@ -405,6 +410,7 @@ final class GmtSixLandmarkAnalyzer {
     /** Turned-image point back to the original image (W,H are the turned image's size). */
     private static double[] back(double[] p,int W,int H,Position pos){
         if(pos==Position.NINE)return new double[]{p[1],W-1-p[0]};
+        if(pos==Position.THREE)return new double[]{H-1-p[1],p[0]};
         return new double[]{W-1-p[0],H-1-p[1]};
     }
     private static double[] mid(double[] a,double[] b){return new double[]{(a[0]+b[0])/2,(a[1]+b[1])/2};}

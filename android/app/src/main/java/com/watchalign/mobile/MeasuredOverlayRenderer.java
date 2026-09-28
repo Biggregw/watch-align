@@ -39,6 +39,8 @@ final class MeasuredOverlayRenderer {
         GmtHumanQcMath.Attention nineAttention=GmtHumanQcMath.Attention.UNASSESSABLE;
         double nineCentring=Double.NaN;
         String nineNotJudged;
+        /** Which side baton "nine" holds: "9", or "3" on a date-at-9 dial (alpha61). */
+        String nineLabel="9";
 
         // Round markers (alpha61): every marker found, with its verdict in GmtRoundMarkerAnalyzer.Marker.
         java.util.List<GmtRoundMarkerAnalyzer.Marker> round=new java.util.ArrayList<>();
@@ -269,7 +271,7 @@ final class MeasuredOverlayRenderer {
         java.util.List<Bitmap> ps=new java.util.ArrayList<>();
         Bitmap a=panel12(watch,overlay,d,size);if(a!=null)ps.add(a);
         if(d.six!=null)ps.add(panelBaton(watch,overlay,"6",d.six,d.sixAttention,d.sixNotJudged,size));
-        if(d.nine!=null)ps.add(panelBaton(watch,overlay,"9",d.nine,d.nineAttention,d.nineNotJudged,size));
+        if(d.nine!=null)ps.add(panelBaton(watch,overlay,d.nineLabel,d.nine,d.nineAttention,d.nineNotJudged,size));
         // Round markers: only those flagged, worst first, at most two.
         java.util.List<GmtRoundMarkerAnalyzer.Marker> fl=new java.util.ArrayList<>();
         for(GmtRoundMarkerAnalyzer.Marker m:d.round)if(m.found&&(m.attention==GmtHumanQcMath.Attention.CHECK||m.attention==GmtHumanQcMath.Attention.STRONG))fl.add(m);
