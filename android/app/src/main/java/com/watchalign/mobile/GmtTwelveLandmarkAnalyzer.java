@@ -34,6 +34,43 @@ final class GmtTwelveLandmarkAnalyzer {
         final int inferredMinutePoints;
         /** Measured image points for drawing, or null (e.g. recovery path). */
         Geometry geometry;
+        /**
+         * Resampling check (alpha56, see measureStability): the largest change in gap and
+         * in axis rotation when the same photo is measured at slightly different scales,
+         * and whether every re-measurement found the same kind of edge. NaN/false until run.
+         */
+        double stabilityGapSpread=Double.NaN,stabilityRotSpreadDeg=Double.NaN;
+        boolean stabilityRun,stabilitySameEdge;
+        /** Range of gap and axis rotation over the original and re-measured scales. */
+        double gapMin=Double.NaN,gapMax=Double.NaN,rotMin=Double.NaN,rotMax=Double.NaN;
+        /** Range of the 59/01 spacing asymmetry (01 minus 59) over the same scales (alpha57). */
+        double asymMin=Double.NaN,asymMax=Double.NaN;
+        /** Angle between the tick-chord axis and the dial-centre line (alpha58); NaN when not measured. */
+        double axisReferenceDisagreementDeg=Double.NaN;
+
+        /**
+         * Gap and rotation are judged separately. Each is stable when every re-measurement
+         * found the same kind of edge and either the reading moved by at most about a pixel
+         * at the marker, or every reading falls on the same side of the level where a
+         * verdict starts (gap 0.070, rotation 1.0°), so the movement cannot change what the
+         * user is told. On the corpus, stable readings moved at most 0.6 px and unstable
+         * ones 1.4 px or more (docs/research/gmt_resample_stability_2026-09-27.md). A
+         * concern with a large spread still counts as unstable, so it is capped at CHECK.
+         */
+        boolean resampleGapStable(){
+            if(!stabilityRun)return true;
+            if(!stabilitySameEdge||!Double.isFinite(gapMax))return false;
+            if((gapMax-gapMin)*triangleWidthPx<=MAX_RESAMPLE_SHIFT_PX)return true;
+            // Every reading must clear the limit by more than a pixel; a reading within a pixel
+            // of it is "too close to call" anyway (emulator, 6I00d8w image_01: 0.074 to 0.148).
+            return gapMin>=GmtHumanQcMath.LOW_CLEARANCE_ATTENTION+MAX_RESAMPLE_SHIFT_PX/triangleWidthPx;
+        }
+        boolean resampleRotStable(){
+            if(!stabilityRun)return true;
+            if(!stabilitySameEdge||!Double.isFinite(rotMax))return false;
+            if(Math.tan(Math.toRadians(rotMax-rotMin))*MARKER_HEIGHT_OVER_WIDTH*triangleWidthPx<=MAX_RESAMPLE_SHIFT_PX)return true;
+            return Math.max(Math.abs(rotMin),Math.abs(rotMax))<ROTATION_VISIBLE_DEG;
+        }
         Result(String reason){
             valid=false;detectorStable=false;this.reason=reason;
             topClearance=horizontalOffset=wholeAxisErrorDeg=topEdgeErrorDeg=Double.NaN;
@@ -109,10 +146,26 @@ final class GmtTwelveLandmarkAnalyzer {
 
             // True local 12 is centre -> detected 60 tick. Use that radial axis for
             // centring and whole-marker orientation. The marker cannot define itself.
-            double ux=cx-frame.center.x,uy=cy-frame.center.y;
-            double un=Math.hypot(ux,uy);
-            if(un<=1e-9)return new Result("60-minute radial axis is degenerate");
-            ux/=un;uy/=un;
+            // Local 12 axis: square to the 59-01 tick chord, pointing inward (alpha58). It used
+            // to be the line from the fitted dial centre to the 60 tick, but that line swings
+            // with any error in the centre fit: on genuine Phillips 126710BLRO photos it sat
+            // 0.7-4.2 deg off the chord's square and read straight triangles as turned 1.4-4.5
+            // deg. The 6 baton already used this local reference (alpha55).
+            double ux,uy;
+            {
+                double kx=frame.right.x-frame.left.x,ky=frame.right.y-frame.left.y,kn=Math.hypot(kx,ky);
+                if(kn<=1e-9)return new Result("59-01 tick chord is degenerate");
+                ux=-ky/kn;uy=kx/kn;
+                if((cx-frame.center.x)*ux+(cy-frame.center.y)*uy<0){ux=-ux;uy=-uy;}
+            }
+            // The chord is short (about 0.2 dial radii), so a tick end found a pixel or two out
+            // of place tilts it. Cross-check against the old dial-centre line: on correct fits
+            // the two agree within ~0.7 deg; where they differ by more, one of them is wrong.
+            double refDisagree;
+            {
+                double rx=cx-frame.center.x,ry=cy-frame.center.y,rn=Math.hypot(rx,ry);
+                refDisagree=rn>1e-9?Math.toDegrees(Math.acos(Math.max(-1,Math.min(1,(rx*ux+ry*uy)/rn)))):Double.NaN;
+            }
             double vx=-uy,vy=ux;
             double dx=baseMid.x-frame.center.x,dy=baseMid.y-frame.center.y;
             double horiz=(dx*vx+dy*vy)/width;
@@ -129,6 +182,7 @@ final class GmtTwelveLandmarkAnalyzer {
 
             Result res=new Result(gap,horiz,axisErr,edgeErr,left,right,side,width,
                     frame.rollDeg,frame.pitchDeg,frame.score,frame.inferred,stable);
+            res.axisReferenceDisagreementDeg=refDisagree;
             res.geometry=new Geometry(new double[]{tri.left.x,tri.left.y},new double[]{tri.right.x,tri.right.y},
                     new double[]{tri.tip.x,tri.tip.y},new double[]{frame.left.x,frame.left.y},
                     new double[]{frame.center.x,frame.center.y},new double[]{frame.right.x,frame.right.y},outerEdge);
@@ -138,6 +192,55 @@ final class GmtTwelveLandmarkAnalyzer {
         }finally{
             enhanced.release();gray.release();
         }
+    }
+
+    /**
+     * Scales the photo is re-measured at for the stability check. Both are reductions: an
+     * enlargement only interpolates pixels that were never captured, and on the official
+     * render at full size a 106% copy read 1.3° where every reduction read 0.2-0.5°.
+     */
+    static final double[] STABILITY_SCALES = {0.94, 0.88};
+
+    /**
+     * Re-measures the 12 marker on the same photo resized by a few percent (alpha56).
+     *
+     * The emulator run showed that the phone's decoder and the desktop harness, which differ
+     * only by about one grey level and a sub-pixel of resampling, could give very different
+     * 12 results on one photo (rep_cf_6I00d8w image_01: gap 0.07 vs 0.14, triangle 43 vs 34
+     * px). The edge fit had several near-equal answers there, and a tiny change picked a
+     * different one. A real measurement barely moves when the photo is reduced by 6-12%; an
+     * unstable one jumps. The result stores how far the readings moved, so the analyzer can
+     * treat a jumpy reading as low confidence instead of giving a verdict.
+     */
+    /** Marker height (0.302R) over base width (0.246R), to turn an angle change into tip travel. */
+    static final double MARKER_HEIGHT_OVER_WIDTH = 1.23;
+    /** Rotation below which no rotation is flagged (the axis test in GmtHumanQcMath.assessRotation). */
+    static final double ROTATION_VISIBLE_DEG = 1.0;
+    /** Largest movement of the gap line or triangle tip under resizing still treated as noise. */
+    static final double MAX_RESAMPLE_SHIFT_PX = 1.0;
+
+    static void measureStability(Mat bgr,double cx,double cy,double r,Result res){
+        if(res==null||!res.valid||bgr==null||bgr.empty())return;
+        double dg=0,dr=0;boolean same=true;
+        double gMin=res.topClearance,gMax=res.topClearance,rMin=res.wholeAxisErrorDeg,rMax=res.wholeAxisErrorDeg;
+        double aMin=res.sideAsymmetry,aMax=res.sideAsymmetry;
+        boolean outer=res.geometry!=null&&res.geometry.outerEdge;
+        for(double s:STABILITY_SCALES){
+            Mat m=new Mat();
+            try{
+                Imgproc.resize(bgr,m,new Size(Math.round(bgr.cols()*s),Math.round(bgr.rows()*s)),0,0,Imgproc.INTER_LINEAR);
+                Result q=analyse(m,cx*s,cy*s,r*s);
+                if(!q.valid){same=false;dg=Double.POSITIVE_INFINITY;dr=Double.POSITIVE_INFINITY;continue;}
+                if((q.geometry!=null&&q.geometry.outerEdge)!=outer)same=false;
+                dg=Math.max(dg,Math.abs(q.topClearance-res.topClearance));
+                dr=Math.max(dr,Math.abs(q.wholeAxisErrorDeg-res.wholeAxisErrorDeg));
+                gMin=Math.min(gMin,q.topClearance);gMax=Math.max(gMax,q.topClearance);
+                rMin=Math.min(rMin,q.wholeAxisErrorDeg);rMax=Math.max(rMax,q.wholeAxisErrorDeg);
+                aMin=Math.min(aMin,q.sideAsymmetry);aMax=Math.max(aMax,q.sideAsymmetry);
+            }finally{m.release();}
+        }
+        res.stabilityRun=true;res.stabilitySameEdge=same;res.stabilityGapSpread=dg;res.stabilityRotSpreadDeg=dr;
+        if(Double.isFinite(dg)){res.gapMin=gMin;res.gapMax=gMax;res.rotMin=rMin;res.rotMax=rMax;res.asymMin=aMin;res.asymMax=aMax;}
     }
 
     /** Backward-compatible overload. Legacy global roll is intentionally ignored. */
@@ -281,7 +384,16 @@ final class GmtTwelveLandmarkAnalyzer {
         Point baseMid=mid(tri.left,tri.right);
         double markerAngle=clockAngle(cx,cy,baseMid.x,baseMid.y);
         if(Math.abs(markerAngle)>22.0)return null;
+        MinuteFrame f=minuteFrameAt(Px.of(gray),cx,cy,r,markerAngle);
+        if(f==null)return null;
+        // 59/01 labels are image-left/image-right after local frame construction.
+        Point left=f.left,right=f.right;
+        if(left.x>right.x){Point z=left;left=right;right=z;}
+        return new MinuteFrame(left,f.center,right,f.rollDeg,f.pitchDeg,f.score,f.inferred);
+    }
 
+    /** Minute-tick frame about any clock angle; left/right are the ticks at a-p / a+p (angular order). */
+    private static MinuteFrame minuteFrameAt(Px gray,double cx,double cy,double r,double markerAngle){
         double best=-Double.MAX_VALUE,bestA=Double.NaN,bestP=Double.NaN;
         for(double a=markerAngle-3.4;a<=markerAngle+3.4+1e-9;a+=0.10){
             for(double p=5.35;p<=6.65+1e-9;p+=0.10){
@@ -322,13 +434,60 @@ final class GmtTwelveLandmarkAnalyzer {
         Point p60=tickInnerPoint(gray,cx,cy,r,bestA);if(p60==null){p60=polarPoint(cx,cy,.915*r,bestA);inferred++;}
         Point p01=tickInnerPoint(gray,cx,cy,r,bestA+bestP);if(p01==null){p01=polarPoint(cx,cy,.915*r,bestA+bestP);inferred++;}
 
-        // 59/01 labels are image-left/image-right after local frame construction.
-        Point left=p59,right=p01;
-        if(left.x>right.x){Point z=left;left=right;right=z;}
-        return new MinuteFrame(left,p60,right,bestA,bestP,frameScore,inferred);
+        return new MinuteFrame(p59,p60,p01,bestA,bestP,frameScore,inferred);
     }
 
-    private static double tickAngleScore(Mat gray,double cx,double cy,double r,double clockDeg){
+    /**
+     * The minute ticks either side of any marker, searched within ±3.4° of clockDeg (clock
+     * degrees, 0 = image up, clockwise) on a CLAHE-enhanced gray image (round markers,
+     * alpha61). Returns {before, centre, after, {roll, pitch, score, inferred}}: the inner
+     * ends of the ticks one minute before, at, and one minute after the marker; or null.
+     */
+    static double[][] tickFrameAt(Px enhanced,double cx,double cy,double r,double clockDeg){
+        MinuteFrame f=minuteFrameAt(enhanced,cx,cy,r,clockDeg);
+        if(f==null)return null;
+        return new double[][]{{f.left.x,f.left.y},{f.center.x,f.center.y},{f.right.x,f.right.y},
+                {f.rollDeg,f.pitchDeg,f.score,f.inferred}};
+    }
+
+    /**
+     * Tick phase and pitch about clockDeg: {angle of the tick nearest clockDeg, pitch, frame score}
+     * (clock degrees), or null. Used with tickInnerEnd for the round markers (alpha61).
+     */
+    static double[] tickAnglesAt(Px enhanced,double cx,double cy,double r,double clockDeg){
+        MinuteFrame f=minuteFrameAt(enhanced,cx,cy,r,clockDeg);
+        return f==null?null:new double[]{f.rollDeg,f.pitchDeg,f.score};
+    }
+    /** Inner end of the tick at clock angle a, ignoring anything inside avoid {x, y, radius}; or null. */
+    static double[] tickInnerEnd(Px enhanced,double cx,double cy,double r,double a,double[] avoid){
+        Point p=tickInnerPoint(enhanced,cx,cy,r,a,avoid);
+        return p==null?null:new double[]{p.x,p.y};
+    }
+
+    /** CLAHE (2.0, 8x8) on gray, as used for all the tick and marker searches. */
+    static Mat enhance(Mat bgr){
+        Mat gray=new Mat(),enhanced=new Mat();
+        Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);
+        Imgproc.createCLAHE(2.0,new Size(8,8)).apply(gray,enhanced);
+        gray.release();
+        return enhanced;
+    }
+
+    /**
+     * The three minute ticks either side of a marker at the top of the image, for other
+     * markers analysed on a rotated image (the 6 baton, alpha55). ox,oy is the marker's
+     * outer-end midpoint. Returns {left, centre, right, {roll, pitch, score, inferred}}
+     * with left/right in image order, or null.
+     */
+    static double[][] tickFrameNear(Mat gray,double cx,double cy,double r,double ox,double oy){
+        Point o=new Point(ox,oy);
+        MinuteFrame f=minuteFrame(gray,cx,cy,r,new Triangle(o,o,new Point(cx,cy)));
+        if(f==null)return null;
+        return new double[][]{{f.left.x,f.left.y},{f.center.x,f.center.y},{f.right.x,f.right.y},
+                {f.rollDeg,f.pitchDeg,f.score,f.inferred}};
+    }
+
+    private static double tickAngleScore(Px gray,double cx,double cy,double r,double clockDeg){
         double[] vals=new double[20];int n=0;
         for(double rf=.855;rf<=.975+1e-9;rf+=.007){
             double c=samplePolar(gray,cx,cy,r*rf,clockDeg);
@@ -346,10 +505,18 @@ final class GmtTwelveLandmarkAnalyzer {
         return sum/take;
     }
 
-    private static Point tickInnerPoint(Mat gray,double cx,double cy,double r,double a){
+    private static Point tickInnerPoint(Px gray,double cx,double cy,double r,double a){return tickInnerPoint(gray,cx,cy,r,a,null);}
+
+    /**
+     * Inner end of the tick at clock angle a. avoid = {x, y, radius}: samples inside that circle
+     * are not tick (round markers, alpha61: where a marker sits close to the track, the walk
+     * inward from the tick ran on along the marker's bright rim).
+     */
+    private static Point tickInnerPoint(Px gray,double cx,double cy,double r,double a,double[] avoid){
         final int N=71;double[] score=new double[N],rad=new double[N];int best=-1;double bestV=-Double.MAX_VALUE;
         for(int i=0;i<N;i++){
             double rf=.835+i*(.155/(N-1));rad[i]=rf*r;
+            if(avoid!=null){Point q=polarPoint(cx,cy,rad[i],a);if(Math.hypot(q.x-avoid[0],q.y-avoid[1])<=avoid[2]){score[i]=-999;continue;}}
             double c=samplePolar(gray,cx,cy,rad[i],a);
             double l=samplePolar(gray,cx,cy,rad[i],a-.72);
             double rr=samplePolar(gray,cx,cy,rad[i],a+.72);
@@ -368,14 +535,32 @@ final class GmtTwelveLandmarkAnalyzer {
         double t=Math.toRadians(clockDeg);
         return new Point(cx+Math.sin(t)*radius,cy-Math.cos(t)*radius);
     }
-    private static double samplePolar(Mat gray,double cx,double cy,double radius,double clockDeg){
+    private static double samplePolar(Px gray,double cx,double cy,double radius,double clockDeg){
         Point p=polarPoint(cx,cy,radius,clockDeg);return bilinear(gray,p.x,p.y);
     }
-    private static double bilinear(Mat m,double x,double y){
-        int x0=(int)Math.floor(x),y0=(int)Math.floor(y);if(x0<0||y0<0||x0+1>=m.cols()||y0+1>=m.rows())return Double.NaN;
-        double fx=x-x0,fy=y-y0;
-        double a=m.get(y0,x0)[0],b=m.get(y0,x0+1)[0],c=m.get(y0+1,x0)[0],d=m.get(y0+1,x0+1)[0];
-        return (a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy;
+    private static double bilinear(Px m,double x,double y){return m.at(x,y);}
+
+    /**
+     * An 8-bit single-channel image copied out of a Mat once, so the many thousands of
+     * bilinear samples in the tick search do not each cross into native code (alpha61: the
+     * round markers run the tick search 24 more times). Same values as Mat.get.
+     */
+    static final class Px {
+        final byte[] d;final int w,h;
+        private Px(byte[] d,int w,int h){this.d=d;this.w=w;this.h=h;}
+        static Px of(Mat m){
+            if(m.type()!=org.opencv.core.CvType.CV_8UC1)throw new IllegalArgumentException("8-bit gray expected");
+            Mat c=m.isContinuous()?m:m.clone();
+            byte[] b=new byte[(int)(c.total())];c.get(0,0,b);if(c!=m)c.release();
+            return new Px(b,m.cols(),m.rows());
+        }
+        /** Bilinear value, NaN within one pixel of the border (as before). */
+        double at(double x,double y){
+            int x0=(int)Math.floor(x),y0=(int)Math.floor(y);if(x0<0||y0<0||x0+1>=w||y0+1>=h)return Double.NaN;
+            double fx=x-x0,fy=y-y0;int i=y0*w+x0;
+            double a=d[i]&0xff,b=d[i+1]&0xff,c=d[i+w]&0xff,e=d[i+w+1]&0xff;
+            return (a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+e*fx)*fy;
+        }
     }
 
     private static double clockAngle(double cx,double cy,double x,double y){

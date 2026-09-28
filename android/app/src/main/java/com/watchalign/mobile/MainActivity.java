@@ -5,6 +5,8 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BitmapRegionDecoder;
+import android.graphics.Rect;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -45,8 +47,10 @@ public class MainActivity extends Activity {
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private final List<ModelCatalog.Profile> models=new ArrayList<>();
     private Bitmap watchBitmap;
+    /** The photo as picked, for the full-resolution dial crop (alpha61). */
+    private Uri watchUri;
     private WatchAlignCoreV13.AnalysisResult lastResult;
-    private ImageView preview;
+    private ImageView preview,closeUpView;
     private TextView status,summaryText;
     private Spinner model;
     private Button checkButton,resultsButton,inspectButton,exportButton,manualButton;
@@ -57,12 +61,18 @@ public class MainActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(BG);
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         TextView h1=text("Watch Align",28,Color.WHITE);root.addView(h1);
-        root.addView(text("GMT-Master II dial check · "+WatchAlignCoreV13.CORE_VERSION,13,MUTED));
+        root.addView(text("Rolex GMT-Master II dial check · "+WatchAlignCoreV13.CORE_VERSION,13,MUTED));
         root.addView(text("Use a sharp, straight-on photo with the dial filling as much of the frame as possible and the hands away from 12.",13,MUTED));
 
         for(ModelCatalog.Profile p:ModelCatalog.all())if(CanonicalGmtGeometryAnalyzer.supports(p.code))models.add(p);
+        // One generic GMT-Master II check (alpha61): the user doesn't want the app to tell the
+        // references apart, and the dial layout is the same on every current GMT-Master II
+        // (126710BLNR/BLRO/GRNR, 126711CHNR, 126713GRNR, 126715CHNR, 126718GRNR, 126720VTNR were
+        // all tested). The spinner stays for the non-GMT models the catalog still defines, but is
+        // hidden while only the GMT check is offered.
         List<String> labels=new ArrayList<>();for(ModelCatalog.Profile p:models)labels.add(p.label);
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,labels));root.addView(model,lp(-1,dp(54),10));
+        if(models.size()<=1)model.setVisibility(View.GONE);
 
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         checkButton=button("Check watch");checkButton.setBackgroundColor(ACCENT);checkButton.setTextColor(Color.rgb(4,32,42));
@@ -70,6 +80,10 @@ public class MainActivity extends Activity {
 
         status=text("Choose a watch photo to begin.",14,MUTED);root.addView(status,lp(-1,-2,10));
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(BG);root.addView(preview,lp(-1,-2,10));
+        closeUpView=new ImageView(this);closeUpView.setAdjustViewBounds(true);closeUpView.setScaleType(ImageView.ScaleType.FIT_CENTER);closeUpView.setVisibility(View.GONE);
+        closeUpView.setOnClickListener(v->{if(lastResult!=null&&lastResult.twelveCloseUp!=null){InspectionImageStore.set(lastResult.twelveCloseUp,"Close-up");startActivity(new Intent(this,FullscreenInspectActivity.class));}});
+        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,-2);cp.topMargin=dp(8);cp.gravity=android.view.Gravity.CENTER_HORIZONTAL;
+        root.addView(closeUpView,cp);
 
         LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
         inspectButton=smallButton("Inspect overlay");resultsButton=smallButton("Full results");exportButton=smallButton("Export card");
@@ -128,6 +142,14 @@ public class MainActivity extends Activity {
             android.graphics.Rect dst=new android.graphics.Rect(0,0,w,imgH);
             c.drawBitmap(display,src,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
         }
+        // Marker close-ups inset, top-right, so the card shows the measured markers at a readable size.
+        if(result.twelveCloseUp!=null&&imgH>0){
+            float aspect=result.twelveCloseUp.getWidth()/(float)result.twelveCloseUp.getHeight();
+            int inset=Math.min(Math.min(aspect>2.3f?840:aspect>1.3f?600:360,w-32),Math.round(imgH/2f*aspect));
+            int insetH=Math.round(inset*result.twelveCloseUp.getHeight()/(float)result.twelveCloseUp.getWidth());
+            android.graphics.Rect dst=new android.graphics.Rect(w-inset-16,16,w-16,16+insetH);
+            c.drawBitmap(result.twelveCloseUp,null,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
+        }
         int y=imgH+60;
         c.drawText("WATCH ALIGN · QC CARD",margin,y,pHeader);y+=50;
         for(String l:lines){if(!l.isEmpty())c.drawText(l,margin,y,pText);y+=lineH;}
@@ -173,11 +195,40 @@ public class MainActivity extends Activity {
         super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null)return;
         try{
             if(request==PICK_WATCH&&data.getData()!=null){
-                InspectionImageStore.clearManualSeed();watchBitmap=readBitmap(data.getData());lastResult=null;
-                preview.setImageBitmap(watchBitmap);summaryText.setText("");setResultButtons(false);manualButton.setVisibility(View.GONE);
+                InspectionImageStore.clearManualSeed();watchBitmap=readBitmap(data.getData());watchUri=data.getData();lastResult=null;
+                preview.setImageBitmap(watchBitmap);closeUpView.setVisibility(View.GONE);summaryText.setText("");setResultButtons(false);manualButton.setVisibility(View.GONE);
                 checkButton.setEnabled(true);status.setText("Photo ready. Tap Check watch.");
             }
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
+    }
+
+    /**
+     * The original photo, read a region at a time (alpha61), so the dial can be analysed at full
+     * resolution without decoding the whole photo at full size. Null when the photo can't be
+     * region-decoded; the analysis then uses the preview as before.
+     */
+    private FullResSource fullSource(Uri uri){
+        if(uri==null)return null;
+        try{
+            BitmapFactory.Options o=new BitmapFactory.Options();o.inJustDecodeBounds=true;
+            try(InputStream in=getContentResolver().openInputStream(uri)){BitmapFactory.decodeStream(in,null,o);}
+            final int w=o.outWidth,h=o.outHeight;
+            if(w<=0||h<=0)return null;
+            return new FullResSource(){
+                @Override public int width(){return w;}
+                @Override public int height(){return h;}
+                @SuppressWarnings("deprecation")
+                @Override public Bitmap region(int x0,int y0,int x1,int y1,int sampleSize){
+                    try(InputStream in=getContentResolver().openInputStream(uri)){
+                        BitmapRegionDecoder d=BitmapRegionDecoder.newInstance(in,false);
+                        try{
+                            BitmapFactory.Options ro=new BitmapFactory.Options();ro.inSampleSize=sampleSize;ro.inPreferredConfig=Bitmap.Config.ARGB_8888;
+                            return d.decodeRegion(new Rect(x0,y0,x1,y1),ro);
+                        }finally{d.recycle();}
+                    }catch(Throwable t){return null;}
+                }
+            };
+        }catch(Throwable t){return null;}
     }
 
     private Bitmap readBitmap(Uri uri)throws Exception{
@@ -196,19 +247,20 @@ public class MainActivity extends Activity {
         if(models.isEmpty()){status.setText("No supported model is available.");return;}
         ModelCatalog.Profile profile=models.get(Math.max(0,model.getSelectedItemPosition()));
         summaryText.setText("");setResultButtons(false);checkButton.setEnabled(false);Bitmap watch=watchBitmap;
-        status.setText("Checking… fitting the dial, drawing the template and measuring the 12 marker.");
+        status.setText("Checking… fitting the dial and measuring the hour markers. This can take up to half a minute.");
         worker.submit(()->{try{
-            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,Collections.<Bitmap>emptyList(),profile.code);
+            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,Collections.<Bitmap>emptyList(),profile.code,fullSource(watchUri));
             runOnUiThread(()->{
                 lastResult=r;checkButton.setEnabled(true);
                 preview.setImageBitmap(r.perspectiveOverlay!=null?composeOverlay(watchBitmap,r.perspectiveOverlay):watchBitmap);
+                closeUpView.setImageBitmap(r.twelveCloseUp);closeUpView.setVisibility(r.twelveCloseUp!=null?View.VISIBLE:View.GONE);
                 String sum=summaryOf(r.report);
                 summaryText.setText(sum!=null?sum:"Summary unavailable. Open Full results.");
                 boolean autoFailed=!r.twelveMeasured||r.report.contains("Dial centre: UNREFINED");
                 boolean manual=InspectionImageStore.hasManualSeed;
                 manualButton.setVisibility(autoFailed||manual?View.VISIBLE:View.GONE);
                 status.setText(r.twelveMeasured
-                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. The overlay shows what was measured at 12.")
+                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. The overlay shows what was measured at each hour marker; tap the close-ups to enlarge them.")
                         :"Done, but the 12 marker could not be measured on this photo. Try Align dial edge by hand below, or a clearer photo.");
                 resultsButton.setEnabled(true);exportButton.setEnabled(true);inspectButton.setEnabled(r.perspectiveOverlay!=null);
             });

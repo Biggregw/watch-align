@@ -24,6 +24,12 @@ public class GmtHumanQcMathTest {
         assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
     }
 
+    @Test public void implausiblyLargeRotationIsAMisdetectionNotAFlag() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(
+                -25.9,-20.0,0.3,82.0,GmtHumanQcMath.PoseLabel.CORRECTABLE,false);
+        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,r.attention);
+    }
+
     @Test public void poorPoseDoesNotSilentlyClearSubtleRotation() {
         GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(
                 1.4,1.2,0.04,42.0,GmtHumanQcMath.PoseLabel.RETAKE,true);
@@ -135,5 +141,21 @@ public class GmtHumanQcMathTest {
     @Test public void localPerspectiveScaleShowsVerticalTiltCompressesRadialGap() {
         double s=GmtHumanQcMath.normalizedClearancePerspectiveScale(0.96,0.0,0.0);
         assertTrue(s<1.0);
+    }
+
+    /** alpha58: genuine Phillips Pepsi photos lean up to 1.4 deg with a level top edge. */
+    @Test public void smallLeanWithLevelTopEdgeIsNotFlagged() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(1.39,-0.66,-0.057,70.0,GmtHumanQcMath.PoseLabel.CORRECTABLE,true);
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,r.attention);
+    }
+
+    @Test public void largeLeanWithLevelTopEdgeIsStillChecked() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(2.4,0.2,0.07,70.0,GmtHumanQcMath.PoseLabel.GOOD,true);
+        org.junit.Assert.assertNotEquals(GmtHumanQcMath.Attention.CLEAR,r.attention);
+    }
+
+    @Test public void smallTurnWithMatchingTopEdgeIsChecked() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(1.2,1.0,0.0,70.0,GmtHumanQcMath.PoseLabel.GOOD,true);
+        assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
     }
 }

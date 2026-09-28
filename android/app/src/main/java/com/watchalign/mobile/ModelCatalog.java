@@ -55,7 +55,7 @@ final class ModelCatalog {
         // Rolex sports / everyday models that dominate RepTimeQC traffic.
         // GMT 24-hour bezel triangles are deliberately visual-only for now. The old brightness
         // peak scan could lock onto bezel numerals/reflections and manufacture multi-degree errors.
-        add(p,"126710BLNR","Rolex GMT-Master II 126710BLNR · Batman/Batgirl","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,false,true,true,"https://www.rolex.com/watches/gmt-master-ii/m126710blnr-0002");
+        add(p,"126710BLNR","Rolex GMT-Master II","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,false,true,true,"https://www.rolex.com/watches/gmt-master-ii/m126710blnr-0002");
         add(p,"126710BLRO","Rolex GMT-Master II 126710BLRO · Pepsi","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,false,true,true,null);
         add(p,"126710GRNR","Rolex GMT-Master II 126710GRNR · Bruce Wayne","Rolex",GeometryMode.ROUND_INDEXED,3,true,0.69,false,true,true,null);
         add(p,"126720VTNR","Rolex GMT-Master II 126720VTNR · Sprite","Rolex",GeometryMode.ROUND_INDEXED,9,true,0.69,false,true,true,null);

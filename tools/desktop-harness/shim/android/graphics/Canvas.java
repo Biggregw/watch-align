@@ -8,7 +8,7 @@ public class Canvas{final Graphics2D g;
  public void drawCircle(float x,float y,float r,Paint p){set(p);Shape s=new Ellipse2D.Float(x-r,y-r,2*r,2*r);if(p.style==Paint.Style.FILL)g.fill(s);else g.draw(s);}
  public void drawRect(float l,float t,float r,float b,Paint p){set(p);Shape s=new Rectangle2D.Float(l,t,r-l,b-t);if(p.style==Paint.Style.FILL)g.fill(s);else g.draw(s);}
  public void drawRect(RectF rc,Paint p){drawRect(rc.left,rc.top,rc.right,rc.bottom,p);}
- public void drawText(String s,float x,float y,Paint p){set(p);g.setFont(g.getFont().deriveFont(p.textSize));g.drawString(s,x,y);}
+ public void drawText(String s,float x,float y,Paint p){set(p);g.setFont(new java.awt.Font(java.awt.Font.SANS_SERIF,p.bold?java.awt.Font.BOLD:java.awt.Font.PLAIN,1).deriveFont(p.textSize));g.drawString(s,x,y);}
  public void drawBitmap(Bitmap b,float x,float y,Paint p){g.drawImage(b.img,(int)x,(int)y,null);}
  public void drawColor(int c){g.setColor(new java.awt.Color(c,true));g.fillRect(0,0,100000,100000);}
  public void drawOval(RectF r,Paint p){set(p);Shape s=new Ellipse2D.Float(r.left,r.top,r.right-r.left,r.bottom-r.top);if(p.style==Paint.Style.FILL)g.fill(s);else g.draw(s);}

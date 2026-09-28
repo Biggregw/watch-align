@@ -5,6 +5,7 @@ public class Bitmap{
  public final BufferedImage img;
  public Bitmap(BufferedImage i){img=i;}
  public static Bitmap createBitmap(int w,int h,Config c){return new Bitmap(new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB));}
+ public static Bitmap createBitmap(Bitmap src,int x,int y,int w,int h){BufferedImage o=new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB);o.getGraphics().drawImage(src.img.getSubimage(x,y,w,h),0,0,null);return new Bitmap(o);}
  public static Bitmap createBitmap(Bitmap src){return src.copy(Config.ARGB_8888,true);}
  public static Bitmap createScaledBitmap(Bitmap b,int w,int h,boolean f){BufferedImage o=new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB);java.awt.Graphics2D g=o.createGraphics();g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);g.drawImage(b.img,0,0,w,h,null);g.dispose();return new Bitmap(o);}
  public int getWidth(){return img.getWidth();} public int getHeight(){return img.getHeight();}

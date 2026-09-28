@@ -73,3 +73,6 @@ tools/desktop-harness/.cache/
 datasets/126710BLNR/gen/
 datasets/126710BLNR/rep/
 datasets/126710BLNR/resolved_images.csv
+
+# Third-party photos fetched by CI for the emulator photo run; never commit.
+android/app/src/androidTest/assets/e2e/

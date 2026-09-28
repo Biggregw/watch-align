@@ -104,4 +104,187 @@ public class GmtHumanSummaryTest {
         in.observedGap = 0.01; in.gapPx = 0.6;
         assertTrue(GmtHumanSummary.build(in).contains("touching or almost touching"));
     }
+
+    /** r/RepTimeQC p3hHVMB: point leans clockwise, top edge level -> "skewed", not "rotated". */
+    @Test public void pointLeaningWithLevelTopEdgeIsCalledSkewed() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.alignment = GmtHumanQcMath.Attention.CHECK; in.rotationDeg = 1.63; in.baseTiltDeg = 0.2;
+        in.spacing59 = 0.15; in.spacing01 = 0.16;
+        String s = GmtHumanSummary.alignmentLine(in);
+        assertTrue(s, s.contains("skewed: the point leans clockwise by about 1.6° but the top edge is level"));
+    }
+
+    @Test public void wholeTriangleTurnedIsCalledRotated() {
+        GmtHumanSummary.Input in = base();
+        in.alignment = GmtHumanQcMath.Attention.STRONG; in.rotationDeg = -2.4; in.baseTiltDeg = -2.1;
+        String s = GmtHumanSummary.alignmentLine(in);
+        assertTrue(s, s.contains("rotated: the whole triangle is turned anticlockwise by about 2.4°"));
+    }
+
+    @Test public void unevenSpacingWithoutLeanIsCalledOffCentre() {
+        GmtHumanSummary.Input in = base();
+        in.alignment = GmtHumanQcMath.Attention.CHECK; in.rotationDeg = 0.3; in.baseTiltDeg = 0.1;
+        in.spacing59 = 0.10; in.spacing01 = 0.21;
+        String s = GmtHumanSummary.alignmentLine(in);
+        // Larger 01-side spacing: the right corner overhangs the 01 tick more, so the triangle is shifted right.
+        assertTrue(s, s.contains("off-centre: the triangle sits towards the 01 tick side (to the right of the 60 tick)"));
+    }
+
+    @Test public void sixBatonOffToTheLeftIsNamed() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.alignment = GmtHumanQcMath.Attention.CLEAR;
+        in.sixValid = true; in.sixStable = true; in.sixAttention = GmtHumanQcMath.Attention.CHECK;
+        in.sixOffCentre = true; in.sixCentring = -0.14; in.sixRotationDeg = 0.3; in.sixWidthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("6 baton: possibly off-centre: it sits to the left (towards the 31 tick)"));
+        assertTrue(s, s.contains("Bottom line: 1 thing to check: the 6 baton position."));
+    }
+
+    @Test public void clearTwelveAndSixSaysBoth() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.alignment = GmtHumanQcMath.Attention.CLEAR;
+        in.sixValid = true; in.sixStable = true; in.sixAttention = GmtHumanQcMath.Attention.CLEAR;
+        in.sixCentring = 0.01; in.sixRotationDeg = -0.1; in.sixWidthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("6 baton: centred between the 29 and 31 ticks and straight"));
+        assertTrue(s, s.contains("Bottom line: nothing flagged at 12 or 6."));
+    }
+
+    @Test public void threeFlagsAreListed() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CHECK; in.observedGap = 0.05;
+        in.alignment = GmtHumanQcMath.Attention.CHECK; in.rotationDeg = 1.2;
+        in.sixValid = true; in.sixStable = true; in.sixAttention = GmtHumanQcMath.Attention.STRONG;
+        in.sixRotated = true; in.sixCentring = 0.0; in.sixRotationDeg = 3.4; in.sixWidthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("3 things to check: the gap at 12, the 12 marker alignment and the 6 baton position."));
+        assertTrue(s, s.contains("6 baton: visibly rotated clockwise."));
+    }
+
+    @Test public void sixNotFoundIsNeverAPass() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.alignment = GmtHumanQcMath.Attention.CLEAR;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("6 baton: not measured"));
+        assertTrue(s, s.contains("Bottom line: nothing flagged at 12."));
+        assertTrue(s, s.contains("The 6 and 9 batons and the round markers could not be judged here"));
+    }
+
+    /** rep_cf_6I00d8w image_01 (alpha56): the gap read 0.07 on the phone and 0.14 on the desktop. */
+    @Test public void readingThatMovesWithResizingIsNotJudged() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.CORRECTABLE;
+        in.gap = GmtHumanQcMath.Attention.UNASSESSABLE; in.observedGap = 0.074;
+        in.alignment = GmtHumanQcMath.Attention.UNASSESSABLE; in.rotationDeg = -1.2;
+        in.gapUnstable = true; in.rotUnstable = true; in.gapMin = 0.074; in.gapMax = 0.226; in.rotMin = -1.5; in.rotMax = -0.7;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("12 gap: not judged: the reading changes when the photo is resized slightly (it read between 0.07 and 0.23)"));
+        assertTrue(s, s.contains("12 alignment: not judged: the reading changes when the photo is resized slightly"));
+        assertTrue(s, s.contains("Bottom line: nothing flagged, but the 12 reading changes when the photo is resized slightly"));
+        assertFalse(s, s.contains("nothing flagged at 12"));
+    }
+
+    @Test public void agreedConcernSurvivesButIsQualified() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CHECK; in.observedGap = 0.050;
+        in.alignment = GmtHumanQcMath.Attention.UNASSESSABLE;
+        in.gapUnstable = true; in.rotUnstable = true; in.gapMin = 0.045; in.gapMax = 0.062; in.rotMin = -0.2; in.rotMax = 1.9;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("12 gap: small in every re-measurement (it read between 0.05 and 0.06)"));
+        assertTrue(s, s.contains("Bottom line: 1 thing to check: the gap at 12. The 12 reading changes when the photo is resized slightly"));
+    }
+
+    @Test public void onlyTheUnstablePartIsWithheld() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.observedGap = 0.091;
+        in.alignment = GmtHumanQcMath.Attention.UNASSESSABLE; in.rotationDeg = 1.65;
+        in.rotUnstable = true; in.gapMin = 0.088; in.gapMax = 0.092; in.rotMin = 0.5; in.rotMax = 1.7;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("12 gap: normal."));
+        assertTrue(s, s.contains("12 alignment: not judged: the reading changes when the photo is resized slightly (it read between +0.5° and +1.7°)"));
+        assertTrue(s, s.contains("Bottom line: nothing flagged, but the 12 rotation reading changes when the photo is resized slightly"));
+    }
+
+    /** Emulator, 6I00d8w image_01: gap too close to call and rotation withheld is not "nothing flagged at 12". */
+    @Test public void withheldRotationWithUnresolvedGapIsNotAPass() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.CORRECTABLE;
+        in.gap = GmtHumanQcMath.Attention.UNASSESSABLE; in.observedGap = 0.074; in.gapResolutionLimited = true; in.pxPerGap = 0.022;
+        in.alignment = GmtHumanQcMath.Attention.UNASSESSABLE; in.rotationDeg = -1.17;
+        in.rotUnstable = true; in.gapMin = 0.074; in.gapMax = 0.148; in.rotMin = -1.17; in.rotMax = 0.19;
+        String s = GmtHumanSummary.build(in);
+        assertFalse(s, s.contains("nothing flagged at 12"));
+        assertTrue(s, s.contains("Bottom line: nothing flagged, but the 12 rotation reading changes when the photo is resized slightly"));
+    }
+
+    /** User photo (alpha57): 0.084 vs 0.156 was described as "even spacing either side". */
+    @Test public void unevenSpacingIsNeverCalledEven() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.alignment = GmtHumanQcMath.Attention.CLEAR; in.rotationDeg = 0.2; in.spacing59 = 0.14; in.spacing01 = 0.18;
+        String s = GmtHumanSummary.alignmentLine(in);
+        assertFalse(s, s.contains("even spacing"));
+        assertTrue(s, s.contains("slightly uneven, within what genuine photos show"));
+    }
+
+    @Test public void offCentreFlagIsNamed() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.alignment = GmtHumanQcMath.Attention.CHECK; in.rotationDeg = 0.53; in.baseTiltDeg = -0.42;
+        in.spacing59 = 0.084; in.spacing01 = 0.196;
+        String s = GmtHumanSummary.alignmentLine(in);
+        assertTrue(s, s.contains("possibly off-centre: the triangle sits towards the 01 tick side (to the right of the 60 tick)"));
+        in.gap = GmtHumanQcMath.Attention.STRONG; in.observedGap = 0.031;
+        assertTrue(GmtHumanSummary.build(in), GmtHumanSummary.build(in).contains("2 things to check: the gap at 12 and the 12 marker position (off-centre)."));
+    }
+
+    /** Emulator, bpdi5xV image_00 (alpha57): printed "offset NaN to NaN". */
+    @Test public void sixNotFoundAgainHasNoNaN() {
+        GmtHumanSummary.Input in = base();
+        in.sixValid = true; in.sixStable = true; in.sixUnstable = true; in.sixAttention = GmtHumanQcMath.Attention.UNASSESSABLE;
+        in.sixCentring = 0.05; in.sixRotationDeg = -0.6; in.sixWidthPx = 29;
+        String s = GmtHumanSummary.sixLine(in);
+        assertFalse(s, s.contains("NaN"));
+        assertTrue(s, s.contains("not found again when the photo is resized slightly"));
+    }
+
+    /** alpha59: the 9 baton is reported and flagged like the 6. */
+    @Test public void nineBatonLowOffCentreIsNamed() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.alignment = GmtHumanQcMath.Attention.CLEAR;
+        in.nine.valid = true; in.nine.stable = true; in.nine.attention = GmtHumanQcMath.Attention.CHECK;
+        in.nine.offCentre = true; in.nine.centring = 0.14; in.nine.rotationDeg = 0.2; in.nine.widthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("9 baton: possibly off-centre: it sits low (towards the 44 tick)"));
+        assertTrue(s, s.contains("Bottom line: 1 thing to check: the 9 baton position."));
+    }
+
+    @Test public void allClearListsTwelveSixAndNine() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.alignment = GmtHumanQcMath.Attention.CLEAR;
+        in.sixValid = true; in.sixStable = true; in.sixAttention = GmtHumanQcMath.Attention.CLEAR; in.sixWidthPx = 30;
+        in.nine.valid = true; in.nine.stable = true; in.nine.attention = GmtHumanQcMath.Attention.CLEAR; in.nine.widthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("Bottom line: nothing flagged at 12, 6 or 9."));
+        assertTrue(s, s.contains("9 baton: centred between the 44 and 46 ticks and straight."));
+    }
+
+    /** alpha60: a baton withheld only because the photo is too angled says so. */
+    @Test public void batonWithheldForAngleSaysSo() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.RETAKE;
+        in.nine.valid = true; in.nine.stable = true; in.nine.attention = GmtHumanQcMath.Attention.UNASSESSABLE;
+        in.nine.centring = -0.05; in.nine.rotationDeg = -0.4; in.nine.widthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("9 baton: not judged: the photo angle is too steep to clear the baton from this photo."));
+    }
 }
