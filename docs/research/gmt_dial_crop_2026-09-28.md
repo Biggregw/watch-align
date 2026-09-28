@@ -102,3 +102,8 @@ the 12:
 
 Neither level is changed on this evidence. Both need more genuine photos, and the replica
 flags they would drop include ones people have confirmed.
+
+**User review (2026-09-28):** after looking at the full-resolution crop, the user judged the
+−1.1° turn on the genuine WOS Root Beer (406107958490) to be a real, visible flaw, not a
+misreading. A "worth a look" there is therefore correct. The app flags things to inspect,
+and genuine watches can have small flaws too. This supports keeping CHECK at 1.0°.
