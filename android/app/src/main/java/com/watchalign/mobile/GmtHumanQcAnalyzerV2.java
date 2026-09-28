@@ -524,6 +524,7 @@ final class GmtHumanQcAnalyzerV2 {
             DialEdgeEllipseFit.Intensity img=intensityOf(g8);
             for(GmtRoundMarkerAnalyzer.Marker m:round){
                 if(!m.found){m.attention=GmtHumanQcMath.Attention.UNASSESSABLE;m.note=m.reason;continue;}
+                if(m.stabilityRun&&!m.stabilitySameEdge)m.sizeRatio=Double.NaN;   // edge changed with scale: size not compared
                 GmtHumanQcMath.RoundDecision d=GmtHumanQcMath.assessRound(m.offset,m.diameterPx(),m.sizeRatio,pose,m.stable);
                 m.tooSmall=d.tooSmall;
                 GmtHumanQcMath.Attention a=d.attention;String note=d.reason;boolean off=d.offCentre,size=d.sizeOdd;
@@ -545,9 +546,13 @@ final class GmtHumanQcAnalyzerV2 {
                     // A local ring rather than the 12's wide wedge: a wedge ±14° wide around a round
                     // marker reaches a marker's width either side and caught hands that were near
                     // but not over it (3KSuGhC image_02: 4 of 8 markers).
-                    m.ringBright=HandIntrusion.ringBrightFraction(img,g8.cols(),g8.rows(),m.x,m.y,m.radiusPx,m.tickBefore,m.tickAfter,cx,cy);
+                    double[] beside={0};
+                    m.ringBright=HandIntrusion.ringBrightFraction(img,g8.cols(),g8.rows(),m.x,m.y,m.radiusPx,m.expectedRadiusPx*1.05,m.tickBefore,m.tickAfter,cx,cy,beside);
                     m.coloured=GmtRoundMarkerAnalyzer.colouredFraction(src,m,cx,cy);
-                    if(m.ringBright>HandIntrusion.MAX_RING_BRIGHT_FRACTION||m.coloured>GmtRoundMarkerAnalyzer.MAX_COLOURED_FRACTION){
+                    // A hand passing beside the marker, clear of its surround, doesn't touch the
+                    // outline, so it isn't a reason to withhold (the outline gates still apply).
+                    m.handBeside=beside[0]>0;
+                    if((m.ringBright>HandIntrusion.MAX_RING_BRIGHT_FRACTION&&!m.handBeside)||m.coloured>GmtRoundMarkerAnalyzer.MAX_COLOURED_FRACTION){
                         m.hand=true;m.tooSmall=false;a=GmtHumanQcMath.Attention.UNASSESSABLE;off=size=false;note="a hand is over or next to it";
                     }
                 }

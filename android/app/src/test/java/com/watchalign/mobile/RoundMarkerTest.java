@@ -88,7 +88,8 @@ public class RoundMarkerTest {
         assertFalse(m.resampleStable());
         m.offMin=0.165;assertTrue(m.resampleStable());                            // 0.2 px
         m.offMin=0.01;m.offMax=0.08;assertTrue(m.resampleStable());               // moves, but below the level throughout
-        m.stabilitySameEdge=false;assertFalse(m.resampleStable());
+        m.stabilitySameEdge=false;assertTrue(m.resampleStable());                   // radius changed, offset steady
+        m.offMax=Double.NaN;assertFalse(m.resampleStable());                        // not found again
     }
 
     private static GmtRoundMarkerAnalyzer.Marker marker(int h,double offset){

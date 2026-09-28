@@ -31,7 +31,10 @@ resampling.
    - The hour tick is the one nearest where the marker belongs (the affine placement), not
      the one nearest the marker. Otherwise a marker moved 0.3 of its width anticlockwise was
      measured against the next minute and read +0.19.
-   - Tick inner ends are never taken inside the marker. On one replica, the walk inward from
+   - Tick inner ends are never taken inside the marker. For the ticks either side, that means
+     inside the whole surround (1.15 × the larger of the fitted and master radius): when the
+     fit is on the lume, the 56 tick beside the ARF Pepsi 11 otherwise ran onto the surround
+     and read +0.22. On one replica, the walk inward from
      a tick ran along a marker rim close to the track. That tilted the tick line and read
      offsets of +0.22 on the 10 and 11 of gpZWOfy, and on seven other replica photos.
 4. **Numbers.** Measurements are made with the dial's ellipse squash undone, so a tilted
@@ -71,10 +74,17 @@ A marker is not judged when any of these apply:
   ticks. Clean genuine readings have contrast of 120 or more, a tick score of 57 or more,
   an inset of 0.52–0.67 and a disagreement under 0.02.
 - **Resize check.** It is measured again at 94% and 88%. It is withheld if the offset moves
-  more than about a pixel across the level, or the radius moves more than 1.5 px.
+  more than about a pixel across the level, or if the marker is not found again. When only
+  the radius moves by more than 1.5 px (lume edge at one scale, surround edge at another),
+  the offset is still judged, because it comes from the centre, but the size is not
+  compared. The ARF Pepsi 5 read +0.016 to +0.017 at every scale and had been withheld.
 - **Hand check.** Either of these:
-  - more than 3.5% of a ring just outside the marker (0.12–0.5 diameters beyond its edge,
-    dial side of the tick line) is marker-bright;
+  - more than 3.5% of a ring just outside the marker is marker-bright. The ring runs from
+    0.12 to 0.3 diameters beyond the surround's outer edge (at least the master size, since
+    the fit is sometimes on the lume), on the half facing the dial centre. It is not counted
+    when those bright pixels form one straight band that stays clear of the surround, i.e.
+    a hand passing beside the marker rather than over it. On the user's ARF Pepsi photo,
+    the seconds hand 5 px below the 2 had made it "hand in the way";
   - more than 1% of the ring out to 2.2 radii is red or blue, above the dial's own tint.
     This is the GMT hand. Its arrowhead can cover a marker while its bright parts barely
     leave the outline. On the official render, the arrow over the 5 was read as a clear
@@ -107,15 +117,15 @@ These are all black-dial GMT-Master IIs with the same marker layout.
 | | genuine | replica |
 |---|---:|---:|
 | photos with a dial fitted | 67 | 174 |
-| round markers judged clear | 181 | 200 |
+| round markers judged clear | 194 | 235 |
 | round markers flagged | 0 | 0 |
-| clear-marker offset, median / 99th percentile / maximum | 0.013 / 0.074 / 0.096 | 0.022 / 0.076 / 0.080 |
+| clear-marker offset, median / 99th percentile / maximum | 0.012 / 0.082 / 0.096 | 0.022 / 0.080 / 0.117 |
 
 The 18 new genuine photos give 106 clear round markers, with a largest offset of 0.041 and
 a largest size difference of 0.054. They are sharp and square-on.
 
 **No replica in this corpus has a round marker outside the genuine spread.** The largest
-replica offset is 0.08. Round-marker placement isn't a tell on these watches, so the check
+replica offset is 0.117. Round-marker placement isn't a tell on these watches, so the check
 reports them as centred rather than inventing a concern. The first uncorrected run
 "flagged" 10/11 offsets of about 0.2 on several VSF watches, and every one of them was the
 tick-line fault described above. The first size flags were all the lume-edge versus

@@ -120,29 +120,60 @@ final class HandIntrusion {
     }
 
     /**
-     * Round markers (alpha61): the share of a ring just outside the marker (from 0.12 to 0.5
-     * diameters beyond its edge, dial side of the tick line only) that is marker-bright. A hand
+     * Round markers (alpha61): the share of a ring just outside the marker (from 0.12 to 0.3
+     * diameters beyond the surround's outer edge, on the half facing the dial centre) that is marker-bright. A hand
      * lying over a round marker also crosses this ring, even when it covers most of the marker
      * and little of the wider wedge (official render: the GMT arrow over the 5 covered 2% of the
      * wedge). Returns NaN when the marker is not clearly brighter than the dial.
      */
     static double ringBrightFraction(DialEdgeEllipseFit.Intensity img,int w,int h,double mx,double my,double radius,
-                                     double[] tickA,double[] tickB,double dialCx,double dialCy){
-        double d=2*radius,r0=radius+0.12*d,r1=radius+0.5*d;
+                                     double outerRadius,double[] tickA,double[] tickB,double dialCx,double dialCy){
+        return ringBrightFraction(img,w,h,mx,my,radius,outerRadius,tickA,tickB,dialCx,dialCy,null);
+    }
+
+    /**
+     * As above; beside[0] is set to 1 when the bright pixels form one straight band whose edge
+     * stays clear of the marker's surround (a hand passing next to the marker, not over it:
+     * ARF Pepsi, the seconds hand 5 px below the 2), else 0.
+     */
+    static double ringBrightFraction(DialEdgeEllipseFit.Intensity img,int w,int h,double mx,double my,double radius,
+                                     double outerRadius,double[] tickA,double[] tickB,double dialCx,double dialCy,double[] beside){
+        // The ring starts outside the whole surround. The fit is sometimes on the lume, and a
+        // ring measured from there lies on the bright polished surround (ARF Pepsi: a clean 2
+        // read as "hand in the way").
+        double outer=Math.max(radius,outerRadius),d=2*outer,r0=outer+0.12*d,r1=outer+0.3*d;
         double lx=tickB[0]-tickA[0],ly=tickB[1]-tickA[1],ll=Math.hypot(lx,ly);if(ll<1e-9)return Double.NaN;
         double nx=-ly/ll,ny=lx/ll;if(nx*(dialCx-tickA[0])+ny*(dialCy-tickA[1])<0){nx=-nx;ny=-ny;}   // towards the dial centre
-        List<Double> ring=new ArrayList<>(),in=new ArrayList<>();
+        List<Double> ring=new ArrayList<>(),in=new ArrayList<>();List<double[]> px=new ArrayList<>();
+        if(beside!=null)beside[0]=0;
         for(int y=(int)Math.max(1,Math.floor(my-r1));y<=Math.min(h-2,Math.ceil(my+r1));y++)
             for(int x=(int)Math.max(1,Math.floor(mx-r1));x<=Math.min(w-2,Math.ceil(mx+r1));x++){
                 double rr=Math.hypot(x-mx,y-my);
                 if(rr<=radius-1.5)in.add(img.at(x,y));
-                else if(rr>=r0&&rr<=r1&&(x-tickA[0])*nx+(y-tickA[1])*ny>=1.0)ring.add(img.at(x,y));
+                // Only the half facing the dial centre (and a little past the sides): hands reach a
+                // marker from the centre, and the outer half holds the minute track, whose hour tick
+                // can come within a surround's width of the marker (ARF Pepsi, the 2).
+                else if(rr>=r0&&rr<=r1&&(x-mx)*nx+(y-my)*ny>=-0.3*outer){ring.add(img.at(x,y));px.add(new double[]{x,y});}
             }
         if(ring.size()<30||in.size()<20)return Double.NaN;
         double dial=percentile(ring,0.30),mark=percentile(in,0.50);
         if(!(mark-dial>30))return Double.NaN;
         double level=dial+0.5*(mark-dial);
         int bright=0;for(double v:ring)if(v>level)bright++;
+        if(beside!=null&&bright>=10){
+            // Straight band beside the marker: fit a line to the bright pixels.
+            double sx=0,sy=0;int n=0;
+            for(int i=0;i<ring.size();i++)if(ring.get(i)>level){sx+=px.get(i)[0];sy+=px.get(i)[1];n++;}
+            sx/=n;sy/=n;double cxx=0,cyy=0,cxy=0;
+            for(int i=0;i<ring.size();i++)if(ring.get(i)>level){double ax=px.get(i)[0]-sx,ay=px.get(i)[1]-sy;cxx+=ax*ax;cyy+=ay*ay;cxy+=ax*ay;}
+            cxx/=n;cyy/=n;cxy/=n;
+            double tr=cxx+cyy,det=cxx*cyy-cxy*cxy,l1=tr/2+Math.sqrt(Math.max(0,tr*tr/4-det)),l2=Math.max(0,tr-l1);
+            double dx=Math.abs(cxy)>1e-9?l1-cyy:(cxx>=cyy?1:0),dy=Math.abs(cxy)>1e-9?cxy:(cxx>=cyy?0:1),dl=Math.hypot(dx,dy);dx/=dl;dy/=dl;
+            double dist=Math.abs((mx-sx)*(-dy)+(my-sy)*dx),halfWidth=2*Math.sqrt(l2);
+            boolean straight=l1>9*l2;   // a band, not a blob
+            if(straight&&dist-halfWidth>outer+3)beside[0]=1;
+        }
+        if(Boolean.getBoolean("wa.ring.debug"))System.err.printf(java.util.Locale.US,"ring: c %.1f,%.1f R %.1f outer %.1f r0 %.1f r1 %.1f dial %.0f mark %.0f level %.0f n %d bright %d%n",mx,my,radius,outer,r0,r1,dial,mark,level,ring.size(),bright);
         return bright/(double)ring.size();
     }
     static final double MAX_RING_BRIGHT_FRACTION = 0.035;

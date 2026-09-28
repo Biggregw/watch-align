@@ -71,6 +71,8 @@ final class GmtRoundMarkerAnalyzer {
         boolean hand,tooSmall,unstable,offCentre,sizeOdd;
         /** Hand-check readings: marker-bright share of the ring just outside, coloured (GMT hand) share. */
         double ringBright=Double.NaN,coloured=Double.NaN;
+        /** The bright pixels in the ring are one straight band clear of the surround: a hand passing by. */
+        boolean handBeside;
         boolean flagged(){return found&&(attention==GmtHumanQcMath.Attention.CHECK||attention==GmtHumanQcMath.Attention.STRONG);}
         boolean clear(){return found&&attention==GmtHumanQcMath.Attention.CLEAR;}
         /**
@@ -79,7 +81,11 @@ final class GmtRoundMarkerAnalyzer {
          */
         boolean resampleStable(){
             if(!stabilityRun)return true;
-            if(!stabilitySameEdge||!Double.isFinite(offMax))return false;
+            // The offset comes from the circle's centre, so a radius that changes between scales
+            // (lume edge on one, surround on another) does not by itself make it unreliable; it
+            // only stops the size comparison (ARF Pepsi, the 5: offset +0.016 to +0.017 at every
+            // scale, withheld for a 2 px radius change).
+            if(!Double.isFinite(offMax))return false;
             return (offMax-offMin)*diameterPx()<=GmtTwelveLandmarkAnalyzer.MAX_RESAMPLE_SHIFT_PX
                     ||Math.max(Math.abs(offMin),Math.abs(offMax))<GmtHumanQcMath.ROUND_OFFSET_CHECK;
         }
@@ -280,10 +286,15 @@ final class GmtRoundMarkerAnalyzer {
         ta[0]=hourTick;
         // Tick inner ends, never inside the marker: where a marker sits close to the track the
         // walk inward from a tick otherwise runs on along the marker's bright rim.
+        // The fit may be on the lume (inside a dark gap and a grey surround), so the side ticks
+        // also stay clear of the whole surround: the master surround radius plus 15%. The side
+        // ticks sit about 1.6 surround radii from the marker centre, so this never reaches them
+        // (ARF Pepsi, the 11: the 56 tick's inner end ran onto the surround and read +0.22).
         double[] avoid={m.x,m.y,m.radiusPx+1.5};
-        double[] tb=GmtTwelveLandmarkAnalyzer.tickInnerEnd(enh,cx,cy,r,ta[0]-ta[1],avoid);
+        double[] avoidWide={m.x,m.y,Math.max(m.radiusPx,r0)*1.15+1.5};
+        double[] tb=GmtTwelveLandmarkAnalyzer.tickInnerEnd(enh,cx,cy,r,ta[0]-ta[1],avoidWide);
         double[] tc=GmtTwelveLandmarkAnalyzer.tickInnerEnd(enh,cx,cy,r,ta[0],avoid);
-        double[] tf=GmtTwelveLandmarkAnalyzer.tickInnerEnd(enh,cx,cy,r,ta[0]+ta[1],avoid);
+        double[] tf=GmtTwelveLandmarkAnalyzer.tickInnerEnd(enh,cx,cy,r,ta[0]+ta[1],avoidWide);
         m.ticksInferred=(tb==null?1:0)+(tc==null?1:0)+(tf==null?1:0);
         if(tb==null||tf==null){m.reason="a minute tick next to the marker could not be located (a hand over it?)";return m;}
         if(tc==null)tc=polar(cx,cy,Math.min(Math.hypot(tb[0]-cx,tb[1]-cy),Math.hypot(tf[0]-cx,tf[1]-cy)),ta[0]);
