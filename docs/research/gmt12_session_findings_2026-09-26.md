@@ -68,6 +68,26 @@ top_clearance in isolation is a reliable discriminator.
 answered first); visual check of the 3 UNASSESSABLE cases; running the
 2 ElegantSwiss dealer photos' failure through the same visual-check process.
 
+### Correction: landmark-precision concern raised, then ruled out
+User flagged that 147798's minute-tick markers looked wrong in the overlay
+preview (appeared to float below the tick, in blank space). Investigated
+with a new debug tool (`measure_manifest.py`'s 3rd-arg source_id filter +
+high-res un-overlaid crosshair zoom, dispatched via the workflow on the
+*feature branch ref* rather than main -- confirms workflow_dispatch runs
+whatever's checked out at the given ref, so this didn't need another main
+push). Initial visual read agreed with the user's concern. But subpixel
+measurement (half-max intensity crossing along the tick, avoiding the
+crosshair's own drawn pixels) on both 147798 and the 146213 outlier showed
+the algorithm's points are within 0.1-2.2 native pixels of the tick's true
+photometric edge -- inside JPEG/anti-aliasing noise. **Not a bug.** The
+visual impression was an artifact of a small, compressed preview: ticks
+fade gradually rather than stopping sharply, and the eye reads only the
+solid bright core as "the tick," while the true edge is further into that
+fade. This does not affect the band-width finding above (that's about
+real gap-size differences between photos, not landmark precision) --
+if anything it reinforces it, since two independent checks (visual +
+subpixel) now agree the geometry is read correctly.
+
 ## Next steps
 - Decide: widen the band from this real data, or investigate whether
   camera distance/pitch (not yet tested, unlike roll/tilt) explains the
