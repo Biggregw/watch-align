@@ -171,7 +171,7 @@ public class GmtHumanSummaryTest {
         String s = GmtHumanSummary.build(in);
         assertTrue(s, s.contains("6 baton: not measured"));
         assertTrue(s, s.contains("Bottom line: nothing flagged at 12."));
-        assertTrue(s, s.contains("The 6 baton could not be judged here"));
+        assertTrue(s, s.contains("The 6 and 9 batons could not be judged here"));
     }
 
     /** rep_cf_6I00d8w image_01 (alpha56): the gap read 0.07 on the phone and 0.14 on the desktop. */
@@ -252,5 +252,28 @@ public class GmtHumanSummaryTest {
         String s = GmtHumanSummary.sixLine(in);
         assertFalse(s, s.contains("NaN"));
         assertTrue(s, s.contains("not found again when the photo is resized slightly"));
+    }
+
+    /** alpha59: the 9 baton is reported and flagged like the 6. */
+    @Test public void nineBatonLowOffCentreIsNamed() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.alignment = GmtHumanQcMath.Attention.CLEAR;
+        in.nine.valid = true; in.nine.stable = true; in.nine.attention = GmtHumanQcMath.Attention.CHECK;
+        in.nine.offCentre = true; in.nine.centring = 0.14; in.nine.rotationDeg = 0.2; in.nine.widthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("9 baton: possibly off-centre: it sits low (towards the 44 tick)"));
+        assertTrue(s, s.contains("Bottom line: 1 thing to check: the 9 baton position."));
+    }
+
+    @Test public void allClearListsTwelveSixAndNine() {
+        GmtHumanSummary.Input in = base();
+        in.pose = GmtHumanQcMath.PoseLabel.GOOD;
+        in.gap = GmtHumanQcMath.Attention.CLEAR; in.alignment = GmtHumanQcMath.Attention.CLEAR;
+        in.sixValid = true; in.sixStable = true; in.sixAttention = GmtHumanQcMath.Attention.CLEAR; in.sixWidthPx = 30;
+        in.nine.valid = true; in.nine.stable = true; in.nine.attention = GmtHumanQcMath.Attention.CLEAR; in.nine.widthPx = 30;
+        String s = GmtHumanSummary.build(in);
+        assertTrue(s, s.contains("Bottom line: nothing flagged at 12, 6 or 9."));
+        assertTrue(s, s.contains("9 baton: centred between the 44 and 46 ticks and straight."));
     }
 }

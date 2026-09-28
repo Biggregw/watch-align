@@ -29,12 +29,31 @@ import java.util.List;
  * and rotation, the baton axis against the square to the 29-31 chord, degrees, positive = CW.
  */
 final class GmtSixLandmarkAnalyzer {
+    /**
+     * Which baton (alpha59: 6 and 9). The image is turned so the baton sits at the top, where
+     * the 12 triangle normally is: 180 degrees for the 6 (a point reflection), 90 degrees
+     * clockwise for the 9. Both are exact pixel moves with no resampling. The 3 is left out:
+     * the date window sits there.
+     */
+    enum Position {
+        SIX("6",29,30,31,180.0), NINE("9",44,45,46,-90.0);
+        final String label;final int before,centre,after;
+        /** Where the marker sits relative to the 12, degrees clockwise in image coordinates. */
+        final double angleFromTwelveDeg;
+        Position(String l,int b,int c,int a,double ang){label=l;before=b;centre=c;after=a;angleFromTwelveDeg=ang;}
+        String ticks(){return before+"/"+centre+"/"+after;}
+        String pair(){return before+" and "+after;}
+    }
+
     static final class Geometry {
-        /** Outer-end corners (viewer's left / right at 6), inner corners, ticks 31/30/29 inner ends. */
-        final double[] outerLeft,outerRight,innerLeft,innerRight,tick31,tick30,tick29;
+        /**
+         * Outer-end corners (outerRight is on the tickBefore side), inner corners, and the inner
+         * ends of the minute ticks after / at / before the marker (6: 31/30/29; 9: 46/45/44).
+         */
+        final double[] outerLeft,outerRight,innerLeft,innerRight,tickAfter,tickCentre,tickBefore;
         final boolean outerEdge;
         Geometry(double[] ol,double[] or,double[] il,double[] ir,double[] t31,double[] t30,double[] t29,boolean outer){
-            outerLeft=ol;outerRight=or;innerLeft=il;innerRight=ir;tick31=t31;tick30=t30;tick29=t29;outerEdge=outer;
+            outerLeft=ol;outerRight=or;innerLeft=il;innerRight=ir;tickAfter=t31;tickCentre=t30;tickBefore=t29;outerEdge=outer;
         }
         double[][] polygon(){return new double[][]{innerLeft,outerLeft,outerRight,innerRight};}
     }
@@ -66,6 +85,7 @@ final class GmtSixLandmarkAnalyzer {
             return c&&t;
         }
 
+        Position position=Position.SIX;
         /** Why a measured baton is low confidence (alpha57), or "" when stable. */
         String lowReason="";
         /** Diagnostics: long-side parallelism of the edge fit, tick frame score/pitch/inferred count. */
@@ -73,7 +93,7 @@ final class GmtSixLandmarkAnalyzer {
         Result lowConfidence(String why){
             if(!valid)return this;
             Result x=new Result(gap,centring,rotationDeg,widthPx,lengthPx,false,geometry);
-            x.lowReason=lowReason.isEmpty()?why:lowReason;x.parallelDeg=parallelDeg;x.tickScore=tickScore;x.tickPitchDeg=tickPitchDeg;x.ticksInferred=ticksInferred;
+            x.position=position;x.lowReason=lowReason.isEmpty()?why:lowReason;x.parallelDeg=parallelDeg;x.tickScore=tickScore;x.tickPitchDeg=tickPitchDeg;x.ticksInferred=ticksInferred;
             return x;
         }
     }
@@ -85,23 +105,34 @@ final class GmtSixLandmarkAnalyzer {
     static boolean DEBUG=Boolean.getBoolean("wa.six.debug");
     private GmtSixLandmarkAnalyzer(){}
 
-    static Result analyse(Mat bgr,double cx,double cy,double r){
+    static Result analyse(Mat bgr,double cx,double cy,double r){return analyse(bgr,cx,cy,r,Position.SIX);}
+
+    static Result analyse(Mat bgr,double cx,double cy,double r,Position pos){
+        Result res=analyseTurned(bgr,cx,cy,r,pos);
+        res.position=pos;
+        return res;
+    }
+
+    private static Result analyseTurned(Mat bgr,double cx,double cy,double r,Position pos){
         if(bgr==null||bgr.empty()||!(r>20))return new Result("invalid dial seed");
         Mat flipped=new Mat(),gray=new Mat(),enh=new Mat();
         try{
-            Core.flip(bgr,flipped,-1);
+            if(pos==Position.NINE)Core.rotate(bgr,flipped,Core.ROTATE_90_CLOCKWISE);
+            else Core.flip(bgr,flipped,-1);
             final int W=flipped.cols(),H=flipped.rows();
-            final double fx=W-1-cx,fy=H-1-cy;
+            // Dial centre in the turned image. 180: (x,y)->(W-1-x,H-1-y). 90 CW: (x,y)->(Horig-1-y,x)
+            // and the turned width W equals the original height.
+            final double fx=pos==Position.NINE?W-1-cy:W-1-cx,fy=pos==Position.NINE?cx:H-1-cy;
             Imgproc.cvtColor(flipped,gray,Imgproc.COLOR_BGR2GRAY);
             CLAHE clahe=Imgproc.createCLAHE(2.0,new Size(8,8));
             clahe.apply(gray,enh);
 
             double[][] rect=batonCandidate(enh,fx,fy,r);
-            if(rect==null)return new Result("6 baton not found");
+            if(rect==null)return new Result(pos.label+" baton not found");
             // rect = {innerLeft, outerLeft, outerRight, innerRight} in the flipped image
             double[] om=mid(rect[1],rect[2]);
             double[][] frame=GmtTwelveLandmarkAnalyzer.tickFrameNear(enh,fx,fy,r,om[0],om[1]);
-            if(frame==null)return new Result("29/30/31 minute-track frame not sufficiently constrained");
+            if(frame==null)return new Result(pos.ticks()+" minute-track frame not sufficiently constrained");
 
             boolean outerEdge=false;
             String[] why={""};double[] par={Double.NaN};
@@ -113,21 +144,21 @@ final class GmtSixLandmarkAnalyzer {
                 else why[0]="the minute ticks were not found again around the fitted baton";
             }
 
-            // Back to the original image: p -> (W-1-x, H-1-y).
-            double[] il=back(rect[0],W,H),ol=back(rect[1],W,H),or=back(rect[2],W,H),ir=back(rect[3],W,H);
-            double[] tA=back(frame[0],W,H),t30=back(frame[1],W,H),tB=back(frame[2],W,H);
+            // Back to the original image.
+            double[] il=back(rect[0],W,H,pos),ol=back(rect[1],W,H,pos),or=back(rect[2],W,H,pos),ir=back(rect[3],W,H,pos);
+            double[] tA=back(frame[0],W,H,pos),t30=back(frame[1],W,H,pos),tB=back(frame[2],W,H,pos);
             // In the flipped image, left is the 29 tick; after flipping back, the 29 tick is
             // on the viewer's right at 6. Name by distance so it cannot be swapped.
             double[] t29=tA,t31=tB;
             // Viewer's left at 6 is image-left for an upright photo; name corners by the
             // 31->29 direction so a rotated photo still gets them right.
             double sx=t29[0]-t31[0],sy=t29[1]-t31[1],sl=Math.hypot(sx,sy);
-            if(sl<1e-9)return new Result("29/31 ticks coincide");
+            if(sl<1e-9)return new Result(pos.pair()+" ticks coincide");
             sx/=sl;sy/=sl;
             if((or[0]-ol[0])*sx+(or[1]-ol[1])*sy<0){double[] z=ol;ol=or;or=z;z=il;il=ir;ir=z;}
 
             double width=Math.hypot(or[0]-ol[0],or[1]-ol[1]);
-            if(!(width>1))return new Result("6 baton width is degenerate");
+            if(!(width>1))return new Result(pos.label+" baton width is degenerate");
             double[] outerMid=mid(ol,or),innerMid=mid(il,ir);
             double length=Math.hypot(outerMid[0]-innerMid[0],outerMid[1]-innerMid[1]);
 
@@ -156,7 +187,7 @@ final class GmtSixLandmarkAnalyzer {
             }
             return res;
         }catch(Throwable t){
-            return new Result("6 marker analysis failed: "+t.getClass().getSimpleName());
+            return new Result(pos.label+" marker analysis failed: "+t.getClass().getSimpleName());
         }finally{flipped.release();gray.release();enh.release();}
     }
 
@@ -239,7 +270,7 @@ final class GmtSixLandmarkAnalyzer {
             Mat m=new Mat();
             try{
                 Imgproc.resize(bgr,m,new Size(Math.round(bgr.cols()*s),Math.round(bgr.rows()*s)),0,0,Imgproc.INTER_LINEAR);
-                Result q=analyse(m,cx*s,cy*s,r*s);
+                Result q=analyse(m,cx*s,cy*s,r*s,res.position);
                 if(!q.valid){same=false;cMin=cMax=rMin=rMax=Double.NaN;break;}
                 if((q.geometry!=null&&q.geometry.outerEdge)!=outer)same=false;
                 cMin=Math.min(cMin,q.centring);cMax=Math.max(cMax,q.centring);
@@ -314,7 +345,11 @@ final class GmtSixLandmarkAnalyzer {
         }catch(Throwable t){why[0]="the baton edge fit failed";return null;}
     }
 
-    private static double[] back(double[] p,int W,int H){return new double[]{W-1-p[0],H-1-p[1]};}
+    /** Turned-image point back to the original image (W,H are the turned image's size). */
+    private static double[] back(double[] p,int W,int H,Position pos){
+        if(pos==Position.NINE)return new double[]{p[1],W-1-p[0]};
+        return new double[]{W-1-p[0],H-1-p[1]};
+    }
     private static double[] mid(double[] a,double[] b){return new double[]{(a[0]+b[0])/2,(a[1]+b[1])/2};}
     private static double pointLineDistance(double[] p,double[] a,double[] b){
         double dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy);if(l<1e-9)return Double.NaN;

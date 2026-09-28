@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-28, alpha58)
+# Watch Align: handoff notes (updated 2026-09-28, alpha59)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -28,7 +28,7 @@ yet**, and the summary says so.
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha58"`, `versionCode 13058` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha59"`, `versionCode 13059` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
@@ -54,7 +54,7 @@ JAVA_HOME=<jdk17> sh ./gradlew --no-daemon -q \
   :app:testDebugUnitTest :app:assembleDebug
 ```
 
-- 169 JVM unit tests, all passing.
+- 171 JVM unit tests, all passing.
 - `:app:compileDebugAndroidTestJavaSource` compiles the on-device test
   (`GenuineOfficialImageValidationTest`). It needs network access for
   androidx.test, so **don't pass `--offline`** for it. Only check the result of the
@@ -200,6 +200,10 @@ alpha58: the **12 rotation is now measured square to the 59–01 tick chord**, n
 dial centre. It is withheld when the two references differ by more than 1.5°, and a lean
 without a top-edge tilt is only flagged from 2°. On genuine Phillips Pepsi photos this
 takes the app from 5 false flags to 0 (`docs/research/gmt12_axis_reference_2026-09-28.md`).
+
+alpha59: the **9 o'clock baton** is checked with the same code as the 6, using a 90°
+turn instead of 180° (`GmtSixLandmarkAnalyzer.Position`). No genuine 9 is flagged
+(`docs/research/gmt9_baton_2026-09-28.md`).
 
 **Scope:** the deliverable is the Android app. The desktop harness only runs the app's
 Java code for fast testing. The Python tools in `tools/research/` (branch

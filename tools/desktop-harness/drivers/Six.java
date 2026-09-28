@@ -19,6 +19,6 @@ public class Six{
    BufferedImage comp=new BufferedImage(2*half,2*half,BufferedImage.TYPE_INT_RGB);var g2=comp.createGraphics();
    g2.drawImage(b.img,-(int)(cx-half),-(int)(cy-half),null);g2.setColor(java.awt.Color.GREEN);
    double[][] p=g.polygon();for(int i=0;i<4;i++){double[] u=p[i],v=p[(i+1)%4];g2.drawLine((int)(u[0]-cx+half),(int)(u[1]-cy+half),(int)(v[0]-cx+half),(int)(v[1]-cy+half));}
-   g2.setColor(java.awt.Color.CYAN);for(double[] t:new double[][]{g.tick31,g.tick30,g.tick29})g2.fillOval((int)(t[0]-cx+half)-2,(int)(t[1]-cy+half)-2,4,4);
+   g2.setColor(java.awt.Color.CYAN);for(double[] t:new double[][]{g.tickAfter,g.tickCentre,g.tickBefore})g2.fillOval((int)(t[0]-cx+half)-2,(int)(t[1]-cy+half)-2,4,4);
    g2.dispose();ImageIO.write(comp,"png",new File(crops+"/"+new File(f).getName().replace(".jpg","")+"_"+Math.abs(f.hashCode()%1000)+".png"));}
  }}}

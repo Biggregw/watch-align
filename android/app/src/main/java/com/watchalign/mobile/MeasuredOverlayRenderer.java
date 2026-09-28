@@ -34,8 +34,13 @@ final class MeasuredOverlayRenderer {
         GmtHumanQcMath.Attention sixAttention=GmtHumanQcMath.Attention.UNASSESSABLE;
         double sixCentring=Double.NaN;
         String sixNotJudged;
+        // 9 o'clock baton (alpha59)
+        GmtSixLandmarkAnalyzer.Geometry nine;
+        GmtHumanQcMath.Attention nineAttention=GmtHumanQcMath.Attention.UNASSESSABLE;
+        double nineCentring=Double.NaN;
+        String nineNotJudged;
 
-        boolean hasAnything(){return Double.isFinite(dialCx)||twelve!=null||six!=null;}
+        boolean hasAnything(){return Double.isFinite(dialCx)||twelve!=null||six!=null||nine!=null;}
     }
 
     private MeasuredOverlayRenderer(){}
@@ -63,7 +68,8 @@ final class MeasuredOverlayRenderer {
             c.drawPath(p,ring);
         }
 
-        drawSix(c,d);
+        drawBaton(c,d.six,d.sixAttention,d.sixCentring,d.sixNotJudged);
+        drawBaton(c,d.nine,d.nineAttention,d.nineCentring,d.nineNotJudged);
 
         GmtTwelveLandmarkAnalyzer.Geometry g=d.twelve;
         if(g==null)return out;
@@ -122,27 +128,26 @@ final class MeasuredOverlayRenderer {
         return out;
     }
 
-    /** 6 baton outline, 31/29 tick ends and the reference midway between them. */
-    private static void drawSix(Canvas c,Drawing d){
-        GmtSixLandmarkAnalyzer.Geometry s=d.six;
+    /** Baton outline (6 or 9), the neighbouring tick ends and the reference midway between them. */
+    private static void drawBaton(Canvas c,GmtSixLandmarkAnalyzer.Geometry s,GmtHumanQcMath.Attention attention,double centring,String notJudged){
         if(s==null)return;
         double w=Math.hypot(s.outerRight[0]-s.outerLeft[0],s.outerRight[1]-s.outerLeft[1]);
         float lw=(float)Math.max(1.0,w/16.0);
         double[][] p=s.polygon();
-        if(d.sixNotJudged!=null){
+        if(notJudged!=null){
             Paint nj=stroke(UNKNOWN,lw,220);
             for(int i=0;i<4;i++)dashed(c,p[i],p[(i+1)%4],w/4.0,nj);
             return;
         }
-        int col=colour(d.sixAttention);
+        int col=colour(attention);
         Paint o=stroke(col,lw,235);
         Path path=new Path();path.moveTo((float)p[0][0],(float)p[0][1]);
         for(int i=1;i<4;i++)path.lineTo((float)p[i][0],(float)p[i][1]);
         path.close();c.drawPath(path,o);
         Paint tick=stroke(TICK,Math.max(1f,lw*0.8f),230);
-        c.drawLine((float)s.tick31[0],(float)s.tick31[1],(float)s.tick29[0],(float)s.tick29[1],tick);
+        c.drawLine((float)s.tickAfter[0],(float)s.tickAfter[1],(float)s.tickBefore[0],(float)s.tickBefore[1],tick);
         Paint dot=fill(TICK,230);float dr=(float)Math.max(1.5,w/12.0);
-        for(double[] q:new double[][]{s.tick31,s.tick29})c.drawCircle((float)q[0],(float)q[1],dr,dot);
+        for(double[] q:new double[][]{s.tickAfter,s.tickBefore})c.drawCircle((float)q[0],(float)q[1],dr,dot);
         // Where the baton's centre line should meet the track: midway between the 29 and 31
         // ticks (the coronet sits there, there is no 30 tick). A short tick-coloured stub
         // inward from that point, and a dot at the baton's measured outer-end centre, show
@@ -151,12 +156,18 @@ final class MeasuredOverlayRenderer {
         double ix=(s.innerLeft[0]+s.innerRight[0])/2,iy=(s.innerLeft[1]+s.innerRight[1])/2;
         double ax=ix-mx,ay=iy-my,al=Math.hypot(ax,ay);
         if(al>1e-9){ax/=al;ay/=al;
-            double rx=(s.tick31[0]+s.tick29[0])/2,ry=(s.tick31[1]+s.tick29[1])/2;
+            double rx=(s.tickAfter[0]+s.tickBefore[0])/2,ry=(s.tickAfter[1]+s.tickBefore[1])/2;
             c.drawLine((float)rx,(float)ry,(float)(rx+ax*w*0.9),(float)(ry+ay*w*0.9),tick);}
         c.drawCircle((float)mx,(float)my,dr,fill(col,240));
-        if(Double.isFinite(d.sixCentring)){
+        if(Double.isFinite(centring)){
             float ts=(float)Math.max(9.0,w*0.55);
-            label(c,String.format(Locale.US,"%+.2f",d.sixCentring),(float)(s.outerRight[0]+w*0.4),(float)(my+w*0.2),ts,col);
+            // Beside the baton on the tickBefore side (right of the 6, below the 9), clear of the
+            // outline and the minute track.
+            double bx=(p[0][0]+p[1][0]+p[2][0]+p[3][0])/4,by=(p[0][1]+p[1][1]+p[2][1]+p[3][1])/4;
+            double sx=s.tickBefore[0]-s.tickAfter[0],sy=s.tickBefore[1]-s.tickAfter[1],sn=Math.hypot(sx,sy);
+            if(sn>1e-9){sx/=sn;sy/=sn;}
+            float lx=(float)(bx+sx*w*1.05-(sx<-0.5?ts*2.2:0)),ly=(float)(by+sy*w*1.05+ts*0.35+(sy>0.5?ts*0.6:0));
+            label(c,String.format(Locale.US,"%+.2f",centring),lx,ly,ts,col);
         }
     }
 
@@ -188,14 +199,18 @@ final class MeasuredOverlayRenderer {
      */
     static Bitmap closeUp(Bitmap watch,Bitmap overlay,Drawing d,int size){
         if(watch==null||d==null)return null;
-        Bitmap a=panel12(watch,overlay,d,size);
-        Bitmap b=d.six!=null?panel6(watch,overlay,d,size):null;
-        if(a==null)return b;
-        if(b==null)return a;
-        int gap=Math.max(6,size/40);
-        Bitmap out=Bitmap.createBitmap(a.getWidth()+gap+b.getWidth(),Math.max(a.getHeight(),b.getHeight()),Bitmap.Config.ARGB_8888);
+        java.util.List<Bitmap> ps=new java.util.ArrayList<>();
+        Bitmap a=panel12(watch,overlay,d,size);if(a!=null)ps.add(a);
+        if(d.six!=null)ps.add(panelBaton(watch,overlay,"6",d.six,d.sixAttention,d.sixNotJudged,size));
+        if(d.nine!=null)ps.add(panelBaton(watch,overlay,"9",d.nine,d.nineAttention,d.nineNotJudged,size));
+        if(ps.isEmpty())return null;
+        if(ps.size()==1)return ps.get(0);
+        int gap=Math.max(6,size/40),w=0,h=0;
+        for(Bitmap p:ps){w+=p.getWidth();h=Math.max(h,p.getHeight());}
+        w+=gap*(ps.size()-1);
+        Bitmap out=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);
         Canvas c=new Canvas(out);c.drawColor(Color.rgb(12,16,22));
-        c.drawBitmap(a,0,0,null);c.drawBitmap(b,a.getWidth()+gap,0,null);
+        int x=0;for(Bitmap p:ps){c.drawBitmap(p,x,0,null);x+=p.getWidth()+gap;}
         return out;
     }
 
@@ -215,22 +230,22 @@ final class MeasuredOverlayRenderer {
         return panel(watch,overlay,cx,cy,half,size,statusColour(d),statusText(d),dashedBorder);
     }
 
-    private static Bitmap panel6(Bitmap watch,Bitmap overlay,Drawing d,int size){
-        GmtSixLandmarkAnalyzer.Geometry s=d.six;
+    private static Bitmap panelBaton(Bitmap watch,Bitmap overlay,String L,GmtSixLandmarkAnalyzer.Geometry s,
+                                     GmtHumanQcMath.Attention attention,String notJudged,int size){
         double w=Math.hypot(s.outerRight[0]-s.outerLeft[0],s.outerRight[1]-s.outerLeft[1]);
-        double cx=(s.outerLeft[0]+s.outerRight[0]+s.innerLeft[0]+s.innerRight[0]+2*s.tick30[0])/6;
-        double cy=(s.outerLeft[1]+s.outerRight[1]+s.innerLeft[1]+s.innerRight[1]+2*s.tick30[1])/6;
+        double cx=(s.outerLeft[0]+s.outerRight[0]+s.innerLeft[0]+s.innerRight[0]+2*s.tickCentre[0])/6;
+        double cy=(s.outerLeft[1]+s.outerRight[1]+s.innerLeft[1]+s.innerRight[1]+2*s.tickCentre[1])/6;
         double half=Math.max(20,2.6*w);
         int col;String text;
-        if(d.sixNotJudged!=null){col=UNKNOWN;text="6 NOT JUDGED: "+d.sixNotJudged;}
+        if(notJudged!=null){col=UNKNOWN;text=L+" NOT JUDGED: "+notJudged;}
         else{
-            col=colour(d.sixAttention);
-            text=d.sixAttention==GmtHumanQcMath.Attention.STRONG?"6: CHECK CLOSELY"
-                    :d.sixAttention==GmtHumanQcMath.Attention.CHECK?"6: WORTH A LOOK"
-                    :d.sixAttention==GmtHumanQcMath.Attention.CLEAR?"6: NOTHING FLAGGED"
-                    :"6: NOT CALLED (LOW CONFIDENCE)";
+            col=colour(attention);
+            text=attention==GmtHumanQcMath.Attention.STRONG?L+": CHECK CLOSELY"
+                    :attention==GmtHumanQcMath.Attention.CHECK?L+": WORTH A LOOK"
+                    :attention==GmtHumanQcMath.Attention.CLEAR?L+": NOTHING FLAGGED"
+                    :L+": NOT CALLED (LOW CONFIDENCE)";
         }
-        return panel(watch,overlay,cx,cy,half,size,col,text,d.sixNotJudged!=null);
+        return panel(watch,overlay,cx,cy,half,size,col,text,notJudged!=null);
     }
 
     private static Bitmap panel(Bitmap watch,Bitmap overlay,double cx,double cy,double half,int size,int col,String text,boolean dashedBorder){

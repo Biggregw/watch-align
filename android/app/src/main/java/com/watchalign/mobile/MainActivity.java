@@ -132,9 +132,10 @@ public class MainActivity extends Activity {
             android.graphics.Rect dst=new android.graphics.Rect(0,0,w,imgH);
             c.drawBitmap(display,src,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
         }
-        // 12 close-up inset, top-right, so the card shows the measured marker at a readable size.
+        // Marker close-ups inset, top-right, so the card shows the measured markers at a readable size.
         if(result.twelveCloseUp!=null&&imgH>0){
-            int inset=Math.min(result.twelveCloseUp.getWidth()>result.twelveCloseUp.getHeight()*1.3?600:360,imgH/2);
+            float aspect=result.twelveCloseUp.getWidth()/(float)result.twelveCloseUp.getHeight();
+            int inset=Math.min(Math.min(aspect>2.3f?840:aspect>1.3f?600:360,w-32),Math.round(imgH/2f*aspect));
             int insetH=Math.round(inset*result.twelveCloseUp.getHeight()/(float)result.twelveCloseUp.getWidth());
             android.graphics.Rect dst=new android.graphics.Rect(w-inset-16,16,w-16,16+insetH);
             c.drawBitmap(result.twelveCloseUp,null,dst,new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG));
@@ -207,7 +208,7 @@ public class MainActivity extends Activity {
         if(models.isEmpty()){status.setText("No supported model is available.");return;}
         ModelCatalog.Profile profile=models.get(Math.max(0,model.getSelectedItemPosition()));
         summaryText.setText("");setResultButtons(false);checkButton.setEnabled(false);Bitmap watch=watchBitmap;
-        status.setText("Checking… fitting the dial and measuring the 12 marker.");
+        status.setText("Checking… fitting the dial and measuring the 12, 6 and 9 markers. This can take up to half a minute.");
         worker.submit(()->{try{
             WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,Collections.<Bitmap>emptyList(),profile.code);
             runOnUiThread(()->{
@@ -220,7 +221,7 @@ public class MainActivity extends Activity {
                 boolean manual=InspectionImageStore.hasManualSeed;
                 manualButton.setVisibility(autoFailed||manual?View.VISIBLE:View.GONE);
                 status.setText(r.twelveMeasured
-                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. The overlay shows what was measured at 12; tap the close-up to enlarge it.")
+                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. The overlay shows what was measured at 12, 6 and 9; tap the close-ups to enlarge them.")
                         :"Done, but the 12 marker could not be measured on this photo. Try Align dial edge by hand below, or a clearer photo.");
                 resultsButton.setEnabled(true);exportButton.setEnabled(true);inspectButton.setEnabled(r.perspectiveOverlay!=null);
             });
