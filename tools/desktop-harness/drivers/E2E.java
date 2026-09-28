@@ -9,7 +9,8 @@ public class E2E{
   System.out.println("working "+b.getWidth()+"x"+b.getHeight());
   String model="126710BLNR";
   WatchAlignCoreV13.AnalysisResult full=null;
-  GmtHumanQcAnalyzerV2.Result h=GmtHumanQcAnalyzerV2.analyse(b,model);
+  Load.Human hu=Load.human(b,a[0]);GmtHumanQcAnalyzerV2.Result h=hu.h;
+  if(hu.crop!=null)System.out.println(hu.crop.describe());
   Bitmap measured=MeasuredOverlayRenderer.render(b,h.drawing);
   GmtHumanSummary.Input sum=h!=null&&h.summary!=null?h.summary:new GmtHumanSummary.Input();
   sum.overlayDrawn=h.drawing!=null&&h.drawing.twelve!=null;
@@ -19,6 +20,6 @@ public class E2E{
    java.awt.image.BufferedImage comp=new java.awt.image.BufferedImage(b.getWidth(),b.getHeight(),java.awt.image.BufferedImage.TYPE_INT_ARGB);
    java.awt.Graphics2D g2=comp.createGraphics();g2.drawImage(b.img,0,0,null);g2.drawImage(measured.img,0,0,null);g2.dispose();
    ImageIO.write(comp,"png",new File(a[1].replace(".png","_comp.png")));}
-  Bitmap cu=MeasuredOverlayRenderer.closeUp(b,measured,h.drawing,540);
+  Bitmap cu=hu.closeUp!=null?hu.closeUp:MeasuredOverlayRenderer.closeUp(b,measured,h.drawing,540);
   if(cu!=null)ImageIO.write(cu.img,"png",new File(a[1].replace(".png","_12.png")));
  }}

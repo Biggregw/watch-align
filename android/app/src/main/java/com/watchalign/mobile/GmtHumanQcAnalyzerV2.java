@@ -402,6 +402,19 @@ final class GmtHumanQcAnalyzerV2 {
         if(r.attention==GmtHumanQcMath.Attention.CLEAR)return "no rotation is resolved strongly enough to be visible at this image scale";
         return "alignment could not be assessed reliably";
     }
+    /** Dial centre and radius {x, y, r} on a bitmap (seed, then dial-edge fit), or null. */
+    static double[] locateDial(Bitmap watch){
+        Mat src=new Mat();
+        try{
+            Utils.bitmapToMat(watch,src);Imgproc.cvtColor(src,src,Imgproc.COLOR_RGBA2BGR);
+            GmtDialSeedAnalyzer.Result dial=GmtDialSeedAnalyzer.analyse(src);
+            if(!dial.valid||dial.quality<0.45||!(dial.r>20))return null;
+            DialEdgeEllipseFit.Fit edge=DialEdgeFitter.fitBgr(src,dial.x,dial.y,dial.r);
+            return edge!=null?new double[]{edge.cx,edge.cy,edge.meanRadius()}:new double[]{dial.x,dial.y,dial.r};
+        }catch(Throwable t){return null;}
+        finally{src.release();}
+    }
+
     static DialEdgeEllipseFit.Intensity intensityOf(Mat gray){
         final int w=gray.cols(),h=gray.rows();
         final byte[] px=new byte[w*h];

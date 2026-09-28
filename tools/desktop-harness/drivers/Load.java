@@ -29,6 +29,44 @@ final class Load {
         if(cur>1600){double k=1600.0/cur;Mat o=new Mat();Imgproc.resize(m,o,new Size(Math.round(m.cols()*k),Math.round(m.rows()*k)),0,0,Imgproc.INTER_LINEAR);m=o;}
         return fromBgr(m);
     }
+    /**
+     * The original photo as a FullResSource (alpha61), like MainActivity's region decoder:
+     * subsampling as libjpeg DCT scaling where it can (IMREAD_REDUCED), area otherwise.
+     */
+    static FullResSource fullSource(String path){
+        final Mat full=Imgcodecs.imread(path,Imgcodecs.IMREAD_COLOR);
+        if(full.empty())return null;
+        final boolean png=path.toLowerCase().endsWith(".png");
+        return new FullResSource(){
+            public int width(){return full.cols();}
+            public int height(){return full.rows();}
+            public Bitmap region(int x0,int y0,int x1,int y1,int s){
+                Mat src=full;int ox=x0,oy=y0,ex=x1,ey=y1;
+                if(s>1){
+                    if(!png&&s<=8){src=Imgcodecs.imread(path,s==2?Imgcodecs.IMREAD_REDUCED_COLOR_2:s==4?Imgcodecs.IMREAD_REDUCED_COLOR_4:Imgcodecs.IMREAD_REDUCED_COLOR_8);}
+                    else{Mat o=new Mat();Imgproc.resize(full,o,new Size(full.cols()/s,full.rows()/s),0,0,Imgproc.INTER_AREA);src=o;}
+                    ox=x0/s;oy=y0/s;ex=Math.min(src.cols(),x1/s);ey=Math.min(src.rows(),y1/s);
+                }
+                return fromBgr(src.submat(oy,ey,ox,ex).clone());
+            }
+        };
+    }
+
+    /** The app's GMT analysis path (WatchAlignCoreV13): full-resolution dial crop unless -Dwa.crop=false. */
+    static final class Human {GmtHumanQcAnalyzerV2.Result h;GmtDialCrop.Crop crop;Bitmap closeUp;}
+    static Human human(Bitmap preview,String path){
+        Human o=new Human();
+        o.crop="false".equals(System.getProperty("wa.crop"))?null:GmtDialCrop.make(preview,fullSource(path));
+        if(o.crop!=null){
+            o.h=GmtHumanQcAnalyzerV2.analyse(o.crop.bitmap,"126710BLNR");
+            if(o.h.drawing!=null&&o.h.drawing.hasAnything()){
+                o.closeUp=MeasuredOverlayRenderer.closeUp(o.crop.bitmap,MeasuredOverlayRenderer.render(o.crop.bitmap,o.h.drawing),o.h.drawing,540);
+                o.h.drawing.mapTo(o.crop);
+            }
+        }else o.h=GmtHumanQcAnalyzerV2.analyse(preview,"126710BLNR");
+        return o;
+    }
+
     static Bitmap fromBgr(Mat bgr){int w=bgr.cols(),h=bgr.rows();byte[] px=new byte[w*h*3];bgr.get(0,0,px);
         BufferedImage o=new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB);int[] a=new int[w*h];
         for(int i=0;i<w*h;i++)a[i]=0xff000000|((px[3*i+2]&0xff)<<16)|((px[3*i+1]&0xff)<<8)|(px[3*i]&0xff);

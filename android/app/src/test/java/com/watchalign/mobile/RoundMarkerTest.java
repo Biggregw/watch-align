@@ -199,6 +199,14 @@ public class RoundMarkerTest {
         assertTrue(s,s.contains("All markers: 12 hand in the way"));
     }
 
+    @Test public void smallTurnIsNotStrongAtHighResolution(){
+        // Genuine WOS CPO on a full-resolution crop: -1.6 deg, top edge agreeing, 105 px triangle.
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(-1.6,-1.4,-0.02,105,GOOD,true);
+        assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
+        r=GmtHumanQcMath.assessRotation(-2.4,-2.2,-0.02,105,GOOD,true);
+        assertEquals(GmtHumanQcMath.Attention.STRONG,r.attention);
+    }
+
     @Test public void hoursAndTicks(){
         assertEquals(Arrays.toString(new int[]{1,2,4,5,7,8,10,11}),Arrays.toString(GmtRoundMarkerAnalyzer.HOURS));
         GmtRoundMarkerAnalyzer.Marker m=new GmtRoundMarkerAnalyzer.Marker(10);

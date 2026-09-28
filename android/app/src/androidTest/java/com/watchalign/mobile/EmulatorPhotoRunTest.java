@@ -62,7 +62,7 @@ public class EmulatorPhotoRunTest {
                 // can be checked against the device decode pixel for pixel.
                 try (FileOutputStream o = new FileOutputStream(new File(out, stem + "_working.png"))) { watch.compress(Bitmap.CompressFormat.PNG, 100, o); }
                 long t0 = System.nanoTime();
-                WatchAlignCoreV13.AnalysisResult r = WatchAlignCoreV13.analyse(watch, Collections.<Bitmap>emptyList(), "126710BLNR");
+                WatchAlignCoreV13.AnalysisResult r = WatchAlignCoreV13.analyse(watch, Collections.<Bitmap>emptyList(), "126710BLNR", fullSource(test, "e2e/" + name));
                 long ms = (System.nanoTime() - t0) / 1_000_000;
                 String rep = r.report == null ? "" : r.report;
                 String head = String.format(java.util.Locale.US, "===== %s (%dx%d, %d ms)\n", name, watch.getWidth(), watch.getHeight(), ms);
@@ -100,6 +100,29 @@ public class EmulatorPhotoRunTest {
         if (cur <= 1600) return b.copy(Bitmap.Config.ARGB_8888, false);
         float k = 1600f / cur;
         return Bitmap.createScaledBitmap(b, Math.round(b.getWidth() * k), Math.round(b.getHeight() * k), true).copy(Bitmap.Config.ARGB_8888, false);
+    }
+
+    /** Same region decoder as MainActivity.fullSource (alpha61 full-resolution dial crop). */
+    private static FullResSource fullSource(Context c, String path) throws Exception {
+        BitmapFactory.Options o = new BitmapFactory.Options();
+        o.inJustDecodeBounds = true;
+        try (InputStream in = c.getAssets().open(path)) { BitmapFactory.decodeStream(in, null, o); }
+        final int w = o.outWidth, h = o.outHeight;
+        return new FullResSource() {
+            @Override public int width() { return w; }
+            @Override public int height() { return h; }
+            @SuppressWarnings("deprecation")
+            @Override public Bitmap region(int x0, int y0, int x1, int y1, int sampleSize) {
+                try (InputStream in = c.getAssets().open(path)) {
+                    android.graphics.BitmapRegionDecoder d = android.graphics.BitmapRegionDecoder.newInstance(in, false);
+                    try {
+                        BitmapFactory.Options ro = new BitmapFactory.Options();
+                        ro.inSampleSize = sampleSize; ro.inPreferredConfig = Bitmap.Config.ARGB_8888;
+                        return d.decodeRegion(new android.graphics.Rect(x0, y0, x1, y1), ro);
+                    } finally { d.recycle(); }
+                } catch (Throwable t) { return null; }
+            }
+        };
     }
 
     private static String summary(String rep) {

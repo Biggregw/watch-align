@@ -247,7 +247,10 @@ final class GmtHumanQcMath {
                     String.format(java.util.Locale.US,"the point leans %.1f° but the top edge is level; genuine photos show up to 1.4° of this from the camera angle",a));
         }
         if (axisVisible && (baseCorroborates || spacingCorroborates)) {
-            boolean strong=a>=3.0 || rise>=1.5 || spacingStrong;
+            // STRONG needs 2 deg as well as a visible rise. The rise alone grows with resolution:
+            // genuine WOS CPO photos read -1.2 and -1.6 deg on a full-resolution crop (1.5+ px of
+            // rise) and were called STRONG (alpha61).
+            boolean strong=a>=3.0 || (rise>=1.5&&a>=GENUINE_ROTATION_SEEN_DEG) || spacingStrong;
             return new RotationDecision(strong?Attention.STRONG:Attention.CHECK,wholeAxisErrorDeg,topEdgeErrorDeg,sideClearanceAsymmetry,rise,baseCorroborates,spacingCorroborates,
                     strong?"whole-marker rotation is visible and independently corroborated":"slight whole-marker rotation is plausibly visible on close inspection and is corroborated");
         }
@@ -310,6 +313,12 @@ final class GmtHumanQcMath {
     // either side, as a fraction of the marker diameter; size is against the median of the round
     // markers on the same dial. Levels set outside the genuine spread (docs/research/gmt_round_markers_2026-09-28.md).
     static final double ROUND_OFFSET_CHECK = 0.15, ROUND_OFFSET_STRONG = 0.25;
+    /**
+     * Largest 12 rotation read on genuine photos so far, rounded up (alpha61: WOS CPO studio
+     * photos read up to -1.6 deg with the top edge agreeing). Below it a CHECK is borderline:
+     * replica flags in the corpus read 1.0-1.7 deg, so the ranges overlap.
+     */
+    static final double GENUINE_ROTATION_SEEN_DEG = 2.0;
     static final double ROUND_SIZE_CHECK = 0.12;
     static final double MIN_ROUND_PX = 24.0;
 

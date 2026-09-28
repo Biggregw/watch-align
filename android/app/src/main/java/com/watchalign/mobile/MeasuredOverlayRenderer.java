@@ -44,6 +44,24 @@ final class MeasuredOverlayRenderer {
         java.util.List<GmtRoundMarkerAnalyzer.Marker> round=new java.util.ArrayList<>();
 
         boolean hasAnything(){return Double.isFinite(dialCx)||twelve!=null||six!=null||nine!=null||!round.isEmpty();}
+
+        /** Maps everything from full-resolution crop coordinates onto the preview (alpha61). */
+        void mapTo(GmtDialCrop.Crop c){
+            java.util.Set<double[]> done=java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+            dialCx=c.toPreviewX(dialCx);dialCy=c.toPreviewY(dialCy);dialA=c.toPreviewLength(dialA);dialB=c.toPreviewLength(dialB);
+            if(twelve!=null)for(double[] p:new double[][]{twelve.triLeft,twelve.triRight,twelve.triTip,twelve.tick59,twelve.tick60,twelve.tick01})map(p,c,done);
+            for(GmtSixLandmarkAnalyzer.Geometry g:new GmtSixLandmarkAnalyzer.Geometry[]{six,nine})
+                if(g!=null)for(double[] p:new double[][]{g.outerLeft,g.outerRight,g.innerLeft,g.innerRight,g.tickAfter,g.tickCentre,g.tickBefore})map(p,c,done);
+            for(GmtRoundMarkerAnalyzer.Marker m:round){
+                m.x=c.toPreviewX(m.x);m.y=c.toPreviewY(m.y);m.radiusPx=c.toPreviewLength(m.radiusPx);
+                m.seedX=c.toPreviewX(m.seedX);m.seedY=c.toPreviewY(m.seedY);m.expectedRadiusPx=c.toPreviewLength(m.expectedRadiusPx);
+                for(double[] p:new double[][]{m.tickBefore,m.tickCentre,m.tickAfter})map(p,c,done);
+            }
+        }
+        private static void map(double[] p,GmtDialCrop.Crop c,java.util.Set<double[]> done){
+            if(p==null||!done.add(p))return;
+            p[0]=c.toPreviewX(p[0]);p[1]=c.toPreviewY(p[1]);
+        }
     }
 
     private MeasuredOverlayRenderer(){}

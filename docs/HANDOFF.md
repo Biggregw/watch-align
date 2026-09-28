@@ -55,7 +55,7 @@ JAVA_HOME=<jdk17> sh ./gradlew --no-daemon -q \
   :app:testDebugUnitTest :app:assembleDebug
 ```
 
-- 197 JVM unit tests, all passing.
+- 200 JVM unit tests, all passing.
 - `:app:compileDebugAndroidTestJavaSource` compiles the on-device test
   (`GenuineOfficialImageValidationTest`). It needs network access for
   androidx.test, so **don't pass `--offline`** for it. Only check the result of the
@@ -226,6 +226,14 @@ not found. A low-confidence baton keeps only an offset concern, not a rotation c
 in the regression. They are downloaded, not committed; the list is in the research note. The tick search was also moved from
 `Mat.get` to a byte array (`GmtTwelveLandmarkAnalyzer.Px`), with identical 12/6/9 results
 (`docs/research/gmt_round_markers_2026-09-28.md`).
+
+alpha61 also re-reads **small dials at full resolution** (`GmtDialCrop`, `FullResSource`; on the
+phone a `BitmapRegionDecoder`). This applies when the preview dial radius is under 230 px and
+the original has more pixels; the crop is scaled to a radius of at most 380 px. It also
+changes the 12 rotation rule: STRONG now needs 2° as well as a visible rise. Genuine WOS CPO
+photos read up to −1.6°, which overlaps the replica flags at 1.0–1.7°. See
+`docs/research/gmt_dial_crop_2026-09-28.md`, which also lists the two 12 CHECKs that remain on
+the 20 Phillips genuine photos (off-centre 0.080; skew +2.2°).
 
 **Scope:** the deliverable is the Android app. The desktop harness only runs the app's
 Java code for fast testing. The Python tools in `tools/research/` (branch

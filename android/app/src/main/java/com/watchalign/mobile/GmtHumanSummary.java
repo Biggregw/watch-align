@@ -190,7 +190,12 @@ final class GmtHumanSummary {
                         :"spacing either side uneven, but not consistently enough to flag";
                 return "straight and centred. No visible rotation, "+spacing+"."+sp+caution;
             }
-            case CHECK: return "possibly "+describe(in)+". Look closely; a hand touching the triangle can cause this."+sp+caution;
+            case CHECK:{
+                String border=Double.isFinite(in.rotationDeg)&&Math.abs(in.rotationDeg)<GmtHumanQcMath.GENUINE_ROTATION_SEEN_DEG&&kind(in)!=AlignmentKind.OFF_CENTRE
+                        ?" Borderline: genuine watches photographed so far read up to about 1.6°."
+                        :"";
+                return "possibly "+describe(in)+". Look closely; a hand touching the triangle can cause this."+border+sp+caution;
+            }
             case STRONG: return "visibly "+describe(in)+"."+sp+caution;
             default: return "could not be judged reliably on this photo.";
         }

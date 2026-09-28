@@ -18,7 +18,7 @@ public class Batch{
    String[] f=lines.get(li).split(",",-1);String rel=f[iPath];File img=base.resolve(rel).toFile();if(!img.exists())continue;
    try{
     Bitmap b=Load.photo(img.getPath());if(b==null)continue;
-    GmtHumanQcAnalyzerV2.Result h=GmtHumanQcAnalyzerV2.analyse(b,"126710BLNR");
+    Load.Human hu=Load.human(b,img.getPath());GmtHumanQcAnalyzerV2.Result h=hu.h;
     GmtHumanSummary.Input s=h.summary;boolean tw=h.drawing!=null&&h.drawing.twelve!=null;
     double triPx=tw?Math.hypot(h.drawing.twelve.triRight[0]-h.drawing.twelve.triLeft[0],h.drawing.twelve.triRight[1]-h.drawing.twelve.triLeft[1]):Double.NaN;
     String ov="";

@@ -6,7 +6,7 @@ public class Round{
   nu.pattern.OpenCV.loadLocally();
   for(String p:a){
    Bitmap b=Load.photo(p);long t0=System.nanoTime();
-   GmtHumanQcAnalyzerV2.Result h=GmtHumanQcAnalyzerV2.analyse(b,"126710BLNR");
+   Load.Human hu=Load.human(b,p);GmtHumanQcAnalyzerV2.Result h=hu.h;if(hu.crop!=null){System.out.println(hu.crop.describe());}
    System.out.printf(Locale.US,"== %s  %d ms  pose %s%n",p,(System.nanoTime()-t0)/1000000,h.poseLabel);
    for(GmtRoundMarkerAnalyzer.Marker m:h.round)System.out.println(line(m));
    String out=System.getProperty("wa.round.png");if(out!=null)strip(b,h,out.replace("%",new java.io.File(p).getParentFile().getName()+"_"+new java.io.File(p).getName().replace(".jpg","")));

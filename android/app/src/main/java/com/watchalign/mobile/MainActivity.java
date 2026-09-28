@@ -5,6 +5,8 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BitmapRegionDecoder;
+import android.graphics.Rect;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -45,6 +47,8 @@ public class MainActivity extends Activity {
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private final List<ModelCatalog.Profile> models=new ArrayList<>();
     private Bitmap watchBitmap;
+    /** The photo as picked, for the full-resolution dial crop (alpha61). */
+    private Uri watchUri;
     private WatchAlignCoreV13.AnalysisResult lastResult;
     private ImageView preview,closeUpView;
     private TextView status,summaryText;
@@ -185,11 +189,40 @@ public class MainActivity extends Activity {
         super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null)return;
         try{
             if(request==PICK_WATCH&&data.getData()!=null){
-                InspectionImageStore.clearManualSeed();watchBitmap=readBitmap(data.getData());lastResult=null;
+                InspectionImageStore.clearManualSeed();watchBitmap=readBitmap(data.getData());watchUri=data.getData();lastResult=null;
                 preview.setImageBitmap(watchBitmap);closeUpView.setVisibility(View.GONE);summaryText.setText("");setResultButtons(false);manualButton.setVisibility(View.GONE);
                 checkButton.setEnabled(true);status.setText("Photo ready. Tap Check watch.");
             }
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
+    }
+
+    /**
+     * The original photo, read a region at a time (alpha61), so the dial can be analysed at full
+     * resolution without decoding the whole photo at full size. Null when the photo can't be
+     * region-decoded; the analysis then uses the preview as before.
+     */
+    private FullResSource fullSource(Uri uri){
+        if(uri==null)return null;
+        try{
+            BitmapFactory.Options o=new BitmapFactory.Options();o.inJustDecodeBounds=true;
+            try(InputStream in=getContentResolver().openInputStream(uri)){BitmapFactory.decodeStream(in,null,o);}
+            final int w=o.outWidth,h=o.outHeight;
+            if(w<=0||h<=0)return null;
+            return new FullResSource(){
+                @Override public int width(){return w;}
+                @Override public int height(){return h;}
+                @SuppressWarnings("deprecation")
+                @Override public Bitmap region(int x0,int y0,int x1,int y1,int sampleSize){
+                    try(InputStream in=getContentResolver().openInputStream(uri)){
+                        BitmapRegionDecoder d=BitmapRegionDecoder.newInstance(in,false);
+                        try{
+                            BitmapFactory.Options ro=new BitmapFactory.Options();ro.inSampleSize=sampleSize;ro.inPreferredConfig=Bitmap.Config.ARGB_8888;
+                            return d.decodeRegion(new Rect(x0,y0,x1,y1),ro);
+                        }finally{d.recycle();}
+                    }catch(Throwable t){return null;}
+                }
+            };
+        }catch(Throwable t){return null;}
     }
 
     private Bitmap readBitmap(Uri uri)throws Exception{
@@ -210,7 +243,7 @@ public class MainActivity extends Activity {
         summaryText.setText("");setResultButtons(false);checkButton.setEnabled(false);Bitmap watch=watchBitmap;
         status.setText("Checking… fitting the dial and measuring the hour markers. This can take up to half a minute.");
         worker.submit(()->{try{
-            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,Collections.<Bitmap>emptyList(),profile.code);
+            WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,Collections.<Bitmap>emptyList(),profile.code,fullSource(watchUri));
             runOnUiThread(()->{
                 lastResult=r;checkButton.setEnabled(true);
                 preview.setImageBitmap(r.perspectiveOverlay!=null?composeOverlay(watchBitmap,r.perspectiveOverlay):watchBitmap);

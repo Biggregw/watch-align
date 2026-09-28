@@ -32,7 +32,10 @@ public final class WatchAlignCoreV13 {
 
     public static AnalysisResult analyse(Bitmap watch,Bitmap reference,String modelRef){List<Bitmap> refs=reference==null?Collections.emptyList():Collections.singletonList(reference);return analyse(watch,refs,modelRef);}
 
-    public static AnalysisResult analyse(Bitmap watch,List<Bitmap> references,String modelRef){
+    public static AnalysisResult analyse(Bitmap watch,List<Bitmap> references,String modelRef){return analyse(watch,references,modelRef,null);}
+
+    /** @param full the original photo, for a full-resolution dial crop when the dial is small (alpha61); may be null */
+    public static AnalysisResult analyse(Bitmap watch,List<Bitmap> references,String modelRef,FullResSource full){
         List<Bitmap> refs=references==null?Collections.emptyList():new ArrayList<>(references);Bitmap primary=refs.isEmpty()?null:refs.get(0);
         WatchAlignCoreV11.AnalysisResult base=WatchAlignCoreV11.analyse(watch,primary,modelRef);
         boolean canonicalGmt=CanonicalGmtGeometryAnalyzer.supports(modelRef);
@@ -47,7 +50,18 @@ public final class WatchAlignCoreV13 {
         // Overlay = what the analysis measured (alpha51). The fixed predicted template is no
         // longer drawn: it could disagree with the measurements when the dial edge was hard
         // to fit, and a full measured template will be built up check by check instead.
-        GmtHumanQcAnalyzerV2.Result human=canonicalGmt?GmtHumanQcAnalyzerV2.analyse(watch,modelRef,manualSeed):null;
+        // Full-resolution dial crop (alpha61): not with a hand-aligned dial, whose taps are in
+        // preview coordinates.
+        GmtDialCrop.Crop crop=canonicalGmt&&manualSeed==null&&full!=null?GmtDialCrop.make(watch,full):null;
+        GmtHumanQcAnalyzerV2.Result human=!canonicalGmt?null
+                :crop!=null?GmtHumanQcAnalyzerV2.analyse(crop.bitmap,modelRef,null)
+                :GmtHumanQcAnalyzerV2.analyse(watch,modelRef,manualSeed);
+        Bitmap cropCloseUp=null;
+        if(crop!=null&&human!=null&&human.drawing!=null&&human.drawing.hasAnything()){
+            // Close-ups from the crop itself (full detail), then everything mapped onto the preview.
+            cropCloseUp=MeasuredOverlayRenderer.closeUp(crop.bitmap,MeasuredOverlayRenderer.render(crop.bitmap,human.drawing),human.drawing,540);
+            human.drawing.mapTo(crop);
+        }
         Bitmap measured=human!=null?MeasuredOverlayRenderer.render(watch,human.drawing):null;
         boolean twelveMeasured=human!=null&&human.drawing!=null&&human.drawing.twelve!=null;
 
@@ -58,6 +72,7 @@ public final class WatchAlignCoreV13 {
             report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\n"
                     +GmtHumanSummary.build(sum)
                     +"\n\nDETAILS\nThe 59/60/01 minute track defines local 12 and the triangle is checked against it for gap, centring, rotation and 59/01 spacing. The dial centre and scale come from the physical black-dial edge. The overlay shows only what was measured: the dial edge (faint ring), the detected 12 triangle, the 59/60/01 tick ends, the gap and the 59/01 spacing, coloured green (clear), amber (check), red (strong) or grey (not judged).\n"
+                    +(crop!=null?"\n"+crop.describe()+"\n":"")
                     +(human==null?"":human.report);
         }else{
             String baselineReport=ReferenceDistributionAnalyzer.analyse(watch,refs,modelRef).report;
@@ -67,7 +82,8 @@ public final class WatchAlignCoreV13 {
         AnalysisResult res=new AnalysisResult(combined,base.reference,base.aligned,
                 measured,null,
                 report,base.registrationConfidence,twelveMeasured?1.0:0.0,twelveMeasured);
-        if(human!=null&&human.drawing!=null)res.twelveCloseUp=MeasuredOverlayRenderer.closeUp(watch,measured,human.drawing,540);
+        if(cropCloseUp!=null)res.twelveCloseUp=cropCloseUp;
+        else if(human!=null&&human.drawing!=null)res.twelveCloseUp=MeasuredOverlayRenderer.closeUp(watch,measured,human.drawing,540);
         return res;
     }
     private WatchAlignCoreV13(){}

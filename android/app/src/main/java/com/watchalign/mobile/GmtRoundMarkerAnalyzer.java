@@ -531,14 +531,16 @@ final class GmtRoundMarkerAnalyzer {
     }
 
     /**
-     * Share of the ring from the marker's edge out to 2.2 radii (dial side of the minute track)
+     * Share of the ring from outside the surround out to 2.2 radii (dial side of the minute track)
      * that is strongly coloured. The dial is black, the markers white and the hour and minute
      * hands steel; the GMT hand's shaft is the only saturated colour there (blue or red). It can
      * cover a marker with its arrowhead while its bright parts barely leave the outline (official
      * render: the arrow over the 5 read as a clear marker).
      */
     static double colouredFraction(Mat bgr,Marker m,double dialCx,double dialCy){
-        double R=m.radiusPx,track=Math.hypot(m.tickCentre[0]-dialCx,m.tickCentre[1]-dialCy)-2;
+        // From outside the whole surround: the fit can be on the lume, and a rose-gold surround
+        // (126711CHNR, 126715CHNR) reads as red at full resolution.
+        double R=Math.max(m.radiusPx,m.expectedRadiusPx*1.15),track=Math.hypot(m.tickCentre[0]-dialCx,m.tickCentre[1]-dialCy)-2;
         int x0=(int)Math.max(0,Math.floor(m.x-2.2*R)),x1=(int)Math.min(bgr.cols()-1,Math.ceil(m.x+2.2*R));
         int y0=(int)Math.max(0,Math.floor(m.y-2.2*R)),y1=(int)Math.min(bgr.rows()-1,Math.ceil(m.y+2.2*R));
         if(x1<=x0||y1<=y0)return Double.NaN;
