@@ -205,6 +205,62 @@ turned out not to be a bug).
 6. Perspective correction stays out of scope until steps 1-5 are proven on
    frontal images, per QC_PRINCIPLES' explicit gate.
 
+3. **In progress 2026-09-28 -- real bug found, not yet fixed.** Ran
+   `detect_baton` on 26 real photos already available locally from earlier
+   this session (4 verified-provenance 126710BLRO photos + 22 previously
+   user-supplied genuine/replica GMT photos), both 6 and 9 o'clock, and
+   visually overlay-checked results before trusting any number (script:
+   `/tmp/.../scratchpad/run_baton_real_photos.py`, not committed -- ad hoc
+   driver, see below for what should actually be committed).
+
+   **9 o'clock: works correctly.** Visually verified 2/2 checked photos
+   (blro_147798, img19) -- outer-edge corners land exactly on the baton,
+   tick landmarks land exactly on the real chapter-ring ticks next to the
+   engraved "ROLEX" text. Not exhaustively checked across all 26.
+
+   **6 o'clock: systematic bug, confirmed on 2 independent real photos
+   (blro_147798, img19 -- different crops/angles/sources).** The
+   tick-search band lands on "SWISS ... MADE" (or equivalent) dial text
+   instead of the true minute-track ticks. Root cause: `_minute_ticks`'
+   search band (`top-.20*r` to `top+.035*r`, hardcoded inside that shared
+   function) assumes the gap between the marker and its neighbouring ticks
+   is blank dial -- true at 12, confirmed true at 9, but **not at 6**,
+   where Rolex prints certification text in exactly that gap on this watch
+   family. The real ticks sit further out, past the text.
+
+   Concretely: on blro_147798, the found "tick" candidates in that band had
+   heights of 5-22px with no consistent pitch (real ticks are much more
+   uniform) -- almost certainly individual text glyphs, not ticks. This
+   fooled not just the `_sequence` fallback (all 4 blro photos' 6 o'clock
+   results went through `_sequence`, never `_direct`, unlike their clean
+   9 o'clock `_direct` results) but on img19 it fooled `_direct` itself
+   (confidence 0.993, "(direct)" reason, still landed on text) -- so
+   confidence/reason alone do not reliably flag this failure.
+
+   **Not fixed yet -- this needs a design decision, not a quick patch:**
+   `_minute_ticks`' band margins are hardcoded inside that shared function,
+   used by both the 12-triangle and baton paths. Options to widen the
+   6 o'clock search past the text without risking the already-validated
+   12/9 o'clock behaviour: (a) parameterize `_minute_ticks`' margin with a
+   default matching its current hardcoded value, so `_minute_ticks_at_angle`
+   can pass a wider one for 6 o'clock specifically; (b) build a baton-
+   specific tick search from the lower-level primitives
+   (`_tick_masks`/`_ticks`/`_direct`/`_sequence`/`_first_regularized`)
+   directly, bypassing `_minute_ticks`'s own band construction entirely;
+   (c) add a tick-candidate height-consistency filter strict enough to
+   reject text glyphs (their heights varied 5-22px on the one photo
+   measured; real ticks should be far more uniform) -- weakest option,
+   since it patches a symptom rather than searching in the right place.
+   (a) or (b) both need real measurement of how far out the true 6 o'clock
+   ticks actually sit past the text, across more than one photo, before
+   picking a margin -- not yet done.
+
+   Also not yet done: the committed `_baton_candidate` ROI margins/size
+   gates are still the untuned triangle-derived placeholders from step 2 --
+   this run didn't surface a problem with them specifically (the baton
+   blob itself was found correctly on every photo visually checked), but
+   they haven't been independently stress-tested either.
+
 ## Explicit non-goals for this scope
 
 - No perspective/tilt correction.
