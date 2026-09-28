@@ -140,8 +140,62 @@ turned out not to be a bug).
    something step 2's baton corner-extraction needs to account for
    (left/right must be re-derived from the un-rotated x-order, not assumed
    to survive the round trip positionally).
-2. Add `BatonGeometry`/`BatonMeasurements` + the minAreaRect-based corner/axis
-   extractor, with synthetic unit tests (mirrors current triangle tests).
+2. **Done 2026-09-28.** Add `BatonGeometry`/`BatonMeasurements` + the
+   minAreaRect-based corner/axis extractor, with synthetic unit tests.
+   - `BatonGeometry`/`BatonMeasurements`/`measure_baton` added to
+     `human_qc_geometry.py`, deliberately mirroring `Gmt12Geometry`'s shape
+     (outer-edge-pair + one inner point; tick-pair + one tick centre) but
+     written orientation-agnostically: `measure_gmt12`'s
+     `_x_on_line_at_y`-based horizontal-offset calculation assumes a
+     roughly-vertical axis (true at 12, also true at 6, but **not** at 9,
+     where the long axis is roughly horizontal and `_x_on_line_at_y` hits
+     its own degenerate-horizontal-line guard). `measure_baton` uses
+     `_signed_point_line_distance` for both the radial and tangential
+     measurements instead -- proven by
+     `test_ideal_9oclock_matches_6oclock_numerically` in
+     `tools/research/tests/test_baton_geometry.py`, which asserts a
+     horizontal-axis case gives numerically identical results to the
+     vertical-axis one, not just that it doesn't crash.
+   - `tools/research/baton_auto_landmarks.py`: `_baton_candidate` (blob
+     threshold + `cv2.minAreaRect` in the rotated frame, replacing
+     `_polygon_to_triangle_corners`'s triangle-specific logic -- a baton has
+     no apex to derive an axis from) and `_minute_ticks_at_angle` (thin
+     rotate/call-unmodified-`_minute_ticks`/unrotate wrapper) and
+     `detect_baton`, tying dial-seed detection + corner extraction + tick
+     search + `measure_baton` together, mirroring `detect_gmt12`'s shape.
+   - **Left/right resolved, correcting step 1's note:** step 1 observed
+     that a 180-degree rotation reverses x-order and read that as
+     "left/right gets reversed." Re-examined properly this step: a rotation
+     (unlike a reflection) preserves orientation/handedness, so
+     "smaller-x-in-the-rotated-frame = counter-clockwise-neighbour" (the
+     existing 12 o'clock convention, where the 59-tick sits left of 60)
+     actually survives unrotation correctly for *all four* supported
+     angles -- confirmed against the true clockwise-tangent-direction
+     formula (`position(theta)=(cx+r*sin(theta), cy-r*cos(theta))`,
+     clockwise from 12) in
+     `test_smaller_x_after_rotation_matches_true_counterclockwise_direction`,
+     parametrized over all 4 angles. What step 1 actually observed was
+     naive original-frame x-values swapping (e.g. x=230 vs x=170), not a
+     break in the CCW/CW semantic labelling -- `_baton_candidate` relies on
+     the labelling being correct and it is.
+   - 20 new tests across `test_baton_geometry.py` and
+     `test_baton_auto_landmarks.py` (synthetic point geometry + full
+     pixel-level `_baton_candidate`/`_minute_ticks_at_angle` pipeline at
+     both 6 and 9 o'clock, built via the same "construct in the easier
+     rotated frame, unrotate to get the real picture" technique proven in
+     step 1). One real debugging finding kept as a code comment: placing
+     the tick band too close to the baton's outer edge let the centre
+     tick's dilated bounding box merge with the baton blob and silently
+     vanish (rejected by the tick-width filter) -- fixed by widening the
+     synthetic gap, but worth remembering as a real failure mode once real
+     photos are tried in step 3. 76/76 relevant repo tests pass.
+   - Untested/placeholder: `_baton_candidate`'s ROI margins and size gates
+     are carried over verbatim from `_triangle_candidate`'s real-photo-tuned
+     values, not yet validated against an actual baton photo. `detect_baton`
+     itself (the full entry point, dial-seed detection included) has no
+     synthetic test, same as `detect_gmt12` -- `_dial_circle` needs a real
+     Hough-detectable circle, which only a real or very carefully
+     constructed photo provides.
 3. Run on a handful of real photos (reuse fetch CI pattern), visually
    overlay-check every one before trusting a single number.
 4. Collect a genuine baseline (own provenance-checked photo set) once step 3

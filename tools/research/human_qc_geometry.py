@@ -14,6 +14,23 @@ GMT 12-o'clock convention used here:
   1 minute-track ticks respectively;
 * minute_60_center is the observed centre of the actual 60/top tick, never a
   fitted dial-centre x coordinate.
+
+Applied baton marker (6/9 o'clock, see docs/research/gmt6_9_baton_scope_2026-09-28.md)
+convention used here -- deliberately mirrors the 12-triangle shape above
+(outer-edge-pair + one inner point; tick-pair + one tick centre) so the same
+measurement primitives apply, but is written orientation-agnostically since
+a baton's long axis is roughly vertical at 6 and roughly horizontal at 9:
+* baton_outer_left/right are the two OUTER (bezel-facing) corners of the
+  baton's outer edge, nearest the minute track;
+* baton_inner_mid is the midpoint of the baton's INNER (centre-facing) edge;
+* "left"/"right" mean the counter-clockwise-neighbour / clockwise-neighbour
+  side of the marker's own position, not image-x -- at 9 o'clock the
+  tangential direction is image-y, so image-left-vs-right does not apply;
+* minute_inner_left/right are the observed inner ends of the immediate
+  counter-clockwise/clockwise-neighbour minute-track ticks;
+* minute_marker_center is the observed centre of the actual tick this baton
+  should align to (the "30" tick for 6, the "45" tick for 9), never a fitted
+  dial-centre coordinate -- same role as minute_60_center above.
 """
 from __future__ import annotations
 
@@ -61,6 +78,49 @@ class Gmt12Measurements:
     # negative means more room on the 59-minute side. This is deliberately a
     # diagnostic, not an independent 'tilt' verdict: translation and rotation
     # can both contribute, so rotation_deg remains the direct angular measure.
+    side_clearance_asymmetry: float
+
+
+@dataclass(frozen=True)
+class BatonGeometry:
+    hour_position: int  # 6 or 9 -- explicit, never inferred from geometry
+    baton_outer_left: Point
+    baton_outer_right: Point
+    baton_inner_mid: Point
+    minute_inner_left: Point
+    minute_inner_right: Point
+    minute_marker_center: Point
+
+
+@dataclass(frozen=True)
+class BatonMeasurements:
+    # Signed perpendicular gap from the local tick-pair line to the baton's
+    # outer-edge midpoint, divided by baton outer-edge width. Analogue of
+    # top_clearance_over_triangle_width.
+    radial_clearance_over_baton_width: float
+
+    # Signed perpendicular distance of the observed minute_marker_center from
+    # the baton's own long-axis line (outer-edge midpoint to inner-edge
+    # midpoint), divided by baton outer-edge width. Zero means the marker's
+    # long axis passes exactly through the tick it should align to. Positive
+    # means the tick sits on the "right" (clockwise) side of the axis.
+    # Analogue of horizontal_offset_over_triangle_width, but orientation-
+    # agnostic (does not assume a roughly-vertical axis).
+    tangential_offset_over_baton_width: float
+
+    # Signed smallest angle between the baton's outer edge and the local
+    # tick-pair reference line. Zero means parallel.
+    rotation_deg: float
+
+    # Human-style local side-clearance diagnostics, same pattern as the
+    # 12-triangle: distance from each outer corner to its corresponding
+    # immediate neighbouring tick inner end, normalized by baton width.
+    left_clearance_over_baton_width: float
+    right_clearance_over_baton_width: float
+
+    # right - left. Positive means visibly more room on the clockwise-
+    # neighbour side. Deliberately a diagnostic, not an independent 'tilt'
+    # verdict -- see side_clearance_asymmetry above.
     side_clearance_asymmetry: float
 
 
@@ -152,5 +212,55 @@ def measure_gmt12(g: Gmt12Geometry) -> Gmt12Measurements:
         rotation_deg=rotation,
         left_clearance_over_triangle_width=left_clearance,
         right_clearance_over_triangle_width=right_clearance,
+        side_clearance_asymmetry=side_asymmetry,
+    )
+
+
+def measure_baton(g: BatonGeometry) -> BatonMeasurements:
+    """Measure the applied-baton-marker QC relationships from
+    docs/architecture/QC_PRINCIPLES.md's "Applied hour markers" section
+    (radial height, tangential/centre alignment, rotation/cant, local
+    side-clearance), using the same human-defined local references as
+    measure_gmt12 -- the observed neighbouring ticks, never a fitted dial
+    centre or global axis.
+
+    Written orientation-agnostically (via _signed_point_line_distance for
+    both the radial and tangential measurements, rather than measure_gmt12's
+    _x_on_line_at_y) because a baton's long axis is roughly vertical at 6
+    o'clock but roughly horizontal at 9 o'clock -- an x-at-given-y formula
+    would silently break at 9.
+
+    No pass/fail thresholds live here, same as measure_gmt12.
+    """
+    outer_mid = _mid(g.baton_outer_left, g.baton_outer_right)
+    baton_width = _norm(_sub(g.baton_outer_right, g.baton_outer_left))
+    if baton_width <= 1e-9:
+        raise ValueError("baton outer edge is degenerate")
+
+    clearance = _signed_point_line_distance(
+        outer_mid, g.minute_inner_left, g.minute_inner_right
+    ) / baton_width
+
+    tangential = _signed_point_line_distance(
+        g.minute_marker_center, outer_mid, g.baton_inner_mid
+    ) / baton_width
+
+    rotation = _parallel_angle_difference_deg(
+        g.baton_outer_left,
+        g.baton_outer_right,
+        g.minute_inner_left,
+        g.minute_inner_right,
+    )
+
+    left_clearance = _distance(g.baton_outer_left, g.minute_inner_left) / baton_width
+    right_clearance = _distance(g.baton_outer_right, g.minute_inner_right) / baton_width
+    side_asymmetry = right_clearance - left_clearance
+
+    return BatonMeasurements(
+        radial_clearance_over_baton_width=clearance,
+        tangential_offset_over_baton_width=tangential,
+        rotation_deg=rotation,
+        left_clearance_over_baton_width=left_clearance,
+        right_clearance_over_baton_width=right_clearance,
         side_clearance_asymmetry=side_asymmetry,
     )
