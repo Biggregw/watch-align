@@ -150,6 +150,18 @@ public class RoundMarkerTest {
         assertTrue(s,s.contains("the round markers could not be judged here"));
     }
 
+    @Test public void lowConfidenceReasonsAreShortAndGrouped(){
+        GmtHumanSummary.Input in=clearTwelve();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS){
+            GmtRoundMarkerAnalyzer.Marker m=judged(h,h==1||h==8?GmtHumanQcMath.Attention.UNASSESSABLE:GmtHumanQcMath.Attention.CLEAR);
+            if(h==1){m.stable=false;m.lowReason="26% of the outline is not on a circle (a hand, glare or a damaged edge)";}
+            if(h==8){m.stable=false;m.lowReason="35% of the outline is not on a circle (a hand, glare or a damaged edge)";}
+            in.round.add(m);
+        }
+        String s=GmtHumanSummary.build(in);
+        assertTrue(s,s.contains("Not judged: the 1 and 8 (outline not clean: a hand, glare or a damaged edge)."));
+    }
+
     @Test public void hoursAndTicks(){
         assertEquals(Arrays.toString(new int[]{1,2,4,5,7,8,10,11}),Arrays.toString(GmtRoundMarkerAnalyzer.HOURS));
         GmtRoundMarkerAnalyzer.Marker m=new GmtRoundMarkerAnalyzer.Marker(10);

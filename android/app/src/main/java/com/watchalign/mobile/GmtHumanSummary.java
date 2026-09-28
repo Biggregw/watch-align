@@ -255,7 +255,7 @@ final class GmtHumanSummary {
                     :m.hand?"a hand is over or next to it"
                     :m.tooSmall?"too small in this photo"
                     :m.unstable?"the reading changes when the photo is resized slightly"
-                    :!m.stable?(m.lowReason==null||m.lowReason.isEmpty()?"measured with low confidence":m.lowReason)
+                    :!m.stable?shortLow(m.lowReason)
                     :m.note!=null&&m.note.contains("angled")?"the photo is too angled"
                     :"could not be judged reliably";
             by.computeIfAbsent(why,k->new ArrayList<>()).add(String.valueOf(m.hour));
@@ -268,6 +268,19 @@ final class GmtHumanSummary {
             parts.add("the "+join(e.getValue())+" ("+why+")");
         }
         return "Not judged: "+String.join("; ",parts)+".";
+    }
+
+    /** Short, parenthesis-free form of a round marker's low-confidence reason, for grouping. */
+    static String shortLow(String r){
+        if(r==null||r.isEmpty())return "measured with low confidence";
+        if(r.contains("not on a circle"))return "outline not clean: a hand, glare or a damaged edge";
+        if(r.contains("outer edge"))return "only the lume could be traced, not the surround";
+        if(r.contains("12 marker was not found"))return "the 12 was not found, so the dial orientation is unknown";
+        if(r.contains("edge is faint"))return "the marker edge is faint";
+        if(r.contains("ticks beside it"))return "the minute ticks beside it are unclear";
+        if(r.contains("tick spacing")||r.contains("disagree"))return "the marker or its ticks were probably not found correctly";
+        if(r.contains("minute tick at the marker"))return "the minute tick at the marker was not found";
+        return r.replace("(","").replace(")","");
     }
 
     static List<String> roundFlagItems(Input in){
