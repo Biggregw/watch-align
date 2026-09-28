@@ -116,9 +116,30 @@ turned out not to be a bug).
 
 ## Order of work (per QC_PRINCIPLES step order, applied to batons)
 
-1. Generalize the ROI/search-angle parameterization (no new measurement yet --
-   prove the *existing* tick-line-fitting machinery still works when pointed
-   at 6 and 9 on synthetic images).
+1. **Done 2026-09-28.** Generalize the ROI/search-angle parameterization (no
+   new measurement yet -- prove the *existing* tick-line-fitting machinery
+   still works when pointed at 6 and 9 on synthetic images). Implemented as
+   `tools/research/dial_rotation.py`: an exact, lossless 90-degree-multiple
+   whole-image rotation (no interpolation, so the Otsu/tophat thresholds
+   `_tick_masks` depends on see unchanged pixel data) that brings any
+   cardinal marker (12=0, 3=90, 6=180, 9=270 clockwise degrees) to the "top"
+   position, plus point-coordinate forward/inverse transforms for mapping
+   landmarks back to the original frame. `_minute_ticks` itself is
+   completely unmodified -- proven in
+   `tools/research/tests/test_dial_rotation.py` (14 tests): point round-trip
+   identity across all 4 angles, forward transform verified pixel-for-pixel
+   against real `cv2.rotate` output (not just formula reasoning), and full
+   synthetic end-to-end runs of the unmodified `_minute_ticks` at 6 o'clock
+   (ticks below the marker, centre above -- physically backwards from what
+   the un-rotated function assumes) and 9 o'clock (ticks wider-than-tall,
+   arranged along y -- a shape the un-rotated function's filters would
+   reject) both succeed once rotated, with results mapped back and checked
+   against the original-frame ground truth. One real finding during this:
+   180-degree rotation reverses left/right, so the rotated frame's "left"
+   tick is the original frame's right-neighbour tick -- not a bug, but
+   something step 2's baton corner-extraction needs to account for
+   (left/right must be re-derived from the un-rotated x-order, not assumed
+   to survive the round trip positionally).
 2. Add `BatonGeometry`/`BatonMeasurements` + the minAreaRect-based corner/axis
    extractor, with synthetic unit tests (mirrors current triangle tests).
 3. Run on a handful of real photos (reuse fetch CI pattern), visually
