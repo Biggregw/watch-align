@@ -14,6 +14,8 @@ final class GmtHumanQcAnalyzerV2 {
     static final double GAP_PX_UNCERTAINTY = 0.75;
     /** Below this triangle width (px) a pixel is >= 0.025 of gap and landmarks are unreliable. */
     static final double MIN_TRIANGLE_PX = 40.0;
+    /** Largest tick-chord vs dial-centre axis difference trusted for rotation (alpha58). */
+    static final double MAX_AXIS_REFERENCE_DISAGREEMENT_DEG = 1.5;
     static final class Result {
         final String report;
         final GmtHumanQcMath.PoseLabel poseLabel;
@@ -129,6 +131,16 @@ final class GmtHumanQcAnalyzerV2 {
             // on the other. A reading that moves by more than about a pixel when the photo is
             // reduced by 6-12% is not a measurement of the watch, so it gets no verdict. A concern
             // is kept (as CHECK) only when every re-measurement agrees on it.
+            // Axis cross-check (alpha58): rotation is measured square to the 59-01 tick chord. When
+            // that disagrees with the dial-centre line by more than MAX_AXIS_REFERENCE_DISAGREEMENT
+            // one of the two is wrong (a tick end or the centre misplaced), so no rotation verdict.
+            boolean axisConflict=twelve.valid&&Double.isFinite(twelve.axisReferenceDisagreementDeg)
+                    &&twelve.axisReferenceDisagreementDeg>MAX_AXIS_REFERENCE_DISAGREEMENT_DEG;
+            if(axisConflict)
+                rotation=new GmtHumanQcMath.RotationDecision(GmtHumanQcMath.Attention.UNASSESSABLE,rotation.axisErrorDeg,rotation.baseErrorDeg,rotation.sideAsymmetry,
+                        rotation.visibleRisePx,false,false,String.format(Locale.US,
+                        "the minute-track ticks and the dial centre disagree by %.1f° about where 12 points, so rotation can't be measured on this photo",
+                        twelve.axisReferenceDisagreementDeg));
             boolean gapUnstable=twelve.valid&&!recovered&&!twelve.resampleGapStable();
             boolean rotUnstable=twelve.valid&&!recovered&&!twelve.resampleRotStable();
             String moved=Double.isFinite(twelve.gapMax)

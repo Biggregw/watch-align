@@ -162,6 +162,11 @@ jobs:
                    rep/calibration/rep_cf_6I00d8w/image_01; do
             src="datasets/126710BLNR/$f.jpg"; [ -s "$src" ] && cp "$src" "$D/$(basename $(dirname $f))_$(basename $f).jpg"
           done
+          # Genuine 126710BLRO (Pepsi) auction photos from Phillips: studio shots that exposed
+          # the dial-centre rotation bias fixed in alpha58.
+          for id in CH080218/1 HK080220/821 NY080120/2 CH080120/75; do
+            curl -sSfL -A 'Mozilla/5.0' -o "$D/gen_BLRO_phillips_$(echo $id | tr / _).jpg" "https://dist.phillips.com/auction-assets/${id}_001.jpg?width=2400" || true
+          done
           ls -la "$D"
       - name: Enable KVM permissions
         run: |

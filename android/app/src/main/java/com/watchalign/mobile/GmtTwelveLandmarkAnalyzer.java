@@ -45,6 +45,8 @@ final class GmtTwelveLandmarkAnalyzer {
         double gapMin=Double.NaN,gapMax=Double.NaN,rotMin=Double.NaN,rotMax=Double.NaN;
         /** Range of the 59/01 spacing asymmetry (01 minus 59) over the same scales (alpha57). */
         double asymMin=Double.NaN,asymMax=Double.NaN;
+        /** Angle between the tick-chord axis and the dial-centre line (alpha58); NaN when not measured. */
+        double axisReferenceDisagreementDeg=Double.NaN;
 
         /**
          * Gap and rotation are judged separately. Each is stable when every re-measurement
@@ -156,6 +158,14 @@ final class GmtTwelveLandmarkAnalyzer {
                 ux=-ky/kn;uy=kx/kn;
                 if((cx-frame.center.x)*ux+(cy-frame.center.y)*uy<0){ux=-ux;uy=-uy;}
             }
+            // The chord is short (about 0.2 dial radii), so a tick end found a pixel or two out
+            // of place tilts it. Cross-check against the old dial-centre line: on correct fits
+            // the two agree within ~0.7 deg; where they differ by more, one of them is wrong.
+            double refDisagree;
+            {
+                double rx=cx-frame.center.x,ry=cy-frame.center.y,rn=Math.hypot(rx,ry);
+                refDisagree=rn>1e-9?Math.toDegrees(Math.acos(Math.max(-1,Math.min(1,(rx*ux+ry*uy)/rn)))):Double.NaN;
+            }
             double vx=-uy,vy=ux;
             double dx=baseMid.x-frame.center.x,dy=baseMid.y-frame.center.y;
             double horiz=(dx*vx+dy*vy)/width;
@@ -172,6 +182,7 @@ final class GmtTwelveLandmarkAnalyzer {
 
             Result res=new Result(gap,horiz,axisErr,edgeErr,left,right,side,width,
                     frame.rollDeg,frame.pitchDeg,frame.score,frame.inferred,stable);
+            res.axisReferenceDisagreementDeg=refDisagree;
             res.geometry=new Geometry(new double[]{tri.left.x,tri.left.y},new double[]{tri.right.x,tri.right.y},
                     new double[]{tri.tip.x,tri.tip.y},new double[]{frame.left.x,frame.left.y},
                     new double[]{frame.center.x,frame.center.y},new double[]{frame.right.x,frame.right.y},outerEdge);

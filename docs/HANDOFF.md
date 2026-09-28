@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-27, alpha57)
+# Watch Align: handoff notes (updated 2026-09-28, alpha58)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -28,7 +28,7 @@ yet**, and the summary says so.
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha57"`, `versionCode 13057` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha58"`, `versionCode 13058` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
@@ -54,7 +54,7 @@ JAVA_HOME=<jdk17> sh ./gradlew --no-daemon -q \
   :app:testDebugUnitTest :app:assembleDebug
 ```
 
-- 166 JVM unit tests, all passing.
+- 169 JVM unit tests, all passing.
 - `:app:compileDebugAndroidTestJavaSource` compiles the on-device test
   (`GenuineOfficialImageValidationTest`). It needs network access for
   androidx.test, so **don't pass `--offline`** for it. Only check the result of the
@@ -195,6 +195,16 @@ alpha57 additions:
 - The 6 has its own **resize check**.
 
 `docs/research/gmt12_offcentre_2026-09-27.md` has the evidence.
+
+alpha58: the **12 rotation is now measured square to the 59–01 tick chord**, not from the
+dial centre. It is withheld when the two references differ by more than 1.5°, and a lean
+without a top-edge tilt is only flagged from 2°. On genuine Phillips Pepsi photos this
+takes the app from 5 false flags to 0 (`docs/research/gmt12_axis_reference_2026-09-28.md`).
+
+**Scope:** the deliverable is the Android app. The desktop harness only runs the app's
+Java code for fast testing. The Python tools in `tools/research/` (branch
+`feature/gmt-human-qc-auto-landmarks`) are a separate, older research track and don't
+ship in the app.
 
 ## 7. What's been validated
 

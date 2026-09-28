@@ -65,14 +65,18 @@ final class GmtTwelveRecoveryAnalyzer {
             double ux=-ky/kn,uy=kx/kn;
             if((cx-frame.center.x)*ux+(cy-frame.center.y)*uy<0){ux=-ux;uy=-uy;}
             double vx=-uy,vy=ux;
+            double rrx=cx-frame.center.x,rry=cy-frame.center.y,rrn=Math.hypot(rrx,rry);
+            double refDisagree=rrn>1e-9?Math.toDegrees(Math.acos(Math.max(-1,Math.min(1,(rrx*ux+rry*uy)/rrn)))):Double.NaN;
             double dx=base.x-frame.center.x,dy=base.y-frame.center.y;
             double horiz=(dx*vx+dy*vy)/width;
             double axisErr=wrap90(Math.toDegrees(Math.atan2(tri.tip.y-base.y,tri.tip.x-base.x)-Math.atan2(uy,ux)));
             double edgeErr=parallelAngleDifferenceDeg(tri.left,tri.right,frame.left,frame.right);
             double left=dist(tri.left,frame.left)/width,right=dist(tri.right,frame.right)/width,side=right-left;
             boolean stable=frame.score>=4.0&&frame.pitch>=5.25&&frame.pitch<=6.75&&tri.score>=4.0;
-            return new GmtTwelveLandmarkAnalyzer.Result(gap,horiz,axisErr,edgeErr,left,right,side,width,
+            GmtTwelveLandmarkAnalyzer.Result res=new GmtTwelveLandmarkAnalyzer.Result(gap,horiz,axisErr,edgeErr,left,right,side,width,
                     frame.roll,frame.pitch,frame.score,frame.inferred,stable);
+            res.axisReferenceDisagreementDeg=refDisagree;
+            return res;
         }catch(Throwable t){
             return new GmtTwelveLandmarkAnalyzer.Result(primaryReason+"; recovery failed "+t.getClass().getSimpleName());
         }finally{enh.release();gray.release();}
