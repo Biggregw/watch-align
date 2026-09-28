@@ -105,4 +105,4 @@ anchor on real observed values (0.114, 0.1211, 0.2552) instead of the old
 - Visually check the 3 UNASSESSABLE 126710BLRO cases (why triangle contour
   wasn't found -- dealer watermark? occlusion? genuinely harder angle?).
 - 50-replica-watch external validation still blocked: this sandbox's egress proxy blocks reddit.com/imgur.com entirely; a GitHub Actions runner reaches Reddit but gets blocked by Reddit's own bot defense (confirmed via `.github/workflows/gmt12-fetch-rep001.yml` run). Unresolved.
-- 6/9 baton markers: not started, would need own geometry + own genuine baseline (explicitly deferred earlier).
+- 6/9 baton markers: scoped (not implemented) in `docs/research/gmt6_9_baton_scope_2026-09-28.md` -- new landmark contract, detector generalization needed (no tip, ROI assumes top-of-dial, two independent markers/baselines), reuses most of the tick-line-fitting machinery and the fetch/measure CI pattern.
