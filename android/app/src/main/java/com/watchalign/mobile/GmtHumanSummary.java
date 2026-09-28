@@ -39,6 +39,8 @@ final class GmtHumanSummary {
         boolean sixUnstable;double sixCentringMin=Double.NaN,sixCentringMax=Double.NaN,sixRotMin=Double.NaN,sixRotMax=Double.NaN;
         /** 9 o'clock baton (alpha59). The 6 keeps its own fields above for compatibility. */
         Baton nine=new Baton("9",44,46);
+        /** Round hour markers (alpha61), with their verdicts; empty when not measured. */
+        List<GmtRoundMarkerAnalyzer.Marker> round=new ArrayList<>();
     }
 
     // Reference only, for the reader: what genuine images have measured on the same
@@ -57,10 +59,11 @@ final class GmtHumanSummary {
         s.append("6 baton: ").append(sixLine(in)).append("\n");
         in.nine.angled=poorPose(in);
         s.append("9 baton: ").append(batonLine(in.nine)).append("\n");
+        s.append("Round markers: ").append(roundLine(in)).append("\n");
         s.append("Overlay: ").append(in.overlayDrawn&&(in.tooSmall||in.handAtTwelve)
                 ?"shows the 12 triangle that was found, grey and dashed because it was not judged. The close-up shows it enlarged."
                 :in.overlayDrawn
-                ?"shows what was measured: at 12 the detected triangle, the 59/60/01 tick ends, the gap and the spacing either side; at 6 and 9 the baton outline and its neighbouring ticks. Each is coloured green (clear), amber (check) or red. The close-ups show them enlarged; Inspect overlay zooms the whole photo."
+                ?"shows what was measured: at 12 the detected triangle, the 59/60/01 tick ends, the gap and the spacing either side; at 6 and 9 the baton outline and its neighbouring ticks; each round marker's outline and the ticks either side. Each is coloured green (clear), amber (check) or red. The close-ups show them enlarged; Inspect overlay zooms the whole photo."
                 :"nothing at 12 could be measured, so only the dial edge is shown.").append("\n");
         s.append("\n").append(bottomLine(in)).append("\n");
         s.append("This flags things to look at closely. It does not prove a watch is genuine or fake.\n");
@@ -207,6 +210,77 @@ final class GmtHumanSummary {
         }
     }
 
+    /** Round markers (alpha61): what was flagged, what was clear, and why the rest were not judged. */
+    static String roundLine(Input in){
+        List<GmtRoundMarkerAnalyzer.Marker> ms=in.round;
+        int found=0;for(GmtRoundMarkerAnalyzer.Marker m:ms)if(m.found)found++;
+        if(ms.isEmpty()||found==0)return "not measured on this photo (the round markers or the minute ticks beside them were not found).";
+        List<String> flags=new ArrayList<>(),clear=new ArrayList<>();
+        boolean strong=false;
+        for(GmtRoundMarkerAnalyzer.Marker m:ms){
+            if(m.flagged()){flags.add(roundFlag(m));strong|=m.attention==GmtHumanQcMath.Attention.STRONG;}
+            else if(m.clear())clear.add(String.valueOf(m.hour));
+        }
+        StringBuilder s=new StringBuilder();
+        if(!flags.isEmpty()){
+            s.append(strong?"visibly off-centre: ":"worth a look: ").append(String.join("; ",flags)).append(". Look closely.");
+            if(!clear.isEmpty())s.append(" ").append(clear.size()==1?"The "+clear.get(0)+" is":"The "+join(clear)+" are").append(" centred.");
+        }else if(!clear.isEmpty()){
+            s.append(clear.size()==8?"all 8 centred on their minute ticks and the same size."
+                    :(clear.size()==1?"the "+clear.get(0)+" is":"the "+join(clear)+" are")+" centred on their minute ticks and the same size.");
+        }
+        String un=unjudgedRound(ms);
+        if(!un.isEmpty())s.append(s.length()==0?"":" ").append(s.length()==0?Character.toUpperCase(un.charAt(0))+un.substring(1):un);
+        String out=s.toString();
+        return out.isEmpty()?"could not be judged reliably on this photo.":Character.toLowerCase(out.charAt(0))+out.substring(1);
+    }
+
+    private static String roundFlag(GmtRoundMarkerAnalyzer.Marker m){
+        List<String> w=new ArrayList<>();
+        if(m.offCentre){
+            boolean cw=m.offset>0;
+            w.add(String.format(Locale.US,"the %d sits %s, towards the %02d tick (offset %+.2f of its width)",m.hour,cw?"clockwise":"anticlockwise",cw?m.after():m.before(),m.offset));
+        }
+        if(m.sizeOdd)w.add(String.format(Locale.US,"%s %s than the other round markers (%.2f of their size)",m.offCentre?"and is":"the "+m.hour+" is",m.sizeRatio<1?"smaller":"larger",m.sizeRatio));
+        if(w.isEmpty())return "the "+m.hour+" is off-centre or a different size";
+        return String.join(" ",w);
+    }
+
+    /** "Not judged: the 2 and 11 (a hand is over them); the 7 (resized reading moves)." */
+    static String unjudgedRound(List<GmtRoundMarkerAnalyzer.Marker> ms){
+        java.util.LinkedHashMap<String,List<String>> by=new java.util.LinkedHashMap<>();
+        for(GmtRoundMarkerAnalyzer.Marker m:ms){
+            if(m.flagged()||m.clear())continue;
+            String why=!m.found?"not found, often a hand over it"
+                    :m.hand?"a hand is over or next to it"
+                    :m.tooSmall?"too small in this photo"
+                    :m.unstable?"the reading changes when the photo is resized slightly"
+                    :!m.stable?(m.lowReason==null||m.lowReason.isEmpty()?"measured with low confidence":m.lowReason)
+                    :m.note!=null&&m.note.contains("angled")?"the photo is too angled"
+                    :"could not be judged reliably";
+            by.computeIfAbsent(why,k->new ArrayList<>()).add(String.valueOf(m.hour));
+        }
+        if(by.isEmpty())return "";
+        List<String> parts=new ArrayList<>();
+        for(java.util.Map.Entry<String,List<String>> e:by.entrySet()){
+            String why=e.getKey();
+            if(e.getValue().size()>1)why=why.replace("a hand is over or next to it","a hand is over or next to them").replace("often a hand over it","often a hand over them");
+            parts.add("the "+join(e.getValue())+" ("+why+")");
+        }
+        return "Not judged: "+String.join("; ",parts)+".";
+    }
+
+    static List<String> roundFlagItems(Input in){
+        List<String> hours=new ArrayList<>();boolean size=false,off=false;
+        for(GmtRoundMarkerAnalyzer.Marker m:in.round)if(m.flagged()){hours.add(String.valueOf(m.hour));size|=m.sizeOdd;off|=m.offCentre;}
+        List<String> items=new ArrayList<>();
+        if(hours.isEmpty())return items;
+        String what=off&&size?"position and size":size?"size":"position";
+        if(hours.size()<=2)for(String h:hours)items.add("the "+h+" marker "+what);
+        else items.add("the round markers at "+join(hours)+" ("+what+")");
+        return items;
+    }
+
     enum AlignmentKind { TURNED, TIP_LEANS, OFF_CENTRE, UNCLEAR }
 
     /**
@@ -245,6 +319,7 @@ final class GmtHumanSummary {
         if(alignFlag)items.add(kind(in)==AlignmentKind.OFF_CENTRE?"the 12 marker position (off-centre)":"the 12 marker alignment");
         List<String> batonFlags=new ArrayList<>();
         for(Baton b:batons)if(b.flagged())batonFlags.add("the "+b.label+" baton position");
+        batonFlags.addAll(roundFlagItems(in));
         items.addAll(batonFlags);
         String six6=batonFlags.isEmpty()?"":" Separately, check "+join(batonFlags)+".";
         if(!in.twelveValid)return "Bottom line: the 12 marker could not be checked on this photo. Try a clearer, straight-on photo with the hands away from 12."+six6;
@@ -267,8 +342,16 @@ final class GmtHumanSummary {
             return items.isEmpty()?"Bottom line: nothing flagged, but the photo is too angled to rely on that. Retake straight-on."
                     :"Bottom line: flagged "+join(items)+", but the photo is too angled to be sure. Retake straight-on.";
         List<String> clearAt=new ArrayList<>();clearAt.add("12");clearAt.addAll(clearBatons);
-        String rest=unjudged.isEmpty()?" The 3 and the round markers are not checked yet, so look over the rest of the dial by eye."
-                :" The "+join(unjudged)+(unjudged.size()==1?" baton":" batons")+" could not be judged here, and the 3 and the round markers are not checked yet, so look over the rest of the dial by eye.";
+        int roundClear=0,roundUn=0;List<String> roundUnjudged=new ArrayList<>();
+        for(GmtRoundMarkerAnalyzer.Marker m:in.round){if(m.clear())roundClear++;else if(!m.flagged()){roundUn++;roundUnjudged.add(String.valueOf(m.hour));}}
+        if(in.round.isEmpty()){roundUn=8;}
+        if(roundClear>0)clearAt.add(roundClear==8?"the round markers":"the "+roundClear+" round markers measured");
+        List<String> notJudged=new ArrayList<>();
+        if(!unjudged.isEmpty())notJudged.add("the "+join(unjudged)+(unjudged.size()==1?" baton":" batons"));
+        if(roundUn==8)notJudged.add("the round markers");
+        else if(roundUn>0)notJudged.add("the "+join(roundUnjudged)+" round "+(roundUn==1?"marker":"markers"));
+        String rest=notJudged.isEmpty()?" Hands, bezel, date and printing are not checked, so look over those by eye."
+                :" "+Character.toUpperCase(join(notJudged).charAt(0))+join(notJudged).substring(1)+" could not be judged here, so look over "+(notJudged.size()==1&&(unjudged.size()+roundUn)==1?"it":"them")+" and the rest of the dial by eye.";
         if(items.isEmpty())return (in.stableFrame?"Bottom line: nothing flagged at "+joinOr(clearAt)+"."+(closer.isEmpty()?rest:closer)
                 :"Bottom line: nothing flagged, but the 12 marker was only measured with low confidence. A clearer photo with the hands away from 12 would help."+closer);
         String line="Bottom line: "+items.size()+(items.size()==1?" thing":" things")+" to check: "+join(items)+".";

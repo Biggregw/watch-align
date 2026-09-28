@@ -40,7 +40,10 @@ final class MeasuredOverlayRenderer {
         double nineCentring=Double.NaN;
         String nineNotJudged;
 
-        boolean hasAnything(){return Double.isFinite(dialCx)||twelve!=null||six!=null||nine!=null;}
+        // Round markers (alpha61): every marker found, with its verdict in GmtRoundMarkerAnalyzer.Marker.
+        java.util.List<GmtRoundMarkerAnalyzer.Marker> round=new java.util.ArrayList<>();
+
+        boolean hasAnything(){return Double.isFinite(dialCx)||twelve!=null||six!=null||nine!=null||!round.isEmpty();}
     }
 
     private MeasuredOverlayRenderer(){}
@@ -70,6 +73,7 @@ final class MeasuredOverlayRenderer {
 
         drawBaton(c,d.six,d.sixAttention,d.sixCentring,d.sixNotJudged);
         drawBaton(c,d.nine,d.nineAttention,d.nineCentring,d.nineNotJudged);
+        for(GmtRoundMarkerAnalyzer.Marker m:d.round)drawRound(c,m);
 
         GmtTwelveLandmarkAnalyzer.Geometry g=d.twelve;
         if(g==null)return out;
@@ -171,6 +175,41 @@ final class MeasuredOverlayRenderer {
         }
     }
 
+    /**
+     * Round marker: the fitted outline coloured by its verdict (grey and dashed when not judged),
+     * the tick ends one minute either side, and a short stub inward from midway between them
+     * (where the marker's centre should line up) with a dot at the measured centre.
+     */
+    private static void drawRound(Canvas c,GmtRoundMarkerAnalyzer.Marker m){
+        if(m==null||!m.found)return;
+        double d=m.diameterPx();
+        float lw=(float)Math.max(1.0,d/22.0);
+        boolean judged=m.attention!=GmtHumanQcMath.Attention.UNASSESSABLE;
+        if(!judged){
+            Paint nj=stroke(UNKNOWN,lw,200);
+            double[][] p=m.polygon();
+            for(int i=0;i<p.length;i+=2)c.drawLine((float)p[i][0],(float)p[i][1],(float)p[(i+1)%p.length][0],(float)p[(i+1)%p.length][1],nj);
+            return;
+        }
+        int col=colour(m.attention);
+        c.drawCircle((float)m.x,(float)m.y,(float)m.radiusPx,stroke(col,lw,235));
+        Paint tick=stroke(TICK,Math.max(1f,lw*0.8f),230);
+        c.drawLine((float)m.tickBefore[0],(float)m.tickBefore[1],(float)m.tickAfter[0],(float)m.tickAfter[1],tick);
+        Paint dot=fill(TICK,230);float dr=(float)Math.max(1.5,d/16.0);
+        for(double[] q:new double[][]{m.tickBefore,m.tickAfter})c.drawCircle((float)q[0],(float)q[1],dr,dot);
+        double rx=(m.tickBefore[0]+m.tickAfter[0])/2,ry=(m.tickBefore[1]+m.tickAfter[1])/2;
+        double nx=-(m.tickAfter[1]-m.tickBefore[1]),ny=m.tickAfter[0]-m.tickBefore[0],nl=Math.hypot(nx,ny);
+        if(nl>1e-9){
+            if(nx*(m.x-rx)+ny*(m.y-ry)<0){nx=-nx;ny=-ny;}   // towards the marker
+            c.drawLine((float)rx,(float)ry,(float)(rx+nx/nl*d*0.6),(float)(ry+ny/nl*d*0.6),tick);
+        }
+        c.drawCircle((float)m.x,(float)m.y,dr,fill(col,240));
+        if(m.attention!=GmtHumanQcMath.Attention.CLEAR&&Double.isFinite(m.offset)){
+            float ts=(float)Math.max(9.0,d*0.4);
+            label(c,String.format(Locale.US,"%+.2f",m.offset),(float)(m.x+m.radiusPx*1.1),(float)(m.y+m.radiusPx*1.2),ts,col);
+        }
+    }
+
     /** Worst verdict colour at 12, or grey when not judged. */
     static int statusColour(Drawing d){
         if(d.notJudged!=null||d.twelve==null)return UNKNOWN;
@@ -203,6 +242,11 @@ final class MeasuredOverlayRenderer {
         Bitmap a=panel12(watch,overlay,d,size);if(a!=null)ps.add(a);
         if(d.six!=null)ps.add(panelBaton(watch,overlay,"6",d.six,d.sixAttention,d.sixNotJudged,size));
         if(d.nine!=null)ps.add(panelBaton(watch,overlay,"9",d.nine,d.nineAttention,d.nineNotJudged,size));
+        // Round markers: only those flagged, worst first, at most two.
+        java.util.List<GmtRoundMarkerAnalyzer.Marker> fl=new java.util.ArrayList<>();
+        for(GmtRoundMarkerAnalyzer.Marker m:d.round)if(m.found&&(m.attention==GmtHumanQcMath.Attention.CHECK||m.attention==GmtHumanQcMath.Attention.STRONG))fl.add(m);
+        java.util.Collections.sort(fl,(x,y)->Integer.compare(y.attention==GmtHumanQcMath.Attention.STRONG?1:0,x.attention==GmtHumanQcMath.Attention.STRONG?1:0));
+        for(int i=0;i<Math.min(2,fl.size());i++)ps.add(panelRound(watch,overlay,fl.get(i),size));
         if(ps.isEmpty())return null;
         if(ps.size()==1)return ps.get(0);
         int gap=Math.max(6,size/40),w=0,h=0;
@@ -246,6 +290,15 @@ final class MeasuredOverlayRenderer {
                     :L+": NOT CALLED (LOW CONFIDENCE)";
         }
         return panel(watch,overlay,cx,cy,half,size,col,text,notJudged!=null);
+    }
+
+    private static Bitmap panelRound(Bitmap watch,Bitmap overlay,GmtRoundMarkerAnalyzer.Marker m,int size){
+        double cx=(m.x+(m.tickBefore[0]+m.tickAfter[0])/2)/2,cy=(m.y+(m.tickBefore[1]+m.tickAfter[1])/2)/2;
+        double half=Math.max(20,1.6*m.diameterPx());
+        String L=String.valueOf(m.hour);
+        int col=colour(m.attention);
+        String text=m.attention==GmtHumanQcMath.Attention.STRONG?L+": CHECK CLOSELY":L+": WORTH A LOOK";
+        return panel(watch,overlay,cx,cy,half,size,col,text,false);
     }
 
     private static Bitmap panel(Bitmap watch,Bitmap overlay,double cx,double cy,double half,int size,int col,String text,boolean dashedBorder){

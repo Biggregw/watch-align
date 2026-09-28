@@ -384,7 +384,16 @@ final class GmtTwelveLandmarkAnalyzer {
         Point baseMid=mid(tri.left,tri.right);
         double markerAngle=clockAngle(cx,cy,baseMid.x,baseMid.y);
         if(Math.abs(markerAngle)>22.0)return null;
+        MinuteFrame f=minuteFrameAt(Px.of(gray),cx,cy,r,markerAngle);
+        if(f==null)return null;
+        // 59/01 labels are image-left/image-right after local frame construction.
+        Point left=f.left,right=f.right;
+        if(left.x>right.x){Point z=left;left=right;right=z;}
+        return new MinuteFrame(left,f.center,right,f.rollDeg,f.pitchDeg,f.score,f.inferred);
+    }
 
+    /** Minute-tick frame about any clock angle; left/right are the ticks at a-p / a+p (angular order). */
+    private static MinuteFrame minuteFrameAt(Px gray,double cx,double cy,double r,double markerAngle){
         double best=-Double.MAX_VALUE,bestA=Double.NaN,bestP=Double.NaN;
         for(double a=markerAngle-3.4;a<=markerAngle+3.4+1e-9;a+=0.10){
             for(double p=5.35;p<=6.65+1e-9;p+=0.10){
@@ -425,10 +434,43 @@ final class GmtTwelveLandmarkAnalyzer {
         Point p60=tickInnerPoint(gray,cx,cy,r,bestA);if(p60==null){p60=polarPoint(cx,cy,.915*r,bestA);inferred++;}
         Point p01=tickInnerPoint(gray,cx,cy,r,bestA+bestP);if(p01==null){p01=polarPoint(cx,cy,.915*r,bestA+bestP);inferred++;}
 
-        // 59/01 labels are image-left/image-right after local frame construction.
-        Point left=p59,right=p01;
-        if(left.x>right.x){Point z=left;left=right;right=z;}
-        return new MinuteFrame(left,p60,right,bestA,bestP,frameScore,inferred);
+        return new MinuteFrame(p59,p60,p01,bestA,bestP,frameScore,inferred);
+    }
+
+    /**
+     * The minute ticks either side of any marker, searched within ±3.4° of clockDeg (clock
+     * degrees, 0 = image up, clockwise) on a CLAHE-enhanced gray image (round markers,
+     * alpha61). Returns {before, centre, after, {roll, pitch, score, inferred}}: the inner
+     * ends of the ticks one minute before, at, and one minute after the marker; or null.
+     */
+    static double[][] tickFrameAt(Px enhanced,double cx,double cy,double r,double clockDeg){
+        MinuteFrame f=minuteFrameAt(enhanced,cx,cy,r,clockDeg);
+        if(f==null)return null;
+        return new double[][]{{f.left.x,f.left.y},{f.center.x,f.center.y},{f.right.x,f.right.y},
+                {f.rollDeg,f.pitchDeg,f.score,f.inferred}};
+    }
+
+    /**
+     * Tick phase and pitch about clockDeg: {angle of the tick nearest clockDeg, pitch, frame score}
+     * (clock degrees), or null. Used with tickInnerEnd for the round markers (alpha61).
+     */
+    static double[] tickAnglesAt(Px enhanced,double cx,double cy,double r,double clockDeg){
+        MinuteFrame f=minuteFrameAt(enhanced,cx,cy,r,clockDeg);
+        return f==null?null:new double[]{f.rollDeg,f.pitchDeg,f.score};
+    }
+    /** Inner end of the tick at clock angle a, ignoring anything inside avoid {x, y, radius}; or null. */
+    static double[] tickInnerEnd(Px enhanced,double cx,double cy,double r,double a,double[] avoid){
+        Point p=tickInnerPoint(enhanced,cx,cy,r,a,avoid);
+        return p==null?null:new double[]{p.x,p.y};
+    }
+
+    /** CLAHE (2.0, 8x8) on gray, as used for all the tick and marker searches. */
+    static Mat enhance(Mat bgr){
+        Mat gray=new Mat(),enhanced=new Mat();
+        Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);
+        Imgproc.createCLAHE(2.0,new Size(8,8)).apply(gray,enhanced);
+        gray.release();
+        return enhanced;
     }
 
     /**
@@ -445,7 +487,7 @@ final class GmtTwelveLandmarkAnalyzer {
                 {f.rollDeg,f.pitchDeg,f.score,f.inferred}};
     }
 
-    private static double tickAngleScore(Mat gray,double cx,double cy,double r,double clockDeg){
+    private static double tickAngleScore(Px gray,double cx,double cy,double r,double clockDeg){
         double[] vals=new double[20];int n=0;
         for(double rf=.855;rf<=.975+1e-9;rf+=.007){
             double c=samplePolar(gray,cx,cy,r*rf,clockDeg);
@@ -463,10 +505,18 @@ final class GmtTwelveLandmarkAnalyzer {
         return sum/take;
     }
 
-    private static Point tickInnerPoint(Mat gray,double cx,double cy,double r,double a){
+    private static Point tickInnerPoint(Px gray,double cx,double cy,double r,double a){return tickInnerPoint(gray,cx,cy,r,a,null);}
+
+    /**
+     * Inner end of the tick at clock angle a. avoid = {x, y, radius}: samples inside that circle
+     * are not tick (round markers, alpha61: where a marker sits close to the track, the walk
+     * inward from the tick ran on along the marker's bright rim).
+     */
+    private static Point tickInnerPoint(Px gray,double cx,double cy,double r,double a,double[] avoid){
         final int N=71;double[] score=new double[N],rad=new double[N];int best=-1;double bestV=-Double.MAX_VALUE;
         for(int i=0;i<N;i++){
             double rf=.835+i*(.155/(N-1));rad[i]=rf*r;
+            if(avoid!=null){Point q=polarPoint(cx,cy,rad[i],a);if(Math.hypot(q.x-avoid[0],q.y-avoid[1])<=avoid[2]){score[i]=-999;continue;}}
             double c=samplePolar(gray,cx,cy,rad[i],a);
             double l=samplePolar(gray,cx,cy,rad[i],a-.72);
             double rr=samplePolar(gray,cx,cy,rad[i],a+.72);
@@ -485,14 +535,32 @@ final class GmtTwelveLandmarkAnalyzer {
         double t=Math.toRadians(clockDeg);
         return new Point(cx+Math.sin(t)*radius,cy-Math.cos(t)*radius);
     }
-    private static double samplePolar(Mat gray,double cx,double cy,double radius,double clockDeg){
+    private static double samplePolar(Px gray,double cx,double cy,double radius,double clockDeg){
         Point p=polarPoint(cx,cy,radius,clockDeg);return bilinear(gray,p.x,p.y);
     }
-    private static double bilinear(Mat m,double x,double y){
-        int x0=(int)Math.floor(x),y0=(int)Math.floor(y);if(x0<0||y0<0||x0+1>=m.cols()||y0+1>=m.rows())return Double.NaN;
-        double fx=x-x0,fy=y-y0;
-        double a=m.get(y0,x0)[0],b=m.get(y0,x0+1)[0],c=m.get(y0+1,x0)[0],d=m.get(y0+1,x0+1)[0];
-        return (a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy;
+    private static double bilinear(Px m,double x,double y){return m.at(x,y);}
+
+    /**
+     * An 8-bit single-channel image copied out of a Mat once, so the many thousands of
+     * bilinear samples in the tick search do not each cross into native code (alpha61: the
+     * round markers run the tick search 24 more times). Same values as Mat.get.
+     */
+    static final class Px {
+        final byte[] d;final int w,h;
+        private Px(byte[] d,int w,int h){this.d=d;this.w=w;this.h=h;}
+        static Px of(Mat m){
+            if(m.type()!=org.opencv.core.CvType.CV_8UC1)throw new IllegalArgumentException("8-bit gray expected");
+            Mat c=m.isContinuous()?m:m.clone();
+            byte[] b=new byte[(int)(c.total())];c.get(0,0,b);if(c!=m)c.release();
+            return new Px(b,m.cols(),m.rows());
+        }
+        /** Bilinear value, NaN within one pixel of the border (as before). */
+        double at(double x,double y){
+            int x0=(int)Math.floor(x),y0=(int)Math.floor(y);if(x0<0||y0<0||x0+1>=w||y0+1>=h)return Double.NaN;
+            double fx=x-x0,fy=y-y0;int i=y0*w+x0;
+            double a=d[i]&0xff,b=d[i+1]&0xff,c=d[i+w]&0xff,e=d[i+w+1]&0xff;
+            return (a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+e*fx)*fy;
+        }
     }
 
     private static double clockAngle(double cx,double cy,double x,double y){

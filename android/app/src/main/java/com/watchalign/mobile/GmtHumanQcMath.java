@@ -303,6 +303,38 @@ final class GmtHumanQcMath {
         return new SixDecision(Attention.CLEAR,false,false,false,"6 baton centred and straight at this image scale");
     }
 
+    // Round hour markers (alpha61). Offset is sideways from the midpoint of the ticks one minute
+    // either side, as a fraction of the marker diameter; size is against the median of the round
+    // markers on the same dial. Levels set outside the genuine spread (docs/research/gmt_round_markers_2026-09-28.md).
+    static final double ROUND_OFFSET_CHECK = 0.15, ROUND_OFFSET_STRONG = 0.25;
+    static final double ROUND_SIZE_CHECK = 0.12;
+    static final double MIN_ROUND_PX = 24.0;
+
+    static final class RoundDecision {
+        final Attention attention;final boolean offCentre,sizeOdd,tooSmall;final String reason;
+        RoundDecision(Attention a,boolean off,boolean size,boolean small,String why){attention=a;offCentre=off;sizeOdd=size;tooSmall=small;reason=why;}
+    }
+
+    static RoundDecision assessRound(double offset,double diameterPx,double sizeRatio,PoseLabel pose,boolean stable){
+        if(!Double.isFinite(offset)||!(diameterPx>0))return new RoundDecision(Attention.UNASSESSABLE,false,false,false,"not measured");
+        if(diameterPx<MIN_ROUND_PX)return new RoundDecision(Attention.UNASSESSABLE,false,false,true,
+                String.format(java.util.Locale.US,"only %.0f px across in this photo (minimum %.0f)",diameterPx,MIN_ROUND_PX));
+        if(Math.abs(offset)>0.6)return new RoundDecision(Attention.UNASSESSABLE,false,false,false,
+                "the reading is far outside any real marker error; the marker or ticks were not found correctly");
+        double o=Math.abs(offset),px=o*diameterPx;
+        boolean off=o>=ROUND_OFFSET_CHECK&&px>=2.0, offStrong=o>=ROUND_OFFSET_STRONG&&px>=4.0;
+        boolean size=Double.isFinite(sizeRatio)&&Math.abs(sizeRatio-1)>=ROUND_SIZE_CHECK&&Math.abs(sizeRatio-1)*diameterPx>=2.0;
+        boolean poor=pose==PoseLabel.RETAKE||pose==PoseLabel.UNASSESSABLE;
+        // Unlike the batons, no concern survives a poor angle or a low-confidence fit: on angled
+        // genuine photos the affine dial model leaves round-marker offsets of up to 0.23.
+        if(!stable||poor){
+            return new RoundDecision(Attention.UNASSESSABLE,false,false,false,poor?"photo too angled to clear the round markers":"measured with low confidence");
+        }
+        if(offStrong)return new RoundDecision(Attention.STRONG,true,size,false,"visibly off-centre");
+        if(off||size)return new RoundDecision(Attention.CHECK,off,size,false,off&&size?"possibly off-centre and a different size":off?"possibly off-centre":"a different size from the other round markers");
+        return new RoundDecision(Attention.CLEAR,false,false,false,"centred on its minute tick");
+    }
+
     static double wrap90(double deg) {
         double x=deg%180.0;
         if(x<=-90.0)x+=180.0;

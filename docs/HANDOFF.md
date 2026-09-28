@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-28, alpha60)
+# Watch Align: handoff notes (updated 2026-09-28, alpha61)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -23,19 +23,20 @@ back later, once more markers are measured.
 
 Since alpha55 it also checks the **6 o'clock baton**: centring between the 29 and 31
 ticks, and rotation (see `docs/research/gmt_fix_list_2026-09-27.md`). The result screen
-shows enlarged close-ups of the 12 and 6. Other markers (9, 3, dots) are **not checked
-yet**, and the summary says so.
+shows enlarged close-ups of the 12 and 6. The 9 baton followed in alpha59 and the eight
+**round markers** (1, 2, 4, 5, 7, 8, 10, 11) in alpha61, so every hour marker is now
+checked (the 3 is the date window).
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha60"`, `versionCode 13060` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha61"`, `versionCode 13061` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
 | Branch | State |
 |---|---|
 | `main` | Has alpha49–54 (PR #24, merged 2026-09-27). |
-| `feature/gmt-qc-fix-list` | alpha55 (the whole fix list below) and alpha56 (resize check, emulator photo run) and alpha57 (off-centre 12, 6 confidence reasons, band fallback and resize check for the 6). PR **#25** into `main`. |
+| `feature/gmt-qc-fix-list` | alpha55 (the whole fix list below) and alpha56 (resize check, emulator photo run) and alpha57 (off-centre 12, 6 confidence reasons, band fallback and resize check for the 6), then alpha58–61 (12 chord axis, 9 baton, photo-angle resize check, round markers). PR **#25** into `main`. |
 | `experiment/template-marker-consensus-shelved` | A shelved experiment: it fitted a template from marker consensus to fix a Pepsi overlay offset. The user rejected this in favour of the measured overlay, so it is **kept for reference only and should not be merged**. |
 
 The `gh` CLI isn't installed, but the GitHub API works through the proxy, so use curl
@@ -54,7 +55,7 @@ JAVA_HOME=<jdk17> sh ./gradlew --no-daemon -q \
   :app:testDebugUnitTest :app:assembleDebug
 ```
 
-- 177 JVM unit tests, all passing.
+- 192 JVM unit tests, all passing.
 - `:app:compileDebugAndroidTestJavaSource` compiles the on-device test
   (`GenuineOfficialImageValidationTest`). It needs network access for
   androidx.test, so **don't pass `--offline`** for it. Only check the result of the
@@ -208,6 +209,18 @@ turn instead of 180° (`GmtSixLandmarkAnalyzer.Position`). No genuine 9 is flagg
 alpha60: the **photo-angle rating and gap-direction cue get the resize check**. The rating
 is the median over the photo and its 94% and 88% copies, and the gap direction is used
 only when all three copies agree (`docs/research/gmt_pose_stability_2026-09-28.md`).
+
+alpha61: the **round hour markers** (`GmtRoundMarkerAnalyzer`). Each marker's outer edge is
+traced on 72 rays and fitted with a circle (least-median start, trimmed least squares). It is
+measured against the inner ends of the minute ticks either side: sideways offset (fraction of
+its diameter), inset, and size against the other round markers on the dial. Markers are
+placed by an affine fit of the master layout to the markers found, with the dial's ellipse
+squash undone for the measurements. Gates: size (24 px), photo angle, fit quality (edge
+contrast, tick score, rejected rays, inset range, tick agreement), resize check, and a local
+hand check (a marker-bright ring just outside the marker, plus red/blue GMT-hand colour).
+Levels: offset CHECK 0.15 / STRONG 0.25, size ±0.12. The tick search was also moved from
+`Mat.get` to a byte array (`GmtTwelveLandmarkAnalyzer.Px`), with identical 12/6/9 results
+(`docs/research/gmt_round_markers_2026-09-28.md`).
 
 **Scope:** the deliverable is the Android app. The desktop harness only runs the app's
 Java code for fast testing. The Python tools in `tools/research/` (branch

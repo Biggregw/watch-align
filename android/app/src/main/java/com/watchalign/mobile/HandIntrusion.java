@@ -119,6 +119,34 @@ final class HandIntrusion {
         return false;
     }
 
+    /**
+     * Round markers (alpha61): the share of a ring just outside the marker (from 0.12 to 0.5
+     * diameters beyond its edge, dial side of the tick line only) that is marker-bright. A hand
+     * lying over a round marker also crosses this ring, even when it covers most of the marker
+     * and little of the wider wedge (official render: the GMT arrow over the 5 covered 2% of the
+     * wedge). Returns NaN when the marker is not clearly brighter than the dial.
+     */
+    static double ringBrightFraction(DialEdgeEllipseFit.Intensity img,int w,int h,double mx,double my,double radius,
+                                     double[] tickA,double[] tickB,double dialCx,double dialCy){
+        double d=2*radius,r0=radius+0.12*d,r1=radius+0.5*d;
+        double lx=tickB[0]-tickA[0],ly=tickB[1]-tickA[1],ll=Math.hypot(lx,ly);if(ll<1e-9)return Double.NaN;
+        double nx=-ly/ll,ny=lx/ll;if(nx*(dialCx-tickA[0])+ny*(dialCy-tickA[1])<0){nx=-nx;ny=-ny;}   // towards the dial centre
+        List<Double> ring=new ArrayList<>(),in=new ArrayList<>();
+        for(int y=(int)Math.max(1,Math.floor(my-r1));y<=Math.min(h-2,Math.ceil(my+r1));y++)
+            for(int x=(int)Math.max(1,Math.floor(mx-r1));x<=Math.min(w-2,Math.ceil(mx+r1));x++){
+                double rr=Math.hypot(x-mx,y-my);
+                if(rr<=radius-1.5)in.add(img.at(x,y));
+                else if(rr>=r0&&rr<=r1&&(x-tickA[0])*nx+(y-tickA[1])*ny>=1.0)ring.add(img.at(x,y));
+            }
+        if(ring.size()<30||in.size()<20)return Double.NaN;
+        double dial=percentile(ring,0.30),mark=percentile(in,0.50);
+        if(!(mark-dial>30))return Double.NaN;
+        double level=dial+0.5*(mark-dial);
+        int bright=0;for(double v:ring)if(v>level)bright++;
+        return bright/(double)ring.size();
+    }
+    static final double MAX_RING_BRIGHT_FRACTION = 0.035;
+
     static final int MAX_LINE_BINS = 8;          // 4 deg: much wider than any hand at the 12 marker
     static final double LINE_BRIGHT = 0.5, LINE_DARK = 0.2;
     private static final int MIN_BIN_SAMPLES = 6;

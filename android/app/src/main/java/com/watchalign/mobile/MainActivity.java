@@ -208,7 +208,7 @@ public class MainActivity extends Activity {
         if(models.isEmpty()){status.setText("No supported model is available.");return;}
         ModelCatalog.Profile profile=models.get(Math.max(0,model.getSelectedItemPosition()));
         summaryText.setText("");setResultButtons(false);checkButton.setEnabled(false);Bitmap watch=watchBitmap;
-        status.setText("Checking… fitting the dial and measuring the 12, 6 and 9 markers. This can take up to half a minute.");
+        status.setText("Checking… fitting the dial and measuring the hour markers. This can take up to half a minute.");
         worker.submit(()->{try{
             WatchAlignCoreV13.AnalysisResult r=WatchAlignCoreV13.analyse(watch,Collections.<Bitmap>emptyList(),profile.code);
             runOnUiThread(()->{
@@ -221,7 +221,7 @@ public class MainActivity extends Activity {
                 boolean manual=InspectionImageStore.hasManualSeed;
                 manualButton.setVisibility(autoFailed||manual?View.VISIBLE:View.GONE);
                 status.setText(r.twelveMeasured
-                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. The overlay shows what was measured at 12, 6 and 9; tap the close-ups to enlarge them.")
+                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. The overlay shows what was measured at each hour marker; tap the close-ups to enlarge them.")
                         :"Done, but the 12 marker could not be measured on this photo. Try Align dial edge by hand below, or a clearer photo.");
                 resultsButton.setEnabled(true);exportButton.setEnabled(true);inspectButton.setEnabled(r.perspectiveOverlay!=null);
             });

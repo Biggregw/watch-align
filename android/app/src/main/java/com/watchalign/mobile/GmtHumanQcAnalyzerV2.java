@@ -26,6 +26,7 @@ final class GmtHumanQcAnalyzerV2 {
         final GmtHumanSummary.Input summary;
         MeasuredOverlayRenderer.Drawing drawing=new MeasuredOverlayRenderer.Drawing();
         GmtSixLandmarkAnalyzer.Result six,nine;
+        java.util.List<GmtRoundMarkerAnalyzer.Marker> round=new java.util.ArrayList<>();
         Result(String report,GmtHumanQcMath.PoseLabel pose,GmtHumanQcMath.Attention rotation,
                GmtHumanQcMath.Attention clearance,double roll,boolean valid){
             this(report,pose,rotation,clearance,roll,valid,new GmtHumanSummary.Input());
@@ -257,6 +258,13 @@ final class GmtHumanQcAnalyzerV2 {
             // Batons at 6 (alpha55) and 9 (alpha59): measured on the same fitted dial, gated the same way.
             BatonOutcome sixOut=measureBaton(GmtSixLandmarkAnalyzer.Position.SIX,src,cx,cy,r,twelve,pose.label);
             BatonOutcome nineOut=measureBaton(GmtSixLandmarkAnalyzer.Position.NINE,src,cx,cy,r,twelve,pose.label);
+            // Round markers (alpha61), oriented by the 12's 60 tick.
+            GmtRoundMarkerAnalyzer.DialFrame dialFrame=edge!=null?new GmtRoundMarkerAnalyzer.DialFrame(edge.cx,edge.cy,edge.axisA,edge.axisB,edge.angleDeg)
+                    :GmtRoundMarkerAnalyzer.DialFrame.circle(cx,cy,r);
+            double[] tick60=twelve.valid&&twelve.geometry!=null?twelve.geometry.tick60:null;
+            java.util.List<GmtRoundMarkerAnalyzer.Marker> round=GmtRoundMarkerAnalyzer.analyse(src,dialFrame,tick60);
+            GmtRoundMarkerAnalyzer.measureStability(src,dialFrame,tick60,round);
+            judgeRound(round,src,cx,cy,r,pose.label);
             GmtSixLandmarkAnalyzer.Result six=sixOut.result;
             GmtHumanQcMath.SixDecision sixDecision=sixOut.decision;
             boolean sixUnstable=sixOut.unstable,handAtSix=sixOut.hand;
@@ -328,12 +336,14 @@ final class GmtHumanQcAnalyzerV2 {
 
             appendBatonReport(out,sixOut);
             appendBatonReport(out,nineOut);
+            appendRoundReport(out,round);
 
             GmtHumanSummary.Input sum=new GmtHumanSummary.Input();
             sum.sixValid=six.valid;sum.sixAttention=sixDecision.attention;sum.sixTooSmall=sixDecision.tooSmall;sum.handAtSix=handAtSix;
             sum.sixStable=six.stable;sum.sixLowReason=six.lowReason;sum.sixUnstable=sixUnstable;sum.sixCentringMin=six.centringMin;sum.sixCentringMax=six.centringMax;sum.sixRotMin=six.rotMin;sum.sixRotMax=six.rotMax;sum.sixCentring=six.centring;sum.sixRotationDeg=six.rotationDeg;sum.sixGap=six.gap;
             sum.sixOffCentre=sixDecision.offCentre;sum.sixRotated=sixDecision.rotated;sum.sixWidthPx=six.widthPx;
             sum.nine=nineOut.summary();
+            sum.round=round;
             sum.pose=pose.label;sum.twelveValid=twelve.valid;sum.stableFrame=stableFrame;
             sum.gapUnstable=gapUnstable;sum.rotUnstable=rotUnstable;sum.gapMin=twelve.gapMin;sum.gapMax=twelve.gapMax;sum.rotMin=twelve.rotMin;sum.rotMax=twelve.rotMax;
             sum.stabilityRun=twelve.stabilityRun;sum.stabilitySameEdge=twelve.stabilitySameEdge;
@@ -351,7 +361,7 @@ final class GmtHumanQcAnalyzerV2 {
             sum.spacing01=twelve.valid?twelve.rightClearance:Double.NaN;
             Result res=new Result(out.toString(),pose.label,rotation.attention,clearance.attention,
                     stableFrame?twelve.trackRollClockDeg:Double.NaN,stableFrame,sum);
-            res.six=six;res.nine=nineOut.result;
+            res.six=six;res.nine=nineOut.result;res.round=round;
             MeasuredOverlayRenderer.Drawing dr=res.drawing;
             if(edge!=null){dr.dialCx=edge.cx;dr.dialCy=edge.cy;dr.dialA=edge.axisA;dr.dialB=edge.axisB;dr.dialAngleDeg=edge.angleDeg;}
             else{dr.dialCx=cx;dr.dialCy=cy;dr.dialA=r;dr.dialB=r;}
@@ -367,6 +377,7 @@ final class GmtHumanQcAnalyzerV2 {
                 dr.nine=nineOut.result.geometry;dr.nineAttention=nineOut.decision.attention;dr.nineCentring=nineOut.result.centring;
                 dr.nineNotJudged=nineOut.decision.tooSmall?"9 baton too small":nineOut.hand?"a hand is at 9":null;
             }
+            dr.round=round;
             dr.notJudged=tooSmall?"12 triangle too small in this photo"
                     :handAtTwelve?"a hand is at 12"
                     :!twelve.valid?"12 marker not found"
@@ -500,6 +511,61 @@ final class GmtHumanQcAnalyzerV2 {
                 ?String.format(Locale.US,"%s resize check (94%%, 88%%): offset %+.3f to %+.3f, rotation %+.2f° to %+.2f°, %s edge; %s.\n",
                         L,b.centringMin,b.centringMax,b.rotMin,b.rotMax,b.stabilitySameEdge?"same":"different",o.unstable?"UNSTABLE":"stable")
                 :L+" resize check (94%, 88%): the baton was not found again at another scale; UNSTABLE.\n");
+    }
+
+    /**
+     * Verdict for each round marker (alpha61): size and offset levels, then the resize check,
+     * then the hand check (wedge and thin line), as for the batons.
+     */
+    static void judgeRound(java.util.List<GmtRoundMarkerAnalyzer.Marker> round,Mat src,double cx,double cy,double r,GmtHumanQcMath.PoseLabel pose){
+        Mat g8=new Mat();
+        try{
+            Imgproc.cvtColor(src,g8,Imgproc.COLOR_BGR2GRAY);Imgproc.GaussianBlur(g8,g8,new org.opencv.core.Size(5,5),1.2);
+            DialEdgeEllipseFit.Intensity img=intensityOf(g8);
+            for(GmtRoundMarkerAnalyzer.Marker m:round){
+                if(!m.found){m.attention=GmtHumanQcMath.Attention.UNASSESSABLE;m.note=m.reason;continue;}
+                GmtHumanQcMath.RoundDecision d=GmtHumanQcMath.assessRound(m.offset,m.diameterPx(),m.sizeRatio,pose,m.stable);
+                m.tooSmall=d.tooSmall;
+                GmtHumanQcMath.Attention a=d.attention;String note=d.reason;boolean off=d.offCentre,size=d.sizeOdd;
+                if(!d.tooSmall&&!m.resampleStable()){
+                    m.unstable=true;
+                    boolean concern=a==GmtHumanQcMath.Attention.CHECK||a==GmtHumanQcMath.Attention.STRONG;
+                    boolean agreed=off&&Double.isFinite(m.offMax)&&Math.min(Math.abs(m.offMin),Math.abs(m.offMax))>=GmtHumanQcMath.ROUND_OFFSET_CHECK
+                            &&Math.signum(m.offMin)==Math.signum(m.offMax);
+                    String moved=Double.isFinite(m.offMax)
+                            ?String.format(Locale.US,"the reading moves when the photo is reduced by 6%% and 12%% (offset %+.2f to %+.2f)",m.offMin,m.offMax)
+                            :"the marker is not found the same way when the photo is reduced by 6% or 12%";
+                    a=concern&&agreed?GmtHumanQcMath.Attention.CHECK:GmtHumanQcMath.Attention.UNASSESSABLE;
+                    off=concern&&agreed;size=false;
+                    note=(concern&&agreed?"off-centre at every scale, but ":"")+moved;
+                }
+                if(!d.tooSmall){
+                    // A local ring rather than the 12's wide wedge: a wedge ±14° wide around a round
+                    // marker reaches a marker's width either side and caught hands that were near
+                    // but not over it (3KSuGhC image_02: 4 of 8 markers).
+                    m.ringBright=HandIntrusion.ringBrightFraction(img,g8.cols(),g8.rows(),m.x,m.y,m.radiusPx,m.tickBefore,m.tickAfter,cx,cy);
+                    m.coloured=GmtRoundMarkerAnalyzer.colouredFraction(src,m,cx,cy);
+                    if(m.ringBright>HandIntrusion.MAX_RING_BRIGHT_FRACTION||m.coloured>GmtRoundMarkerAnalyzer.MAX_COLOURED_FRACTION){
+                        m.hand=true;a=GmtHumanQcMath.Attention.UNASSESSABLE;off=size=false;note="a hand is over or next to it";
+                    }
+                }
+                m.attention=a;m.note=note;m.offCentre=off;m.sizeOdd=size;
+            }
+        }finally{g8.release();}
+    }
+
+    private static void appendRoundReport(StringBuilder out,java.util.List<GmtRoundMarkerAnalyzer.Marker> round){
+        out.append("\nHUMAN ROUND-MARKER QC\n");
+        out.append("Offset: sideways from midway between the minute ticks either side, fraction of the marker diameter, + = clockwise. Inset: centre to the tick line over the tick spacing. Size: against the median round marker on this dial.\n");
+        for(GmtRoundMarkerAnalyzer.Marker m:round){
+            String t=String.format(Locale.US,"%d (%02d/%02d/%02d)",m.hour,m.before(),m.minute(),m.after());
+            if(!m.found){out.append(t).append(": UNASSESSABLE - ").append(m.reason).append("\n");continue;}
+            out.append(t).append(": ").append(m.attention).append(" - ").append(m.note).append("\n");
+            out.append(String.format(Locale.US,"   offset %+.3f (centre tick %+.3f), inset %.3f, edge gap %.3f, diameter %.1f px, size %.3f; outline %.0f%% off-circle, contrast %.0f, ticks score %.0f pitch %.2f°, hand ring %.3f, colour %.3f%s%s.\n",
+                    m.offset,m.offsetFromCentreTick,m.inset,m.gap,m.diameterPx(),m.sizeRatio,100*m.rejectFraction,m.contrast,m.tickScore,m.tickPitchDeg,m.ringBright,m.coloured,
+                    m.stable?"":"; low confidence: "+m.lowReason,
+                    m.stabilityRun?(Double.isFinite(m.offMax)?String.format(Locale.US,"; resize check offset %+.3f to %+.3f, %s edge, %s",m.offMin,m.offMax,m.stabilitySameEdge?"same":"different",m.unstable?"UNSTABLE":"stable"):"; resize check: not found again, UNSTABLE"):""));
+        }
     }
 
     /** Photo-angle rating and gap-direction cue at one scale (used by the resize check). */
