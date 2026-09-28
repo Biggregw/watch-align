@@ -43,6 +43,8 @@ final class GmtRoundMarkerAnalyzer {
     static final double MIN_OUTER_R=0.074;
     /** A different edge is assumed when the radius moves more than this across the resize check (px). */
     static final double MAX_RESAMPLE_RADIUS_SHIFT_PX=1.5;
+    /** Median round-marker diameter (px) needed before sizes are compared (alpha61). */
+    static final double MIN_SIZE_CHECK_PX=36;
 
     static final class Marker {
         final int hour;
@@ -59,6 +61,8 @@ final class GmtRoundMarkerAnalyzer {
         double angleFromExpectedDeg=Double.NaN,outerOverDialR=Double.NaN,seedX=Double.NaN,seedY=Double.NaN;
         /** The seed came from the affine fit to the other markers, so it marks where this hour belongs. */
         boolean seedPlaced;
+        /** Expected surround radius at this dial size (px), for drawing a marker that was not found. */
+        double expectedRadiusPx=Double.NaN;
         // Resize check: ranges over the original and the 94%/88% re-measurements.
         boolean stabilityRun,stabilitySameEdge;
         double offMin=Double.NaN,offMax=Double.NaN,gapMin=Double.NaN,gapMax=Double.NaN,insetMin=Double.NaN,insetMax=Double.NaN;
@@ -149,9 +153,11 @@ final class GmtRoundMarkerAnalyzer {
         if(d.size()<4)return;
         double[] a=new double[d.size()];for(int i=0;i<a.length;i++)a[i]=d.get(i);Arrays.sort(a);
         double med=a.length%2==1?a[a.length/2]:(a[a.length/2-1]+a[a.length/2])/2;
-        // Comparing against markers too small to judge would flag the one that happens to read
-        // largest (rep_cplus_wEYZOyK image_00: a 26 px 4 against 22-23 px others).
-        if(med<GmtHumanQcMath.MIN_ROUND_PX)return;
+        // Sizes are only compared on markers large enough for the surround (about a fifth of the
+        // radius) to be several pixels wide. Below that the fit takes the lume edge on some markers
+        // and the surround's outer edge on others, which reads as a 12-18% size difference
+        // (rep_cplus_wEYZOyK images 00, 02 and 03 at 25-28 px; rep_vsf_gpZWOfy image_02 at 27 px).
+        if(med<MIN_SIZE_CHECK_PX)return;
         for(Marker m:ms)if(m.found)m.sizeRatio=m.diameterPx()/med;
     }
 
@@ -249,6 +255,7 @@ final class GmtRoundMarkerAnalyzer {
         double cx=dial.cx,cy=dial.cy,r=dial.r;
         double phi=dial.phiOf(seed[0],seed[1]);
         double r0=Gmt126710BlnrMaster.ROUND_OUTER_R*r;
+        m.expectedRadiusPx=r0;
         m.seedX=seed[0];m.seedY=seed[1];m.seedPlaced=seed.length>2&&seed[2]>0;
         double[] c=fitCircle(g,seed[0],seed[1],r0,m,1.0);
         if(c==null){m.reason=m.reason.isEmpty()?"marker outline not found":m.reason;return m;}
@@ -340,19 +347,39 @@ final class GmtRoundMarkerAnalyzer {
             m.contrast=S-D;
             if(!(S-D>=25)){m.reason=String.format(java.util.Locale.US,"marker edge contrast too low (%.0f grey levels)",S-D);return null;}
             double level=D+0.5*(S-D);
-            int iStart=idx(0.50*r0,t0,step),hold=(int)Math.round(2.0/step);
+            int iStart=idx(0.50*r0,t0,step),iEnd=Math.min(ns-1,idx(1.25*r0,t0,step)),hold=(int)Math.round(2.0/step);
+            // Candidate edges on each ray: every falling crossing at the half level and at a lower
+            // level. With light from one side the surround's shadowed half can sit below the half
+            // level, so the first crossing there is the lume edge; the lower level finds the
+            // surround's outer edge on that side.
+            double[] levels={level,D+0.3*(S-D)};
+            List<List<Double>> cand=new ArrayList<>();
             double[] px=new double[RAYS],py=new double[RAYS];boolean[] ok=new boolean[RAYS];
             for(int k=0;k<RAYS;k++){
-                double a=2*Math.PI*k/RAYS,dx=Math.cos(a),dy=Math.sin(a);
-                boolean above=false;
-                for(int i=Math.max(1,iStart);i<ns;i++){
-                    double v=prof[k][i];if(!Double.isFinite(v))break;
-                    if(v>=level){above=true;continue;}
-                    if(!above)continue;
-                    boolean stays=true;for(int j=i;j<Math.min(ns,i+hold);j++)if(!(prof[k][j]<level)){stays=false;break;}
-                    if(!stays)continue;
-                    double vp=prof[k][i-1],t=t0+(i-1)*step+step*(vp-level)/Math.max(1e-6,vp-v);
-                    px[k]=ox+dx*t;py[k]=oy+dy*t;ok[k]=true;break;
+                List<Double> c=new ArrayList<>();
+                for(int li=0;li<levels.length;li++){
+                    double lv=levels[li];boolean above=false;
+                    for(int i=Math.max(1,iStart);i<=iEnd;i++){
+                        double v=prof[k][i];if(!Double.isFinite(v))break;
+                        if(v>=lv){above=true;continue;}
+                        if(!above)continue;
+                        boolean stays=true;for(int j=i;j<Math.min(ns,i+hold);j++)if(!(prof[k][j]<lv)){stays=false;break;}
+                        if(!stays)continue;
+                        double vp=prof[k][i-1],t=t0+(i-1)*step+step*(vp-lv)/Math.max(1e-6,vp-v);
+                        c.add(t);above=false;
+                        if(li==0&&!ok[k]){double a=2*Math.PI*k/RAYS;px[k]=ox+Math.cos(a)*t;py[k]=oy+Math.sin(a)*t;ok[k]=true;}
+                    }
+                }
+                cand.add(c);
+            }
+            fit=trimmedFit(px,py,ok,m);
+            if(fit==null){if(m.reason.isEmpty())m.reason="marker outline could not be fitted";return null;}
+            // Re-pick on each ray the candidate nearest the fitted circle, then fit again.
+            for(int k=0;k<RAYS;k++){
+                double a=2*Math.PI*k/RAYS,dx=Math.cos(a),dy=Math.sin(a),best=Double.MAX_VALUE;
+                for(double t:cand.get(k)){
+                    double x=ox+dx*t,y=oy+dy*t,e=Math.abs(Math.hypot(x-fit[0],y-fit[1])-fit[2]);
+                    if(e<best){best=e;px[k]=x;py[k]=y;ok[k]=true;}
                 }
             }
             fit=trimmedFit(px,py,ok,m);
@@ -394,8 +421,14 @@ final class GmtRoundMarkerAnalyzer {
             if(!changed&&pass>0)break;
         }
         int kept=0;for(boolean u:use)if(u)kept++;
-        m.rejectFraction=1.0-kept/(double)n;
-        if(kept<n/3)return null;
+        if(kept<n/3){m.rejectFraction=1.0-kept/(double)n;return null;}
+        // The quality gate counts only gross misses (no edge, or more than 2 px and 8% of the
+        // radius off the circle: a hand, glare, a chipped edge). Trimming for the fit is tighter,
+        // and on sharp studio photos it trimmed a third of the rays for sub-pixel lighting
+        // differences around a clean surround (WOS CPO images, 46 px markers).
+        double gross=Math.max(2.0,0.08*f[2]);int bad=0;
+        for(int i=0;i<n;i++)if(!ok[i]||Math.abs(Math.hypot(px[i]-f[0],py[i]-f[1])-f[2])>gross)bad++;
+        m.rejectFraction=bad/(double)n;
         return f;
     }
 

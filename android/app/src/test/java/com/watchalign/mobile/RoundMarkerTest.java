@@ -162,6 +162,42 @@ public class RoundMarkerTest {
         assertTrue(s,s.contains("Not judged: the 1 and 8 (outline not clean: a hand, glare or a damaged edge)."));
     }
 
+    @Test public void sizeIsNotClaimedWhenNotCompared(){
+        GmtHumanSummary.Input in=clearTwelve();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS){GmtRoundMarkerAnalyzer.Marker m=judged(h,GmtHumanQcMath.Attention.CLEAR);m.sizeRatio=Double.NaN;in.round.add(m);}
+        String s=GmtHumanSummary.build(in);
+        assertTrue(s,s.contains("Round markers: all 8 centred on their minute ticks.\n"));
+    }
+
+    @Test public void sizesAreComparedOnlyOnLargeEnoughMarkers(){
+        List<GmtRoundMarkerAnalyzer.Marker> ms=new ArrayList<>();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS){GmtRoundMarkerAnalyzer.Marker m=marker(h,0);m.radiusPx=h==4?15:13;m.sizeRatio=Double.NaN;ms.add(m);}
+        GmtRoundMarkerAnalyzer.sizeRatios(ms);
+        for(GmtRoundMarkerAnalyzer.Marker m:ms)assertTrue(Double.isNaN(m.sizeRatio));   // 26 px median: lume vs surround can't be told apart
+        for(GmtRoundMarkerAnalyzer.Marker m:ms){m.radiusPx=m.hour==4?23:20;}
+        GmtRoundMarkerAnalyzer.sizeRatios(ms);
+        assertEquals(1.15,ms.get(2).sizeRatio,1e-9);
+    }
+
+    @Test public void everyHourPositionIsReported(){
+        GmtHumanSummary.Input in=clearTwelve();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS){
+            GmtRoundMarkerAnalyzer.Marker m=h==7?new GmtRoundMarkerAnalyzer.Marker(7):judged(h,GmtHumanQcMath.Attention.CLEAR);
+            if(h==2){m.attention=GmtHumanQcMath.Attention.UNASSESSABLE;m.hand=true;}
+            in.round.add(m);
+        }
+        String s=GmtHumanSummary.build(in);
+        assertTrue(s,s.contains("All markers: 12 OK · 1 OK · 2 hand in the way · 3 date window (not a marker) · 4 OK · 5 OK · 6 not found · 7 not found · 8 OK · 9 not found · 10 OK · 11 OK."));
+    }
+
+    @Test public void otherMarkersAreReportedWhenTheTwelveIsNotChecked(){
+        GmtHumanSummary.Input in=clearTwelve();in.handAtTwelve=true;
+        for(int h:GmtRoundMarkerAnalyzer.HOURS)in.round.add(judged(h,GmtHumanQcMath.Attention.CLEAR));
+        String s=GmtHumanSummary.build(in);
+        assertTrue(s,s.contains("Nothing flagged at all 8 round markers."));
+        assertTrue(s,s.contains("All markers: 12 hand in the way"));
+    }
+
     @Test public void hoursAndTicks(){
         assertEquals(Arrays.toString(new int[]{1,2,4,5,7,8,10,11}),Arrays.toString(GmtRoundMarkerAnalyzer.HOURS));
         GmtRoundMarkerAnalyzer.Marker m=new GmtRoundMarkerAnalyzer.Marker(10);

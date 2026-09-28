@@ -212,7 +212,7 @@ final class GmtHumanQcAnalyzerV2 {
             boolean tooSmall=false,handAtTwelve=false;
             if(twelve.valid&&Double.isFinite(twelve.triangleWidthPx)&&twelve.triangleWidthPx<MIN_TRIANGLE_PX){
                 tooSmall=true;
-                String why=String.format(Locale.US,"the 12 triangle is only %.0f px wide in this photo (minimum %.0f); too small to measure",twelve.triangleWidthPx,MIN_TRIANGLE_PX);
+                String why=String.format(Locale.US,"the 12 triangle is only %.0f px wide in this photo (minimum %.0f); too small to measure",Math.floor(twelve.triangleWidthPx),MIN_TRIANGLE_PX);
                 rotation=new GmtHumanQcMath.RotationDecision(GmtHumanQcMath.Attention.UNASSESSABLE,rotation.axisErrorDeg,rotation.baseErrorDeg,
                         rotation.sideAsymmetry,rotation.visibleRisePx,false,false,why);
                 clearance=new GmtHumanQcMath.ClearanceDecision(GmtHumanQcMath.Attention.UNASSESSABLE,clearance.trend,clearance.observedGap,
@@ -539,14 +539,16 @@ final class GmtHumanQcAnalyzerV2 {
                     off=concern&&agreed;size=false;
                     note=(concern&&agreed?"off-centre at every scale, but ":"")+moved;
                 }
-                if(!d.tooSmall){
+                {
+                    // Checked even when the marker reads too small: a hand over it is the likelier
+                    // reason for a small outline, and it is the more useful thing to say.
                     // A local ring rather than the 12's wide wedge: a wedge ±14° wide around a round
                     // marker reaches a marker's width either side and caught hands that were near
                     // but not over it (3KSuGhC image_02: 4 of 8 markers).
                     m.ringBright=HandIntrusion.ringBrightFraction(img,g8.cols(),g8.rows(),m.x,m.y,m.radiusPx,m.tickBefore,m.tickAfter,cx,cy);
                     m.coloured=GmtRoundMarkerAnalyzer.colouredFraction(src,m,cx,cy);
                     if(m.ringBright>HandIntrusion.MAX_RING_BRIGHT_FRACTION||m.coloured>GmtRoundMarkerAnalyzer.MAX_COLOURED_FRACTION){
-                        m.hand=true;a=GmtHumanQcMath.Attention.UNASSESSABLE;off=size=false;note="a hand is over or next to it";
+                        m.hand=true;m.tooSmall=false;a=GmtHumanQcMath.Attention.UNASSESSABLE;off=size=false;note="a hand is over or next to it";
                     }
                 }
                 m.attention=a;m.note=note;m.offCentre=off;m.sizeOdd=size;

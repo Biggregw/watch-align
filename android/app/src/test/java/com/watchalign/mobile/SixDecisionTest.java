@@ -33,6 +33,8 @@ public class SixDecisionTest {
     @Test public void lowConfidenceNeverClears() {
         assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE, d(0.02, 0.1, 30, false).attention);
         assertEquals(GmtHumanQcMath.Attention.CHECK, d(0.25, 0.1, 30, false).attention);
+        // A rotation read from an outline that could not be traced cleanly is not kept (alpha61).
+        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE, d(0.02, 5.0, 30, false).attention);
     }
 
     @Test public void rotationNeedsAVisibleRise() {

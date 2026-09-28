@@ -55,7 +55,7 @@ JAVA_HOME=<jdk17> sh ./gradlew --no-daemon -q \
   :app:testDebugUnitTest :app:assembleDebug
 ```
 
-- 193 JVM unit tests, all passing.
+- 197 JVM unit tests, all passing.
 - `:app:compileDebugAndroidTestJavaSource` compiles the on-device test
   (`GenuineOfficialImageValidationTest`). It needs network access for
   androidx.test, so **don't pass `--offline`** for it. Only check the result of the
@@ -218,7 +218,12 @@ placed by an affine fit of the master layout to the markers found, with the dial
 squash undone for the measurements. Gates: size (24 px), photo angle, fit quality (edge
 contrast, tick score, rejected rays, inset range, tick agreement), resize check, and a local
 hand check (a marker-bright ring just outside the marker, plus red/blue GMT-hand colour).
-Levels: offset CHECK 0.15 / STRONG 0.25, size ±0.12. The tick search was also moved from
+Levels: offset CHECK 0.15 / STRONG 0.25, size ±0.12 (compared only when the median is 36 px or more).
+The summary opens with an "All markers" line listing every hour position. The baton finder's
+rectangularity limit went from 0.80 to 0.60, so clean photos stop reporting the 6 and 9 as
+not found. A low-confidence baton keeps only an offset concern, not a rotation concern.
+18 more genuine photos (WOS CPO, and the official 2026 renders of the other GMT models) are
+in the regression. They are downloaded, not committed; the list is in the research note. The tick search was also moved from
 `Mat.get` to a byte array (`GmtTwelveLandmarkAnalyzer.Px`), with identical 12/6/9 results
 (`docs/research/gmt_round_markers_2026-09-28.md`).
 

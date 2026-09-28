@@ -54,6 +54,7 @@ final class GmtHumanSummary {
     static String build(Input in){
         StringBuilder s=new StringBuilder("SUMMARY\n");
         s.append("Photo: ").append(photoLine(in)).append("\n");
+        s.append("All markers: ").append(allMarkersLine(in)).append("\n");
         s.append("12 gap: ").append(gapLine(in)).append("\n");
         s.append("12 alignment: ").append(alignmentLine(in)).append("\n");
         s.append("6 baton: ").append(sixLine(in)).append("\n");
@@ -70,6 +71,63 @@ final class GmtHumanSummary {
         return s.toString();
     }
 
+    /**
+     * Every hour position, 12 round to 11, with one word each (alpha61), so no marker can go
+     * unmentioned whatever else the summary says. The 3 is the date window.
+     */
+    static String allMarkersLine(Input in){
+        List<String> parts=new ArrayList<>();
+        java.util.Map<Integer,GmtRoundMarkerAnalyzer.Marker> round=new java.util.HashMap<>();
+        for(GmtRoundMarkerAnalyzer.Marker m:in.round)round.put(m.hour,m);
+        Baton six=six(in);in.nine.angled=poorPose(in);
+        for(int h=12,k=0;k<12;k++,h=h%12+1){
+            String st;
+            if(h==12)st=twelveStatus(in);
+            else if(h==3)st="date window (not a marker)";
+            else if(h==6)st=batonStatus(six);
+            else if(h==9)st=batonStatus(in.nine);
+            else{GmtRoundMarkerAnalyzer.Marker m=round.get(h);st=m==null?"not measured":roundStatus(m);}
+            parts.add(h+" "+st);
+        }
+        return String.join(" · ",parts)+".";
+    }
+
+    static String twelveStatus(Input in){
+        if(!in.twelveValid)return "not found";
+        if(in.tooSmall)return "too small";
+        if(in.handAtTwelve)return "hand in the way";
+        boolean flag=in.gap==GmtHumanQcMath.Attention.CHECK||in.gap==GmtHumanQcMath.Attention.STRONG
+                ||in.alignment==GmtHumanQcMath.Attention.CHECK||in.alignment==GmtHumanQcMath.Attention.STRONG;
+        if(flag)return (in.gap==GmtHumanQcMath.Attention.STRONG||in.alignment==GmtHumanQcMath.Attention.STRONG)?"CHECK CLOSELY":"worth a look";
+        if(in.gap==GmtHumanQcMath.Attention.CLEAR&&in.alignment==GmtHumanQcMath.Attention.CLEAR)return in.stableFrame?"OK":"OK (low confidence)";
+        if(in.gap==GmtHumanQcMath.Attention.CLEAR||in.alignment==GmtHumanQcMath.Attention.CLEAR)return "partly judged";
+        return "not judged";
+    }
+
+    static String batonStatus(Baton b){
+        if(!b.valid)return "not found";
+        if(b.tooSmall)return "too small";
+        if(b.hand)return "hand in the way";
+        switch(b.attention){
+            case CLEAR:return "OK";
+            case CHECK:return "worth a look";
+            case STRONG:return "CHECK CLOSELY";
+            default:return b.unstable?"not judged (reading unsteady)":b.angled&&b.stable?"not judged (angle)":"not judged";
+        }
+    }
+
+    static String roundStatus(GmtRoundMarkerAnalyzer.Marker m){
+        if(!m.found)return "not found";
+        if(m.hand)return "hand in the way";
+        if(m.tooSmall)return "too small";
+        switch(m.attention){
+            case CLEAR:return "OK";
+            case CHECK:return "worth a look";
+            case STRONG:return "CHECK CLOSELY";
+            default:return m.unstable?"not judged (reading unsteady)":!m.stable?"not judged (unclear outline)":"not judged";
+        }
+    }
+
     static String photoLine(Input in){
         switch(in.pose){
             case GOOD: return "good, near straight-on angle. Measurements are reliable.";
@@ -83,7 +141,7 @@ final class GmtHumanSummary {
         if(!in.twelveValid)return "could not be measured on this photo (12 triangle or minute track not found). This is not a pass.";
         String v=Double.isFinite(in.observedGap)?String.format(Locale.US," Measured %.2f; genuine photos tested so far read %s.",in.observedGap,GENUINE_GAP_SEEN):"";
         if(!in.stableFrame)v+=" The 12 marker could only be measured with low confidence on this photo, so treat this with caution.";
-        if(in.tooSmall)return String.format(Locale.US,"not measured: the 12 triangle is only %.0f px wide in this photo. Take a closer photo so the dial fills more of the frame.",in.trianglePx);
+        if(in.tooSmall)return String.format(Locale.US,"not measured: the 12 triangle is only %.0f px wide in this photo. Take a closer photo so the dial fills more of the frame.",Math.floor(in.trianglePx));
         if(in.handAtTwelve)return "not judged: a hand is next to the 12 marker. Retake with the hands away from 12.";
         if(in.gapUnstable){
             String range=Double.isFinite(in.gapMax)?String.format(Locale.US," (it read between %.2f and %.2f)",in.gapMin,in.gapMax):"";
@@ -181,7 +239,7 @@ final class GmtHumanSummary {
     static String batonLine(Baton b){
         String L=b.label;
         if(!b.valid)return "not measured on this photo (baton or minute track at "+L+" not found, often because a hand covers it).";
-        if(b.tooSmall)return String.format(Locale.US,"not measured: the baton is only %.0f px wide in this photo.",b.widthPx);
+        if(b.tooSmall)return String.format(Locale.US,"not measured: the baton is only %.0f px wide in this photo.",Math.floor(b.widthPx));
         if(b.hand)return "not judged: a hand is next to the "+L+" baton.";
         boolean towardsBefore=b.centring>0;
         String sideWord="9".equals(L)?(towardsBefore?"sits low":"sits high"):"sits to the "+side(b,towardsBefore);
@@ -216,18 +274,20 @@ final class GmtHumanSummary {
         int found=0;for(GmtRoundMarkerAnalyzer.Marker m:ms)if(m.found)found++;
         if(ms.isEmpty()||found==0)return "not measured on this photo (the round markers or the minute ticks beside them were not found).";
         List<String> flags=new ArrayList<>(),clear=new ArrayList<>();
-        boolean strong=false;
+        boolean strong=false,sized=true;
         for(GmtRoundMarkerAnalyzer.Marker m:ms){
             if(m.flagged()){flags.add(roundFlag(m));strong|=m.attention==GmtHumanQcMath.Attention.STRONG;}
-            else if(m.clear())clear.add(String.valueOf(m.hour));
+            else if(m.clear()){clear.add(String.valueOf(m.hour));sized&=Double.isFinite(m.sizeRatio);}
         }
+        // "The same size" only when sizes were compared (markers large enough, alpha61).
+        String same=sized?" and the same size":"";
         StringBuilder s=new StringBuilder();
         if(!flags.isEmpty()){
             s.append(strong?"visibly off-centre: ":"worth a look: ").append(String.join("; ",flags)).append(". Look closely.");
             if(!clear.isEmpty())s.append(" ").append(clear.size()==1?"The "+clear.get(0)+" is":"The "+join(clear)+" are").append(" centred.");
         }else if(!clear.isEmpty()){
-            s.append(clear.size()==8?"all 8 centred on their minute ticks and the same size."
-                    :(clear.size()==1?"the "+clear.get(0)+" is":"the "+join(clear)+" are")+" centred on their minute ticks and the same size.");
+            s.append(clear.size()==8?"all 8 centred on their minute ticks"+same+"."
+                    :(clear.size()==1?"the "+clear.get(0)+" is":"the "+join(clear)+" are")+" centred on their minute ticks"+same+".");
         }
         String un=unjudgedRound(ms);
         if(!un.isEmpty())s.append(s.length()==0?"":" ").append(s.length()==0?Character.toUpperCase(un.charAt(0))+un.substring(1):un);
@@ -283,6 +343,13 @@ final class GmtHumanSummary {
         return r.replace("(","").replace(")","");
     }
 
+    /** " 6 of the 8 round markers are centred." or "" (for bottom lines that otherwise omit them). */
+    static String roundClearSentence(Input in){
+        int rc=0;for(GmtRoundMarkerAnalyzer.Marker m:in.round)if(m.clear())rc++;
+        if(rc==0)return "";
+        return rc==8?" All 8 round markers are centred.":" "+rc+" of the 8 round markers are centred.";
+    }
+
     static List<String> roundFlagItems(Input in){
         List<String> hours=new ArrayList<>();boolean size=false,off=false;
         for(GmtRoundMarkerAnalyzer.Marker m:in.round)if(m.flagged()){hours.add(String.valueOf(m.hour));size|=m.sizeOdd;off|=m.offCentre;}
@@ -335,6 +402,13 @@ final class GmtHumanSummary {
         batonFlags.addAll(roundFlagItems(in));
         items.addAll(batonFlags);
         String six6=batonFlags.isEmpty()?"":" Separately, check "+join(batonFlags)+".";
+        {   // When the 12 can't be checked, still say which other markers were (alpha61).
+            List<String> ok=new ArrayList<>();
+            for(Baton b:batons)if(b.clear())ok.add("the "+b.label+" baton");
+            int rc=0;for(GmtRoundMarkerAnalyzer.Marker m:in.round)if(m.clear())rc++;
+            if(rc>0)ok.add(rc==8?"all 8 round markers":rc+" of the 8 round markers");
+            if(!ok.isEmpty()&&(!in.twelveValid||in.tooSmall||in.handAtTwelve))six6+=" Nothing flagged at "+joinOr(ok)+".";
+        }
         if(!in.twelveValid)return "Bottom line: the 12 marker could not be checked on this photo. Try a clearer, straight-on photo with the hands away from 12."+six6;
         if(in.twelveValid&&in.tooSmall)return "Bottom line: the 12 marker is too small in this photo to check. Take a closer photo so the dial fills more of the frame."+six6;
         if(in.twelveValid&&in.handAtTwelve)return "Bottom line: a hand is covering the area around the 12 marker, so it could not be checked. Retake with the hands away from 12."+six6;
@@ -347,7 +421,8 @@ final class GmtHumanSummary {
             String what=bothUnstable?"the 12 reading":in.gapUnstable?"the 12 gap reading":"the 12 rotation reading";
             String unstable=what+" changes when the photo is resized slightly, so it isn't a reliable measurement here";
             if(items.isEmpty())return "Bottom line: nothing flagged, but "+unstable+". A closer, sharper, straight-on photo with the hands away from 12 usually fixes this."
-                    +(clearBatons.isEmpty()?"":" The "+join(clearBatons)+(clearBatons.size()==1?" baton is":" batons are")+" centred and straight.");
+                    +(clearBatons.isEmpty()?"":" The "+join(clearBatons)+(clearBatons.size()==1?" baton is":" batons are")+" centred and straight.")
+                    +roundClearSentence(in);
             return "Bottom line: "+items.size()+(items.size()==1?" thing":" things")+" to check: "+join(items)+". "
                     +Character.toUpperCase(unstable.charAt(0))+unstable.substring(1)+", so confirm by eye.";
         }

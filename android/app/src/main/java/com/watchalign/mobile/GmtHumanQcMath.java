@@ -283,7 +283,7 @@ final class GmtHumanQcMath {
             return new SixDecision(Attention.UNASSESSABLE,false,false,false,"6 baton not measured");
         if(widthPx<MIN_BATON_PX)
             return new SixDecision(Attention.UNASSESSABLE,false,false,true,
-                    String.format(java.util.Locale.US,"the 6 baton is only %.0f px wide in this photo (minimum %.0f)",widthPx,MIN_BATON_PX));
+                    String.format(java.util.Locale.US,"the 6 baton is only %.0f px wide in this photo (minimum %.0f)",Math.floor(widthPx),MIN_BATON_PX));
         if(Math.abs(rotationDeg)>MAX_PLAUSIBLE_ROTATION_DEG||Math.abs(centring)>0.6)
             return new SixDecision(Attention.UNASSESSABLE,false,false,false,"the 6 reading is far outside any real marker error; the baton or ticks were not found correctly");
         double c=Math.abs(centring),offPx=c*widthPx;
@@ -293,7 +293,10 @@ final class GmtHumanQcMath {
         boolean rot=a>=SIX_ROTATION_CHECK_DEG&&rise>=1.0, rotStrong=a>=SIX_ROTATION_STRONG_DEG&&rise>=2.0;
         boolean poor=pose==PoseLabel.RETAKE||pose==PoseLabel.UNASSESSABLE;
         if(!stable||poor){
-            if(offStrong||rotStrong)return new SixDecision(Attention.CHECK,offStrong,rotStrong,false,
+            // Only a clear offset survives low confidence. Rotation comes from the long edges, and
+            // when one could not be traced the outline has usually merged with something else: a
+            // minute hand lying along the 9 read +7.7° (rep_vsf_gpZWOfy image_01, alpha61).
+            if(offStrong)return new SixDecision(Attention.CHECK,true,false,false,
                     "a clear offset is visible but the 6 landmarks or the photo angle are not reliable enough for a firm verdict");
             return new SixDecision(Attention.UNASSESSABLE,false,false,false,
                     poor?"photo too angled to clear the 6 baton":"6 landmarks measured with low confidence");
@@ -318,7 +321,7 @@ final class GmtHumanQcMath {
     static RoundDecision assessRound(double offset,double diameterPx,double sizeRatio,PoseLabel pose,boolean stable){
         if(!Double.isFinite(offset)||!(diameterPx>0))return new RoundDecision(Attention.UNASSESSABLE,false,false,false,"not measured");
         if(diameterPx<MIN_ROUND_PX)return new RoundDecision(Attention.UNASSESSABLE,false,false,true,
-                String.format(java.util.Locale.US,"only %.0f px across in this photo (minimum %.0f)",diameterPx,MIN_ROUND_PX));
+                String.format(java.util.Locale.US,"only %.0f px across in this photo (minimum %.0f)",Math.floor(diameterPx),MIN_ROUND_PX));
         if(Math.abs(offset)>0.6)return new RoundDecision(Attention.UNASSESSABLE,false,false,false,
                 "the reading is far outside any real marker error; the marker or ticks were not found correctly");
         double o=Math.abs(offset),px=o*diameterPx;

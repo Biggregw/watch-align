@@ -181,7 +181,17 @@ final class MeasuredOverlayRenderer {
      * (where the marker's centre should line up) with a dot at the measured centre.
      */
     private static void drawRound(Canvas c,GmtRoundMarkerAnalyzer.Marker m){
-        if(m==null||!m.found)return;
+        if(m==null)return;
+        if(!m.found){
+            // Where the marker should be, grey and dashed, so every position shows on the overlay.
+            if(!Double.isFinite(m.seedX)||!(m.expectedRadiusPx>0))return;
+            Paint nj=stroke(UNKNOWN,(float)Math.max(1.0,m.expectedRadiusPx/11.0),170);
+            for(int i=0;i<24;i+=2){
+                double a0=2*Math.PI*i/24,a1=2*Math.PI*(i+1)/24,R=m.expectedRadiusPx;
+                c.drawLine((float)(m.seedX+R*Math.cos(a0)),(float)(m.seedY+R*Math.sin(a0)),(float)(m.seedX+R*Math.cos(a1)),(float)(m.seedY+R*Math.sin(a1)),nj);
+            }
+            return;
+        }
         double d=m.diameterPx();
         float lw=(float)Math.max(1.0,d/22.0);
         boolean judged=m.attention!=GmtHumanQcMath.Attention.UNASSESSABLE;

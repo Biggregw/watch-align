@@ -167,6 +167,11 @@ jobs:
           for id in CH080218/1 HK080220/821 NY080120/2 CH080120/75; do
             curl -sSfL -A 'Mozilla/5.0' -o "$D/gen_BLRO_phillips_$(echo $id | tr / _).jpg" "https://dist.phillips.com/auction-assets/${id}_001.jpg?width=2400" || true
           done
+          # Genuine Watches of Switzerland CPO studio photos (alpha61): clean 6/9 batons and
+          # round markers that the old baton finder and ray tracer missed.
+          for id in 40411116 40411167 406107958490 40617914; do
+            curl -sSfL -A 'Mozilla/5.0' -o "$D/gen_wos_cpo_$id.jpg" "https://content.thewosgroup.com/productimage/$id/${id}_1.png" || true
+          done
           ls -la "$D"
       - name: Enable KVM permissions
         run: |

@@ -15,10 +15,16 @@ resampling.
    - On steep photos the dial-edge ellipse can sit several marker radii off. On 3KSuGhC
      image_02, 6 of 8 markers were missed; with the affine map, all 8 were found.
 2. **Outline.** The search starts from the bright area nearest the placed position, then
-   traces the outermost falling edge along 72 rays. A circle is fitted to these edge points:
+   collects falling edges along 72 rays at two levels: half-way, and 30% of the way from the
+   dial to the surround. With light from one side, the shadowed half of the surround sits
+   below the half level, so the lower level is needed to find its outer edge there. Without
+   it, a third of the rays on sharp studio photos traced the lume instead. A circle is fitted to these edge points:
    - a least-median centre first, so that a hand lying along one side can't drag the fit;
    - then trimmed least squares, dropping rays more than 3 robust SDs off the circle.
-   - This is repeated from the fitted centre.
+   - Each ray then takes the edge candidate nearest that circle, and the circle is fitted
+     again. This is repeated from the fitted centre.
+   - The rays-off-the-circle gate counts only gross misses: no edge, or more than 2 px and 8%
+     of the radius off the circle.
 3. **Reference.** The reference is the inner ends of the minute ticks one minute either side
    (for the 1: the 04 and 06 ticks), found by the 12's tick search, which now works from any
    angle.
@@ -35,7 +41,11 @@ resampling.
    - **inset**: the centre-to-tick-line distance over the tick spacing. This doesn't depend
      on which edge was traced.
    - **size**: the marker's diameter against the median of the confidently traced round
-     markers on the same dial. It is only used when that median is itself 24 px or more.
+     markers on the same dial. It is only compared when that median is 36 px or more. On
+     smaller markers the surround is only about 3 px wide, and the fit takes the lume edge on
+     some markers and the outer edge on others. That read as a 12–18% size difference on
+     three photos of one replica (rep_cplus_wEYZOyK images 00, 02 and 03) and on
+     rep_vsf_gpZWOfy image_02.
 
 ## Gates
 
@@ -81,34 +91,54 @@ These are set outside the genuine spread, with pixel minimums.
 | | CHECK | STRONG | genuine judged maximum |
 |---|---:|---:|---:|
 | offset (fraction of diameter) | 0.15 and ≥ 2 px | 0.25 and ≥ 4 px | 0.103 (Phillips Pepsi 151477, the 4) |
-| size against the dial median | ±0.12 and ≥ 2 px | not used | 0.051 |
+| size against the dial median (median ≥ 36 px) | ±0.12 and ≥ 2 px | not used | 0.072 |
 
-## Corpus (262 photos, phone-like loading)
+## Corpus (280 photos, phone-like loading)
+
+This is the 262-photo regression set, plus 18 genuine photos the user supplied on
+2026-09-28:
+
+- 12 Watches of Switzerland CPO studio photos: BLNR, BLRO and 126711CHNR;
+- 6 official 2026 renders: 126710GRNR, 126711CHNR, 126713GRNR, 126715CHNR, 126718GRNR and
+  126720VTNR.
+
+These are all black-dial GMT-Master IIs with the same marker layout.
 
 | | genuine | replica |
 |---|---:|---:|
-| photos with a dial fitted (of 262) | 49 | 174 |
-| round markers judged clear | 75 | 176 |
+| photos with a dial fitted | 67 | 174 |
+| round markers judged clear | 181 | 200 |
 | round markers flagged | 0 | 0 |
-| clear-marker offset, median / 99th percentile | 0.018 / 0.096 | 0.020 / 0.075 |
+| clear-marker offset, median / 99th percentile / maximum | 0.013 / 0.074 / 0.096 | 0.022 / 0.076 / 0.080 |
 
-On dial photos (12 found, usable angle) there were 720 marker readings. 251 were judged
-clear. The rest were not judged, for these reasons:
-
-| reason | count |
-|---|---:|
-| not found (mostly non-dial photos where a "12" was found, or hands) | 174 |
-| a hand | 110 |
-| too small | 77 |
-| outline not on a circle | 64 |
-| resize check | 32 |
-| other low confidence | 12 |
+The 18 new genuine photos give 106 clear round markers, with a largest offset of 0.041 and
+a largest size difference of 0.054. They are sharp and square-on.
 
 **No replica in this corpus has a round marker outside the genuine spread.** The largest
 replica offset is 0.08. Round-marker placement isn't a tell on these watches, so the check
 reports them as centred rather than inventing a concern. The first uncorrected run
 "flagged" 10/11 offsets of about 0.2 on several VSF watches, and every one of them was the
-tick-line fault described above.
+tick-line fault described above. The first size flags were all the lume-edge versus
+outer-edge mix-up at small sizes (see size above).
+
+### Also found with the new photos
+
+- **The 6 and 9 were "not found" on clean photos.** The baton finder required the lume
+  outline to fill 80% of its bounding rectangle. Clean studio photos and the renders read
+  0.64–0.78 (anti-aliased, slightly rounded ends). The limit is now 0.60; a surround-only
+  ring reads well under 0.5.
+  - Genuine 6 clear: 6 → 11. Genuine 9 unchanged at 17. No genuine flags.
+  - On the official renders the 6 is still not found, correctly: the seconds hand lies
+    along it.
+- **A low-confidence baton no longer keeps a rotation concern.** The change above let a
+  minute hand lying along the 9 of rep_vsf_gpZWOfy image_01 through, and it read +7.7°.
+  Only a clear offset now survives low confidence.
+- **The 12 gap on all 18 new genuine photos reads 0.089–0.104**, all clear. That supports
+  the 0.070 attention level.
+- **One genuine photo still gets a 12 alignment CHECK:** WOS 406107958490, a 126711CHNR.
+  The triangle reads −1.1° with the top edge at −1.0°. It is stable under resizing and the
+  photo angle is rated good. It is the first genuine photo past the 1.0° level. It isn't
+  changed here, because a single case isn't enough to move a level.
 
 The 12, 6, 9 and photo-angle results are identical to alpha60 on all 262 photos, in every
 column. The tick search now reads pixels from a byte array (`GmtTwelveLandmarkAnalyzer.Px`)
@@ -137,3 +167,14 @@ re-runs the analysis. The measured change follows the applied change:
   (0.54–0.64 on 3KSuGhC image_02), because the dial ellipse is poor on steep photos.
 - The edge-to-track gap is reported only. Which surround edge is traced (the polished inner
   lip or the outer bevel) varies with lighting.
+
+## Reporting every marker
+
+The summary now opens with an "All markers" line covering every hour position, so none can
+go unmentioned, for example:
+
+"12 OK · 1 OK · 2 hand in the way · 3 date window (not a marker) · 4 OK … · 6 not found …"
+
+Round markers that weren't found are drawn on the overlay as grey dashed circles where they
+should be. When the 12 can't be checked, the bottom line still names the markers that were
+clear.

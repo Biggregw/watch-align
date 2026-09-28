@@ -101,6 +101,7 @@ final class GmtSixLandmarkAnalyzer {
     // Plausible baton size, dial radii (measured master: half-length 0.150R, half-width 0.060R).
     static final double MIN_LEN_R=0.20, MAX_LEN_R=0.40, MIN_WID_R=0.07, MAX_WID_R=0.18;
     static final double PARALLEL_TOLERANCE_DEG=2.0;
+    static final double RECTANGULARITY_MIN=0.60;
 
     static boolean DEBUG=Boolean.getBoolean("wa.six.debug");
     private GmtSixLandmarkAnalyzer(){}
@@ -226,7 +227,11 @@ final class GmtSixLandmarkAnalyzer {
                     double len=Math.max(e1,e2),wid=Math.min(e1,e2);
                     if(len<MIN_LEN_R*r||len>MAX_LEN_R*r||wid<MIN_WID_R*r||wid>MAX_WID_R*r)continue;
                     double aspect=len/wid;if(aspect<1.8||aspect>3.8)continue;
-                    if(area/(len*wid)<0.80)continue;                       // rectangle, not a blob or a ring
+                    // Rectangle, not a blob or a ring. Was 0.80 until alpha61: clean studio photos (WOS
+                    // CPO) and the official renders read 0.64-0.78 on the lume outline (anti-aliased,
+                    // slightly rounded ends), so their 6 and 9 were reported "not found". A ring
+                    // (surround only) reads well under 0.5.
+                    if(area/(len*wid)<RECTANGULARITY_MIN)continue;
                     double lx,ly;if(e1>=e2){lx=v[1].x-v[0].x;ly=v[1].y-v[0].y;}else{lx=v[2].x-v[1].x;ly=v[2].y-v[1].y;}
                     double rx=mx-cx,ry=my-cy;
                     double cosA=Math.abs(lx*rx+ly*ry)/(Math.hypot(lx,ly)*Math.hypot(rx,ry));
