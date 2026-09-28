@@ -395,6 +395,8 @@ final class GmtRoundMarkerAnalyzer {
             }
             fit=trimmedFit(px,py,ok,m);
             if(fit==null){if(m.reason.isEmpty())m.reason="marker outline could not be fitted";return null;}
+            double[] both=concentric(cand,ox,oy,fit,m);
+            if(both!=null)fit=both;
             ox=fit[0];oy=fit[1];
         }
         if(fit[2]<0.55*r0||fit[2]>1.45*r0){
@@ -463,6 +465,75 @@ final class GmtRoundMarkerAnalyzer {
             if(score<best){best=score;bx=cx;by=cy;br=med;}
         }
         return new double[]{bx,by,br};
+    }
+
+    /**
+     * The surround and the lume are concentric edges, and with a dark ring between them either
+     * can be the first falling edge on a ray. A clean marker then read as "30-40% of the outline
+     * is not on a circle" (the user's ONE Batgirl photo: 1, 5, 7, 10, 11). Rays that miss the
+     * fitted circle but sit on a second circle about 0.6-0.88 or 1.12-1.5 times its radius are
+     * the other edge of the same marker: they count as on the outline, and the centre is refitted
+     * from both groups (one centre, two radii). Returns the refitted {x, y, r} or null; always
+     * sets m.rejectFraction to the share of rays on neither edge.
+     */
+    static double[] concentric(List<List<Double>> cand,double ox,double oy,double[] fit,Marker m){
+        int n=cand.size();double R1=fit[2],gross=Math.max(2.0,0.08*R1);
+        double[][] p1=new double[n][],pAlt=new double[n][];
+        List<Double> inner=new ArrayList<>(),outer=new ArrayList<>();
+        for(int k=0;k<n;k++){
+            double a=2*Math.PI*k/n,dx=Math.cos(a),dy=Math.sin(a),best=Double.MAX_VALUE;
+            for(double t:cand.get(k)){
+                double x=ox+dx*t,y=oy+dy*t,d=Math.hypot(x-fit[0],y-fit[1]),e=Math.abs(d-R1);
+                if(e<=gross&&e<best){best=e;p1[k]=new double[]{x,y};}
+            }
+            if(p1[k]!=null)continue;
+            for(double t:cand.get(k)){
+                double x=ox+dx*t,y=oy+dy*t,q=Math.hypot(x-fit[0],y-fit[1])/R1;
+                if(q>=1.12&&q<=1.5)outer.add(q);else if(q>=0.6&&q<=0.88)inner.add(q);
+            }
+        }
+        List<Double> alt=outer.size()>=inner.size()?outer:inner;
+        double R2=Double.NaN;
+        if(alt.size()>=n/8){double[] a=new double[alt.size()];for(int i=0;i<a.length;i++)a[i]=alt.get(i);Arrays.sort(a);R2=R1*a[a.length/2];}
+        int onAlt=0,miss=0;
+        for(int k=0;k<n;k++){
+            if(p1[k]!=null)continue;
+            if(Double.isFinite(R2)){
+                double a=2*Math.PI*k/n,dx=Math.cos(a),dy=Math.sin(a),best=Double.MAX_VALUE;
+                for(double t:cand.get(k)){
+                    double x=ox+dx*t,y=oy+dy*t,e=Math.abs(Math.hypot(x-fit[0],y-fit[1])-R2);
+                    if(e<=gross&&e<best){best=e;pAlt[k]=new double[]{x,y};}
+                }
+            }
+            if(pAlt[k]!=null)onAlt++;else miss++;
+        }
+        m.rejectFraction=miss/(double)n;
+        if(onAlt<n/8)return null;
+        // One centre, two radii: x^2+y^2+Dx+Ey+F_g=0 for group g, in coordinates about the fit.
+        double[][] A=new double[4][4];double[] b=new double[4];
+        for(int k=0;k<n;k++){
+            double[] q=p1[k]!=null?p1[k]:pAlt[k];if(q==null)continue;
+            double x=q[0]-fit[0],y=q[1]-fit[1],z=-(x*x+y*y);
+            double[] row={x,y,p1[k]!=null?1:0,p1[k]!=null?0:1};
+            for(int i=0;i<4;i++){for(int j=0;j<4;j++)A[i][j]+=row[i]*row[j];b[i]+=row[i]*z;}
+        }
+        double[] sol=solve(A,b);if(sol==null)return null;
+        double cx=-sol[0]/2,cy=-sol[1]/2,rr=cx*cx+cy*cy-sol[2];
+        if(!(rr>0))return null;
+        return new double[]{fit[0]+cx,fit[1]+cy,Math.sqrt(rr)};
+    }
+
+    /** Gaussian elimination with partial pivoting; null when singular. */
+    static double[] solve(double[][] A,double[] b){
+        int n=b.length;double[][] M=new double[n][n+1];
+        for(int i=0;i<n;i++){System.arraycopy(A[i],0,M[i],0,n);M[i][n]=b[i];}
+        for(int c=0;c<n;c++){
+            int piv=c;for(int r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[piv][c]))piv=r;
+            if(Math.abs(M[piv][c])<1e-12)return null;
+            double[] t=M[c];M[c]=M[piv];M[piv]=t;
+            for(int r=0;r<n;r++){if(r==c)continue;double f=M[r][c]/M[c][c];for(int k=c;k<=n;k++)M[r][k]-=f*M[c][k];}
+        }
+        double[] x=new double[n];for(int i=0;i<n;i++)x[i]=M[i][n]/M[i][i];return x;
     }
 
     /** Algebraic least-squares circle: x^2+y^2+Dx+Ey+F=0. */

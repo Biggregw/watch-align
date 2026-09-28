@@ -1,5 +1,9 @@
 # Off-centre 12, 6-baton confidence and the 6 resize check (2026-09-27, alpha57)
 
+> **Superseded in part (alpha61):** a genuine Phillips 126710BLNR reads 0.080, so the
+> off-centre levels are now 0.10 and 0.15. The summary also named the wrong side: the
+> triangle is shifted towards the larger spacing. See `gmt12_offcentre_recheck_2026-09-28.md`.
+
 The trigger was the user's photo from the "ONE" seller (date 4, 12 hands at about 10:10).
 On that photo alpha56 said the 12 was "straight and centred … even spacing either side",
 but the spacing it printed was 0.08 on the 59 side against 0.16 on the 01 side. It also

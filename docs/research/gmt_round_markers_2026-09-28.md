@@ -25,6 +25,12 @@ resampling.
      again. This is repeated from the fitted centre.
    - The rays-off-the-circle gate counts only gross misses: no edge, or more than 2 px and 8%
      of the radius off the circle.
+   - The lume and the surround are concentric. With a dark ring between them, the first
+     falling edge on a ray is sometimes the lume and sometimes the surround. On the user's ONE
+     Batgirl photo that read 28–40% of the outline as "not on a circle" on four clean
+     markers. Rays on a second circle 0.6–0.88× or 1.12–1.5× the fitted radius now count as
+     the same outline. The centre is refitted from both groups: one centre, two radii.
+     `GmtRoundMarkerAnalyzer.concentric`.
 3. **Reference.** The reference is the inner ends of the minute ticks one minute either side
    (for the 1: the 04 and 06 ticks), found by the 12's tick search, which now works from any
    angle.

@@ -207,6 +207,24 @@ public class RoundMarkerTest {
         assertEquals(GmtHumanQcMath.Attention.STRONG,r.attention);
     }
 
+    @Test public void lumeAndSurroundEdgesCountAsOneOutline(){
+        // 72 rays from a centre 1 px off the true one; 45 rays see the lume edge (r 17), 27 only
+        // the surround's outer edge (r 23): the user's ONE Batgirl photo pattern.
+        List<List<Double>> cand=new ArrayList<>();
+        double tx=51,ty=60,ox=50,oy=60;
+        for(int k=0;k<72;k++){
+            double a=2*Math.PI*k/72,dx=Math.cos(a),dy=Math.sin(a),R=k%8<5?17:23;
+            // distance t along the ray from (ox,oy) to the circle about (tx,ty)
+            double bx=ox-tx,by=oy-ty,bb=bx*dx+by*dy,t=-bb+Math.sqrt(bb*bb-(bx*bx+by*by-R*R));
+            List<Double> c=new ArrayList<>();c.add(t);cand.add(c);
+        }
+        GmtRoundMarkerAnalyzer.Marker m=new GmtRoundMarkerAnalyzer.Marker(1);
+        double[] f=GmtRoundMarkerAnalyzer.concentric(cand,ox,oy,new double[]{51.2,60.1,17.1},m);
+        assertEquals(0.0,m.rejectFraction,1e-9);
+        assertNotNull(f);
+        assertEquals(51,f[0],0.01);assertEquals(60,f[1],0.01);assertEquals(17,f[2],0.01);
+    }
+
     @Test public void hoursAndTicks(){
         assertEquals(Arrays.toString(new int[]{1,2,4,5,7,8,10,11}),Arrays.toString(GmtRoundMarkerAnalyzer.HOURS));
         GmtRoundMarkerAnalyzer.Marker m=new GmtRoundMarkerAnalyzer.Marker(10);

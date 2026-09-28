@@ -55,7 +55,7 @@ JAVA_HOME=<jdk17> sh ./gradlew --no-daemon -q \
   :app:testDebugUnitTest :app:assembleDebug
 ```
 
-- 200 JVM unit tests, all passing.
+- 201 JVM unit tests, all passing.
 - `:app:compileDebugAndroidTestJavaSource` compiles the on-device test
   (`GenuineOfficialImageValidationTest`). It needs network access for
   androidx.test, so **don't pass `--offline`** for it. Only check the result of the
@@ -233,7 +233,14 @@ the original has more pixels; the crop is scaled to a radius of at most 380 px. 
 changes the 12 rotation rule: STRONG now needs 2° as well as a visible rise. Genuine WOS CPO
 photos read up to −1.6°, which overlaps the replica flags at 1.0–1.7°. See
 `docs/research/gmt_dial_crop_2026-09-28.md`, which also lists the two 12 CHECKs that remain on
-the 20 Phillips genuine photos (off-centre 0.080; skew +2.2°).
+the 20 Phillips genuine photos (off-centre 0.080; skew +2.2°). Both were then dealt with
+(`docs/research/gmt12_offcentre_recheck_2026-09-28.md`):
+
+- The off-centre reading is real placement, not a misplaced tick. The levels are now 0.10
+  and 0.15.
+- The summary had named the wrong side since alpha57; it is shifted towards the larger
+  spacing.
+- A lean with a level top edge must clear 2° at every resize scale to stay a concern.
 
 **Scope:** the deliverable is the Android app. The desktop harness only runs the app's
 Java code for fast testing. The Python tools in `tools/research/` (branch

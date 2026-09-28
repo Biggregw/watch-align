@@ -380,7 +380,7 @@ final class GmtHumanSummary {
         if(axis&&Double.isFinite(b)&&Math.abs(b)>=0.75&&Math.signum(a)==Math.signum(b))return AlignmentKind.TURNED;
         if(axis&&Double.isFinite(b)&&Math.abs(b)<0.75)return AlignmentKind.TIP_LEANS;
         if(axis&&!Double.isFinite(b))return AlignmentKind.TURNED;   // no top-edge reading: describe the measured turn
-        if(Double.isFinite(in.spacing59)&&Double.isFinite(in.spacing01)&&Math.abs(in.spacing01-in.spacing59)>=0.06)return AlignmentKind.OFF_CENTRE;
+        if(Double.isFinite(in.spacing59)&&Double.isFinite(in.spacing01)&&Math.abs(in.spacing01-in.spacing59)>=GmtHumanQcMath.OFF_CENTRE_CHECK)return AlignmentKind.OFF_CENTRE;
         if(axis)return AlignmentKind.TURNED;
         return AlignmentKind.UNCLEAR;
     }
@@ -390,7 +390,11 @@ final class GmtHumanSummary {
         switch(kind(in)){
             case TURNED: return String.format(Locale.US,"rotated: the whole triangle is turned %s by about %.1f°, top edge included",dir,Math.abs(in.rotationDeg));
             case TIP_LEANS: return String.format(Locale.US,"skewed: the point leans %s by about %.1f° but the top edge is level",dir,Math.abs(in.rotationDeg));
-            case OFF_CENTRE: return "off-centre: the triangle sits closer to the "+(in.spacing59<in.spacing01?"59":"01")+" tick than the "+(in.spacing59<in.spacing01?"01":"59")+" tick";
+            // The spacings are corner-to-tick distances, and the base is wider than the 59-01
+            // gap, so each corner overhangs its tick: the triangle is shifted towards the side
+            // with the LARGER spacing. Until alpha61 this named the other side (the user's
+            // date-4 photo: shifted towards 01 by 2.7 px, reported as "closer to the 59 tick").
+            case OFF_CENTRE: return "off-centre: the triangle sits towards the "+(in.spacing59>in.spacing01?"59":"01")+" tick side (to the "+(in.spacing59>in.spacing01?"left":"right")+" of the 60 tick)";
             default: return "rotated or off-centre";
         }
     }

@@ -187,7 +187,11 @@ final class GmtHumanQcAnalyzerV2 {
             }
             if(rotUnstable){
                 boolean concern=rotation.attention==GmtHumanQcMath.Attention.CHECK||rotation.attention==GmtHumanQcMath.Attention.STRONG;
-                boolean allTurned=Double.isFinite(twelve.rotMin)&&(twelve.rotMin>=1.0||twelve.rotMax<=-1.0);
+                // A lean with a level top edge is only a concern from SKEW_ONLY_MIN_DEG, so every
+                // re-measurement has to clear that, not 1 deg (Phillips Bruce Wayne 126710GRNR, genuine:
+                // +1.3 to +2.2 deg with the top edge at +0.6 was kept as CHECK, alpha61).
+                double lim=rotation.baseCorroborates?1.0:GmtHumanQcMath.SKEW_ONLY_MIN_DEG;
+                boolean allTurned=Double.isFinite(twelve.rotMin)&&(twelve.rotMin>=lim||twelve.rotMax<=-lim);
                 rotation=new GmtHumanQcMath.RotationDecision(concern&&allTurned?GmtHumanQcMath.Attention.CHECK:GmtHumanQcMath.Attention.UNASSESSABLE,
                         rotation.axisErrorDeg,rotation.baseErrorDeg,rotation.sideAsymmetry,rotation.visibleRisePx,rotation.baseCorroborates,rotation.spacingCorroborates,
                         (concern&&allTurned?"turned the same way in every re-measurement, but ":"")+moved);
@@ -203,7 +207,7 @@ final class GmtHumanQcAnalyzerV2 {
                 if(oc==GmtHumanQcMath.Attention.CHECK||oc==GmtHumanQcMath.Attention.STRONG)
                     rotation=new GmtHumanQcMath.RotationDecision(oc,rotation.axisErrorDeg,rotation.baseErrorDeg,rotation.sideAsymmetry,
                             rotation.visibleRisePx,rotation.baseCorroborates,true,
-                            String.format(Locale.US,"no rotation, but the triangle sits off-centre: 59-side spacing %.3f vs 01-side %.3f (difference %.3f, %.1f px); genuine photos so far differ by at most 0.04",
+                            String.format(Locale.US,"no rotation, but the triangle sits off-centre: 59-side spacing %.3f vs 01-side %.3f (difference %.3f, %.1f px); genuine photos so far differ by up to 0.08",
                                     twelve.leftClearance,twelve.rightClearance,Math.abs(twelve.sideAsymmetry),Math.abs(twelve.sideAsymmetry)*twelve.triangleWidthPx));
             }
 

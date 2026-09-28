@@ -125,9 +125,10 @@ public class GmtHumanSummaryTest {
     @Test public void unevenSpacingWithoutLeanIsCalledOffCentre() {
         GmtHumanSummary.Input in = base();
         in.alignment = GmtHumanQcMath.Attention.CHECK; in.rotationDeg = 0.3; in.baseTiltDeg = 0.1;
-        in.spacing59 = 0.10; in.spacing01 = 0.19;
+        in.spacing59 = 0.10; in.spacing01 = 0.21;
         String s = GmtHumanSummary.alignmentLine(in);
-        assertTrue(s, s.contains("off-centre: the triangle sits closer to the 59 tick than the 01 tick"));
+        // Larger 01-side spacing: the right corner overhangs the 01 tick more, so the triangle is shifted right.
+        assertTrue(s, s.contains("off-centre: the triangle sits towards the 01 tick side (to the right of the 60 tick)"));
     }
 
     @Test public void sixBatonOffToTheLeftIsNamed() {
@@ -237,9 +238,9 @@ public class GmtHumanSummaryTest {
         GmtHumanSummary.Input in = base();
         in.pose = GmtHumanQcMath.PoseLabel.GOOD;
         in.alignment = GmtHumanQcMath.Attention.CHECK; in.rotationDeg = 0.53; in.baseTiltDeg = -0.42;
-        in.spacing59 = 0.084; in.spacing01 = 0.156;
+        in.spacing59 = 0.084; in.spacing01 = 0.196;
         String s = GmtHumanSummary.alignmentLine(in);
-        assertTrue(s, s.contains("possibly off-centre: the triangle sits closer to the 59 tick than the 01 tick"));
+        assertTrue(s, s.contains("possibly off-centre: the triangle sits towards the 01 tick side (to the right of the 60 tick)"));
         in.gap = GmtHumanQcMath.Attention.STRONG; in.observedGap = 0.031;
         assertTrue(GmtHumanSummary.build(in), GmtHumanSummary.build(in).contains("2 things to check: the gap at 12 and the 12 marker position (off-centre)."));
     }

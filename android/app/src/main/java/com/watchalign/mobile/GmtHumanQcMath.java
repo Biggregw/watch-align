@@ -174,10 +174,12 @@ final class GmtHumanQcMath {
      */
     // ---- Off-centre 12 triangle (alpha57) ----------------------------------------------
     // Spacing asymmetry = 01-side spacing minus 59-side spacing, each as a fraction of the
-    // triangle width. Genuine stable readings so far: -0.021 to +0.040 (official render,
-    // 3KSuGhC, e99gXKb, vmbUDwy, 1TDYtpN); see docs/research/gmt12_offcentre_2026-09-27.md.
-    // The levels sit 1.5x and 3x outside that spread, and must also be a visible distance.
-    static final double OFF_CENTRE_CHECK = 0.06, OFF_CENTRE_STRONG = 0.12;
+    // triangle width. Genuine stable readings: up to 0.040 in alpha57, then 0.080 on a Phillips
+    // 126710BLNR (CH080120/2, alpha61), where the base midpoint and the tip both sit ~4 px from
+    // the 60 tick, so it is the triangle's placement, not a misplaced tick. The next genuine
+    // readings are 0.057 and 0.048 (35 genuine photos). CHECK sits 1.25x past the genuine
+    // maximum; see docs/research/gmt12_offcentre_recheck_2026-09-28.md.
+    static final double OFF_CENTRE_CHECK = 0.10, OFF_CENTRE_STRONG = 0.15;
     static final double OFF_CENTRE_CHECK_PX = 2.0, OFF_CENTRE_STRONG_PX = 3.0;
 
     /**
