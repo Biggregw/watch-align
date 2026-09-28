@@ -41,6 +41,8 @@ final class GmtHumanSummary {
         Baton nine=new Baton("9",44,46);
         /** Round hour markers (alpha61), with their verdicts; empty when not measured. */
         List<GmtRoundMarkerAnalyzer.Marker> round=new ArrayList<>();
+        /** No readable dial in the photo (alpha61): the summary says only that. */
+        boolean noDial;
     }
 
     // Reference only, for the reader: what genuine images have measured on the same
@@ -53,6 +55,13 @@ final class GmtHumanSummary {
 
     static String build(Input in){
         StringBuilder s=new StringBuilder("SUMMARY\n");
+        if(in.noDial){
+            s.append("Photo: no readable watch dial found. It may be a side, bracelet or caseback view, or the dial is too small, blurred, angled or turned to read.\n");
+            s.append("All markers: not checked.\n");
+            s.append("\nBottom line: nothing was checked on this photo. Take a sharp, straight-on photo of the dial with it filling as much of the frame as possible.\n");
+            s.append("This flags things to look at closely. It does not prove a watch is genuine or fake.\n");
+            return s.toString();
+        }
         s.append("Photo: ").append(photoLine(in)).append("\n");
         s.append("All markers: ").append(allMarkersLine(in)).append("\n");
         s.append("12 gap: ").append(gapLine(in)).append("\n");

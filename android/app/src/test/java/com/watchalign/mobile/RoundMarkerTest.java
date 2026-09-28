@@ -225,6 +225,14 @@ public class RoundMarkerTest {
         assertEquals(51,f[0],0.01);assertEquals(60,f[1],0.01);assertEquals(17,f[2],0.01);
     }
 
+    @Test public void noReadableDialSaysSoAndNothingElse(){
+        GmtHumanSummary.Input in=clearTwelve();in.noDial=true;
+        String s=GmtHumanSummary.build(in);
+        assertTrue(s,s.contains("Photo: no readable watch dial found."));
+        assertTrue(s,s.contains("Bottom line: nothing was checked on this photo."));
+        assertFalse(s,s.contains("12 gap"));
+    }
+
     @Test public void hoursAndTicks(){
         assertEquals(Arrays.toString(new int[]{1,2,4,5,7,8,10,11}),Arrays.toString(GmtRoundMarkerAnalyzer.HOURS));
         GmtRoundMarkerAnalyzer.Marker m=new GmtRoundMarkerAnalyzer.Marker(10);

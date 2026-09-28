@@ -16,6 +16,8 @@ final class GmtHumanQcAnalyzerV2 {
     static final double MIN_TRIANGLE_PX = 40.0;
     /** Largest tick-chord vs dial-centre axis difference trusted for rotation (alpha58). */
     static final double MAX_AXIS_REFERENCE_DISAGREEMENT_DEG = 1.5;
+    /** At most this many clean round markers, with no confident 12 or baton, means no readable dial (alpha61). */
+    static final int MAX_ROUND_FOR_NO_DIAL = 2;
     static final class Result {
         final String report;
         final GmtHumanQcMath.PoseLabel poseLabel;
@@ -273,7 +275,18 @@ final class GmtHumanQcAnalyzerV2 {
             GmtHumanQcMath.SixDecision sixDecision=sixOut.decision;
             boolean sixUnstable=sixOut.unstable,handAtSix=sixOut.hand;
 
+            // No readable dial (alpha61). A "12" can be found on a bracelet, a caseback, fabric or a
+            // dial seen edge-on; every check then withholds, but the summary still read as if a dial
+            // had been checked. With no confident 12 frame, no stable baton and at most two round
+            // markers with a clear edge and ticks, say so plainly instead. On the 319-photo set no
+            // photo caught by this had any verdict; clean dials have 6-8 such round markers.
+            int cleanRound=0;
+            for(GmtRoundMarkerAnalyzer.Marker m:round)if(m.found&&m.contrast>=GmtRoundMarkerAnalyzer.MIN_EDGE_CONTRAST&&m.tickScore>=GmtRoundMarkerAnalyzer.MIN_TICK_SCORE)cleanRound++;
+            boolean noDial=!stableFrame&&cleanRound<=MAX_ROUND_FOR_NO_DIAL
+                    &&!(six.valid&&six.stable)&&!(nineOut.result.valid&&nineOut.result.stable);
+
             StringBuilder out=new StringBuilder("\n\nHUMAN 12-MARKER QC\n");
+            if(noDial)out.append(String.format(Locale.US,"No readable dial: the 12 was only found with low confidence, no baton was traced cleanly and only %d round markers were (a clean dial shows 6-8). Nothing below is judged.\n",cleanRound));
             if(twelve.valid){
                 out.append("12 marker: ").append(clearance.attention).append(" - ").append(clearanceSummary(clearance)).append("\n");
                 out.append("Alignment: ").append(rotation.attention).append(" - ").append(rotationSummary(rotation)).append("\n");
@@ -347,7 +360,7 @@ final class GmtHumanQcAnalyzerV2 {
             sum.sixStable=six.stable;sum.sixLowReason=six.lowReason;sum.sixUnstable=sixUnstable;sum.sixCentringMin=six.centringMin;sum.sixCentringMax=six.centringMax;sum.sixRotMin=six.rotMin;sum.sixRotMax=six.rotMax;sum.sixCentring=six.centring;sum.sixRotationDeg=six.rotationDeg;sum.sixGap=six.gap;
             sum.sixOffCentre=sixDecision.offCentre;sum.sixRotated=sixDecision.rotated;sum.sixWidthPx=six.widthPx;
             sum.nine=nineOut.summary();
-            sum.round=round;
+            sum.round=round;sum.noDial=noDial;
             sum.pose=pose.label;sum.twelveValid=twelve.valid;sum.stableFrame=stableFrame;
             sum.gapUnstable=gapUnstable;sum.rotUnstable=rotUnstable;sum.gapMin=twelve.gapMin;sum.gapMax=twelve.gapMax;sum.rotMin=twelve.rotMin;sum.rotMax=twelve.rotMax;
             sum.stabilityRun=twelve.stabilityRun;sum.stabilitySameEdge=twelve.stabilitySameEdge;
@@ -382,6 +395,10 @@ final class GmtHumanQcAnalyzerV2 {
                 dr.nineNotJudged=nineOut.decision.tooSmall?"9 baton too small":nineOut.hand?"a hand is at 9":null;
             }
             dr.round=round;
+            if(noDial){   // nothing drawn: the outlines found are not a dial's
+                res.drawing=new MeasuredOverlayRenderer.Drawing();
+                return res;
+            }
             dr.notJudged=tooSmall?"12 triangle too small in this photo"
                     :handAtTwelve?"a hand is at 12"
                     :!twelve.valid?"12 marker not found"

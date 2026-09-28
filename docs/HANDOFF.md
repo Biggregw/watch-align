@@ -35,7 +35,7 @@ The app never says "genuine" or "fake". It flags things to look at.
 
 | Branch | State |
 |---|---|
-| `main` | Has alpha49–54 (PR #24, merged 2026-09-27). |
+| `main` | Has alpha49–54 (PR #24, merged 2026-09-27) and alpha55–61 (PR #25, merged 2026-09-28). |
 | `feature/gmt-qc-fix-list` | alpha55 (the whole fix list below) and alpha56 (resize check, emulator photo run) and alpha57 (off-centre 12, 6 confidence reasons, band fallback and resize check for the 6), then alpha58–61 (12 chord axis, 9 baton, photo-angle resize check, round markers). PR **#25** into `main`. |
 | `experiment/template-marker-consensus-shelved` | A shelved experiment: it fitted a template from marker consensus to fix a Pepsi overlay offset. The user rejected this in favour of the measured overlay, so it is **kept for reference only and should not be merged**. |
 
