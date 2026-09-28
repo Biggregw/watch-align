@@ -23,6 +23,7 @@ tools/research/tests/test_baton_auto_landmarks.py.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Optional
 
@@ -35,6 +36,7 @@ from gmt12_auto_landmarks import (
     _dial_circle,
     _minute_ticks,
     _touches_roi_edge,
+    detect_gmt12,
 )
 from human_qc_geometry import BatonGeometry, Point, measure_baton
 
@@ -46,6 +48,12 @@ class BatonDetection:
     geometry: Optional[BatonGeometry]
     confidence: float
     reason: str = ""
+
+
+def _tick_pitch(ml: Point, mc: Point, mr: Point) -> float:
+    """Euclidean tick pitch, not x-only: valid regardless of whether the
+    tangential direction is image-x (12/6 o'clock) or image-y (9 o'clock)."""
+    return (math.hypot(mc.x - ml.x, mc.y - ml.y) + math.hypot(mr.x - mc.x, mr.y - mc.y)) / 2
 
 
 def _baton_candidate(gray, cx, cy, r, angle_deg):
@@ -101,18 +109,22 @@ def _baton_candidate(gray, cx, cy, r, angle_deg):
     return outer_left, outer_right, inner_mid
 
 
-def _minute_ticks_at_angle(gray, cx, cy, r, angle_deg, outer_left, outer_right):
+def _minute_ticks_at_angle(gray, cx, cy, r, angle_deg, outer_left, outer_right, reference_pitch=None):
     """Run gmt12_auto_landmarks._minute_ticks (completely unmodified) at an
     arbitrary cardinal marker position, via dial_rotation.py. Returns
     (minute_left, minute_right, minute_marker_center, inferred, n) in the
-    ORIGINAL frame, or None -- same shape as _minute_ticks' own return."""
+    ORIGINAL frame, or None -- same shape as _minute_ticks' own return.
+
+    reference_pitch, when given, is passed straight through to
+    _minute_ticks/_first_regularized as a same-photo sanity check on the
+    tick candidates found here (see _first_regularized's docstring)."""
     orig_shape = gray.shape[:2]
     rotated = rotate_gray_to_top(gray, angle_deg)
     c2 = rotate_point_to_top(Point(cx, cy), angle_deg, orig_shape)
     ol2 = rotate_point_to_top(outer_left, angle_deg, orig_shape)
     or2 = rotate_point_to_top(outer_right, angle_deg, orig_shape)
 
-    result = _minute_ticks(rotated, c2.x, c2.y, r, ol2, or2)
+    result = _minute_ticks(rotated, c2.x, c2.y, r, ol2, or2, reference_pitch=reference_pitch)
     if result is None:
         return None
     ml2, mr2, mc2, inferred, n = result
@@ -122,7 +134,15 @@ def _minute_ticks_at_angle(gray, cx, cy, r, angle_deg, outer_left, outer_right):
     return ml, mr, mc, inferred, n
 
 
-def detect_baton(bgr, hour_position: int) -> BatonDetection:
+def detect_baton(bgr, hour_position: int, reference_pitch=None) -> BatonDetection:
+    """reference_pitch: optional, the tick pitch already measured elsewhere
+    on this SAME photo (see _first_regularized). When omitted, this runs
+    detect_gmt12 on the same image to obtain one -- 12 o'clock has no known
+    text-contamination issue and is the most real-photo-tested marker, so
+    it's the default source. Pass a precomputed value instead when calling
+    this for multiple hour positions on the same image, to avoid repeating
+    that detection. If detect_gmt12 also fails, detection proceeds without
+    a reference (same behaviour as before this existed)."""
     if hour_position not in _ANGLE_FOR_HOUR:
         raise ValueError(f"hour_position must be one of {sorted(_ANGLE_FOR_HOUR)}, got {hour_position}")
     angle_deg = _ANGLE_FOR_HOUR[hour_position]
@@ -130,6 +150,12 @@ def detect_baton(bgr, hour_position: int) -> BatonDetection:
     if bgr is None or bgr.size == 0:
         return BatonDetection(None, 0, "empty image")
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY) if bgr.ndim == 3 else bgr.copy()
+
+    if reference_pitch is None:
+        ref_detection = detect_gmt12(bgr)
+        if ref_detection.geometry is not None:
+            g12 = ref_detection.geometry
+            reference_pitch = _tick_pitch(g12.minute_inner_left, g12.minute_60_center, g12.minute_inner_right)
 
     circle = _dial_circle(gray)
     if circle is None:
@@ -141,7 +167,7 @@ def detect_baton(bgr, hour_position: int) -> BatonDetection:
         return BatonDetection(None, 0, f"{hour_position}-o'clock baton physical contour not found")
     outer_left, outer_right, inner_mid = baton
 
-    t = _minute_ticks_at_angle(gray, cx, cy, r, angle_deg, outer_left, outer_right)
+    t = _minute_ticks_at_angle(gray, cx, cy, r, angle_deg, outer_left, outer_right, reference_pitch=reference_pitch)
     if t is None:
         return BatonDetection(None, 0, "minute-track sequence not sufficiently constrained")
     ml, mr, mc, inf, n = t

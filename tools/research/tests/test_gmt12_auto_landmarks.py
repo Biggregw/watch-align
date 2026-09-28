@@ -354,6 +354,45 @@ def test_first_regularized_empty_is_none():
     assert _first_regularized([],300.0,1000.0) is None
 
 
+def test_first_regularized_ignores_pitch_by_default():
+    # Baseline: with no reference_pitch, behaviour is unchanged from before
+    # this parameter existed -- lowest score wins regardless of pitch.
+    cx,cy=300.0,1000.0
+    bad_pitch=(0.1,(280.0,500.0),(300.0,500.0),(320.0,500.0))   # pitch=20, best score
+    good_pitch=(1.0,(260.0,500.0),(300.0,500.0),(340.0,500.0))  # pitch=40, worse score
+    result=_first_regularized([bad_pitch,good_pitch],cx,cy)
+    assert result is not None
+    (l,c,rr),_=result
+    assert (l,c,rr)==((280.0,500.0),(300.0,500.0),(320.0,500.0))
+
+
+def test_first_regularized_rejects_implausible_pitch_against_reference():
+    # Real failure shape (126710BLRO-family 6-o'clock batons): a text-glyph
+    # -derived candidate can score better (lower) than the true tick triple
+    # while measuring a pitch far from the pitch already established
+    # elsewhere on the same photo (e.g. the 12-o'clock triangle) -- real
+    # photos showed a cluster of these at ~0.5x the true pitch, cleanly
+    # separated from genuine detections at ~0.87-1.04x. With a reference
+    # pitch supplied, the mismatched-pitch candidate must be skipped in
+    # favour of the next one, even though it scores better.
+    cx,cy=300.0,1000.0
+    bad_pitch=(0.1,(280.0,500.0),(300.0,500.0),(320.0,500.0))   # pitch=20, best score
+    good_pitch=(1.0,(260.0,500.0),(300.0,500.0),(340.0,500.0))  # pitch=40, worse score
+
+    result=_first_regularized([bad_pitch,good_pitch],cx,cy,reference_pitch=40.0)
+    assert result is not None
+    (l,c,rr),_=result
+    assert (l,c,rr)==((260.0,500.0),(300.0,500.0),(340.0,500.0))
+
+
+def test_first_regularized_accepts_pitch_within_tolerance():
+    cx,cy=300.0,1000.0
+    # pitch=20, within 20% of a reference_pitch=24 (ratio 0.833)
+    within=(0.1,(280.0,500.0),(300.0,500.0),(320.0,500.0))
+    result=_first_regularized([within],cx,cy,reference_pitch=24.0)
+    assert result is not None
+
+
 def test_minute_ticks_end_to_end_direct_detection_on_synthetic_dial():
     # Closes the coverage gap for _minute_ticks itself: a synthetic but
     # geometrically plausible dial band (real tick proportions, r=400) drawn

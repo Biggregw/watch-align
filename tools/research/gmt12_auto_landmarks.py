@@ -356,7 +356,7 @@ def _trim_bezel_band(gray,x0,y0,x1,y1):
     return y0+min(run_end+TRIM_MARGIN_ROWS,h-1)
 
 
-def _minute_ticks(gray,cx,cy,r,tl,tr):
+def _minute_ticks(gray,cx,cy,r,tl,tr,reference_pitch=None):
     mid=(tl.x+tr.x)/2;top=(tl.y+tr.y)/2;x0=max(0,int(mid-.42*r));x1=min(gray.shape[1],int(mid+.42*r));y0_full=max(0,int(top-.20*r));y1=min(gray.shape[0],int(top+.035*r))
     y0_trim=_trim_bezel_band(gray,x0,y0_full,x1,y1)
     # Search both the full band and, when a bright bezel run was found, the
@@ -379,16 +379,16 @@ def _minute_ticks(gray,cx,cy,r,tl,tr):
             if d:direct.append(d)
             s=_sequence(t,mid,r)
             if s:seq.append(s)
-    best=_first_regularized(direct,cx,cy)
+    best=_first_regularized(direct,cx,cy,reference_pitch)
     if best is not None:
         (l,c,rr),_=best;return Point(*l),Point(*rr),Point(*c),False,0
-    best=_first_regularized(seq,cx,cy)
+    best=_first_regularized(seq,cx,cy,reference_pitch)
     if best is not None:
         (l,c,rr),(n,)=best;return Point(*l),Point(*rr),Point(*c),True,n
     return None
 
 
-def _first_regularized(candidates,cx,cy):
+def _first_regularized(candidates,cx,cy,reference_pitch=None):
     """Try circle-tangent regularisation on each candidate in ascending
     score order, returning ((left,center,right), extra_fields) for the
     first one that passes, or None if none do.
@@ -401,8 +401,34 @@ def _first_regularized(candidates,cx,cy):
     avoids discarding a genuinely good direct detection in favour of a
     weaker or absent sequence fallback purely because of how one candidate
     happened to score on unrelated regularity/centring terms.
+
+    reference_pitch, when given, is the tick pitch already measured on a
+    DIFFERENT, successfully-detected marker on the SAME photo (e.g. the 12
+    o'clock triangle, when detecting a baton at 6 or 9). A candidate whose
+    own fitted pitch falls outside PITCH_TOLERANCE of it is skipped in
+    favour of the next one, even a lower-ranked or different-family
+    candidate. This exists because internal regularity/axis checks alone
+    were shown, on real photos, not to be enough on their own: a cluster of
+    real 6-o'clock baton detections had fitted pitch consistently ~0.50-
+    0.76x the pitch independently measured at 12 o'clock on the SAME
+    photo (most tightly around 0.5x -- a half-pitch aliasing failure,
+    picking sub-features half a tick apart rather than genuine neighbouring
+    ticks), cleanly separated from a second cluster at ~0.87-1.04x matching
+    the genuine tick pitch. PITCH_TOLERANCE sits in that observed real gap
+    (accepting down to 0.80x), not tuned tight to a single failing photo.
+    Comparing against a reference measured elsewhere on the same photo
+    avoids the much larger, unreliable photo-to-photo variance seen when
+    comparing against a fixed geometric formula (dial radius * 2*pi/60)
+    instead -- that approach was tried and rejected: real working 12
+    o'clock detections alone ranged from ~0.65x to ~0.99x of that formula's
+    prediction, with no clean separation from known-bad cases.
     """
+    PITCH_TOLERANCE = 0.20
     for score,l,c,rr,*rest in sorted(candidates,key=lambda z:z[0]):
+        if reference_pitch is not None:
+            pitch=abs(((c[0]-l[0])+(rr[0]-c[0]))/2)
+            if pitch<=0 or not (1-PITCH_TOLERANCE<=pitch/reference_pitch<=1+PITCH_TOLERANCE):
+                continue
         reg=_circle_tangent_landmarks(l,c,rr,cx,cy)
         if reg is not None:
             return reg,tuple(rest)

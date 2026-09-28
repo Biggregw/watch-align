@@ -261,6 +261,73 @@ turned out not to be a bug).
    blob itself was found correctly on every photo visually checked), but
    they haven't been independently stress-tested either.
 
+### Update 2026-09-28: same-photo reference-pitch check -- partial fix, honestly bounded
+
+Explored and rejected two other fixes first, with real evidence each time
+(recorded for anyone revisiting this): (a) widening `_minute_ticks`' search
+margin -- rejected once a wider raw photo crop showed the real ticks sit at
+the SAME radius as "SWISS MADE" text, not further out, so radius alone
+can't separate them; (b) a fixed geometric expected-pitch formula
+(`r*2*pi/60`) -- rejected once pulled across the full real-photo set:
+genuinely-correct 12-o'clock detections alone ranged ~0.65x-0.99x of that
+formula's prediction with no clean separation from known-bad cases, so it
+has no discriminating power. (Earlier notes above already flagged the
+dial-centre-radial-alignment idea as not matching the intended definition
+-- the marker must sit parallel to its immediate tick neighbours, not just
+point at the dial centre -- so that one was dropped without implementing.)
+
+**What was implemented instead:** `_first_regularized` (shared by the
+12-triangle and baton code paths) now takes an optional `reference_pitch`
+-- the tick pitch already measured on a DIFFERENT, successfully-detected
+marker on the SAME photo. A candidate whose own fitted pitch falls outside
+20% of that reference is skipped in favour of the next-best one, even a
+lower-scored one. `detect_baton` sources this automatically by running
+`detect_gmt12` on the same image first (12 o'clock has no known text-
+contamination issue and is the most real-photo-tested marker), or accepts
+a precomputed value via a new optional parameter for callers detecting
+multiple positions on one image.
+
+Real-photo evidence for the 20% tolerance: a corrected re-run (using the
+actual `detect_gmt12`/`detect_baton` functions rather than a simplified
+stand-in script -- the first attempt at this had a real bug, computing
+pitch from x-differences only, which is wrong at 9 o'clock where the
+tangential direction is image-y) showed measured 6-o'clock pitch, as a
+ratio to the same photo's 12-o'clock pitch, cleanly split into two
+clusters: ~0.87-1.04x (7 photos, genuine detections) and ~0.50-0.76x (4
+photos: img13, img16, img20, img23 -- a likely half-pitch aliasing
+failure, picking sub-features half a tick apart). The tolerance boundary
+(reject below 0.80x) sits in the real gap between these clusters.
+
+**Verified outcome, honestly mixed:** all 4 previously-bad photos now
+measure closer to the reference pitch. Visual re-check of all 4:
+- **img16: genuinely fixed.** Landmarks now land on the real tick dashes
+  flanking "SWISS MADE", confirmed by eye.
+- **img13: separately broken, unrelated to this fix.** It's a watermarked
+  product-listing screenshot with UI chrome and a stray object in the
+  background below the watch case; `_dial_circle` picked a wrong seed
+  entirely for this image, so BOTH the 12 o'clock reference and the 6
+  o'clock target inherit the same wrong scale -- a pitch-ratio check
+  can't catch a same-photo-consistent wrong answer. Separate, pre-existing
+  failure class, not something this fix was meant to address.
+- **img20, img23: NOT fixed, despite passing the new check.** Visual
+  re-check shows the landmarks are still sitting on "SWISS MADE" text, not
+  the real ticks -- in these two cases the text's letter spacing happens
+  to coincidentally land within 20% of the true pitch, so the filter lets
+  it through. The pitch signal alone cannot fully distinguish real ticks
+  from text that happens to be evenly spaced at a similar scale.
+
+**Conclusion:** this is a real, verified, net-positive improvement (fixes
+the half-pitch-aliasing failure mode outright) but is NOT a complete
+solution to 6 o'clock's text-contamination problem. Some fraction of
+photos will still silently report a wrong number. A fuller fix would need
+an additional, independent signal (shape/solidity was tried in-session and
+also didn't cleanly separate text from ticks on its own; cross-position
+consistency using the ACTUAL measured 9 o'clock clearance as a validity
+check on 6, per the "circle drawn through the outer edges should be the
+same distance from the minute markers at every hour" idea, is the most
+promising remaining direction but is unimplemented -- it needs 6 to be
+reliable enough first to not just flag itself).
+
 ## Explicit non-goals for this scope
 
 - No perspective/tilt correction.
