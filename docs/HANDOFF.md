@@ -242,6 +242,12 @@ the 20 Phillips genuine photos (off-centre 0.080; skew +2.2°). Both were then d
   spacing.
 - A lean with a level top edge must clear 2° at every resize scale to stay a concern.
 
+**One generic GMT check (user's decision, 2026-09-28):** the app doesn't tell GMT-Master II
+references apart. The model dropdown is hidden, the screen and report say "Rolex GMT-Master
+II", and the internal model code stays `126710BLNR`. All current references share the dial
+layout and have been tested: BLNR, BLRO, GRNR, CHNR, 126713/126715/126718 and VTNR. A
+per-model list or a bezel check is not wanted.
+
 **Scope:** the deliverable is the Android app. The desktop harness only runs the app's
 Java code for fast testing. The Python tools in `tools/research/` (branch
 `feature/gmt-human-qc-auto-landmarks`) are a separate, older research track and don't

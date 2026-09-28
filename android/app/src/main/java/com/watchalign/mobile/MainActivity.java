@@ -61,12 +61,18 @@ public class MainActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(BG);
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         TextView h1=text("Watch Align",28,Color.WHITE);root.addView(h1);
-        root.addView(text("GMT-Master II dial check · "+WatchAlignCoreV13.CORE_VERSION,13,MUTED));
+        root.addView(text("Rolex GMT-Master II dial check · "+WatchAlignCoreV13.CORE_VERSION,13,MUTED));
         root.addView(text("Use a sharp, straight-on photo with the dial filling as much of the frame as possible and the hands away from 12.",13,MUTED));
 
         for(ModelCatalog.Profile p:ModelCatalog.all())if(CanonicalGmtGeometryAnalyzer.supports(p.code))models.add(p);
+        // One generic GMT-Master II check (alpha61): the user doesn't want the app to tell the
+        // references apart, and the dial layout is the same on every current GMT-Master II
+        // (126710BLNR/BLRO/GRNR, 126711CHNR, 126713GRNR, 126715CHNR, 126718GRNR, 126720VTNR were
+        // all tested). The spinner stays for the non-GMT models the catalog still defines, but is
+        // hidden while only the GMT check is offered.
         List<String> labels=new ArrayList<>();for(ModelCatalog.Profile p:models)labels.add(p.label);
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,labels));root.addView(model,lp(-1,dp(54),10));
+        if(models.size()<=1)model.setVisibility(View.GONE);
 
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         checkButton=button("Check watch");checkButton.setBackgroundColor(ACCENT);checkButton.setTextColor(Color.rgb(4,32,42));

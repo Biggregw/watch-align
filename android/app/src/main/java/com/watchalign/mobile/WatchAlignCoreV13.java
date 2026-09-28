@@ -69,7 +69,7 @@ public final class WatchAlignCoreV13 {
         if(canonicalGmt){
             GmtHumanSummary.Input sum=human!=null&&human.summary!=null?human.summary:new GmtHumanSummary.Input();
             sum.overlayDrawn=twelveMeasured;
-            report=modelRef+" · Watch Align Core "+CORE_VERSION+"\n\n"
+            report="Rolex GMT-Master II · Watch Align Core "+CORE_VERSION+"\n\n"
                     +GmtHumanSummary.build(sum)
                     +"\n\nDETAILS\nThe 59/60/01 minute track defines local 12 and the triangle is checked against it for gap, centring, rotation and 59/01 spacing. The dial centre and scale come from the physical black-dial edge. The overlay shows only what was measured: the dial edge (faint ring), the detected 12 triangle, the 59/60/01 tick ends, the gap and the 59/01 spacing, coloured green (clear), amber (check), red (strong) or grey (not judged).\n"
                     +(crop!=null?"\n"+crop.describe()+"\n":"")
