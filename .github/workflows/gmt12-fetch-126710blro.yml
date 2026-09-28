@@ -39,11 +39,15 @@ jobs:
 
       - name: Run current detector + assessment, print previews (LAST STEP)
         # Deliberately the job's final stdout-producing step: keeps result
-        # lines and base64 previews together at the end of the log.
+        # lines and base64 previews together at the end of the log. The 3rd
+        # arg limits the high-res raw-landmark zoom diagnostic to specific
+        # source_ids (debug tool, see measure_manifest.py) -- remove it to
+        # go back to measuring the full manifest.
         run: |
           python3 tools/research/validation/gmt12/measure_manifest.py \
             tools/research/validation/gmt12/126710blro_sources.csv \
-            tools/research/validation/gmt12/action-downloads/126710blro
+            tools/research/validation/gmt12/action-downloads/126710blro \
+            gen_126710BLRO_phillips_147798,gen_126710BLRO_phillips_146213,gen_126710BLRO_phillips_210072,gen_126710BLRO_phillips_232301
 
       - name: Upload downloaded images
         if: always()
