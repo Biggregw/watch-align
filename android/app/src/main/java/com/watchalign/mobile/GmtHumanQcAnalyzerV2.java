@@ -301,7 +301,7 @@ final class GmtHumanQcAnalyzerV2 {
 
             GmtHumanSummary.Input sum=new GmtHumanSummary.Input();
             sum.sixValid=six.valid;sum.sixAttention=sixDecision.attention;sum.sixTooSmall=sixDecision.tooSmall;sum.handAtSix=handAtSix;
-            sum.sixStable=six.stable;sum.sixLowReason=six.lowReason;sum.sixUnstable=sixUnstable;sum.sixCentringMin=six.centringMin;sum.sixCentringMax=six.centringMax;sum.sixCentring=six.centring;sum.sixRotationDeg=six.rotationDeg;sum.sixGap=six.gap;
+            sum.sixStable=six.stable;sum.sixLowReason=six.lowReason;sum.sixUnstable=sixUnstable;sum.sixCentringMin=six.centringMin;sum.sixCentringMax=six.centringMax;sum.sixRotMin=six.rotMin;sum.sixRotMax=six.rotMax;sum.sixCentring=six.centring;sum.sixRotationDeg=six.rotationDeg;sum.sixGap=six.gap;
             sum.sixOffCentre=sixDecision.offCentre;sum.sixRotated=sixDecision.rotated;sum.sixWidthPx=six.widthPx;
             sum.nine=nineOut.summary();
             sum.pose=pose.label;sum.twelveValid=twelve.valid;sum.stableFrame=stableFrame;
@@ -393,7 +393,7 @@ final class GmtHumanQcAnalyzerV2 {
             GmtHumanSummary.Baton b=new GmtHumanSummary.Baton(position.label,position.before,position.after);
             b.valid=result.valid;b.attention=decision.attention;b.tooSmall=decision.tooSmall;b.hand=hand;
             b.stable=result.stable;b.lowReason=result.lowReason;b.unstable=unstable;
-            b.centringMin=result.centringMin;b.centringMax=result.centringMax;b.centring=result.centring;
+            b.centringMin=result.centringMin;b.centringMax=result.centringMax;b.rotMin=result.rotMin;b.rotMax=result.rotMax;b.centring=result.centring;
             b.rotationDeg=result.rotationDeg;b.gap=result.gap;b.widthPx=result.widthPx;
             b.offCentre=decision.offCentre;b.rotated=decision.rotated;
             return b;

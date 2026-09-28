@@ -36,7 +36,7 @@ final class GmtHumanSummary {
         double sixCentring=Double.NaN,sixRotationDeg=Double.NaN,sixGap=Double.NaN,sixWidthPx=Double.NaN;
         /** Why the 6 was measured with low confidence (alpha57), or empty. */
         String sixLowReason="";
-        boolean sixUnstable;double sixCentringMin=Double.NaN,sixCentringMax=Double.NaN;
+        boolean sixUnstable;double sixCentringMin=Double.NaN,sixCentringMax=Double.NaN,sixRotMin=Double.NaN,sixRotMax=Double.NaN;
         /** 9 o'clock baton (alpha59). The 6 keeps its own fields above for compatibility. */
         Baton nine=new Baton("9",44,46);
     }
@@ -142,7 +142,7 @@ final class GmtHumanSummary {
         final String label;final int before,after;
         boolean valid,stable,tooSmall,hand,offCentre,rotated,unstable;
         GmtHumanQcMath.Attention attention=GmtHumanQcMath.Attention.UNASSESSABLE;
-        double centring=Double.NaN,rotationDeg=Double.NaN,gap=Double.NaN,widthPx=Double.NaN,centringMin=Double.NaN,centringMax=Double.NaN;
+        double centring=Double.NaN,rotationDeg=Double.NaN,gap=Double.NaN,widthPx=Double.NaN,centringMin=Double.NaN,centringMax=Double.NaN,rotMin=Double.NaN,rotMax=Double.NaN;
         String lowReason="";
         Baton(String label,int before,int after){this.label=label;this.before=before;this.after=after;}
         boolean flagged(){return valid&&(attention==GmtHumanQcMath.Attention.CHECK||attention==GmtHumanQcMath.Attention.STRONG);}
@@ -154,7 +154,7 @@ final class GmtHumanSummary {
         b.valid=in.sixValid;b.stable=in.sixStable;b.tooSmall=in.sixTooSmall;b.hand=in.handAtSix;
         b.offCentre=in.sixOffCentre;b.rotated=in.sixRotated;b.unstable=in.sixUnstable;b.attention=in.sixAttention;
         b.centring=in.sixCentring;b.rotationDeg=in.sixRotationDeg;b.gap=in.sixGap;b.widthPx=in.sixWidthPx;
-        b.centringMin=in.sixCentringMin;b.centringMax=in.sixCentringMax;b.lowReason=in.sixLowReason;
+        b.centringMin=in.sixCentringMin;b.centringMax=in.sixCentringMax;b.rotMin=in.sixRotMin;b.rotMax=in.sixRotMax;b.lowReason=in.sixLowReason;
         return b;
     }
 
@@ -180,8 +180,8 @@ final class GmtHumanSummary {
         String nums=String.format(Locale.US," (offset %+.2f of its width, rotation %+.1f°)",b.centring,b.rotationDeg);
         if(b.unstable&&b.attention!=GmtHumanQcMath.Attention.CHECK)
             return Double.isFinite(b.centringMax)
-                    ?String.format(Locale.US,"not judged: the reading changes when the photo is resized slightly (offset %+.2f to %+.2f of its width), so it can't be trusted on this photo.",
-                            b.centringMin,b.centringMax)
+                    ?String.format(Locale.US,"not judged: the reading changes when the photo is resized slightly (offset %+.2f to %+.2f of its width, rotation %+.1f° to %+.1f°), so it can't be trusted on this photo.",
+                            b.centringMin,b.centringMax,b.rotMin,b.rotMax)
                     :"not judged: the baton is not found again when the photo is resized slightly, so the reading can't be trusted on this photo.";
         String why=b.lowReason==null||b.lowReason.isEmpty()?"":" ("+b.lowReason+")";
         String caution=b.stable?"":" Measured with low confidence"+why+", so treat this with caution.";
