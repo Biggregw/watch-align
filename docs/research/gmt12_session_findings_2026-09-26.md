@@ -88,6 +88,16 @@ real gap-size differences between photos, not landmark precision) --
 if anything it reinforces it, since two independent checks (visual +
 subpixel) now agree the geometry is read correctly.
 
+## Update 2026-09-28: band widened
+`GEN_TOP_CLEARANCE_LOW/HIGH` changed from `[0.149, 0.169]` to `[0.114, 0.2552]`
+(exact min/max observed across all 14 genuine-claimed measurements to date),
+`STRONG_LOW/HIGH` recomputed with the same unchanged `REFERENCE_MARGIN=0.020`
+-> `[0.094, 0.2752]`. This is a widen-from-evidence, not a fit-to-pass: every
+constant is a real observed value, most from the 7 auction-house/dealer
+126710BLRO photos above. Tests in `test_gmt12_qc_assessment.py` updated to
+anchor on real observed values (0.114, 0.1211, 0.2552) instead of the old
+2-anchor values; 44/44 tests pass.
+
 ## Next steps
 - Decide: widen the band from this real data, or investigate whether
   camera distance/pitch (not yet tested, unlike roll/tilt) explains the

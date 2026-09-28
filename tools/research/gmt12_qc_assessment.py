@@ -3,16 +3,26 @@
 Landmark detection and measurement happen upstream. Missing landmarks can
 never become a pass.
 
-The two genuine top-clearance values are verified observations, not Rolex
-factory tolerances. A small excursion beyond either observation is therefore
-not a defect. We keep the raw value and only flag a *strong* empirical
-reference deviation once it is separated from the observed genuine interval
-by a deliberately conservative margin.
+The genuine top-clearance interval below is the observed min/max across 14
+genuine-claimed dial photos, not Rolex factory tolerances. A small excursion
+beyond either observation is therefore not a defect. We keep the raw value
+and only flag a *strong* empirical reference deviation once it is separated
+from the observed genuine interval by a deliberately conservative margin.
 
 The margin is provisional validation policy, not a manufacturing tolerance.
 It exists to distinguish the clearly reduced-gap cases we are validating from
 normal measurement / watch-to-watch variation while more labelled examples
 are collected.
+
+2026-09-28: widened from the original [0.149, 0.169], which traced to only
+2 undocumented anchor photos. 7 auction-house/dealer 126710BLRO photos with
+real, checkable provenance (Phillips lot pages, ElegantSwiss listings) were
+run through the current detector and measured 0.1211-0.2552, visually and
+then subpixel-verified as correct landmark placement, not detector error --
+3 of the 7 would have been wrongly flagged under the old band. Combined with
+7 earlier weaker-provenance genuine-claimed photos (0.114-0.169), the full
+observed genuine interval is 0.114-0.2552. See
+docs/research/gmt12_session_findings_2026-09-26.md for the per-photo table.
 """
 from __future__ import annotations
 
@@ -23,11 +33,11 @@ from typing import Optional
 from gmt12_auto_landmarks import Detection
 from human_qc_geometry import Gmt12Measurements, measure_gmt12
 
-GEN_TOP_CLEARANCE_LOW = 0.149
-GEN_TOP_CLEARANCE_HIGH = 0.169
+GEN_TOP_CLEARANCE_LOW = 0.114
+GEN_TOP_CLEARANCE_HIGH = 0.2552
 REFERENCE_MARGIN = 0.020
-STRONG_LOW = GEN_TOP_CLEARANCE_LOW - REFERENCE_MARGIN   # 0.129
-STRONG_HIGH = GEN_TOP_CLEARANCE_HIGH + REFERENCE_MARGIN # 0.189
+STRONG_LOW = GEN_TOP_CLEARANCE_LOW - REFERENCE_MARGIN   # 0.094
+STRONG_HIGH = GEN_TOP_CLEARANCE_HIGH + REFERENCE_MARGIN # 0.2752
 
 
 class Status(str, Enum):

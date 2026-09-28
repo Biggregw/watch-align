@@ -36,11 +36,6 @@ def test_obvious_too_small_top_gap_is_reported():
     assert "materially below" in a.reason
 
 
-def test_observed_bad_0121_gap_is_reported():
-    a = assess_detection(Detection(geometry_for_gap_ratio(0.121), 1.0, ""))
-    assert a.status is Status.REFERENCE_DEVIATION
-
-
 def test_observed_clean_0143_gap_is_not_called_defective():
     a = assess_detection(Detection(geometry_for_gap_ratio(0.143), 1.0, ""))
     assert a.status is Status.MEASURED
@@ -57,7 +52,38 @@ def test_second_verified_genuine_anchor_is_measured():
 
 
 def test_large_gap_is_reported_without_calling_it_rolex_tolerance():
-    a = assess_detection(Detection(geometry_for_gap_ratio(0.25), 1.0, ""))
+    a = assess_detection(Detection(geometry_for_gap_ratio(0.35), 1.0, ""))
     assert a.status is Status.REFERENCE_DEVIATION
     assert "materially above" in a.reason
     assert "not a Rolex tolerance" in a.reason
+
+
+def test_widened_band_low_edge_from_weaker_provenance_photo_is_measured():
+    # observed genuine-claimed measurement, weaker provenance (screenshot)
+    a = assess_detection(Detection(geometry_for_gap_ratio(0.114), 1.0, ""))
+    assert a.status is Status.MEASURED
+
+
+def test_verified_126710blro_phillips_232301_is_measured():
+    # Phillips auction lot 232301, real provenance -- see
+    # docs/research/gmt12_session_findings_2026-09-26.md
+    a = assess_detection(Detection(geometry_for_gap_ratio(0.1211), 1.0, ""))
+    assert a.status is Status.MEASURED
+
+
+def test_verified_126710blro_phillips_146213_high_outlier_is_measured():
+    # Phillips auction lot 146213, real provenance, the highest observed
+    # genuine top_clearance -- visually and subpixel-verified as a correct
+    # landmark placement, not detector error
+    a = assess_detection(Detection(geometry_for_gap_ratio(0.2552), 1.0, ""))
+    assert a.status is Status.MEASURED
+
+
+def test_just_below_widened_strong_low_is_reference_deviation():
+    a = assess_detection(Detection(geometry_for_gap_ratio(0.09), 1.0, ""))
+    assert a.status is Status.REFERENCE_DEVIATION
+
+
+def test_just_above_widened_strong_high_is_reference_deviation():
+    a = assess_detection(Detection(geometry_for_gap_ratio(0.28), 1.0, ""))
+    assert a.status is Status.REFERENCE_DEVIATION
