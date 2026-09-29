@@ -91,7 +91,14 @@ final class GmtHumanQcAnalyzerV2 {
             double disagreement=Double.NaN;
             if(rehaut.valid&&ellipse.valid&&rehaut.firstHarmonicStrength>=0.08)
                 disagreement=axisDisagreement(rehaut.widestClockDeg,ellipse.minorAxisClockDeg);
-            GmtHumanQcMath.PoseDecision pose=GmtHumanPosePolicy.classify(rehaut,sectors,ellipse,disagreement);
+            // Round markers (alpha61), oriented by the 12's 60 tick. Traced before the angle
+            // rating (alpha63): their layout is an independent check on the camera angle.
+            GmtRoundMarkerAnalyzer.DialFrame dialFrame=edge!=null?new GmtRoundMarkerAnalyzer.DialFrame(edge.cx,edge.cy,edge.axisA,edge.axisB,edge.angleDeg)
+                    :GmtRoundMarkerAnalyzer.DialFrame.circle(cx,cy,r);
+            double[] tick60=twelve.valid&&twelve.geometry!=null?twelve.geometry.tick60:null;
+            java.util.List<GmtRoundMarkerAnalyzer.Marker> round=GmtRoundMarkerAnalyzer.analyse(src,dialFrame,tick60);
+            GmtMarkerPose.Result markerPose=GmtMarkerPose.estimate(round,r);
+            GmtHumanQcMath.PoseDecision pose=GmtHumanPosePolicy.classify(rehaut,sectors,ellipse,disagreement,markerPose);
             GmtHumanQcMath.GapTrend rehautTrend=sectors.gapTrendAt12();
             // Resize check on the photo-angle rating and the gap-direction cue (alpha60). Both
             // come from how wide the rehaut ring looks around the dial, and on a borderline photo
@@ -109,7 +116,7 @@ final class GmtHumanQcAnalyzerV2 {
                     Mat m=new Mat();
                     try{
                         Imgproc.resize(src,m,new org.opencv.core.Size(Math.round(src.cols()*sc[k]),Math.round(src.rows()*sc[k])),0,0,Imgproc.INTER_LINEAR);
-                        PoseAt pq=poseAt(m,cx*sc[k],cy*sc[k],r*sc[k],poseRoll);
+                        PoseAt pq=poseAt(m,cx*sc[k],cy*sc[k],r*sc[k],poseRoll,markerPose);
                         labels[k+1]=pq.pose.label;trends[k+1]=pq.trend;
                     }finally{m.release();}
                 }
@@ -277,11 +284,6 @@ final class GmtHumanQcAnalyzerV2 {
                     ?GmtSixLandmarkAnalyzer.Position.THREE:GmtSixLandmarkAnalyzer.Position.NINE;
             BatonOutcome nineOut=withholdIfSideUnknown(
                     measureBaton(sidePos,src,cx,cy,r,twelve,pose.label,layout.layout!=GmtDialLayout.Layout.UNKNOWN),layout.layout);
-            // Round markers (alpha61), oriented by the 12's 60 tick.
-            GmtRoundMarkerAnalyzer.DialFrame dialFrame=edge!=null?new GmtRoundMarkerAnalyzer.DialFrame(edge.cx,edge.cy,edge.axisA,edge.axisB,edge.angleDeg)
-                    :GmtRoundMarkerAnalyzer.DialFrame.circle(cx,cy,r);
-            double[] tick60=twelve.valid&&twelve.geometry!=null?twelve.geometry.tick60:null;
-            java.util.List<GmtRoundMarkerAnalyzer.Marker> round=GmtRoundMarkerAnalyzer.analyse(src,dialFrame,tick60);
             GmtRoundMarkerAnalyzer.measureStability(src,dialFrame,tick60,round);
             judgeRound(round,src,cx,cy,r,pose.label);
             GmtSixLandmarkAnalyzer.Result six=sixOut.result;
@@ -307,6 +309,7 @@ final class GmtHumanQcAnalyzerV2 {
                 out.append("Alignment: ").append(rotation.attention).append(" - ").append(rotationSummary(rotation)).append("\n");
             }else out.append("12 marker: UNASSESSABLE - local minute-track/triangle landmarks were not verified; no pass is inferred.\n");
             out.append("Perspective: ").append(pose.label).append(" - ").append(pose.reason).append(".").append(poseNote).append("\n");
+            out.append(markerPose.describe()).append("\n");
 
             out.append("\nDiagnostics\n");
             out.append(String.format(Locale.US,"%s: centre %.1f, %.1f; radius %.1f px; quality %.2f.\n",
@@ -664,7 +667,8 @@ final class GmtHumanQcAnalyzerV2 {
     /** Photo-angle rating and gap-direction cue at one scale (used by the resize check). */
     static final class PoseAt {GmtHumanQcMath.PoseDecision pose;GmtHumanQcMath.GapTrend trend;}
 
-    static PoseAt poseAt(Mat src,double cx,double cy,double r,double poseRoll){
+    /** @param markers marker-layout angle from the full-size photo (geometry, so it holds at every scale) */
+    static PoseAt poseAt(Mat src,double cx,double cy,double r,double poseRoll,GmtMarkerPose.Result markers){
         GmtRehautPoseAnalyzer.Result rehaut=GmtRehautPoseAnalyzer.analyse(src,cx,cy,r,poseRoll);
         GmtRehautSectorAnalyzer.Result sectors;
         if(rehaut.valid){
@@ -676,7 +680,7 @@ final class GmtHumanQcAnalyzerV2 {
         if(rehaut.valid&&ellipse.valid&&rehaut.firstHarmonicStrength>=0.08)
             disagreement=axisDisagreement(rehaut.widestClockDeg,ellipse.minorAxisClockDeg);
         PoseAt o=new PoseAt();
-        o.pose=GmtHumanPosePolicy.classify(rehaut,sectors,ellipse,disagreement);
+        o.pose=GmtHumanPosePolicy.classify(rehaut,sectors,ellipse,disagreement,markers);
         o.trend=sectors.gapTrendAt12();
         return o;
     }

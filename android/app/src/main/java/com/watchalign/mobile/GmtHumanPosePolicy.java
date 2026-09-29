@@ -12,6 +12,21 @@ final class GmtHumanPosePolicy {
                                                 GmtRehautSectorAnalyzer.Result sectors,
                                                 GmtEllipsePoseAnalyzer.Result ellipse,
                                                 double cueAxisDisagreementDeg) {
+        return classify(rehaut,sectors,ellipse,cueAxisDisagreementDeg,null);
+    }
+
+    /**
+     * alpha63: the rehaut alone may not reject a photo whose round-marker layout confidently
+     * shows the camera near straight on (tilt at most GmtMarkerPose.NEAR_FRONTAL_MAX_DEG at its
+     * upper bound). Such a rehaut RETAKE becomes CORRECTABLE. With no confident marker layout the
+     * rehaut decides as before; the dial-ellipse RETAKE is unaffected.
+     */
+    static GmtHumanQcMath.PoseDecision classify(GmtRehautPoseAnalyzer.Result rehaut,
+                                                GmtRehautSectorAnalyzer.Result sectors,
+                                                GmtEllipsePoseAnalyzer.Result ellipse,
+                                                double cueAxisDisagreementDeg,
+                                                GmtMarkerPose.Result markers) {
+        boolean frontalMarkers=markers!=null&&markers.nearFrontal();
         boolean ellipseUsable=ellipse!=null&&ellipse.valid&&Double.isFinite(ellipse.tiltDeg);
         boolean sectorUsable=sectors!=null&&sectors.valid&&sectors.meanCoverage()>=0.35
                 &&Double.isFinite(sectors.minOverMean);
@@ -29,7 +44,8 @@ final class GmtHumanPosePolicy {
         // a perfect 360-degree harmonic model to be useful.
         if(sectorUsable){
             if(sectors.minOverMean<0.45)
-                return new GmtHumanQcMath.PoseDecision(GmtHumanQcMath.PoseLabel.RETAKE,
+                return frontalMarkers?overruled(markers,"local rehaut sectors show one cardinal side below about half the mean visible width")
+                        :new GmtHumanQcMath.PoseDecision(GmtHumanQcMath.PoseLabel.RETAKE,
                         "local rehaut sectors show one cardinal side collapsing below about half the mean visible width");
             double maxAsym=Math.max(Math.abs(sectors.verticalAsymmetry),Math.abs(sectors.horizontalAsymmetry));
             if(sectors.minOverMean<0.75||maxAsym>=0.14)
@@ -45,7 +61,8 @@ final class GmtHumanPosePolicy {
                             "global rehaut direction disagrees with ellipse, so only local sectors/ellipse are trusted");
             }
             if(rehaut.minWidthOverMean<0.48)
-                return new GmtHumanQcMath.PoseDecision(GmtHumanQcMath.PoseLabel.RETAKE,
+                return frontalMarkers?overruled(markers,"a coherent global rehaut fit shows one side below about half the mean visible width")
+                        :new GmtHumanQcMath.PoseDecision(GmtHumanQcMath.PoseLabel.RETAKE,
                         "a coherent global rehaut fit shows one side collapsing below about half the mean visible width");
             if(rehaut.minWidthOverMean<0.78||rehaut.firstHarmonicStrength>=0.16)
                 return new GmtHumanQcMath.PoseDecision(GmtHumanQcMath.PoseLabel.CORRECTABLE,
@@ -77,6 +94,12 @@ final class GmtHumanPosePolicy {
 
         return new GmtHumanQcMath.PoseDecision(GmtHumanQcMath.PoseLabel.UNASSESSABLE,
                 "neither local rehaut sectors nor planar pose could be constrained reliably");
+    }
+
+    private static GmtHumanQcMath.PoseDecision overruled(GmtMarkerPose.Result m,String rehautWhat){
+        return new GmtHumanQcMath.PoseDecision(GmtHumanQcMath.PoseLabel.CORRECTABLE,String.format(java.util.Locale.US,
+                "%s, but the round-marker layout shows the camera near straight on (%.1f°, at most %.1f°), so the photo is not rejected on the rehaut alone",
+                rehautWhat,m.tiltDeg,m.tiltHighDeg));
     }
 
     private GmtHumanPosePolicy(){}
