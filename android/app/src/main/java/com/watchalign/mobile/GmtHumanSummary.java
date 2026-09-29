@@ -57,7 +57,8 @@ final class GmtHumanSummary {
 
     static String build(Input in){
         StringBuilder s=new StringBuilder("SUMMARY\n");
-        if(in.noDial){
+        if(in.layout==GmtDialLayout.Layout.UNKNOWN)in.nine.sideUnknown=true;
+        if(in.noDial&&!anyResolvedFlag(in)){
             s.append("Photo: no readable watch dial found. It may be a side, bracelet or caseback view, or the dial is too small, blurred, angled or turned to read.\n");
             s.append("All markers: not checked.\n");
             s.append("\nBottom line: nothing was checked on this photo. Take a sharp, straight-on photo of the dial with it filling as much of the frame as possible.\n");
@@ -70,7 +71,7 @@ final class GmtHumanSummary {
         s.append("12 alignment: ").append(alignmentLine(in)).append("\n");
         s.append("6 baton: ").append(sixLine(in)).append("\n");
         in.nine.angled=poorPose(in);
-        s.append(in.nine.label).append(" baton: ").append(batonLine(in.nine)).append("\n");
+        s.append(in.nine.sideUnknown?"3/9":in.nine.label).append(" baton: ").append(batonLine(in.nine)).append("\n");
         s.append("Round markers: ").append(roundLine(in)).append("\n");
         s.append("Overlay: ").append(in.overlayDrawn&&(in.tooSmall||in.handAtTwelve)
                 ?"shows the 12 triangle that was found, grey and dashed because it was not judged. The close-up shows it enlarged."
@@ -99,7 +100,8 @@ final class GmtHumanSummary {
                 // One of 3 and 9 is the date window. Which one is read from the photo (126720VTNR
                 // Sprite: date at 9); when it couldn't be told, the side not measured isn't named.
                 int dateAt=in.layout==GmtDialLayout.Layout.DATE_AT_9?9:in.layout==GmtDialLayout.Layout.DATE_AT_3?3:0;
-                if(String.valueOf(h).equals(in.nine.label))st=batonStatus(in.nine);
+                if(in.layout==GmtDialLayout.Layout.UNKNOWN||in.nine.sideUnknown)st=SIDE_UNKNOWN_STATUS;
+                else if(String.valueOf(h).equals(in.nine.label))st=batonStatus(in.nine);
                 else st=dateAt==h?"date window (not a marker)":"not checked (date side not determined)";
             }
             else{GmtRoundMarkerAnalyzer.Marker m=round.get(h);st=m==null?"not measured":roundStatus(m);}
@@ -121,6 +123,7 @@ final class GmtHumanSummary {
     }
 
     static String batonStatus(Baton b){
+        if(b.sideUnknown)return SIDE_UNKNOWN_STATUS;
         if(!b.valid)return "not found";
         if(b.tooSmall)return "too small";
         if(b.hand)return "hand in the way";
@@ -230,8 +233,10 @@ final class GmtHumanSummary {
         double centring=Double.NaN,rotationDeg=Double.NaN,gap=Double.NaN,widthPx=Double.NaN,centringMin=Double.NaN,centringMax=Double.NaN,rotMin=Double.NaN,rotMax=Double.NaN;
         String lowReason="";
         Baton(String label,int before,int after){this.label=label;this.before=before;this.after=after;}
-        boolean flagged(){return valid&&(attention==GmtHumanQcMath.Attention.CHECK||attention==GmtHumanQcMath.Attention.STRONG);}
-        boolean clear(){return valid&&attention==GmtHumanQcMath.Attention.CLEAR;}
+        /** Side baton only: the date side (3 or 9) was not determined, so it is never judged. */
+        boolean sideUnknown;
+        boolean flagged(){return valid&&!sideUnknown&&(attention==GmtHumanQcMath.Attention.CHECK||attention==GmtHumanQcMath.Attention.STRONG);}
+        boolean clear(){return valid&&!sideUnknown&&attention==GmtHumanQcMath.Attention.CLEAR;}
     }
 
     static Baton six(Input in){
@@ -258,8 +263,19 @@ final class GmtHumanSummary {
         return towardsBefore?"right (towards the "+b.before+" tick)":"left (towards the "+b.after+" tick)";
     }
 
+    static final String SIDE_UNKNOWN_STATUS="not checked (date side not determined)";
+
+    /** Any CHECK or STRONG verdict at 12, the 6, the side baton or a round marker (alpha62 review). */
+    static boolean anyResolvedFlag(Input in){
+        if(in.twelveValid&&(GmtHumanQcAnalyzerV2.resolvedFlag(in.gap)||GmtHumanQcAnalyzerV2.resolvedFlag(in.alignment)))return true;
+        if(six(in).flagged()||in.nine.flagged())return true;
+        for(GmtRoundMarkerAnalyzer.Marker m:in.round)if(m.flagged())return true;
+        return false;
+    }
+
     static String batonLine(Baton b){
         String L=b.label;
+        if(b.sideUnknown)return "not checked: the date side could not be determined (standard or Sprite layout), so neither the 3 nor the 9 baton is judged.";
         if(!b.valid)return "not measured on this photo (baton or minute track at "+L+" not found, often because a hand covers it).";
         if(b.tooSmall)return String.format(Locale.US,"not measured: the baton is only %.0f px wide in this photo.",Math.floor(b.widthPx));
         if(b.hand)return "not judged: a hand is next to the "+L+" baton.";
@@ -441,7 +457,7 @@ final class GmtHumanSummary {
         if(in.twelveValid&&in.handAtTwelve)return "Bottom line: a hand is covering the area around the 12 marker, so it could not be checked. Retake with the hands away from 12."+six6;
         String closer=in.gapResolutionLimited&&!in.gapUnstable?" The gap at 12 is too close to call at this resolution; a closer photo would settle it.":"";
         List<String> clearBatons=new ArrayList<>(),unjudged=new ArrayList<>();
-        for(Baton b:batons){if(b.clear())clearBatons.add(b.label);else if(!b.flagged())unjudged.add(b.label);}
+        for(Baton b:batons){if(b.clear())clearBatons.add(b.label);else if(!b.flagged())unjudged.add(b.sideUnknown?"3/9":b.label);}
         boolean bothUnstable=in.gapUnstable&&in.rotUnstable;
         boolean anyUnstable=in.gapUnstable||in.rotUnstable;
         if(anyUnstable&&in.pose!=GmtHumanQcMath.PoseLabel.RETAKE){

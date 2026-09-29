@@ -172,12 +172,70 @@ public class RoundMarkerTest {
 
     @Test public void sizesAreComparedOnlyOnLargeEnoughMarkers(){
         List<GmtRoundMarkerAnalyzer.Marker> ms=new ArrayList<>();
-        for(int h:GmtRoundMarkerAnalyzer.HOURS){GmtRoundMarkerAnalyzer.Marker m=marker(h,0);m.radiusPx=h==4?15:13;m.sizeRatio=Double.NaN;ms.add(m);}
+        for(int h:GmtRoundMarkerAnalyzer.HOURS)ms.add(h==4?ringMarker(h,11.5,11.5,15.0):ringMarker(h,10.0,10.0,13.0));
         GmtRoundMarkerAnalyzer.sizeRatios(ms);
-        for(GmtRoundMarkerAnalyzer.Marker m:ms)assertTrue(Double.isNaN(m.sizeRatio));   // 26 px median: lume vs surround can't be told apart
-        for(GmtRoundMarkerAnalyzer.Marker m:ms){m.radiusPx=m.hour==4?23:20;}
+        for(GmtRoundMarkerAnalyzer.Marker m:ms)assertTrue(Double.isNaN(m.sizeRatio));   // 26 px median surround: too small
+        ms.clear();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS)ms.add(h==4?ringMarker(h,23.0,23.0,23.0*1.3):ringMarker(h,20.0,20.0,26.0));
         GmtRoundMarkerAnalyzer.sizeRatios(ms);
-        assertEquals(1.15,ms.get(2).sizeRatio,1e-9);
+        assertEquals(1.15,ms.get(2).sizeRatio,0.01);
+    }
+
+    @Test public void fittedEdgesAreNeverComparedWhenTooFewMarkersShowBothRings(){
+        // alpha62 review: with fewer than 4 markers whose surround is identified, the old fallback
+        // compared fitted edges, some on the lume (25 px) and some on the surround (30 px). That is
+        // the false-size mechanism, so size must be left unassessable.
+        List<GmtRoundMarkerAnalyzer.Marker> ms=new ArrayList<>();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS){
+            if(h==1||h==2||h==4)ms.add(ringMarker(h,25.0,25.0,30.0));   // both rings: surround identified
+            else if(h==5||h==7)ms.add(ringMarker(h,30.0,30.0));         // one ring, fitted on the surround
+            else ms.add(ringMarker(h,25.0,25.0));                       // one ring, fitted on the lume
+        }
+        GmtRoundMarkerAnalyzer.sizeRatios(ms);
+        for(GmtRoundMarkerAnalyzer.Marker m:ms){
+            assertTrue("hour "+m.hour,Double.isNaN(m.sizeRatio));
+            GmtHumanQcMath.RoundDecision d=GmtHumanQcMath.assessRound(0.02,m.diameterPx(),m.sizeRatio,GOOD,true);
+            assertFalse("hour "+m.hour,d.sizeOdd);
+            assertEquals("hour "+m.hour,GmtHumanQcMath.Attention.CLEAR,d.attention);
+        }
+    }
+
+    /** A marker at (100,100) whose rays all show edges at the given radii, fitted on radius fitR. */
+    private static GmtRoundMarkerAnalyzer.Marker ringMarker(int h,double fitR,double... rings){
+        GmtRoundMarkerAnalyzer.Marker m=new GmtRoundMarkerAnalyzer.Marker(h);
+        m.found=true;m.stable=true;m.x=100;m.y=100;m.radiusPx=fitR;
+        m.edgePts=new double[72][];
+        for(int k=0;k<72;k++){
+            double a=2*Math.PI*k/72;double[] q=new double[2*rings.length];
+            for(int i=0;i<rings.length;i++){q[2*i]=100+Math.cos(a)*rings[i];q[2*i+1]=100+Math.sin(a)*rings[i];}
+            m.edgePts[k]=q;
+        }
+        return m;
+    }
+
+    @Test public void sizeComparesOuterRingsWhenOneMarkerWasTracedOnItsSurround(){
+        // Genuine Bob's Watches 126720VTNR 182860: the 8 traced on its surround (60 px), the rest on
+        // their lume (50 px). Both edges are on every marker, so the sizes are the same.
+        List<GmtRoundMarkerAnalyzer.Marker> ms=new ArrayList<>();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS)ms.add(h==8?ringMarker(h,30.0,25.0,30.0):ringMarker(h,25.0,25.0,30.0));
+        GmtRoundMarkerAnalyzer.sizeRatios(ms);
+        for(GmtRoundMarkerAnalyzer.Marker m:ms)assertEquals("hour "+m.hour,1.0,m.sizeRatio,0.01);
+    }
+
+    @Test public void aMarkerThatIsReallyLargerStillReadsLarger(){
+        List<GmtRoundMarkerAnalyzer.Marker> ms=new ArrayList<>();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS)ms.add(h==4?ringMarker(h,30.0,30.0,36.6):ringMarker(h,25.0,25.0,30.5));
+        GmtRoundMarkerAnalyzer.sizeRatios(ms);
+        for(GmtRoundMarkerAnalyzer.Marker m:ms)assertEquals("hour "+m.hour,m.hour==4?1.2:1.0,m.sizeRatio,0.01);
+    }
+
+    @Test public void aMarkerWithOnlyOneEdgeFoundIsNotSizeJudged(){
+        // One ring only: it can't be told whether it is the lume or the surround.
+        List<GmtRoundMarkerAnalyzer.Marker> ms=new ArrayList<>();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS)ms.add(h==11?ringMarker(h,25.0,25.0):ringMarker(h,25.0,25.0,30.5));
+        GmtRoundMarkerAnalyzer.sizeRatios(ms);
+        for(GmtRoundMarkerAnalyzer.Marker m:ms)
+            if(m.hour==11)assertTrue(Double.isNaN(m.sizeRatio));else assertEquals(1.0,m.sizeRatio,0.01);
     }
 
     @Test public void everyHourPositionIsReported(){
@@ -231,6 +289,30 @@ public class RoundMarkerTest {
         assertTrue(s,s.contains("Photo: no readable watch dial found."));
         assertTrue(s,s.contains("Bottom line: nothing was checked on this photo."));
         assertFalse(s,s.contains("12 gap"));
+    }
+
+    @Test public void noReadableDialNeverHidesAResolvedFinding(){
+        // alpha62 review: a low-evidence photo is only "no readable dial" when nothing is flagged.
+        GmtHumanQcMath.Attention C=GmtHumanQcMath.Attention.CHECK,S=GmtHumanQcMath.Attention.STRONG,U=GmtHumanQcMath.Attention.UNASSESSABLE,OK=GmtHumanQcMath.Attention.CLEAR;
+        List<GmtRoundMarkerAnalyzer.Marker> none=new ArrayList<>();
+        assertTrue(GmtHumanQcAnalyzerV2.noReadableDial(true,U,U,null,null,none));
+        assertTrue(GmtHumanQcAnalyzerV2.noReadableDial(true,OK,null,U,null,none));
+        assertFalse(GmtHumanQcAnalyzerV2.noReadableDial(false,U,U,U,U,none));
+        assertFalse(GmtHumanQcAnalyzerV2.noReadableDial(true,C,U,null,null,none));      // 12 gap
+        assertFalse(GmtHumanQcAnalyzerV2.noReadableDial(true,U,S,null,null,none));      // 12 alignment
+        assertFalse(GmtHumanQcAnalyzerV2.noReadableDial(true,null,null,C,null,none));   // 6
+        assertFalse(GmtHumanQcAnalyzerV2.noReadableDial(true,null,null,null,S,none));   // side baton
+        List<GmtRoundMarkerAnalyzer.Marker> round=new ArrayList<>();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS)round.add(judged(h,h==7?C:U));
+        assertFalse(GmtHumanQcAnalyzerV2.noReadableDial(true,null,null,null,null,round)); // a round marker
+        // The summary keeps the finding even if noDial arrives set.
+        GmtHumanSummary.Input in=clearTwelve();in.noDial=true;in.round=round;
+        String s=GmtHumanSummary.build(in);
+        assertFalse(s,s.contains("nothing was checked"));
+        assertTrue(s,s.contains("the 7 marker"));
+        in=clearTwelve();in.noDial=true;in.gap=S;
+        s=GmtHumanSummary.build(in);
+        assertFalse(s,s.contains("nothing was checked"));assertTrue(s,s.contains("the gap at 12"));
     }
 
     @Test public void hoursAndTicks(){

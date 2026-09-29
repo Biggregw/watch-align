@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-28, alpha61)
+# Watch Align: handoff notes (updated 2026-09-29, alpha62)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -29,7 +29,7 @@ checked (the 3 is the date window).
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha61"`, `versionCode 13061` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha62"`, `versionCode 13062` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
@@ -271,6 +271,23 @@ All replica photos are 126710BLNR.
 Java code for fast testing. The Python tools in `tools/research/` (branch
 `feature/gmt-human-qc-auto-landmarks`) are a separate, older research track and don't
 ship in the app.
+
+alpha62: **round-marker size is compared surround to surround.** A marker's lume and its
+surround are both edges, and the fit can land on either: on genuine Bob's Watches 126720VTNR
+182860 the 8 was traced on its surround (60 px) and the rest on their lume (50 px), and the 8
+read 1.21x the others. The fit now keeps every edge it found on each ray; a marker whose lume
+and surround are both found as rings (surround 1.12-1.5x the lume) is compared on its
+surround, and a marker with only one ring is not size-judged. With fewer than 4 such markers
+size is not assessed at all (review: the old fallback to fitted edges was the same lume-vs-surround
+ambiguity). The one false flag on the clean genuine set is gone; synthetic 0.85x / 1.15x markers
+still read 0.856 / 1.134 (CHECK) (`docs/research/gmt_round_size_edges_2026-09-29.md`).
+
+alpha62 review fixes: (1) no fitted-edge size fallback, as above: on the 319-photo regression size
+is now compared on 12 photos instead of 92; no size flag existed on the dropped ones. (2) Date side
+UNKNOWN: neither the 3 nor the 9 baton gets a verdict ("not checked (date side not determined)");
+12 photos lose a side-baton CLEAR, none a CHECK. (3) "No readable dial" is only reported when no
+marker or baton has a CHECK or STRONG verdict; one replica photo (rep_cf_UpTW8nx image_06, 12 gap
+0.030) now shows its gap CHECK instead of "nothing checked". No other verdict changed.
 
 ## 7. What's been validated
 
