@@ -21,7 +21,8 @@ BUDGET_FRACTION = 0.5          # withhold when the pose could induce >= half of 
 # Affine confidence requirements.
 MIN_MARKERS = 6
 MIN_QUADRANTS = 4              # markers in each of the four quadrants (1-2, 4-5, 7-8, 10-11)
-MAX_RESID = 0.012              # rms residual / dial radius
+MAX_RESID = 0.006              # rms residual / dial radius; perspective at 10-15 deg from ~10 R leaves ~0.003-0.005
+DROP_RESID = 0.003             # above this, try refitting without the single worst marker
 MAX_SCALE_DEV = 0.10           # affine scale vs the fitted dial radius (gross mislabel/misfit only)
 MAX_SQUASH_SD = 0.015          # jackknife sd of the squash vector (1 - ratio units); the rest is carried by tilt_hi
 
@@ -68,11 +69,13 @@ def dial_pose(markers, r_px):
     if len(hs) < 5: out['why'] = f'{len(hs)} markers'; return out
     ratio, phi, res, scale = affine(hs, [markers[h] for h in hs])
     dropped = ''
-    if res > MAX_RESID and len(hs) > MIN_MARKERS:
-        # One misplaced marker (a hand, glare): refit without the one whose removal helps most.
+    if res > DROP_RESID and len(hs) > MIN_MARKERS:
+        # One misplaced marker (a hand, glare, a lume/surround misfit): refit without the one whose
+        # removal helps most, if that removes at least 40% of the residual.
         best = min(hs, key=lambda h: affine([k for k in hs if k != h], [markers[k] for k in hs if k != h])[2])
-        hs = [k for k in hs if k != best]; dropped = str(best)
-        ratio, phi, res, scale = affine(hs, [markers[h] for h in hs])
+        hs2 = [k for k in hs if k != best]; fit2 = affine(hs2, [markers[h] for h in hs2])
+        if fit2[2] <= 0.6 * res:
+            hs = hs2; dropped = str(best); ratio, phi, res, scale = fit2
     sv = squash_vec(ratio, phi)
     jk = []
     for i in range(len(hs)):
@@ -161,8 +164,8 @@ def _read(files):
 def load_batch(dirs):
     main, rnd = {}, collections.defaultdict(dict)
     for d in dirs:
-        for r in _read([f for f in glob.glob(d + '/r*.csv') if not f.endswith('_round.csv')]): main[r['path']] = r
-        for r in _read(glob.glob(d + '/r*_round.csv')): rnd[r['path']][int(r['hour'])] = r
+        for r in _read([f for f in glob.glob(d + '/[rs]?.csv')]): main[r['path']] = r
+        for r in _read(glob.glob(d + '/[rs]?_round.csv')): rnd[r['path']][int(r['hour'])] = r
     return main, rnd
 
 

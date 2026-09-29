@@ -1,92 +1,106 @@
 photo,app_pose,rehaut_minmean,rehaut_H,rehaut_V,n_markers,affine_valid,affine_why,tilt,tilt_hi,minor_clock,squash_sd,resid,quadrants,par_A,par_B,side_z,camera_az,hm_est,layout
-official_rolex_2026/image_00.jpg,CORRECTABLE,0.7529,0.2381,0.0233,8,True,,5.4862,11.8592,118.0649,0.0084,0.0065,4,-0.029,-0.0439,1.8306,,nan,DATE_AT_3
+official_rolex_2026/image_00.jpg,CORRECTABLE,0.7529,0.2381,0.0233,7,True,,4.5178,8.5256,176.4399,0.004,0.0025,4,-0.029,-0.0439,1.804,,nan,DATE_AT_3
 gen_wex_vmbUDwy/image_04.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,DATE_AT_3
 gen_wex_3KSuGhC/image_01.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,DATE_AT_3
-gen_wex_3KSuGhC/image_06.jpg,CORRECTABLE,0.678,0.4737,-0.0476,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_e99gXKb/image_01.jpg,CORRECTABLE,0.7665,0.1364,-0.1899,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_3KSuGhC/image_06.jpg,CORRECTABLE,0.678,0.4737,-0.0476,1,False,1 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_e99gXKb/image_01.jpg,CORRECTABLE,0.7665,0.1364,-0.1899,1,False,1 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_e99gXKb/image_06.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_1TDYtpN/image_01.jpg,CORRECTABLE,0.6111,0.0732,0.2903,7,True,,10.7802,16.1603,29.0471,0.0109,0.0068,4,0.0412,-0.0414,2.6353,209.0471,0.054,UNKNOWN
-gen_wex_1TDYtpN/image_06.jpg,CORRECTABLE,0.5333,-0.2593,0.5151,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_1TDYtpN/image_01.jpg,CORRECTABLE,0.6111,0.0732,0.2903,8,False,resid 0.008,11.9259,16.8881,22.3559,0.0108,0.0084,4,0.0412,-0.0414,0.0,,nan,UNKNOWN
+gen_wex_1TDYtpN/image_06.jpg,CORRECTABLE,0.5333,-0.2593,0.5151,2,False,2 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_8Rg3vqJ/image_03.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 pepsi/elegantswiss_ES363380210.jpg,GOOD,0.9302,-0.0476,0.0,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 pepsi/phillips_151477.jpg,CORRECTABLE,0.6621,0.2,-0.0824,8,True,,19.3838,21.3874,94.6912,0.0061,0.0049,4,-0.0663,-0.005,3.2957,94.6912,0.0333,UNKNOWN
-more/rolex_official_126710GRNR_0003_126710GRNR.png,CORRECTABLE,0.8182,0.1818,0.0,8,True,,3.6862,9.012,136.6831,0.0051,0.004,4,-0.0037,-0.0171,4.1356,136.6831,nan,DATE_AT_3
+more/rolex_official_126710GRNR_0003_126710GRNR.png,CORRECTABLE,0.8182,0.1818,0.0,7,True,,4.3782,8.1681,2.8101,0.0036,0.0023,4,-0.0037,-0.0171,4.5667,182.8101,nan,DATE_AT_3
 more/rolex_official_126720VTNR_0001_126720VTNR.png,CORRECTABLE,0.8372,0.1818,0.0476,8,True,,3.4436,8.6707,137.6254,0.0048,0.0037,4,-0.0253,-0.0411,1.9215,,nan,DATE_AT_9
 more/wos_cpo_40411280_126710BLNR.jpg,CORRECTABLE,0.8435,0.0461,0.0732,7,True,,2.6209,4.4634,173.7159,0.001,0.0006,4,0.0013,-0.0047,0.3953,,nan,UNKNOWN
 more/wos_cpo_408101817490_126711CHNR.jpg,CORRECTABLE,0.8235,0.2,0.0303,7,True,,2.4908,5.199,88.7057,0.0016,0.0009,4,0.0067,-0.0021,1.0806,,nan,DATE_AT_3
 more2/gen_126710BLNR_phillips_192617.jpg,GOOD,0.9434,-0.0566,-0.0189,8,True,,12.4453,14.2626,96.1179,0.0037,0.0029,4,-0.013,-0.0073,2.1415,96.1179,0.0119,UNKNOWN
 more2/gen_126711CHNR_phillips_159236.jpg,GOOD,0.7423,-0.2286,0.0199,8,True,,15.9927,18.307,95.9915,0.006,0.0047,4,-0.0358,-0.0124,2.7399,95.9915,0.0233,DATE_AT_3
-more2/gen_126715CHNR_phillips_137349.jpg,CORRECTABLE,0.8,-0.2381,0.1268,7,True,,10.7368,13.0144,98.561,0.0041,0.0024,4,-0.0291,-0.0004,4.9836,98.561,0.027,DATE_AT_3
-more2/gen_126720VTNR_phillips_204149.jpg,CORRECTABLE,0.875,0.0968,0.1515,7,True,,7.53,10.8908,59.7276,0.0047,0.003,4,-0.0039,0.0174,2.4552,59.7276,0.0238,UNKNOWN
-more3/gen_126710BLRO_phillips_172193.jpg,CORRECTABLE,0.5,0.1712,-0.3699,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+more2/gen_126715CHNR_phillips_137349.jpg,CORRECTABLE,0.8,-0.2381,0.1268,8,True,,10.5639,12.4461,96.4238,0.0033,0.0026,4,-0.0291,-0.0004,5.0097,96.4238,0.0274,DATE_AT_3
+more2/gen_126720VTNR_phillips_204149.jpg,CORRECTABLE,0.875,0.0968,0.1515,8,True,,7.4978,10.1924,57.9977,0.0036,0.0028,4,-0.0039,0.0174,2.528,57.9977,0.0239,UNKNOWN
+more3/gen_126710BLRO_phillips_172193.jpg,CORRECTABLE,0.5,0.1712,-0.3699,1,False,1 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 more3/wos_cpo_406107584490.jpg,GOOD,0.9057,0.0769,0.037,7,True,,3.2709,4.3626,78.8562,0.0006,0.0004,4,-0.0018,-0.0011,0.4547,,nan,DATE_AT_3
 more3/wos_cpo_406108072490.jpg,GOOD,0.8358,0.0667,0.1351,7,True,,1.2123,3.6992,78.2561,0.0009,0.0005,4,0.0036,-0.0076,2.0354,258.2561,nan,DATE_AT_3
-gen_wex_vmbUDwy/image_00.jpg,CORRECTABLE,0.5926,-0.3939,0.2381,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+bw_180863.jpg,GOOD,0.7514,-0.0811,-0.0841,8,False,resid 0.012; squash sd 0.0156,5.4155,15.3343,2.2241,0.0156,0.0121,4,0.006,-0.0069,0.0,,nan,DATE_AT_3
+bw_182860.jpg,CORRECTABLE,0.9195,-0.0244,0.0435,7,True,,2.3658,5.2,170.583,0.0016,0.0011,4,0.0075,-0.0108,1.3172,,nan,UNKNOWN
+bw_188819.jpg,CORRECTABLE,0.9212,0.013,-0.1364,7,True,,4.4582,9.4211,45.0757,0.0052,0.003,4,-0.0009,-0.0125,1.534,,nan,DATE_AT_3
+bw_191309.jpg,CORRECTABLE,0.8205,0.0303,-0.1111,8,True,,3.0305,5.3316,155.2554,0.0015,0.0011,4,-0.0088,-0.0242,4.4761,155.2554,nan,DATE_AT_3
+gen_wex_vmbUDwy/image_00.jpg,CORRECTABLE,0.5926,-0.3939,0.2381,1,False,1 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_vmbUDwy/image_05.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,DATE_AT_3
 gen_wex_3KSuGhC/image_02.jpg,CORRECTABLE,0.4,-0.5,0.1333,8,True,,18.405,19.8634,102.0548,0.0042,0.0033,4,0.0559,-0.0052,3.0708,282.0548,0.0297,UNKNOWN
-gen_wex_3KSuGhC/image_07.jpg,CORRECTABLE,0.5681,0.0,-0.2131,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_e99gXKb/image_02.jpg,GOOD,0.8571,-0.1429,-0.0476,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_3KSuGhC/image_07.jpg,CORRECTABLE,0.5681,0.0,-0.2131,2,False,2 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_e99gXKb/image_02.jpg,GOOD,0.8571,-0.1429,-0.0476,1,False,1 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_e99gXKb/image_07.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_1TDYtpN/image_02.jpg,CORRECTABLE,0.7692,0.0,0.1667,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_U2XNblj/image_00.jpg,CORRECTABLE,0.378,0.2152,0.5,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_8Rg3vqJ/image_04.jpg,CORRECTABLE,0.6292,-0.0435,-0.3488,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_1TDYtpN/image_02.jpg,CORRECTABLE,0.7692,0.0,0.1667,1,False,1 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_U2XNblj/image_00.jpg,CORRECTABLE,0.378,0.2152,0.5,2,False,2 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_8Rg3vqJ/image_04.jpg,CORRECTABLE,0.6292,-0.0435,-0.3488,2,False,2 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 pepsi/elegantswiss_ES387180218.jpg,CORRECTABLE,0.5783,0.3793,-0.04,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-pepsi/phillips_210072.jpg,GOOD,0.5674,-0.4118,-0.0685,6,True,,13.2007,18.696,89.453,0.0132,0.0042,4,-0.0497,-0.0275,4.7036,89.453,0.0426,UNKNOWN
+pepsi/phillips_210072.jpg,GOOD,0.5674,-0.4118,-0.0685,8,True,,13.3307,15.9413,91.3645,0.0058,0.0045,4,-0.0497,-0.0275,4.7889,91.3645,0.0421,UNKNOWN
 more/rolex_official_126711CHNR_0002_126711CHNR.png,CORRECTABLE,0.8372,0.1818,0.0476,8,True,,4.0995,9.4129,138.5364,0.0055,0.0042,4,-0.0102,-0.0455,1.4047,,nan,DATE_AT_3
 more/wos_cpo_40410010_126710BLRO.jpg,CORRECTABLE,0.6956,0.3513,0.0625,7,True,,5.2062,9.0929,83.7036,0.0042,0.0031,4,-0.0078,-0.0174,0.2963,,nan,DATE_AT_3
 more/wos_cpo_406107925490_126710BLRO.jpg,CORRECTABLE,0.8,0.0588,-0.2542,7,True,,2.3959,4.9754,24.7183,0.0014,0.001,4,0.0053,-0.0037,0.8933,,nan,UNKNOWN
 more/wos_cpo_408102338490_126711CHNR.jpg,CORRECTABLE,0.8,0.0256,0.1667,7,True,,1.7286,4.1586,79.6044,0.0011,0.0007,4,0.0009,0.0062,0.065,,nan,DATE_AT_3
-more2/gen_126710BLNR_phillips_211174.jpg,CORRECTABLE,0.7647,0.037,0.0732,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+more2/gen_126710BLNR_phillips_211174.jpg,CORRECTABLE,0.7647,0.037,0.0732,2,False,2 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 more2/gen_126711CHNR_phillips_166152.jpg,CORRECTABLE,0.8461,-0.1111,0.12,8,True,,13.2833,14.6518,98.3329,0.0029,0.0023,4,-0.0237,0.0035,8.9337,98.3329,0.0179,DATE_AT_3
-more2/gen_126715CHNR_phillips_159750.jpg,CORRECTABLE,0.6095,-0.129,-0.2558,8,True,,20.3297,22.9212,88.2545,0.0083,0.0067,4,-0.0733,-0.0189,3.1386,88.2545,0.036,UNKNOWN
-more2/gen_126720VTNR_phillips_233043.jpg,CORRECTABLE,0.7191,-0.0588,-0.4182,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-more3/gen_126720VTNR_phillips_214410.jpg,CORRECTABLE,0.7194,0.3953,-0.0566,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+more2/gen_126715CHNR_phillips_159750.jpg,CORRECTABLE,0.6095,-0.129,-0.2558,8,False,resid 0.007,20.3297,22.9212,88.2545,0.0083,0.0067,4,-0.0733,-0.0189,0.0,,nan,UNKNOWN
+more2/gen_126720VTNR_phillips_233043.jpg,CORRECTABLE,0.7191,-0.0588,-0.4182,1,False,1 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+more3/gen_126720VTNR_phillips_214410.jpg,CORRECTABLE,0.7194,0.3953,-0.0566,3,False,3 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 more3/wos_cpo_406107834490.jpg,CORRECTABLE,0.8455,0.2121,0.0175,7,True,,4.4699,7.0243,93.0576,0.0022,0.0017,4,-0.0035,-0.0091,0.697,,nan,DATE_AT_3
 more3/wos_cpo_408102212490.jpg,CORRECTABLE,0.6,0.4,-0.0667,7,True,,2.086,4.3885,60.0341,0.0011,0.0007,4,-0.0041,-0.0015,0.8389,,nan,DATE_AT_3
-gen_wex_vmbUDwy/image_01.jpg,CORRECTABLE,0.5246,0.0588,0.2727,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+bw_181134.jpg,CORRECTABLE,0.7351,-0.236,-0.1667,7,True,,3.0759,5.5904,34.61,0.0017,0.001,4,0.0106,-0.0063,3.341,214.61,nan,DATE_AT_3
+bw_183365.jpg,CORRECTABLE,0.7901,0.1351,-0.2273,8,True,,5.4561,8.7886,43.8352,0.0036,0.0028,4,0.0168,-0.0268,4.6168,223.8352,nan,DATE_AT_9
+bw_189306.jpg,CORRECTABLE,0.8276,0.0526,-0.2245,7,True,,6.0652,9.73,10.9577,0.0044,0.0024,4,0.0129,-0.0063,2.2595,190.9577,0.0237,UNKNOWN
+bw_191799.jpg,GOOD,0.8718,0.0286,-0.0698,7,True,,6.8443,11.4481,1.0846,0.0064,0.0039,4,0.0075,-0.0302,2.0036,181.0846,0.0456,DATE_AT_3
+gen_wex_vmbUDwy/image_01.jpg,CORRECTABLE,0.5246,0.0588,0.2727,1,False,1 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_vmbUDwy/image_06.jpg,GOOD,0.8814,0.0,0.0909,8,True,,8.3827,9.9226,175.9064,0.0021,0.0017,4,0.0059,-0.02,4.7019,175.9064,0.0249,DATE_AT_3
-gen_wex_3KSuGhC/image_03.jpg,CORRECTABLE,0.8571,0.1724,-0.1111,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_3KSuGhC/image_03.jpg,CORRECTABLE,0.8571,0.1724,-0.1111,8,True,,4.3222,5.5052,166.6919,0.0009,0.0007,4,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_3KSuGhC/image_08.jpg,CORRECTABLE,0.4923,0.4286,-0.1351,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_e99gXKb/image_03.jpg,CORRECTABLE,0.28,-0.2222,0.2683,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_e99gXKb/image_03.jpg,CORRECTABLE,0.28,-0.2222,0.2683,3,False,3 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_e99gXKb/image_08.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_1TDYtpN/image_03.jpg,CORRECTABLE,0.4546,0.4595,0.1765,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_8Rg3vqJ/image_00.jpg,RETAKE,0.8571,-0.0833,0.0,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_8Rg3vqJ/image_00.jpg,RETAKE,0.8571,-0.0833,0.0,2,False,2 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_8Rg3vqJ/image_05.jpg,CORRECTABLE,0.6667,0.0,0.4,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 pepsi/phillips_122669.jpg,RETAKE,0.4604,0.2055,-0.5151,2,False,2 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-pepsi/phillips_232301.jpg,CORRECTABLE,0.8571,0.1111,0.1035,7,True,,17.9329,20.6045,1.9157,0.0077,0.0049,4,0.0137,-0.0573,4.7041,181.9157,0.032,UNKNOWN
-more/rolex_official_126713GRNR_0001_126713GRNR.png,CORRECTABLE,0.7442,0.2381,0.0,7,True,,4.5494,9.573,163.9079,0.0054,0.0035,4,-0.0174,-0.046,1.85,,nan,DATE_AT_3
+pepsi/phillips_232301.jpg,CORRECTABLE,0.8571,0.1111,0.1035,8,True,,17.5761,19.7932,1.7006,0.0062,0.005,4,0.0137,-0.0573,4.7005,181.7006,0.0327,UNKNOWN
+more/rolex_official_126713GRNR_0001_126713GRNR.png,CORRECTABLE,0.7442,0.2381,0.0,8,True,,4.3325,9.4404,136.4784,0.0053,0.0041,4,-0.0174,-0.046,1.6528,,nan,DATE_AT_3
 more/wos_cpo_40410883_126710BLRO.jpg,CORRECTABLE,0.7429,0.2353,0.1667,7,True,,2.2443,5.1113,54.4972,0.0016,0.001,4,0.0034,0.0067,0.2971,,nan,DATE_AT_3
 more/wos_cpo_406107958490_126711CHNR.jpg,GOOD,0.8372,0.122,-0.0222,7,True,,2.2102,4.4395,36.4971,0.0011,0.0006,4,0.0003,-0.0015,0.2716,,nan,DATE_AT_3
 more/wos_cpo_408102363490_126710BLRO.jpg,GOOD,0.8823,-0.0857,0.0909,7,True,,1.7723,4.9383,75.4588,0.0016,0.0011,4,0.0045,-0.0053,3.4366,255.4588,nan,DATE_AT_3
 more2/gen_126710BLNR_phillips_CH080120_2.jpg,CORRECTABLE,0.5957,0.3333,0.0,8,True,,13.333,15.2776,89.3443,0.0042,0.0033,4,-0.0477,0.0155,11.7653,89.3443,0.0372,DATE_AT_3
 more2/gen_126711CHNR_phillips_172578.jpg,GOOD,0.7879,-0.1053,-0.0714,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-more2/gen_126715CHNR_phillips_223302.jpg,CORRECTABLE,0.4378,-0.5056,0.0,6,True,,15.6727,17.7327,96.6976,0.0052,0.0031,4,-0.0381,0.0059,2.6682,96.6976,0.0242,DATE_AT_3
-more2/gen_126720VTNR_phillips_CH080223_1.jpg,CORRECTABLE,0.5714,-0.3846,-0.0667,7,True,,19.5707,22.5266,90.6286,0.0093,0.0053,4,0.0543,-0.0211,4.4026,270.6286,0.0288,UNKNOWN
-more3/wos_cpo_40410003.jpg,GOOD,0.9286,0.0,-0.0667,6,True,,1.9428,5.0939,165.8861,0.0017,0.0007,4,-0.0102,0.0042,0.7147,,nan,DATE_AT_3
+more2/gen_126715CHNR_phillips_223302.jpg,CORRECTABLE,0.4378,-0.5056,0.0,8,True,,14.5455,17.1921,100.4801,0.0063,0.005,4,-0.0381,0.0059,2.5951,100.4801,0.0261,DATE_AT_3
+more2/gen_126720VTNR_phillips_CH080223_1.jpg,CORRECTABLE,0.5714,-0.3846,-0.0667,8,True,,19.4731,21.7987,89.1576,0.0072,0.0057,4,0.0543,-0.0211,4.4465,269.1576,0.029,UNKNOWN
+more3/wos_cpo_40410003.jpg,GOOD,0.9286,0.0,-0.0667,7,True,,2.4993,4.8442,157.1272,0.0013,0.0008,4,-0.0102,0.0042,0.0182,,nan,DATE_AT_3
 more3/wos_cpo_406107893490.jpg,CORRECTABLE,0.8814,0.1333,-0.0345,7,True,,2.9041,5.1941,177.9098,0.0014,0.0008,4,0.0047,-0.0122,1.5305,,nan,DATE_AT_3
 more3/wos_cpo_408102323490.jpg,CORRECTABLE,0.3704,0.6154,0.1429,7,True,,2.0576,4.2011,17.6823,0.001,0.0005,4,-0.0022,-0.0004,0.0196,,nan,UNKNOWN
+bw_181135.jpg,CORRECTABLE,0.9302,0.0,-0.1304,7,True,,3.0509,5.1129,1.1844,0.0013,0.0007,4,-0.0022,-0.0062,1.0805,,nan,DATE_AT_3
+bw_183395.jpg,CORRECTABLE,0.8395,0.05,-0.1707,7,True,,2.82,9.1324,85.504,0.0057,0.0036,4,-0.0241,0.0273,2.1221,85.504,nan,DATE_AT_9
+bw_189631.jpg,GOOD,0.8193,0.1053,-0.1556,7,True,,3.4172,8.7624,171.767,0.0049,0.0034,4,0.0133,-0.0084,0.5354,,nan,DATE_AT_9
 gen_wex_vmbUDwy/image_02.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,DATE_AT_3
 gen_wex_K4gqk6U/image_00.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_3KSuGhC/image_04.jpg,CORRECTABLE,0.7432,0.0127,-0.3462,8,True,,4.2911,5.2006,11.4543,0.0007,0.0005,4,-0.0024,-0.0003,0.0898,,nan,DATE_AT_3
-gen_wex_3KSuGhC/image_09.jpg,CORRECTABLE,0.6038,-0.3846,-0.3333,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_e99gXKb/image_04.jpg,RETAKE,0.2837,-0.2308,0.6174,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_e99gXKb/image_09.jpg,CORRECTABLE,0.7525,0.1364,0.2281,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_3KSuGhC/image_09.jpg,CORRECTABLE,0.6038,-0.3846,-0.3333,2,False,2 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_e99gXKb/image_04.jpg,RETAKE,0.2837,-0.2308,0.6174,1,False,1 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_e99gXKb/image_09.jpg,CORRECTABLE,0.7525,0.1364,0.2281,1,False,1 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_1TDYtpN/image_04.jpg,CORRECTABLE,0.7333,0.102,0.0423,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_8Rg3vqJ/image_01.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+gen_wex_8Rg3vqJ/image_01.jpg,UNASSESSABLE,nan,nan,nan,2,False,2 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_8Rg3vqJ/image_06.jpg,CORRECTABLE,0.4753,0.3207,-0.5,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 pepsi/phillips_146213.jpg,CORRECTABLE,0.6197,-0.3889,-0.0857,8,True,,7.8109,9.8861,85.8562,0.0028,0.0022,4,-0.0245,0.0069,8.2585,85.8562,0.0327,DATE_AT_3
-pepsi/phillips_CH080120_75.jpg,CORRECTABLE,0.8677,-0.1546,0.0435,6,True,,16.133,19.8711,107.1914,0.0101,0.0036,4,-0.0451,-0.0149,6.2706,107.1914,0.0289,DATE_AT_3
+pepsi/phillips_CH080120_75.jpg,CORRECTABLE,0.8677,-0.1546,0.0435,8,True,,15.9473,17.9362,107.8781,0.0051,0.004,4,-0.0451,-0.0149,6.2564,107.8781,0.0293,DATE_AT_3
 more/rolex_official_126715CHNR_0001_126715CHNR.png,CORRECTABLE,0.7711,0.2381,0.0732,8,True,,3.8834,9.1343,139.1995,0.0052,0.004,4,-0.015,-0.0484,1.6426,,nan,DATE_AT_3
 more/wos_cpo_40411116_126710BLRO.jpg,GOOD,0.8649,0.0244,0.0303,7,True,,2.2473,5.2188,26.8316,0.0017,0.0009,4,-0.0036,-0.0051,0.7653,,nan,DATE_AT_3
 more/wos_cpo_406107973490_126710BLRO.jpg,CORRECTABLE,0.7761,0.2571,0.0,7,True,,3.6395,5.6643,84.4552,0.0014,0.0009,4,0.0101,0.0005,3.2432,264.4552,nan,DATE_AT_3
-more2/gen_126710BLNR_phillips_159233.jpg,CORRECTABLE,0.7805,-0.312,0.0,6,True,,16.4027,21.4439,94.4819,0.0143,0.006,4,-0.0664,-0.0148,3.6273,94.4819,0.0407,UNKNOWN
+more2/gen_126710BLNR_phillips_159233.jpg,CORRECTABLE,0.7805,-0.312,0.0,7,True,,15.9754,19.4448,95.4428,0.0092,0.006,4,-0.0664,-0.0148,3.6348,95.4428,0.0419,UNKNOWN
 more2/gen_126710BLRO_phillips_151263.jpg,RETAKE,0.3636,-0.4667,-0.1035,7,True,,13.4374,15.0623,90.9518,0.0035,0.0021,4,-0.0186,-0.0128,5.4184,90.9518,0.0167,UNKNOWN
-more2/gen_126711CHNR_phillips_180697.jpg,RETAKE,0.2857,-0.5,-0.1,7,True,,10.2712,13.3842,85.5097,0.0056,0.0031,4,-0.0271,0.0041,3.377,85.5097,0.0267,UNKNOWN
-more2/gen_126715CHNR_phillips_224135.jpg,CORRECTABLE,0.6614,-0.0556,0.2364,7,True,,19.6337,22.635,93.4427,0.0094,0.0052,4,-0.0575,-0.0243,5.1469,93.4427,0.0308,UNKNOWN
-more3/gen_126710BLNR_phillips_181407.jpg,GOOD,0.5079,-0.36,-0.3684,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+more2/gen_126711CHNR_phillips_180697.jpg,RETAKE,0.2857,-0.5,-0.1,8,True,,10.9218,14.085,91.1546,0.006,0.0046,4,-0.0271,0.0041,3.3386,91.1546,0.025,UNKNOWN
+more2/gen_126715CHNR_phillips_224135.jpg,CORRECTABLE,0.6614,-0.0556,0.2364,8,True,,19.8089,21.9994,94.6625,0.0068,0.0055,4,-0.0575,-0.0243,5.1829,94.6625,0.0305,UNKNOWN
+more3/gen_126710BLNR_phillips_181407.jpg,GOOD,0.5079,-0.36,-0.3684,1,False,1 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 more3/wos_cpo_40411271.jpg,RETAKE,0.4444,0.5385,-0.0714,7,True,,1.9894,4.078,64.7641,0.001,0.0006,4,0.0089,-0.0066,6.6547,244.7641,nan,DATE_AT_3
 more3/wos_cpo_406107957490.jpg,CORRECTABLE,0.8608,0.0476,-0.0811,7,True,,1.8955,3.7696,179.6936,0.0008,0.0006,4,-0.0033,-0.0019,0.4768,,nan,DATE_AT_3
-more3/wos_cpo_408102331490.jpg,CORRECTABLE,0.6545,-0.2174,0.0,6,True,,3.2695,4.75,16.5413,0.0009,0.0005,4,0.0033,-0.0022,1.2244,,nan,DATE_AT_3
+more3/wos_cpo_408102331490.jpg,CORRECTABLE,0.6545,-0.2174,0.0,7,True,,3.2404,4.7221,24.1738,0.0009,0.0006,4,0.0033,-0.0022,1.3285,,nan,DATE_AT_3
+bw_181970.jpg,CORRECTABLE,0.6536,0.1111,-0.3827,7,True,,4.8165,9.3585,36.5685,0.0049,0.0033,4,0.0059,-0.0131,1.158,,nan,DATE_AT_9
+bw_185984.jpg,GOOD,0.9123,0.0,-0.1429,8,False,resid 0.008,5.3575,12.5415,82.1151,0.0097,0.0075,4,-0.0107,-0.0255,0.0,,nan,UNKNOWN
+bw_190342.jpg,GOOD,0.8293,0.1053,-0.0909,7,True,,4.0749,6.3649,18.4151,0.0018,0.0012,4,-0.0035,-0.0119,2.5221,198.4151,nan,DATE_AT_9
 gen_wex_vmbUDwy/image_03.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,DATE_AT_3
 gen_wex_3KSuGhC/image_00.jpg,GOOD,0.896,-0.0476,-0.0968,7,True,,2.9766,4.0536,30.4846,0.0006,0.0003,4,-0.0031,-0.0009,0.393,,nan,DATE_AT_3
 gen_wex_3KSuGhC/image_05.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,DATE_AT_3
@@ -95,16 +109,20 @@ gen_wex_e99gXKb/image_05.jpg,UNASSESSABLE,nan,nan,nan,0,False,no dial fit,nan,na
 gen_wex_1TDYtpN/image_00.jpg,CORRECTABLE,0.8302,0.1429,0.12,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_1TDYtpN/image_05.jpg,RETAKE,0.3497,-0.36,-0.1278,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 gen_wex_8Rg3vqJ/image_02.jpg,CORRECTABLE,0.6087,-0.04,0.3333,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-gen_wex_bRffRhD/image_00.jpg,CORRECTABLE,0.7692,0.0,0.1667,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
-pepsi/phillips_147798.jpg,CORRECTABLE,0.8205,-0.1707,-0.1351,7,True,,7.8223,9.8358,80.7276,0.0027,0.0016,4,-0.0192,0.0005,4.1166,80.7276,0.0246,DATE_AT_3
+gen_wex_bRffRhD/image_00.jpg,CORRECTABLE,0.7692,0.0,0.1667,2,False,2 markers,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
+pepsi/phillips_147798.jpg,CORRECTABLE,0.8205,-0.1707,-0.1351,8,True,,7.6605,9.1845,79.8694,0.0019,0.0015,4,-0.0192,0.0005,4.106,79.8694,0.0252,DATE_AT_3
 pepsi/phillips_NY080121_35.jpg,RETAKE,0.8175,-0.2533,0.0968,8,True,,16.8943,18.7297,84.4508,0.0049,0.0039,4,-0.037,-0.0068,2.4279,84.4508,0.0218,UNKNOWN
-more/rolex_official_126718GRNR_0001_126718GRNR.png,CORRECTABLE,0.8372,0.1818,0.0476,7,True,,4.563,9.6248,160.0949,0.0055,0.0035,4,-0.0181,-0.0469,1.8052,,nan,DATE_AT_3
+more/rolex_official_126718GRNR_0001_126718GRNR.png,CORRECTABLE,0.8372,0.1818,0.0476,8,True,,4.1951,9.1235,138.3575,0.005,0.0039,4,-0.0181,-0.0469,1.6442,,nan,DATE_AT_3
 more/wos_cpo_40411167_126710BLNR.jpg,CORRECTABLE,0.8276,0.1429,0.0,7,True,,2.0998,5.519,141.5573,0.002,0.0012,4,0.0011,-0.0049,0.5805,,nan,DATE_AT_3
 more/wos_cpo_40617914_126711CHNR.jpg,GOOD,0.7273,0.2727,-0.0303,7,True,,1.8169,4.1919,32.5254,0.0011,0.0006,4,-0.0024,-0.0047,0.7077,,nan,DATE_AT_3
 more2/gen_126710BLNR_phillips_166153.jpg,CORRECTABLE,0.9,0.082,-0.0848,0,False,no dial fit,nan,nan,nan,nan,nan,0,nan,nan,0.0,,nan,UNKNOWN
 more2/gen_126710GRNR_phillips_perpetual_bruce_wayne_2024.jpg,GOOD,0.7643,-0.0909,0.0549,7,True,,7.1854,12.0253,116.3456,0.007,0.0044,4,-0.0324,-0.0355,11.7983,116.3456,0.0671,DATE_AT_3
 more2/gen_126711CHNR_phillips_180859.jpg,RETAKE,0.2712,-0.68,0.0,7,True,,11.6811,13.791,92.0428,0.0041,0.0024,4,-0.0245,-0.0036,5.1138,92.0428,0.0211,DATE_AT_3
-more2/gen_126718GRNR_phillips_218413.jpg,CORRECTABLE,0.8205,0.1933,-0.113,7,True,,22.0704,24.7314,93.6447,0.0092,0.0054,4,-0.0664,-0.0028,4.107,93.6447,0.0289,UNKNOWN
+more2/gen_126718GRNR_phillips_218413.jpg,CORRECTABLE,0.8205,0.1933,-0.113,8,True,,22.1397,24.1119,94.5334,0.0068,0.0055,4,-0.0664,-0.0028,4.1043,94.5334,0.0288,UNKNOWN
 more3/gen_126710BLRO_phillips_146853.jpg,CORRECTABLE,0.6956,-0.2453,0.0968,7,True,,9.8464,13.9131,12.4607,0.0073,0.004,4,-0.001,-0.0454,3.6715,192.4607,0.046,UNKNOWN
 more3/wos_cpo_40411407.jpg,GOOD,0.8205,0.0667,0.0303,7,True,,1.6565,4.3956,91.5507,0.0013,0.0008,4,0.003,-0.0014,0.8472,,nan,DATE_AT_3
 more3/wos_cpo_406107977490.jpg,CORRECTABLE,0.7407,0.0566,0.0244,7,True,,2.154,4.5288,59.3444,0.0012,0.0008,4,0.0023,-0.0064,1.9417,,nan,DATE_AT_3
+bw_180183.jpg,GOOD,0.8372,-0.0526,-0.1667,7,True,,1.771,4.9108,41.6959,0.0016,0.0011,4,0.0042,-0.0115,3.7962,221.6959,nan,UNKNOWN
+bw_182028.jpg,CORRECTABLE,0.8947,0.0556,-0.05,7,True,,6.2336,9.3416,18.0493,0.0037,0.0025,4,-0.001,-0.0116,1.1451,,0.0188,DATE_AT_9
+bw_187386.jpg,CORRECTABLE,0.8533,0.0,-0.2195,8,True,,7.322,10.1875,12.0015,0.0038,0.003,4,-0.0229,-0.0219,1.5127,,0.0433,DATE_AT_3
+bw_190706.jpg,GOOD,0.8571,0.0526,-0.087,7,True,,6.1191,10.1241,151.7426,0.0049,0.003,4,0.0106,-0.006,0.0253,,0.0199,DATE_AT_9
