@@ -275,7 +275,8 @@ final class GmtHumanQcAnalyzerV2 {
                     :new GmtDialLayout.Result(GmtDialLayout.Layout.UNKNOWN,Double.NaN,Double.NaN);
             GmtSixLandmarkAnalyzer.Position sidePos=layout.layout==GmtDialLayout.Layout.DATE_AT_9
                     ?GmtSixLandmarkAnalyzer.Position.THREE:GmtSixLandmarkAnalyzer.Position.NINE;
-            BatonOutcome nineOut=measureBaton(sidePos,src,cx,cy,r,twelve,pose.label,layout.layout!=GmtDialLayout.Layout.UNKNOWN);
+            BatonOutcome nineOut=withholdIfSideUnknown(
+                    measureBaton(sidePos,src,cx,cy,r,twelve,pose.label,layout.layout!=GmtDialLayout.Layout.UNKNOWN),layout.layout);
             // Round markers (alpha61), oriented by the 12's 60 tick.
             GmtRoundMarkerAnalyzer.DialFrame dialFrame=edge!=null?new GmtRoundMarkerAnalyzer.DialFrame(edge.cx,edge.cy,edge.axisA,edge.axisB,edge.angleDeg)
                     :GmtRoundMarkerAnalyzer.DialFrame.circle(cx,cy,r);
@@ -294,8 +295,10 @@ final class GmtHumanQcAnalyzerV2 {
             // photo caught by this had any verdict; clean dials have 6-8 such round markers.
             int cleanRound=0;
             for(GmtRoundMarkerAnalyzer.Marker m:round)if(m.found&&m.contrast>=GmtRoundMarkerAnalyzer.MIN_EDGE_CONTRAST&&m.tickScore>=GmtRoundMarkerAnalyzer.MIN_TICK_SCORE)cleanRound++;
-            boolean noDial=!stableFrame&&cleanRound<=MAX_ROUND_FOR_NO_DIAL
-                    &&!(six.valid&&six.stable)&&!(nineOut.result.valid&&nineOut.result.stable);
+            boolean noDial=noReadableDial(!stableFrame&&cleanRound<=MAX_ROUND_FOR_NO_DIAL
+                    &&!(six.valid&&six.stable)&&!(nineOut.result.valid&&nineOut.result.stable),
+                    twelve.valid?clearance.attention:null,twelve.valid?rotation.attention:null,
+                    six.valid?sixDecision.attention:null,nineOut.result.valid?nineOut.decision.attention:null,round);
 
             StringBuilder out=new StringBuilder("\n\nHUMAN 12-MARKER QC\n");
             if(noDial)out.append(String.format(Locale.US,"No readable dial: the 12 was only found with low confidence, no baton was traced cleanly and only %d round markers were (a clean dial shows 6-8). Nothing below is judged.\n",cleanRound));
@@ -472,11 +475,43 @@ final class GmtHumanQcAnalyzerV2 {
     private GmtHumanQcAnalyzerV2(){}
 
     /** One baton's measurement, decision and gates (6 and 9). */
+    static boolean resolvedFlag(GmtHumanQcMath.Attention a){
+        return a==GmtHumanQcMath.Attention.CHECK||a==GmtHumanQcMath.Attention.STRONG;
+    }
+
+    /**
+     * alpha62 review: "no readable dial / nothing checked" may never hide a resolved finding. The
+     * low-evidence candidate is only accepted when no marker or baton (12 gap, 12 alignment, 6, the
+     * side baton, any round marker) has a CHECK or STRONG verdict. Null means not measured.
+     */
+    static boolean noReadableDial(boolean lowEvidence,GmtHumanQcMath.Attention gap,GmtHumanQcMath.Attention alignment,
+                                  GmtHumanQcMath.Attention six,GmtHumanQcMath.Attention side,java.util.List<GmtRoundMarkerAnalyzer.Marker> round){
+        if(!lowEvidence)return false;
+        if(resolvedFlag(gap)||resolvedFlag(alignment)||resolvedFlag(six)||resolvedFlag(side))return false;
+        if(round!=null)for(GmtRoundMarkerAnalyzer.Marker m:round)if(m.flagged())return false;
+        return true;
+    }
+
+    /**
+     * alpha62 review: with the date side UNKNOWN the app can't tell a standard GMT (baton at 9) from
+     * the Sprite (baton at 3), so the side baton gets no verdict at either position. The outline is
+     * still measured (it counts as evidence that a dial is present) but nothing is judged.
+     */
+    static BatonOutcome withholdIfSideUnknown(BatonOutcome o,GmtDialLayout.Layout layout){
+        if(layout!=GmtDialLayout.Layout.UNKNOWN)return o;
+        o.sideUnknown=true;
+        o.decision=new GmtHumanQcMath.SixDecision(GmtHumanQcMath.Attention.UNASSESSABLE,false,false,false,
+                "date side not determined, so neither the 3 nor the 9 is judged");
+        return o;
+    }
+
     static final class BatonOutcome {
         final GmtSixLandmarkAnalyzer.Position position;
         GmtSixLandmarkAnalyzer.Result result;
         GmtHumanQcMath.SixDecision decision;
         boolean unstable,hand;
+        /** The date side could not be told, so this side baton is not judged (see withholdIfSideUnknown). */
+        boolean sideUnknown;
         BatonOutcome(GmtSixLandmarkAnalyzer.Position p){position=p;}
         GmtHumanSummary.Baton summary(){
             GmtHumanSummary.Baton b=new GmtHumanSummary.Baton(position.label,position.before,position.after);
@@ -484,7 +519,7 @@ final class GmtHumanQcAnalyzerV2 {
             b.stable=result.stable;b.lowReason=result.lowReason;b.unstable=unstable;
             b.centringMin=result.centringMin;b.centringMax=result.centringMax;b.rotMin=result.rotMin;b.rotMax=result.rotMax;b.centring=result.centring;
             b.rotationDeg=result.rotationDeg;b.gap=result.gap;b.widthPx=result.widthPx;
-            b.offCentre=decision.offCentre;b.rotated=decision.rotated;
+            b.offCentre=decision.offCentre;b.rotated=decision.rotated;b.sideUnknown=sideUnknown;
             return b;
         }
     }

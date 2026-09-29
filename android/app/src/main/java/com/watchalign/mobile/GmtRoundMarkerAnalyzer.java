@@ -220,29 +220,26 @@ final class GmtRoundMarkerAnalyzer {
     }
     static final int MIN_PAIRED_FOR_SIZE=4;
 
-    /** Diameter against the median of the confidently traced markers on the same dial (needs 4). */
+    /**
+     * Surround diameter against the median surround on the same dial. Only markers whose surround
+     * edge is identified (both rings found) are compared, and at least MIN_PAIRED_FOR_SIZE are
+     * needed; otherwise size is left unjudged (NaN) on every marker.
+     */
     static void sizeRatios(List<Marker> ms){
-        // Preferred: compare surround to surround on the markers where both edges were found; the
-        // others are left uncompared. With fewer than MIN_PAIRED_FOR_SIZE such markers, the fitted
-        // edges are compared as before.
+        // No fallback to the fitted edges (alpha62 review): a single fitted edge may be the lume on
+        // one marker and the surround on another, which reads as a 12-20% size difference on a
+        // genuine dial (Bob's Watches 126720VTNR 182860). Without enough markers whose edge identity
+        // is known, size is not assessable.
         List<Double> paired=new ArrayList<>();double[] sr=new double[ms.size()];
         for(int i=0;i<ms.size();i++){Marker m=ms.get(i);sr[i]=m.found&&m.stable?surroundRadius(m):Double.NaN;if(Double.isFinite(sr[i]))paired.add(2*sr[i]);}
-        boolean byRing=paired.size()>=MIN_PAIRED_FOR_SIZE;
-        List<Double> d=new ArrayList<>();
-        if(byRing)d=paired;else for(Marker m:ms)if(m.found&&m.stable)d.add(m.diameterPx());
-        if(d.size()<4)return;
-        double[] a=new double[d.size()];for(int i=0;i<a.length;i++)a[i]=d.get(i);Arrays.sort(a);
+        if(paired.size()<MIN_PAIRED_FOR_SIZE)return;
+        double[] a=new double[paired.size()];for(int i=0;i<a.length;i++)a[i]=paired.get(i);Arrays.sort(a);
         double med=a.length%2==1?a[a.length/2]:(a[a.length/2-1]+a[a.length/2])/2;
         // Sizes are only compared on markers large enough for the surround (about a fifth of the
-        // radius) to be several pixels wide. Below that the fit takes the lume edge on some markers
-        // and the surround's outer edge on others, which reads as a 12-18% size difference
-        // (rep_cplus_wEYZOyK images 00, 02 and 03 at 25-28 px; rep_vsf_gpZWOfy image_02 at 27 px).
+        // radius) to be several pixels wide (rep_cplus_wEYZOyK images 00, 02 and 03 at 25-28 px;
+        // rep_vsf_gpZWOfy image_02 at 27 px).
         if(med<MIN_SIZE_CHECK_PX)return;
-        for(int i=0;i<ms.size();i++){
-            Marker m=ms.get(i);if(!m.found)continue;
-            if(byRing){if(Double.isFinite(sr[i]))m.sizeRatio=2*sr[i]/med;}
-            else m.sizeRatio=m.diameterPx()/med;
-        }
+        for(int i=0;i<ms.size();i++){Marker m=ms.get(i);if(m.found&&Double.isFinite(sr[i]))m.sizeRatio=2*sr[i]/med;}
     }
 
     /** Re-measures each found marker at 94% and 88% and records the ranges. */
