@@ -278,9 +278,16 @@ surround are both edges, and the fit can land on either: on genuine Bob's Watche
 read 1.21x the others. The fit now keeps every edge it found on each ray; a marker whose lume
 and surround are both found as rings (surround 1.12-1.5x the lume) is compared on its
 surround, and a marker with only one ring is not size-judged. With fewer than 4 such markers
-the fitted edges are compared as before. 319-photo regression unchanged; the one false flag on
-the clean genuine set is gone; synthetic 0.85x / 1.15x markers still read 0.856 / 1.134 (CHECK)
-(`docs/research/gmt_round_size_edges_2026-09-29.md`).
+size is not assessed at all (review: the old fallback to fitted edges was the same lume-vs-surround
+ambiguity). The one false flag on the clean genuine set is gone; synthetic 0.85x / 1.15x markers
+still read 0.856 / 1.134 (CHECK) (`docs/research/gmt_round_size_edges_2026-09-29.md`).
+
+alpha62 review fixes: (1) no fitted-edge size fallback, as above: on the 319-photo regression size
+is now compared on 12 photos instead of 92; no size flag existed on the dropped ones. (2) Date side
+UNKNOWN: neither the 3 nor the 9 baton gets a verdict ("not checked (date side not determined)");
+12 photos lose a side-baton CLEAR, none a CHECK. (3) "No readable dial" is only reported when no
+marker or baton has a CHECK or STRONG verdict; one replica photo (rep_cf_UpTW8nx image_06, 12 gap
+0.030) now shows its gap CHECK instead of "nothing checked". No other verdict changed.
 
 ## 7. What's been validated
 

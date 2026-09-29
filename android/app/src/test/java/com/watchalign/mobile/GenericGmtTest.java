@@ -66,4 +66,38 @@ public class GenericGmtTest {
         String s=GmtHumanSummary.batonLine(b);
         assertTrue(s,s.contains("sits high (towards the 14 tick)"));
     }
+
+    private static GmtHumanQcAnalyzerV2.BatonOutcome sideBaton(GmtSixLandmarkAnalyzer.Position pos,GmtHumanQcMath.Attention a){
+        GmtHumanQcAnalyzerV2.BatonOutcome o=new GmtHumanQcAnalyzerV2.BatonOutcome(pos);
+        o.result=new GmtSixLandmarkAnalyzer.Result(0.05,0.20,1.5,20,60,true,null);
+        o.decision=new GmtHumanQcMath.SixDecision(a,a!=GmtHumanQcMath.Attention.CLEAR,false,false,"measured");
+        return o;
+    }
+
+    @Test public void unknownLayoutGivesNoThreeOrNineVerdict(){
+        // alpha62 review: UNKNOWN can't say whether the baton is at 9 (standard) or 3 (Sprite).
+        for(GmtSixLandmarkAnalyzer.Position pos:new GmtSixLandmarkAnalyzer.Position[]{GmtSixLandmarkAnalyzer.Position.NINE,GmtSixLandmarkAnalyzer.Position.THREE}){
+            for(GmtHumanQcMath.Attention a:new GmtHumanQcMath.Attention[]{GmtHumanQcMath.Attention.CLEAR,GmtHumanQcMath.Attention.CHECK,GmtHumanQcMath.Attention.STRONG}){
+                GmtHumanQcAnalyzerV2.BatonOutcome o=GmtHumanQcAnalyzerV2.withholdIfSideUnknown(sideBaton(pos,a),GmtDialLayout.Layout.UNKNOWN);
+                assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,o.decision.attention);
+                GmtHumanSummary.Input in=clearTwelve();in.layout=GmtDialLayout.Layout.UNKNOWN;in.nine=o.summary();
+                assertFalse(in.nine.flagged());assertFalse(in.nine.clear());
+                String s=GmtHumanSummary.build(in);
+                assertTrue(s,s.contains("3 not checked (date side not determined)"));
+                assertTrue(s,s.contains("9 not checked (date side not determined)"));
+                assertTrue(s,s.contains("3/9 baton: not checked: the date side could not be determined"));
+                assertFalse(s,s.contains("9 baton position"));assertFalse(s,s.contains("3 baton position"));
+                for(String h:new String[]{"3","9"})for(String v:new String[]{" OK"," worth a look"," CHECK CLOSELY"})assertFalse(s,s.contains(h+v));
+                assertFalse(s,s.contains("baton is centred"));assertFalse(s,s.contains("batons are centred"));
+            }
+        }
+        // Even a verdict that reaches the summary without the analyzer's withholding is not shown.
+        GmtHumanSummary.Input in=clearTwelve();in.layout=GmtDialLayout.Layout.UNKNOWN;
+        in.nine=sideBaton(GmtSixLandmarkAnalyzer.Position.NINE,GmtHumanQcMath.Attention.CHECK).summary();
+        String s=GmtHumanSummary.build(in);
+        assertFalse(s,s.contains("worth a look"));assertFalse(s,s.contains("9 baton position"));
+        // A known layout keeps its verdict.
+        GmtHumanQcAnalyzerV2.BatonOutcome k=GmtHumanQcAnalyzerV2.withholdIfSideUnknown(sideBaton(GmtSixLandmarkAnalyzer.Position.NINE,GmtHumanQcMath.Attention.CHECK),GmtDialLayout.Layout.DATE_AT_3);
+        assertEquals(GmtHumanQcMath.Attention.CHECK,k.decision.attention);
+    }
 }
