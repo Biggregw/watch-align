@@ -147,3 +147,19 @@ The marker affine drops the misfitted 5 automatically: its radius was 16.5 px ag
 - The camera side is known for only half the photos with a valid affine pose.
 - The "held for pose" classification treats every UNASSESSABLE verdict on a RETAKE or UNASSESSABLE photo as pose-caused.
 - Bob's photos had no alpha62-review batch run before this one. They are included with the same build.
+
+## 7. Follow-up (alpha63): what was shipped and what was dropped
+
+- **Shipped:** the rehaut-only RETAKE is overruled when the round-marker layout confidently shows the camera near straight on (tilt_hi < 5°), in `GmtMarkerPose` and `GmtHumanPosePolicy`.
+  - The requirements are as in section 1, using cleanly traced markers only.
+  - On 319 corpus photos plus 18 Bob's Watches photos, only WOS 40411271 changes. It goes from RETAKE to CORRECTABLE, and its 12, its 9 and seven round markers are now judged, all CLEAR.
+- **Dropped:** measuring the 12 and baton rotations after undoing the fitted dial-edge ellipse. It was tried on the same corpus and did not reduce the rotations of genuine photos, which should read about 0:
+
+  | rotation | median \|rotation\| before → after | genuine readings ≥ 2° before → after |
+  |---|---|---|
+  | 12 | 0.53° → 0.52° | 9 → 9 |
+  | 6 | 0.39° → 0.34° | 2 → 2 |
+  | 9 | 0.30° → 0.36° | 1 → 4 |
+
+  It also produced a new genuine 12 CHECK: Phillips 224135 went from 1.7° to 3.4°. The model's shear is real, but the dial-edge ellipse is not an accurate enough measure of it. At a ratio of 0.97, fit noise alone gives about 1.7° of false shear.
+  - The marker affine has a squash sd of about 0.0016, roughly 0.1° of shear, so it is the candidate source if this is retried.
