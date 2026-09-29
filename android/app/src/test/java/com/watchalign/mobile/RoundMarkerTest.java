@@ -180,6 +180,44 @@ public class RoundMarkerTest {
         assertEquals(1.15,ms.get(2).sizeRatio,1e-9);
     }
 
+    /** A marker at (100,100) whose rays all show edges at the given radii, fitted on radius fitR. */
+    private static GmtRoundMarkerAnalyzer.Marker ringMarker(int h,double fitR,double... rings){
+        GmtRoundMarkerAnalyzer.Marker m=new GmtRoundMarkerAnalyzer.Marker(h);
+        m.found=true;m.stable=true;m.x=100;m.y=100;m.radiusPx=fitR;
+        m.edgePts=new double[72][];
+        for(int k=0;k<72;k++){
+            double a=2*Math.PI*k/72;double[] q=new double[2*rings.length];
+            for(int i=0;i<rings.length;i++){q[2*i]=100+Math.cos(a)*rings[i];q[2*i+1]=100+Math.sin(a)*rings[i];}
+            m.edgePts[k]=q;
+        }
+        return m;
+    }
+
+    @Test public void sizeComparesOuterRingsWhenOneMarkerWasTracedOnItsSurround(){
+        // Genuine Bob's Watches 126720VTNR 182860: the 8 traced on its surround (60 px), the rest on
+        // their lume (50 px). Both edges are on every marker, so the sizes are the same.
+        List<GmtRoundMarkerAnalyzer.Marker> ms=new ArrayList<>();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS)ms.add(h==8?ringMarker(h,30.0,25.0,30.0):ringMarker(h,25.0,25.0,30.0));
+        GmtRoundMarkerAnalyzer.sizeRatios(ms);
+        for(GmtRoundMarkerAnalyzer.Marker m:ms)assertEquals("hour "+m.hour,1.0,m.sizeRatio,0.01);
+    }
+
+    @Test public void aMarkerThatIsReallyLargerStillReadsLarger(){
+        List<GmtRoundMarkerAnalyzer.Marker> ms=new ArrayList<>();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS)ms.add(h==4?ringMarker(h,30.0,30.0,36.6):ringMarker(h,25.0,25.0,30.5));
+        GmtRoundMarkerAnalyzer.sizeRatios(ms);
+        for(GmtRoundMarkerAnalyzer.Marker m:ms)assertEquals("hour "+m.hour,m.hour==4?1.2:1.0,m.sizeRatio,0.01);
+    }
+
+    @Test public void aMarkerWithOnlyOneEdgeFoundIsNotSizeJudged(){
+        // One ring only: it can't be told whether it is the lume or the surround.
+        List<GmtRoundMarkerAnalyzer.Marker> ms=new ArrayList<>();
+        for(int h:GmtRoundMarkerAnalyzer.HOURS)ms.add(h==11?ringMarker(h,25.0,25.0):ringMarker(h,25.0,25.0,30.5));
+        GmtRoundMarkerAnalyzer.sizeRatios(ms);
+        for(GmtRoundMarkerAnalyzer.Marker m:ms)
+            if(m.hour==11)assertTrue(Double.isNaN(m.sizeRatio));else assertEquals(1.0,m.sizeRatio,0.01);
+    }
+
     @Test public void everyHourPositionIsReported(){
         GmtHumanSummary.Input in=clearTwelve();
         for(int h:GmtRoundMarkerAnalyzer.HOURS){

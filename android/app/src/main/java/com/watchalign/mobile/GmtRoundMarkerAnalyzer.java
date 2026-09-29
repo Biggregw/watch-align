@@ -6,6 +6,7 @@ import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -69,6 +70,9 @@ final class GmtRoundMarkerAnalyzer {
         /** Decision, filled in by the QC (GmtHumanQcAnalyzerV2): attention and a short note. */
         GmtHumanQcMath.Attention attention=GmtHumanQcMath.Attention.UNASSESSABLE;String note="";
         boolean hand,tooSmall,unstable,offCentre,sizeOdd;
+        /** Every falling edge found on each ray of the final fit (image x,y pairs), for the size check. */
+        double[][] edgePts;
+
         /** Hand-check readings: marker-bright share of the ring just outside, coloured (GMT hand) share. */
         double ringBright=Double.NaN,coloured=Double.NaN;
         /** The bright pixels in the ring are one straight band clear of the surround: a hand passing by. */
@@ -152,10 +156,80 @@ final class GmtRoundMarkerAnalyzer {
         return out;
     }
 
+    static double[][] edgePoints(List<List<Double>> cand,double ox,double oy){
+        int n=cand.size();double[][] out=new double[n][];
+        for(int k=0;k<n;k++){
+            double a=2*Math.PI*k/n,dx=Math.cos(a),dy=Math.sin(a);List<Double> c=cand.get(k);
+            double[] q=new double[2*c.size()];
+            for(int i=0;i<c.size();i++){q[2*i]=ox+dx*c.get(i);q[2*i+1]=oy+dy*c.get(i);}
+            out[k]=q;
+        }
+        return out;
+    }
+
+    /** Share of rays with an edge within tol of radius rad about the marker centre. */
+    static double edgeShareAt(Marker m,double rad,double tol){
+        if(m.edgePts==null||m.edgePts.length==0)return 0;
+        int hit=0;
+        for(double[] q:m.edgePts){
+            for(int i=0;i+1<q.length;i+=2)if(Math.abs(Math.hypot(q[i]-m.x,q[i+1]-m.y)-rad)<=tol){hit++;break;}
+        }
+        return hit/(double)m.edgePts.length;
+    }
+    /** A ring of edges counts as a marker edge when it is found on at least this share of the rays. */
+    static final double EDGE_RING_SHARE=0.4;
+
+    /** Radii of the rings of edges found on at least EDGE_RING_SHARE of the rays, innermost first. */
+    static List<Double> ringRadii(Marker m){
+        List<Double> out=new ArrayList<>();
+        if(m.edgePts==null||!(m.radiusPx>0))return out;
+        double R=m.radiusPx,tol=Math.max(1.0,0.04*R),peak=Double.NaN,peakShare=0;boolean in=false;
+        for(double r=0.6*R;r<=1.5*R+1e-9;r+=0.25){
+            double sh=edgeShareAt(m,r,tol);
+            if(sh>=EDGE_RING_SHARE){if(!in){in=true;peakShare=0;}if(sh>=peakShare){peakShare=sh;peak=r;}}
+            else if(in){in=false;out.add(refineRing(m,peak,tol));}
+        }
+        if(in)out.add(refineRing(m,peak,tol));
+        return out;
+    }
+    /** Median over the rays of the edge nearest radius r (within tol). */
+    static double refineRing(Marker m,double r,double tol){
+        List<Double> v=new ArrayList<>();
+        for(double[] q:m.edgePts){
+            double bd=Double.MAX_VALUE,br=Double.NaN;
+            for(int i=0;i+1<q.length;i+=2){double d=Math.hypot(q[i]-m.x,q[i+1]-m.y),e=Math.abs(d-r);if(e<=tol&&e<bd){bd=e;br=d;}}
+            if(Double.isFinite(br))v.add(br);
+        }
+        if(v.isEmpty())return r;
+        Collections.sort(v);
+        return v.size()%2==1?v.get(v.size()/2):(v.get(v.size()/2-1)+v.get(v.size()/2))/2;
+    }
+    /**
+     * The surround's outer edge, known only when both of the marker's edges are found as rings
+     * (the lume inside, the surround 1.12-1.5 times its radius); NaN otherwise. With one ring it
+     * can't be told which edge it is. Genuine Bob's Watches 126720VTNR 182860: the 8 was fitted on
+     * its surround (60 px) and the rest on their lume (50 px), and read 1.21 x the others.
+     */
+    static double surroundRadius(Marker m){
+        List<Double> r=ringRadii(m);
+        for(int i=r.size()-1;i>0;i--)for(int j=i-1;j>=0;j--){
+            double q=r.get(i)/r.get(j);
+            if(q>=1.12&&q<=1.5)return r.get(i);
+        }
+        return Double.NaN;
+    }
+    static final int MIN_PAIRED_FOR_SIZE=4;
+
     /** Diameter against the median of the confidently traced markers on the same dial (needs 4). */
     static void sizeRatios(List<Marker> ms){
+        // Preferred: compare surround to surround on the markers where both edges were found; the
+        // others are left uncompared. With fewer than MIN_PAIRED_FOR_SIZE such markers, the fitted
+        // edges are compared as before.
+        List<Double> paired=new ArrayList<>();double[] sr=new double[ms.size()];
+        for(int i=0;i<ms.size();i++){Marker m=ms.get(i);sr[i]=m.found&&m.stable?surroundRadius(m):Double.NaN;if(Double.isFinite(sr[i]))paired.add(2*sr[i]);}
+        boolean byRing=paired.size()>=MIN_PAIRED_FOR_SIZE;
         List<Double> d=new ArrayList<>();
-        for(Marker m:ms)if(m.found&&m.stable)d.add(m.diameterPx());
+        if(byRing)d=paired;else for(Marker m:ms)if(m.found&&m.stable)d.add(m.diameterPx());
         if(d.size()<4)return;
         double[] a=new double[d.size()];for(int i=0;i<a.length;i++)a[i]=d.get(i);Arrays.sort(a);
         double med=a.length%2==1?a[a.length/2]:(a[a.length/2-1]+a[a.length/2])/2;
@@ -164,7 +238,11 @@ final class GmtRoundMarkerAnalyzer {
         // and the surround's outer edge on others, which reads as a 12-18% size difference
         // (rep_cplus_wEYZOyK images 00, 02 and 03 at 25-28 px; rep_vsf_gpZWOfy image_02 at 27 px).
         if(med<MIN_SIZE_CHECK_PX)return;
-        for(Marker m:ms)if(m.found)m.sizeRatio=m.diameterPx()/med;
+        for(int i=0;i<ms.size();i++){
+            Marker m=ms.get(i);if(!m.found)continue;
+            if(byRing){if(Double.isFinite(sr[i]))m.sizeRatio=2*sr[i]/med;}
+            else m.sizeRatio=m.diameterPx()/med;
+        }
     }
 
     /** Re-measures each found marker at 94% and 88% and records the ranges. */
@@ -397,6 +475,7 @@ final class GmtRoundMarkerAnalyzer {
             if(fit==null){if(m.reason.isEmpty())m.reason="marker outline could not be fitted";return null;}
             double[] both=concentric(cand,ox,oy,fit,m);
             if(both!=null)fit=both;
+            m.edgePts=edgePoints(cand,ox,oy);
             ox=fit[0];oy=fit[1];
         }
         if(fit[2]<0.55*r0||fit[2]>1.45*r0){
