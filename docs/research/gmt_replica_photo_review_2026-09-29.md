@@ -36,3 +36,15 @@ had a photo labelled "Gen Pic": the dealer used a genuine watch's photo.
 
 Reddit (RepTime QC posts) and the Replica Watch Info forum's image host are blocked from
 this environment.
+
+## RepTimeQC albums found by ChatGPT (2026-09-29)
+
+24 Imgur albums were checked (the Reddit, Yupoo, Mega and imgbox links can't be fetched
+here). 5 photos pass: Clean and ARF 126710GRNR, VSF 126720VTNR, VSF and ARF 126710BLRO.
+The others failed mainly on a hand over the 9, 12, 6 or (Sprite) 3, an angled shot, or a QC
+overlay drawn on the dial. One album listed as a VSF Pepsi (qOu9YiZ) is a Sprite.
+
+Observation, not a result: the 12 gap on several of these replicas reads 0.065-0.075
+(VSF Pepsi 0.068, ARF Pepsi 0.074, VSF Sprite 0.038 and 0.065), under every clean genuine
+photo (0.084-0.105). Most of these readings are withheld by the app's own checks, so they
+are not judged; the VSF Sprite at 0.038 is flagged CHECK.
