@@ -48,3 +48,13 @@ Observation, not a result: the 12 gap on several of these replicas reads 0.065-0
 (VSF Pepsi 0.068, ARF Pepsi 0.074, VSF Sprite 0.038 and 0.065), under every clean genuine
 photo (0.084-0.105). Most of these readings are withheld by the app's own checks, so they
 are not judged; the VSF Sprite at 0.038 is flagged CHECK.
+
+### Third batch (23 Imgur albums)
+
+11 photos pass: 6 x 126720VTNR (5 Clean, 1 VSF), 2 x 126711CHNR (Clean, GMF), 3 x
+126710BLRO (VSF, Clean, GMF). Two albums were mislabelled: AprFyb6 is a Submariner and
+sC9b4ad is a Pepsi, not a Sprite. The clean replica set is now 19 photos.
+
+Both VSF Sprites from different posts (grmFo4g, iHuZ4gx) get a 12 gap CHECK, reading 0.038
+and 0.028; the genuine clean photos read 0.084-0.105. The Clean Sprites read 0.070-0.101.
+EFgYxw5 (0.200) and lOJmEYb (0.161) are withheld by the app and look like misfits.
