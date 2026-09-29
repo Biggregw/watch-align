@@ -1,0 +1,546 @@
+photo,app_pose,measurement,current,current_flag,current_att,proposed,budget_used,budget_used_stress,tilt,tilt_hi,camera_az,affine_why
+official_rolex_2026/image_00.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.23,0.36,5.5,11.9,,
+official_rolex_2026/image_00.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.41,0.58,5.5,11.9,,
+official_rolex_2026/image_00.jpg,CORRECTABLE,rot12,judged,False,CLEAR,withhold,1.02,1.35,5.5,11.9,,
+official_rolex_2026/image_00.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,0.99,1.31,5.5,11.9,,
+official_rolex_2026/image_00.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,withhold,0.76,0.92,5.5,11.9,,
+gen_wex_vmbUDwy/image_04.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_04.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_04.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_04.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_04.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_01.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_01.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_01.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_01.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_01.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_06.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_06.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_06.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_06.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_06.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_01.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_01.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_01.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_01.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_01.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_06.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_06.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_06.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_06.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_06.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_01.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.32,0.49,10.8,16.2,209.0471236867147,
+gen_wex_1TDYtpN/image_01.jpg,CORRECTABLE,gap12,judged,False,CLEAR,withhold,0.99,1.42,10.8,16.2,209.0471236867147,
+gen_wex_1TDYtpN/image_01.jpg,CORRECTABLE,rot12,judged,False,CLEAR,withhold,1.34,1.58,10.8,16.2,209.0471236867147,
+gen_wex_1TDYtpN/image_01.jpg,CORRECTABLE,six,judged,False,CLEAR,withhold,0.63,0.38,10.8,16.2,209.0471236867147,
+gen_wex_1TDYtpN/image_01.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.42,0.66,10.8,16.2,209.0471236867147,
+gen_wex_1TDYtpN/image_06.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_06.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_06.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_06.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_06.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_03.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_03.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_03.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_03.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_03.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/elegantswiss_ES363380210.jpg,GOOD,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+pepsi/elegantswiss_ES363380210.jpg,GOOD,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/elegantswiss_ES363380210.jpg,GOOD,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/elegantswiss_ES363380210.jpg,GOOD,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/elegantswiss_ES363380210.jpg,GOOD,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/phillips_151477.jpg,CORRECTABLE,round_offset,judged,False,CLEAR,allow,0.39,0.6,19.4,21.4,94.69119671030741,
+pepsi/phillips_151477.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,allow,0.1,0.03,19.4,21.4,94.69119671030741,
+pepsi/phillips_151477.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,withhold,1.41,2.12,19.4,21.4,94.69119671030741,
+pepsi/phillips_151477.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,0.7,1.38,19.4,21.4,94.69119671030741,
+pepsi/phillips_151477.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.41,0.45,19.4,21.4,94.69119671030741,
+more/rolex_official_126710GRNR_0003_126710GRNR.png,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.17,0.27,3.7,9.0,136.68311869418878,
+more/rolex_official_126710GRNR_0003_126710GRNR.png,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.43,0.64,3.7,9.0,136.68311869418878,
+more/rolex_official_126710GRNR_0003_126710GRNR.png,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,withhold,0.65,0.85,3.7,9.0,136.68311869418878,
+more/rolex_official_126710GRNR_0003_126710GRNR.png,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,allow,0.18,0.28,3.7,9.0,136.68311869418878,
+more/rolex_official_126710GRNR_0003_126710GRNR.png,CORRECTABLE,side,judged,False,CLEAR,withhold,0.65,0.85,3.7,9.0,136.68311869418878,
+more/rolex_official_126720VTNR_0001_126720VTNR.png,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.17,0.26,3.4,8.7,,
+more/rolex_official_126720VTNR_0001_126720VTNR.png,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.42,0.63,3.4,8.7,,
+more/rolex_official_126720VTNR_0001_126720VTNR.png,CORRECTABLE,rot12,judged,False,CLEAR,withhold,0.61,0.79,3.4,8.7,,
+more/rolex_official_126720VTNR_0001_126720VTNR.png,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,0.59,0.77,3.4,8.7,,
+more/rolex_official_126720VTNR_0001_126720VTNR.png,CORRECTABLE,side,judged,False,CLEAR,withhold,0.62,0.81,3.4,8.7,,
+more/wos_cpo_40411280_126710BLNR.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.08,0.12,2.6,4.5,,
+more/wos_cpo_40411280_126710BLNR.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.3,0.44,2.6,4.5,,
+more/wos_cpo_40411280_126710BLNR.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,allow,0.04,0.06,2.6,4.5,,
+more/wos_cpo_40411280_126710BLNR.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,allow,0.04,0.06,2.6,4.5,,
+more/wos_cpo_40411280_126710BLNR.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.22,0.36,2.6,4.5,,
+more/wos_cpo_408101817490_126711CHNR.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.09,0.14,2.5,5.2,,
+more/wos_cpo_408101817490_126711CHNR.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.02,0.02,2.5,5.2,,
+more/wos_cpo_408101817490_126711CHNR.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,allow,0.26,0.43,2.5,5.2,,
+more/wos_cpo_408101817490_126711CHNR.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.25,0.4,2.5,5.2,,
+more/wos_cpo_408101817490_126711CHNR.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.01,0.01,2.5,5.2,,
+more2/gen_126710BLNR_phillips_192617.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.26,0.4,12.4,14.3,96.11785389108961,
+more2/gen_126710BLNR_phillips_192617.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.0,0.09,12.4,14.3,96.11785389108961,
+more2/gen_126710BLNR_phillips_192617.jpg,GOOD,rot12,withheld-other,False,UNASSESSABLE,withhold,0.89,1.35,12.4,14.3,96.11785389108961,
+more2/gen_126710BLNR_phillips_192617.jpg,GOOD,six,judged,False,CLEAR,allow,0.48,0.92,12.4,14.3,96.11785389108961,
+more2/gen_126710BLNR_phillips_192617.jpg,GOOD,side,judged,False,CLEAR,allow,0.26,0.3,12.4,14.3,96.11785389108961,
+more2/gen_126711CHNR_phillips_159236.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.33,0.52,16.0,18.3,95.99153031567077,
+more2/gen_126711CHNR_phillips_159236.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.03,0.09,16.0,18.3,95.99153031567077,
+more2/gen_126711CHNR_phillips_159236.jpg,GOOD,rot12,judged,False,CLEAR,withhold,1.22,1.82,16.0,18.3,95.99153031567077,
+more2/gen_126711CHNR_phillips_159236.jpg,GOOD,six,judged,False,CLEAR,withhold,0.58,1.14,16.0,18.3,95.99153031567077,
+more2/gen_126711CHNR_phillips_159236.jpg,GOOD,side,withheld-other,False,UNASSESSABLE,allow,0.39,0.44,16.0,18.3,95.99153031567077,
+more2/gen_126715CHNR_phillips_137349.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.24,0.37,10.7,13.0,98.56101535295124,
+more2/gen_126715CHNR_phillips_137349.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.05,0.14,10.7,13.0,98.56101535295124,
+more2/gen_126715CHNR_phillips_137349.jpg,CORRECTABLE,rot12,judged,False,CLEAR,withhold,0.85,1.27,10.7,13.0,98.56101535295124,
+more2/gen_126715CHNR_phillips_137349.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,allow,0.4,0.79,10.7,13.0,98.56101535295124,
+more2/gen_126715CHNR_phillips_137349.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.3,0.36,10.7,13.0,98.56101535295124,
+more2/gen_126720VTNR_phillips_204149.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.21,0.33,7.5,10.9,59.72762941317993,
+more2/gen_126720VTNR_phillips_204149.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.39,0.57,7.5,10.9,59.72762941317993,
+more2/gen_126720VTNR_phillips_204149.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,allow,0.01,0.32,7.5,10.9,59.72762941317993,
+more2/gen_126720VTNR_phillips_204149.jpg,CORRECTABLE,six,judged,False,CLEAR,withhold,0.88,1.17,7.5,10.9,59.72762941317993,
+more2/gen_126720VTNR_phillips_204149.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,withhold,0.7,0.86,7.5,10.9,59.72762941317993,
+more3/gen_126710BLRO_phillips_172193.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126710BLRO_phillips_172193.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126710BLRO_phillips_172193.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126710BLRO_phillips_172193.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126710BLRO_phillips_172193.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/wos_cpo_406107584490.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.08,0.12,3.3,4.4,,
+more3/wos_cpo_406107584490.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.06,0.09,3.3,4.4,,
+more3/wos_cpo_406107584490.jpg,GOOD,rot12,withheld-other,False,UNASSESSABLE,allow,0.24,0.38,3.3,4.4,,
+more3/wos_cpo_406107584490.jpg,GOOD,six,judged,False,CLEAR,allow,0.23,0.36,3.3,4.4,,
+more3/wos_cpo_406107584490.jpg,GOOD,side,judged,False,CLEAR,allow,0.07,0.1,3.3,4.4,,
+more3/wos_cpo_406108072490.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.07,0.11,1.2,3.7,258.2560921900563,
+more3/wos_cpo_406108072490.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.04,0.07,1.2,3.7,258.2560921900563,
+more3/wos_cpo_406108072490.jpg,GOOD,rot12,judged,False,CLEAR,allow,0.2,0.32,1.2,3.7,258.2560921900563,
+more3/wos_cpo_406108072490.jpg,GOOD,six,withheld-other,False,UNASSESSABLE,allow,0.14,0.25,1.2,3.7,258.2560921900563,
+more3/wos_cpo_406108072490.jpg,GOOD,side,judged,False,CLEAR,allow,0.02,0.03,1.2,3.7,258.2560921900563,
+gen_wex_vmbUDwy/image_00.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_00.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_00.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_00.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_00.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_05.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_05.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_05.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_05.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_05.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_02.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.38,0.58,18.4,19.9,282.0547628090621,
+gen_wex_3KSuGhC/image_02.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,allow,0.49,0.57,18.4,19.9,282.0547628090621,
+gen_wex_3KSuGhC/image_02.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,allow,0.26,0.91,18.4,19.9,282.0547628090621,
+gen_wex_3KSuGhC/image_02.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,1.64,2.24,18.4,19.9,282.0547628090621,
+gen_wex_3KSuGhC/image_02.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,withhold,0.54,0.41,18.4,19.9,282.0547628090621,
+gen_wex_3KSuGhC/image_07.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_07.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_07.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_07.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_07.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_02.jpg,GOOD,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_02.jpg,GOOD,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_02.jpg,GOOD,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_02.jpg,GOOD,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_02.jpg,GOOD,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_07.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_07.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_07.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_07.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_07.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_02.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_02.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_02.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_02.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_02.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_U2XNblj/image_00.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_U2XNblj/image_00.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_U2XNblj/image_00.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_U2XNblj/image_00.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_U2XNblj/image_00.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_04.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_04.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_04.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_04.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_04.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/elegantswiss_ES387180218.jpg,CORRECTABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+pepsi/elegantswiss_ES387180218.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/elegantswiss_ES387180218.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/elegantswiss_ES387180218.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/elegantswiss_ES387180218.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/phillips_210072.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.33,0.5,13.2,18.7,89.45300142626085,
+pepsi/phillips_210072.jpg,GOOD,gap12,withheld-other,False,UNASSESSABLE,allow,0.19,0.14,13.2,18.7,89.45300142626085,
+pepsi/phillips_210072.jpg,GOOD,rot12,withheld-other,False,UNASSESSABLE,withhold,0.91,1.53,13.2,18.7,89.45300142626085,
+pepsi/phillips_210072.jpg,GOOD,six,judged,False,CLEAR,withhold,0.92,1.51,13.2,18.7,89.45300142626085,
+pepsi/phillips_210072.jpg,GOOD,side,withheld-other,False,UNASSESSABLE,allow,0.04,0.04,13.2,18.7,89.45300142626085,
+more/rolex_official_126711CHNR_0002_126711CHNR.png,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.18,0.28,4.1,9.4,,
+more/rolex_official_126711CHNR_0002_126711CHNR.png,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.47,0.69,4.1,9.4,,
+more/rolex_official_126711CHNR_0002_126711CHNR.png,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,withhold,0.68,0.88,4.1,9.4,,
+more/rolex_official_126711CHNR_0002_126711CHNR.png,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,0.67,0.85,4.1,9.4,,
+more/rolex_official_126711CHNR_0002_126711CHNR.png,CORRECTABLE,side,judged,False,CLEAR,withhold,0.71,0.92,4.1,9.4,,
+more/wos_cpo_40410010_126710BLRO.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.16,0.25,5.2,9.1,,
+more/wos_cpo_40410010_126710BLRO.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.11,0.13,5.2,9.1,,
+more/wos_cpo_40410010_126710BLRO.jpg,CORRECTABLE,rot12,judged,False,CLEAR,withhold,0.52,0.81,5.2,9.1,,
+more/wos_cpo_40410010_126710BLRO.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,allow,0.5,0.78,5.2,9.1,,
+more/wos_cpo_40410010_126710BLRO.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.12,0.15,5.2,9.1,,
+more/wos_cpo_406107925490_126710BLRO.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.1,0.15,2.4,5.0,,
+more/wos_cpo_406107925490_126710BLRO.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.3,0.44,2.4,5.0,,
+more/wos_cpo_406107925490_126710BLRO.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.18,0.25,2.4,5.0,,
+more/wos_cpo_406107925490_126710BLRO.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,allow,0.18,0.24,2.4,5.0,,
+more/wos_cpo_406107925490_126710BLRO.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.29,0.43,2.4,5.0,,
+more/wos_cpo_408102338490_126711CHNR.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.08,0.12,1.7,4.2,,
+more/wos_cpo_408102338490_126711CHNR.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.06,0.08,1.7,4.2,,
+more/wos_cpo_408102338490_126711CHNR.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.23,0.36,1.7,4.2,,
+more/wos_cpo_408102338490_126711CHNR.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.22,0.34,1.7,4.2,,
+more/wos_cpo_408102338490_126711CHNR.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.06,0.08,1.7,4.2,,
+more2/gen_126710BLNR_phillips_211174.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126710BLNR_phillips_211174.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126710BLNR_phillips_211174.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126710BLNR_phillips_211174.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126710BLNR_phillips_211174.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126711CHNR_phillips_166152.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.27,0.42,13.3,14.7,98.33290340984593,
+more2/gen_126711CHNR_phillips_166152.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.04,0.15,13.3,14.7,98.33290340984593,
+more2/gen_126711CHNR_phillips_166152.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,withhold,0.99,1.46,13.3,14.7,98.33290340984593,
+more2/gen_126711CHNR_phillips_166152.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,allow,0.46,0.87,13.3,14.7,98.33290340984593,
+more2/gen_126711CHNR_phillips_166152.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.36,0.42,13.3,14.7,98.33290340984593,
+more2/gen_126715CHNR_phillips_159750.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.41,0.63,20.3,22.9,88.25454291674353,
+more2/gen_126715CHNR_phillips_159750.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,allow,0.33,0.26,20.3,22.9,88.25454291674353,
+more2/gen_126715CHNR_phillips_159750.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,withhold,1.02,1.8,20.3,22.9,88.25454291674353,
+more2/gen_126715CHNR_phillips_159750.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,1.26,1.99,20.3,22.9,88.25454291674353,
+more2/gen_126715CHNR_phillips_159750.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.17,0.19,20.3,22.9,88.25454291674353,
+more2/gen_126720VTNR_phillips_233043.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126720VTNR_phillips_233043.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126720VTNR_phillips_233043.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126720VTNR_phillips_233043.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126720VTNR_phillips_233043.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126720VTNR_phillips_214410.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126720VTNR_phillips_214410.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126720VTNR_phillips_214410.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126720VTNR_phillips_214410.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126720VTNR_phillips_214410.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/wos_cpo_406107834490.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.12,0.19,4.5,7.0,,
+more3/wos_cpo_406107834490.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.05,0.05,4.5,7.0,,
+more3/wos_cpo_406107834490.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,allow,0.36,0.59,4.5,7.0,,
+more3/wos_cpo_406107834490.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.35,0.56,4.5,7.0,,
+more3/wos_cpo_406107834490.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.04,0.05,4.5,7.0,,
+more3/wos_cpo_408102212490.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.09,0.13,2.1,4.4,,
+more3/wos_cpo_408102212490.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.15,0.22,2.1,4.4,,
+more3/wos_cpo_408102212490.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.26,0.38,2.1,4.4,,
+more3/wos_cpo_408102212490.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,allow,0.25,0.36,2.1,4.4,,
+more3/wos_cpo_408102212490.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.17,0.24,2.1,4.4,,
+gen_wex_vmbUDwy/image_01.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_01.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_01.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_01.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_01.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_06.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.18,0.27,8.4,9.9,175.906360704254,
+gen_wex_vmbUDwy/image_06.jpg,GOOD,gap12,withheld-other,False,UNASSESSABLE,withhold,0.69,0.99,8.4,9.9,175.906360704254,
+gen_wex_vmbUDwy/image_06.jpg,GOOD,rot12,withheld-other,False,UNASSESSABLE,allow,0.09,0.12,8.4,9.9,175.906360704254,
+gen_wex_vmbUDwy/image_06.jpg,GOOD,six,withheld-other,False,UNASSESSABLE,allow,0.03,0.03,8.4,9.9,175.906360704254,
+gen_wex_vmbUDwy/image_06.jpg,GOOD,side,judged,False,CLEAR,withhold,0.52,0.83,8.4,9.9,175.906360704254,
+gen_wex_3KSuGhC/image_03.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_03.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_03.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_03.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_03.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_08.jpg,CORRECTABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_08.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_08.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_08.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_08.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_03.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_03.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_03.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_03.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_03.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_08.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_08.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_08.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_08.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_08.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_03.jpg,CORRECTABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_03.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_03.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_03.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_03.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_00.jpg,RETAKE,round_offset,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_00.jpg,RETAKE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_00.jpg,RETAKE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_00.jpg,RETAKE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_00.jpg,RETAKE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_05.jpg,CORRECTABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_05.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_05.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_05.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_05.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/phillips_122669.jpg,RETAKE,round_offset,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,2 markers
+pepsi/phillips_122669.jpg,RETAKE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,2 markers
+pepsi/phillips_122669.jpg,RETAKE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,2 markers
+pepsi/phillips_122669.jpg,RETAKE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,2 markers
+pepsi/phillips_122669.jpg,RETAKE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,2 markers
+pepsi/phillips_232301.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.37,0.57,17.9,20.6,181.91565283004937,
+pepsi/phillips_232301.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,withhold,1.51,2.09,17.9,20.6,181.91565283004937,
+pepsi/phillips_232301.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,allow,0.16,0.18,17.9,20.6,181.91565283004937,
+pepsi/phillips_232301.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.1,0.08,17.9,20.6,181.91565283004937,
+pepsi/phillips_232301.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,withhold,0.86,1.52,17.9,20.6,181.91565283004937,
+more/rolex_official_126713GRNR_0001_126713GRNR.png,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.18,0.28,4.5,9.6,,
+more/rolex_official_126713GRNR_0001_126713GRNR.png,CORRECTABLE,gap12,judged,False,CLEAR,withhold,0.63,0.92,4.5,9.6,,
+more/rolex_official_126713GRNR_0001_126713GRNR.png,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,allow,0.34,0.42,4.5,9.6,,
+more/rolex_official_126713GRNR_0001_126713GRNR.png,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,allow,0.33,0.41,4.5,9.6,,
+more/rolex_official_126713GRNR_0001_126713GRNR.png,CORRECTABLE,side,judged,False,CLEAR,withhold,0.64,0.92,4.5,9.6,,
+more/wos_cpo_40410883_126710BLRO.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.1,0.15,2.2,5.1,,
+more/wos_cpo_40410883_126710BLRO.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.2,0.29,2.2,5.1,,
+more/wos_cpo_40410883_126710BLRO.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.31,0.44,2.2,5.1,,
+more/wos_cpo_40410883_126710BLRO.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.3,0.42,2.2,5.1,,
+more/wos_cpo_40410883_126710BLRO.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.24,0.33,2.2,5.1,,
+more/wos_cpo_406107958490_126711CHNR.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.09,0.13,2.2,4.4,,
+more/wos_cpo_406107958490_126711CHNR.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.23,0.35,2.2,4.4,,
+more/wos_cpo_406107958490_126711CHNR.jpg,GOOD,rot12,judged,True,CHECK,allow,0.21,0.29,2.2,4.4,,
+more/wos_cpo_406107958490_126711CHNR.jpg,GOOD,six,withheld-other,False,UNASSESSABLE,allow,0.2,0.28,2.2,4.4,,
+more/wos_cpo_406107958490_126711CHNR.jpg,GOOD,side,withheld-other,False,UNASSESSABLE,allow,0.25,0.35,2.2,4.4,,
+more/wos_cpo_408102363490_126710BLRO.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.09,0.14,1.8,4.9,255.4588446428412,
+more/wos_cpo_408102363490_126710BLRO.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.07,0.11,1.8,4.9,255.4588446428412,
+more/wos_cpo_408102363490_126710BLRO.jpg,GOOD,rot12,judged,False,CLEAR,allow,0.28,0.44,1.8,4.9,255.4588446428412,
+more/wos_cpo_408102363490_126710BLRO.jpg,GOOD,six,judged,False,CLEAR,allow,0.17,0.32,1.8,4.9,255.4588446428412,
+more/wos_cpo_408102363490_126710BLRO.jpg,GOOD,side,judged,False,CLEAR,allow,0.04,0.06,1.8,4.9,255.4588446428412,
+more2/gen_126710BLNR_phillips_CH080120_2.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.26,0.41,13.3,15.3,89.34430122891466,
+more2/gen_126710BLNR_phillips_CH080120_2.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.13,0.1,13.3,15.3,89.34430122891466,
+more2/gen_126710BLNR_phillips_CH080120_2.jpg,CORRECTABLE,rot12,judged,False,CLEAR,withhold,0.73,1.24,13.3,15.3,89.34430122891466,
+more2/gen_126710BLNR_phillips_CH080120_2.jpg,CORRECTABLE,six,judged,False,CLEAR,withhold,0.74,1.22,13.3,15.3,89.34430122891466,
+more2/gen_126710BLNR_phillips_CH080120_2.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.03,0.04,13.3,15.3,89.34430122891466,
+more2/gen_126711CHNR_phillips_172578.jpg,GOOD,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126711CHNR_phillips_172578.jpg,GOOD,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126711CHNR_phillips_172578.jpg,GOOD,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126711CHNR_phillips_172578.jpg,GOOD,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126711CHNR_phillips_172578.jpg,GOOD,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126715CHNR_phillips_223302.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.33,0.5,15.7,17.7,96.69757337860106,
+more2/gen_126715CHNR_phillips_223302.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.01,0.11,15.7,17.7,96.69757337860106,
+more2/gen_126715CHNR_phillips_223302.jpg,CORRECTABLE,rot12,judged,False,CLEAR,withhold,1.2,1.78,15.7,17.7,96.69757337860106,
+more2/gen_126715CHNR_phillips_223302.jpg,CORRECTABLE,six,judged,False,CLEAR,withhold,0.56,1.08,15.7,17.7,96.69757337860106,
+more2/gen_126715CHNR_phillips_223302.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,allow,0.41,0.47,15.7,17.7,96.69757337860106,
+more2/gen_126720VTNR_phillips_CH080223_1.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.4,0.61,19.6,22.5,270.62855196923914,
+more2/gen_126720VTNR_phillips_CH080223_1.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,allow,0.28,0.21,19.6,22.5,270.62855196923914,
+more2/gen_126720VTNR_phillips_CH080223_1.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,withhold,1.09,1.86,19.6,22.5,270.62855196923914,
+more2/gen_126720VTNR_phillips_CH080223_1.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,1.14,1.87,19.6,22.5,270.62855196923914,
+more2/gen_126720VTNR_phillips_CH080223_1.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,allow,0.04,0.03,19.6,22.5,270.62855196923914,
+more3/wos_cpo_40410003.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.1,0.15,1.9,5.1,,
+more3/wos_cpo_40410003.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.33,0.49,1.9,5.1,,
+more3/wos_cpo_40410003.jpg,GOOD,rot12,judged,True,CHECK,allow,0.11,0.15,1.9,5.1,,
+more3/wos_cpo_40410003.jpg,GOOD,six,withheld-other,False,UNASSESSABLE,allow,0.11,0.15,1.9,5.1,,
+more3/wos_cpo_40410003.jpg,GOOD,side,judged,False,CLEAR,allow,0.28,0.43,1.9,5.1,,
+more3/wos_cpo_406107893490.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.09,0.14,2.9,5.2,,
+more3/wos_cpo_406107893490.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.35,0.51,2.9,5.2,,
+more3/wos_cpo_406107893490.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.02,0.02,2.9,5.2,,
+more3/wos_cpo_406107893490.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.02,0.02,2.9,5.2,,
+more3/wos_cpo_406107893490.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.25,0.41,2.9,5.2,,
+more3/wos_cpo_408102323490.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.08,0.12,2.1,4.2,,
+more3/wos_cpo_408102323490.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.27,0.39,2.1,4.2,,
+more3/wos_cpo_408102323490.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.11,0.15,2.1,4.2,,
+more3/wos_cpo_408102323490.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.1,0.14,2.1,4.2,,
+more3/wos_cpo_408102323490.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.23,0.35,2.1,4.2,,
+gen_wex_vmbUDwy/image_02.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_02.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_02.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_02.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_02.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_K4gqk6U/image_00.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_K4gqk6U/image_00.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_K4gqk6U/image_00.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_K4gqk6U/image_00.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_K4gqk6U/image_00.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_04.jpg,CORRECTABLE,round_offset,judged,False,CLEAR,allow,0.1,0.15,4.3,5.2,,
+gen_wex_3KSuGhC/image_04.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,allow,0.34,0.5,4.3,5.2,,
+gen_wex_3KSuGhC/image_04.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,allow,0.1,0.13,4.3,5.2,,
+gen_wex_3KSuGhC/image_04.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,allow,0.09,0.12,4.3,5.2,,
+gen_wex_3KSuGhC/image_04.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,allow,0.28,0.44,4.3,5.2,,
+gen_wex_3KSuGhC/image_09.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_09.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_09.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_09.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_09.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_04.jpg,RETAKE,round_offset,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_04.jpg,RETAKE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_04.jpg,RETAKE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_04.jpg,RETAKE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_04.jpg,RETAKE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_09.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_09.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_09.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_09.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_09.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_04.jpg,CORRECTABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_04.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_04.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_04.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_04.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_01.jpg,UNASSESSABLE,round_offset,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_01.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_01.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_01.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_01.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_06.jpg,CORRECTABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_06.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_06.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_06.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_06.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/phillips_146213.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.18,0.27,7.8,9.9,85.85615642850614,
+pepsi/phillips_146213.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.1,0.1,7.8,9.9,85.85615642850614,
+pepsi/phillips_146213.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.42,0.74,7.8,9.9,85.85615642850614,
+pepsi/phillips_146213.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,0.52,0.82,7.8,9.9,85.85615642850614,
+pepsi/phillips_146213.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.09,0.11,7.8,9.9,85.85615642850614,
+pepsi/phillips_CH080120_75.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.39,0.6,16.1,19.9,107.19144270840913,
+pepsi/phillips_CH080120_75.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.26,0.52,16.1,19.9,107.19144270840913,
+pepsi/phillips_CH080120_75.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,withhold,1.93,2.54,16.1,19.9,107.19144270840913,
+pepsi/phillips_CH080120_75.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,0.59,0.91,16.1,19.9,107.19144270840913,
+pepsi/phillips_CH080120_75.jpg,CORRECTABLE,side,judged,False,CLEAR,withhold,1.24,1.4,16.1,19.9,107.19144270840913,
+more/rolex_official_126715CHNR_0001_126715CHNR.png,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.18,0.27,3.9,9.1,,
+more/rolex_official_126715CHNR_0001_126715CHNR.png,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.46,0.68,3.9,9.1,,
+more/rolex_official_126715CHNR_0001_126715CHNR.png,CORRECTABLE,rot12,judged,False,CLEAR,withhold,0.65,0.83,3.9,9.1,,
+more/rolex_official_126715CHNR_0001_126715CHNR.png,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,0.63,0.81,3.9,9.1,,
+more/rolex_official_126715CHNR_0001_126715CHNR.png,CORRECTABLE,side,judged,False,CLEAR,withhold,0.68,0.88,3.9,9.1,,
+more/wos_cpo_40411116_126710BLRO.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.1,0.16,2.2,5.2,,
+more/wos_cpo_40411116_126710BLRO.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.31,0.46,2.2,5.2,,
+more/wos_cpo_40411116_126710BLRO.jpg,GOOD,rot12,judged,False,CLEAR,allow,0.21,0.28,2.2,5.2,,
+more/wos_cpo_40411116_126710BLRO.jpg,GOOD,six,judged,False,CLEAR,allow,0.2,0.27,2.2,5.2,,
+more/wos_cpo_40411116_126710BLRO.jpg,GOOD,side,judged,False,CLEAR,allow,0.31,0.45,2.2,5.2,,
+more/wos_cpo_406107973490_126710BLRO.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.1,0.16,3.6,5.7,264.4551988990533,
+more/wos_cpo_406107973490_126710BLRO.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.02,0.04,3.6,5.7,264.4551988990533,
+more/wos_cpo_406107973490_126710BLRO.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.3,0.48,3.6,5.7,264.4551988990533,
+more/wos_cpo_406107973490_126710BLRO.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.23,0.41,3.6,5.7,264.4551988990533,
+more/wos_cpo_406107973490_126710BLRO.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.02,0.03,3.6,5.7,264.4551988990533,
+more2/gen_126710BLNR_phillips_159233.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.39,0.6,16.4,21.4,94.481855261618,
+more2/gen_126710BLNR_phillips_159233.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,allow,0.11,0.03,16.4,21.4,94.481855261618,
+more2/gen_126710BLNR_phillips_159233.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,withhold,1.4,2.11,16.4,21.4,94.481855261618,
+more2/gen_126710BLNR_phillips_159233.jpg,CORRECTABLE,six,judged,False,CLEAR,withhold,0.71,1.4,16.4,21.4,94.481855261618,
+more2/gen_126710BLNR_phillips_159233.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,allow,0.39,0.43,16.4,21.4,94.481855261618,
+more2/gen_126710BLRO_phillips_151263.jpg,RETAKE,round_offset,withheld-pose,False,UNASSESSABLE,allow,0.26,0.4,13.4,15.1,90.95184611128158,
+more2/gen_126710BLRO_phillips_151263.jpg,RETAKE,gap12,withheld-pose,False,UNASSESSABLE,allow,0.1,0.05,13.4,15.1,90.95184611128158,
+more2/gen_126710BLRO_phillips_151263.jpg,RETAKE,rot12,withheld-pose,False,UNASSESSABLE,withhold,0.78,1.27,13.4,15.1,90.95184611128158,
+more2/gen_126710BLRO_phillips_151263.jpg,RETAKE,six,withheld-pose,False,UNASSESSABLE,withhold,0.68,1.15,13.4,15.1,90.95184611128158,
+more2/gen_126710BLRO_phillips_151263.jpg,RETAKE,side,withheld-pose,False,UNASSESSABLE,allow,0.04,0.05,13.4,15.1,90.95184611128158,
+more2/gen_126711CHNR_phillips_180697.jpg,RETAKE,round_offset,withheld-pose,False,UNASSESSABLE,allow,0.24,0.37,10.3,13.4,85.50969133083083,
+more2/gen_126711CHNR_phillips_180697.jpg,RETAKE,gap12,withheld-pose,False,UNASSESSABLE,allow,0.16,0.17,10.3,13.4,85.50969133083083,
+more2/gen_126711CHNR_phillips_180697.jpg,RETAKE,rot12,withheld-pose,False,UNASSESSABLE,withhold,0.53,0.97,10.3,13.4,85.50969133083083,
+more2/gen_126711CHNR_phillips_180697.jpg,RETAKE,six,withheld-pose,False,UNASSESSABLE,withhold,0.75,1.16,10.3,13.4,85.50969133083083,
+more2/gen_126711CHNR_phillips_180697.jpg,RETAKE,side,withheld-pose,False,UNASSESSABLE,allow,0.17,0.2,10.3,13.4,85.50969133083083,
+more2/gen_126715CHNR_phillips_224135.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.41,0.63,19.6,22.6,93.4427239011783,
+more2/gen_126715CHNR_phillips_224135.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,allow,0.16,0.03,19.6,22.6,93.4427239011783,
+more2/gen_126715CHNR_phillips_224135.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,withhold,1.42,2.18,19.6,22.6,93.4427239011783,
+more2/gen_126715CHNR_phillips_224135.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,0.82,1.56,19.6,22.6,93.4427239011783,
+more2/gen_126715CHNR_phillips_224135.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,allow,0.33,0.37,19.6,22.6,93.4427239011783,
+more3/gen_126710BLNR_phillips_181407.jpg,GOOD,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126710BLNR_phillips_181407.jpg,GOOD,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126710BLNR_phillips_181407.jpg,GOOD,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126710BLNR_phillips_181407.jpg,GOOD,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/gen_126710BLNR_phillips_181407.jpg,GOOD,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more3/wos_cpo_40411271.jpg,RETAKE,round_offset,withheld-pose,False,UNASSESSABLE,allow,0.08,0.12,2.0,4.1,244.76407336505505,
+more3/wos_cpo_40411271.jpg,RETAKE,gap12,withheld-pose,False,UNASSESSABLE,allow,0.11,0.17,2.0,4.1,244.76407336505505,
+more3/wos_cpo_40411271.jpg,RETAKE,rot12,withheld-pose,False,UNASSESSABLE,allow,0.23,0.35,2.0,4.1,244.76407336505505,
+more3/wos_cpo_40411271.jpg,RETAKE,six,withheld-pose,False,UNASSESSABLE,allow,0.11,0.23,2.0,4.1,244.76407336505505,
+more3/wos_cpo_40411271.jpg,RETAKE,side,withheld-pose,False,UNASSESSABLE,allow,0.05,0.08,2.0,4.1,244.76407336505505,
+more3/wos_cpo_406107957490.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.06,0.1,1.9,3.8,,
+more3/wos_cpo_406107957490.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.25,0.37,1.9,3.8,,
+more3/wos_cpo_406107957490.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.0,0.0,1.9,3.8,,
+more3/wos_cpo_406107957490.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.0,0.0,1.9,3.8,,
+more3/wos_cpo_406107957490.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.17,0.29,1.9,3.8,,
+more3/wos_cpo_408102331490.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.09,0.14,3.3,4.8,,
+more3/wos_cpo_408102331490.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.3,0.45,3.3,4.8,,
+more3/wos_cpo_408102331490.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.12,0.16,3.3,4.8,,
+more3/wos_cpo_408102331490.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.12,0.16,3.3,4.8,,
+more3/wos_cpo_408102331490.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.26,0.4,3.3,4.8,,
+gen_wex_vmbUDwy/image_03.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_03.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_03.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_03.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_vmbUDwy/image_03.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_00.jpg,GOOD,round_offset,judged,False,CLEAR,allow,0.08,0.12,3.0,4.1,,
+gen_wex_3KSuGhC/image_00.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.23,0.34,3.0,4.1,,
+gen_wex_3KSuGhC/image_00.jpg,GOOD,rot12,judged,False,CLEAR,allow,0.16,0.23,3.0,4.1,,
+gen_wex_3KSuGhC/image_00.jpg,GOOD,six,withheld-other,False,UNASSESSABLE,allow,0.16,0.22,3.0,4.1,,
+gen_wex_3KSuGhC/image_00.jpg,GOOD,side,withheld-other,False,UNASSESSABLE,allow,0.22,0.33,3.0,4.1,,
+gen_wex_3KSuGhC/image_05.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_05.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_05.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_05.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_3KSuGhC/image_05.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_00.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.16,0.25,5.6,8.8,172.4717136537662,
+gen_wex_e99gXKb/image_00.jpg,GOOD,gap12,judged,False,CLEAR,withhold,0.6,0.87,5.6,8.8,172.4717136537662,
+gen_wex_e99gXKb/image_00.jpg,GOOD,rot12,judged,False,CLEAR,allow,0.14,0.18,5.6,8.8,172.4717136537662,
+gen_wex_e99gXKb/image_00.jpg,GOOD,six,withheld-other,False,UNASSESSABLE,allow,0.04,0.05,5.6,8.8,172.4717136537662,
+gen_wex_e99gXKb/image_00.jpg,GOOD,side,withheld-other,False,UNASSESSABLE,allow,0.49,0.76,5.6,8.8,172.4717136537662,
+gen_wex_e99gXKb/image_05.jpg,UNASSESSABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_05.jpg,UNASSESSABLE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_05.jpg,UNASSESSABLE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_05.jpg,UNASSESSABLE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_e99gXKb/image_05.jpg,UNASSESSABLE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_00.jpg,CORRECTABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_00.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_00.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_00.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_00.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_05.jpg,RETAKE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_05.jpg,RETAKE,gap12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_05.jpg,RETAKE,rot12,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_05.jpg,RETAKE,six,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_1TDYtpN/image_05.jpg,RETAKE,side,withheld-pose,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_02.jpg,CORRECTABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_02.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_02.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_02.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_8Rg3vqJ/image_02.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_bRffRhD/image_00.jpg,CORRECTABLE,round_offset,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_bRffRhD/image_00.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_bRffRhD/image_00.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_bRffRhD/image_00.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+gen_wex_bRffRhD/image_00.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+pepsi/phillips_147798.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.18,0.28,7.8,9.8,80.72755091138433,
+pepsi/phillips_147798.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.15,0.19,7.8,9.8,80.72755091138433,
+pepsi/phillips_147798.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.34,0.66,7.8,9.8,80.72755091138433,
+pepsi/phillips_147798.jpg,CORRECTABLE,six,judged,False,CLEAR,withhold,0.58,0.88,7.8,9.8,80.72755091138433,
+pepsi/phillips_147798.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.21,0.25,7.8,9.8,80.72755091138433,
+pepsi/phillips_NY080121_35.jpg,RETAKE,round_offset,withheld-pose,False,UNASSESSABLE,allow,0.34,0.53,16.9,18.7,84.45080237990096,
+pepsi/phillips_NY080121_35.jpg,RETAKE,gap12,withheld-pose,False,UNASSESSABLE,allow,0.31,0.31,16.9,18.7,84.45080237990096,
+pepsi/phillips_NY080121_35.jpg,RETAKE,rot12,withheld-pose,False,UNASSESSABLE,withhold,0.63,1.26,16.9,18.7,84.45080237990096,
+pepsi/phillips_NY080121_35.jpg,RETAKE,six,withheld-pose,False,UNASSESSABLE,withhold,1.19,1.77,16.9,18.7,84.45080237990096,
+pepsi/phillips_NY080121_35.jpg,RETAKE,side,withheld-pose,False,UNASSESSABLE,allow,0.38,0.42,16.9,18.7,84.45080237990096,
+more/rolex_official_126718GRNR_0001_126718GRNR.png,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.19,0.29,4.6,9.6,,
+more/rolex_official_126718GRNR_0001_126718GRNR.png,CORRECTABLE,gap12,judged,False,CLEAR,withhold,0.62,0.9,4.6,9.6,,
+more/rolex_official_126718GRNR_0001_126718GRNR.png,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,allow,0.42,0.52,4.6,9.6,,
+more/rolex_official_126718GRNR_0001_126718GRNR.png,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,allow,0.41,0.5,4.6,9.6,,
+more/rolex_official_126718GRNR_0001_126718GRNR.png,CORRECTABLE,side,judged,False,CLEAR,withhold,0.68,0.95,4.6,9.6,,
+more/wos_cpo_40411167_126710BLNR.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.11,0.16,2.1,5.5,,
+more/wos_cpo_40411167_126710BLNR.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.28,0.42,2.1,5.5,,
+more/wos_cpo_40411167_126710BLNR.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.29,0.4,2.1,5.5,,
+more/wos_cpo_40411167_126710BLNR.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.29,0.39,2.1,5.5,,
+more/wos_cpo_40411167_126710BLNR.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.33,0.46,2.1,5.5,,
+more/wos_cpo_40617914_126711CHNR.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.08,0.13,1.8,4.2,,
+more/wos_cpo_40617914_126711CHNR.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.23,0.35,1.8,4.2,,
+more/wos_cpo_40617914_126711CHNR.jpg,GOOD,rot12,withheld-other,False,UNASSESSABLE,allow,0.18,0.25,1.8,4.2,,
+more/wos_cpo_40617914_126711CHNR.jpg,GOOD,six,judged,False,CLEAR,allow,0.17,0.24,1.8,4.2,,
+more/wos_cpo_40617914_126711CHNR.jpg,GOOD,side,judged,False,CLEAR,allow,0.23,0.34,1.8,4.2,,
+more2/gen_126710BLNR_phillips_166153.jpg,CORRECTABLE,round_offset,not measured,False,,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126710BLNR_phillips_166153.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126710BLNR_phillips_166153.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126710BLNR_phillips_166153.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126710BLNR_phillips_166153.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,no dial pose,,,nan,nan,,no dial fit
+more2/gen_126710GRNR_phillips_perpetual_bruce_wayne_2024.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.24,0.37,7.2,12.0,116.34557698581277,
+more2/gen_126710GRNR_phillips_perpetual_bruce_wayne_2024.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.31,0.5,7.2,12.0,116.34557698581277,
+more2/gen_126710GRNR_phillips_perpetual_bruce_wayne_2024.jpg,GOOD,rot12,withheld-other,False,UNASSESSABLE,withhold,1.03,1.37,7.2,12.0,116.34557698581277,
+more2/gen_126710GRNR_phillips_perpetual_bruce_wayne_2024.jpg,GOOD,six,judged,False,CLEAR,allow,0.33,0.5,7.2,12.0,116.34557698581277,
+more2/gen_126710GRNR_phillips_perpetual_bruce_wayne_2024.jpg,GOOD,side,withheld-other,False,UNASSESSABLE,withhold,0.74,0.9,7.2,12.0,116.34557698581277,
+more2/gen_126711CHNR_phillips_180859.jpg,RETAKE,round_offset,withheld-pose,False,UNASSESSABLE,allow,0.24,0.37,11.7,13.8,92.04276829898191,
+more2/gen_126711CHNR_phillips_180859.jpg,RETAKE,gap12,withheld-pose,False,UNASSESSABLE,allow,0.06,0.02,11.7,13.8,92.04276829898191,
+more2/gen_126711CHNR_phillips_180859.jpg,RETAKE,rot12,withheld-pose,False,UNASSESSABLE,withhold,0.74,1.19,11.7,13.8,92.04276829898191,
+more2/gen_126711CHNR_phillips_180859.jpg,RETAKE,six,withheld-pose,False,UNASSESSABLE,withhold,0.59,1.02,11.7,13.8,92.04276829898191,
+more2/gen_126711CHNR_phillips_180859.jpg,RETAKE,side,withheld-pose,False,UNASSESSABLE,allow,0.08,0.09,11.7,13.8,92.04276829898191,
+more2/gen_126718GRNR_phillips_218413.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.45,0.7,22.1,24.7,93.6446763518204,
+more2/gen_126718GRNR_phillips_218413.jpg,CORRECTABLE,gap12,withheld-other,False,UNASSESSABLE,allow,0.2,0.03,22.1,24.7,93.6446763518204,
+more2/gen_126718GRNR_phillips_218413.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,withhold,1.61,2.45,22.1,24.7,93.6446763518204,
+more2/gen_126718GRNR_phillips_218413.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,withhold,0.86,1.67,22.1,24.7,93.6446763518204,
+more2/gen_126718GRNR_phillips_218413.jpg,CORRECTABLE,side,withheld-other,False,UNASSESSABLE,allow,0.41,0.45,22.1,24.7,93.6446763518204,
+more3/gen_126710BLRO_phillips_146853.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.26,0.4,9.8,13.9,192.46074999770926,
+more3/gen_126710BLRO_phillips_146853.jpg,CORRECTABLE,gap12,judged,False,CLEAR,withhold,0.96,1.37,9.8,13.9,192.46074999770926,
+more3/gen_126710BLRO_phillips_146853.jpg,CORRECTABLE,rot12,judged,False,CLEAR,allow,0.5,0.59,9.8,13.9,192.46074999770926,
+more3/gen_126710BLRO_phillips_146853.jpg,CORRECTABLE,six,judged,False,CLEAR,allow,0.22,0.13,9.8,13.9,192.46074999770926,
+more3/gen_126710BLRO_phillips_146853.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.42,0.71,9.8,13.9,192.46074999770926,
+more3/wos_cpo_40411407.jpg,GOOD,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.08,0.12,1.7,4.4,,
+more3/wos_cpo_40411407.jpg,GOOD,gap12,judged,False,CLEAR,allow,0.02,0.02,1.7,4.4,,
+more3/wos_cpo_40411407.jpg,GOOD,rot12,withheld-other,False,UNASSESSABLE,allow,0.22,0.36,1.7,4.4,,
+more3/wos_cpo_40411407.jpg,GOOD,six,judged,False,CLEAR,allow,0.21,0.34,1.7,4.4,,
+more3/wos_cpo_40411407.jpg,GOOD,side,judged,False,CLEAR,allow,0.01,0.01,1.7,4.4,,
+more3/wos_cpo_406107977490.jpg,CORRECTABLE,round_offset,judged,False,CLEAR/UNASSESSABLE,allow,0.09,0.14,2.2,4.5,,
+more3/wos_cpo_406107977490.jpg,CORRECTABLE,gap12,judged,False,CLEAR,allow,0.16,0.23,2.2,4.5,,
+more3/wos_cpo_406107977490.jpg,CORRECTABLE,rot12,withheld-other,False,UNASSESSABLE,allow,0.27,0.39,2.2,4.5,,
+more3/wos_cpo_406107977490.jpg,CORRECTABLE,six,withheld-other,False,UNASSESSABLE,allow,0.26,0.38,2.2,4.5,,
+more3/wos_cpo_406107977490.jpg,CORRECTABLE,side,judged,False,CLEAR,allow,0.18,0.25,2.2,4.5,,

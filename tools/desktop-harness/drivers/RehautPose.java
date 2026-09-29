@@ -8,13 +8,15 @@ import org.opencv.core.Mat;import org.opencv.imgproc.Imgproc;import org.opencv.a
  */
 public class RehautPose{
  static String mk(List<GmtRoundMarkerAnalyzer.Marker> ms){StringBuilder b=new StringBuilder();for(var m:ms)if(m.found&&m.stable)b.append(m.hour).append(':').append(f(m.x)).append(':').append(f(m.y)).append(':').append(f(m.radiusPx)).append(';');return b.toString();}
+ /** Every found marker, stable or not (h:x:y:r:stable;), for the dial-plane pose prototype. */
+ static String mkAll(List<GmtRoundMarkerAnalyzer.Marker> ms){StringBuilder b=new StringBuilder();for(var m:ms)if(m.found)b.append(m.hour).append(':').append(f(m.x)).append(':').append(f(m.y)).append(':').append(f(m.radiusPx)).append(':').append(m.stable?1:0).append(';');return b.toString();}
  static String f(double v){return Double.isFinite(v)?String.format(Locale.US,"%.5f",v):"";}
  public static void main(String[] a)throws Exception{
   nu.pattern.OpenCV.loadLocally();
   try(PrintWriter out=new PrintWriter(new FileWriter(a[0]))){
    out.println("file,app_pose,crop,r_px,roll,stable,g_valid,g_inner,g_outer,g_mean,g_watchV,g_watchH,g_harm,g_widest,g_minmean,g_cov,g_resid,"
     +"s_valid,s_self,w12,w3,w6,w9,c12,c3,c6,c9,s_V,s_H,s_minmean,ell_valid,ell_ratio,ell_tilt,ell_minor,edge_ratio,edge_angle,"
-    +"aff_n,aff_ratio,aff_tilt,aff_minor_watch,aff_scale_over_r,tri_w,gap,rot_axis,rot_top,tick_ok,cx,cy,edge_a,edge_b,t60x,t60y,t59x,t59y,t01x,t01y,markers");
+    +"aff_n,aff_ratio,aff_tilt,aff_minor_watch,aff_scale_over_r,tri_w,gap,rot_axis,rot_top,tick_ok,cx,cy,edge_a,edge_b,t60x,t60y,t59x,t59y,t01x,t01y,markers,markers_all");
    for(int i=1;i<a.length;i++){
     String p=a[i];
     try{
@@ -69,7 +71,7 @@ public class RehautPose{
       f(tick60!=null?tick60[0]:Double.NaN),f(tick60!=null?tick60[1]:Double.NaN),
       f(tw.valid&&tw.geometry!=null?tw.geometry.tick59[0]:Double.NaN),f(tw.valid&&tw.geometry!=null?tw.geometry.tick59[1]:Double.NaN),
       f(tw.valid&&tw.geometry!=null?tw.geometry.tick01[0]:Double.NaN),f(tw.valid&&tw.geometry!=null?tw.geometry.tick01[1]:Double.NaN),
-      mk(ms)));
+      mk(ms),mkAll(ms)));
      out.flush();src.release();
     }catch(Throwable t){out.println(p+",ERROR "+t.getClass().getSimpleName());out.flush();}
    }

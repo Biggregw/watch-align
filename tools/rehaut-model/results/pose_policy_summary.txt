@@ -1,0 +1,18 @@
+photos: 109 genuine with batch verdicts; dirs ['/tmp/claude-0/-home-claude-watch-align/f0955dce-5ff0-5966-86c9-26d96a1d0aec/scratchpad/b_fix2']
+current pose labels: {'CORRECTABLE': 68, 'UNASSESSABLE': 13, 'GOOD': 19, 'RETAKE': 9}
+affine pose valid: 61/109; by label: {'CORRECTABLE': 41, 'GOOD': 15, 'RETAKE': 5}
+affine invalid reasons: {'fit': 47, 'markers': 1}
+tilt median 4.6 (IQR 2.4-13.2); tilt_hi median 9.4; squash sd median 0.0035
+side sign known (|z|>=2): 33 of 61
+index height from parallax/tilt (tilt > 6 deg, n=27): median 0.029 R, IQR 0.024-0.035
+  GOOD: n=15 tilt median 3.0, max 16.0; tilt_hi median 5.1
+  CORRECTABLE: n=41 tilt median 4.6, max 22.1; tilt_hi median 9.6
+  RETAKE: n=5 tilt median 11.7, max 16.9; tilt_hi median 13.8
+
+per measurement (rows = current app, cols = proposed):
+measurement    judged&allow  judged&WITHHOLD  poseheld&ALLOW  poseheld&withhold  otherheld no dial pose
+round_offset             56                0               5                  0          0           24
+gap12                    40                5               5                  0         11           48
+rot12                    20                9               1                  4         27           48
+six                      19                8               1                  4         29           48
+side                     32                8               5                  0         16           48
