@@ -35,6 +35,10 @@ class GmtGoldenFixtureTest(unittest.TestCase):
             rows = G.read_run(Path(d), False)
             self.assertEqual([{"path": "/a.jpg", "gap": "0.1"}, {"path": "/b.jpg", "gap": "0.2"}], rows)
 
+    def test_text_comparison_is_encoding_neutral_but_values_are_exact(self):
+        self.assertEqual(G.norm("fitted 6.7\u00b0 apart"), G.norm("fitted 6.7? apart"))
+        self.assertNotEqual(G.norm("0.0701"), G.norm("0.0700"))
+
     def test_check_reports_missing_images_instead_of_passing(self):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(2, G.check([Path(d)], 1, None))

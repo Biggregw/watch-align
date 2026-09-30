@@ -61,7 +61,7 @@ jobs:
 
   measure:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 330
     defaults:
       run:
         shell: bash   # -eo pipefail: a failing command before `| tee` fails the step

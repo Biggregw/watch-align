@@ -32,6 +32,12 @@ REPO = HERE.parent.parent
 IGNORED = {"path", "overlay"}     # file locations, not measurements
 
 
+def norm(v):
+    """Free-text notes contain a degree sign that a non-UTF-8 JVM writes as '?': compare text
+    encoding-neutrally (non-ASCII -> '?'). Numbers and labels are ASCII and compared exactly."""
+    return (v or "").encode("ascii", "replace").decode("ascii")
+
+
 def sha256(p: Path) -> str:
     h = hashlib.sha256()
     with p.open("rb") as f:
@@ -120,7 +126,7 @@ def check(roots: list[Path], shards: int, work: Path | None) -> int:
             for c, v in e.items():
                 if c == "sha256":
                     continue
-                if g.get(c) != v:
+                if norm(g.get(c)) != norm(v):
                     diffs.append({"table": name, "key": k, "column": c, "expected": v, "got": g.get(c)})
     print(json.dumps({"compared_images": len(found), "differences": len(diffs), "first": diffs[:20]}, indent=1, default=str))
     return 1 if diffs else 0

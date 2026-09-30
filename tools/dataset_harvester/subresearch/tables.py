@@ -241,8 +241,11 @@ def summary(watch_rows: list[dict], dataset_rows: list[dict], img_rows: list[dic
                 "round_detected_rate": rate([r for r in rs if r["kind"] == "round"], lambda r: r.get("detected") is True)["rate"],
             }
     stab = {}
-    for kind in ("dial", "triangle", "baton", "round"):
-        rs = [r for r in stab_rows if r["kind"] == kind and r.get("detected_in_orig")]
+    groups = {k: [r for r in stab_rows if r["kind"] == k and r.get("detected_in_orig")] for k in ("dial", "triangle", "baton", "round")}
+    # The dial seed without an edge fit can lock onto another ring; report the two cases apart.
+    groups["dial_edge_fit_in_every_variant"] = [r for r in groups["dial"] if r.get("fit_paths") == "edge_fit"]
+    groups["dial_seed_circle_in_some_variant"] = [r for r in groups["dial"] if r.get("fit_paths") != "edge_fit"]
+    for kind, rs in groups.items():
         stab[kind] = {"photo_landmarks": len(rs),
                       "lost_in_some_variant": sum(1 for r in rs if r.get("variants_missing")),
                       "centre_spread_over_r_median": q([r.get("centre_spread_over_r") for r in rs], 50),
