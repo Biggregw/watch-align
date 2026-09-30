@@ -1,0 +1,194 @@
+{
+  "adapters": {},
+  "dataset": {
+    "accepted_usable_images": 78,
+    "accepted_watches": 41,
+    "by_class_watches": {
+      "gen": 13,
+      "rep": 28
+    },
+    "by_factory_watches": {
+      "ARF": 2,
+      "C+": 1,
+      "Clean": 13,
+      "VSF": 12
+    },
+    "by_group_watches": {
+      "gen/126710BLNR/Rolex": 1,
+      "gen/126710BLRO/Rolex": 6,
+      "gen/126710GRNR/Rolex": 1,
+      "gen/126711CHNR/Rolex": 2,
+      "gen/126719BLRO/Rolex": 3,
+      "rep/126710BLNR/ARF": 2,
+      "rep/126710BLNR/C+": 1,
+      "rep/126710BLNR/Clean": 9,
+      "rep/126710BLNR/VSF": 9,
+      "rep/126710BLRO/Clean": 3,
+      "rep/126710BLRO/VSF": 2,
+      "rep/126710GRNR/Clean": 1,
+      "rep/126710GRNR/VSF": 1
+    },
+    "by_model_watches": {
+      "gen:126710BLNR": 1,
+      "gen:126710BLRO": 6,
+      "gen:126710GRNR": 1,
+      "gen:126711CHNR": 2,
+      "gen:126719BLRO": 3,
+      "rep:126710BLNR": 21,
+      "rep:126710BLRO": 5,
+      "rep:126710GRNR": 2
+    },
+    "multiview_watches": 19,
+    "multiview_watches_by_class": {
+      "gen": 1,
+      "rep": 18
+    },
+    "quarantined_watches": 159,
+    "reference_only_watches": [
+      "official_catalogue_2026"
+    ],
+    "rejected_watches": 143,
+    "repeatability_target_views": 2,
+    "research_targets": {
+      "gen_watches": 50,
+      "rep_watches": 30
+    }
+  },
+  "dry_run": false,
+  "errors": [
+    "https://sothebys.com/en/buy/_rolex-gmt-master-ii-root-beer-reference-126711-a-40mm-rose-gold-stainless-steel-automatic-wristwatch-with-date-and-dual-time-a0cc: no_images_downloaded: blocked_robots x7 (final)",
+    "https://sothebys.com/en/articles/the-rolex-pepsi-rugged-examples-that-honour-the-dna-of-the-gmt-series: no_images_downloaded: blocked_robots x12 (final)",
+    "https://sothebys.com/en/articles/from-pandas-to-pepsis-a-guide-to-rolex-nicknames: no_images_downloaded: blocked_robots x12 (final)",
+    "https://sothebys.com/en/buy/auction/2020/watches-weekly-london-10/rolex-gmt-master-ii-pepsi-ref-126710blro-stainless: no_images_downloaded: blocked_robots x10 (final)",
+    "https://sothebys.com/en/buy/auction/2023/fine-watches-8/gmt-master-ii-reference-116713-montre-bracelet-a: no_images_downloaded: blocked_robots x9 (final)",
+    "https://sothebys.com/en/buy/auction/2022/important-watches-online/gmt-master-ii-pepsi-reference-126710blro-stainless: no_images_downloaded: blocked_robots x11 (final)",
+    "https://sothebys.com/en/buy/_rolex-gmt-master-ii-batman-reference-126710blnr-b9c1: no_images_downloaded: blocked_robots x7 (final)",
+    "https://sothebys.com/en/buy/_rolex-gmt-master-ii-pepsi-reference-126719-a-white-gold-automatic-wristwatch-with-date-and-dual-time-a882: no_images_downloaded: blocked_robots x7 (final)",
+    "https://sothebys.com/en/buy/_rolex-gmt-master-ii-pepsi-reference-126710blro-a-40mm-650b: no_images_downloaded: blocked_robots x5 (final)",
+    "https://sothebys.com/en/buy/_rolex-gmt-master-ii-batgirl-reference-126710blnr-a-40mm-9bce: no_images_downloaded: blocked_robots x7 (final)",
+    "https://sothebys.com/en/buy/_rolex-gmt-master-ii-pepsi-reference-126710blro-an-unworn-stainless-steel-automatic-wristwatch-with-date-and-dual-time-20224-d57a: no_images_downloaded: blocked_robots x5 (final)",
+    "https://sothebys.com/en/buy/_rolx-gmt-master-ii-root-beer-0f98: no_images_downloaded: blocked_robots x6 (final)",
+    "https://sothebys.com/en/buy/_gmt-master-ii-batman-reference-126710blnr-6b2e: no_images_downloaded: blocked_robots x7 (final)",
+    "https://sothebys.com/en/buy/_rolex-gmt-master-ii-blue-red-pepsi-reference-126710-a-stainless-steel-automatic-wristwatch-with-date-and-dual-time-aadb: no_images_downloaded: blocked_robots x7 (final)",
+    "https://sothebys.com/en/articles/a-concise-guide-to-the-rolex-gmt-root-beer: no_images_downloaded: blocked_robots x12 (final)",
+    "https://sothebys.com/en/buy/_gmt-master-ii-pepsi-reference-126710blro-a-stainless-steel-automatic-dual-time-zone-wristwatch-with-date-circa-2022-990d: no_images_downloaded: blocked_robots x6 (final)",
+    "https://sothebys.com/en/buy/all-watches/_rolex-stainless-steel-pepsi-with-bp-22d2: no_images_downloaded: blocked_robots x6 (final)",
+    "https://sothebys.com/en/articles/the-rolex-gmt-pepsi-the-key-references: no_images_downloaded: blocked_robots x12 (final)",
+    "https://swisswatchexpo.com/thewatchclub/2024/06/21/rolex-gmt-master-ultimate-guide: http_error: http 400 (retry 2/3)",
+    "https://swisswatchexpo.com/thewatchclub/2025/10/24/rolex-black-grey-gmt-master-ii-grnr-guide: http_error: http 400 (retry 2/3)",
+    "https://swisswatchexpo.com/TheWatchClub/2024/01/02/rolex-gmt-master-ii-yellow-gold-and-rolesor-yellow-gold-editions: http_error: http 400 (retry 2/3)",
+    "https://swisswatchexpo.com/thewatchclub/2026/04/15/discontinued-rolex-2026-pepsi-gmt-submariner: http_error: http 400 (retry 2/3)",
+    "https://swisswatchexpo.com/thewatchclub/rolex-pepsi-126710blro-vs-126719blro-comparison: http_error: http 400 (retry 2/3)"
+  ],
+  "exact_duplicates": 430,
+  "finished_at": "2026-09-30T18:24:40Z",
+  "images_downloaded": 483,
+  "images_inconclusive": 1,
+  "images_local": 0,
+  "images_measurement_quality": 14,
+  "images_rejected": 448,
+  "images_rejected_by_reason": {
+    "inconclusive_marker_layout": 1,
+    "reject_blur": 5,
+    "reject_landmarks_unusable": 1,
+    "reject_low_resolution": 148,
+    "reject_no_dial": 304
+  },
+  "images_restored": 0,
+  "images_unreadable": 0,
+  "near_duplicates": 12,
+  "next_priorities": [
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126720VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126713GRNR"
+    },
+    {
+      "accepted_watches": 1,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126710BLNR"
+    },
+    {
+      "accepted_watches": 1,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126715CHNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126718GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126729VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Rich",
+      "model": "126710BLNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "ARF",
+      "model": "126710BLRO"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Rich",
+      "model": "126710BLRO"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "ARF",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Rich",
+      "model": "126710GRNR"
+    }
+  ],
+  "possible_duplicates": 23,
+  "run_id": "20260930T181306Z",
+  "sources_already_known": 0,
+  "sources_deferred": 0,
+  "sources_discovered_new": 0,
+  "sources_examined": 64,
+  "sources_failed": 23,
+  "sources_pending_total": 64,
+  "started_at": "2026-09-30T18:13:06Z",
+  "watch_reasons": {
+    "quarantine_inconclusive_images": 17,
+    "quarantine_possible_same_watch": 31,
+    "reject_duplicate": 4,
+    "reject_low_resolution": 2,
+    "reject_no_dial": 5,
+    "reject_unusable_imagery": 6
+  },
+  "watches_accepted": 0,
+  "watches_quarantined": 31,
+  "watches_rejected": 10
+}
