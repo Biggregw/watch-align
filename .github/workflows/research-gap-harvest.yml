@@ -1,0 +1,181 @@
+name: Research gap harvest
+
+# One-off bounded acquisition run for the fresh-holdout/repeatability gaps identified by the
+# corpus-driven QC research. This workflow intentionally lives on the feature branch only.
+# It uses the normal harvester and normal ACCEPT/QUARANTINE/REJECT rules, but enables optional
+# class-level acquisition targets so discovery favours the largest research gaps.
+on:
+  push:
+    branches:
+      - feature/harvester-research-gap-targets
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dataset-harvester
+  cancel-in-progress: false
+
+jobs:
+  targeted-gap-harvest:
+    if: github.event.head_commit.message == 'Run targeted research gap harvest'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+      IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+      HARVEST_TARGET_GEN_WATCHES: '50'
+      HARVEST_TARGET_REP_WATCHES: '30'
+      HARVEST_TARGET_VIEWS_PER_WATCH: '2'
+      HARVEST_SEARCH_MAX_QUERIES: '16'
+    steps:
+      - name: Checkout feature code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        run: python -m pip install -q -r tools/dataset_harvester/requirements.txt
+
+      - name: Harvester unit tests
+        run: python -m unittest discover -s tools/dataset_harvester/tests
+
+      - name: Verify Brave secret
+        run: test -n "$BRAVE_SEARCH_API_KEY" || { echo "::error::BRAVE_SEARCH_API_KEY missing"; exit 1; }
+
+      - name: Restore OpenCV jar
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Check out persistent harvest state
+        run: |
+          git fetch -q origin data/harvest:refs/remotes/origin/data/harvest
+          echo "Before data/harvest: $(git rev-parse origin/data/harvest)" >> "$GITHUB_STEP_SUMMARY"
+          git worktree add -q datasets/harvest origin/data/harvest
+          git -C datasets/harvest switch -q -c harvest-gap-run
+
+      - name: Restore downloaded image cache
+        uses: actions/cache@v4
+        with:
+          path: datasets/harvest/images
+          key: harvest-images-${{ github.run_id }}
+          restore-keys: harvest-images-
+
+      - name: Record starting corpus
+        run: |
+          python3 - <<'PY' | tee gap-before.txt
+          import csv
+          from pathlib import Path
+          p=Path('datasets/harvest/watches.csv')
+          rows=list(csv.DictReader(p.open())) if p.exists() else []
+          accepted=[r for r in rows if r.get('dataset_decision')=='ACCEPT' and r.get('sample_role')!='reference_only']
+          gen=[r for r in accepted if r.get('class_label')=='gen']
+          rep=[r for r in accepted if r.get('class_label')=='rep']
+          gm=[r for r in gen if int(r.get('usable_images') or 0)>=2]
+          rm=[r for r in rep if int(r.get('usable_images') or 0)>=2]
+          print(f"START gen={len(gen)} rep={len(rep)} gen_multiview={len(gm)} rep_multiview={len(rm)}")
+          PY
+          cat gap-before.txt >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run targeted acquisition cycles
+        run: |
+          : > harvest-gap-output.md
+          for cycle in 1 2 3; do
+            echo "# Acquisition cycle $cycle" | tee -a harvest-gap-output.md
+            python3 tools/dataset_harvester/harvest.py \
+              --once \
+              --source-adapter search \
+              --max-sources 75 | tee -a harvest-gap-output.md
+
+            read GEN REP RETAKE GMULTI RMULTI <<< "$(python3 - <<'PY'
+          import csv
+          from pathlib import Path
+          wp=Path('datasets/harvest/watches.csv')
+          mp=Path('datasets/harvest/manifest.csv')
+          wr=list(csv.DictReader(wp.open())) if wp.exists() else []
+          mr=list(csv.DictReader(mp.open())) if mp.exists() else []
+          accepted=[r for r in wr if r.get('dataset_decision')=='ACCEPT' and r.get('sample_role')!='reference_only']
+          gen=[r for r in accepted if r.get('class_label')=='gen']
+          rep=[r for r in accepted if r.get('class_label')=='rep']
+          gmulti=sum(int(r.get('usable_images') or 0)>=2 for r in gen)
+          rmulti=sum(int(r.get('usable_images') or 0)>=2 for r in rep)
+          retake={r.get('sha256') for r in mr if r.get('class_label')=='gen' and r.get('pose')=='RETAKE' and not r.get('duplicate_of')}
+          print(len(gen), len(rep), len(retake), gmulti, rmulti)
+          PY
+          )"
+            echo "After cycle $cycle: gen=$GEN rep=$REP genuine_RETAKE_images=$RETAKE gen_multiview=$GMULTI rep_multiview=$RMULTI" | tee -a harvest-gap-output.md
+            if [ "$GEN" -ge 50 ] && [ "$REP" -ge 30 ] && [ "$RETAKE" -ge 10 ]; then
+              echo "Core research gaps reached after cycle $cycle." | tee -a harvest-gap-output.md
+              break
+            fi
+          done
+
+      - name: Final gap report
+        if: always()
+        run: |
+          python3 - <<'PY' | tee gap-final.md
+          import csv, json
+          from pathlib import Path
+          wp=Path('datasets/harvest/watches.csv')
+          mp=Path('datasets/harvest/manifest.csv')
+          wr=list(csv.DictReader(wp.open())) if wp.exists() else []
+          mr=list(csv.DictReader(mp.open())) if mp.exists() else []
+          accepted=[r for r in wr if r.get('dataset_decision')=='ACCEPT' and r.get('sample_role')!='reference_only']
+          gen=[r for r in accepted if r.get('class_label')=='gen']
+          rep=[r for r in accepted if r.get('class_label')=='rep']
+          gmulti=[r for r in gen if int(r.get('usable_images') or 0)>=2]
+          rmulti=[r for r in rep if int(r.get('usable_images') or 0)>=2]
+          retake={r.get('sha256') for r in mr if r.get('class_label')=='gen' and r.get('pose')=='RETAKE' and not r.get('duplicate_of')}
+          print('# Research gap harvest result')
+          print()
+          print(f'- Genuine accepted independent watches: {len(gen)} / 50 target')
+          print(f'- Replica accepted independent watches: {len(rep)} / 30 target')
+          print(f'- Genuine watches with 2+ usable views: {len(gmulti)}')
+          print(f'- Replica watches with 2+ usable views: {len(rmulti)}')
+          print(f'- Traceable genuine RETAKE images retained for pose research: {len(retake)} / 10 target')
+          print(f'- Total accepted usable views: {sum(int(r.get("usable_images") or 0) for r in accepted)}')
+          print()
+          print('Targets change discovery priority only; normal provenance, quality, dedupe and acceptance rules remain unchanged.')
+          PY
+          cat gap-final.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-gap-harvest-${{ github.run_id }}
+          path: |
+            harvest-gap-output.md
+            gap-before.txt
+            gap-final.md
+            datasets/harvest/reports/latest.*
+          if-no-files-found: ignore
+
+      - name: Persist targeted harvest state to data/harvest
+        run: |
+          cp tools/dataset_harvester/data.gitignore datasets/harvest/.gitignore
+          cd datasets/harvest
+          git add -A .
+          if git diff --cached --quiet; then
+            echo "No persistent harvest-state changes." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git -c user.name="watch-align harvester" -c user.email="actions@users.noreply.github.com" \
+            commit -q -m "Targeted research gap harvest ${{ github.run_id }}"
+          git push -q origin HEAD:data/harvest
+          echo "After data/harvest: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
