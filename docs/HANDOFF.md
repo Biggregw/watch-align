@@ -413,7 +413,8 @@ Open items:
 - Hull corners clip and bevels bend side fits. That's why the apex and squareness
   checks exist.
 
-alpha67: **Find photos on RepTimeQC.** From Collect, "Find photos on RepTimeQC" (`RepTimeQcActivity`)
+alpha67: **Find photos on RepTimeQC.** (Reddit now approves API access before an app can be created, so this
+needs the user's API request approved first; until then use sharing, below.) From Collect, "Find photos on RepTimeQC" (`RepTimeQcActivity`)
 searches r/RepTimeQC (default query "GMT") through Reddit's official API (`RedditClient`: app-only
 OAuth for an "installed app" client id the user creates once at reddit.com/prefs/apps; no password;
 about one API call a second at most). Photos come from Reddit images and galleries, direct Imgur
@@ -428,3 +429,11 @@ only takes replica photos that passed the check. Added photos join the Collect s
 per post, source = post link) and are uploaded or exported from there. The JSON parsing and tag
 guesses are unit-tested with synthetic replies (`RedditParseTest`, `MiniJson`); the Reddit and
 Imgur calls themselves could not be exercised from the dev container (Reddit is blocked there).
+
+alpha67 also: **share into Collect.** Collect accepts photos (one or several) and plain-text links
+shared from other apps. Shared photos open the tag dialog pre-filled from the shared post: replica
+(or "not sure" if the title mentions a genuine), model and factory from `TitleTags.guess`, source =
+the post link without tracking parameters, notes = title (from the share subject/text, or the words
+of a reddit link's slug). A link shared on its own is remembered for 30 minutes and used for the
+photos shared next; photos from the same post as the last batch default to the same watch id.
+Dialog help text is now light grey (it was dark grey on the dark dialog).

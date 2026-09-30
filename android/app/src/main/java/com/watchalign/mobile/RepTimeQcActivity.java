@@ -242,7 +242,7 @@ public class RepTimeQcActivity extends Activity {
     /** Changes the tags of every photo from the same post. */
     private void editTags(TestSetStore.Entry c){
         LinearLayout f=new LinearLayout(this);f.setOrientation(LinearLayout.VERTICAL);f.setPadding(dp(20),dp(8),dp(20),0);
-        f.addView(text(c.notes,13,Color.DKGRAY));
+        f.addView(text(c.notes,13,CollectActivity.DIALOG_TEXT));
         RadioGroup cls=new RadioGroup(this);cls.setOrientation(RadioGroup.HORIZONTAL);
         RadioButton r=radio("Replica"),u=radio("Not sure");cls.addView(r);cls.addView(u);f.addView(cls);
         ("rep".equals(c.cls)?r:u).setChecked(true);
@@ -281,12 +281,12 @@ public class RepTimeQcActivity extends Activity {
     private void settings(){
         SharedPreferences p=prefs();
         LinearLayout f=new LinearLayout(this);f.setOrientation(LinearLayout.VERTICAL);f.setPadding(dp(20),dp(8),dp(20),0);
-        f.addView(text("One-time setup: on reddit.com/prefs/apps (signed in), choose \"create another app\", type \"installed app\", "
-                +"any name, redirect uri http://localhost. The client id is the short code under the app's name. No password is stored.",12,Color.DKGRAY));
+        f.addView(text("Reddit now approves API access before an app can be created: request it through \"register to use the API\" on reddit.com/prefs/apps. Once approved, choose \"create another app\", type \"installed app\", "
+                +"any name, redirect uri http://localhost. The client id is the short code under the app's name. No password is stored.",12,CollectActivity.DIALOG_TEXT));
         EditText id=new EditText(this);id.setHint("Reddit client id");id.setSingleLine(true);id.setText(p.getString("client_id",""));f.addView(id);
         EditText user=new EditText(this);user.setHint("Your Reddit username (optional)");user.setSingleLine(true);user.setText(p.getString("user",""));f.addView(user);
         EditText sub=new EditText(this);sub.setHint("Subreddit");sub.setSingleLine(true);sub.setText(p.getString("sub","RepTimeQC"));f.addView(sub);
-        f.addView(text("Optional, for Imgur albums: an Imgur Client-ID from api.imgur.com/oauth2/addclient. Without it, only Reddit photos and single Imgur images are fetched.",12,Color.DKGRAY));
+        f.addView(text("Optional, for Imgur albums: an Imgur Client-ID from api.imgur.com/oauth2/addclient. Without it, only Reddit photos and single Imgur images are fetched.",12,CollectActivity.DIALOG_TEXT));
         EditText imgur=new EditText(this);imgur.setHint("Imgur Client-ID (optional)");imgur.setSingleLine(true);imgur.setText(p.getString("imgur",""));f.addView(imgur);
         new AlertDialog.Builder(this).setTitle("Reddit settings").setView(f)
                 .setPositiveButton("Save",(d,w)->p.edit().putString("client_id",id.getText().toString().trim()).putString("user",user.getText().toString().trim())

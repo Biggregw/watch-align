@@ -53,6 +53,25 @@ final class TitleTags {
         return g;
     }
 
+    /**
+     * Title and link from text shared by another app (alpha67), e.g. the Reddit app's share of a post:
+     * a link, sometimes with the title before it or in the subject. Without a title, the words in a
+     * reddit post link's slug are used. Tracking parameters are removed from the link.
+     */
+    static String[] fromShare(String subject,String text){
+        String sub=subject==null?"":subject.trim(),txt=text==null?"":text.trim();
+        String all=(sub.isEmpty()||txt.contains(sub)?txt:sub+"\n"+txt).trim();
+        Matcher m=RedditClient.LINK.matcher(all);
+        String raw=m.find()?m.group():"";
+        String link=raw.indexOf('?')>=0?raw.substring(0,raw.indexOf('?')):raw;
+        String title=(raw.isEmpty()?all:all.replace(raw,"")).replaceAll("\\s+"," ").trim();
+        if(title.isEmpty()){
+            Matcher slug=Pattern.compile("/comments/[A-Za-z0-9]+/([^/?#]+)").matcher(link);
+            if(slug.find())title=slug.group(1).replace('_',' ').trim();
+        }
+        return new String[]{title,link};
+    }
+
     private static String nick(String low){for(String[] n:NICK)if(Pattern.compile("\\b("+n[0]+")\\b").matcher(low).find())return n[1];return null;}
     private static String nickSuffix(String low){String n=nick(low);return n==null?null:n.substring(6);}
     private static String byDefault(String suf){

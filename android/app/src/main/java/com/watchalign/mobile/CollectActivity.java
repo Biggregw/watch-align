@@ -53,6 +53,8 @@ public class CollectActivity extends Activity {
     private static final int PICK=2001,CAPTURE=2002;
     private static final int BG=Color.rgb(8,17,31),ACCENT=Color.rgb(50,213,242),MUTED=Color.rgb(158,176,201);
     static final String[] MODELS=TestSetStore.MODELS;
+    /** Readable on the dark dialog background. */
+    static final int DIALOG_TEXT=Color.rgb(200,208,220);
 
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private TestSetStore store;
@@ -73,6 +75,43 @@ public class CollectActivity extends Activity {
         refresh();
         // Photos saved before a check finished (app closed) are checked now.
         for(TestSetStore.Entry e:new ArrayList<>(store.entries))if(e.suitable.isEmpty())check(e);
+        handleShare(getIntent());
+    }
+
+    @Override protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);handleShare(i);}
+
+    // ---- photos and links shared from other apps (alpha67) ----
+
+    private static final long SHARED_POST_MS=30*60*1000L;
+
+    /**
+     * Photos shared in (e.g. from the Reddit app) open the tag dialog pre-filled as a replica with the
+     * model and factory guessed from the post title. A shared post link on its own is remembered for
+     * 30 minutes and used for the photos shared next.
+     */
+    private void handleShare(Intent in){
+        if(in==null||in.getBooleanExtra("handled",false))return;
+        String act=in.getAction();
+        if(!Intent.ACTION_SEND.equals(act)&&!Intent.ACTION_SEND_MULTIPLE.equals(act))return;
+        in.putExtra("handled",true);
+        List<Uri> uris=new ArrayList<>();
+        if(Intent.ACTION_SEND_MULTIPLE.equals(act)){
+            ArrayList<Uri> l=in.getParcelableArrayListExtra(Intent.EXTRA_STREAM);if(l!=null)uris.addAll(l);
+        }else{Uri u=in.getParcelableExtra(Intent.EXTRA_STREAM);if(u!=null)uris.add(u);}
+        String[] post=TitleTags.fromShare(in.getStringExtra(Intent.EXTRA_SUBJECT),in.getStringExtra(Intent.EXTRA_TEXT));
+        SharedPreferences p=prefs();
+        if(uris.isEmpty()){
+            if(post[1].isEmpty()&&post[0].isEmpty()){toast("Nothing to add: share a photo or a post link");return;}
+            p.edit().putString("share_title",post[0]).putString("share_link",post[1]).putLong("share_at",System.currentTimeMillis()).apply();
+            status.setText("Post remembered: "+(post[0].isEmpty()?post[1]:post[0])+"\nNow share its photos to Watch Align (within 30 minutes).");
+            return;
+        }
+        if(post[0].isEmpty()&&post[1].isEmpty()&&System.currentTimeMillis()-p.getLong("share_at",0)<SHARED_POST_MS)
+            post=new String[]{p.getString("share_title",""),p.getString("share_link","")};
+        TestSetStore.Entry pre=new TestSetStore.Entry();
+        TitleTags.Guess g=TitleTags.guess(post[0]);
+        pre.cls=g.mixed?"unsure":"rep";pre.model=g.model;pre.factory=g.factory;pre.source=post[1];pre.notes=post[0];
+        askTags(uris,pre);
     }
 
     private View buildUi(){
@@ -163,9 +202,13 @@ public class CollectActivity extends Activity {
     }
 
     /** One set of tags for the photos just added (usually one watch). */
-    private void askTags(List<Uri> uris){
+    private void askTags(List<Uri> uris){askTags(uris,null);}
+
+    /** With pre (shared photos), the dialog starts from the guessed tags instead of the last batch. */
+    private void askTags(List<Uri> uris,TestSetStore.Entry pre){
         LinearLayout f=new LinearLayout(this);f.setOrientation(LinearLayout.VERTICAL);f.setPadding(dp(20),dp(8),dp(20),0);
-        f.addView(text(uris.size()==1?"1 photo":uris.size()+" photos (tagged together)",13,Color.DKGRAY));
+        f.addView(text(uris.size()==1?"1 photo":uris.size()+" photos (tagged together)",13,DIALOG_TEXT));
+        if(pre!=null&&!pre.notes.isEmpty())f.addView(text("Post: "+pre.notes+(pre.model.isEmpty()?"":"\nModel and factory guessed from the title: check them."),12,DIALOG_TEXT));
         RadioGroup cls=new RadioGroup(this);cls.setOrientation(RadioGroup.HORIZONTAL);
         RadioButton g=radio("Genuine"),r=radio("Replica"),u=radio("Not sure");
         cls.addView(g);cls.addView(r);cls.addView(u);f.addView(cls);
@@ -175,7 +218,14 @@ public class CollectActivity extends Activity {
         EditText notes=field("Notes (optional)");f.addView(notes);
         CheckBox same=new CheckBox(this);same.setText(last!=null?"Same watch as the last photos ("+last.watchId+")":"Same watch as the last photos");
         same.setEnabled(last!=null);f.addView(same);
-        if(last!=null){
+        if(pre!=null){
+            (("gen".equals(pre.cls))?g:"rep".equals(pre.cls)?r:u).setChecked(true);
+            model.setSelection(MODELS.length-1);
+            for(int k=0;k<MODELS.length;k++)if(MODELS[k].equals(pre.model))model.setSelection(k);
+            factory.setText(pre.factory);source.setText(pre.source);notes.setText(pre.notes);
+            // Photos from the same post as the last batch are the same watch.
+            same.setChecked(last!=null&&!pre.source.isEmpty()&&pre.source.equals(last.source));
+        }else if(last!=null){
             // Default to the last batch's tags: consecutive photos are usually the same watch.
             (("gen".equals(last.cls))?g:"rep".equals(last.cls)?r:u).setChecked(true);
             for(int k=0;k<MODELS.length;k++)if(MODELS[k].equals(last.model))model.setSelection(k);
@@ -184,7 +234,7 @@ public class CollectActivity extends Activity {
         new AlertDialog.Builder(this).setTitle("Tag these photos").setView(f)
                 .setPositiveButton("Add",(d,w)->{
                     int id=cls.getCheckedRadioButtonId();
-                    if(id==-1){toast("Choose genuine, replica or not sure");askTags(uris);return;}
+                    if(id==-1){toast("Choose genuine, replica or not sure");askTags(uris,pre);return;}
                     TestSetStore.Entry t=new TestSetStore.Entry();
                     t.cls=id==g.getId()?"gen":id==r.getId()?"rep":"unsure";
                     String m=MODELS[model.getSelectedItemPosition()];t.model=m.startsWith("Other")?"":m;
@@ -283,7 +333,7 @@ public class CollectActivity extends Activity {
     private void settings(){
         SharedPreferences p=prefs();
         LinearLayout f=new LinearLayout(this);f.setOrientation(LinearLayout.VERTICAL);f.setPadding(dp(20),dp(8),dp(20),0);
-        f.addView(text("Optional. Use a fine-grained GitHub token limited to one repository, with Contents read and write. Photos go onto their own branch, not the app's main branch.",12,Color.DKGRAY));
+        f.addView(text("Optional. Use a fine-grained GitHub token limited to one repository, with Contents read and write. Photos go onto their own branch, not the app's main branch.",12,DIALOG_TEXT));
         EditText repo=field("Repository (owner/name)");repo.setText(p.getString("repo","Biggregw/watch-align"));f.addView(repo);
         EditText branch=field("Branch");branch.setText(p.getString("branch","testset-inbox"));f.addView(branch);
         EditText folder=field("Folder");folder.setText(p.getString("folder","testset"));f.addView(folder);

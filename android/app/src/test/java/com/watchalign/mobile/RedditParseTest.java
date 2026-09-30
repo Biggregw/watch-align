@@ -97,4 +97,16 @@ public class RedditParseTest {
         tags("Clean Submariner QC","","Clean",false,false);
         tags("126710 BLRO next to my real one","126710BLRO","",true,true);
     }
+
+    @Test public void sharedPostText(){
+        String[] a=TitleTags.fromShare(null,"https://www.reddit.com/r/RepTimeQC/comments/1abc23/qc_vsf_pepsi_jubilee_gl/?share_id=xyz&utm_source=share");
+        assertEquals("qc vsf pepsi jubilee gl",a[0]);assertEquals("https://www.reddit.com/r/RepTimeQC/comments/1abc23/qc_vsf_pepsi_jubilee_gl/",a[1]);
+        String[] b=TitleTags.fromShare("[QC] Clean BLNR","[QC] Clean BLNR\nhttps://reddit.com/r/RepTimeQC/s/AbC123");
+        assertEquals("[QC] Clean BLNR",b[0]);assertEquals("https://reddit.com/r/RepTimeQC/s/AbC123",b[1]);
+        String[] c=TitleTags.fromShare("GMF sprite","https://reddit.com/r/RepTimeQC/s/Q1");
+        assertEquals("GMF sprite",c[0]);
+        String[] d=TitleTags.fromShare(null,null);
+        assertEquals("",d[0]);assertEquals("",d[1]);
+        TitleTags.Guess g=TitleTags.guess(a[0]);assertEquals("126710BLRO",g.model);assertEquals("VSF",g.factory);
+    }
 }
