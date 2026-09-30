@@ -1,0 +1,5 @@
+local_path,class_label,physical_watch_id,factory
+/home/runner/work/watch-align/watch-align/datasets/harvest/images/38/389040bd2d20ad8484751b1b6be3e8cd5aebfc114a49559514670f9ac08b27e6.jpg,rep,hv_imgur_album_62cbf2f8f1,Clean
+/home/runner/work/watch-align/watch-align/datasets/harvest/images/d0/d05ddce377e2f343ac93be6ba2d98eed48627d94769d2367303314d384de4e62.jpg,rep,hv_imgur_album_62cbf2f8f1,Clean
+/home/runner/work/watch-align/watch-align/datasets/harvest/images/c5/c5f55ae2950cbedf56b816aaebf672de9d5dc079aa25091879ca423f8fb4d354.jpg,gen,hv_page_5288db58bb,Rolex
+/home/runner/work/watch-align/watch-align/datasets/harvest/images/62/624701285584b496da5d3270ce028a665fe1916417997d8b0d2130650c9d4564.jpg,gen,hv_page_fce2a01689,Rolex
