@@ -1,0 +1,76 @@
+name: Dataset harvester smoke
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/dataset_harvester/**'
+      - '.github/workflows/dataset-harvester*.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dataset-harvester-smoke-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  brave-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install harvester dependencies
+        run: python -m pip install -q -r tools/dataset_harvester/requirements.txt
+
+      - name: Run deterministic harvester tests
+        run: python -m unittest discover -s tools/dataset_harvester/tests
+
+      - name: Verify Brave secret is available
+        run: |
+          if [ -z "$BRAVE_SEARCH_API_KEY" ]; then
+            echo "::error::BRAVE_SEARCH_API_KEY is not available to this workflow"
+            exit 1
+          fi
+          echo "Brave API secret is present (value not printed)."
+
+      - name: Live Brave discovery into ephemeral state
+        run: |
+          data="$RUNNER_TEMP/harvest-smoke"
+          python3 tools/dataset_harvester/harvest.py \
+            --discover \
+            --source-adapter search \
+            --max-sources 1 \
+            --data-dir "$data" | tee "$RUNNER_TEMP/harvest-smoke-output.md"
+
+      - name: Verify discovery returned usable candidates
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, sys
+          p = pathlib.Path(os.environ['RUNNER_TEMP']) / 'harvest-smoke' / 'state' / 'sources.jsonl'
+          if not p.exists():
+              print('ERROR: discovery created no sources state file')
+              sys.exit(1)
+          rows = [json.loads(x) for x in p.read_text(encoding='utf-8').splitlines() if x.strip()]
+          search_rows = [r for r in rows if str(r.get('adapter', '')).startswith('search')]
+          print(f'Brave discovery stored {len(search_rows)} search candidate(s).')
+          if not search_rows:
+              print('ERROR: Brave API call completed but produced no persisted search candidates')
+              sys.exit(1)
+          for r in search_rows[:5]:
+              print('candidate:', r.get('model') or '?', r.get('factory') or '?', r.get('provider') or '?', r.get('url') or '')
+          PY
+
+      - name: Prove smoke test changed no repository files
+        run: |
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
