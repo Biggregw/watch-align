@@ -475,6 +475,24 @@ class PipelineTest(unittest.TestCase):
         self.assertTrue(any("harness unavailable" in e for e in p.run["errors"]))
 
 
+class AlbumStorageTest(unittest.TestCase):
+    def test_album_files_in_work_dir_are_copied_into_the_store(self):
+        tmp = Path(tempfile.mkdtemp())
+        p = make_pipeline(tmp, [])
+        p.paths.ensure()
+        f = p.paths.work_dir / "imgur_x" / "1.jpg"
+        f.parent.mkdir(parents=True)
+        f.write_bytes(jpeg(dial_photo(7)))
+        rec = SourceRecord(key="https://imgur.com/a/x")
+        from harvester.resolvers import ImageRef
+        h = p._ingest(rec, ImageRef(path=str(f)), {})
+        stored = Path(p.state.images[h].local_path)
+        stored = stored if stored.is_absolute() else Path(__file__).resolve().parents[3] / stored
+        self.assertTrue(stored.exists())
+        self.assertNotIn("work", stored.parts)
+        self.assertEqual(1, p.c["images_downloaded"])
+
+
 class AdapterTest(unittest.TestCase):
     def test_optional_adapters_disabled_without_credentials(self):
         for k in ("BRAVE_SEARCH_API_KEY", "REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET", "HARVEST_PHONE_INBOX"):

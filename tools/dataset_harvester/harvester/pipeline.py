@@ -248,8 +248,13 @@ class Pipeline:
         if ref.path:
             path = Path(ref.path)
             data = path.read_bytes()
-            self.c["images_local"] += 1
-            stored = path
+            if self.paths.work_dir.resolve() in path.resolve().parents:
+                # Fetched into scratch space (album tools): stored like any other download.
+                self.c["images_downloaded"] += 1
+                stored = None
+            else:
+                self.c["images_local"] += 1
+                stored = path
         else:
             known = url_sha.get(ref.url)
             if known and known in self.state.images and absolute(self.state.images[known].local_path).exists():
