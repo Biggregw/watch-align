@@ -1,0 +1,4 @@
+local_path,class_label,physical_watch_id,model,factory,source,notes,captured_at,app_version,dial_found,twelve_found,pose,marker_tilt_deg,suitable,uploaded
+images/20260930_091255_0_w008.jpg,rep,w008,126710BLRO,Rich,,,2026-09-30T09:12:55,1.3.0-alpha66,yes,yes,CORRECTABLE,3.0,yes,yes
+images/20260930_091435_0_w009.jpg,rep,w009,126710BLNR,Rich,,,2026-09-30T09:14:35,1.3.0-alpha66,yes,yes,GOOD,3.7,yes,yes
+images/20260930_091535_0_w010.jpg,rep,w010,126710GRNR,Rich,,,2026-09-30T09:15:35,1.3.0-alpha66,yes,yes,GOOD,3.6,yes,yes
