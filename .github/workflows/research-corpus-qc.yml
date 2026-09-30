@@ -1,0 +1,103 @@
+name: Research - corpus QC evaluation
+
+# Research-only. Runs the production analysis (desktop harness, CorpusQc driver) over the accepted
+# harvested corpus and uploads reports/metrics/overlays as artifacts. It never pushes: data/harvest
+# is checked out read-only and nothing is committed. Production Android code is not touched.
+#
+# Image bytes come from the harvester's Actions cache (harvest-images-*). Actions caches are scoped
+# by branch: a research branch can restore caches saved on its own branch or the default branch
+# (main), not caches saved on other feature branches. If the corpus is incomplete, corpus.load()
+# fails loudly instead of analysing a subset.
+on:
+  workflow_dispatch:
+    inputs:
+      parts:
+        description: 'Partitions: development,validation (default) or holdout (final, once)'
+        required: false
+        default: 'development,validation'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-corpus-qc
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout research code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        run: python -m pip install -q numpy Pillow
+
+      - name: Restore OpenCV jar
+        uses: actions/cache/restore@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Check out harvest state (read-only)
+        run: |
+          git fetch -q origin data/harvest:refs/remotes/origin/data/harvest
+          git worktree add -q --detach datasets/harvest origin/data/harvest
+          echo "data/harvest at $(git rev-parse origin/data/harvest)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Restore harvested images (cache, read-only)
+        uses: actions/cache/restore@v4
+        with:
+          path: datasets/harvest/images
+          key: harvest-images-none
+          restore-keys: harvest-images-
+
+      - name: Export production analysis for the requested partitions
+        env:
+          PARTS: ${{ github.event.inputs.parts || 'development,validation' }}
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          mkdir -p "$(dirname "$J")"
+          test -s "$J" || curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar
+          python3 tools/research/corpus_qc/export.py datasets/harvest docs/research/corpus_qc/split_v1.csv out/export --parts "$PARTS"
+
+      - name: Baseline and experiments
+        env:
+          PARTS: ${{ github.event.inputs.parts || 'development,validation' }}
+        run: |
+          cd tools/research/corpus_qc
+          for p in ${PARTS//,/ }; do
+            python3 baseline.py ../../../out/export/corpus_qc.jsonl --parts "$p" --json ../../../out/baseline_$p.json > /dev/null
+          done
+          mkdir -p ../../../out/experiments
+          if [[ "$PARTS" == *holdout* ]]; then
+            python3 candidates.py ../../../out/export/corpus_qc.jsonl --frozen ../../../docs/research/corpus_qc/frozen_candidates_v1.json --parts holdout > ../../../out/experiments/candidates_holdout.json
+          else
+            python3 experiments.py ../../../out/export/corpus_qc.jsonl --out ../../../out/experiments --parts "$PARTS" > /dev/null
+            python3 candidates.py ../../../out/export/corpus_qc.jsonl --frozen ../../../docs/research/corpus_qc/frozen_candidates_v1.json --parts "$PARTS" > ../../../out/experiments/candidates.json
+          fi
+          python3 -m unittest discover -s . -p 'test_*.py'
+
+      - name: Upload reports (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corpus-qc-${{ github.run_id }}
+          path: |
+            out/baseline_*.json
+            out/experiments/
+          if-no-files-found: warn

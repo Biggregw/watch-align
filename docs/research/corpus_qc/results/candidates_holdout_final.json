@@ -1,0 +1,87 @@
+{
+ "frozen": {
+  "scales": {
+   "gap": 0.09972468904187752,
+   "rot_deg": 4.747979166092453,
+   "sp59": 0.11221499771655989,
+   "sp01": 0.13783588095657445,
+   "six_centring": 0.12431558994975406,
+   "six_rot": 6.405520275219801,
+   "nine_centring": 0.04214748458196975,
+   "nine_rot": 1.1663232854848458
+  },
+  "C1_rehaut_asym_gate": {
+   "key": "rh_asym",
+   "above": 0.6554925546378527
+  },
+  "C2_marker_tilt_gate": {
+   "key": "mpose_tilt",
+   "above": 8.35574
+  },
+  "C3_resize_spread_gate": {
+   "key": "stab_gap_spread",
+   "above": 0.0787795
+  },
+  "C6_rotation_flag_margin_deg": 0.6756555,
+  "frozen_from": "development"
+ },
+ "results": {
+  "holdout": {
+   "baseline": {
+    "judged_verdicts": 21,
+    "judged_pairs_compared": 2,
+    "loo_err_mean": 0.003817546921147251,
+    "loo_err_p90": 0.003817546921147251,
+    "unstable_judged_under_perturbation": 16,
+    "flags_total": 4,
+    "genuine_flags": 1,
+    "photos": 10,
+    "watches": 8
+   },
+   "C1_rehaut_asym_gate": {
+    "judged_verdicts": 19,
+    "judged_pairs_compared": 2,
+    "loo_err_mean": 0.003817546921147251,
+    "loo_err_p90": 0.003817546921147251,
+    "unstable_judged_under_perturbation": 15,
+    "flags_total": 3,
+    "genuine_flags": 1,
+    "photos": 10,
+    "watches": 8
+   },
+   "C2_marker_tilt_gate": {
+    "judged_verdicts": 15,
+    "judged_pairs_compared": 2,
+    "loo_err_mean": 0.003817546921147251,
+    "loo_err_p90": 0.003817546921147251,
+    "unstable_judged_under_perturbation": 12,
+    "flags_total": 3,
+    "genuine_flags": 0,
+    "photos": 10,
+    "watches": 8
+   },
+   "C3_resize_spread_gate": {
+    "judged_verdicts": 19,
+    "judged_pairs_compared": 0,
+    "loo_err_mean": NaN,
+    "loo_err_p90": NaN,
+    "unstable_judged_under_perturbation": 13,
+    "flags_total": 3,
+    "genuine_flags": 1,
+    "photos": 10,
+    "watches": 8
+   },
+   "C6_rotation_flag_margin": {
+    "judged_verdicts": 21,
+    "judged_pairs_compared": 2,
+    "loo_err_mean": 0.003817546921147251,
+    "loo_err_p90": 0.003817546921147251,
+    "unstable_judged_under_perturbation": 16,
+    "flags_total": 4,
+    "genuine_flags": 1,
+    "photos": 10,
+    "watches": 8
+   }
+  }
+ }
+}

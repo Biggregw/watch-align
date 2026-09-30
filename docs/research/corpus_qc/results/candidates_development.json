@@ -1,0 +1,87 @@
+{
+ "frozen": {
+  "scales": {
+   "gap": 0.09972468904187752,
+   "rot_deg": 4.747979166092453,
+   "sp59": 0.11221499771655989,
+   "sp01": 0.13783588095657445,
+   "six_centring": 0.12431558994975406,
+   "six_rot": 6.405520275219801,
+   "nine_centring": 0.04214748458196975,
+   "nine_rot": 1.1663232854848458
+  },
+  "C1_rehaut_asym_gate": {
+   "key": "rh_asym",
+   "above": 0.6554925546378527
+  },
+  "C2_marker_tilt_gate": {
+   "key": "mpose_tilt",
+   "above": 8.35574
+  },
+  "C3_resize_spread_gate": {
+   "key": "stab_gap_spread",
+   "above": 0.0787795
+  },
+  "C6_rotation_flag_margin_deg": 0.6756555,
+  "frozen_from": "development"
+ },
+ "results": {
+  "development": {
+   "baseline": {
+    "judged_verdicts": 77,
+    "judged_pairs_compared": 35,
+    "loo_err_mean": 0.085460235752353,
+    "loo_err_p90": 0.24304240531868856,
+    "unstable_judged_under_perturbation": 51,
+    "flags_total": 6,
+    "genuine_flags": 0,
+    "photos": 44,
+    "watches": 25
+   },
+   "C1_rehaut_asym_gate": {
+    "judged_verdicts": 61,
+    "judged_pairs_compared": 31,
+    "loo_err_mean": 0.09597071153739438,
+    "loo_err_p90": 0.26002692030070645,
+    "unstable_judged_under_perturbation": 44,
+    "flags_total": 3,
+    "genuine_flags": 0,
+    "photos": 44,
+    "watches": 25
+   },
+   "C2_marker_tilt_gate": {
+    "judged_verdicts": 62,
+    "judged_pairs_compared": 35,
+    "loo_err_mean": 0.085460235752353,
+    "loo_err_p90": 0.24304240531868856,
+    "unstable_judged_under_perturbation": 50,
+    "flags_total": 6,
+    "genuine_flags": 0,
+    "photos": 44,
+    "watches": 25
+   },
+   "C3_resize_spread_gate": {
+    "judged_verdicts": 75,
+    "judged_pairs_compared": 33,
+    "loo_err_mean": 0.07311287818969071,
+    "loo_err_p90": 0.2064814236925147,
+    "unstable_judged_under_perturbation": 46,
+    "flags_total": 6,
+    "genuine_flags": 0,
+    "photos": 44,
+    "watches": 25
+   },
+   "C6_rotation_flag_margin": {
+    "judged_verdicts": 74,
+    "judged_pairs_compared": 33,
+    "loo_err_mean": 0.09061232773318006,
+    "loo_err_p90": 0.2515346628096975,
+    "unstable_judged_under_perturbation": 44,
+    "flags_total": 3,
+    "genuine_flags": 0,
+    "photos": 44,
+    "watches": 25
+   }
+  }
+ }
+}
