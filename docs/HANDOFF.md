@@ -437,3 +437,19 @@ the post link without tracking parameters, notes = title (from the share subject
 of a reddit link's slug). A link shared on its own is remembered for 30 minutes and used for the
 photos shared next; photos from the same post as the last batch default to the same watch id.
 Dialog help text is now light grey (it was dark grey on the dark dialog).
+
+**Dataset harvester (headless; the main test-set collector from here on).**
+`tools/dataset_harvester/harvest.py` builds the genuine/replica GMT test set with no phone: it
+discovers sources (every source already in the repository with no credentials; optionally the
+phone upload branch, a documented web-search API, and Reddit's official API), downloads or reuses
+local copies, groups by physical watch (one post/album/listing = one watch), deduplicates
+(sha256, perceptual hashes confirmed pixel by pixel, dial-crop hash), checks suitability with the
+app's own analysis run through `tools/desktop-harness` (new read-only driver `Suit`) plus dial
+pixel checks, infers labels with evidence (TitleTags rules ported), runs the regression `Batch`
+measurement, and decides ACCEPT / QUARANTINE / REJECT per watch with reasons. State is resumable
+JSONL; reports give independent-watch and image counts separately. Workflow **Dataset harvester**
+(schedule + workflow_dispatch) runs the same CLI and keeps state on the `data/harvest` branch; a
+VM is the other supported runtime. See `tools/dataset_harvester/README.md` and
+`docs/research/dataset_harvester.md`. The app's Collect screen (and share-to-Collect) remains an
+optional manual contribution route that feeds this pipeline; `RepTimeQcActivity` is not the Reddit
+collector (it needs a Reddit-approved key on the phone and is kept only for compatibility).
