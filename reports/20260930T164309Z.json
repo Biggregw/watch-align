@@ -1,0 +1,183 @@
+{
+  "adapters": {
+    "phone": "not selected",
+    "reddit": "not selected",
+    "repo": "not selected",
+    "search": "enabled (brave)"
+  },
+  "dataset": {
+    "accepted_usable_images": 73,
+    "accepted_watches": 43,
+    "by_class_watches": {
+      "gen": 17,
+      "rep": 26
+    },
+    "by_factory_watches": {
+      "ARF": 2,
+      "C+": 1,
+      "Clean": 12,
+      "VSF": 11
+    },
+    "by_group_watches": {
+      "gen/126710BLNR/Rolex": 11,
+      "gen/126710BLRO/Rolex": 6,
+      "rep/126710BLNR/ARF": 2,
+      "rep/126710BLNR/C+": 1,
+      "rep/126710BLNR/Clean": 9,
+      "rep/126710BLNR/VSF": 9,
+      "rep/126710BLRO/Clean": 2,
+      "rep/126710BLRO/VSF": 1,
+      "rep/126710GRNR/Clean": 1,
+      "rep/126710GRNR/VSF": 1
+    },
+    "by_model_watches": {
+      "gen:126710BLNR": 11,
+      "gen:126710BLRO": 6,
+      "rep:126710BLNR": 21,
+      "rep:126710BLRO": 3,
+      "rep:126710GRNR": 2
+    },
+    "multiview_watches": 16,
+    "multiview_watches_by_class": {
+      "rep": 16
+    },
+    "quarantined_watches": 83,
+    "reference_only_watches": [
+      "official_catalogue_2026"
+    ],
+    "rejected_watches": 40,
+    "repeatability_target_views": 2,
+    "research_targets": {
+      "gen_watches": 50,
+      "rep_watches": 30
+    }
+  },
+  "dry_run": false,
+  "errors": [
+    "https://swisswatchexpo.com/thewatchclub/2026/06/04/rolex-gmt-master-ii-two-tone-guide: http_error: http 400 (retry 1/3)",
+    "https://swisswatchexpo.com/thewatchclub/2024/01/02/rolex-gmt-master-ii-yellow-gold-and-rolesor-yellow-gold-editions: http_error: http 400 (retry 1/3)",
+    "https://swisswatchexpo.com/thewatchclub/rolex-zombie-gmt-master-ii-guide: http_error: http 400 (retry 1/3)",
+    "https://imgur.com/a/WorVVMb: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/WorVVMb?include=media%2Ctags%2Caccount' (final)"
+  ],
+  "exact_duplicates": 580,
+  "finished_at": "2026-09-30T17:05:28Z",
+  "images_downloaded": 802,
+  "images_inconclusive": 1,
+  "images_local": 0,
+  "images_measurement_quality": 22,
+  "images_rejected": 711,
+  "images_rejected_by_reason": {
+    "inconclusive_marker_layout": 2,
+    "reject_blur": 12,
+    "reject_landmarks_unusable": 12,
+    "reject_low_resolution": 213,
+    "reject_no_dial": 519,
+    "reject_pose": 1
+  },
+  "images_restored": 13,
+  "images_unreadable": 0,
+  "near_duplicates": 28,
+  "next_priorities": [
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126720VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126711CHNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126713GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126715CHNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Rich",
+      "model": "126710BLNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "ARF",
+      "model": "126710BLRO"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Rich",
+      "model": "126710BLRO"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "ARF",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Rich",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "ARF",
+      "model": "126720VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Clean",
+      "model": "126720VTNR"
+    }
+  ],
+  "possible_duplicates": 159,
+  "run_id": "20260930T164309Z",
+  "search_results_filtered": {
+    "not_gmt": 53
+  },
+  "sources_already_known": 158,
+  "sources_deferred": 0,
+  "sources_discovered_new": 102,
+  "sources_examined": 75,
+  "sources_failed": 4,
+  "sources_pending_total": 180,
+  "started_at": "2026-09-30T16:43:09Z",
+  "watch_reasons": {
+    "accepted": 2,
+    "quarantine_inconclusive_images": 38,
+    "quarantine_possible_same_watch": 51,
+    "quarantine_uncertain_class": 5,
+    "quarantine_uncertain_model": 1,
+    "reject_duplicate": 6,
+    "reject_landmarks_unusable": 4,
+    "reject_low_resolution": 1,
+    "reject_no_dial": 2,
+    "reject_no_images": 1,
+    "reject_pose": 1,
+    "reject_unusable_imagery": 7
+  },
+  "watches_accepted": 2,
+  "watches_quarantined": 55,
+  "watches_rejected": 14
+}
