@@ -271,7 +271,7 @@ public class MainActivity extends Activity {
                 boolean manual=InspectionImageStore.hasManualSeed;
                 manualButton.setVisibility(autoFailed||manual?View.VISIBLE:View.GONE);
                 status.setText(r.twelveMeasured
-                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. The overlay shows what was measured at each hour marker; tap the close-ups to enlarge them.")
+                        ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. Each hour marker has a badge: tick = nothing flagged, ! = worth a look, !! = check closely, dash = not judged. Tap the close-ups to enlarge them.")
                         :"Done, but the 12 marker could not be measured on this photo. Try Align dial edge by hand below, or a clearer photo.");
                 resultsButton.setEnabled(true);exportButton.setEnabled(true);inspectButton.setEnabled(r.perspectiveOverlay!=null);
             });

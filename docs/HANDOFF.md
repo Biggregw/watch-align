@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-29, alpha63)
+# Watch Align: handoff notes (updated 2026-09-30, alpha64)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -29,7 +29,7 @@ checked (the 3 is the date window).
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha63"`, `versionCode 13063` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha64"`, `versionCode 13064` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
@@ -303,6 +303,24 @@ CORRECTABLE (markers 2.0 deg, at most 4.1; the 9 rehaut sector was mismeasured a
 baton rotations (measuring them after undoing the dial-edge ellipse) was tried and dropped: on
 genuine photos it did not reduce the rotations (9 o'clock readings of 2 deg or more went from 1 to 4)
 and it added a false 12 CHECK (Phillips 224135). See `docs/research/gmt_dial_pose_policy_2026-09-29.md`.
+
+alpha64: **the overlay reads at a glance.** Whole-dial view (`MeasuredOverlayRenderer.render`): every
+hour position gets the same mark, the measured outline in its verdict colour (grey and dashed when
+not judged) and a badge on the marker whose symbol carries the verdict without relying on colour:
+a tick (nothing flagged), ! (worth a look), !! (check closely), a dash (not judged). A flagged marker
+says why in a word or two beside it, on the side towards the dial centre ("gap small", "rotated",
+"off-centre", "size"), as does a specific not-judged reason ("hand in the way", "too small",
+"date side unknown"); generic not-judged gets the badge only. A too-angled or unknown-angle photo
+gets one banner across the top instead of a word on every marker, and a key sits under the dial.
+The 12 shows one verdict (the worse of gap and alignment). Numbers and the tick references moved
+to the close-ups (`renderDetail`), whose strip now has two lines: the verdict and what was found
+("gap 0.03 (genuine about 0.08-0.11)", "rotated 2.2°", "off-centre by 0.14 of its width").
+Close-ups are now only of what needs a look (`closeUpPlan`): flagged markers (check closely, then
+worth a look), then markers not judged for a specific reason (hand, too small, not found, date side
+unknown), then other not-judged markers (left to the banner on a too-angled photo), at most four,
+two per row; when everything is clear the 12 is shown for reference. Before, the 12, 6 and side
+baton were always shown and round markers only when flagged. A baton that was not found is marked
+where it should be. No QC logic changed.
 
 ## 7. What's been validated
 

@@ -10,7 +10,7 @@ import java.util.List;
 
 /** Alpha40: human GMT12 QC with real-image rehaut direction calibration and stricter pose gating. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha63";
+    public static final String CORE_VERSION="1.3.0-alpha64";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -71,7 +71,7 @@ public final class WatchAlignCoreV13 {
             sum.overlayDrawn=twelveMeasured;
             report="Rolex GMT-Master II · Watch Align Core "+CORE_VERSION+"\n\n"
                     +GmtHumanSummary.build(sum)
-                    +"\n\nDETAILS\nThe 59/60/01 minute track defines local 12 and the triangle is checked against it for gap, centring, rotation and 59/01 spacing. The dial centre and scale come from the physical black-dial edge. The overlay shows only what was measured: the dial edge (faint ring), the detected 12 triangle, the 59/60/01 tick ends, the gap and the 59/01 spacing, coloured green (clear), amber (check), red (strong) or grey (not judged).\n"
+                    +"\n\nDETAILS\nThe 59/60/01 minute track defines local 12 and the triangle is checked against it for gap, centring, rotation and 59/01 spacing. The dial centre and scale come from the physical black-dial edge. The overlay shows only what was measured: the dial edge (faint ring) and each hour marker's outline with a badge (tick = nothing flagged, ! = worth a look, !! = check closely, dash = not judged) and a word saying why when flagged or not judged. The close-ups show only what needs a look: anything flagged or not judged (up to four, most important first), or the 12 when all is clear, each against its neighbouring tick ends.\n"
                     +(crop!=null?"\n"+crop.describe()+"\n":"")
                     +(human==null?"":human.report);
         }else{
