@@ -5,6 +5,7 @@
         <activity android:name=".FullscreenInspectActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".ManualSeedActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".CollectActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".RepTimeQcActivity" android:screenOrientation="portrait" android:exported="false" />
         <provider android:name=".TestSetFileProvider" android:authorities="com.watchalign.mobile.testset"
             android:exported="false" android:grantUriPermissions="true" />
         <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">

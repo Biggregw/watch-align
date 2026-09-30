@@ -24,6 +24,8 @@ import java.util.zip.ZipOutputStream;
  * export drops straight into datasets/ with tools/testset/ingest.py.
  */
 final class TestSetStore {
+    static final String[] MODELS={"126710BLNR","126710BLRO","126710GRNR","126711CHNR","126713GRNR","126715CHNR",
+            "126718GRNR","126719BLRO","126720VTNR","126729VTNR","Other / not sure"};
     static final String[] COLUMNS={"local_path","class_label","physical_watch_id","model","factory","source","notes",
             "captured_at","app_version","dial_found","twelve_found","pose","marker_tilt_deg","suitable","uploaded"};
 

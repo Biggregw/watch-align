@@ -10,7 +10,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Color;
 import android.graphics.Rect;
-import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -53,14 +52,7 @@ import java.util.concurrent.Executors;
 public class CollectActivity extends Activity {
     private static final int PICK=2001,CAPTURE=2002;
     private static final int BG=Color.rgb(8,17,31),ACCENT=Color.rgb(50,213,242),MUTED=Color.rgb(158,176,201);
-    static final String[] MODELS={"126710BLNR","126710BLRO","126710GRNR","126711CHNR","126713GRNR","126715CHNR",
-            "126718GRNR","126719BLRO","126720VTNR","126729VTNR","Other / not sure"};
-    private static final String[] GPS_TAGS={ExifInterface.TAG_GPS_LATITUDE,ExifInterface.TAG_GPS_LATITUDE_REF,ExifInterface.TAG_GPS_LONGITUDE,
-            ExifInterface.TAG_GPS_LONGITUDE_REF,ExifInterface.TAG_GPS_ALTITUDE,ExifInterface.TAG_GPS_ALTITUDE_REF,ExifInterface.TAG_GPS_TIMESTAMP,
-            ExifInterface.TAG_GPS_DATESTAMP,ExifInterface.TAG_GPS_PROCESSING_METHOD,ExifInterface.TAG_GPS_AREA_INFORMATION,
-            ExifInterface.TAG_GPS_SPEED,ExifInterface.TAG_GPS_SPEED_REF,ExifInterface.TAG_GPS_TRACK,ExifInterface.TAG_GPS_TRACK_REF,
-            ExifInterface.TAG_GPS_IMG_DIRECTION,ExifInterface.TAG_GPS_IMG_DIRECTION_REF,ExifInterface.TAG_GPS_DEST_LATITUDE,
-            ExifInterface.TAG_GPS_DEST_LONGITUDE,ExifInterface.TAG_GPS_MAP_DATUM,ExifInterface.TAG_GPS_SATELLITES,ExifInterface.TAG_GPS_STATUS};
+    static final String[] MODELS=TestSetStore.MODELS;
 
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private TestSetStore store;
@@ -97,6 +89,9 @@ public class CollectActivity extends Activity {
 
         Button add=button("Add photos from gallery");add.setOnClickListener(v->pick());root.addView(add,lp(-1,dp(52),10));
         Button cam=button("Take a photo");cam.setOnClickListener(v->capture());root.addView(cam,lp(-1,dp(52),6));
+        // alpha67: replica photos from r/RepTimeQC, reviewed before they join the set.
+        Button rtqc=button("Find photos on RepTimeQC");rtqc.setOnClickListener(v->startActivity(new Intent(this,RepTimeQcActivity.class)));
+        root.addView(rtqc,lp(-1,dp(52),6));
 
         LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
         Button exp=button("Export zip");exp.setBackgroundColor(ACCENT);exp.setTextColor(Color.rgb(4,32,42));exp.setOnClickListener(v->exportZip());
@@ -234,8 +229,7 @@ public class CollectActivity extends Activity {
         String type="file".equals(uri.getScheme())?"image/jpeg":getContentResolver().getType(uri);
         if(type!=null&&(type.equals("image/jpeg")||type.equals("image/jpg"))){
             try(InputStream in=open(uri);OutputStream out=new FileOutputStream(dst)){byte[] b=new byte[65536];int k;while((k=in.read(b))>0)out.write(b,0,k);}
-            try{ExifInterface ex=new ExifInterface(dst.getPath());for(String t:GPS_TAGS)ex.setAttribute(t,null);ex.saveAttributes();}
-            catch(Exception ignored){/* no EXIF block: nothing to strip */}
+            TestSetOps.stripGps(dst);
         }else{
             Bitmap b;try(InputStream in=open(uri)){b=BitmapFactory.decodeStream(in);}
             if(b==null)throw new IllegalArgumentException("not a readable image");
@@ -251,52 +245,11 @@ public class CollectActivity extends Activity {
     private void check(TestSetStore.Entry e){worker.submit(()->checkNow(e));}
 
     private void checkNow(TestSetStore.Entry e){
-        File f=new File(store.images,e.file);
-        try{
-            Bitmap preview=decodePreview(f);
-            FullResSource full=fullSource(f);
-            GmtDialCrop.Crop crop=full!=null?GmtDialCrop.make(preview,full):null;
-            Bitmap b=crop!=null?crop.bitmap:preview;
-            GmtHumanQcAnalyzerV2.Result h=GmtHumanQcAnalyzerV2.analyse(b,MainActivity.GENERIC_GMT_CODE,null);
-            boolean noDial=h.summary==null||h.summary.noDial||h.drawing==null||!Double.isFinite(h.drawing.dialCx);
-            boolean twelve=!noDial&&h.drawing.twelve!=null;
-            e.dialFound=noDial?"no":"yes";e.twelveFound=twelve?"yes":"no";e.pose=String.valueOf(h.poseLabel);
-            if(!noDial&&h.round!=null){
-                GmtMarkerPose.Result mp=GmtMarkerPose.estimate(h.round,Math.sqrt(h.drawing.dialA*h.drawing.dialB));
-                e.markerTilt=mp.valid?String.format(Locale.US,"%.1f",mp.tiltDeg):"";
-            }
-            e.suitable=!noDial&&twelve&&h.poseLabel!=GmtHumanQcMath.PoseLabel.RETAKE?"yes":"no";
-        }catch(Throwable t){e.dialFound="";e.suitable="no";e.notes=(e.notes.isEmpty()?"":e.notes+"; ")+"check failed: "+t.getClass().getSimpleName();}
+        TestSetOps.checkPhoto(new File(store.images,e.file),e);
         synchronized(store){try{store.save();}catch(Exception ignored){}}
         runOnUiThread(this::refresh);
     }
 
-    private static Bitmap decodePreview(File f){
-        BitmapFactory.Options o=new BitmapFactory.Options();o.inJustDecodeBounds=true;BitmapFactory.decodeFile(f.getPath(),o);
-        int max=Math.max(o.outWidth,o.outHeight),s=1;while(max/(s*2)>=1600)s*=2;
-        o.inJustDecodeBounds=false;o.inSampleSize=s;o.inPreferredConfig=Bitmap.Config.ARGB_8888;
-        Bitmap b=BitmapFactory.decodeFile(f.getPath(),o);
-        if(b==null)throw new IllegalArgumentException("not a readable image");
-        int m=Math.max(b.getWidth(),b.getHeight());
-        if(m<=1600)return b.copy(Bitmap.Config.ARGB_8888,false);
-        float k=1600f/m;return Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*k),Math.round(b.getHeight()*k),true).copy(Bitmap.Config.ARGB_8888,false);
-    }
-    private static FullResSource fullSource(File f){
-        BitmapFactory.Options o=new BitmapFactory.Options();o.inJustDecodeBounds=true;BitmapFactory.decodeFile(f.getPath(),o);
-        final int w=o.outWidth,h=o.outHeight;if(w<=0||h<=0)return null;
-        return new FullResSource(){
-            @Override public int width(){return w;}
-            @Override public int height(){return h;}
-            @SuppressWarnings("deprecation")
-            @Override public Bitmap region(int x0,int y0,int x1,int y1,int ss){
-                try{
-                    BitmapRegionDecoder d=BitmapRegionDecoder.newInstance(f.getPath(),false);
-                    try{BitmapFactory.Options ro=new BitmapFactory.Options();ro.inSampleSize=ss;ro.inPreferredConfig=Bitmap.Config.ARGB_8888;return d.decodeRegion(new Rect(x0,y0,x1,y1),ro);}
-                    finally{d.recycle();}
-                }catch(Throwable t){return null;}
-            }
-        };
-    }
     private static Bitmap thumb(File f){
         BitmapFactory.Options o=new BitmapFactory.Options();o.inJustDecodeBounds=true;BitmapFactory.decodeFile(f.getPath(),o);
         int s=1;while(Math.max(o.outWidth,o.outHeight)/(s*2)>=200)s*=2;
@@ -381,5 +334,11 @@ public class CollectActivity extends Activity {
     private EditText field(String hint){EditText e=new EditText(this);e.setHint(hint);e.setSingleLine(true);return e;}
     private LinearLayout.LayoutParams lp(int w,int h,int top){LinearLayout.LayoutParams q=new LinearLayout.LayoutParams(w,h);q.topMargin=dp(top);return q;}
     private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
+    @Override protected void onResume(){
+        super.onResume();
+        synchronized(store){try{store.load();}catch(Exception ignored){}}
+        if(!store.entries.isEmpty())last=store.entries.get(store.entries.size()-1);
+        refresh();
+    }
     @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
 }

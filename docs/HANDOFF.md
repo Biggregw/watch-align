@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-30, alpha66)
+# Watch Align: handoff notes (updated 2026-09-30, alpha67)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -29,7 +29,7 @@ checked (the 3 is the date window).
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha66"`, `versionCode 13066` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha67"`, `versionCode 13067` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
@@ -412,3 +412,19 @@ Open items:
   This is why the gap moved to the outer edge.
 - Hull corners clip and bevels bend side fits. That's why the apex and squareness
   checks exist.
+
+alpha67: **Find photos on RepTimeQC.** From Collect, "Find photos on RepTimeQC" (`RepTimeQcActivity`)
+searches r/RepTimeQC (default query "GMT") through Reddit's official API (`RedditClient`: app-only
+OAuth for an "installed app" client id the user creates once at reddit.com/prefs/apps; no password;
+about one API call a second at most). Photos come from Reddit images and galleries, direct Imgur
+links, crossposts, Reddit's preview of other image hosts, and Imgur albums only when an optional
+Imgur Client-ID is set. Up to 10 new GMT posts per search and 12 photos per post; posts already
+seen are remembered. Each photo is downloaded into a separate candidates list
+(`reptimeqc/testset/`), GPS-stripped, given the Collect photo check (`TestSetOps`), and dropped if
+no dial is found. Model and factory are guessed from the title (`TitleTags`: reference, BLNR-style
+suffix, nicknames, factory names) and can be corrected per post. Titles mentioning a genuine
+("gen", "real", "vs gen" ...) are tagged "not sure" and excluded from "Add all good ones", which
+only takes replica photos that passed the check. Added photos join the Collect set (one watch id
+per post, source = post link) and are uploaded or exported from there. The JSON parsing and tag
+guesses are unit-tested with synthetic replies (`RedditParseTest`, `MiniJson`); the Reddit and
+Imgur calls themselves could not be exercised from the dev container (Reddit is blocked there).
