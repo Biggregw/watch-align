@@ -1,0 +1,12 @@
+local_path,class_label,physical_watch_id,factory
+/home/claude/watch-align/datasets/harvest/images/6d/6da5df4eb2ac6ff5224db1e8921a9afdb8c82aa6cc836309e952899fed54f6c1.jpg,gen,swe_75910,Rolex
+/home/claude/watch-align/datasets/harvest/images/a5/a5431af6379b78a5233303aeec379b30ef8a5c46ffa70be67a55a1126de8c138.jpg,gen,wos_cpo_40616911,Rolex
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_cplus_wEYZOyK/image_00.jpg,rep,rep_cplus_wEYZOyK,C+
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_cplus_wEYZOyK/image_02.jpg,rep,rep_cplus_wEYZOyK,C+
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_cplus_wEYZOyK/image_03.jpg,rep,rep_cplus_wEYZOyK,C+
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_cplus_wEYZOyK/image_05.jpg,rep,rep_cplus_wEYZOyK,C+
+/home/claude/watch-align/datasets/126710BLNR/rep/validation/rep_cf_UpTW8nx/image_07.jpg,rep,rep_cf_UpTW8nx,Clean
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_cf_xK08a3L/image_00.jpg,rep,rep_cf_xK08a3L,Clean
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_cf_xK08a3L/image_01.jpg,rep,rep_cf_xK08a3L,Clean
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_cf_xK08a3L/image_02.jpg,rep,rep_cf_xK08a3L,Clean
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_cf_xK08a3L/image_03.jpg,rep,rep_cf_xK08a3L,Clean

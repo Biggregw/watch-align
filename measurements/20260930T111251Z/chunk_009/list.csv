@@ -1,0 +1,8 @@
+local_path,class_label,physical_watch_id,factory
+/home/claude/watch-align/datasets/collected/images/20260930_085934_20260930_085921_0_w002.jpg,rep,collected_w002,VSF
+/home/claude/watch-align/datasets/collected/images/20260930_090312_20260930_090145_0_w003.jpg,rep,collected_w003,VSF
+/home/claude/watch-align/datasets/collected/images/20260930_090312_20260930_090257_0_w004.jpg,rep,collected_w004,VSF
+/home/claude/watch-align/datasets/collected/images/20260930_091001_20260930_090955_0_w006.jpg,rep,collected_w006,Rich
+/home/claude/watch-align/datasets/collected/images/20260930_091154_20260930_091147_0_w007.jpg,rep,collected_w007,Rich
+/home/claude/watch-align/datasets/collected/images/20260930_091554_20260930_091255_0_w008.jpg,rep,collected_w008,Rich
+/home/claude/watch-align/datasets/collected/images/20260930_091554_20260930_091435_0_w009.jpg,rep,collected_w009,Rich
