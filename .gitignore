@@ -79,3 +79,6 @@ android/app/src/androidTest/assets/e2e/
 
 # Dataset harvester data directory (its own branch, data/harvest; images never committed)
 datasets/harvest/
+
+# Submariner research data: third-party images and generated tables are never committed (Actions cache / artifacts only)
+datasets/submariner_research/

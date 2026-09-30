@@ -1,0 +1,146 @@
+name: Submariner research measurement
+
+# Research-only (issue #34). No production Android QC is changed or enabled, no GMT verdict or pose
+# policy is run on Submariner photos, and no authenticity classifier exists. Third-party image bytes
+# live only in the Actions cache; the uploaded artifact carries manifests and measurements.
+on:
+  workflow_dispatch:
+    inputs:
+      variants:
+        description: "Comma-separated variants (orig,s94,s88,x+1,x-1,x+2,x-2,y+1,y-1,y+2,y-2,r+5,r-5)"
+        required: false
+        default: "orig,s94,s88,x+1,x-1,x+2,x-2,y+1,y-1,y+2,y-2,r+5,r-5"
+      include_holdout:
+        description: "Also measure the locked holdout (normally false: the holdout stays unseen)"
+        type: boolean
+        default: false
+  push:
+    branches:
+      - feature/submariner-research-hardening
+    paths:
+      - 'tools/dataset_harvester/**'
+      - 'tools/desktop-harness/drivers/SubMeasure.java'
+      - 'docs/research/submariner/**'
+      - 'docs/research/submariner_*.csv'
+      - '.github/workflows/submariner-research.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: submariner-research-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  android-jvm-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android platform
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Android JVM unit tests (GMT behaviour, constants snapshot, Submariner isolation)
+        run: bash ./gradlew :app:testDebugUnitTest --stacktrace
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: submariner-research-android-jvm-tests-${{ github.run_id }}
+          path: android/app/build/test-results/
+          if-no-files-found: warn
+
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash   # -eo pipefail: a failing command before `| tee` fails the step
+    env:
+      IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+      OUT: datasets/submariner_research/measurements
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install dependencies
+        run: python -m pip install -q -r tools/dataset_harvester/requirements.txt
+
+      - name: Restore OpenCV jar
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Deterministic tests first (harvester, family boundaries, research path, driver isolation)
+        run: python -m unittest discover -s tools/dataset_harvester/tests -v 2>&1 | tail -80
+
+      - name: Restore Submariner image cache
+        uses: actions/cache@v4
+        with:
+          path: datasets/submariner_research/images
+          key: submariner-research-images-${{ github.run_id }}
+          restore-keys: |
+            submariner-research-images-
+            submariner-source-images-
+            submariner-measure-images-
+
+      - name: Rebuild the acquisition manifest (every pool; fills cache gaps)
+        run: |
+          pools=()
+          for p in docs/research/submariner_candidate_sources_2026-09-30.csv docs/research/submariner_*topup*.csv; do
+            [ -f "$p" ] && pools+=(--pool "$p")
+          done
+          python3 tools/dataset_harvester/submariner_acquire.py "${pools[@]}" \
+            --out datasets/submariner_research --max-images 12 | tee submariner-acquisition.log
+
+      - name: Research measurement (dataset states, locked split, SubMeasure driver, tables)
+        run: |
+          extra=""
+          if [ "${{ github.event.inputs.include_holdout }}" = "true" ]; then extra="--include-holdout"; fi
+          python3 tools/dataset_harvester/submariner_measure.py \
+            --root datasets/submariner_research --out "$OUT" \
+            --variants "${{ github.event.inputs.variants || 'orig,s94,s88,x+1,x-1,x+2,x-2,y+1,y-1,y+2,y-2,r+5,r-5' }}" \
+            --shards "$(nproc)" $extra | tee submariner-measurement.log
+
+      - name: Summary
+        if: always()
+        run: |
+          [ -f "$OUT/sub_summary.md" ] && cat "$OUT/sub_summary.md" >> "$GITHUB_STEP_SUMMARY" || echo "no summary produced" >> "$GITHUB_STEP_SUMMARY"
+          [ -f datasets/submariner_research/acquisition_report.md ] && cat datasets/submariner_research/acquisition_report.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload research tables
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: submariner-research-measurement-${{ github.run_id }}
+          path: |
+            ${{ env.OUT }}/sub_images.csv
+            ${{ env.OUT }}/sub_landmarks.csv
+            ${{ env.OUT }}/sub_landmark_stability.csv
+            ${{ env.OUT }}/sub_summary.json
+            ${{ env.OUT }}/sub_summary.md
+            ${{ env.OUT }}/sub_dataset_images.csv
+            ${{ env.OUT }}/sub_dataset_watches.csv
+            ${{ env.OUT }}/work/*.log
+            datasets/submariner_research/acquired_images.csv
+            datasets/submariner_research/candidate_summary.csv
+            datasets/submariner_research/acquisition_report.json
+            datasets/submariner_research/acquisition_report.md
+            submariner-acquisition.log
+            submariner-measurement.log
+          if-no-files-found: warn
