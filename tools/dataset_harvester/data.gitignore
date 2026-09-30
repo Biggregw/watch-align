@@ -1,0 +1,6 @@
+# Harvest data directory: state, manifests, reports and measurement tables are kept;
+# third-party photographs and scratch files are not committed.
+images/
+work/
+measurements/*/*/crops/
+measurements/*/*/log*

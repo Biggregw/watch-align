@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-30, alpha65)
+# Watch Align: handoff notes (updated 2026-09-30, alpha68)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -29,7 +29,7 @@ checked (the 3 is the date window).
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha65"`, `versionCode 13065` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha68"`, `versionCode 13068` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
@@ -328,6 +328,21 @@ on with twelve hour ticks, the 12 index as a lume triangle under a cyan referenc
 app's green "nothing flagged" badge. Original artwork, no brand marks. Generated from
 `tools/icon/make_icon.py` (edit the script, not the XML); `icon_preview.png` shows it.
 
+alpha66: **Collect test photos.** A second screen (`CollectActivity`, from "Collect test photos" on
+the main screen) builds the test set on the phone: add photos from the gallery (several at once)
+or the camera, tag them together (genuine / replica / not sure, reference, factory, source, notes,
+"same watch as the last photos"), and each is checked in the background for dial found, 12 found
+and angle, shown as "good for the test set" or why not. QC verdicts are deliberately not shown there
+so they cannot sway the labels. Location tags are stripped from JPEGs on import (other formats are
+re-saved as JPEG). Stored in the app's own storage (`TestSetStore`: images/ and entries.csv).
+Sending on: "Export zip" (manifest.csv in the corpus list format + images/, shared through
+`TestSetFileProvider`), or "Upload to GitHub" (`GitHubUploader`, REST contents API, optional:
+repository, branch (default `testset-inbox`, never main), folder and a fine-grained token entered
+in GitHub settings). `tools/testset/ingest.py` adds either to `datasets/collected/` (images not
+committed; manifest committed; exact duplicates skipped). The upload's read calls were exercised
+against the real API from the dev container; its writes could not be (the container's proxy blocks
+GitHub API writes), so the first real upload is from the phone.
+
 ## 7. What's been validated
 
 These results are recorded in `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -397,3 +412,56 @@ Open items:
   This is why the gap moved to the outer edge.
 - Hull corners clip and bevels bend side fits. That's why the apex and squareness
   checks exist.
+
+alpha67: **Find photos on RepTimeQC.** (Reddit now approves API access before an app can be created, so this
+needs the user's API request approved first; until then use sharing, below.) From Collect, "Find photos on RepTimeQC" (`RepTimeQcActivity`)
+searches r/RepTimeQC (default query "GMT") through Reddit's official API (`RedditClient`: app-only
+OAuth for an "installed app" client id the user creates once at reddit.com/prefs/apps; no password;
+about one API call a second at most). Photos come from Reddit images and galleries, direct Imgur
+links, crossposts, Reddit's preview of other image hosts, and Imgur albums only when an optional
+Imgur Client-ID is set. Up to 10 new GMT posts per search and 12 photos per post; posts already
+seen are remembered. Each photo is downloaded into a separate candidates list
+(`reptimeqc/testset/`), GPS-stripped, given the Collect photo check (`TestSetOps`), and dropped if
+no dial is found. Model and factory are guessed from the title (`TitleTags`: reference, BLNR-style
+suffix, nicknames, factory names) and can be corrected per post. Titles mentioning a genuine
+("gen", "real", "vs gen" ...) are tagged "not sure" and excluded from "Add all good ones", which
+only takes replica photos that passed the check. Added photos join the Collect set (one watch id
+per post, source = post link) and are uploaded or exported from there. The JSON parsing and tag
+guesses are unit-tested with synthetic replies (`RedditParseTest`, `MiniJson`); the Reddit and
+Imgur calls themselves could not be exercised from the dev container (Reddit is blocked there).
+
+alpha67 also: **share into Collect.** Collect accepts photos (one or several) and plain-text links
+shared from other apps. Shared photos open the tag dialog pre-filled from the shared post: replica
+(or "not sure" if the title mentions a genuine), model and factory from `TitleTags.guess`, source =
+the post link without tracking parameters, notes = title (from the share subject/text, or the words
+of a reddit link's slug). A link shared on its own is remembered for 30 minutes and used for the
+photos shared next; photos from the same post as the last batch default to the same watch id.
+Dialog help text is now light grey (it was dark grey on the dark dialog).
+
+**Dataset harvester (headless; the main test-set collector from here on).**
+`tools/dataset_harvester/harvest.py` builds the genuine/replica GMT test set with no phone: it
+discovers sources (every source already in the repository with no credentials; optionally the
+phone upload branch, a documented web-search API, and Reddit's official API), downloads or reuses
+local copies, groups by physical watch (one post/album/listing = one watch), deduplicates
+(sha256, perceptual hashes confirmed pixel by pixel, dial-crop hash), checks suitability with the
+app's own analysis run through `tools/desktop-harness` (new read-only driver `Suit`) plus dial
+pixel checks, infers labels with evidence (TitleTags rules ported), runs the regression `Batch`
+measurement, and decides ACCEPT / QUARANTINE / REJECT per watch with reasons. State is resumable
+JSONL; reports give independent-watch and image counts separately. Workflow **Dataset harvester**
+(schedule + workflow_dispatch) runs the same CLI and keeps state on the `data/harvest` branch; a
+VM is the other supported runtime. See `tools/dataset_harvester/README.md` and
+`docs/research/dataset_harvester.md`. The app's collection screens were removed in alpha68 (below);
+photos already uploaded from the phone remain an optional harvester source.
+
+alpha68: **dataset collection removed from the app.** The headless harvester is the dataset
+collector, so the phone's collection code is gone:
+- screens: Collect (with its share-sheet entry) and Find photos on RepTimeQC;
+- `TestSetStore`, `TestSetOps`, `TestSetFileProvider` (provider), `GitHubUploader`,
+  `RedditClient`, `MiniJson`, `TitleTags`;
+- their tests, the "Collect test photos" button, and the INTERNET permission (no reachable code
+  uses the network now; `OnlineReferenceFinder` predates this, has no caller, and would need the
+  permission back if it were ever wired in).
+
+The QC flow is unchanged: photo pick, analysis, overlay, close-ups, inspect, full results, export
+card, manual dial alignment. Photos already uploaded to `testset-inbox` stay readable by the
+harvester's optional phone adapter. The alpha66/67 notes above describe code that no longer exists.

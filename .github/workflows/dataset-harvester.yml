@@ -1,0 +1,147 @@
+name: Dataset harvester
+
+# Unattended test-set harvesting. All logic lives in tools/dataset_harvester/harvest.py; this
+# workflow only provides a runner, restores/saves state, and calls the same CLI that runs on any
+# Linux machine or small VM (hosted runners can be blocked by some image hosts, so a VM is the
+# other supported runtime; see tools/dataset_harvester/README.md).
+#
+# State (sources/images JSONL, manifest.csv, watches.csv, reports, measurement tables) is kept on
+# the data/harvest branch, checked out as a worktree at datasets/harvest (the CLI's default data
+# directory, so manifest paths are the same here as on a VM). Third-party images are never committed; they are kept between runs in
+# the Actions cache only. Credentials come only from repository secrets; every adapter whose
+# secret is missing reports itself disabled and the run continues.
+on:
+  workflow_dispatch:
+    inputs:
+      max_sources:
+        description: 'Sources to process this run (bounded)'
+        required: false
+        default: '25'
+      adapters:
+        description: 'Discovery adapters, space separated (blank = all enabled): repo phone search reddit'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Plan only (no downloads, no state written)'
+        type: boolean
+        required: false
+        default: false
+      reprocess:
+        description: 'Re-evaluate sources already processed'
+        type: boolean
+        required: false
+        default: false
+  schedule:
+    - cron: '17 3 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dataset-harvester
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      HARVEST_PHONE_INBOX: ${{ github.workspace }}/phone-inbox
+      HARVEST_COLLECTED_MANIFEST: ${{ github.workspace }}/collected-manifest.csv
+      BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+      IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up JDK 17 (desktop harness runs the app's analysis)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        run: python -m pip install -q -r tools/dataset_harvester/requirements.txt
+
+      - name: Harvester unit tests (no network, no Java)
+        run: python -m unittest discover -s tools/dataset_harvester/tests
+
+      - name: Restore OpenCV jar
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Check out harvest state (data/harvest branch)
+        run: |
+          if git ls-remote --exit-code --heads origin data/harvest >/dev/null; then
+            git fetch -q origin data/harvest:refs/remotes/origin/data/harvest
+            git worktree add -q datasets/harvest origin/data/harvest
+            git -C datasets/harvest switch -q -c harvest-run
+          else
+            git worktree add -q --detach datasets/harvest
+            git -C datasets/harvest switch -q --orphan harvest-run
+            find datasets/harvest -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          fi
+
+      - name: Restore downloaded images (cache only, never committed)
+        uses: actions/cache@v4
+        with:
+          path: datasets/harvest/images
+          key: harvest-images-${{ github.run_id }}
+          restore-keys: harvest-images-
+
+      - name: Optional phone sources (testset-inbox upload branch, data/collected tags)
+        run: |
+          if git ls-remote --exit-code --heads origin testset-inbox >/dev/null; then
+            git fetch -q origin testset-inbox:refs/remotes/origin/testset-inbox
+            git worktree add -q phone-inbox origin/testset-inbox
+          fi
+          if git ls-remote --exit-code --heads origin data/collected >/dev/null; then
+            git fetch -q origin data/collected:refs/remotes/origin/data/collected
+            git show origin/data/collected:datasets/collected/manifest.csv > collected-manifest.csv || true
+          fi
+
+      - name: Harvest
+        env:
+          MAX_SOURCES: ${{ github.event.inputs.max_sources || '25' }}
+          ADAPTERS: ${{ github.event.inputs.adapters }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+          REPROCESS: ${{ github.event.inputs.reprocess }}
+        run: |
+          args=(--once --max-sources "$MAX_SOURCES")
+          for a in $ADAPTERS; do args+=(--source-adapter "$a"); done
+          [ "$DRY_RUN" = "true" ] && args+=(--dry-run)
+          [ "$REPROCESS" = "true" ] && args+=(--reprocess)
+          python3 tools/dataset_harvester/harvest.py "${args[@]}" | tee harvest-output.md
+          cat harvest-output.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harvest-report-${{ github.run_id }}
+          path: |
+            harvest-output.md
+            datasets/harvest/reports/latest.*
+          if-no-files-found: ignore
+
+      - name: Save state to data/harvest
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          cp tools/dataset_harvester/data.gitignore datasets/harvest/.gitignore
+          cd datasets/harvest
+          git add -A .
+          if git diff --cached --quiet; then echo "no state changes"; exit 0; fi
+          git -c user.name="watch-align harvester" -c user.email="actions@users.noreply.github.com" \
+            commit -q -m "Harvest run ${{ github.run_id }}"
+          git push -q origin HEAD:data/harvest
