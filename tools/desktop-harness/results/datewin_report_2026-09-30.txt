@@ -1,0 +1,30 @@
+rows 153; with a full measurement row 104; skipped 49
+not measured: {'date side not determined': 49}
+measured (tick, aperture, numeral all found): {('gen', True): 53, ('rep', True): 43, ('gen', False): 3, ('rep', False): 5}
+
+Resize-check stability (max-min over 100/94/88%), median and 90th percentile:
+  aperture centre vs 15/45 tick    n= 94  median 0.007  p90 0.091 aperture widths
+  numeral across aperture (u)      n= 94  median 0.013  p90 0.119 aperture widths
+  numeral along aperture (v)       n= 94  median 0.007  p90 0.080 aperture heights
+  numeral height (u) / dial R      n= 94  median 0.005  p90 0.049 dial radii
+  aperture u size / dial R         n= 94  median 0.005  p90 0.050 dial radii
+  aperture v size / dial R         n= 96  median 0.005  p90 0.073 dial radii
+  lens centre vs tick              n= 96  median 0.003  p90 0.038 lens widths
+
+Genuine vs replica (stable readings only: spread within the p90 above):
+  aperture centre vs 15/45 tick    gen n= 46 median +0.063 IQR -0.005..+0.109 range -0.188..+0.332 | rep n= 38 median +0.134 range -0.247..+0.871  outside genuine range: 4
+  numeral across aperture (u)      gen n= 45 median -0.044 IQR -0.068..+0.000 range -0.191..+0.219 | rep n= 39 median -0.013 range -0.227..+0.172  outside genuine range: 1
+  numeral along aperture (v)       gen n= 48 median -0.013 IQR -0.025..+0.000 range -0.148..+0.112 | rep n= 36 median +0.000 range -0.245..+0.191  outside genuine range: 5
+  numeral height (u) / dial R      gen n= 46 median +0.168 IQR +0.164..+0.199 range +0.082..+0.323 | rep n= 38 median +0.173 range +0.118..+0.427  outside genuine range: 3
+  aperture u size / dial R         gen n= 46 median +0.225 IQR +0.205..+0.259 range +0.173..+0.427 | rep n= 38 median +0.257 range +0.164..+0.445  outside genuine range: 4
+  aperture v size / dial R         gen n= 48 median +0.355 IQR +0.350..+0.402 range +0.327..+0.582 | rep n= 38 median +0.386 range +0.323..+0.632  outside genuine range: 7
+  lens centre vs tick              gen n= 48 median +0.003 IQR -0.014..+0.067 range -0.181..+0.123 | rep n= 38 median +0.011 range -0.157..+0.171  outside genuine range: 4
+
+Angle sensitivity (genuine, marker-layout tilt available): correlation with tilt
+  aperture centre vs 15/45 tick    n=53 corr(|value - median|, tilt) = +0.46
+  numeral across aperture (u)      n=53 corr(|value - median|, tilt) = +0.40
+  numeral along aperture (v)       n=53 corr(|value - median|, tilt) = +0.57
+  numeral height (u) / dial R      n=53 corr(|value - median|, tilt) = +0.21
+  aperture u size / dial R         n=53 corr(|value - median|, tilt) = +0.22
+  aperture v size / dial R         n=53 corr(|value - median|, tilt) = +0.20
+  lens centre vs tick              n=53 corr(|value - median|, tilt) = +0.32
