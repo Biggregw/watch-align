@@ -1,0 +1,99 @@
+name: Dataset harvester real canary
+
+on:
+  push:
+    branches:
+      - feature/unattended-dataset-harvester
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dataset-harvester
+  cancel-in-progress: false
+
+jobs:
+  five-source-canary:
+    if: github.event.head_commit.message == 'Run five-source real harvest canary'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+    steps:
+      - name: Checkout feature code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        run: python -m pip install -q -r tools/dataset_harvester/requirements.txt
+
+      - name: Harvester unit tests
+        run: python -m unittest discover -s tools/dataset_harvester/tests
+
+      - name: Verify Brave secret
+        run: |
+          test -n "$BRAVE_SEARCH_API_KEY" || { echo "::error::BRAVE_SEARCH_API_KEY missing"; exit 1; }
+
+      - name: Restore OpenCV jar
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Check out persistent harvest state
+        run: |
+          git fetch -q origin data/harvest:refs/remotes/origin/data/harvest
+          echo "Before data/harvest: $(git rev-parse origin/data/harvest)" >> "$GITHUB_STEP_SUMMARY"
+          git worktree add -q datasets/harvest origin/data/harvest
+          git -C datasets/harvest switch -q -c harvest-canary
+
+      - name: Restore downloaded image cache
+        uses: actions/cache@v4
+        with:
+          path: datasets/harvest/images
+          key: harvest-images-${{ github.run_id }}
+          restore-keys: harvest-images-
+
+      - name: Run five-source real harvest
+        run: |
+          python3 tools/dataset_harvester/harvest.py \
+            --once \
+            --source-adapter search \
+            --max-sources 5 | tee harvest-canary-output.md
+          cat harvest-canary-output.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harvest-canary-${{ github.run_id }}
+          path: |
+            harvest-canary-output.md
+            datasets/harvest/reports/latest.*
+          if-no-files-found: ignore
+
+      - name: Persist canary state to data/harvest
+        run: |
+          cp tools/dataset_harvester/data.gitignore datasets/harvest/.gitignore
+          cd datasets/harvest
+          git add -A .
+          if git diff --cached --quiet; then
+            echo "No persistent harvest-state changes." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git -c user.name="watch-align harvester" -c user.email="actions@users.noreply.github.com" \
+            commit -q -m "Harvest canary run ${{ github.run_id }}"
+          git push -q origin HEAD:data/harvest
+          echo "After data/harvest: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
