@@ -1,0 +1,167 @@
+{
+  "adapters": {},
+  "dataset": {
+    "accepted_usable_images": 78,
+    "accepted_watches": 49,
+    "by_class_watches": {
+      "gen": 19,
+      "rep": 30
+    },
+    "by_factory_watches": {
+      "ARF": 3,
+      "C+": 1,
+      "Clean": 9,
+      "Rich": 5,
+      "VSF": 12
+    },
+    "by_group_watches": {
+      "gen/126710BLNR/Rolex": 12,
+      "gen/126710BLRO/Rolex": 7,
+      "rep/126710BLNR/ARF": 3,
+      "rep/126710BLNR/C+": 1,
+      "rep/126710BLNR/Clean": 9,
+      "rep/126710BLNR/Rich": 1,
+      "rep/126710BLNR/VSF": 10,
+      "rep/126710BLRO/Rich": 1,
+      "rep/126710BLRO/VSF": 2,
+      "rep/126710GRNR/Rich": 2,
+      "rep/126720VTNR/Rich": 1
+    },
+    "by_model_watches": {
+      "gen:126710BLNR": 12,
+      "gen:126710BLRO": 7,
+      "rep:126710BLNR": 24,
+      "rep:126710BLRO": 3,
+      "rep:126710GRNR": 2,
+      "rep:126720VTNR": 1
+    },
+    "quarantined_watches": 5,
+    "rejected_watches": 14
+  },
+  "dry_run": false,
+  "errors": [
+    "https://sothebys.com/buy/064d8ca0-0ed0-4543-aba6-465c9ddf8ed4/lots/6e7fcd2c-f005-40ad-9d11-07aa84384222: no_images_downloaded: blocked_robots x1 (final)",
+    "https://sothebys.com/en/buy/_gmt-126710-blnr-batman-a3e8: no_images_downloaded: blocked_robots x1 (final)",
+    "https://sothebys.com/en/buy/_gmt-master-ii-batgirl-reference-126710blnr-6456: no_images_downloaded: blocked_robots x1 (final)",
+    "https://sothebys.com/en/buy/_gmt-master-ii-batgirl-reference-126710blnr-8ccb: no_images_downloaded: blocked_robots x1 (final)",
+    "https://sothebys.com/en/buy/_gmt-master-ii-batman-reference-126710blnr-1a0f: no_images_downloaded: blocked_robots x1 (final)",
+    "https://sothebys.com/en/buy/_gmt-master-ii-batman-reference-126710blnr-a-stainless-steel-automatic-dual-time-zone-wristwatch-with-date-and-bracelet-6ae6: no_images_downloaded: blocked_robots x1 (final)",
+    "https://sothebys.com/en/buy/auction/2019/watches-online-the-drivers-collection/rolex-gmt-master-ii-ref-126710blnr-a-stainless: no_images_downloaded: blocked_robots x1 (final)",
+    "https://sothebys.com/en/buy/pdp/luxury/watches/watch/_gmt-master-ii-batgirl-reference-126710blnr-f83f: no_images_downloaded: blocked_robots x1 (final)",
+    "https://swisswatchexpo.com/watches/rolex/gmt-master-ii-steel-batgirl-black-blue-bezel-watch-126710-box-card-unworn-79807: gone: http 410 (final)",
+    "https://www.reddit.com/r/RepTimeQC/comments/t1jfef/: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/17D8FaS?include=media%2Ctags%2Caccount' (final)",
+    "https://www.reddit.com/r/Watchexchange/comments/ded0hw/: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/I9FxPLn?include=media%2Ctags%2Caccount' (final)",
+    "https://www.reddit.com/r/Watchexchange/comments/eoypw5/: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/EZKpLku?include=media%2Ctags%2Caccount' (final)",
+    "https://www.reddit.com/r/Watchexchange/comments/hzpihw/: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/KWfXz8G?include=media%2Ctags%2Caccount' (final)"
+  ],
+  "exact_duplicates": 0,
+  "finished_at": "2026-09-30T10:34:59Z",
+  "images_downloaded": 0,
+  "images_inconclusive": 0,
+  "images_local": 262,
+  "images_measurement_quality": 85,
+  "images_rejected": 222,
+  "images_rejected_by_reason": {
+    "reject_landmarks_unusable": 12,
+    "reject_low_resolution": 12,
+    "reject_no_dial": 199,
+    "reject_pose": 6
+  },
+  "images_unreadable": 0,
+  "near_duplicates": 0,
+  "next_priorities": [
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126720VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "ARF",
+      "model": "126710BLRO"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Clean",
+      "model": "126710BLRO"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "ARF",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Clean",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "VSF",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "ARF",
+      "model": "126720VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Clean",
+      "model": "126720VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "VSF",
+      "model": "126720VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126711CHNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126713GRNR"
+    }
+  ],
+  "possible_duplicates": 0,
+  "run_id": "20260930T101251Z",
+  "sources_already_known": 0,
+  "sources_deferred": 0,
+  "sources_discovered_new": 0,
+  "sources_examined": 81,
+  "sources_failed": 13,
+  "sources_pending_total": 81,
+  "started_at": "2026-09-30T10:12:51Z",
+  "watch_reasons": {
+    "accepted": 49,
+    "quarantine_uncertain_factory": 1,
+    "quarantine_weak_genuine_provenance": 4,
+    "reject_landmarks_unusable": 3,
+    "reject_no_dial": 11,
+    "reject_pose": 3,
+    "reject_unusable_imagery": 14
+  },
+  "watches_accepted": 49,
+  "watches_quarantined": 5,
+  "watches_rejected": 14
+}

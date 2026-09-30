@@ -1,0 +1,3 @@
+local_path,class_label,physical_watch_id,factory
+/home/claude/watch-align/datasets/126710BLNR/gen/validation/gen_wex_vmbUDwy/image_06.jpg,gen,gen_wex_vmbUDwy,Rolex
+/home/claude/watch-align/datasets/126710BLNR/gen/calibration/gen_wex_e99gXKb/image_00.jpg,gen,gen_wex_e99gXKb,Rolex

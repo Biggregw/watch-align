@@ -1,0 +1,145 @@
+{
+  "adapters": {
+    "phone": "enabled (/tmp/claude-0/-home-claude-watch-align/f0955dce-5ff0-5966-86c9-26d96a1d0aec/scratchpad/phone-inbox/testset)",
+    "reddit": "disabled: REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not set",
+    "repo": "enabled (no credentials needed)",
+    "search": "disabled: no API key for brave (set BRAVE_SEARCH_API_KEY)"
+  },
+  "dataset": {
+    "accepted_usable_images": 78,
+    "accepted_watches": 49,
+    "by_class_watches": {
+      "gen": 19,
+      "rep": 30
+    },
+    "by_factory_watches": {
+      "ARF": 3,
+      "C+": 1,
+      "Clean": 9,
+      "Rich": 5,
+      "VSF": 12
+    },
+    "by_group_watches": {
+      "gen/126710BLNR/Rolex": 12,
+      "gen/126710BLRO/Rolex": 7,
+      "rep/126710BLNR/ARF": 3,
+      "rep/126710BLNR/C+": 1,
+      "rep/126710BLNR/Clean": 9,
+      "rep/126710BLNR/Rich": 1,
+      "rep/126710BLNR/VSF": 10,
+      "rep/126710BLRO/Rich": 1,
+      "rep/126710BLRO/VSF": 2,
+      "rep/126710GRNR/Rich": 2,
+      "rep/126720VTNR/Rich": 1
+    },
+    "by_model_watches": {
+      "gen:126710BLNR": 12,
+      "gen:126710BLRO": 7,
+      "rep:126710BLNR": 24,
+      "rep:126710BLRO": 3,
+      "rep:126710GRNR": 2,
+      "rep:126720VTNR": 1
+    },
+    "quarantined_watches": 5,
+    "rejected_watches": 14
+  },
+  "dry_run": false,
+  "errors": [],
+  "exact_duplicates": 0,
+  "finished_at": "2026-09-30T10:36:02Z",
+  "images_downloaded": 0,
+  "images_inconclusive": 0,
+  "images_local": 0,
+  "images_measurement_quality": 0,
+  "images_rejected": 0,
+  "images_rejected_by_reason": {},
+  "images_unreadable": 0,
+  "near_duplicates": 0,
+  "next_priorities": [
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126720VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "ARF",
+      "model": "126710BLRO"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Clean",
+      "model": "126710BLRO"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "ARF",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Clean",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "VSF",
+      "model": "126710GRNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "ARF",
+      "model": "126720VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "Clean",
+      "model": "126720VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "rep",
+      "factory": "VSF",
+      "model": "126720VTNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126711CHNR"
+    },
+    {
+      "accepted_watches": 0,
+      "class": "gen",
+      "factory": "Rolex",
+      "model": "126713GRNR"
+    }
+  ],
+  "possible_duplicates": 0,
+  "run_id": "20260930T103602Z",
+  "sources_already_known": 82,
+  "sources_deferred": 0,
+  "sources_discovered_new": 0,
+  "sources_examined": 0,
+  "sources_failed": 0,
+  "sources_pending_total": 0,
+  "started_at": "2026-09-30T10:36:02Z",
+  "watch_reasons": {},
+  "watches_accepted": 0,
+  "watches_quarantined": 0,
+  "watches_rejected": 0
+}

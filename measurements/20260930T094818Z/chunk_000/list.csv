@@ -1,0 +1,7 @@
+local_path,class_label,physical_watch_id,factory
+/home/claude/watch-align/datasets/harvest/images/ca/cae9ed4ca889fc44d149349edba5ea03d9f8624d9a26bf2abe4ef115daf422d0.jpg,gen,bobs_185749,Rolex
+/home/claude/watch-align/datasets/harvest/images/49/49ba843c0a7e19d7ca00fd558a3d7f14544925f55d6d0ac7047fe4a4208fce81.jpg,gen,bobs_175818,Rolex
+/home/claude/watch-align/datasets/harvest/images/f0/f036181f390bd44fd2cd0f7e71d63ff85c5b70cd00421cbf1b4428554c492739.jpg,gen,gen_126710BLRO_phillips_122669,Rolex
+/home/claude/watch-align/datasets/harvest/images/68/68b9f82bb2ddbf29da1342be3cbc3bbcbc1fc6af4d11348363da46a139bee0fd.jpg,gen,gen_126710BLRO_phillips_146213,Rolex
+/home/claude/watch-align/datasets/harvest/images/95/959b9d718208d34bf3f9eef71440c0cf4fd7cafa702ccde8e19dd736ba3a8a43.jpg,gen,gen_126710BLRO_phillips_147798,Rolex
+/home/claude/watch-align/datasets/harvest/images/6d/6de22511c60b1ca29b6d85d36128a7cc4c5fa24417d1a14cec81776e3edd7a00.jpg,gen,gen_126710BLRO_phillips_151477,Rolex

@@ -1,0 +1,17 @@
+local_path,class_label,physical_watch_id,factory
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_vsf_GKJDidL/image_00.jpg,rep,rep_vsf_GKJDidL,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_vsf_KfRKFwA/image_00.jpg,rep,rep_vsf_KfRKFwA,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_vsf_KfRKFwA/image_03.jpg,rep,rep_vsf_KfRKFwA,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_vsf_KfRKFwA/image_07.jpg,rep,rep_vsf_KfRKFwA,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_vsf_HCz9EAj/image_01.jpg,rep,rep_vsf_HCz9EAj,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_vsf_HCz9EAj/image_07.jpg,rep,rep_vsf_HCz9EAj,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/validation/rep_vsf_7s6PyXJ/image_01.jpg,rep,rep_vsf_7s6PyXJ,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/validation/rep_vsf_7s6PyXJ/image_02.jpg,rep,rep_vsf_7s6PyXJ,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_vsf_oVwWMrC/image_00.jpg,rep,rep_vsf_oVwWMrC,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_vsf_oVwWMrC/image_01.jpg,rep,rep_vsf_oVwWMrC,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/calibration/rep_vsf_oVwWMrC/image_02.jpg,rep,rep_vsf_oVwWMrC,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/validation/rep_vsf_p3hHVMB/image_00.jpg,rep,rep_vsf_p3hHVMB,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/validation/rep_vsf_p3hHVMB/image_01.jpg,rep,rep_vsf_p3hHVMB,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/validation/rep_vsf_gpZWOfy/image_00.jpg,rep,rep_vsf_gpZWOfy,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/validation/rep_vsf_gpZWOfy/image_01.jpg,rep,rep_vsf_gpZWOfy,VSF
+/home/claude/watch-align/datasets/126710BLNR/rep/validation/rep_vsf_gpZWOfy/image_02.jpg,rep,rep_vsf_gpZWOfy,VSF
