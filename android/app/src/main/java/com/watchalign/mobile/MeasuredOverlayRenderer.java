@@ -44,6 +44,8 @@ final class MeasuredOverlayRenderer {
         // What was found, for the words on the overlay (alpha64).
         boolean sixOffCentre,sixRotated,nineOffCentre,nineRotated,nineSideUnknown;
         double sixRotationDeg=Double.NaN,nineRotationDeg=Double.NaN;
+        /** The baton reading moved across the resize check (so it was not judged). */
+        boolean sixUnstable,nineUnstable;
         /** One line across the top of the dial when something photo-wide limits the verdicts (e.g. the angle), or null. */
         String photoNote;
         /** 12 alignment finding in words ("rotated", "off-centre", "point leans"), or null. */
@@ -130,7 +132,11 @@ final class MeasuredOverlayRenderer {
             if(w!=null)word(c,d,m.x,m.y,m.radiusPx,w,colour(a),text);
         }
 
-        // Batons at 6 and the side baton.
+        // Batons at 6 and the side baton; one that was not found is marked where it should be.
+        if(d.six==null){double[] at=expectedAt(d,180,Gmt126710BlnrMaster.MARKER_CENTER_R);
+            if(at!=null){badge(c,at[0],at[1],badge,GmtHumanQcMath.Attention.UNASSESSABLE);word(c,d,at[0],at[1],badge*2.5,"not found",UNKNOWN,text);}}
+        if(d.nine==null&&!d.nineSideUnknown){double[] at=expectedAt(d,"3".equals(d.nineLabel)?90:270,Gmt126710BlnrMaster.MARKER_CENTER_R);
+            if(at!=null){badge(c,at[0],at[1],badge,GmtHumanQcMath.Attention.UNASSESSABLE);word(c,d,at[0],at[1],badge*2.5,"not found",UNKNOWN,text);}}
         batonMark(c,d,d.six,d.sixAttention,d.sixNotJudged,batonWord(d.sixAttention,d.sixOffCentre,d.sixRotated,d.sixNotJudged),badge,text);
         String sideNj=d.nineSideUnknown?"date side not determined":d.nineNotJudged;
         batonMark(c,d,d.nine,d.nineSideUnknown?GmtHumanQcMath.Attention.UNASSESSABLE:d.nineAttention,sideNj,
@@ -462,8 +468,8 @@ final class MeasuredOverlayRenderer {
     }
 
     static String statusText(Drawing d){
-        if(d.notJudged!=null)return "12 NOT JUDGED: "+d.notJudged;
-        if(d.twelve==null)return "12 NOT JUDGED: 12 marker not found";
+        if(d.notJudged!=null)return "12 NOT JUDGED · "+d.notJudged;
+        if(d.twelve==null)return "12 NOT JUDGED · 12 marker not found";
         // Decided on the verdicts, not the colours (colour constants are all 0 in JVM unit tests).
         GmtHumanQcMath.Attention a=d.gap,b=d.alignment;
         boolean strong=a==GmtHumanQcMath.Attention.STRONG||b==GmtHumanQcMath.Attention.STRONG;
@@ -488,33 +494,101 @@ final class MeasuredOverlayRenderer {
         return String.join(", ",why);
     }
 
+    /** At most this many close-ups (alpha64). */
+    static final int MAX_CLOSE_UPS=4;
+
     /**
-     * Close-ups of the 12 marker and, when measured, the 6 baton, side by side: photo plus
-     * overlay, enlarged, each with a status strip. Returns null when there is nothing to frame.
+     * Which close-ups to show, most important first (alpha64): flagged markers (check closely,
+     * then worth a look), then markers that could not be judged for a specific reason (a hand,
+     * too small, not found, date side unknown), then any other marker not judged, at most
+     * MAX_CLOSE_UPS. When the photo as a whole is too angled (photoNote), the generic not-judged
+     * markers are left out: the banner says why once. With nothing to show, the 12 is shown as
+     * a reference. Keys: "12", "6", "side", or "r" + hour.
+     */
+    static java.util.List<String> closeUpPlan(Drawing d){
+        java.util.List<String[]> c=new java.util.ArrayList<>();   // {priority, key}
+        // 12
+        GmtHumanQcMath.Attention a12=twelveAttention(d);
+        if(d.twelve==null||d.notJudged!=null)c.add(new String[]{"2","12"});
+        else if(a12==GmtHumanQcMath.Attention.STRONG)c.add(new String[]{"0","12"});
+        else if(a12==GmtHumanQcMath.Attention.CHECK)c.add(new String[]{"1","12"});
+        else if(!(d.gap==GmtHumanQcMath.Attention.CLEAR&&d.alignment==GmtHumanQcMath.Attention.CLEAR))c.add(new String[]{"3","12"});
+        // Batons
+        batonPlan(c,"6",d.six,d.sixAttention,d.sixNotJudged,false);
+        batonPlan(c,"side",d.nine,d.nineAttention,d.nineNotJudged,d.nineSideUnknown);
+        // Round markers
+        for(GmtRoundMarkerAnalyzer.Marker m:d.round){
+            if(m==null)continue;
+            String k="r"+m.hour;
+            if(!m.found){if(Double.isFinite(m.seedX))c.add(new String[]{"2",k});continue;}
+            if(m.attention==GmtHumanQcMath.Attention.STRONG)c.add(new String[]{"0",k});
+            else if(m.attention==GmtHumanQcMath.Attention.CHECK)c.add(new String[]{"1",k});
+            else if(m.attention==GmtHumanQcMath.Attention.UNASSESSABLE)c.add(new String[]{m.hand||m.tooSmall?"2":"3",k});
+        }
+        java.util.List<String> out=new java.util.ArrayList<>();
+        for(int pr=0;pr<=3;pr++){
+            if(pr==3&&d.photoNote!=null)break;
+            for(String[] e:c)if(Integer.parseInt(e[0])==pr&&out.size()<MAX_CLOSE_UPS)out.add(e[1]);
+        }
+        if(out.isEmpty()&&(d.twelve!=null||Double.isFinite(d.dialCx)))out.add("12");
+        return out;
+    }
+    private static void batonPlan(java.util.List<String[]> c,String key,GmtSixLandmarkAnalyzer.Geometry g,GmtHumanQcMath.Attention a,String notJudged,boolean sideUnknown){
+        if(g==null){c.add(new String[]{"2",key});return;}   // not found: shown where it should be
+        if(sideUnknown||notJudged!=null){c.add(new String[]{"2",key});return;}
+        if(a==GmtHumanQcMath.Attention.STRONG)c.add(new String[]{"0",key});
+        else if(a==GmtHumanQcMath.Attention.CHECK)c.add(new String[]{"1",key});
+        else if(a==GmtHumanQcMath.Attention.UNASSESSABLE)c.add(new String[]{"3",key});
+    }
+
+    /** Where a baton should be (clock degrees from 12, radius in dial radii), from the found 12; null when unknown. */
+    static double[] expectedAt(Drawing d,double clockDeg,double rho){
+        if(d.twelve==null||!Double.isFinite(d.dialCx))return null;
+        double R=Math.max(d.dialA,d.dialB);
+        double a12=Math.atan2(d.twelve.tick60[1]-d.dialCy,d.twelve.tick60[0]-d.dialCx)+Math.toRadians(clockDeg);
+        return new double[]{d.dialCx+Math.cos(a12)*rho*R,d.dialCy+Math.sin(a12)*rho*R};
+    }
+
+    /**
+     * Close-ups of what needs a look (see closeUpPlan), each with a two-line strip. Two per row
+     * when there are more than two. Returns null when there is nothing to frame.
      */
     static Bitmap closeUp(Bitmap watch,Bitmap overlay,Drawing d,int size){
         if(watch==null||d==null)return null;
         // Close-ups show the measurement detail, not the whole-dial badges (alpha64).
         overlay=renderDetail(watch,d);
         java.util.List<Bitmap> ps=new java.util.ArrayList<>();
-        Bitmap a=panel12(watch,overlay,d,size);if(a!=null)ps.add(a);
-        if(d.six!=null)ps.add(panelBaton(watch,overlay,"6",d.six,d.sixAttention,d.sixNotJudged,
-                batonReason(d.sixOffCentre,d.sixRotated,d.sixCentring,d.sixRotationDeg),size));
-        if(d.nine!=null)ps.add(panelBaton(watch,overlay,d.nineSideUnknown?"3/9":d.nineLabel,d.nine,d.nineAttention,
-                d.nineSideUnknown?"date side not determined":d.nineNotJudged,batonReason(d.nineOffCentre,d.nineRotated,d.nineCentring,d.nineRotationDeg),size));
-        // Round markers: only those flagged, worst first, at most two.
-        java.util.List<GmtRoundMarkerAnalyzer.Marker> fl=new java.util.ArrayList<>();
-        for(GmtRoundMarkerAnalyzer.Marker m:d.round)if(m.found&&(m.attention==GmtHumanQcMath.Attention.CHECK||m.attention==GmtHumanQcMath.Attention.STRONG))fl.add(m);
-        java.util.Collections.sort(fl,(x,y)->Integer.compare(y.attention==GmtHumanQcMath.Attention.STRONG?1:0,x.attention==GmtHumanQcMath.Attention.STRONG?1:0));
-        for(int i=0;i<Math.min(2,fl.size());i++)ps.add(panelRound(watch,overlay,fl.get(i),size));
+        double R=Math.max(d.dialA,d.dialB);
+        for(String k:closeUpPlan(d)){
+            Bitmap b=null;
+            if(k.equals("12"))b=panel12(watch,overlay,d,size);
+            else if(k.equals("6")||k.equals("side")){
+                boolean six=k.equals("6");
+                GmtSixLandmarkAnalyzer.Geometry g=six?d.six:d.nine;
+                String L=six?"6":d.nineSideUnknown?"3/9":d.nineLabel;
+                boolean angled=d.photoNote!=null;
+                if(g!=null)b=six?panelBaton(watch,overlay,"6",g,d.sixAttention,d.sixNotJudged,batonReason(d.sixOffCentre,d.sixRotated,d.sixCentring,d.sixRotationDeg),d.sixUnstable,angled,size)
+                        :panelBaton(watch,overlay,L,g,d.nineAttention,d.nineSideUnknown?"date side not determined":d.nineNotJudged,
+                                batonReason(d.nineOffCentre,d.nineRotated,d.nineCentring,d.nineRotationDeg),d.nineUnstable,angled,size);
+                else{
+                    double[] at=expectedAt(d,six?180:"3".equals(d.nineLabel)?90:270,Gmt126710BlnrMaster.MARKER_CENTER_R);
+                    if(at!=null&&!(d.nineSideUnknown&&!six))
+                        b=panel(watch,overlay,at[0],at[1],0.26*R,size,UNKNOWN,L+" NOT FOUND · baton or its ticks not found, often a hand over it",true);
+                }
+            }else if(k.startsWith("r")){
+                int h=Integer.parseInt(k.substring(1));
+                for(GmtRoundMarkerAnalyzer.Marker m:d.round)if(m!=null&&m.hour==h)b=panelRound(watch,overlay,m,size);
+            }
+            if(b!=null)ps.add(b);
+        }
         if(ps.isEmpty())return null;
         if(ps.size()==1)return ps.get(0);
-        int gap=Math.max(6,size/40),w=0,h=0;
-        for(Bitmap p:ps){w+=p.getWidth();h=Math.max(h,p.getHeight());}
-        w+=gap*(ps.size()-1);
-        Bitmap out=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);
+        int cols=ps.size()<=2?ps.size():2,rows=(ps.size()+cols-1)/cols;
+        int gap=Math.max(6,size/40),cw=0,rh=0;
+        for(Bitmap p:ps){cw=Math.max(cw,p.getWidth());rh=Math.max(rh,p.getHeight());}
+        Bitmap out=Bitmap.createBitmap(cols*cw+gap*(cols-1),rows*rh+gap*(rows-1),Bitmap.Config.ARGB_8888);
         Canvas c=new Canvas(out);c.drawColor(Color.rgb(12,16,22));
-        int x=0;for(Bitmap p:ps){c.drawBitmap(p,x,0,null);x+=p.getWidth()+gap;}
+        for(int i=0;i<ps.size();i++)c.drawBitmap(ps.get(i),(i%cols)*(cw+gap),(i/cols)*(rh+gap),null);
         return out;
     }
 
@@ -535,30 +609,38 @@ final class MeasuredOverlayRenderer {
     }
 
     private static Bitmap panelBaton(Bitmap watch,Bitmap overlay,String L,GmtSixLandmarkAnalyzer.Geometry s,
-                                     GmtHumanQcMath.Attention attention,String notJudged,String reason,int size){
+                                     GmtHumanQcMath.Attention attention,String notJudged,String reason,boolean unstable,boolean angled,int size){
         double w=Math.hypot(s.outerRight[0]-s.outerLeft[0],s.outerRight[1]-s.outerLeft[1]);
         double cx=(s.outerLeft[0]+s.outerRight[0]+s.innerLeft[0]+s.innerRight[0]+2*s.tickCentre[0])/6;
         double cy=(s.outerLeft[1]+s.outerRight[1]+s.innerLeft[1]+s.innerRight[1]+2*s.tickCentre[1])/6;
         double half=Math.max(20,2.6*w);
-        int col;String text;
-        if(notJudged!=null){col=UNKNOWN;text=L+" NOT JUDGED: "+notJudged;}
-        else{
-            col=colour(attention);
-            text=attention==GmtHumanQcMath.Attention.STRONG?L+": CHECK CLOSELY"
-                    :attention==GmtHumanQcMath.Attention.CHECK?L+": WORTH A LOOK"
-                    :attention==GmtHumanQcMath.Attention.CLEAR?L+": NOTHING FLAGGED"
-                    :L+": NOT CALLED (LOW CONFIDENCE)";
-            if(flagged(attention)&&reason!=null&&!reason.isEmpty())text+=" · "+reason;
+        if(notJudged!=null||attention==GmtHumanQcMath.Attention.UNASSESSABLE){
+            String why=notJudged!=null?notJudged:unstable?"the reading changes when the photo is resized slightly"
+                    :angled?"photo too angled to judge it":"measured with low confidence";
+            return panel(watch,overlay,cx,cy,half,size,UNKNOWN,L+" NOT JUDGED · "+why,true);
         }
-        return panel(watch,overlay,cx,cy,half,size,col,text,notJudged!=null);
+        int col=colour(attention);
+        String text=attention==GmtHumanQcMath.Attention.STRONG?L+": CHECK CLOSELY"
+                :attention==GmtHumanQcMath.Attention.CHECK?L+": WORTH A LOOK":L+": NOTHING FLAGGED";
+        if(flagged(attention)&&reason!=null&&!reason.isEmpty())text+=" · "+reason;
+        return panel(watch,overlay,cx,cy,half,size,col,text,false);
     }
 
     private static Bitmap panelRound(Bitmap watch,Bitmap overlay,GmtRoundMarkerAnalyzer.Marker m,int size){
+        String L=String.valueOf(m.hour);
+        if(!m.found){
+            double half=Math.max(20,3.2*m.expectedRadiusPx);
+            return panel(watch,overlay,m.seedX,m.seedY,half,size,UNKNOWN,L+" NOT FOUND · the marker or its ticks were not found here",true);
+        }
         double cx=(m.x+(m.tickBefore[0]+m.tickAfter[0])/2)/2,cy=(m.y+(m.tickBefore[1]+m.tickAfter[1])/2)/2;
         double half=Math.max(20,1.6*m.diameterPx());
-        String L=String.valueOf(m.hour);
+        if(m.attention==GmtHumanQcMath.Attention.UNASSESSABLE){
+            String why=m.hand?"a hand is over or next to it":m.tooSmall?"too small in this photo":m.lowReason!=null&&!m.lowReason.isEmpty()?m.lowReason
+                    :m.note!=null&&!m.note.isEmpty()?m.note:"measured with low confidence";
+            return panel(watch,overlay,cx,cy,half,size,UNKNOWN,L+" NOT JUDGED · "+why,true);
+        }
         int col=colour(m.attention);
-        String text=m.attention==GmtHumanQcMath.Attention.STRONG?L+": CHECK CLOSELY":L+": WORTH A LOOK";
+        String text=m.attention==GmtHumanQcMath.Attention.STRONG?L+": CHECK CLOSELY":m.attention==GmtHumanQcMath.Attention.CHECK?L+": WORTH A LOOK":L+": NOTHING FLAGGED";
         java.util.List<String> why=new java.util.ArrayList<>();
         if(m.offCentre&&Double.isFinite(m.offset))why.add(String.format(Locale.US,"off-centre by %.2f of its width",Math.abs(m.offset)));
         if(m.sizeOdd&&Double.isFinite(m.sizeRatio))why.add(String.format(Locale.US,"%.2fx the size of the others",m.sizeRatio));

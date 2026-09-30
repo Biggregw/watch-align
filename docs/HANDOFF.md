@@ -315,7 +315,12 @@ gets one banner across the top instead of a word on every marker, and a key sits
 The 12 shows one verdict (the worse of gap and alignment). Numbers and the tick references moved
 to the close-ups (`renderDetail`), whose strip now has two lines: the verdict and what was found
 ("gap 0.03 (genuine about 0.08-0.11)", "rotated 2.2°", "off-centre by 0.14 of its width").
-No QC logic changed.
+Close-ups are now only of what needs a look (`closeUpPlan`): flagged markers (check closely, then
+worth a look), then markers not judged for a specific reason (hand, too small, not found, date side
+unknown), then other not-judged markers (left to the banner on a too-angled photo), at most four,
+two per row; when everything is clear the 12 is shown for reference. Before, the 12, 6 and side
+baton were always shown and round markers only when flagged. A baton that was not found is marked
+where it should be. No QC logic changed.
 
 ## 7. What's been validated
 

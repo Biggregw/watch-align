@@ -407,13 +407,13 @@ final class GmtHumanQcAnalyzerV2 {
             }
             if(six.valid){
                 dr.six=six.geometry;dr.sixAttention=sixDecision.attention;dr.sixCentring=six.centring;
-                dr.sixOffCentre=sixDecision.offCentre;dr.sixRotated=sixDecision.rotated;dr.sixRotationDeg=six.rotationDeg;
+                dr.sixOffCentre=sixDecision.offCentre;dr.sixRotated=sixDecision.rotated;dr.sixRotationDeg=six.rotationDeg;dr.sixUnstable=sixUnstable;
                 dr.sixNotJudged=sixDecision.tooSmall?"6 baton too small":handAtSix?"a hand is at 6":null;
             }
             if(nineOut.result.valid){
                 dr.nine=nineOut.result.geometry;dr.nineAttention=nineOut.decision.attention;dr.nineCentring=nineOut.result.centring;
                 dr.nineOffCentre=nineOut.decision.offCentre;dr.nineRotated=nineOut.decision.rotated;dr.nineRotationDeg=nineOut.result.rotationDeg;
-                dr.nineSideUnknown=nineOut.sideUnknown;
+                dr.nineSideUnknown=nineOut.sideUnknown;dr.nineUnstable=nineOut.unstable;
                 String NL=sidePos.label;
                 dr.nineNotJudged=nineOut.decision.tooSmall?NL+" baton too small":nineOut.hand?"a hand is at "+NL:null;
             }

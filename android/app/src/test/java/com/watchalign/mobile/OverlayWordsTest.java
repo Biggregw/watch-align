@@ -41,4 +41,28 @@ public class OverlayWordsTest {
         m.hand=true;m.attention=NJ;
         assertEquals("hand in the way",MeasuredOverlayRenderer.roundWord(m));
     }
+
+    private static MeasuredOverlayRenderer.Drawing clearDial(){
+        MeasuredOverlayRenderer.Drawing d=new MeasuredOverlayRenderer.Drawing();
+        d.dialCx=500;d.dialCy=500;d.dialA=300;d.dialB=300;
+        d.twelve=new GmtTwelveLandmarkAnalyzer.Geometry(new double[]{470,270},new double[]{530,270},new double[]{500,320},new double[]{470,225},new double[]{500,222},new double[]{530,225},true);
+        d.gap=OK;d.alignment=OK;
+        double[] z={0,0};
+        d.six=new GmtSixLandmarkAnalyzer.Geometry(z,z,z,z,z,z,z,true);d.sixAttention=OK;
+        d.nine=new GmtSixLandmarkAnalyzer.Geometry(z,z,z,z,z,z,z,true);d.nineAttention=OK;
+        for(int h:GmtRoundMarkerAnalyzer.HOURS){GmtRoundMarkerAnalyzer.Marker m=new GmtRoundMarkerAnalyzer.Marker(h);m.found=true;m.attention=OK;d.round.add(m);}
+        return d;
+    }
+
+    @Test public void closeUpsShowOnlyWhatNeedsALook(){
+        MeasuredOverlayRenderer.Drawing d=clearDial();
+        assertEquals(java.util.Arrays.asList("12"),MeasuredOverlayRenderer.closeUpPlan(d));   // all clear: the 12 as a reference
+        d.sixAttention=CHECK;d.round.get(4).attention=STRONG;d.round.get(1).attention=NJ;d.round.get(1).hand=true;d.round.get(6).attention=NJ;
+        // check closely first, then worth a look, then a hand, then generic not judged
+        assertEquals(java.util.Arrays.asList("r7","6","r2","r10"),MeasuredOverlayRenderer.closeUpPlan(d));
+        d.photoNote="Photo too angled: most markers not judged";
+        assertEquals(java.util.Arrays.asList("r7","6","r2"),MeasuredOverlayRenderer.closeUpPlan(d));   // generic ones left to the banner
+        for(GmtRoundMarkerAnalyzer.Marker m:d.round){m.attention=CHECK;}
+        assertEquals(MeasuredOverlayRenderer.MAX_CLOSE_UPS,MeasuredOverlayRenderer.closeUpPlan(d).size());
+    }
 }
