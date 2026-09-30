@@ -1,0 +1,626 @@
+{
+ "parts": [
+  "development"
+ ],
+ "photos": 39,
+ "watches": 20,
+ "landmarks": {
+  "12 triangle": {
+   "centre_spread": {
+    "median": 0.00045965369061999584,
+    "p95": 0.011462348947332647,
+    "n": 35
+   },
+   "rot_spread_deg": {
+    "median": 0.849586,
+    "p95": 25.04443799999999,
+    "n": 35
+   },
+   "size_spread_rel": {
+    "median": 0.005893509091449309,
+    "p95": 0.15141458759829154,
+    "n": 35
+   },
+   "counts": {
+    "instances": 39,
+    "detected_t0": 35,
+    "lost_in_some_translation": 3,
+    "judged_t0": 35,
+    "judged_verdict_changes": 17,
+    "flag_t0": 2,
+    "flag_not_in_all_translations": 2
+   },
+   "verdict_flip_rate": 0.4857142857142857,
+   "flag_instability_rate": 1.0
+  },
+  "3/9 baton": {
+   "centre_spread": {
+    "median": 0.0010836637542248465,
+    "p95": 0.009181627927894799,
+    "n": 32
+   },
+   "rot_spread_deg": {
+    "median": 0.8783004999999999,
+    "p95": 4.5191949499999975,
+    "n": 32
+   },
+   "size_spread_rel": {
+    "median": 0.009592714454104275,
+    "p95": 0.10347794491148966,
+    "n": 32
+   },
+   "counts": {
+    "instances": 39,
+    "detected_t0": 31,
+    "lost_in_some_translation": 4,
+    "judged_t0": 10,
+    "judged_verdict_changes": 3,
+    "appears_in_some_translation": 1
+   },
+   "verdict_flip_rate": 0.3,
+   "flag_instability_rate": NaN
+  },
+  "6 baton": {
+   "centre_spread": {
+    "median": 0.0008392730918634447,
+    "p95": 0.011595039985272185,
+    "n": 35
+   },
+   "rot_spread_deg": {
+    "median": 0.688591,
+    "p95": 2.5283639999999985,
+    "n": 35
+   },
+   "size_spread_rel": {
+    "median": 0.00998489925165535,
+    "p95": 0.2755112943996439,
+    "n": 35
+   },
+   "counts": {
+    "instances": 39,
+    "detected_t0": 34,
+    "lost_in_some_translation": 4,
+    "judged_t0": 16,
+    "judged_verdict_changes": 1,
+    "appears_in_some_translation": 2
+   },
+   "verdict_flip_rate": 0.0625,
+   "flag_instability_rate": NaN
+  },
+  "round": {
+   "centre_spread": {
+    "median": 0.00043325616699646855,
+    "p95": 0.008405786402202508,
+    "n": 302
+   },
+   "size_spread_rel": {
+    "median": 0.0028460106716017017,
+    "p95": 0.08613809326081973,
+    "n": 302
+   },
+   "counts": {
+    "instances": 312,
+    "detected_t0": 300,
+    "lost_in_some_translation": 10,
+    "judged_t0": 197,
+    "judged_verdict_changes": 29,
+    "appears_in_some_translation": 2
+   },
+   "verdict_flip_rate": 0.14720812182741116,
+   "flag_instability_rate": NaN
+  }
+ },
+ "pose": {
+  "photos": 39,
+  "transitions_t0_to_translation": {
+   "CORRECTABLE->CORRECTABLE": 129,
+   "GOOD->GOOD": 113,
+   "GOOD->CORRECTABLE": 30,
+   "CORRECTABLE->RETAKE": 16,
+   "CORRECTABLE->GOOD": 11,
+   "UNASSESSABLE->UNASSESSABLE": 8,
+   "CORRECTABLE->UNASSESSABLE": 4,
+   "GOOD->RETAKE": 1
+  },
+  "photos_with_any_label_change": 0.5384615384615384,
+  "label_change_rate_per_translation": 0.1987179487179487,
+  "parameter_spread": {
+   "mpose_tilt": {
+    "median": 0.5829749999999989,
+    "p95": 2.7153774999999998,
+    "n": 30
+   },
+   "frame_pitch": {
+    "median": 0.0,
+    "p95": 0.6150000000000003,
+    "n": 38
+   },
+   "track_roll_deg": {
+    "median": 0.08910499999999999,
+    "p95": 1.0839739999999976,
+    "n": 29
+   },
+   "ell_tilt": {
+    "median": 2.1999999999999993,
+    "p95": 8.7,
+    "n": 13
+   }
+  },
+  "rehaut_spread": {
+   "rh_v": {
+    "median": 0.14700000000000002,
+    "p95": 0.6416,
+    "n": 38
+   },
+   "rh_h": {
+    "median": 0.1305,
+    "p95": 0.8079499999999998,
+    "n": 38
+   },
+   "rh_top": {
+    "median": 3.0,
+    "p95": 15.47499999999999,
+    "n": 38
+   },
+   "rh_bottom": {
+    "median": 4.75,
+    "p95": 16.65,
+    "n": 38
+   },
+   "rh_left": {
+    "median": 3.0,
+    "p95": 18.824999999999992,
+    "n": 38
+   },
+   "rh_right": {
+    "median": 1.5,
+    "p95": 15.174999999999994,
+    "n": 38
+   }
+  }
+ },
+ "pose_consensus": {
+  "photos": 39,
+  "single_label_agreement": 0.7692307692307693,
+  "consensus3_agreement": 0.8461538461538461,
+  "majority_retake_photos": 2,
+  "retake_kept_single": 0,
+  "retake_kept_consensus": 1
+ },
+ "pose_threshold_proximity": {
+  "photos_with_label_change": 21,
+  "of_which_a_quantity_straddles_a_boundary": 17,
+  "photos_straddling_by_quantity": {
+   "rh_min_mean": 19,
+   "rh_maxasym": 21,
+   "ell_tilt": 4
+  },
+  "margin_over_translation_spread": {
+   "rh_maxasym": {
+    "median": 0.4625000000000003,
+    "share_below_1": 0.631578947368421,
+    "n": 38
+   },
+   "rh_min_mean": {
+    "median": 0.5861220472440947,
+    "share_below_1": 0.631578947368421,
+    "n": 38
+   },
+   "ell_tilt": {
+    "median": 3.005376344086023,
+    "share_below_1": 0.3333333333333333,
+    "n": 12
+   }
+  }
+ },
+ "decomposition": {
+  "gap": {
+   "translation_mad_within_photo_median": 0.001265750000000003,
+   "translation_mad_within_photo_p95": 0.0674760749999998,
+   "photo_to_photo_mad_within_watch_median": 0.004358500000000001,
+   "between_watch_mad": 0.02037845,
+   "translation_sd_within_photo": 0.47171307187148775,
+   "photo_to_photo_sd_within_watch": 0.16522607275217277,
+   "watches_with_2plus_photos": 8,
+   "between_watch_sd": 0.06182527763602058,
+   "watches": 20
+  },
+  "rot_deg": {
+   "translation_mad_within_photo_median": 0.051688500000000026,
+   "translation_mad_within_photo_p95": 1.2858644999999949,
+   "photo_to_photo_mad_within_watch_median": 0.45946145,
+   "between_watch_mad": 0.50402675,
+   "translation_sd_within_photo": 7.273851561313877,
+   "photo_to_photo_sd_within_watch": 10.172812601284539,
+   "watches_with_2plus_photos": 8,
+   "between_watch_sd": 1.5403351530291123,
+   "watches": 20
+  },
+  "sp59": {
+   "translation_mad_within_photo_median": 0.0011475000000000027,
+   "translation_mad_within_photo_p95": 0.05374042499999991,
+   "photo_to_photo_mad_within_watch_median": 0.005751500000000007,
+   "between_watch_mad": 0.007226999999999997,
+   "translation_sd_within_photo": 0.4419188595702115,
+   "photo_to_photo_sd_within_watch": 0.28480849162883454,
+   "watches_with_2plus_photos": 8,
+   "between_watch_sd": 0.10600696642383065,
+   "watches": 20
+  },
+  "sp01": {
+   "translation_mad_within_photo_median": 0.0011759999999999965,
+   "translation_mad_within_photo_p95": 0.04849487499999978,
+   "photo_to_photo_mad_within_watch_median": 0.006720000000000004,
+   "between_watch_mad": 0.01919,
+   "translation_sd_within_photo": 0.46392420011854113,
+   "photo_to_photo_sd_within_watch": 0.22295711844364285,
+   "watches_with_2plus_photos": 8,
+   "between_watch_sd": 0.08636372910150794,
+   "watches": 20
+  },
+  "six_centring": {
+   "translation_mad_within_photo_median": 0.00012939000000000006,
+   "translation_mad_within_photo_p95": 0.025545469999999938,
+   "photo_to_photo_mad_within_watch_median": 0.009461055000000001,
+   "between_watch_mad": 0.018765010000000002,
+   "translation_sd_within_photo": 0.033878707667820675,
+   "photo_to_photo_sd_within_watch": 0.11767915895676055,
+   "watches_with_2plus_photos": 8,
+   "between_watch_sd": 0.12002585172857178,
+   "watches": 19
+  },
+  "six_rot": {
+   "translation_mad_within_photo_median": 0.034721999999999975,
+   "translation_mad_within_photo_p95": 0.6555948999999999,
+   "photo_to_photo_mad_within_watch_median": 0.35380599999999995,
+   "between_watch_mad": 0.5253490000000001,
+   "translation_sd_within_photo": 0.5323724490669584,
+   "photo_to_photo_sd_within_watch": 3.617224161679881,
+   "watches_with_2plus_photos": 8,
+   "between_watch_sd": 6.291177686708701,
+   "watches": 19
+  },
+  "nine_centring": {
+   "translation_mad_within_photo_median": 0.00020380000000000224,
+   "translation_mad_within_photo_p95": 0.008482844999999996,
+   "photo_to_photo_mad_within_watch_median": 0.0012092000000000006,
+   "between_watch_mad": 0.02271279999999999,
+   "translation_sd_within_photo": 0.03565615255467163,
+   "photo_to_photo_sd_within_watch": 0.05431436703962116,
+   "watches_with_2plus_photos": 7,
+   "between_watch_sd": 0.0492390284162417,
+   "watches": 19
+  },
+  "nine_rot": {
+   "translation_mad_within_photo_median": 0.12045800000000004,
+   "translation_mad_within_photo_p95": 0.6042183900000003,
+   "photo_to_photo_mad_within_watch_median": 0.821125,
+   "between_watch_mad": 0.449091,
+   "translation_sd_within_photo": 3.6242672267343425,
+   "photo_to_photo_sd_within_watch": 7.099095857733593,
+   "watches_with_2plus_photos": 7,
+   "between_watch_sd": 3.8085855298336853,
+   "watches": 19
+  }
+ },
+ "gate_all_candidate_rules": [
+  {
+   "rule": {
+    "kind": "fraction",
+    "min_fraction": 0.25
+   },
+   "judged_verdicts_before": 258,
+   "flags_before": 2,
+   "flags_after": 1,
+   "withheld_as_not_confidently_measurable": 1,
+   "judged_verdicts_after": 257,
+   "genuine_flags_before": 0,
+   "genuine_flags_after": 0,
+   "confirmed_before": 0,
+   "confirmed_after": 0,
+   "contradicted_before": 1,
+   "contradicted_after": 0,
+   "unconfirmable_before": 1,
+   "unconfirmable_after": 1,
+   "by_type_before": {
+    "12 triangle": 2
+   },
+   "by_type_after": {
+    "12 triangle": 1
+   }
+  },
+  {
+   "rule": {
+    "kind": "fraction",
+    "min_fraction": 0.5
+   },
+   "judged_verdicts_before": 258,
+   "flags_before": 2,
+   "flags_after": 1,
+   "withheld_as_not_confidently_measurable": 1,
+   "judged_verdicts_after": 257,
+   "genuine_flags_before": 0,
+   "genuine_flags_after": 0,
+   "confirmed_before": 0,
+   "confirmed_after": 0,
+   "contradicted_before": 1,
+   "contradicted_after": 0,
+   "unconfirmable_before": 1,
+   "unconfirmable_after": 1,
+   "by_type_before": {
+    "12 triangle": 2
+   },
+   "by_type_after": {
+    "12 triangle": 1
+   }
+  },
+  {
+   "rule": {
+    "kind": "fraction",
+    "min_fraction": 0.625
+   },
+   "judged_verdicts_before": 258,
+   "flags_before": 2,
+   "flags_after": 1,
+   "withheld_as_not_confidently_measurable": 1,
+   "judged_verdicts_after": 257,
+   "genuine_flags_before": 0,
+   "genuine_flags_after": 0,
+   "confirmed_before": 0,
+   "confirmed_after": 0,
+   "contradicted_before": 1,
+   "contradicted_after": 0,
+   "unconfirmable_before": 1,
+   "unconfirmable_after": 1,
+   "by_type_before": {
+    "12 triangle": 2
+   },
+   "by_type_after": {
+    "12 triangle": 1
+   }
+  },
+  {
+   "rule": {
+    "kind": "fraction",
+    "min_fraction": 0.75
+   },
+   "judged_verdicts_before": 258,
+   "flags_before": 2,
+   "flags_after": 0,
+   "withheld_as_not_confidently_measurable": 2,
+   "judged_verdicts_after": 256,
+   "genuine_flags_before": 0,
+   "genuine_flags_after": 0,
+   "confirmed_before": 0,
+   "confirmed_after": 0,
+   "contradicted_before": 1,
+   "contradicted_after": 0,
+   "unconfirmable_before": 1,
+   "unconfirmable_after": 0,
+   "by_type_before": {
+    "12 triangle": 2
+   },
+   "by_type_after": {}
+  },
+  {
+   "rule": {
+    "kind": "fraction",
+    "min_fraction": 0.875
+   },
+   "judged_verdicts_before": 258,
+   "flags_before": 2,
+   "flags_after": 0,
+   "withheld_as_not_confidently_measurable": 2,
+   "judged_verdicts_after": 256,
+   "genuine_flags_before": 0,
+   "genuine_flags_after": 0,
+   "confirmed_before": 0,
+   "confirmed_after": 0,
+   "contradicted_before": 1,
+   "contradicted_after": 0,
+   "unconfirmable_before": 1,
+   "unconfirmable_after": 0,
+   "by_type_before": {
+    "12 triangle": 2
+   },
+   "by_type_after": {}
+  },
+  {
+   "rule": {
+    "kind": "fraction",
+    "min_fraction": 1.0
+   },
+   "judged_verdicts_before": 258,
+   "flags_before": 2,
+   "flags_after": 0,
+   "withheld_as_not_confidently_measurable": 2,
+   "judged_verdicts_after": 256,
+   "genuine_flags_before": 0,
+   "genuine_flags_after": 0,
+   "confirmed_before": 0,
+   "confirmed_after": 0,
+   "contradicted_before": 1,
+   "contradicted_after": 0,
+   "unconfirmable_before": 1,
+   "unconfirmable_after": 0,
+   "by_type_before": {
+    "12 triangle": 2
+   },
+   "by_type_after": {}
+  },
+  {
+   "rule": {
+    "kind": "all_of",
+    "shifts": [
+     "x+2",
+     "y+2"
+    ]
+   },
+   "judged_verdicts_before": 258,
+   "flags_before": 2,
+   "flags_after": 1,
+   "withheld_as_not_confidently_measurable": 1,
+   "judged_verdicts_after": 257,
+   "genuine_flags_before": 0,
+   "genuine_flags_after": 0,
+   "confirmed_before": 0,
+   "confirmed_after": 0,
+   "contradicted_before": 1,
+   "contradicted_after": 0,
+   "unconfirmable_before": 1,
+   "unconfirmable_after": 1,
+   "by_type_before": {
+    "12 triangle": 2
+   },
+   "by_type_after": {
+    "12 triangle": 1
+   }
+  },
+  {
+   "rule": {
+    "kind": "all_of",
+    "shifts": [
+     "x-2",
+     "y-2"
+    ]
+   },
+   "judged_verdicts_before": 258,
+   "flags_before": 2,
+   "flags_after": 0,
+   "withheld_as_not_confidently_measurable": 2,
+   "judged_verdicts_after": 256,
+   "genuine_flags_before": 0,
+   "genuine_flags_after": 0,
+   "confirmed_before": 0,
+   "confirmed_after": 0,
+   "contradicted_before": 1,
+   "contradicted_after": 0,
+   "unconfirmable_before": 1,
+   "unconfirmable_after": 0,
+   "by_type_before": {
+    "12 triangle": 2
+   },
+   "by_type_after": {}
+  },
+  {
+   "rule": {
+    "kind": "all_of",
+    "shifts": [
+     "x+1",
+     "y+1"
+    ]
+   },
+   "judged_verdicts_before": 258,
+   "flags_before": 2,
+   "flags_after": 1,
+   "withheld_as_not_confidently_measurable": 1,
+   "judged_verdicts_after": 257,
+   "genuine_flags_before": 0,
+   "genuine_flags_after": 0,
+   "confirmed_before": 0,
+   "confirmed_after": 0,
+   "contradicted_before": 1,
+   "contradicted_after": 0,
+   "unconfirmable_before": 1,
+   "unconfirmable_after": 1,
+   "by_type_before": {
+    "12 triangle": 2
+   },
+   "by_type_after": {
+    "12 triangle": 1
+   }
+  },
+  {
+   "rule": {
+    "kind": "all_of",
+    "shifts": [
+     "x+2",
+     "x-2"
+    ]
+   },
+   "judged_verdicts_before": 258,
+   "flags_before": 2,
+   "flags_after": 0,
+   "withheld_as_not_confidently_measurable": 2,
+   "judged_verdicts_after": 256,
+   "genuine_flags_before": 0,
+   "genuine_flags_after": 0,
+   "confirmed_before": 0,
+   "confirmed_after": 0,
+   "contradicted_before": 1,
+   "contradicted_after": 0,
+   "unconfirmable_before": 1,
+   "unconfirmable_after": 0,
+   "by_type_before": {
+    "12 triangle": 2
+   },
+   "by_type_after": {}
+  },
+  {
+   "rule": {
+    "kind": "all_of",
+    "shifts": [
+     "y+2",
+     "y-2"
+    ]
+   },
+   "judged_verdicts_before": 258,
+   "flags_before": 2,
+   "flags_after": 0,
+   "withheld_as_not_confidently_measurable": 2,
+   "judged_verdicts_after": 256,
+   "genuine_flags_before": 0,
+   "genuine_flags_after": 0,
+   "confirmed_before": 0,
+   "confirmed_after": 0,
+   "contradicted_before": 1,
+   "contradicted_after": 0,
+   "unconfirmable_before": 1,
+   "unconfirmable_after": 0,
+   "by_type_before": {
+    "12 triangle": 2
+   },
+   "by_type_after": {}
+  }
+ ],
+ "flag_rows": [
+  {
+   "watch": "hv_imgur_album_62cbf2f8f1",
+   "cls": "rep",
+   "verdict": "gap",
+   "type": "12 triangle",
+   "stability": 0.0,
+   "stable_in": {
+    "x+1": false,
+    "x-1": false,
+    "x+2": false,
+    "x-2": false,
+    "y+1": false,
+    "y-1": false,
+    "y+2": false,
+    "y-2": false
+   },
+   "status": "contradicted",
+   "t0": "CHECK"
+  },
+  {
+   "watch": "rep_vsf_HCz9EAj",
+   "cls": "rep",
+   "verdict": "gap",
+   "type": "12 triangle",
+   "stability": 0.625,
+   "stable_in": {
+    "x+1": true,
+    "x-1": true,
+    "x+2": true,
+    "x-2": false,
+    "y+1": true,
+    "y-1": false,
+    "y+2": true,
+    "y-2": false
+   },
+   "status": "unconfirmable",
+   "t0": "CHECK"
+  }
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "rule": {
+  "kind": "all_of",
+  "shifts": [
+   "x-2",
+   "y-2"
+  ]
+ },
+ "frozen_from": [
+  "development"
+ ]
+}
