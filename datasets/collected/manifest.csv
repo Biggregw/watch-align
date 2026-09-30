@@ -1,0 +1,2 @@
+local_path,class_label,physical_watch_id,model,factory,source,notes,captured_at,app_version,dial_found,twelve_found,pose,marker_tilt_deg,suitable,batch,sha256
+datasets/collected/images/20260930_085536_20260930_085218_0_w001.jpg,rep,collected_w001,126710BLNR,ARF,,,2026-09-30T08:52:18,1.3.0-alpha66,yes,yes,GOOD,8.6,yes,20260930_085536,b737323948c9119f6287e3a633d26db2c683befc88df08a31d6412cc28ea5c87
