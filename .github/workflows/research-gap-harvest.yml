@@ -29,7 +29,6 @@ jobs:
       HARVEST_TARGET_GEN_WATCHES: '50'
       HARVEST_TARGET_REP_WATCHES: '30'
       HARVEST_TARGET_VIEWS_PER_WATCH: '2'
-      HARVEST_SEARCH_MAX_QUERIES: '16'
     steps:
       - name: Checkout feature code
         uses: actions/checkout@v4
@@ -93,6 +92,8 @@ jobs:
           cat gap-before.txt >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run targeted acquisition cycles
+        env:
+          HARVEST_SEARCH_MAX_QUERIES: '16'
         run: |
           : > harvest-gap-output.md
           for cycle in 1 2 3; do
@@ -129,7 +130,7 @@ jobs:
         if: always()
         run: |
           python3 - <<'PY' | tee gap-final.md
-          import csv, json
+          import csv
           from pathlib import Path
           wp=Path('datasets/harvest/watches.csv')
           mp=Path('datasets/harvest/manifest.csv')
