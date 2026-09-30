@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-30, alpha64)
+# Watch Align: handoff notes (updated 2026-09-30, alpha65)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -29,7 +29,7 @@ checked (the 3 is the date window).
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha64"`, `versionCode 13064` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha65"`, `versionCode 13065` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
@@ -321,6 +321,12 @@ unknown), then other not-judged markers (left to the banner on a too-angled phot
 two per row; when everything is clear the 12 is shown for reference. Before, the 12, 6 and side
 baton were always shown and round markers only when flagged. A baton that was not found is marked
 where it should be. No QC logic changed.
+
+alpha65: **app icon.** Adaptive launcher icon (`res/mipmap-anydpi-v26/ic_launcher*.xml`, navy
+background, vector foreground, monochrome layer for Android 13 themed icons): a dial seen straight
+on with twelve hour ticks, the 12 index as a lume triangle under a cyan reference line, and the
+app's green "nothing flagged" badge. Original artwork, no brand marks. Generated from
+`tools/icon/make_icon.py` (edit the script, not the XML); `icon_preview.png` shows it.
 
 ## 7. What's been validated
 
