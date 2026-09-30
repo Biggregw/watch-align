@@ -4,6 +4,9 @@
     <application android:theme="@style/AppTheme" android:label="Watch Align" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:usesCleartextTraffic="false">
         <activity android:name=".FullscreenInspectActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".ManualSeedActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".CollectActivity" android:screenOrientation="portrait" android:exported="false" />
+        <provider android:name=".TestSetFileProvider" android:authorities="com.watchalign.mobile.testset"
+            android:exported="false" android:grantUriPermissions="true" />
         <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

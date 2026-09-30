@@ -110,6 +110,10 @@ public class MainActivity extends Activity {
         manualButton=button("Align dial edge by hand");manualButton.setOnClickListener(v->openManualSeedPicker());manualButton.setVisibility(View.GONE);
         root.addView(manualButton,lp(-1,dp(50),10));
 
+        // Test-set collection (alpha66): genuine and replica photos with tags, for building the test set.
+        Button collect=smallButton("Collect test photos");collect.setOnClickListener(v->startActivity(new Intent(this,CollectActivity.class)));
+        root.addView(collect,lp(-1,dp(48),24));
+
         View spacer=new View(this);root.addView(spacer,lp(-1,dp(32),0));
         setResultButtons(false);
         return scroll;

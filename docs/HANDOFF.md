@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-30, alpha65)
+# Watch Align: handoff notes (updated 2026-09-30, alpha66)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -29,7 +29,7 @@ checked (the 3 is the date window).
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha65"`, `versionCode 13065` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha66"`, `versionCode 13066` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
@@ -327,6 +327,21 @@ background, vector foreground, monochrome layer for Android 13 themed icons): a 
 on with twelve hour ticks, the 12 index as a lume triangle under a cyan reference line, and the
 app's green "nothing flagged" badge. Original artwork, no brand marks. Generated from
 `tools/icon/make_icon.py` (edit the script, not the XML); `icon_preview.png` shows it.
+
+alpha66: **Collect test photos.** A second screen (`CollectActivity`, from "Collect test photos" on
+the main screen) builds the test set on the phone: add photos from the gallery (several at once)
+or the camera, tag them together (genuine / replica / not sure, reference, factory, source, notes,
+"same watch as the last photos"), and each is checked in the background for dial found, 12 found
+and angle, shown as "good for the test set" or why not. QC verdicts are deliberately not shown there
+so they cannot sway the labels. Location tags are stripped from JPEGs on import (other formats are
+re-saved as JPEG). Stored in the app's own storage (`TestSetStore`: images/ and entries.csv).
+Sending on: "Export zip" (manifest.csv in the corpus list format + images/, shared through
+`TestSetFileProvider`), or "Upload to GitHub" (`GitHubUploader`, REST contents API, optional:
+repository, branch (default `testset-inbox`, never main), folder and a fine-grained token entered
+in GitHub settings). `tools/testset/ingest.py` adds either to `datasets/collected/` (images not
+committed; manifest committed; exact duplicates skipped). The upload's read calls were exercised
+against the real API from the dev container; its writes could not be (the container's proxy blocks
+GitHub API writes), so the first real upload is from the phone.
 
 ## 7. What's been validated
 
