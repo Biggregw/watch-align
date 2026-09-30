@@ -2,8 +2,9 @@ name: Research gap harvest
 
 # One-off bounded acquisition run for the fresh-holdout/repeatability gaps identified by the
 # corpus-driven QC research. This workflow intentionally lives on the feature branch only.
-# It uses the normal harvester and normal ACCEPT/QUARANTINE/REJECT rules, but enables optional
-# class-level acquisition targets so discovery favours the largest research gaps.
+# It preserves the normal ACCEPT/QUARANTINE/REJECT rules. The genuine phase now targets exact
+# dealer/auction listings and expands known listings to multiple gallery views instead of repeating
+# broad web searches that have saturated.
 on:
   push:
     branches:
@@ -91,40 +92,54 @@ jobs:
           PY
           cat gap-before.txt >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Run targeted acquisition cycles
-        env:
-          HARVEST_SEARCH_MAX_QUERIES: '16'
+      - name: Seed exact genuine dealer listings and gallery views
         run: |
-          : > harvest-gap-output.md
-          for cycle in 1 2 3; do
-            echo "# Acquisition cycle $cycle" | tee -a harvest-gap-output.md
-            python3 tools/dataset_harvester/harvest.py \
-              --once \
-              --source-adapter search \
-              --max-sources 75 | tee -a harvest-gap-output.md
+          python3 tools/dataset_harvester/targeted_genuine_acquisition.py \
+            --data-dir datasets/harvest \
+            --max-queries 64 \
+            --results-per-query 20 \
+            --expand-limit 50 | tee genuine-seed.md
+          cat genuine-seed.md >> "$GITHUB_STEP_SUMMARY"
 
-            read GEN REP RETAKE GMULTI RMULTI <<< "$(python3 - <<'PY'
-          import csv
+      - name: Process targeted genuine sources
+        run: |
+          python3 tools/dataset_harvester/harvest.py \
+            --process \
+            --data-dir datasets/harvest \
+            --max-sources 100 | tee genuine-process-1.md
+
+          TARGETED_PENDING=$(python3 - <<'PY'
+          import json
           from pathlib import Path
-          wp=Path('datasets/harvest/watches.csv')
-          mp=Path('datasets/harvest/manifest.csv')
-          wr=list(csv.DictReader(wp.open())) if wp.exists() else []
-          mr=list(csv.DictReader(mp.open())) if mp.exists() else []
-          accepted=[r for r in wr if r.get('dataset_decision')=='ACCEPT' and r.get('sample_role')!='reference_only']
-          gen=[r for r in accepted if r.get('class_label')=='gen']
-          rep=[r for r in accepted if r.get('class_label')=='rep']
-          gmulti=sum(int(r.get('usable_images') or 0)>=2 for r in gen)
-          rmulti=sum(int(r.get('usable_images') or 0)>=2 for r in rep)
-          retake={r.get('sha256') for r in mr if r.get('class_label')=='gen' and r.get('pose')=='RETAKE' and not r.get('duplicate_of')}
-          print(len(gen), len(rep), len(retake), gmulti, rmulti)
+          p=Path('datasets/harvest/state/sources.jsonl')
+          n=0
+          if p.exists():
+              for line in p.open():
+                  r=json.loads(line)
+                  if r.get('status') == 'new' and float(r.get('priority') or 0) >= 800:
+                      n += 1
+          print(n)
           PY
-          )"
-            echo "After cycle $cycle: gen=$GEN rep=$REP genuine_RETAKE_images=$RETAKE gen_multiview=$GMULTI rep_multiview=$RMULTI" | tee -a harvest-gap-output.md
-            if [ "$GEN" -ge 50 ] && [ "$REP" -ge 30 ] && [ "$RETAKE" -ge 10 ]; then
-              echo "Core research gaps reached after cycle $cycle." | tee -a harvest-gap-output.md
-              break
-            fi
-          done
+          )
+          echo "Targeted high-priority sources still pending after batch 1: $TARGETED_PENDING" | tee -a genuine-process-1.md
+          if [ "$TARGETED_PENDING" -gt 0 ]; then
+            python3 tools/dataset_harvester/harvest.py \
+              --process \
+              --data-dir datasets/harvest \
+              --max-sources 100 | tee genuine-process-2.md
+          fi
+
+      - name: Replica top-up toward 30 independent watches
+        env:
+          HARVEST_TARGET_GEN_WATCHES: '18'
+          HARVEST_TARGET_REP_WATCHES: '30'
+          HARVEST_SEARCH_MAX_QUERIES: '12'
+        run: |
+          python3 tools/dataset_harvester/harvest.py \
+            --once \
+            --data-dir datasets/harvest \
+            --source-adapter search \
+            --max-sources 50 | tee replica-topup.md
 
       - name: Final gap report
         if: always()
@@ -151,7 +166,7 @@ jobs:
           print(f'- Traceable genuine RETAKE images retained for pose research: {len(retake)} / 10 target')
           print(f'- Total accepted usable views: {sum(int(r.get("usable_images") or 0) for r in accepted)}')
           print()
-          print('Targets change discovery priority only; normal provenance, quality, dedupe and acceptance rules remain unchanged.')
+          print('No provenance, quality, dedupe, measurement or acceptance threshold was relaxed.')
           PY
           cat gap-final.md >> "$GITHUB_STEP_SUMMARY"
 
@@ -161,7 +176,10 @@ jobs:
         with:
           name: research-gap-harvest-${{ github.run_id }}
           path: |
-            harvest-gap-output.md
+            genuine-seed.md
+            genuine-process-1.md
+            genuine-process-2.md
+            replica-topup.md
             gap-before.txt
             gap-final.md
             datasets/harvest/reports/latest.*
@@ -177,6 +195,6 @@ jobs:
             exit 0
           fi
           git -c user.name="watch-align harvester" -c user.email="actions@users.noreply.github.com" \
-            commit -q -m "Targeted research gap harvest ${{ github.run_id }}"
+            commit -q -m "Targeted genuine-listing harvest ${{ github.run_id }}"
           git push -q origin HEAD:data/harvest
           echo "After data/harvest: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
