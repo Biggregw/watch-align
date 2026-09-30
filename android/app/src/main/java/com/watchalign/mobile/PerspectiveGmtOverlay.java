@@ -119,7 +119,16 @@ final class PerspectiveGmtOverlay {
             Mat H0=homographyFromUnitSquare(card);
             if(H0==null||H0.empty())return null;
             double[] h0Values=matrixValues(H0);
-            DialProjectiveRefiner.MatResult refinement=DialProjectiveRefiner.refineWithDiagnostics(edges,H0);
+            // The fitted ellipse's own eccentricity already tells us roughly how tilted this
+            // photo is. A genuine additional projective (keystone) correction on top of that
+            // should scale with the tilt, not be a fixed allowance for every photo: a near-frontal
+            // dial (small tiltDeg) has little room for a real h31/h32 term, so let the refiner
+            // search only as far as the observed tilt justifies. This keeps it from locking onto
+            // unrelated edge clutter (bezel numerals, hands, reflections) by taking a large,
+            // implausible projective excursion that happens to shave a fraction of a pixel off
+            // the average tick-edge distance.
+            double projectiveLimit=Math.max(0.015,Math.min(0.32,0.45*Math.sin(Math.toRadians(tiltDeg))));
+            DialProjectiveRefiner.MatResult refinement=DialProjectiveRefiner.refineWithDiagnostics(edges,H0,projectiveLimit);
             Mat H=refinement.homography;
             H0.release();
 

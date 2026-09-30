@@ -64,12 +64,16 @@ final class DialProjectiveRefiner {
     }
 
     static MatResult refineWithDiagnostics(Mat edges, Mat h0) {
+        return refineWithDiagnostics(edges, h0, LIMIT[6]);
+    }
+
+    static MatResult refineWithDiagnostics(Mat edges, Mat h0, double projectiveLimit) {
         Mat inverted = new Mat();
         Mat distance = new Mat();
         try {
             Imgproc.threshold(edges, inverted, 0.0, 255.0, Imgproc.THRESH_BINARY_INV);
             Imgproc.distanceTransform(inverted, distance, Imgproc.DIST_L2, Imgproc.DIST_MASK_PRECISE);
-            Result result = refine(new MatDistanceField(distance), matrix(h0));
+            Result result = refine(new MatDistanceField(distance), matrix(h0), projectiveLimit);
             if (!result.accepted) return new MatResult(h0.clone(), result);
             Mat refined = new Mat(3, 3, CvType.CV_64F);
             refined.put(0, 0, flatten(result.homography));
@@ -81,19 +85,26 @@ final class DialProjectiveRefiner {
     }
 
     static Result refine(DistanceField field, double[][] h0) {
+        return refine(field, h0, LIMIT[6]);
+    }
+
+    static Result refine(DistanceField field, double[][] h0, double projectiveLimit) {
+        double[] limits = LIMIT.clone();
+        limits[6] = projectiveLimit;
+        limits[7] = projectiveLimit;
         double[] zero = new double[8];
         double fitBefore = evidenceScore(field, h0, false, true);
         double holdoutBefore = evidenceScore(field, h0, true, false);
         double[] best = zero.clone();
-        double bestObjective = objective(field, h0, best);
+        double bestObjective = objective(field, h0, best, limits);
         double[] step = INITIAL_STEP.clone();
 
         // Projective displacement can put H0 outside the basin of a pixel-scale
         // edge loss. Seed the local search with a small bounded h31/h32 grid.
-        for (double p = -LIMIT[6]; p <= LIMIT[6] + 1e-9; p += 0.08) {
-            for (double q = -LIMIT[7]; q <= LIMIT[7] + 1e-9; q += 0.08) {
+        for (double p = -limits[6]; p <= limits[6] + 1e-9; p += 0.08) {
+            for (double q = -limits[7]; q <= limits[7] + 1e-9; q += 0.08) {
                 double[] candidate = conicPreservingSeed(p, q);
-                double value = objective(field, h0, candidate);
+                double value = objective(field, h0, candidate, limits);
                 if (value < bestObjective) {
                     bestObjective = value;
                     best = candidate;
@@ -103,12 +114,12 @@ final class DialProjectiveRefiner {
         double coarseP = best[6], coarseQ = best[7];
         for (double p = coarseP - 0.08; p <= coarseP + 0.08 + 1e-9; p += 0.02) {
             for (double q = coarseQ - 0.08; q <= coarseQ + 0.08 + 1e-9; q += 0.02) {
-                if (Math.abs(p) > LIMIT[6] || Math.abs(q) > LIMIT[7]) continue;
+                if (Math.abs(p) > limits[6] || Math.abs(q) > limits[7]) continue;
                 for (double rotation = -0.06; rotation <= 0.06 + 1e-9; rotation += 0.02) {
                     double[] candidate = conicPreservingSeed(p, q);
                     candidate[1] = rotation;
                     candidate[2] = -rotation;
-                    double value = objective(field, h0, candidate);
+                    double value = objective(field, h0, candidate, limits);
                     if (value < bestObjective) {
                         bestObjective = value;
                         best = candidate;
@@ -128,10 +139,10 @@ final class DialProjectiveRefiner {
                     double original = best[i];
                     double selected = original;
                     for (int direction : new int[]{-1, 1}) {
-                        double candidate = clamp(original + direction * step[i], -LIMIT[i], LIMIT[i]);
+                        double candidate = clamp(original + direction * step[i], -limits[i], limits[i]);
                         if (candidate == original) continue;
                         best[i] = candidate;
-                        double value = objective(field, h0, best);
+                        double value = objective(field, h0, best, limits);
                         if (value + 1e-9 < bestObjective) {
                             bestObjective = value;
                             selected = candidate;
@@ -177,13 +188,13 @@ final class DialProjectiveRefiner {
         };
     }
 
-    private static double objective(DistanceField field, double[][] h0, double[] p) {
+    private static double objective(DistanceField field, double[][] h0, double[] p, double[] limits) {
         double[][] h = compose(h0, p);
         if (!finite(h)) return Double.POSITIVE_INFINITY;
         double evidence = evidenceScore(field, h, false, true);
         double regularization = 0.0;
         for (int i = 0; i < p.length; i++) {
-            double normalized = p[i] / LIMIT[i];
+            double normalized = p[i] / limits[i];
             double weight = i < 6 ? 0.055 : 0.012;
             regularization += weight * normalized * normalized;
         }
