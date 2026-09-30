@@ -76,7 +76,7 @@ final class GmtHumanSummary {
         s.append("Overlay: ").append(in.overlayDrawn&&(in.tooSmall||in.handAtTwelve)
                 ?"shows the 12 triangle that was found, grey and dashed because it was not judged. The close-up shows it enlarged."
                 :in.overlayDrawn
-                ?"shows what was measured: at 12 the detected triangle, the 59/60/01 tick ends, the gap and the spacing either side; at 6 and "+in.nine.label+" the baton outline and its neighbouring ticks; each round marker's outline and the ticks either side. Each is coloured green (clear), amber (check) or red. The close-ups show them enlarged; Inspect overlay zooms the whole photo."
+                ?"every hour marker is outlined where it was found and carries a badge: a tick (OK), ! (worth a look), !! (check closely) or a dash (not judged, outline grey and dashed). Anything flagged or not judged says why beside it. The close-ups show the measurements up close, with what was found and how much underneath; Inspect overlay zooms the whole photo."
                 :"nothing at 12 could be measured, so only the dial edge is shown.").append("\n");
         s.append("\n").append(bottomLine(in)).append("\n");
         s.append("This flags things to look at closely. It does not prove a watch is genuine or fake.\n");

@@ -407,14 +407,28 @@ final class GmtHumanQcAnalyzerV2 {
             }
             if(six.valid){
                 dr.six=six.geometry;dr.sixAttention=sixDecision.attention;dr.sixCentring=six.centring;
+                dr.sixOffCentre=sixDecision.offCentre;dr.sixRotated=sixDecision.rotated;dr.sixRotationDeg=six.rotationDeg;
                 dr.sixNotJudged=sixDecision.tooSmall?"6 baton too small":handAtSix?"a hand is at 6":null;
             }
             if(nineOut.result.valid){
                 dr.nine=nineOut.result.geometry;dr.nineAttention=nineOut.decision.attention;dr.nineCentring=nineOut.result.centring;
+                dr.nineOffCentre=nineOut.decision.offCentre;dr.nineRotated=nineOut.decision.rotated;dr.nineRotationDeg=nineOut.result.rotationDeg;
+                dr.nineSideUnknown=nineOut.sideUnknown;
                 String NL=sidePos.label;
                 dr.nineNotJudged=nineOut.decision.tooSmall?NL+" baton too small":nineOut.hand?"a hand is at "+NL:null;
             }
             dr.round=round;dr.nineLabel=sidePos.label;
+            if(pose.label==GmtHumanQcMath.PoseLabel.RETAKE)dr.photoNote="Photo too angled: most markers not judged";
+            else if(pose.label==GmtHumanQcMath.PoseLabel.UNASSESSABLE)dr.photoNote="Photo angle unknown: treat with caution";
+            if(twelve.valid&&twelve.geometry!=null){
+                dr.twelveRotationDeg=twelve.wholeAxisErrorDeg;
+                switch(GmtHumanSummary.kind(sum)){
+                    case TURNED:dr.twelveKind="rotated";break;
+                    case TIP_LEANS:dr.twelveKind="point leans";break;
+                    case OFF_CENTRE:dr.twelveKind="off-centre";break;
+                    default:dr.twelveKind=null;
+                }
+            }
             if(noDial){   // nothing drawn: the outlines found are not a dial's
                 res.drawing=new MeasuredOverlayRenderer.Drawing();
                 return res;
