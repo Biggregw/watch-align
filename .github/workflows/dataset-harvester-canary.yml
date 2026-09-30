@@ -13,10 +13,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  five-source-canary:
-    if: github.event.head_commit.message == 'Run five-source real harvest canary'
+  twenty-five-source-canary:
+    if: github.event.head_commit.message == 'Run twenty-five-source real harvest canary'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     env:
       BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
     steps:
@@ -66,12 +66,12 @@ jobs:
           key: harvest-images-${{ github.run_id }}
           restore-keys: harvest-images-
 
-      - name: Run five-source real harvest
+      - name: Run twenty-five-source real harvest
         run: |
           python3 tools/dataset_harvester/harvest.py \
             --once \
             --source-adapter search \
-            --max-sources 5 | tee harvest-canary-output.md
+            --max-sources 25 | tee harvest-canary-output.md
           cat harvest-canary-output.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Save report artifact
