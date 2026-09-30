@@ -69,6 +69,8 @@ public class MainActivity extends Activity {
 
     private View buildUi(){
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(BG);
+        // Android 15 draws apps edge to edge: keep the content clear of the status and navigation bars (alpha66).
+        scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         TextView h1=text("Watch Align",28,Color.WHITE);root.addView(h1);
         root.addView(text("Rolex GMT-Master II dial check · "+WatchAlignCoreV13.CORE_VERSION,13,MUTED));

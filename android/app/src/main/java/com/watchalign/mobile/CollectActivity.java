@@ -85,6 +85,8 @@ public class CollectActivity extends Activity {
 
     private View buildUi(){
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(BG);
+        // Android 15 draws apps edge to edge: keep the content clear of the status and navigation bars (alpha66).
+        scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);
         scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("Collect test photos",26,Color.WHITE));
