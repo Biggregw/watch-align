@@ -108,7 +108,9 @@ class AcquisitionHelpersTest(unittest.TestCase):
         root = Path(__file__).resolve().parents[3] / "docs" / "research"
         keep, skipped = ACQ.load_pools([root / "submariner_candidate_sources_2026-09-30.csv", root / "submariner_genuine_topup_2026-09-30.csv"])
         top = [r for r in keep if r["pool"] == "submariner_genuine_topup_2026-09-30.csv"]
-        self.assertEqual(15, len(top))
+        self.assertEqual(30, len(top))
+        bobs_124060 = [r for r in top if r["model"] == "124060" and r["source_name"] == "Bobs Watches"]
+        self.assertEqual(15, len(bobs_124060))
         self.assertEqual([], skipped)
         self.assertTrue(all(ACQ.normalize_class(r["class"]) == "gen" and ACQ.listing_id(r) for r in top))
         self.assertEqual(len(keep), len({r["physical_watch_id"] for r in keep}))
@@ -232,6 +234,22 @@ class SplitTest(unittest.TestCase):
             got = SP.assign(["g0", "brand_new_watch"], locked)
             self.assertEqual(locked["g0"], got["g0"])
             self.assertEqual(SP.UNASSIGNED, got["brand_new_watch"])
+
+    def test_new_split_version_keeps_every_existing_assignment(self):
+        with tempfile.TemporaryDirectory() as d:
+            v1, v2 = Path(d) / "split_sub_v1.csv", Path(d) / "split_sub_v2.csv"
+            SP.create(self.watches(), v1)
+            newcomers = [{"physical_watch_id": f"n{i}", "class_label": "gen", "model": "124060", "factory": ""} for i in range(10)]
+            new = SP.extend(v1, self.watches() + newcomers, v2, "v2")
+            self.assertEqual({f"n{i}" for i in range(10)}, {r["physical_watch_id"] for r in new})
+            a, b = SP.load(v1), SP.load(v2)
+            for w, p in a.items():
+                self.assertEqual(p, b[w])
+            self.assertEqual(30, len(b))
+            self.assertEqual({"development": 6, "validation": 2, "holdout": 2},
+                             {p: sum(1 for r in new if r["partition"] == p) for p in SP.PARTS})
+            with self.assertRaises(FileExistsError):
+                SP.extend(v1, newcomers, v2, "v2")
 
     def test_committed_split_is_watch_level_and_sub_only(self):
         p = Path(__file__).resolve().parents[3] / "docs" / "research" / "submariner" / "split_sub_v1.csv"

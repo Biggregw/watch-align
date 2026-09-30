@@ -37,7 +37,7 @@ from subresearch import split as SP  # noqa: E402
 from subresearch import tables as TB  # noqa: E402
 
 DEFAULT_ROOT = REPO_ROOT / "datasets" / "submariner_research"
-DEFAULT_SPLIT = REPO_ROOT / "docs" / "research" / "submariner" / "split_sub_v1.csv"
+DEFAULT_SPLIT = REPO_ROOT / "docs" / "research" / "submariner" / "split_sub_v2.csv"
 
 
 def dataset_stage(root: Path, out: Path) -> tuple[list[dict], list[dict], dict]:
@@ -100,6 +100,7 @@ def main(argv=None) -> int:
     ap.add_argument("--out", type=Path, default=DEFAULT_ROOT / "measurements")
     ap.add_argument("--split", type=Path, default=DEFAULT_SPLIT)
     ap.add_argument("--create-split", action="store_true", help="create the locked split if it does not exist yet")
+    ap.add_argument("--extend-from", type=Path, help="with --create-split: new split version = this split + new watches")
     ap.add_argument("--include-holdout", action="store_true")
     ap.add_argument("--variants", default=",".join(MS.ALL_VARIANTS))
     ap.add_argument("--shards", type=int, default=2)
@@ -112,7 +113,10 @@ def main(argv=None) -> int:
     img_rows, watch_rows, acq = dataset_stage(a.root, out)
     accepted = [w for w in watch_rows if w["research_state"] == D.ACCEPT]
     if a.create_split and not a.split.exists():
-        SP.create(accepted, a.split)
+        if a.extend_from:
+            SP.extend(a.extend_from, accepted, a.split, a.split.stem.replace("split_sub_", ""))
+        else:
+            SP.create(accepted, a.split)
     parts = SP.assign([w["physical_watch_id"] for w in watch_rows], SP.load(a.split))
     for w in watch_rows:
         w["partition"] = parts[w["physical_watch_id"]] if w["research_state"] == D.ACCEPT else ""

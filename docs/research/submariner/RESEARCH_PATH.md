@@ -17,7 +17,7 @@ Submariner reference, and `SubmarinerProductionIsolationTest` checks both.
 |---|---|---|
 | Acquire | `tools/dataset_harvester/submariner_acquire.py` (one or more `--pool` files) | `acquired_images.csv`, `candidate_summary.csv`, acquisition report |
 | Dataset states | `tools/dataset_harvester/subresearch/dataset.py` | `sub_dataset_images.csv`, `sub_dataset_watches.csv` |
-| Locked split | `tools/dataset_harvester/subresearch/split.py`, committed as `split_sub_v1.csv` | partition per physical watch |
+| Locked split | `tools/dataset_harvester/subresearch/split.py`, committed as `split_sub_v1.csv` / `split_sub_v2.csv` | partition per physical watch |
 | Measure | `tools/desktop-harness/drivers/SubMeasure.java`, run by `tools/dataset_harvester/submariner_measure.py` | JSON lines |
 | Tables | `tools/dataset_harvester/subresearch/tables.py` | `sub_images.csv`, `sub_landmarks.csv`, `sub_landmark_stability.csv`, `sub_summary.json` / `.md` |
 
@@ -50,6 +50,10 @@ A separate job runs the Android JVM tests.
 - **The locked split** is 60/20/20 at watch level, stratified by class, model and (for replicas) factory.
   It is created once and never regenerated.
   - Watches that appear later are `unassigned` until a new split version is made deliberately.
+  - A new version (`subresearch.split.extend`) keeps every earlier assignment and splits only the
+    newcomers 60/20/20 within their own strata, so no watch ever moves between partitions.
+  - `split_sub_v1.csv` covers the phase-1 pool. `split_sub_v2.csv` (the default) adds the genuine
+    top-up pool.
   - Holdout photos are not measured unless `--include-holdout` is given.
 
 ## Adding a supplemental pool
@@ -67,6 +71,11 @@ physical_watch_id,family,model,class_tag,source_type,source_name,source_url,prov
   from the trailing number of the dealer URL.
 - **Duplicate rows.** A second row for the same listing (same dealer and listing id) is skipped as
   `duplicate_listing_of:<first>`. It is never a second watch.
+
+Watchfinder serves the harvester's declared user-agent an HTTP 202 with an empty body (a bot
+challenge). Those listings are recorded as `fetch_error: empty_page_http_202` and their watches stay
+QUARANTINED (`quarantine_no_images`). The challenge is never worked around. Genuine 124060 photos come
+from Bob's Watches listings in the top-up pool instead.
 
 ## What is generic, and what stays GMT-only
 
