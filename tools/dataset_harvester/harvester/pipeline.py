@@ -22,7 +22,8 @@ from .canonical import canonical_url
 from .config import LIMITS, REPO_ROOT, THRESHOLDS, Paths
 from .harness import Harness, HarnessUnavailable
 from .http import FetchError, Http
-from .outputs import MANIFEST_COLUMNS, WATCH_COLUMNS, build_report, manifest_rows, watch_rows, write_csv, write_reports
+from .outputs import (MANIFEST_COLUMNS, WATCH_COLUMNS, build_report, manifest_rows, watch_measurement_columns,
+                      watch_measurement_rows, watch_rows, write_csv, write_reports)
 from .resolvers import Deferred, ImageRef, resolve
 from .state import (ACCEPT, DEFERRED, DONE, FAILED, FAILED_FINAL, NEW, QUARANTINE, REJECT, ImageRecord, SourceRecord,
                     State, now_iso)
@@ -49,6 +50,17 @@ def open_image(data: bytes) -> Image.Image | None:
         return ImageOps.exif_transpose(im).convert("RGB")
     except Exception:
         return None
+
+
+def provenance_overrides() -> dict:
+    """Explicit, verified provenance overrides (physical_watch_id -> row). The file lists owner-
+    tagged watches whose provenance a person has checked; nothing is added automatically."""
+    import csv
+    p = Path(os.environ.get("HARVEST_PROVENANCE_OVERRIDES") or Path(__file__).resolve().parents[1] / "provenance_overrides.csv")
+    if not p.exists():
+        return {}
+    with p.open(newline="", encoding="utf-8") as f:
+        return {r["physical_watch_id"]: r for r in csv.DictReader(f) if r.get("physical_watch_id") and not r["physical_watch_id"].startswith("#")}
 
 
 class Pipeline:
@@ -86,15 +98,24 @@ class Pipeline:
                 continue
             ok, why = a.status()
             self.run["adapters"][name] = why
-            if not ok:
-                continue
             if self.dry_run and name in ("search", "reddit"):
-                self.run.setdefault("planned_queries", {})[name] = [q for q, _ in ad.search_queries(pri, ctx.max_queries)]
+                # Show what the next run would ask for, whether or not the adapter has its key yet.
+                if name == "search":
+                    qs = [q for q, _ in ad.search_queries(pri, ctx.max_queries, rd.credentials() is not None)]
+                else:
+                    qs = [f"r/RepTimeQC: {m} {f}" for c, m, f, _n, _w in pri if c == "rep"][: ctx.max_queries]
+                self.run.setdefault("planned_queries", {})[name] = {"enabled": ok, "queries": qs}
+                continue
+            if not ok:
                 continue
             try:
                 for cand in a.discover(ctx):
                     if cand.meta.get("error"):
                         self.run["errors"].append(f"{name}: {cand.meta['error']}")
+                        continue
+                    if cand.meta.get("filtered"):
+                        f = self.run.setdefault("search_results_filtered", {})
+                        f[cand.meta["filtered"]] = f.get(cand.meta["filtered"], 0) + 1
                         continue
                     rec = self._record(cand)
                     if self.state.add_source(rec):
@@ -183,6 +204,13 @@ class Pipeline:
         """CLASSIFY METADATA. Curated labels stay; otherwise infer from the source text and URL."""
         inf = metadata.infer(s.title, s.url)
         s.meta["unsupported_model"] = inf.unsupported_model
+        # Master/catalogue imagery is reference material, not an independent population watch.
+        s.sample_role = dc.REFERENCE_ONLY if (s.provenance == "official" or s.meta.get("split") == "reference") else dc.POPULATION
+        if s.provenance in ("owner_tagged", "owner_tagged_traceable"):
+            ov = provenance_overrides().get(s.physical_watch_id)
+            if ov:
+                s.provenance = "owner_verified"
+                s.label_evidence.append(f"provenance verified by {ov.get('verified_by', '?')} on {ov.get('verified_on', '?')}: {ov.get('evidence', '')}")
         if s.meta.get("curated"):
             # A curated genuine source recorded conservatively as gen_candidate but hosted by an
             # auction house / dealer / Rolex CPO gets that tier, with the reason kept as evidence.
@@ -278,15 +306,15 @@ class Pipeline:
                 existing.source_keys.append(s.key)
                 if existing.source_keys[0] != s.key:
                     self.c["exact_duplicates"] += 1
-            if not absolute(existing.local_path).exists() and stored is not None:
-                existing.local_path = rel(stored)
+            if not absolute(existing.local_path).exists():
+                # The state knows this photo but its file is gone (e.g. a lost Actions image cache):
+                # keep a local original if there is one, otherwise restore the downloaded bytes
+                # into the content-addressed store.
+                existing.local_path = rel(stored if stored is not None else self._store(h, data))
+                self.c["images_restored"] += 1
             return h
         if stored is None:
-            fmt = (Image.open(io.BytesIO(data)).format or "JPEG").lower()
-            ext = {"jpeg": ".jpg", "png": ".png", "webp": ".webp"}.get(fmt, ".jpg")
-            stored = self.paths.images_dir / h[:2] / f"{h}{ext}"
-            stored.parent.mkdir(parents=True, exist_ok=True)
-            stored.write_bytes(data)
+            stored = self._store(h, data)
         rec = ImageRecord(sha256=h, seq=self.state.next_seq(), source_keys=[s.key], image_url=ref.url, local_path=rel(stored), width=img.width,
                           height=img.height, bytes=len(data), dhash=hashing.dhash(img), phash=hashing.phash(img))
         # Near duplicate (resized / re-encoded copy of a photo already held): hash match, then a
@@ -302,6 +330,16 @@ class Pipeline:
                         break
         self.state.images[h] = rec
         return h
+
+    def _store(self, h: str, data: bytes) -> Path:
+        """Writes bytes to images/<sha[:2]>/<sha>.<ext> (content-addressed) and returns the path."""
+        fmt = (Image.open(io.BytesIO(data)).format or "JPEG").lower()
+        ext = {"jpeg": ".jpg", "png": ".png", "webp": ".webp"}.get(fmt, ".jpg")
+        stored = self.paths.images_dir / h[:2] / f"{h}{ext}"
+        stored.parent.mkdir(parents=True, exist_ok=True)
+        if not stored.exists():
+            stored.write_bytes(data)
+        return stored
 
     def _confirm(self, img: Image.Image, box, other: ImageRecord, other_box) -> str:
         """"near" when the pixels confirm the same photograph, "possible" when the other photo is
@@ -412,9 +450,10 @@ class Pipeline:
     def write_outputs(self) -> None:
         write_csv(self.paths.manifest, MANIFEST_COLUMNS, manifest_rows(self.state))
         write_csv(self.paths.watches, WATCH_COLUMNS, watch_rows(self.state))
+        write_csv(self.paths.watch_measurements, watch_measurement_columns(), watch_measurement_rows(self.state))
 
     COUNTERS = ("sources_discovered_new", "sources_already_known", "sources_pending_total", "sources_examined", "sources_deferred",
-                "sources_failed", "images_downloaded", "images_local", "images_unreadable", "exact_duplicates", "near_duplicates",
+                "sources_failed", "images_downloaded", "images_local", "images_restored", "images_unreadable", "exact_duplicates", "near_duplicates",
                 "possible_duplicates", "images_rejected", "images_inconclusive", "images_measurement_quality", "watches_accepted", "watches_quarantined",
                 "watches_rejected")
 

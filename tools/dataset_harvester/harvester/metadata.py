@@ -26,17 +26,68 @@ def at_least(conf: str, level: str) -> bool:
 _REF = re.compile(r"(?<!\d)(1267(?:10|11|13|15|18|19|20|29))\s*-?\s*(BLNR|BLRO|GRNR|CHNR|VTNR)?(?![A-Z0-9])", re.I)
 _OLD_REF = re.compile(r"(?<!\d)(" + "|".join(UNSUPPORTED_GMT_MODELS) + r")(?:\s*-?\s*[A-Z]{2,4})?(?!\d)", re.I)
 _SUFFIX = re.compile(r"(?<![A-Z0-9])(BLNR|BLRO|GRNR|CHNR|VTNR)(?![A-Z0-9])", re.I)
-# (pattern, model, note). Nicknames are "medium": they identify the model in practice but are
-# not a reference number.
+
+# Every current GMT-Master II reference and its bezel code. A reference number alone is unique
+# except 126710 (BLNR / BLRO / GRNR), which needs its bezel code or a nickname.
+REFERENCE_SUFFIX = {"126711": "CHNR", "126713": "GRNR", "126715": "CHNR", "126718": "GRNR", "126719": "BLRO",
+                    "126720": "VTNR", "126729": "VTNR"}
+# Bezel code (or nickname) -> the references that share it. Only BLNR is unique; for the others a
+# bezel code or nickname alone does NOT pick a reference: material evidence must.
+FAMILY = {
+    "BLNR": ("126710BLNR",),
+    "BLRO": ("126710BLRO", "126719BLRO"),
+    "GRNR": ("126710GRNR", "126713GRNR", "126718GRNR"),
+    "CHNR": ("126711CHNR", "126715CHNR"),
+    "VTNR": ("126720VTNR", "126729VTNR"),
+}
+# (pattern, candidate references, note). A nickname narrows to a family; material words decide.
 _NICK = [
-    (r"bruce\s*wayne", "126710GRNR", ""),
-    (r"batgirl|batman", "126710BLNR", ""),
-    (r"pepsi", "126710BLRO", "126719BLRO (white gold) is also called Pepsi"),
-    (r"sprite|destro|lefty|left[- ]?handed", "126720VTNR", ""),
-    (r"root\s*beer", "126711CHNR", "126715CHNR (Everose) is also a root beer"),
-    (r"guinness", "126715CHNR", ""),
+    (r"batgirl|batman", ("126710BLNR",), ""),
+    (r"bruce\s*wayne", ("126710GRNR",), "nickname of the Oystersteel 126710GRNR"),
+    (r"guinness|zombie", ("126713GRNR", "126718GRNR"), "nickname of the yellow Rolesor / yellow gold GRNR"),
+    (r"pepsi", FAMILY["BLRO"], "Pepsi is both the steel 126710BLRO and the white gold 126719BLRO"),
+    (r"sprite|destro|lefty|left[- ]?handed", FAMILY["VTNR"], "left-handed green/black is both 126720VTNR (steel) and 126729VTNR (white gold)"),
+    (r"root\s*beer", FAMILY["CHNR"], "root beer is both 126711CHNR (Everose Rolesor) and 126715CHNR (Everose gold)"),
 ]
-_SUFFIX_DEFAULT = {"BLNR": "126710BLNR", "BLRO": "126710BLRO", "GRNR": "126710GRNR", "CHNR": "126711CHNR", "VTNR": "126720VTNR"}
+# Material evidence per reference. Two-tone wording is checked first; when present, "gold" words
+# in the same title describe the two-tone, not a solid-gold case.
+_TWO_TONE = r"two[- ]?tone|rolesor|\btt\b|steel\s*(?:and|&|/)\s*(?:yellow\s*|everose\s*|rose\s*)?gold"
+_MATERIAL = {
+    "126710BLRO": r"\b(?:oyster)?steel\b|stainless|\bss\b|jubilee",   # 126719BLRO is only on Oyster
+    "126719BLRO": r"white\s*gold|\bwg\b|meteorite",
+    "126710GRNR": r"\b(?:oyster)?steel\b|stainless|\bss\b",
+    "126713GRNR": _TWO_TONE,
+    "126718GRNR": r"yellow\s*gold|\byg\b|solid\s*gold|full\s*gold",
+    "126711CHNR": _TWO_TONE,
+    "126715CHNR": r"(?:everose|rose)\s*gold|solid\s*(?:everose|rose)|full\s*(?:everose|rose)",
+    "126720VTNR": r"\b(?:oyster)?steel\b|stainless|\bss\b|jubilee",   # 126729VTNR is only on Oyster
+    "126729VTNR": r"white\s*gold|\bwg\b|meteorite",
+}
+_TWO_TONE_REFS = {"126713GRNR", "126711CHNR"}
+_SOLID_GOLD_REFS = {"126718GRNR", "126715CHNR"}
+_STEEL_REFS = {"126710BLRO", "126710GRNR", "126720VTNR"}
+
+
+def resolve_family(candidates: tuple, low: str) -> tuple[str, str]:
+    """(reference, evidence) when exactly one candidate has material evidence, else ("", why)."""
+    if len(candidates) == 1:
+        return candidates[0], "unique"
+    two_tone = re.search(_TWO_TONE, low) is not None
+    hits = []
+    for ref in candidates:
+        if two_tone and (ref in _SOLID_GOLD_REFS or ref in _STEEL_REFS):
+            continue   # "steel and yellow gold" is two-tone: neither all-steel nor solid gold
+        if not two_tone and ref in _TWO_TONE_REFS:
+            continue
+        if re.search(_MATERIAL[ref], low):
+            hits.append(ref)
+    if len(hits) == 1:
+        return hits[0], f"material words match {hits[0]}"
+    if not hits:
+        return "", f"shared by {', '.join(candidates)}; no material evidence"
+    return "", f"shared by {', '.join(candidates)}; material evidence conflicts ({', '.join(hits)})"
+
+
 # Base factory vocabulary (from TitleTags); extended from the repository manifests at runtime.
 _BASE_FACTORIES = [
     (r"vsf|vs\s*factory", "VSF"), (r"clean|cf|clean\s*factory", "Clean"), (r"arf|ar\s*factory", "ARF"), (r"gmf", "GMF"),
@@ -117,36 +168,47 @@ def factories() -> list[tuple[str, str]]:
 
 
 def infer_model(text: str) -> tuple[str, str, list[str], str]:
-    """(model, confidence, evidence, unsupported_model)."""
-    up = text.upper()
-    low = text.lower()
+    """(model, confidence, evidence, unsupported_model).
+
+    high   = explicit reference with its bezel code, or a reference number that has only one bezel.
+    medium = a bezel code / nickname narrowed to one reference (unique, or by material words).
+    low    = ambiguous or conflicting: the watch is quarantined rather than given a guessed reference.
+    """
+    up, low = text.upper(), text.lower()
     found: dict[str, tuple[str, str]] = {}
+    ambiguous: list[str] = []
+    nick = next(((cands, pat, note) for pat, cands, note in _NICK if re.search(r"\b(" + pat + r")\b", low)), None)
     for m in _REF.finditer(up):
-        ref, suf = m.group(1), m.group(2)
-        if suf:
-            found.setdefault(ref + suf, (HIGH, f"reference '{m.group(0).strip()}'"))
-        else:
+        ref, suf = m.group(1), (m.group(2) or "").upper()
+        if not suf:
             s = _SUFFIX.search(up)
-            nick = next(((mod, pat) for pat, mod, _ in _NICK if re.search(r"\b(" + pat + r")\b", low)), None)
-            if s:
-                found.setdefault(ref + s.group(1).upper(), (HIGH, f"reference '{ref}' with '{s.group(1)}'"))
-            elif nick and nick[0].startswith(ref):
-                found.setdefault(nick[0], (HIGH, f"reference '{ref}' with nickname"))
-            elif nick:
-                found.setdefault(ref + nick[0][6:], (MEDIUM, f"reference '{ref}' with nickname of {nick[0]}"))
-            else:
-                found.setdefault(ref, (LOW, f"reference '{ref}' without a bezel code"))
-    if not found:
+            suf = s.group(1).upper() if s else ""
+        if not suf and ref in REFERENCE_SUFFIX:
+            suf = REFERENCE_SUFFIX[ref]
+        if not suf and nick:
+            cands = [c for c in nick[0] if c.startswith(ref)]
+            if len(cands) == 1:
+                found.setdefault(cands[0], (HIGH, f"reference '{ref}' with nickname"))
+                continue
+        if suf:
+            found.setdefault(ref + suf, (HIGH, f"reference '{m.group(0).strip()}'" + ("" if m.group(2) else f" with '{suf}'")))
+        else:
+            ambiguous.append(f"reference '{ref}' without a bezel code (126710 is BLNR, BLRO or GRNR)")
+    if not found and not ambiguous:
         s = _SUFFIX.search(up)
         if s:
-            mod = _SUFFIX_DEFAULT[s.group(1).upper()]
-            found[mod] = (MEDIUM, f"bezel code '{s.group(1)}' without reference")
-    if not found:
-        for pat, mod, note in _NICK:
-            if re.search(r"\b(" + pat + r")\b", low):
-                if mod == "126711CHNR" and re.search(r"everose|rose\s*gold|126715", low):
-                    mod, note = "126715CHNR", ""
-                found.setdefault(mod, (MEDIUM, f"nickname '{re.search(pat, low).group(0)}'" + (f" ({note})" if note else "")))
+            ref, why = resolve_family(FAMILY[s.group(1).upper()], low)
+            if ref:
+                found[ref] = (MEDIUM, f"bezel code '{s.group(1)}'" + ("" if why == "unique" else f", {why}"))
+            else:
+                ambiguous.append(f"bezel code '{s.group(1)}' {why}")
+    if not found and not ambiguous and nick:
+        word = re.search(nick[1], low).group(0)
+        ref, why = resolve_family(nick[0], low)
+        if ref:
+            found[ref] = (MEDIUM, f"nickname '{word}'" + ("" if why == "unique" else f", {why}") + (f" ({nick[2]})" if nick[2] else ""))
+        else:
+            ambiguous.append(f"nickname '{word}' {why}")
     unsupported = ""
     om = _OLD_REF.search(up)
     if om and not found:
@@ -157,6 +219,8 @@ def infer_model(text: str) -> tuple[str, str, list[str], str]:
     if full:
         mod, (conf, ev) = next(iter(full.items()))
         return mod, conf, [ev], unsupported
+    if ambiguous:
+        return "", LOW, ambiguous, unsupported
     if found:
         mod, (conf, ev) = next(iter(found.items()))
         return "", LOW, [ev + " (not a supported reference)"], unsupported

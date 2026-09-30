@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import csv
 import json
+
+import numpy as np
 from collections import Counter
 from pathlib import Path
 
@@ -17,12 +19,16 @@ MANIFEST_COLUMNS = [
     "source_id", "image_url", "adapter", "provider", "discovered_at", "sha256", "dhash", "phash", "dial_phash",
     "width", "height", "duplicate_of", "suitable", "suitability_reasons", "pose", "dial_diameter_px", "sharpness",
     "perspective_axis", "rehaut_top_bottom_ratio", "rehaut_left_right_ratio", "rehaut_confidence",
-    "label_confidence", "provenance", "measurement_status", "measurement_file", "dataset_decision",
+    "label_confidence", "provenance", "measurement_status", "measurement_file", "dataset_decision", "sample_role",
 ]
 WATCH_COLUMNS = [
     "physical_watch_id", "class_label", "model", "factory", "provenance", "label_confidence", "dataset_decision",
     "decision_reasons", "images", "usable_images", "value_score", "source", "source_title", "label_evidence", "duplicate_of_watch",
+    "sample_role",
 ]
+# Raw Batch measurements summarised per watch (the regression harness column names).
+WATCH_MEASURES = ("gap", "rot", "sp59", "sp01", "tri_px", "six_centring", "six_rot", "nine_c", "nine_r")
+POSE_RANK = {"GOOD": 3, "CORRECTABLE": 2, "UNASSESSABLE": 1}
 
 
 def _fmt(v) -> str:
@@ -54,6 +60,7 @@ def manifest_rows(state: State) -> list[dict]:
                 "rehaut_top_bottom_ratio": p.get("rehaut_top_bottom_ratio"), "rehaut_left_right_ratio": p.get("rehaut_left_right_ratio"),
                 "rehaut_confidence": p.get("rehaut_confidence"), "label_confidence": s.label_confidence, "provenance": s.provenance,
                 "measurement_status": im.measurement_status, "measurement_file": im.measurement_file, "dataset_decision": s.decision,
+                "sample_role": s.sample_role,
             })
     return rows
 
@@ -91,9 +98,66 @@ def watch_rows(state: State) -> list[dict]:
             "decision_reasons": best.decision_reasons, "images": len(shas),
             "usable_images": len(good),
             "value_score": best.value_score, "source": best.url or best.key, "source_title": best.title,
-            "label_evidence": best.label_evidence, "duplicate_of_watch": best.duplicate_of_watch,
+            "label_evidence": best.label_evidence, "duplicate_of_watch": best.duplicate_of_watch, "sample_role": best.sample_role,
         })
     return rows
+
+
+def _num(v) -> float | None:
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        return None
+    return x if x == x and abs(x) != float("inf") else None
+
+
+def watch_measurement_rows(state: State) -> list[dict]:
+    """One row per accepted physical watch: the primary (best) image and, over all its usable,
+    non-duplicate images, the median of each raw measurement with its within-watch spread (MAD and
+    min-max). Downstream statistics should use these rows, one per independent watch, never the
+    image rows as if every view were a separate watch."""
+    by: dict[str, list] = {}
+    for s in state.sources.values():
+        if s.decision == "ACCEPT" and s.physical_watch_id:
+            by.setdefault(s.physical_watch_id, []).append(s)
+    rows = []
+    for wid, srcs in sorted(by.items()):
+        ims, seen = [], set()
+        for s in srcs:
+            for h in s.image_shas:
+                im = state.images.get(h)
+                if im and h not in seen and usable_for(state, s, im):
+                    seen.add(h)
+                    ims.append(im)
+        if not ims:
+            continue
+        def score(im):
+            return (POSE_RANK.get(im.quality.get("pose", ""), 0), im.quality.get("dial_diameter_px") or 0, im.quality.get("sharpness") or 0)
+        best = max(ims, key=score)
+        s0 = srcs[0]
+        row = {"physical_watch_id": wid, "class_label": s0.class_label, "model": s0.model, "factory": s0.factory,
+               "sample_role": s0.sample_role, "usable_images": len(ims), "primary_image": best.local_path,
+               "primary_sha256": best.sha256, "primary_pose": best.quality.get("pose", ""),
+               "primary_dial_diameter_px": best.quality.get("dial_diameter_px")}
+        for m in WATCH_MEASURES:
+            vals = [v for v in (_num(im.measurement_row.get(m)) for im in ims) if v is not None]
+            row[f"{m}_primary"] = _num(best.measurement_row.get(m))
+            row[f"{m}_n"] = len(vals)
+            if vals:
+                med = float(np.median(vals))
+                row[f"{m}_median"] = med
+                row[f"{m}_mad"] = float(np.median([abs(v - med) for v in vals]))
+                row[f"{m}_min"], row[f"{m}_max"] = min(vals), max(vals)
+        rows.append(row)
+    return rows
+
+
+def watch_measurement_columns() -> list[str]:
+    cols = ["physical_watch_id", "class_label", "model", "factory", "sample_role", "usable_images", "primary_image",
+            "primary_sha256", "primary_pose", "primary_dial_diameter_px"]
+    for m in WATCH_MEASURES:
+        cols += [f"{m}_primary", f"{m}_n", f"{m}_median", f"{m}_mad", f"{m}_min", f"{m}_max"]
+    return cols
 
 
 def build_report(state: State, run: dict, factories: list[str]) -> dict:
@@ -110,6 +174,11 @@ def markdown(rep: dict) -> str:
     L = [f"# Dataset harvester{' (dry run)' if r.get('dry_run') else ''}", "",
          f"Run {r.get('run_id', '')} · {r.get('started_at', '')} → {r.get('finished_at', '')}", ""]
     L += ["## Adapters", ""] + [f"- **{k}**: {v}" for k, v in r.get("adapters", {}).items()] + [""]
+    for name, pq in (r.get("planned_queries") or {}).items():
+        L += [f"## Planned {name} queries" + ("" if pq.get("enabled") else " (adapter disabled: these run once its key is set)"), ""]
+        L += [f"- `{q}`" for q in pq.get("queries", [])] + [""]
+    if r.get("search_results_filtered"):
+        L += ["Search results filtered before storing: " + ", ".join(f"{k} {v}" for k, v in sorted(r["search_results_filtered"].items())), ""]
     L += ["## This run", "",
           f"- {r.get('sources_discovered_new', 0)} new sources discovered ({r.get('sources_already_known', 0)} already known)",
           f"- {r.get('sources_examined', 0)} sources examined ({r.get('sources_deferred', 0)} deferred, {r.get('sources_failed', 0)} failed)",
@@ -131,7 +200,8 @@ def markdown(rep: dict) -> str:
           f"- Genuine: {ds['by_class_watches'].get('gen', 0)} independent watches",
           f"- Replica: {ds['by_class_watches'].get('rep', 0)} independent watches",
           f"- Usable images in accepted watches: {ds['accepted_usable_images']} (images are views, not independent samples)",
-          f"- Quarantined watches: {ds['quarantined_watches']} · rejected watches: {ds['rejected_watches']}", ""]
+          f"- Quarantined watches: {ds['quarantined_watches']} · rejected watches: {ds['rejected_watches']}",
+          f"- Reference-only (not counted as population): {', '.join(ds.get('reference_only_watches') or []) or 'none'}", ""]
     if ds["by_factory_watches"]:
         L += ["Replica watches by factory:", ""] + [f"- {k}: {v}" for k, v in ds["by_factory_watches"].items()] + [""]
     if ds["by_model_watches"]:

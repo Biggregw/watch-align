@@ -60,7 +60,7 @@ class Thresholds:
 
     # --- markers ----------------------------------------------------------------------------
     # Round hour markers found by the app. Fewer than this and the marker-layout pose cannot be
-    # estimated (GmtMarkerPose needs 6); treated as occlusion/inconclusive, not as a pass.
+    # estimated (GmtMarkerPose needs 6): the photo is inconclusive_marker_layout, never a pass.
     min_round_markers_found: int = 6
 
     # --- sharpness --------------------------------------------------------------------------
@@ -128,6 +128,8 @@ class Paths:
     def manifest(self) -> Path: return self.data_dir / "manifest.csv"
     @property
     def watches(self) -> Path: return self.data_dir / "watches.csv"
+    @property
+    def watch_measurements(self) -> Path: return self.data_dir / "watch_measurements.csv"
     @property
     def work_dir(self) -> Path: return self.data_dir / "work"
 

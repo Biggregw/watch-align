@@ -39,8 +39,8 @@ State is kept on the `data/harvest` branch; images stay in the Actions cache and
 | Adapter | Needs | What it finds |
 |---|---|---|
 | `repo` | nothing | every source already recorded in this repository: `datasets/126710BLNR` corpus, `datasets/gmt_phase_b_genuine`, `tools/research/validation/gmt12` lists, the phone-collected manifest (`datasets/collected/manifest.csv` or `$HARVEST_COLLECTED_MANIFEST`), and anything placed in `datasets/inbox/<gen\|rep\|unknown>/` (image folders = one watch each; `*.txt` = URL lists) |
-| `phone` | `HARVEST_PHONE_INBOX` (a checkout of the `testset-inbox` branch) | photos uploaded from the app's optional Collect screen; photos already ingested with reviewed tags are skipped |
-| `search` | `BRAVE_SEARCH_API_KEY` | web results from the Brave Search API for the most under-represented model/factory groups |
+| `phone` | `HARVEST_PHONE_INBOX` (a checkout of the `testset-inbox` branch) | photos uploaded earlier from the app's former Collect screen (removed in alpha68); photos already ingested with reviewed tags are skipped |
+| `search` | `BRAVE_SEARCH_API_KEY` | Brave Search API results for the most under-represented groups. Replica queries target public image hosts (`site:imgur.com`) unless Reddit API credentials exist. Genuine queries target dealer/auction sites. Results are filtered before storing: irrelevant hosts, not a GMT, unsupported reference, pages without QC/factory, Reddit links without API access, and genuine pages without a provenance rule |
 | `reddit` | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` (Reddit-approved app, official API) | RepTimeQC posts for the most under-represented replica groups |
 
 Album resolution: Imgur albums use the Imgur API when `IMGUR_CLIENT_ID` is set, otherwise
@@ -56,9 +56,28 @@ Missing credentials never stop a run: that adapter reports `disabled` and the re
 
 * **One post/album/listing = one physical watch**, unless a curated manifest maps several sources to
   one `physical_watch_id`. Reports always give independent-watch counts and image counts separately.
+* **Image store recovery**: if an image file is missing (e.g. a lost Actions cache) but state knows its
+  sha, a re-download restores it into the content-addressed store.
 * **Deduplication**: sha256 (exact), whole-image dHash + pHash (resized/re-encoded copies), and a pHash
   of the dial region (crops of the same photograph). The first copy held is the original; later copies
   never count again, and a source whose photos all belong to another watch is rejected as a duplicate.
+* **Exact references are never guessed.** Only a reference number with one bezel (126711, 126713,
+  126715, 126718, 126719, 126720, 126729), a full reference such as 126710GRNR, BLNR, or a
+  nickname unique to one reference (Batman/Batgirl, Bruce Wayne) is enough on its own. BLRO / Pepsi,
+  GRNR, Guinness/Zombie (126713GRNR or 126718GRNR), CHNR / Root Beer and VTNR / Sprite each cover
+  several references. Material words (steel/Jubilee, two-tone/Rolesor, yellow/Everose/white gold,
+  meteorite) must single one out; otherwise the watch is quarantined.
+* **Sources are enriched, not replaced.** When a second adapter finds a known source, image URLs are
+  merged and titles, ids, labels and provenance are taken from the more authoritative adapter
+  (curated repository > phone uploads > official Reddit API > web-search snippet). Status, times and
+  retries are kept; a deferred source that gains images is re-queued.
+* **Reference imagery is not population.** Official catalogue/master images (`provenance=official` or
+  split `reference`) get `sample_role=reference_only`. They are kept and measured, but excluded from
+  independent-watch counts and acquisition balance.
+* **Owner tags need a trail.** A phone-tagged watch with no source link is quarantined
+  (`quarantine_untraceable_provenance`) until its provenance is traceable or verified in
+  `tools/dataset_harvester/provenance_overrides.csv` (physical_watch_id, verified_by, verified_on,
+  evidence), which is empty by default. Factory names are not judged by how common they are.
 * **Labels carry evidence and confidence.** Curated repository labels are taken as recorded. Otherwise
   class comes from the source (replica QC community, dealer/auction/CPO, marketplace), reference and
   factory from the title (the app's TitleTags rules, factory vocabulary learned from the manifests).
@@ -70,7 +89,8 @@ Missing credentials never stop a run: that adapter reports `disabled` and the re
   in `harvester/config.py`. Reason codes: `reject_no_dial`, `reject_low_resolution`, `reject_pose`,
   `reject_blur`, `reject_occlusion`, `reject_duplicate`, `reject_incomplete_dial`,
   `reject_landmarks_unusable`, `reject_underexposed`, `reject_overexposed`, `reject_glare`,
-  `reject_unreadable`, `inconclusive_*`.
+  `reject_unreadable`, `inconclusive_marker_layout` (fewer than 6 round markers found),
+  `inconclusive_*`. An inconclusive photo is never "suitable"; its watch needs another photo that passes.
 * **Perspective diagnostics** (recorded, not used to correct anything): rehaut widths at 12/3/6/9 and
   their top/bottom and left/right ratios with coverage as confidence, the dial-ellipse tilt and which
   axis it foreshortens, and the marker-layout tilt.
@@ -92,6 +112,9 @@ Missing credentials never stop a run: that adapter reports `disabled` and the re
 * `manifest.csv`: one row per image, starting with the corpus columns `local_path, class_label,
   physical_watch_id, model, factory, source`, then provenance, hashes, suitability, measurement and decision.
 * `watches.csv`: one row per physical watch.
+* `watch_measurements.csv`: one row per accepted physical watch: the primary (best) image and, over
+  its usable images, the median, MAD and min/max of each raw measurement. Use this for
+  genuine-vs-replica statistics, so several views of one watch never count as several samples.
 * `reports/<run>.json|md` and `reports/latest.*`.
 * `measurements/<run>/chunk_NNN/r*.csv`: raw Batch measurement tables.
 

@@ -26,6 +26,7 @@ REJECT_DUPLICATE = "reject_duplicate"
 INCONCLUSIVE_ANALYSIS = "inconclusive_analysis_failed"
 INCONCLUSIVE_POSE = "inconclusive_pose"
 INCONCLUSIVE_MEASUREMENT = "inconclusive_measurement"
+INCONCLUSIVE_MARKERS = "inconclusive_marker_layout"
 
 
 def dial_geometry(suit: dict) -> dict | None:
@@ -152,7 +153,10 @@ def assess(img: Image.Image | None, suit: dict | None, t: Thresholds = THRESHOLD
     q["round_markers_found"] = suit.get("round_found")
     q["round_markers_total"] = suit.get("round_total")
     if (suit.get("round_found") or 0) < t.min_round_markers_found:
-        details.append(f"only {suit.get('round_found')} round markers found (marker-layout pose unavailable)")
+        # Too few round markers to check the marker layout (GmtMarkerPose needs 6): not usable on
+        # its own; the watch can still be accepted through another photo that passes.
+        reasons.append(INCONCLUSIVE_MARKERS)
+        details.append(f"only {suit.get('round_found')} of {suit.get('round_total')} round markers found (< {t.min_round_markers_found}; marker layout not verifiable)")
     if not suit.get("twelve_found") and not suit.get("no_readable_dial"):
         if suit.get("hand_at_twelve"):
             reasons.append(REJECT_OCCLUSION)

@@ -57,8 +57,9 @@ adapters (discover) ─► state/sources.jsonl ─► resolvers (normalise sourc
   upload branch are both read as sources.
 * Exact-duplicate detection by sha256, and quarantine for "not sure" and genuine-in-title posts.
 
-What remains Android-only: the Collect screen, share-to-Collect and the RepTimeQC screen. They are
-optional manual routes. Nothing in the harvester needs them.
+Android: the collection screens (Collect, share-to-Collect, RepTimeQC) and their classes were
+removed from the app in alpha68. The app is back to QC only. Photos already uploaded to
+`testset-inbox` and `datasets/collected` are still read as optional sources.
 
 ## Calibration notes (from the first full run over the repository's sources)
 
@@ -96,6 +97,11 @@ optional manual routes. Nothing in the harvester needs them.
 
 ## Known limits
 
+* **The GitHub Actions workflow has not yet run on a hosted runner.** The CLI, tests, reprocess and
+  regression were verified locally; the workflow's YAML parses and its data-branch steps were
+  rehearsed in a local clone, but that is not a hosted run. The workflow must be on `main` before
+  its schedule or manual trigger appears.
+
 * Hosted runners can be refused by some image hosts. The same CLI runs on a VM
   (`--loop --interval 3600`, or cron).
 * The Reddit adapter needs a Reddit-approved API app (`REDDIT_CLIENT_ID/SECRET`). Until then, Reddit
@@ -132,3 +138,28 @@ Replica by factory: VSF 12, Clean 9, Rich 5, ARF 3, C+ 1. By model: replica 1267
 126710BLRO 3, 126710GRNR 2, 126720VTNR 1; genuine 126710BLNR 12, 126710BLRO 7.
 The next priorities follow from that: genuine 126710GRNR and 126720VTNR, and replica BLRO, GRNR and
 VTNR from VSF, Clean and ARF.
+
+## After the review fixes (reprocess of the same state, 2026-09-30)
+
+Rules added: exact references are not guessed from a shared bezel code or nickname; fewer than 6
+round markers makes a photo inconclusive; catalogue imagery is reference-only; owner tags without a
+source trail are quarantined; sources are enriched by adapter authority; lost image files are
+restored on re-download; watch-level measurement summaries are written; search results are filtered.
+
+| | before | after |
+|---|---|---|
+| Accepted population watches | 48 (+ catalogue counted as a watch) | **38**: genuine 17, replica 21 |
+| Reference-only | – | 1 (official_catalogue_2026) |
+| Quarantined | 5 | 15 |
+| Rejected | 14 | 14 |
+
+Moved from ACCEPT:
+- **To QUARANTINE, untraceable provenance: 9 phone-tagged replicas** (collected_w001–w004 and
+  w006–w010), which have no source link. They can be released by adding a verified row to
+  `provenance_overrides.csv`.
+- **To QUARANTINE, inconclusive:** `gen_126710BLRO_phillips_122669`. Its only photo has fewer than
+  6 round markers found.
+- **To reference-only:** `official_catalogue_2026`.
+
+Replica by factory is now VSF 9, Clean 9, ARF 2, C+ 1. Every accepted replica is a 126710BLNR; the
+BLRO, GRNR and VTNR replicas were all phone-tagged. Genuine: 126710BLNR 11, 126710BLRO 6.

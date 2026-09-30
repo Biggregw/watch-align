@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-30, alpha67)
+# Watch Align: handoff notes (updated 2026-09-30, alpha68)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -29,7 +29,7 @@ checked (the 3 is the date window).
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha67"`, `versionCode 13067` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha68"`, `versionCode 13068` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
@@ -450,6 +450,18 @@ measurement, and decides ACCEPT / QUARANTINE / REJECT per watch with reasons. St
 JSONL; reports give independent-watch and image counts separately. Workflow **Dataset harvester**
 (schedule + workflow_dispatch) runs the same CLI and keeps state on the `data/harvest` branch; a
 VM is the other supported runtime. See `tools/dataset_harvester/README.md` and
-`docs/research/dataset_harvester.md`. The app's Collect screen (and share-to-Collect) remains an
-optional manual contribution route that feeds this pipeline; `RepTimeQcActivity` is not the Reddit
-collector (it needs a Reddit-approved key on the phone and is kept only for compatibility).
+`docs/research/dataset_harvester.md`. The app's collection screens were removed in alpha68 (below);
+photos already uploaded from the phone remain an optional harvester source.
+
+alpha68: **dataset collection removed from the app.** The headless harvester is the dataset
+collector, so the phone's collection code is gone:
+- screens: Collect (with its share-sheet entry) and Find photos on RepTimeQC;
+- `TestSetStore`, `TestSetOps`, `TestSetFileProvider` (provider), `GitHubUploader`,
+  `RedditClient`, `MiniJson`, `TitleTags`;
+- their tests, the "Collect test photos" button, and the INTERNET permission (no reachable code
+  uses the network now; `OnlineReferenceFinder` predates this, has no caller, and would need the
+  permission back if it were ever wired in).
+
+The QC flow is unchanged: photo pick, analysis, overlay, close-ups, inspect, full results, export
+card, manual dial alignment. Photos already uploaded to `testset-inbox` stay readable by the
+harvester's optional phone adapter. The alpha66/67 notes above describe code that no longer exists.

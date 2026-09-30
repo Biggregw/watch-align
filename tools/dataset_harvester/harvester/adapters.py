@@ -248,7 +248,8 @@ def phone_candidates(rows: Iterable[dict], base: Path, prefix: str, evidence: st
         yield Candidate(url=r0.get("source", "") if r0.get("source", "").startswith("http") else "", adapter="phone" if prefix == "phone" else "repo",
                         provider="local", source_id=wid, title=r0.get("notes", ""), local_paths=paths,
                         class_label=cls if cls in ("gen", "rep") else "unsure", model=r0.get("model", ""), factory=r0.get("factory", ""),
-                        provenance="owner_tagged", physical_watch_id=wid,
+                        provenance="owner_tagged_traceable" if r0.get("source", "").startswith("http") else "owner_tagged",
+                        physical_watch_id=wid,
                         label_confidence=(HIGH if reviewed else MEDIUM) if cls in ("gen", "rep") else "",
                         label_evidence=[evidence])
 
@@ -318,23 +319,67 @@ def parse_brave(obj: dict) -> list[dict]:
 SEARCH_PROVIDERS = {"brave": BraveSearch}
 
 
-def search_queries(priorities: list, limit: int) -> list[tuple[str, tuple]]:
-    """Queries for the most-needed (class, model, factory) groups, most needed first."""
+SEARCH_NICK = {"126710BLNR": "Batman", "126710BLRO": "Pepsi", "126710GRNR": "Bruce Wayne", "126720VTNR": "Sprite",
+               "126711CHNR": "Root Beer", "126713GRNR": "Guinness"}
+DEALER_SITES = "site:bobswatches.com OR site:watchfinder.co.uk OR site:swisswatchexpo.com OR site:phillips.com"
+# Hosts whose results cannot give usable, attributable still photos of one watch.
+IRRELEVANT_HOSTS = ("youtube.com", "youtu.be", "facebook.com", "instagram.com", "tiktok.com", "pinterest.", "x.com",
+                    "twitter.com", "amazon.", "aliexpress.", "dhgate.", "wikipedia.org", "quora.com")
+IMAGE_HOSTS = ("imgur.com", "i.imgur.com", "i.redd.it", "postimg.cc", "ibb.co")
+
+
+def search_queries(priorities: list, limit: int, reddit_available: bool = False) -> list[tuple[str, tuple]]:
+    """Queries for the most-needed (class, model, factory) groups, most needed first.
+
+    Replica: without Reddit API credentials, Reddit posts cannot be opened, so the queries ask for
+    public image/album hosts (Imgur) directly; with credentials a plain QC query is added too.
+    Genuine: dealer / auction sites whose provenance the harvester can classify."""
     out = []
     for cls, model, factory, _watches, _w in priorities:
+        nick = SEARCH_NICK.get(model, "")
         if cls == "rep":
-            q = f"\"{model}\" {factory if factory and factory != '*' else ''} QC photos".replace("  ", " ")
+            f = factory if factory and factory != "*" else ""
+            qs = [f"{model} {nick} {f} QC site:imgur.com"]
+            if reddit_available:
+                qs.append(f"\"{model}\" {f} QC")
         else:
-            q = f"\"{model}\" Rolex GMT-Master II pre-owned authenticated dial"
-        out.append((q, (cls, model, factory)))
+            qs = [f"\"{model}\" Rolex GMT-Master II {DEALER_SITES}"]
+        for q in qs:
+            out.append((" ".join(q.split()), (cls, model, factory)))
         if len(out) >= limit:
             break
-    return out
+    return out[:limit]
+
+
+def relevance(url: str, text: str, group: tuple, reddit_available: bool) -> str:
+    """"" when a search result is worth keeping, else the reason it was filtered out (never stored)."""
+    from .metadata import DEALER_HOSTS, MARKETPLACE_HOSTS, infer_model, infer_factory
+    host = host_of(url)
+    if not url.startswith("http") or any(host == h or host.endswith("." + h) or host.startswith(h) for h in IRRELEVANT_HOSTS):
+        return "irrelevant_host"
+    prov = provider_for(url)
+    if prov == "reddit" and not reddit_available:
+        return "needs_reddit_api"
+    low = (text + " " + url).lower()
+    model, _conf, ev, unsupported = infer_model(text + " " + url.replace("-", " ").replace("_", " "))
+    if unsupported and not model:
+        return "unsupported_model"
+    if not (model or ev or "gmt" in low):
+        return "not_gmt"
+    cls = group[0] if group else ""
+    if cls == "rep" and prov == "page" and not any(host.endswith(h) for h in IMAGE_HOSTS) \
+            and not (re.search(r"\bqc\b", low) and infer_factory(text)[0]):
+        return "page_without_qc_or_factory"
+    if cls == "gen" and prov == "page" and not (host in DEALER_HOSTS or host in MARKETPLACE_HOSTS
+                                                 or any(host.endswith("." + h) for h in DEALER_HOSTS)):
+        return "genuine_source_without_provenance_rule"
+    return ""
 
 
 class SearchAdapter:
     """Web-search discovery through a documented search API (provider in HARVEST_SEARCH_PROVIDER,
-    default brave). Disabled without a key. Never scrapes a search engine's HTML."""
+    default brave). Disabled without a key. Never scrapes a search engine's HTML. Results are
+    filtered for relevance before anything is stored."""
 
     name = "search"
 
@@ -352,15 +397,21 @@ class SearchAdapter:
     def discover(self, ctx: DiscoveryContext) -> Iterable[Candidate]:
         if not self.status()[0]:
             return
-        for q, group in search_queries(ctx.priorities, ctx.max_queries):
+        reddit_ok = rd.credentials() is not None
+        for q, group in search_queries(ctx.priorities, ctx.max_queries, reddit_ok):
             try:
                 results = self.provider.search(ctx.http, q, 20)
             except FetchError as e:
                 yield Candidate(url="", adapter=self.name, meta={"error": f"{e.reason} for query {q!r}"})
                 continue
             for i, r in enumerate(results):
+                text = (r["title"] + " — " + r["snippet"]).strip(" —")
+                why = relevance(r["url"], text, group, reddit_ok)
+                if why:
+                    yield Candidate(url="", adapter=self.name, meta={"filtered": why})
+                    continue
                 yield Candidate(url=r["url"], adapter=f"{self.name}:{self.provider.name}", provider=provider_for(r["url"]),
-                                title=(r["title"] + " — " + r["snippet"]).strip(" —"), priority=ctx_weight(ctx, group) - i * 0.01,
+                                title=text, priority=ctx_weight(ctx, group) - i * 0.01,
                                 meta={"query": q, "target_group": list(group)})
 
 

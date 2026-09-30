@@ -58,6 +58,10 @@ class SourceRecord:
     value_notes: list = field(default_factory=list)
     duplicate_of_watch: str = ""
     priority: float = 0.0
+    # "population": an independent physical watch that counts in genuine/replica statistics.
+    # "reference_only": master/catalogue imagery (e.g. the official Rolex render): kept and
+    # measured, but never counted as an independent watch or used for acquisition balance.
+    sample_role: str = "population"
     meta: dict = field(default_factory=dict)
 
 
@@ -119,6 +123,16 @@ def _atomic_write(path: Path, lines: Iterable[str]) -> None:
         raise
 
 
+# Which adapter's metadata wins when several find the same source.
+ADAPTER_AUTHORITY = {"repo": 4, "phone": 3, "reddit": 2, "search": 1}
+
+
+def source_authority(rec: "SourceRecord") -> int:
+    """curated repository metadata > owner uploads > official Reddit API > web-search snippet."""
+    base = ADAPTER_AUTHORITY.get((rec.adapter or "").split(":")[0], 0)
+    return max(base, int(rec.meta.get("authority", 0) or 0))
+
+
 class State:
     def __init__(self, state_dir: Path):
         self.dir = Path(state_dir)
@@ -133,17 +147,61 @@ class State:
 
     # ---- sources ----
     def add_source(self, rec: SourceRecord) -> bool:
-        """Adds a newly discovered source. False (and nothing changes) when it is already known."""
-        if rec.key in self.sources:
-            known = self.sources[rec.key]
-            # A later adapter may know more (e.g. local copies); merge without resetting status.
-            for p in rec.local_paths:
-                if p not in known.local_paths:
-                    known.local_paths.append(p)
-            return False
-        rec.discovered_at = rec.discovered_at or now_iso()
-        self.sources[rec.key] = rec
-        return True
+        """Adds a newly discovered source; True when it was new.
+
+        A source already known is never replaced and its processing history (status, times,
+        retries, decision, images) is kept. It is ENRICHED instead: image URLs and local copies are
+        merged, priority takes the maximum, and title / source id / labels / provenance are taken
+        from the new record only when its adapter ranks higher (source_authority). If the known
+        source was waiting (deferred or failed-and-retryable) and the enrichment gives it images,
+        it becomes NEW again so the next run processes it."""
+        if rec.key not in self.sources:
+            rec.discovered_at = rec.discovered_at or now_iso()
+            rec.meta.setdefault("adapters", [rec.adapter])
+            self.sources[rec.key] = rec
+            return True
+        known = self.sources[rec.key]
+        adapters = known.meta.setdefault("adapters", [known.adapter])
+        if rec.adapter and rec.adapter not in adapters:
+            adapters.append(rec.adapter)
+        added_images = False
+        for p in rec.local_paths:
+            if p not in known.local_paths:
+                known.local_paths.append(p)
+                added_images = True
+        for u in rec.image_urls:
+            if u not in known.image_urls:
+                known.image_urls.append(u)
+                added_images = True
+        for a in rec.meta.get("imgur_albums") or []:
+            albums = known.meta.setdefault("imgur_albums", [])
+            if a not in albums:
+                albums.append(a)
+                added_images = True
+        known.priority = max(known.priority, rec.priority)
+        if source_authority(rec) > source_authority(known):
+            if rec.title:
+                if known.title and known.title != rec.title:
+                    known.meta.setdefault("earlier_titles", []).append(known.title)
+                known.title = rec.title
+            known.source_id = rec.source_id or known.source_id
+            if rec.meta.get("curated"):
+                known.class_label, known.model, known.factory = rec.class_label, rec.model, rec.factory
+                known.provenance, known.label_confidence = rec.provenance, rec.label_confidence
+                known.physical_watch_id = known.physical_watch_id or rec.physical_watch_id
+                known.meta["curated"] = True
+            known.label_evidence += [e for e in rec.label_evidence if e not in known.label_evidence]
+            for k, v in rec.meta.items():
+                if k not in ("adapters", "imgur_albums", "curated"):
+                    known.meta[k] = v
+            known.meta["authority"] = source_authority(rec)
+            known.meta.setdefault("enriched_by", []).append(rec.adapter)
+        if added_images and (known.status == DEFERRED or known.status == FAILED):
+            known.status = NEW
+            known.meta.setdefault("history", []).append(f"{now_iso()} re-queued: new images from {rec.adapter}")
+        elif added_images and known.status == DONE:
+            known.meta["new_images_since_processing"] = True   # picked up by --reprocess
+        return False
 
     def pending(self, reprocess: bool = False, max_retries: int = 3, available_providers: set | None = None) -> list[SourceRecord]:
         out = []

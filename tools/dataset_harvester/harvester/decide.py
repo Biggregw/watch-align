@@ -24,7 +24,12 @@ Q_SAME_WATCH = "quarantine_possible_same_watch"
 Q_INCONCLUSIVE = "quarantine_inconclusive_images"
 Q_SATURATED = "quarantine_low_value_group_saturated"
 
-STRONG_GENUINE = {"official", "established_dealer", "auction_house", "rolex_cpo", "owner_tagged"}
+STRONG_GENUINE = {"official", "established_dealer", "auction_house", "rolex_cpo", "owner_verified"}
+# A replica needs a traceable replica source: a QC post/curated replica label, an owner tag that
+# links to its source, or an explicit verified override (provenance_overrides.csv).
+REPLICA_PROVENANCE = {"rep_labelled", "owner_tagged_traceable", "owner_verified"}
+Q_UNTRACEABLE = "quarantine_untraceable_provenance"
+REFERENCE_ONLY, POPULATION = "reference_only", "population"
 
 
 def group_key(cls: str, model: str, factory: str) -> tuple:
@@ -36,7 +41,7 @@ def accepted_counts(state: State, exclude_key: str = "") -> dict:
     watches: dict[str, tuple] = {}
     images = Counter()
     for s in state.sources.values():
-        if s.decision != ACCEPT or s.key == exclude_key:
+        if s.decision != ACCEPT or s.key == exclude_key or s.sample_role == REFERENCE_ONLY:
             continue
         watches[s.physical_watch_id] = group_key(s.class_label, s.model, s.factory)
         images[s.physical_watch_id] += sum(1 for h in s.image_shas if state.images.get(h) and usable_for(state, s, state.images[h]))
@@ -155,7 +160,9 @@ def decide(state: State, rec, inference_unsupported: str = "") -> tuple[str, lis
     if rec.class_label == "rep" and not rec.factory:
         reasons.append(Q_FACTORY)
     if rec.class_label == "gen" and rec.provenance not in STRONG_GENUINE:
-        reasons.append(Q_GEN_PROVENANCE)
+        reasons.append(Q_UNTRACEABLE if rec.provenance == "owner_tagged" else Q_GEN_PROVENANCE)
+    if rec.class_label == "rep" and rec.provenance not in REPLICA_PROVENANCE:
+        reasons.append(Q_UNTRACEABLE)
     if not good:
         if inconclusive:
             return QUARANTINE, reasons + [Q_INCONCLUSIVE]
@@ -183,6 +190,8 @@ def dataset_summary(state: State) -> dict:
         "by_model_watches": {f"{k[0]}:{k[1]}": v for k, v in sorted(c["by_model"].items())},
         "by_factory_watches": dict(sorted(c["by_factory"].items())),
         "by_group_watches": {"/".join(k): v for k, v in sorted(c["by_group"].items())},
+        "reference_only_watches": sorted({s.physical_watch_id for s in state.sources.values()
+                                          if s.decision == ACCEPT and s.sample_role == REFERENCE_ONLY}),
         "quarantined_watches": len(decisions[QUARANTINE] - decisions[ACCEPT]),
         "rejected_watches": len(decisions[REJECT] - decisions[ACCEPT] - decisions[QUARANTINE]),
     }
