@@ -1,7 +1,12 @@
+import sys
 import unittest
+from pathlib import Path
 
-from harvester.config import SUPPORTED_MODELS, UNSUPPORTED_GMT_MODELS
-from harvester.families import GMT_12, SUBMARINER_12, family_for_model, models_for_family
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
+
+from harvester.config import SUPPORTED_MODELS, UNSUPPORTED_GMT_MODELS  # noqa: E402
+from harvester.families import GMT_12, SUBMARINER_12, family_for_model, models_for_family  # noqa: E402
 
 
 class FamilyConfigTest(unittest.TestCase):
