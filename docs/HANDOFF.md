@@ -1,4 +1,4 @@
-# Watch Align: handoff notes (updated 2026-09-29, alpha62)
+# Watch Align: handoff notes (updated 2026-09-29, alpha63)
 
 This file is for a new Claude session taking over the Android GMT dial QC work. Read it
 first, then `AGENTS.md`, then `docs/research/gmt12_outer_edge_gap_2026-09-26.md`.
@@ -29,7 +29,7 @@ checked (the 3 is the date window).
 
 The app never says "genuine" or "fake". It flags things to look at.
 
-- Version: `CORE_VERSION "1.3.0-alpha62"`, `versionCode 13062` in `android/app/build.gradle`.
+- Version: `CORE_VERSION "1.3.0-alpha63"`, `versionCode 13063` in `android/app/build.gradle`.
 
 ## 2. Branches and PRs
 
@@ -288,6 +288,21 @@ UNKNOWN: neither the 3 nor the 9 baton gets a verdict ("not checked (date side n
 12 photos lose a side-baton CLEAR, none a CHECK. (3) "No readable dial" is only reported when no
 marker or baton has a CHECK or STRONG verdict; one replica photo (rep_cf_UpTW8nx image_06, 12 gap
 0.030) now shows its gap CHECK instead of "nothing checked". No other verdict changed.
+
+alpha63: **the rehaut alone can no longer reject a photo that the round markers show is straight on.**
+The angle rating's rehaut RETAKE rules (a local sector below 0.45 of the mean, or a coherent
+global fit below 0.48) now become CORRECTABLE when the round-marker layout (`GmtMarkerPose`)
+confidently puts the camera within 5 degrees of straight on at its upper bound: at least 6 cleanly
+traced markers covering all four quarters, affine fit to the master layout without the 60 tick,
+residual at most 0.006 of the radius after leaving out one misplaced marker, and a
+leave-one-out jackknife for the bound. Without a confident layout the rehaut decides as before, and
+the dial-ellipse RETAKE is untouched. The round markers are now traced before the angle rating
+(same call, moved). Corpus (319 + 18 Bob's Watches photos): only WOS 40411271 changes, RETAKE to
+CORRECTABLE (markers 2.0 deg, at most 4.1; the 9 rehaut sector was mismeasured at 6 px), and its
+12, 9 and seven round markers are now judged, all CLEAR. A pose-free "un-squash" of the 12 and
+baton rotations (measuring them after undoing the dial-edge ellipse) was tried and dropped: on
+genuine photos it did not reduce the rotations (9 o'clock readings of 2 deg or more went from 1 to 4)
+and it added a false 12 CHECK (Phillips 224135). See `docs/research/gmt_dial_pose_policy_2026-09-29.md`.
 
 ## 7. What's been validated
 
