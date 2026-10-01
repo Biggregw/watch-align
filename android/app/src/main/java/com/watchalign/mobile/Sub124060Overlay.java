@@ -7,6 +7,9 @@ import android.graphics.Bitmap;
  * all visible drawing and close-up planning are delegated to {@link MeasuredOverlayRenderer}.
  */
 final class Sub124060Overlay {
+    /** Compatibility alias for tests and old callers; the banner now belongs to the presentation adapter. */
+    static final String BANNER=Sub124060PresentationAdapter.BANNER;
+
     static final class Drawing {
         final MeasuredOverlayRenderer.Drawing common;
         // Kept only for the existing desktop SubCheck harness, which records the selected 12 centre.
