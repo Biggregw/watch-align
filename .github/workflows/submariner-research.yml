@@ -124,9 +124,15 @@ jobs:
             python3 tools/dataset_harvester/subresearch/triangle_eval.py "$OUT" --partition "$part" --json "$OUT/triangle_eval_$part.json" > /dev/null
           done
 
+      - name: Genuine 124060 geometry study (development genuine only; reads no validation or holdout row)
+        run: |
+          python3 tools/dataset_harvester/subresearch/geometry124060.py "$OUT" "$OUT/geometry124060" \
+            --review docs/research/submariner/geometry/sub124060_dev_review.csv
+
       - name: Summary
         if: always()
         run: |
+          [ -f "$OUT/geometry124060/sub124060_geometry_summary.md" ] && cat "$OUT/geometry124060/sub124060_geometry_summary.md" >> "$GITHUB_STEP_SUMMARY" || true
           [ -f "$OUT/sub_summary.md" ] && cat "$OUT/sub_summary.md" >> "$GITHUB_STEP_SUMMARY" || echo "no summary produced" >> "$GITHUB_STEP_SUMMARY"
           [ -f datasets/submariner_research/acquisition_report.md ] && cat datasets/submariner_research/acquisition_report.md >> "$GITHUB_STEP_SUMMARY" || true
 
@@ -146,6 +152,7 @@ jobs:
             ${{ env.OUT }}/sub_summary.md
             ${{ env.OUT }}/sub_dataset_images.csv
             ${{ env.OUT }}/sub_dataset_watches.csv
+            ${{ env.OUT }}/geometry124060/
             ${{ env.OUT }}/work/*.log
             datasets/submariner_research/acquired_images.csv
             datasets/submariner_research/candidate_summary.csv

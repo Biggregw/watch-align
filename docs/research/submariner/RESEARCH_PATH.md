@@ -187,3 +187,9 @@ measured in phase 1.
   production Batch outputs. The photos themselves are not committed.
   `python3 tools/desktop-harness/gmt_golden.py check --images <dir>` re-runs Batch wherever the photos
   are available and compares every column exactly.
+
+## Genuine 124060 geometry calibration
+
+`subresearch/geometry124060.py` studies the repeatability of the 124060 geometry on development
+genuine watches only. It separates perturbation, within-watch and between-watch spread, and tests pose
+dependence. It derives no threshold. See `SUB124060_GEOMETRY_CALIBRATION.md`.

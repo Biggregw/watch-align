@@ -1,0 +1,23 @@
+sha_prefix,physical_watch_id,excluded_landmarks,reason
+15149ae289,bobs_124060_151200,all,watch upside down (12 at the bottom) and small in frame; detections fall on the bezel
+b240dfce8a,bobs_124060_174149,all,watch upside down (12 at the bottom) and small in frame; detections fall on the bezel
+5d746bafb7,bobs_124060_182455,all,watch upside down (12 at the bottom) and small in frame; detections fall on the bezel
+211999e931,bobs_124060_151200,r8,hand crossing (minute hand over the 8)
+4bf250413f,bobs_124060_151200,r2,hand crossing (minute hand tip over the 2)
+6a4ce9c64f,bobs_124060_174149,12;r5,hand crossing (seconds-hand tip/lume dot at the 12 apex; minute hand over the 5)
+c84ee1426d,bobs_124060_174149,12;r5,hand crossing (seconds-hand tip/lume dot at the 12 apex; minute hand over the 5)
+cbf87c6069,bobs_124060_174149,r1,hand crossing (seconds-hand lume dot at the 1)
+50418ff952,bobs_124060_182386pl,r2,hand crossing (minute hand tip at the 2)
+31edfb66b6,bobs_124060_182455,r4,hand crossing (seconds-hand lume dot at the 4)
+98dd3ab2d8,bobs_124060_182455,b3;r7,hand crossing (minute hand along the 3 baton; seconds hand over the 7)
+fa86078e31,bobs_124060_182455,r7,hand crossing (hour hand over the 7)
+06166e7935,bobs_124060_182482,r11,hand crossing (minute hand over the 11)
+32736f25fb,bobs_124060_182482,r1,hand crossing (minute hand over the 1)
+cec3df9313,bobs_124060_182482,r2;r8,hand crossing (minute hand at the 2; seconds hand at the 8)
+ab5aeaf2e1,bobs_124060_187439,r2;r4,hand crossing (minute hand at the 2; seconds-hand lume dot at the 4)
+ece0886178,bobs_124060_187439,r4,unusable fit: the circle found for the 4 is on the bezel (oblique photo)
+b316d6b31f,bobs_124060_187502pl,r1;r2,hand crossing (seconds hand over the 1; minute hand at the 2)
+5aefb6a02a,bobs_124060_190837,r2;r8,hand crossing (minute hand at the 2; seconds-hand lume dot near the 8)
+a205de17a5,bobs_124060_190837,12;r2;r4,hand crossing (seconds hand along the 12 axis to the triangle); unusable fits: circles for the 2 and 4 are on the bezel numerals (oblique photo)
+8c94e8fafc,bobs_124060_191110,r8,unusable fit: the circle found for the 8 is on the rehaut/bezel
+c14f8b3abb,bobs_124060_191110,r1;r2,hand crossing (seconds hand over the 1; minute hand at the 2)

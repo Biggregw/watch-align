@@ -1,0 +1,323 @@
+{
+ "scope": {
+  "family": "submariner_12",
+  "model": "124060",
+  "class_tag": "gen",
+  "partition": "development"
+ },
+ "note": "Development genuine 124060 only. Descriptive repeatability; no thresholds, no replica comparison.",
+ "photos_in_scope": 36,
+ "usable_photos": 19,
+ "watches_used": 9,
+ "usable_photos_by_watch": {
+  "bobs_124060_151200": 2,
+  "bobs_124060_174149": 3,
+  "bobs_124060_182386pl": 1,
+  "bobs_124060_182455": 3,
+  "bobs_124060_182482": 3,
+  "bobs_124060_187439": 2,
+  "bobs_124060_187502pl": 1,
+  "bobs_124060_190837": 2,
+  "bobs_124060_191110": 2
+ },
+ "excluded_photos": {
+  "no_dial": 10,
+  "review:watch upside down (12 at the bottom) and small in frame; detections fall on the bezel": 3,
+  "dial_not_edge_fitted_or_fallback": 4
+ },
+ "excluded_photo_ids": {
+  "no_dial": [
+   "00bb9429c1",
+   "093bf05900",
+   "11b90f7f1a",
+   "2fd888506d",
+   "4cc657b624",
+   "66f3df6133",
+   "b282db5140",
+   "bf26ac559b",
+   "d7d33a3883",
+   "e49b26e80f"
+  ],
+  "review:watch upside down (12 at the bottom) and small in frame; detections fall on the bezel": [
+   "15149ae289",
+   "5d746bafb7",
+   "b240dfce8a"
+  ],
+  "dial_not_edge_fitted_or_fallback": [
+   "4ed67b0b65",
+   "68e582d32c",
+   "aa5c0f6028",
+   "db0e15506b"
+  ]
+ },
+ "landmark_exclusions": {
+  "06166e7935": [
+   "r11"
+  ],
+  "211999e931": [
+   "r8"
+  ],
+  "31edfb66b6": [
+   "r4"
+  ],
+  "32736f25fb": [
+   "r1"
+  ],
+  "4bf250413f": [
+   "r2"
+  ],
+  "50418ff952": [
+   "r2"
+  ],
+  "5aefb6a02a": [
+   "r2",
+   "r8"
+  ],
+  "6a4ce9c64f": [
+   "12",
+   "r5"
+  ],
+  "8c94e8fafc": [
+   "r8"
+  ],
+  "98dd3ab2d8": [
+   "b3",
+   "r7"
+  ],
+  "a205de17a5": [
+   "12",
+   "r2",
+   "r4"
+  ],
+  "ab5aeaf2e1": [
+   "r2",
+   "r4"
+  ],
+  "b316d6b31f": [
+   "r1",
+   "r2"
+  ],
+  "c14f8b3abb": [
+   "r1",
+   "r2"
+  ],
+  "c84ee1426d": [
+   "12",
+   "r5"
+  ],
+  "cbf87c6069": [
+   "r1"
+  ],
+  "cec3df9313": [
+   "r2",
+   "r8"
+  ],
+  "ece0886178": [
+   "r4"
+  ],
+  "fa86078e31": [
+   "r7"
+  ]
+ },
+ "classes": {
+  "between-watch variation clearly exceeds measurement noise": [
+   "r10_dtheta_deg",
+   "r10_fitted_edge_radius_r",
+   "r1_inset",
+   "r4_fitted_edge_radius_r",
+   "track_spread_r"
+  ],
+  "descriptive only (image frame)": [
+   "dial_cx_px",
+   "dial_cy_px",
+   "dial_semi_major_px",
+   "dial_semi_minor_px",
+   "tick60_image_clock_angle_deg"
+  ],
+  "insufficient data": [
+   "b3_b9_angle_dev_deg",
+   "b3_b9_line_centre_offset_r",
+   "b3_b9_rho_diff",
+   "line12_6_vs_line3_9_orthogonality_deg",
+   "mirror_r2_r10_rho_diff",
+   "opp_r2_r8_angle_dev_deg",
+   "opp_r2_r8_rho_diff",
+   "r10_lume_radius_r",
+   "r10_surround_radius_r",
+   "r11_lume_radius_r",
+   "r11_surround_radius_r",
+   "r1_lume_radius_r",
+   "r1_surround_radius_r",
+   "r2_dtheta_deg",
+   "r2_fitted_edge_radius_r",
+   "r2_gap_to_track_r",
+   "r2_inset",
+   "r2_lume_radius_r",
+   "r2_rho",
+   "r2_surround_radius_r",
+   "r4_lume_radius_r",
+   "r4_surround_radius_r",
+   "r5_lume_radius_r",
+   "r5_surround_radius_r",
+   "r7_lume_radius_r",
+   "r7_surround_radius_r",
+   "r8_lume_radius_r",
+   "r8_surround_radius_r",
+   "t12_lume_apex_deg",
+   "t12_lume_dtheta_from_60tick_deg",
+   "t12_lume_gap_to_track_r",
+   "t12_lume_height_r",
+   "t12_lume_lateral_offset_from_60tick_w",
+   "t12_lume_rho",
+   "t12_lume_rotation_deg",
+   "t12_lume_width_r"
+  ],
+  "measurement noise dominates": [
+   "b3_dtheta_deg",
+   "b3_gap_to_track_r",
+   "b3_inset",
+   "b3_length_r",
+   "b3_rho",
+   "b3_rotation_deg",
+   "b3_width_r",
+   "b6_dtheta_deg",
+   "b6_gap_to_track_r",
+   "b6_inset",
+   "b6_length_r",
+   "b6_rotation_deg",
+   "b6_width_r",
+   "b9_dtheta_deg",
+   "b9_gap_to_track_r",
+   "b9_inset",
+   "b9_length_r",
+   "b9_rho",
+   "b9_rotation_deg",
+   "b9_width_r",
+   "baton_minus_round_rho",
+   "mirror_r1_r11_rho_diff",
+   "mirror_r4_r8_rho_diff",
+   "mirror_r5_r7_rho_diff",
+   "mpose_residual_r",
+   "opp_r1_r7_angle_dev_deg",
+   "opp_r1_r7_rho_diff",
+   "opp_r4_r10_angle_dev_deg",
+   "opp_r5_r11_angle_dev_deg",
+   "opp_r5_r11_rho_diff",
+   "r10_gap_to_track_r",
+   "r10_inset",
+   "r11_dtheta_deg",
+   "r11_fitted_edge_radius_r",
+   "r11_rho",
+   "r4_dtheta_deg",
+   "r4_gap_to_track_r",
+   "r4_rho",
+   "r5_dtheta_deg",
+   "r5_inset",
+   "r5_rho",
+   "r7_dtheta_deg",
+   "r7_fitted_edge_radius_r",
+   "r7_gap_to_track_r",
+   "r7_inset",
+   "r8_gap_to_track_r",
+   "r8_inset",
+   "r8_rho",
+   "rehaut_min_over_mean",
+   "rehaut_rh_w12_r",
+   "rehaut_rh_w6_r",
+   "rehaut_rh_w9_r",
+   "ring_round_circle_radius_r",
+   "ring_round_rho_median",
+   "ring_round_spacing_rms_deg",
+   "t12_b6_angle_dev_deg",
+   "t12_b6_line_centre_offset_r",
+   "t12_surround_apex_deg",
+   "t12_surround_dtheta_from_60tick_deg",
+   "t12_surround_height_r",
+   "t12_surround_lateral_offset_from_60tick_w",
+   "t12_surround_rho",
+   "t12_surround_width_r",
+   "track_minus_baton_rho_r",
+   "track_minus_round_ring_r",
+   "track_pitch_deg",
+   "track_radius_r",
+   "dial_axis_ratio",
+   "mpose_tilt_deg",
+   "inplane_rotation_deg"
+  ],
+  "similar scale": [
+   "b6_rho",
+   "dial_fit_rms_over_r",
+   "opp_r4_r10_rho_diff",
+   "r10_rho",
+   "r11_gap_to_track_r",
+   "r11_inset",
+   "r1_dtheta_deg",
+   "r1_fitted_edge_radius_r",
+   "r1_gap_to_track_r",
+   "r1_rho",
+   "r4_inset",
+   "r5_fitted_edge_radius_r",
+   "r5_gap_to_track_r",
+   "r7_rho",
+   "r8_dtheta_deg",
+   "r8_fitted_edge_radius_r",
+   "rehaut_rh_w3_r",
+   "ring_round_circle_centre_offset_r",
+   "ring_round_mean_angle_offset_deg",
+   "ring_round_rho_mad",
+   "t12_surround_gap_to_track_r",
+   "t12_surround_rotation_deg",
+   "dial_r_px"
+  ]
+ },
+ "pose_sensitive": {
+  "b3_b9_angle_dev_deg": "image_scale(88%);inplane_rotation(+-5deg)",
+  "b3_b9_line_centre_offset_r": "image_scale(88%);inplane_rotation(+-5deg)",
+  "b3_rotation_deg": "inplane_rotation(+-5deg)",
+  "b6_length_r": "mpose_tilt_deg;inplane_rotation_deg;dial_r_px",
+  "b6_rho": "mpose_tilt_deg;inplane_rotation_deg;dial_r_px",
+  "b6_width_r": "inplane_rotation_deg;dial_r_px",
+  "b9_rotation_deg": "inplane_rotation(+-5deg)",
+  "dial_fit_rms_over_r": "inplane_rotation_deg;dial_r_px",
+  "opp_r4_r10_angle_dev_deg": "dial_axis_ratio",
+  "opp_r4_r10_rho_diff": "mpose_tilt_deg",
+  "r10_dtheta_deg": "inplane_rotation(+-5deg)",
+  "r10_fitted_edge_radius_r": "dial_r_px",
+  "r10_gap_to_track_r": "mpose_tilt_deg",
+  "r10_inset": "dial_axis_ratio",
+  "r10_rho": "dial_axis_ratio",
+  "r11_fitted_edge_radius_r": "dial_r_px",
+  "r11_gap_to_track_r": "mpose_tilt_deg;dial_r_px",
+  "r11_inset": "inplane_rotation(+-5deg)",
+  "r11_rho": "dial_axis_ratio;inplane_rotation_deg",
+  "r1_dtheta_deg": "image_scale(88%);inplane_rotation(+-5deg)",
+  "r1_inset": "image_scale(88%);inplane_rotation(+-5deg)",
+  "r1_rho": "inplane_rotation(+-5deg)",
+  "r2_inset": "inplane_rotation(+-5deg)",
+  "r4_inset": "mpose_tilt_deg;inplane_rotation(+-5deg)",
+  "r4_rho": "dial_axis_ratio;mpose_tilt_deg",
+  "r5_gap_to_track_r": "inplane_rotation(+-5deg)",
+  "rehaut_min_over_mean": "mpose_tilt_deg;dial_r_px;inplane_rotation(+-5deg)",
+  "rehaut_rh_w12_r": "mpose_tilt_deg;dial_r_px;inplane_rotation(+-5deg)",
+  "rehaut_rh_w6_r": "dial_axis_ratio",
+  "rehaut_rh_w9_r": "mpose_tilt_deg",
+  "ring_round_circle_centre_offset_r": "dial_axis_ratio;mpose_tilt_deg;inplane_rotation(+-5deg)",
+  "ring_round_circle_radius_r": "mpose_tilt_deg;dial_r_px",
+  "ring_round_mean_angle_offset_deg": "inplane_rotation(+-5deg)",
+  "ring_round_rho_mad": "mpose_tilt_deg",
+  "ring_round_rho_median": "mpose_tilt_deg;dial_r_px",
+  "t12_surround_apex_deg": "inplane_rotation_deg;dial_r_px",
+  "t12_surround_dtheta_from_60tick_deg": "inplane_rotation_deg",
+  "t12_surround_gap_to_track_r": "image_scale(88%);inplane_rotation(+-5deg)",
+  "t12_surround_lateral_offset_from_60tick_w": "inplane_rotation_deg",
+  "t12_surround_rho": "inplane_rotation_deg;dial_r_px",
+  "t12_surround_rotation_deg": "inplane_rotation_deg",
+  "t12_surround_width_r": "inplane_rotation_deg",
+  "track_minus_round_ring_r": "mpose_tilt_deg",
+  "track_pitch_deg": "dial_axis_ratio",
+  "track_radius_r": "inplane_rotation_deg",
+  "track_spread_r": "dial_axis_ratio",
+  "inplane_rotation_deg": "dial_r_px",
+  "dial_r_px": "mpose_tilt_deg;inplane_rotation_deg"
+ }
+}

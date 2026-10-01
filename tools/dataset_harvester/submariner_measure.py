@@ -109,6 +109,8 @@ def main(argv=None) -> int:
     ap.add_argument("--dataset-only", action="store_true")
     ap.add_argument("--only-12", action="store_true", help="triangle study: dial + 12 detectors only; perturb only edge-fitted dials")
     ap.add_argument("--partition", action="append", help="measure only these partitions (e.g. development)")
+    ap.add_argument("--model", action="append", help="measure only these models (e.g. 124060)")
+    ap.add_argument("--class-tag", action="append", help="measure only these class tags (gen / rep)")
     ap.add_argument("--reuse-work", action="store_true", help="rebuild the tables from OUT/work/*.jsonl without re-running the driver")
     a = ap.parse_args(argv)
     out = a.out
@@ -137,6 +139,10 @@ def main(argv=None) -> int:
             and (a.include_holdout or r["partition"] != "holdout")]
     if a.partition:
         todo = [r for r in todo if r["partition"] in set(a.partition)]
+    if a.model:
+        todo = [r for r in todo if r["model"] in {m.upper() for m in a.model}]
+    if a.class_tag:
+        todo = [r for r in todo if r["class_label"] in set(a.class_tag)]
     if a.limit:
         todo = todo[:a.limit]
     variants = [v.strip() for v in a.variants.split(",") if v.strip()]
