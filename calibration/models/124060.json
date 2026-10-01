@@ -12,15 +12,14 @@
   "variants": "orig,s94,s88,x+1,x-1,x+2,x-2,y+1,y-1,y+2,y-2,r+5,r-5",
   "shards": 4,
   "discovery": {
-    "target_gen": 28,
-    "target_rep": 16,
+    "target_gen": 24,
+    "target_rep": 12,
     "minimum_gen_candidates": 12,
     "per_source_target": 10,
+    "search_pages": 4,
     "max_images_per_watch": 10,
-    "bootstrap_pool_globs": [
-      "docs/research/submariner_candidate_sources_2026-09-30.csv",
-      "docs/research/submariner_*topup*.csv"
-    ],
+    "require_clean_discovery": true,
+    "allow_bootstrap": false,
     "sources": [
       {
         "class": "gen",
@@ -28,12 +27,16 @@
         "name": "Bob's Watches",
         "id_prefix": "auto_bobs_124060",
         "source_type": "dealer_listing",
-        "target": 14,
+        "target": 18,
         "require_listing_id": true,
+        "seed_urls": ["https://www.bobswatches.com/rolex/submariner-{model}"],
         "queries": [
-          "site:bobswatches.com Rolex {model}",
-          "site:bobswatches.com Submariner {model}",
-          "site:bobswatches.com {model} black dial"
+          "site:bobswatches.com \"Rolex Submariner 124060\" \"Sku\"",
+          "site:bobswatches.com \"124060\" \"Actual Photo\"",
+          "site:bobswatches.com \"used Rolex Submariner 124060\"",
+          "site:bobswatches.com \"pre-owned Rolex Submariner 124060\"",
+          "site:bobswatches.com \"124060\" \"No Date\"",
+          "site:bobswatches.com \"124060\" \"Black Dial\""
         ]
       },
       {
@@ -43,10 +46,11 @@
         "id_prefix": "auto_swe_124060",
         "source_type": "dealer_listing",
         "target": 8,
-        "require_listing_id": true,
+        "require_listing_id": false,
         "queries": [
-          "site:swisswatchexpo.com Rolex {model}",
-          "site:swisswatchexpo.com Submariner {model}"
+          "site:swisswatchexpo.com \"Rolex 124060\"",
+          "site:swisswatchexpo.com \"Submariner 124060\"",
+          "site:swisswatchexpo.com \"124060\" \"No Date\""
         ]
       },
       {
@@ -55,10 +59,11 @@
         "name": "Watchfinder",
         "id_prefix": "auto_watchfinder_124060",
         "source_type": "dealer_listing",
-        "target": 6,
+        "target": 4,
+        "require_listing_id": false,
         "queries": [
-          "site:watchfinder.co.uk Rolex {model}",
-          "site:watchfinder.co.uk Submariner {model}"
+          "site:watchfinder.co.uk \"Rolex 124060\"",
+          "site:watchfinder.co.uk \"Submariner 124060\""
         ]
       },
       {
@@ -67,14 +72,16 @@
         "name": "r/RepTimeQC",
         "id_prefix": "auto_reptimeqc_124060",
         "source_type": "forum_qc",
-        "target": 16,
+        "target": 12,
         "require_album": true,
         "require_factory": true,
+        "reddit_direct": true,
         "queries": [
-          "site:reddit.com/r/RepTimeQC {model} VSF imgur",
-          "site:reddit.com/r/RepTimeQC {model} Clean imgur",
-          "site:reddit.com/r/RepTimeQC {model} CF imgur",
-          "site:reddit.com/r/RepTimeQC Rolex {model} QC imgur"
+          "site:reddit.com/r/RepTimeQC \"124060\" \"VSF\" \"imgur\"",
+          "site:reddit.com/r/RepTimeQC \"124060\" \"Clean\" \"imgur\"",
+          "site:reddit.com/r/RepTimeQC \"124060\" \"CF\" \"imgur\"",
+          "site:reddit.com/r/RepTimeQC \"124060\" \"ARF\" \"imgur\"",
+          "site:reddit.com/r/RepTimeQC \"124060\" \"QC\" \"imgur\""
         ]
       }
     ]
@@ -92,47 +99,12 @@
     "holdout_check_rate_min": 1.0
   },
   "calibration_metrics": [
-    {
-      "metric": "t12_surround_rotation_deg",
-      "app_key": "twelve.rotation_deg",
-      "minimum_half_width": 0.20,
-      "allow_pose_sensitive": false
-    },
-    {
-      "metric": "t12_surround_gap_to_track_r",
-      "app_key": "twelve.gap_r",
-      "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false
-    },
-    {
-      "metric": "t12_surround_lateral_offset_from_60tick_w",
-      "app_key": "twelve.centring_w",
-      "minimum_half_width": 0.01,
-      "allow_pose_sensitive": false
-    },
-    {
-      "metric": "ring_round_rho_median",
-      "app_key": "round.ring_rho",
-      "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false
-    },
-    {
-      "metric": "ring_round_spacing_rms_deg",
-      "app_key": "round.spacing_rms_deg",
-      "minimum_half_width": 0.10,
-      "allow_pose_sensitive": false
-    },
-    {
-      "metric": "b3_b9_line_centre_offset_r",
-      "app_key": "baton.3_9_line_offset_r",
-      "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false
-    },
-    {
-      "metric": "t12_b6_line_centre_offset_r",
-      "app_key": "axis.12_6_line_offset_r",
-      "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false
-    }
+    {"metric": "t12_surround_rotation_deg", "app_key": "twelve.rotation_deg", "minimum_half_width": 0.20, "allow_pose_sensitive": false},
+    {"metric": "t12_surround_gap_to_track_r", "app_key": "twelve.gap_r", "minimum_half_width": 0.002, "allow_pose_sensitive": false},
+    {"metric": "t12_surround_lateral_offset_from_60tick_w", "app_key": "twelve.centring_w", "minimum_half_width": 0.01, "allow_pose_sensitive": false},
+    {"metric": "ring_round_rho_median", "app_key": "round.ring_rho", "minimum_half_width": 0.002, "allow_pose_sensitive": false},
+    {"metric": "ring_round_spacing_rms_deg", "app_key": "round.spacing_rms_deg", "minimum_half_width": 0.10, "allow_pose_sensitive": false},
+    {"metric": "b3_b9_line_centre_offset_r", "app_key": "baton.3_9_line_offset_r", "minimum_half_width": 0.002, "allow_pose_sensitive": false},
+    {"metric": "t12_b6_line_centre_offset_r", "app_key": "axis.12_6_line_offset_r", "minimum_half_width": 0.002, "allow_pose_sensitive": false}
   ]
 }
