@@ -115,6 +115,20 @@ class AcquisitionHelpersTest(unittest.TestCase):
         self.assertTrue(all(ACQ.normalize_class(r["class"]) == "gen" and ACQ.listing_id(r) for r in top))
         self.assertEqual(len(keep), len({r["physical_watch_id"] for r in keep}))
 
+    def test_cached_image_bytes_are_reused_by_url(self):
+        class NoNet:
+            def get(self, url):
+                raise AssertionError("must not download a cached URL")
+        with tempfile.TemporaryDirectory() as d:
+            images = Path(d)
+            (images / "c1").mkdir()
+            (images / "c1" / "01_ab.jpg").write_bytes(b"cached-bytes")
+            index = {"https://x/a.jpg": "c1/01_ab.jpg"}
+            ref = ACQ.ImageRef(url="https://x/a.jpg")
+            self.assertEqual((b"cached-bytes", "https://x/a.jpg"), ACQ.image_bytes(ref, NoNet(), index, images))
+            (images / ACQ.URL_INDEX).write_text(json.dumps(index))
+            self.assertEqual(index, ACQ.load_url_index(images))
+
     def test_listing_images_exclude_navigation_and_other_watches(self):
         html = """<img src="/cdn-cgi/image/width=312/images/nav-thumb-rolex.jpg">
         <a href="/images/zUsed-Rolex-Submariner-126610-SKU188986.jpg">x</a>

@@ -22,6 +22,7 @@ from harvester.harness import Harness, HarnessUnavailable, _tool  # noqa: E402
 from .layout import layout_for  # noqa: E402
 
 DRIVER = HARNESS_DIR / "drivers" / "SubMeasure.java"
+DRIVER_SOURCES = (DRIVER, HARNESS_DIR / "drivers" / "SubTriangle.java")
 ALL_VARIANTS = ("orig", "s94", "s88", "x+1", "x-1", "x+2", "x-2", "y+1", "y-1", "y+2", "y-2", "r+5", "r-5")
 FORBIDDEN_CLASSES = ("GmtHumanQcAnalyzerV2", "GmtHumanQcAnalyzer", "GmtHumanPosePolicy", "GmtDialLayout", "GmtDialCrop",
                      "GmtHumanSummary", "GmtDirectionalClearancePolicy", "CanonicalGmtGeometryAnalyzer", "QcExtendedAnalyzer",
@@ -37,12 +38,12 @@ def compile_driver(harness: Harness, out_root: Path | None = None) -> Path:
             st = p.stat()
             h.update(f"{p}:{st.st_size}:{int(st.st_mtime)}".encode())
     out = (out_root or harness.cache) / f"submeasure_classes_{h.hexdigest()[:12]}"
-    if not (out / "com" / "watchalign" / "mobile" / "SubMeasure.class").exists():
+    if not (out / "com" / "watchalign" / "mobile" / "SubTriangle.class").exists():
         shutil.rmtree(out, ignore_errors=True)
         out.mkdir(parents=True)
         # Only the driver is named; the drivers directory is deliberately NOT on the sourcepath.
         cmd = [_tool("javac"), "-encoding", "UTF-8", "-nowarn", "-cp", str(harness.jar), "-sourcepath",
-               os.pathsep.join(str(d) for d in src_dirs), "-d", str(out), str(DRIVER)]
+               os.pathsep.join(str(d) for d in src_dirs), "-d", str(out)] + [str(p) for p in DRIVER_SOURCES]
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         if res.returncode != 0:
             shutil.rmtree(out, ignore_errors=True)
@@ -66,7 +67,7 @@ def job_line(path: str, sha: str, model: str, variants=ALL_VARIANTS) -> str:
     return "\t".join([path, sha, model, batons, dates, ",".join(variants)])
 
 
-def run(harness: Harness, classes: Path, jobs: list[str], work: Path, shards: int) -> list[dict]:
+def run(harness: Harness, classes: Path, jobs: list[str], work: Path, shards: int, only12: bool = False) -> list[dict]:
     work.mkdir(parents=True, exist_ok=True)
     lst = work / "jobs.tsv"
     lst.write_text("\n".join(jobs) + "\n", encoding="utf-8")
@@ -74,7 +75,7 @@ def run(harness: Harness, classes: Path, jobs: list[str], work: Path, shards: in
 
     def one(k: int) -> Path:
         out = work / f"sub_{k}.jsonl"
-        cmd = [_tool("java"), f"-Xmx{harness.heap}", "-Dfile.encoding=UTF-8", "-cp", f"{harness.jar}{os.pathsep}{classes}",
+        cmd = [_tool("java"), f"-Xmx{harness.heap}", "-Dfile.encoding=UTF-8"] + (["-Dsub.only12=true"] if only12 else []) + ["-cp", f"{harness.jar}{os.pathsep}{classes}",
                "com.watchalign.mobile.SubMeasure", str(lst), str(out), str(n), str(k)]
         with (work / f"sub_{k}.log").open("w") as f:
             subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, cwd=str(REPO_ROOT))

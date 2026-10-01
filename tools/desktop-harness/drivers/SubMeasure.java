@@ -54,7 +54,9 @@ import java.util.Locale;
  * variant is analysed from scratch (dial included) and mapped back through its known transform.
  */
 final class SubMeasure {
-    static final String DRIVER_VERSION="submeasure-v1";
+    static final String DRIVER_VERSION="submeasure-v2";
+    /** -Dsub.only12=true: dial + both 12 detectors only (triangle study). */
+    static final boolean ONLY12=Boolean.getBoolean("sub.only12");
     /** Labelled search priors (not Submariner calibration). */
     static final String PRIORS="round_seed_radius=gmt_126710BLNR_master_0.816R;round_size_window=gmt_master_0.088R(x0.55-1.45);"
             +"detector_windows=gmt_tuned(12:0.52-0.88R,batons:0.62-0.88R,ticks:0.835-0.99R);"
@@ -145,7 +147,9 @@ final class SubMeasure {
                 Mat img=apply(w.img,T,v);
                 try{
                     int detected=measure(img,job,inverse(T),w,j);
-                    if(v.equals("orig"))baseDial=detected>0;
+                    // Triangle study (-Dsub.only12): perturb only photos whose original dial was edge-fitted;
+                    // fallback (seed-circle) dials are never used to study triangle geometry.
+                    if(v.equals("orig"))baseDial=detected>0&&(!ONLY12||Boolean.TRUE.equals(j.get("edge_fit_valid")));
                 }catch(Throwable t){
                     j.str("error","measurement failed: "+t.getClass().getSimpleName()+": "+t.getMessage());
                 }finally{if(img!=w.img)img.release();}
@@ -291,16 +295,22 @@ final class SubMeasure {
         // ---- 12 triangle ------------------------------------------------------------------------------
         GmtTwelveLandmarkAnalyzer.Result t=GmtTwelveLandmarkAnalyzer.analyse(img,cx,cy,r);
         double[] tick60=null;double twelveClock=Double.NaN;
-        J tri=new J();tri.str("landmark","12");tri.str("kind","triangle");tri.num("hour",12);
+        // v1 research fit, kept for comparison as "12_legacy" (its tick frame can be contaminated, see SubTriangle).
+        J tri=new J();tri.str("landmark","12_legacy");tri.str("kind","triangle_legacy");tri.num("hour",12);
         if(t.valid&&t.geometry!=null){
             tick60=t.geometry.tick60;
             twelveClock=clock(cx,cy,tick60[0],tick60[1]);
             triangle(img,t,cx,cy,r,inv,w,frame,tri);
         }else{tri.bool("detected",false);tri.str("reason",t.reason);}
         lms.add(tri);
+        // v2 Submariner research detector: enumerated candidates; the per-variant top one is "12".
+        SubTriangle.Result st=SubTriangle.detect(img,frame);
+        lms.add(triangleV2(st,cx,cy,r,inv,w,frame));
+        j.arr("tri_candidates",candidates(st,inv,w,r));
         j.num("twelve_clock_deg_analysis",twelveClock);
         j.str("orientation_source",tick60!=null?"tick60":"image_up");
 
+        if(ONLY12){j.arr("landmarks",lms);int n=0;for(J q:lms)if(Boolean.TRUE.equals(q.get("detected")))n++;j.num("landmarks_detected",n);return n;}
         // ---- batons from the model layout ---------------------------------------------------------------
         for(int h:job.batons){
             J b=new J();b.str("landmark","b"+h);b.str("kind","baton");b.num("hour",h);
@@ -413,6 +423,46 @@ final class SubMeasure {
         q.num("axis_ref_disagreement_deg",t.axisReferenceDisagreementDeg);
         pt(q,"p_left",L,inv,w);pt(q,"p_right",R,inv,w);pt(q,"p_tip",T,inv,w);
         pt(q,"tick_before",tl,inv,w);pt(q,"tick_centre",tc,inv,w);pt(q,"tick_after",tr,inv,w);
+    }
+
+    static void candFields(J q,SubTriangle.Cand c,double[] inv,Working w,double r){
+        double sc=scaleToOrig(inv,w);
+        q.num("cand_id",c.id);q.num("cand_rank",c.rank);q.num("sel_score",c.score);q.str("cand_source",c.source);q.num("cand_masks",c.masks);
+        q.str("outline_class",c.outline);q.str("fit_path","sub_tri_v2:"+c.fit);
+        double[] o=orig(inv,w,c.cx,c.cy);q.num("x",o[0]);q.num("y",o[1]);
+        q.num("rho_r",c.rho);q.num("theta_from12_deg",wrap360(c.thetaDeg-(Double.isFinite(c.dthetaDeg)?c.thetaDeg-c.dthetaDeg:0)));
+        q.num("dtheta_from_nominal_deg",c.dthetaDeg);q.str("theta_reference",Double.isFinite(c.tickAngle)?"tick60_phase":"none");
+        q.num("rotation_deg",c.rotationDeg);q.num("base_edge_rot_deg",c.baseEdgeDeg);
+        q.num("rotation_vs_track_chord_deg",c.rotationChordDeg);q.num("chord_pairs",c.chordPairs);
+        q.bool("plausible",c.plausible);q.str("implausible_reason",c.implausible);
+        q.num("width_over_r",c.widthR);q.num("length_over_r",c.heightR);q.num("width_px",c.widthR*r*sc);q.num("length_px",c.heightR*r*sc);
+        q.num("apex_deg",c.apex);q.num("squareness_deg",c.square);q.num("symmetry",c.sym);
+        q.num("gap_over_r",c.gapR);q.num("centring_raw",c.centring);q.num("base_rho_r",c.baseRho);
+        q.num("edge_completeness",c.completeness);q.num("fit_residual_over_r",c.residualR);q.bool("outside_track",c.outsideTrack);
+        q.num("tick_pitch_deg",c.tickPitch);q.num("tick_score",c.tickScore);q.num("track_r_over_r",c.trackR/r);q.num("track_spread_over_r",c.trackSpreadR);
+        q.num("tick_raw59_r",c.raw59R);q.num("tick_raw60_r",c.raw60R);q.num("tick_raw01_r",c.raw01R);
+        q.num("s_pos",c.sPos);q.num("s_rho",c.sRho);q.num("s_size",c.sSize);q.num("s_apex",c.sApex);q.num("s_sym",c.sSym);q.num("s_square",c.sSquare);
+        q.num("s_axis",c.sAxis);q.num("s_fit",c.sFit);q.num("s_track",c.sTrack);q.num("s_outline",c.sOutline);q.num("s_masks",c.sMasks);
+        pt(q,"p_left",c.L,inv,w);pt(q,"p_right",c.R,inv,w);pt(q,"p_tip",c.T,inv,w);
+        pt(q,"tick_before",c.ref59,inv,w);pt(q,"tick_after",c.ref01,inv,w);
+        if(c.tickRaw60!=null)pt(q,"tick_centre",c.tickRaw60,inv,w);
+    }
+
+    static J triangleV2(SubTriangle.Result st,double cx,double cy,double r,double[] inv,Working w,GmtRoundMarkerAnalyzer.DialFrame frame){
+        J q=new J();q.str("landmark","12");q.str("kind","triangle");q.num("hour",12);q.str("detector",SubTriangle.VERSION);
+        SubTriangle.Cand b=st.best();
+        q.num("cand_count",st.cands.size());
+        if(b==null){q.bool("detected",false);q.str("reason",st.cands.isEmpty()?st.reason:"no plausible 12-triangle candidate (rho/width windows)");return q;}
+        q.bool("detected",true);
+        candFields(q,b,inv,w,r);
+        if(st.cands.size()>1)q.num("runner_up_margin",st.cands.get(1).score-b.score);
+        return q;
+    }
+
+    static List<J> candidates(SubTriangle.Result st,double[] inv,Working w,double r){
+        List<J> out=new ArrayList<>();
+        for(SubTriangle.Cand c:st.cands){J q=new J();candFields(q,c,inv,w,r);out.add(q);}
+        return out;
     }
 
     /** TriangleEdgeRefiner's side fits and intersections WITHOUT the apex/squareness/displacement gates. */

@@ -20,6 +20,7 @@ on:
     paths:
       - 'tools/dataset_harvester/**'
       - 'tools/desktop-harness/drivers/SubMeasure.java'
+      - 'tools/desktop-harness/drivers/SubTriangle.java'
       - 'docs/research/submariner/**'
       - 'docs/research/submariner_*.csv'
       - '.github/workflows/submariner-research.yml'
@@ -117,6 +118,12 @@ jobs:
             --variants "${{ github.event.inputs.variants || 'orig,s94,s88,x+1,x-1,x+2,x-2,y+1,y-1,y+2,y-2,r+5,r-5' }}" \
             --shards "$(nproc)" $extra | tee submariner-measurement.log
 
+      - name: Triangle detector stability (development and validation only; holdout stays unseen)
+        run: |
+          for part in development validation; do
+            python3 tools/dataset_harvester/subresearch/triangle_eval.py "$OUT" --partition "$part" --json "$OUT/triangle_eval_$part.json" > /dev/null
+          done
+
       - name: Summary
         if: always()
         run: |
@@ -132,6 +139,9 @@ jobs:
             ${{ env.OUT }}/sub_images.csv
             ${{ env.OUT }}/sub_landmarks.csv
             ${{ env.OUT }}/sub_landmark_stability.csv
+            ${{ env.OUT }}/sub_triangle_candidates.csv
+            ${{ env.OUT }}/triangle_eval_development.json
+            ${{ env.OUT }}/triangle_eval_validation.json
             ${{ env.OUT }}/sub_summary.json
             ${{ env.OUT }}/sub_summary.md
             ${{ env.OUT }}/sub_dataset_images.csv

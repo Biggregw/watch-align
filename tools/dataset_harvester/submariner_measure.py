@@ -35,6 +35,7 @@ from subresearch import dataset as D  # noqa: E402
 from subresearch import measure as MS  # noqa: E402
 from subresearch import split as SP  # noqa: E402
 from subresearch import tables as TB  # noqa: E402
+from subresearch import triangle as TRI  # noqa: E402
 
 DEFAULT_ROOT = REPO_ROOT / "datasets" / "submariner_research"
 DEFAULT_SPLIT = REPO_ROOT / "docs" / "research" / "submariner" / "split_sub_v2.csv"
@@ -106,6 +107,9 @@ def main(argv=None) -> int:
     ap.add_argument("--shards", type=int, default=2)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--dataset-only", action="store_true")
+    ap.add_argument("--only-12", action="store_true", help="triangle study: dial + 12 detectors only; perturb only edge-fitted dials")
+    ap.add_argument("--partition", action="append", help="measure only these partitions (e.g. development)")
+    ap.add_argument("--reuse-work", action="store_true", help="rebuild the tables from OUT/work/*.jsonl without re-running the driver")
     a = ap.parse_args(argv)
     out = a.out
     out.mkdir(parents=True, exist_ok=True)
@@ -131,6 +135,8 @@ def main(argv=None) -> int:
     wstate = {w["physical_watch_id"]: w["research_state"] for w in watch_rows}
     todo = [r for r in img_rows if r["research_state"] == D.ACCEPT and wstate.get(r["physical_watch_id"]) == D.ACCEPT
             and (a.include_holdout or r["partition"] != "holdout")]
+    if a.partition:
+        todo = [r for r in todo if r["partition"] in set(a.partition)]
     if a.limit:
         todo = todo[:a.limit]
     variants = [v.strip() for v in a.variants.split(",") if v.strip()]
@@ -149,12 +155,17 @@ def main(argv=None) -> int:
         print(f"driver selftest failed: {st}", file=sys.stderr)
         return 4
     jobs = [MS.job_line(str((a.root / r["local_path"]).resolve()), r["sha256"], r["model"], variants) for r in todo]
-    recs = MS.run(harness, classes, jobs, out / "work", a.shards)
+    if a.reuse_work:
+        recs = [json.loads(line) for p in sorted((out / "work").glob("sub_*.jsonl")) for line in p.read_text(encoding="utf-8").splitlines() if line.strip()]
+    else:
+        recs = MS.run(harness, classes, jobs, out / "work", a.shards, only12=a.only_12)
     meta = {r["sha256"]: r for r in img_rows if r["research_state"] == D.ACCEPT}
     pix = {}
     for rec in recs:
         if rec.get("variant") == "orig" and rec.get("sha256") in meta:
             pix[rec["sha256"]] = pixels(a.root, meta[rec["sha256"]]["local_path"], rec)
+    tri_diag = TRI.apply_consensus(recs)
+    TB.write(out / "sub_triangle_candidates.csv", TB.candidate_rows(recs, meta), TB.CANDIDATE_COLS)
     irows = TB.image_rows(recs, meta, pix)
     lrows = TB.landmark_rows(recs, meta)
     srows = TB.stability_rows(irows, lrows)
@@ -163,6 +174,8 @@ def main(argv=None) -> int:
     TB.write(out / "sub_landmark_stability.csv", srows, TB.STABILITY_COLS)
     summ = TB.summary(watch_rows, img_rows, irows, lrows, srows, acq)
     summ["driver_isolation"] = iso
+    summ["triangle_consensus"] = {"photos": len(tri_diag), "with_consensus": sum(1 for d in tri_diag.values() if d.get("consensus")),
+                                  "variants_excluded_fallback_dial": sum(d.get("variants_excluded_fallback_dial", 0) for d in tri_diag.values())}
     summ["variants"] = variants
     summ["holdout_measured"] = bool(a.include_holdout)
     (out / "sub_summary.json").write_text(json.dumps(summ, indent=1, default=str) + "\n", encoding="utf-8")

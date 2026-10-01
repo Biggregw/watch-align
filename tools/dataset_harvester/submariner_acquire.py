@@ -167,10 +167,28 @@ def safe_id(value: str) -> str:
     return "".join(c if c.isalnum() or c in "-_" else "_" for c in value)
 
 
-def image_bytes(ref: ImageRef, http: Http) -> tuple[bytes, str]:
+URL_INDEX = "_url_index.json"
+
+
+def load_url_index(images_dir: Path) -> dict:
+    """image URL -> stored file (relative to images_dir). Lives inside the cached images directory, so a
+    later run reuses the exact bytes of an earlier one: some dealer CDNs re-encode an image between
+    requests, which would otherwise give the same photograph a new sha256 on every run."""
+    p = images_dir / URL_INDEX
+    try:
+        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    except ValueError:
+        return {}
+
+
+def image_bytes(ref: ImageRef, http: Http, index: dict | None = None, images_dir: Path | None = None) -> tuple[bytes, str]:
     if ref.path:
         p = Path(ref.path)
         return p.read_bytes(), ""
+    if index is not None and images_dir is not None and ref.url in index:
+        p = images_dir / index[ref.url]
+        if p.exists():
+            return p.read_bytes(), ref.url
     r = http.get(ref.url)
     return r.content, ref.url
 
@@ -229,6 +247,7 @@ def run(pool, out: Path, max_images: int = 12) -> dict:
     pools = [Path(p) for p in (pool if isinstance(pool, (list, tuple)) else [pool])]
     out.mkdir(parents=True, exist_ok=True)
     images_dir = out / "images"
+    url_index = load_url_index(images_dir)
     work = out / "work"
     shutil.rmtree(work, ignore_errors=True)
     work.mkdir(parents=True, exist_ok=True)
@@ -271,7 +290,7 @@ def run(pool, out: Path, max_images: int = 12) -> dict:
         good = 0
         for idx, ref in enumerate(refs[:max_images], start=1):
             try:
-                data, image_url = image_bytes(ref, http)
+                data, image_url = image_bytes(ref, http, url_index, images_dir)
                 im, ext = inspect(data)
             except Exception as e:
                 errors.append(f"{cid} image {idx}: {type(e).__name__}: {e}")
@@ -337,6 +356,11 @@ def run(pool, out: Path, max_images: int = 12) -> dict:
             "pool": row.get("pool", ""),
         })
 
+    for a in acquired:
+        if a.image_url:
+            url_index[a.image_url] = str(Path(a.local_path).relative_to("images"))
+    images_dir.mkdir(parents=True, exist_ok=True)
+    (images_dir / URL_INDEX).write_text(json.dumps(url_index, indent=0, sort_keys=True), encoding="utf-8")
     write_csv(out / "acquired_images.csv", list(Acquired.__dataclass_fields__), [a.__dict__ for a in acquired])
     write_csv(out / "candidate_summary.csv",
               ["candidate_id", "physical_watch_id", "family", "class_label", "class", "listing_id", "model", "factory", "source_type", "source_url", "image_album_url",

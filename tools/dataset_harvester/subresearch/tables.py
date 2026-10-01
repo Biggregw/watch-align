@@ -52,6 +52,24 @@ LANDMARK_COLS = ID_COLS + [
     "p_outer_left_x", "p_outer_left_y", "p_outer_right_x", "p_outer_right_y", "p_inner_left_x", "p_inner_left_y",
     "p_inner_right_x", "p_inner_right_y",
     "tick_before_x", "tick_before_y", "tick_centre_x", "tick_centre_y", "tick_after_x", "tick_after_y",
+    # v2 triangle detector (landmark "12"); "12_legacy" is the v1 research fit kept for comparison
+    "detector", "cand_count", "cand_id", "cand_rank", "sel_score", "runner_up_margin", "cand_source", "cand_masks", "outline_class",
+    "symmetry", "base_rho_r", "edge_completeness", "fit_residual_over_r", "outside_track", "track_r_over_r", "track_spread_over_r",
+    "tick_raw59_r", "tick_raw60_r", "tick_raw01_r",
+    "s_pos", "s_rho", "s_size", "s_apex", "s_sym", "s_square", "s_axis", "s_fit", "s_track", "s_outline", "s_masks",
+    "consensus_cluster", "consensus_support", "selected_is_variant_top", "variant_top_cand_id",
+    "rotation_vs_track_chord_deg", "chord_pairs", "plausible", "implausible_reason",
+]
+
+CANDIDATE_COLS = ID_COLS + [
+    "cand_id", "cand_rank", "sel_score", "cand_source", "cand_masks", "outline_class", "fit_path", "x", "y", "rho_r",
+    "theta_from12_deg", "dtheta_from_nominal_deg", "rotation_deg", "base_edge_rot_deg", "width_over_r", "length_over_r",
+    "width_px", "length_px", "apex_deg", "squareness_deg", "symmetry", "gap_over_r", "centring_raw", "base_rho_r",
+    "edge_completeness", "fit_residual_over_r", "outside_track", "tick_pitch_deg", "tick_score", "track_r_over_r",
+    "track_spread_over_r", "tick_raw59_r", "tick_raw60_r", "tick_raw01_r",
+    "s_pos", "s_rho", "s_size", "s_apex", "s_sym", "s_square", "s_axis", "s_fit", "s_track", "s_outline", "s_masks",
+    "p_left_x", "p_left_y", "p_right_x", "p_right_y", "p_tip_x", "p_tip_y", "consensus_cluster",
+    "rotation_vs_track_chord_deg", "chord_pairs", "plausible", "implausible_reason",
 ]
 
 STAB_ID = ["family", "model", "class_tag", "physical_watch_id", "partition", "research_state", "sha256", "source_id", "image_index"]
@@ -117,6 +135,17 @@ def landmark_rows(records: list[dict], meta_by_sha: dict) -> list[dict]:
                 if k not in row and k in lm:
                     v = lm[k]
                     row[k] = int(v) if k == "hour" and finite(v) else v
+            out.append(row)
+    return out
+
+
+def candidate_rows(records: list[dict], meta_by_sha: dict) -> list[dict]:
+    out = []
+    for rec in records:
+        base = ident(rec, meta_by_sha.get(rec.get("sha256", ""), {}))
+        for c in rec.get("tri_candidates") or []:
+            row = dict(base)
+            row.update({k: c[k] for k in CANDIDATE_COLS if k in c and k not in row})
             out.append(row)
     return out
 

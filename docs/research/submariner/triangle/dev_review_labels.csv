@@ -1,0 +1,57 @@
+sha_prefix,legacy_orig,v2_orig,category,note
+06166e7935,correct,correct,ok,
+0ccf578410,correct_outline_tick_frame_contaminated,correct,tick_walk_into_surround,legacy 59/01 tick ends on the triangle corners
+211999e931,wrong_outline,correct,misfit_beyond_outline,legacy refit larger than the surround
+265712debc,correct,correct,ok,
+28984ce373,correct,correct,ok,
+3116b7962e,correct,correct,ok,
+31acf5a38f,correct,correct,ok,
+31edfb66b6,correct,correct,ok,
+32736f25fb,correct,correct,ok,
+381254deb9,correct,correct,ok,
+3e7ec61e84,correct,correct,ok,
+459bb1a885,wrong_outline,not_detected,watch_rotated_over_30deg/hand,12 outside the search window; legacy took a hand
+4bf250413f,correct,correct,ok,
+50418ff952,correct,correct,ok,
+531bf26df6,correct,correct,ok,
+5aefb6a02a,correct,correct,ok,
+5c2dc34c92,not_detected,wrong_outline,watch_rotated/hand,v2 took a hand + round-marker region
+5e972c30e8,correct,correct,ok,
+6a4ce9c64f,correct,correct,ok,
+726d8bcbc6,correct,correct,ok,
+72d1133a1f,correct,correct,ok,
+7868a23d1b,not_detected,correct,hand_crossing,seconds hand across the triangle
+8276c0e5ef,correct_outline_tick_frame_wrong_ring,not_detected,dial_fit_on_bezel_ring,ticks read on bezel graduations; v2 rejects (track gap)
+83afb3e032,correct_outline_tick_frame_contaminated,correct,tick_walk_into_surround,
+89033d4639,correct,correct,ok,
+8c94e8fafc,correct_outline_tick_frame_contaminated,correct,tick_walk_into_surround,
+8e2808ee90,correct_outline_tick_frame_contaminated,correct,tick_walk_into_surround,
+9573ebd618,not_detected,wrong_outline,hand_crossing,v2 outline half triangle + hand edge
+98dd3ab2d8,correct,correct,ok,
+9c4d6cd0bf,correct,correct,ok,
+9da12064b8,correct,correct,ok,
+9f90ab5f5f,correct,correct,ok,
+a1d086a2cf,correct_inner_lume_outline,correct,lume_vs_surround,legacy traced the lume; red lines in this photo are a QC annotation
+a205de17a5,correct_outline_tick_frame_contaminated,correct,tick_walk_into_surround,
+a4db4d8827,wrong_outline,wrong_outline,watch_rotated_over_30deg,both took another marker/hand
+a699939a58,correct,correct,ok,
+ab5aeaf2e1,correct,correct,ok,
+b0daba7953,correct_outline_tick_frame_contaminated,correct,tick_walk_into_surround,
+b145c08e0f,correct,correct,ok,watch turned ~15 deg
+b316d6b31f,correct,correct,ok,
+bf0cd103e5,correct,correct,ok,
+c14f8b3abb,correct,correct,ok,
+c46f94befa,wrong_outline,not_detected,watch_rotated_over_30deg/hand,
+c63e219ccd,correct,correct,ok,
+c7f8f078b5,correct,correct,ok,
+c84ee1426d,wrong_outline,correct,misfit_beyond_outline,
+c922db8a71,wrong_outline,not_detected,annotation_overlay,QC markup drawn over the dial
+cbf87c6069,correct,correct,ok,
+cec3df9313,correct,correct,ok,
+d34c234d65,correct,correct,ok,
+d6018ffbfb,correct_outline_tick_frame_contaminated,correct,tick_walk_into_surround,
+ece0886178,correct_outline_tick_frame_wrong_ring,correct,dial_fit_on_bezel_ring,
+f15decbaae,correct_outline_tick_frame_contaminated,correct,tick_walk_into_surround,
+f96db427cc,not_detected,wrong_outline,hand_crossing,v2 narrow outline merged with a hand
+fa05d36c89,correct_outline_tick_frame_contaminated,correct,tick_walk_into_surround,
+fa86078e31,correct,correct,ok,
