@@ -10,8 +10,10 @@ import java.util.List;
 /** One generic GMT-Master II check; date side read from the photo (alpha61). */
 public class GenericGmtTest {
     @Test public void onlyTheGenericProfileIsOffered(){
+        // One GMT entry, first (the default); the 124060 checkpoint entry follows it (see SubmarinerProductionIsolationTest).
         List<ModelCatalog.Profile> m=MainActivity.offeredModels();
-        assertEquals(1,m.size());
+        int gmt=0;for(ModelCatalog.Profile p:m)if(CanonicalGmtGeometryAnalyzer.supports(p.code))gmt++;
+        assertEquals(1,gmt);
         assertEquals("Rolex GMT-Master II",m.get(0).label);
         // Before alpha61's fix every 126710* profile was offered, so the selector showed three.
         int legacy=0;for(ModelCatalog.Profile p:ModelCatalog.all())if(CanonicalGmtGeometryAnalyzer.supports(p.code))legacy++;

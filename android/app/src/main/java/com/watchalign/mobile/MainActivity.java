@@ -46,12 +46,33 @@ public class MainActivity extends Activity {
 
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private final List<ModelCatalog.Profile> models=new ArrayList<>();
-    /** Model profiles offered in the (hidden) selector: only the generic GMT-Master II. */
+    /**
+     * Model profiles offered in the selector: the generic GMT-Master II (first, the default) and the
+     * experimental Submariner 124060 (checkpoint build). No other Submariner is offered yet.
+     */
     static List<ModelCatalog.Profile> offeredModels(){
         List<ModelCatalog.Profile> out=new ArrayList<>();
         ModelCatalog.Profile generic=ModelCatalog.byCode(GENERIC_GMT_CODE);
         if(generic!=null&&CanonicalGmtGeometryAnalyzer.supports(generic.code))out.add(generic);
+        ModelCatalog.Profile sub=ModelCatalog.byCode(SUB124060_CODE);
+        if(sub!=null&&Sub124060QcAnalyzer.supports(sub.code))out.add(sub);
         return out;
+    }
+
+    /** The experimental Submariner 124060 profile. */
+    static final String SUB124060_CODE="124060";
+
+    /** What the selector shows for a profile. */
+    static String selectorLabel(ModelCatalog.Profile p){
+        if(GENERIC_GMT_CODE.equals(p.code))return "GMT-Master II 126710";
+        if(SUB124060_CODE.equals(p.code))return "Submariner 124060 (experimental)";
+        return p.label;
+    }
+
+    /** The line under the title for the selected profile; the GMT line is the one the app always showed. */
+    static String subtitleFor(ModelCatalog.Profile p){
+        if(p!=null&&Sub124060QcAnalyzer.supports(p.code))return "Rolex Submariner 124060 dial check (experimental) · "+WatchAlignCoreV13.CORE_VERSION;
+        return "Rolex GMT-Master II dial check · "+WatchAlignCoreV13.CORE_VERSION;
     }
 
     /** The one model profile the app checks (generic GMT-Master II). */
@@ -61,7 +82,7 @@ public class MainActivity extends Activity {
     private Uri watchUri;
     private WatchAlignCoreV13.AnalysisResult lastResult;
     private ImageView preview,closeUpView;
-    private TextView status,summaryText;
+    private TextView status,summaryText,subtitle;
     private Spinner model;
     private Button checkButton,resultsButton,inspectButton,exportButton,manualButton;
 
@@ -73,7 +94,7 @@ public class MainActivity extends Activity {
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         TextView h1=text("Watch Align",28,Color.WHITE);root.addView(h1);
-        root.addView(text("Rolex GMT-Master II dial check · "+WatchAlignCoreV13.CORE_VERSION,13,MUTED));
+        subtitle=text(subtitleFor(ModelCatalog.byCode(GENERIC_GMT_CODE)),13,MUTED);root.addView(subtitle);
         root.addView(text("Use a sharp, straight-on photo with the dial filling as much of the frame as possible and the hands away from 12.",13,MUTED));
 
         // One generic GMT-Master II check (alpha61, the user's decision). Before this, every catalog
@@ -82,10 +103,27 @@ public class MainActivity extends Activity {
         // code stays 126710BLNR, whose measured master geometry is assumed to hold for the other
         // current references (genuine photos of each have been run, most only a few; see
         // docs/HANDOFF.md). The date side (3, or 9 on the Sprite) is read from the photo (GmtDialLayout).
+        // Checkpoint build: the experimental Submariner 124060 is offered as well, so the selector is
+        // shown when there is more than one model. GMT stays first and is the default.
         models.addAll(offeredModels());
-        List<String> labels=new ArrayList<>();for(ModelCatalog.Profile p:models)labels.add(p.label);
+        List<String> labels=new ArrayList<>();for(ModelCatalog.Profile p:models)labels.add(selectorLabel(p));
         model=new Spinner(this);model.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,labels));root.addView(model,lp(-1,dp(54),10));
-        model.setVisibility(View.GONE);
+        model.setVisibility(models.size()>1?View.VISIBLE:View.GONE);
+        model.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
+            int shown=0;
+            @Override public void onItemSelected(android.widget.AdapterView<?> parent,View v,int position,long id){
+                if(position<0||position>=models.size())return;
+                subtitle.setText(subtitleFor(models.get(position)));
+                if(position==shown)return;
+                shown=position;
+                // A result belongs to the model it was checked as: clear it when the model changes.
+                if(lastResult!=null){
+                    lastResult=null;setResultButtons(false);summaryText.setText("");closeUpView.setVisibility(View.GONE);
+                    if(watchBitmap!=null){preview.setImageBitmap(watchBitmap);status.setText("Model changed. Tap Check watch.");}
+                }
+            }
+            @Override public void onNothingSelected(android.widget.AdapterView<?> parent){}
+        });
 
         Button pick=button("Choose watch photo");pick.setOnClickListener(v->pickWatch());root.addView(pick,lp(-1,dp(52),6));
         checkButton=button("Check watch");checkButton.setBackgroundColor(ACCENT);checkButton.setTextColor(Color.rgb(4,32,42));
@@ -269,8 +307,17 @@ public class MainActivity extends Activity {
                 closeUpView.setImageBitmap(r.twelveCloseUp);closeUpView.setVisibility(r.twelveCloseUp!=null?View.VISIBLE:View.GONE);
                 String sum=summaryOf(r.report);
                 summaryText.setText(sum!=null?sum:"Summary unavailable. Open Full results.");
-                boolean autoFailed=!r.twelveMeasured||r.report.contains("Dial centre: UNREFINED");
                 boolean manual=InspectionImageStore.hasManualSeed;
+                if(r.submariner){
+                    // Experimental 124060 route: no badges or verdicts; hand alignment whenever the dial or 12 was not found.
+                    manualButton.setVisibility(r.dialNeedsManual||manual?View.VISIBLE:View.GONE);
+                    status.setText(r.dialNeedsManual&&!manual
+                            ?"Done, but the dial or the 12 could not be located automatically. Try Align dial edge by hand below."
+                            :"Done (124060 experimental). Landmarks found are outlined; measurements are shown but not judged. Tap the close-up to enlarge it.");
+                    resultsButton.setEnabled(true);exportButton.setEnabled(true);inspectButton.setEnabled(r.perspectiveOverlay!=null);
+                    return;
+                }
+                boolean autoFailed=!r.twelveMeasured||r.report.contains("Dial centre: UNREFINED");
                 manualButton.setVisibility(autoFailed||manual?View.VISIBLE:View.GONE);
                 status.setText(r.twelveMeasured
                         ?(autoFailed&&!manual?"Done, but the dial edge could not be fitted automatically. Try Align dial edge by hand below.":"Done. Each hour marker has a badge: tick = nothing flagged, ! = worth a look, !! = check closely, dash = not judged. Tap the close-ups to enlarge them.")

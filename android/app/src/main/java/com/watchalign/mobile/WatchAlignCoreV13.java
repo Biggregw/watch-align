@@ -10,7 +10,7 @@ import java.util.List;
 
 /** Alpha40: human GMT12 QC with real-image rehaut direction calibration and stricter pose gating. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha68";
+    public static final String CORE_VERSION="1.3.0-alpha69";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -20,6 +20,12 @@ public final class WatchAlignCoreV13 {
         public final boolean twelveMeasured;
         /** Enlarged 12-marker (and 6-baton, when measured) close-ups with status strips, or null. */
         public Bitmap twelveCloseUp;
+        /** True when the experimental Submariner 124060 route produced this result (never for GMT). */
+        public boolean submariner;
+        /** 124060 route only: the dial or the 12 could not be located automatically, so offer hand alignment. */
+        public boolean dialNeedsManual;
+        /** 124060 route only: the measurements behind the report, or null. */
+        Sub124060QcAnalyzer.Result sub124060;
         AnalysisResult(Bitmap a,Bitmap r,Bitmap al,Bitmap po,Bitmap rect,String rep,double c,double pc){this(a,r,al,po,rect,rep,c,pc,false);}
         AnalysisResult(Bitmap a,Bitmap r,Bitmap al,Bitmap po,Bitmap rect,String rep,double c,double pc,boolean twelve){annotated=a;reference=r;aligned=al;perspectiveOverlay=po;rectified=rect;report=rep;registrationConfidence=c;perspectiveConfidence=pc;twelveMeasured=twelve;}
         public Bitmap overlay(float alpha){
@@ -36,6 +42,9 @@ public final class WatchAlignCoreV13 {
 
     /** @param full the original photo, for a full-resolution dial crop when the dial is small (alpha61); may be null */
     public static AnalysisResult analyse(Bitmap watch,List<Bitmap> references,String modelRef,FullResSource full){
+        // Experimental Submariner 124060 route (checkpoint build). It never reaches the GMT analysis below
+        // nor the legacy non-GMT analysers; every other model takes the existing path unchanged.
+        if(Sub124060QcAnalyzer.supports(modelRef))return Sub124060QcAnalyzer.analyseForCore(watch,full,manualSeed());
         List<Bitmap> refs=references==null?Collections.emptyList():new ArrayList<>(references);Bitmap primary=refs.isEmpty()?null:refs.get(0);
         WatchAlignCoreV11.AnalysisResult base=WatchAlignCoreV11.analyse(watch,primary,modelRef);
         boolean canonicalGmt=CanonicalGmtGeometryAnalyzer.supports(modelRef);
@@ -45,8 +54,7 @@ public final class WatchAlignCoreV13 {
         Bitmap guide=QcGuideRenderer.render(watch);
         Bitmap combined=canonicalGmt?guide:QcOverlayComposer.compose(watch,guide,ext.annotated);
 
-        PerspectiveGmtOverlay.DialSeed manualSeed=InspectionImageStore.hasManualSeed?
-                new PerspectiveGmtOverlay.DialSeed(InspectionImageStore.manualCx,InspectionImageStore.manualCy,InspectionImageStore.manualR,0.98,InspectionImageStore.manualRoll):null;
+        PerspectiveGmtOverlay.DialSeed manualSeed=manualSeed();
         // Overlay = what the analysis measured (alpha51). The fixed predicted template is no
         // longer drawn: it could disagree with the measurements when the dial edge was hard
         // to fit, and a full measured template will be built up check by check instead.
@@ -85,6 +93,11 @@ public final class WatchAlignCoreV13 {
         if(cropCloseUp!=null)res.twelveCloseUp=cropCloseUp;
         else if(human!=null&&human.drawing!=null)res.twelveCloseUp=MeasuredOverlayRenderer.closeUp(watch,measured,human.drawing,540);
         return res;
+    }
+    /** The hand-aligned dial (12/6 dial-edge taps), or null. */
+    static PerspectiveGmtOverlay.DialSeed manualSeed(){
+        return InspectionImageStore.hasManualSeed?
+                new PerspectiveGmtOverlay.DialSeed(InspectionImageStore.manualCx,InspectionImageStore.manualCy,InspectionImageStore.manualR,0.98,InspectionImageStore.manualRoll):null;
     }
     private WatchAlignCoreV13(){}
 }
