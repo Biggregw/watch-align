@@ -4,13 +4,13 @@ This is the short, living index of lessons that should be reused across watch fa
 It is not a tolerance table and it does not make model-specific geometry generic by assertion.
 The purpose is to stop a new family from rediscovering problems already solved elsewhere.
 
-Before designing or changing a detector, measurement, confidence rule, recovery path, or QC decision:
+Before designing or changing a detector, measurement, confidence rule, recovery path, presentation, or QC decision:
 
 1. Read this file.
 2. Find the closest mature implementation, normally the GMT path.
 3. Read the relevant handoff/research note for that implementation.
 4. Separate what is genuinely generic from what is model-specific.
-5. Try reuse/adaptation diagnostically before creating a parallel algorithm.
+5. Try reuse/adaptation diagnostically before creating a parallel algorithm or user experience.
 6. Preserve the mature family's regression behaviour while experimenting.
 
 ## Reuse-first checklist
@@ -18,7 +18,7 @@ Before designing or changing a detector, measurement, confidence rule, recovery 
 For every new family-specific check, answer these before implementation:
 
 - What is the equivalent mature check, if any?
-- Which detector primitives, coordinate frames, confidence gates, recovery rules and tests already exist?
+- Which detector primitives, coordinate frames, confidence gates, recovery rules, presentation components and tests already exist?
 - Which parts are pure geometry or image-quality logic and which parts depend on model dimensions/layout?
 - What known failure modes did the mature path already solve?
 - Can the existing implementation be parameterised or composed rather than copied?
@@ -26,6 +26,20 @@ For every new family-specific check, answer these before implementation:
 
 A new family-specific implementation should not be created just because the marker shape or model name is different.
 Equally, shared code must not be forced when the evidence shows a genuinely different measurement strategy is more reliable.
+
+## Start from the mature product, not only the mature algorithm
+
+The alpha69-alpha70 124060 work exposed an important process mistake. We reused many GMT detector and confidence ideas but allowed the Submariner to grow a separate research-style overlay and wording. By the time the measurements were reliable enough for phone testing, the app did not feel like Watch Align's mature GMT experience even though much of the underlying engineering had already been reused.
+
+The corrected rule is:
+
+- when a mature family already exists, the default starting point for a new production family is its **end-to-end workflow and presentation contract**;
+- keep model-specific layout, geometry, references, calibration and thresholds behind an adapter;
+- where thresholds are not yet calibrated, preserve the mature UI and show **measured / not yet judged** rather than replacing the UI with a separate research presentation;
+- a family-specific debug/research overlay may exist for diagnostics, but it must not become the user-test checkpoint by accident;
+- missing markers, hand obstruction, confidence withholding, whole-dial markup, close-up structure, summary hierarchy and interaction flow should be assumed reusable until a real model difference says otherwise.
+
+This is the preferred migration sequence for future families: **copy the mature product behaviour, disable or neutralise unsupported judgements, then replace only the model-specific pieces that fail under evidence.** That is safer and usually faster than rebuilding the product experience around a new detector and trying to add parity later.
 
 ## Reusable lessons from GMT and 124060 work
 
@@ -150,7 +164,7 @@ Cross-family experiments should begin as diagnostics. Do not alter GMT behaviour
 
 ## Required experiment/handoff note
 
-For any substantial detector, geometry or QC experiment, include a short section with:
+For any substantial detector, geometry, presentation or QC experiment, include a short section with:
 
 - **Lessons reused:** mature mechanisms deliberately carried over.
 - **Deliberate divergences:** mature mechanisms not reused, with evidence/reason.
