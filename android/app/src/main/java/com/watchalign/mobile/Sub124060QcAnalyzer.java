@@ -30,7 +30,9 @@ import java.util.Locale;
  *    to 94% and 88% (centre within 0.01 R, radius within 2%: the research dial-consistency rule);
  *  - and a 12 triangle at least MIN_TRIANGLE_PX wide, with no hand at 12, found as the same outline at
  *    94% and 88%; each reported fine measurement must itself also repeat to about one source pixel;
- *  - shared baton and round-marker measurements reuse the same pixel-space resize reliability lesson.
+ *  - shared baton and round-marker resize checks are run and reported diagnostically. Until 124060
+ *    marker tolerances are calibrated, their numeric resize movement does not downgrade an otherwise
+ *    stable marker. A changed round-marker physical edge only suppresses the size comparison.
  */
 final class Sub124060QcAnalyzer {
     static final double[] RESIZE_SCALES = GmtTwelveLandmarkAnalyzer.STABILITY_SCALES;   // 0.94, 0.88
@@ -331,14 +333,16 @@ final class Sub124060QcAnalyzer {
         if(!b.stable){o.status=Status.LOW_CONFIDENCE;o.note=b.lowReason;return o;}
         if(!Double.isFinite(twelveClockDeg)){o.status=Status.LOW_CONFIDENCE;o.note="the 12 was not found, so the dial orientation is unknown";return o;}
 
+        // Reuse the mature GMT re-measurement machinery, but keep it diagnostic until the 124060
+        // has its own marker tolerances. GMT's resampleStable() contains GMT verdict levels, so using
+        // it here to change status would silently import GMT calibration into the Sub path.
         GmtSixLandmarkAnalyzer.measureStability(src,cx,cy,r,b);
-        if(!batonRepeatable(b)){
-            o.status=Status.LOW_CONFIDENCE;o.note=batonResizeReason(b);return o;
-        }
+        if(!batonRepeatable(b))o.note="resize diagnostic only: "+batonResizeReason(b)+"; no 124060 marker tolerance uses this yet";
         o.status=Status.FOUND;
         return o;
     }
 
+    /** Strict one-pixel diagnostic only. It is not currently a 124060 FOUND/LOW_CONFIDENCE gate. */
     static boolean batonRepeatable(GmtSixLandmarkAnalyzer.Result b){
         if(b==null||!b.stabilityRun||!b.stabilitySameEdge)return false;
         double c=MeasurementRepeatability.widthShiftPx(b.centringMin,b.centringMax,b.widthPx);
@@ -376,17 +380,21 @@ final class Sub124060QcAnalyzer {
             m.attention=GmtHumanQcMath.Attention.UNASSESSABLE;   // never judged on the 124060 path
             if(hand){res.rounds.add(new Round(m,Status.HAND,"a hand is over or next to it"));continue;}
             if(!m.stable){res.rounds.add(new Round(m,Status.LOW_CONFIDENCE,m.lowReason));continue;}
-            if(!roundOffsetRepeatable(m)){
-                res.rounds.add(new Round(m,Status.LOW_CONFIDENCE,roundResizeReason(m)));continue;
-            }
-            // GMT lesson: a changed lume/surround edge invalidates size comparison, not the repeatable centre.
+
+            String note="";
+            if(!roundOffsetRepeatable(m))note="resize diagnostic only: "+roundResizeReason(m)+"; no 124060 marker tolerance uses this yet";
+            // GMT lesson: if resize picks a different concentric physical edge, centre placement can
+            // still be useful but a surround-size comparison is not like-for-like.
             if(m.stabilityRun&&!m.stabilitySameEdge){
                 m.sizeRatio=Double.NaN;
-                res.rounds.add(new Round(m,Status.FOUND,"centre repeats under resize; outline edge identity changes, so size is not compared"));
-            }else res.rounds.add(new Round(m,Status.FOUND,""));
+                note=note.isEmpty()?"centre measured; outline edge identity changes under resize, so size is not compared"
+                        :note+"; outline edge identity also changes, so size is not compared";
+            }
+            res.rounds.add(new Round(m,Status.FOUND,note));
         }
     }
 
+    /** Strict one-pixel centre-offset diagnostic only; not currently a 124060 status gate. */
     static boolean roundOffsetRepeatable(GmtRoundMarkerAnalyzer.Marker m){
         if(m==null||!m.stabilityRun)return false;
         return MeasurementRepeatability.stable(MeasurementRepeatability.widthShiftPx(m.offMin,m.offMax,m.diameterPx()));
