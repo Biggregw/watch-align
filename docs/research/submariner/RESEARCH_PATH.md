@@ -125,6 +125,13 @@ primitive's own result is kept as `primitive_*` diagnostics.
 - **124060:** triangle at 12; batons at 3, 6 and 9; round markers at 1, 2, 4, 5, 7, 8, 10 and 11.
 - **126610LN / 126610LV:** triangle at 12; batons at 6 and 9; date at 3 (not measured in phase 1); the same eight round markers.
 
+## 12 triangle
+
+Landmark `12` comes from the v2 Submariner research detector. It enumerates candidates, uses a local
+tick frame, applies development-derived plausibility windows and reaches a cross-variant consensus.
+`12_legacy` is the v1 fit and `12_top` is each variant's own best candidate. Every candidate is written
+to `sub_triangle_candidates.csv`. See `SUB_TRIANGLE_DETECTOR.md`.
+
 ## What is measured
 
 Each photo is measured in its original form and in these variants, each analysed from scratch

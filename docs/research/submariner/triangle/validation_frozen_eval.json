@@ -1,0 +1,48 @@
+{
+ "photos_edge_fitted_original": 23,
+ "watches": 8,
+ "excluded": {
+  "variants_fallback_or_other_dial": 29,
+  "original_dial_not_edge_fitted": 16,
+  "no_dial_in_original": 10
+ },
+ "12_legacy": {
+  "detection_rate_orig": 0.7391304347826086,
+  "detection_repeat_rate_median": 1.0,
+  "photos_with_2plus_detections": 17,
+  "centre_spread_median": 0.0014999261805906338,
+  "centre_spread_p95": 0.015682408720888875,
+  "rotation_spread_median": 1.2193592,
+  "rotation_spread_p95": 9.776287399999998,
+  "apex_spread_median": 0.3353999999999999,
+  "apex_spread_p95": 3.4205360000000002,
+  "path_switch_rate": 0.11764705882352941
+ },
+ "12_top": {
+  "detection_rate_orig": 0.782608695652174,
+  "detection_repeat_rate_median": 1.0,
+  "photos_with_2plus_detections": 18,
+  "centre_spread_median": 0.0012735187377135664,
+  "centre_spread_p95": 0.007707517617531871,
+  "rotation_spread_median": 0.28933690000000045,
+  "rotation_spread_p95": 1.716107444999996,
+  "apex_spread_median": 0.4287399999999977,
+  "apex_spread_p95": 3.3444579999999946,
+  "path_switch_rate": 0.05555555555555555
+ },
+ "12": {
+  "detection_rate_orig": 0.782608695652174,
+  "detection_repeat_rate_median": 1.0,
+  "photos_with_2plus_detections": 18,
+  "centre_spread_median": 0.0012735187377135664,
+  "centre_spread_p95": 0.007707517617531871,
+  "rotation_spread_median": 0.28933690000000045,
+  "rotation_spread_p95": 1.716107444999996,
+  "apex_spread_median": 0.4287399999999977,
+  "apex_spread_p95": 3.3444579999999946,
+  "path_switch_rate": 0.05555555555555555,
+  "rank_consistency_median": 1.0,
+  "consensus_support_median": 1.0
+ },
+ "partition": "validation"
+}

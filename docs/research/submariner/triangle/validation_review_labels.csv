@@ -1,0 +1,19 @@
+sha_prefix,legacy_orig,v2_orig,category,note
+0bc6f00d7c,correct,correct,ok,
+1333f367b9,correct,correct,ok,
+252f4a6bb2,correct,correct,ok,
+2aa6173d4a,correct,correct,ok,
+34c16ff694,correct,correct,ok,
+37084e0861,correct,correct,ok,
+518a9c7257,correct,correct,ok,
+805bd9b0f4,correct,correct,ok,
+8e71320aa4,correct,correct,ok,
+9d3d3c12e6,not_detected,wrong_outline,hand_crossing,v2 traced the visible right part of a hand-occluded triangle
+9df14f957a,wrong_outline,wrong_outline,hand_crossing,low resolution; right edge taken from the hand
+abd5bb0cd9,correct,correct,ok,
+c359d6c186,correct,correct,ok,
+c8e251501d,correct_outline_tick_frame_contaminated,correct,tick_walk_into_surround,
+c8f2e023ac,correct_outline_tick_frame_contaminated,correct,tick_walk_into_surround,
+cda52ed241,correct,correct,ok,
+e408edb542,correct,correct,ok,
+fbd51ef5af,correct,correct,ok,
