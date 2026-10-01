@@ -37,11 +37,31 @@ Finding a plausible marker is only the first stage. Fine QC measurements need in
 
 The mature GMT path re-measures important landmarks at 94% and 88% image scale. This catches results that depend on a particular decode/resample rather than the physical watch. The same principle should be considered for every fine marker measurement before adding a tolerance.
 
+### Marker identity stability and metric stability are separate
+
+Re-detecting the same physical marker at 100%, 94% and 88% does not prove that its fine geometry is stable. On the 124060 development study, all 31 measured 12 triangles returned the same outline at every scale, but several gap, rotation and centring readings still moved by more than one image pixel.
+
+Therefore:
+- first verify that the same physical outline was found;
+- then re-measure each numeric quantity itself;
+- store movement in physical pixels as well as normalized units;
+- allow gap, rotation and centring to become independently assessable or unassessable.
+
+See `docs/research/submariner/gmt_reuse_diagnostics_2026-10-01.md`.
+
 ### Reuse confidence logic and failure modes, not only detector code
 
 The most valuable transferable work is often the guardrail around an algorithm: minimum pixel size, hand obstruction, local-frame quality, resize repeatability, alternate-reference disagreement, recovery confidence and fail-closed behaviour.
 
 When adapting a mature check, audit these before writing a new detector or measurement formula.
+
+### Quantity-specific confidence should travel with a shared detector
+
+A shared detector can return several quantities whose reliability differs. Reuse the mature confidence policy per quantity, not just the detector implementation.
+
+The 124060 round-marker study is the current example: 232/232 previously found round-marker offsets passed the existing GMT resize-repeatability rule, while 63/232 changed fitted edge/radius identity across scale. The mature GMT policy correctly allows a stable centre offset to survive while withholding size when the lume/surround edge identity changes.
+
+Do not invalidate every output because one fitted edge changed, and do not keep size/edge-dependent outputs merely because the centre stayed stable.
 
 ### Local and global references are independent evidence
 
@@ -50,9 +70,15 @@ A local minute-track reference can reject dial-centre error; a dial-radial refer
 Where both are available:
 - measure both diagnostically;
 - choose the primary reference from repeatability evidence for that marker/model;
-- retain disagreement between the references as a possible confidence signal rather than discarding the losing reference.
+- retain disagreement between the references as possible confidence evidence rather than discarding the losing reference.
 
 The 124060 12 study is the current example: its dial-radial rotation was more repeatable than the GMT-style 59/01 chord, so GMT geometry should not simply replace the Sub formula. The GMT cross-check concept is still reusable.
+
+### An alternate reference becomes a gate only when evidence supports it
+
+Do not copy a mature cross-check threshold simply because the same quantities exist on another family. In the 124060 development study, radial/chord disagreement did not correlate with rotation resize error, and stable genuine-source readings could disagree by roughly 2 to 2.7 degrees.
+
+Keep an alternate reference diagnostic until family-specific evidence shows that disagreement predicts a bad measurement. Independent geometry can still be useful for describing the kind of issue: for example, the triangle base edge can corroborate whether an axis lean is a whole-marker rotation or only a point/shape lean.
 
 ### Recovery must not lower the primary standard
 
@@ -61,6 +87,14 @@ A mature path may use a bounded recovery detector when the primary detector fail
 ### Pixel support matters
 
 A normalized geometric value is not equally trustworthy at every image size. Fine spacing/rotation checks should establish a minimum usable pixel scale or uncertainty model before production judgement.
+
+A resolution floor alone is not a substitute for direct repeatability testing: in the 124060 development study, some well-resolved dealer images still showed multi-pixel movement after small resizes.
+
+### Reuse an estimator before reusing its policy threshold
+
+An algorithm can transfer cleanly while its decision boundary does not. `GmtMarkerPose` produced valid marker-layout pose estimates on 29/39 124060 development photos with low affine residuals, showing that the estimator itself is reusable. However, only 5/29 valid Sub estimates met the GMT-specific 5-degree `nearFrontal` policy.
+
+Therefore reuse the estimator first, inspect its uncertainty and failure modes, then calibrate any family-specific pose policy separately. Do not invent a new family pose detector until the mature estimator has been tested.
 
 ### Model-specific shape priors stay model-specific
 
@@ -71,6 +105,8 @@ The generic part is usually the relationship being tested: alignment to the nomi
 ### Common markers should use common primitives where the assumptions match
 
 GMT and 124060 already share dial localisation, baton detection, round-marker detection and hand-obstruction machinery. Prefer model layout/configuration around shared marker primitives instead of parallel copies.
+
+The shared confidence layer matters too. In the 124060 development study, applying the already-existing GMT baton resize check rejected 5/83 readings that the Sub route had previously called `FOUND`; no new baton detector was needed.
 
 ### Before declaring a metric unusable, check the mature path
 
