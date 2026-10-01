@@ -14,12 +14,15 @@ class Response:
 
 
 class FakeHttp:
-    def __init__(self, post):
-        self.post = post
+    def __init__(self, post=None, fail=False):
+        self.post = post or {}
+        self.fail = fail
         self.calls = []
 
     def get(self, url, api=False):
         self.calls.append((url, api))
+        if self.fail:
+            raise RuntimeError("blocked")
         return Response([{"data": {"children": [{"data": self.post}]}}])
 
 
@@ -35,7 +38,7 @@ class RedditAcquireTest(unittest.TestCase):
             10,
         )
         self.assertEqual("https://i.redd.it/watch123.jpg", refs[0].url)
-        self.assertTrue(http.calls[0][1], "Reddit JSON must use the documented API path")
+        self.assertTrue(http.calls[0][1])
 
     def test_native_gallery_keeps_gallery_order_and_full_resolution_sources(self):
         http = FakeHttp({
@@ -54,6 +57,24 @@ class RedditAcquireTest(unittest.TestCase):
             ["https://i.redd.it/two.jpg", "https://i.redd.it/one.jpg?x=1&y=2"],
             [r.url for r in refs],
         )
+
+    def test_rss_direct_image_hint_requires_no_reddit_metadata_call(self):
+        http = FakeHttp(fail=True)
+        row = {
+            "source_url": "https://www.reddit.com/r/RepTimeQC/comments/abc123/qc/",
+            "image_album_url": "",
+            "direct_image_url": "https://preview.redd.it/qcface.jpg?width=640&format=pjpg",
+        }
+        refs = acquire.resolve_candidate(row, http, Path("."), 10)
+        self.assertEqual(["https://i.redd.it/qcface.jpg"], [r.url for r in refs])
+        self.assertEqual([], http.calls)
+
+    def test_blocked_json_fails_closed_instead_of_crashing(self):
+        http = FakeHttp(fail=True)
+        refs = acquire.reddit_image_refs(
+            "https://reddit.com/r/RepTimeQC/comments/abc123/qc/", http, 10
+        )
+        self.assertEqual([], refs)
 
     def test_non_reddit_media_hosts_are_not_silently_downloaded(self):
         http = FakeHttp({"url_overridden_by_dest": "https://example.com/not-a-reddit-image.jpg"})
