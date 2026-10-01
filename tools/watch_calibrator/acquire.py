@@ -2,10 +2,10 @@
 """Watch-calibrator acquisition adapter with first-class Reddit QC media support.
 
 The mature Submariner acquisition path remains the provenance/dedupe/storage authority. This
-adapter only adds a resolver for Reddit-hosted QC posts (gallery, i.redd.it/direct image and
-preview fallback) and then delegates the complete acquisition run to submariner_acquire.
-One Reddit post remains one physical watch because discovery assigns one candidate/watch id per
-post. No replica image is used to set a genuine tolerance; this module only acquires evidence.
+adapter adds Reddit-hosted media support and then delegates the complete acquisition run to
+submariner_acquire. One Reddit post remains one physical watch because discovery assigns one
+candidate/watch id per post. No replica image is used to set a genuine tolerance; replica images
+are downstream stress-test evidence only.
 """
 from __future__ import annotations
 
@@ -46,15 +46,16 @@ def _image_url(url: str) -> str:
     host = p.netloc.lower()
     if host not in REDDIT_IMAGE_HOSTS:
         return ""
+    if host in {"preview.redd.it", "external-preview.redd.it"}:
+        name = Path(p.path).name
+        if name and "." in name:
+            return f"https://i.redd.it/{name}"
     return u
 
 
 def _post_image_urls(post: dict) -> list[str]:
     """Return still-image URLs in gallery order where Reddit supplies that order."""
     out: list[str] = []
-
-    # Native Reddit gallery. media_metadata contains the full-resolution source URL while
-    # gallery_data preserves the user's photo order.
     metadata = post.get("media_metadata") or {}
     gallery = (post.get("gallery_data") or {}).get("items") or []
     ordered_ids = [str(x.get("media_id") or "") for x in gallery if x.get("media_id")]
@@ -67,19 +68,15 @@ def _post_image_urls(post: dict) -> list[str]:
         if u:
             out.append(u)
 
-    # Single-image Reddit post.
     u = _image_url(post.get("url_overridden_by_dest") or post.get("url") or "")
     if u:
         out.append(u)
 
-    # Preview is a conservative fallback for posts where Reddit omits media_metadata/source.
     for image in ((post.get("preview") or {}).get("images") or []):
         u = _image_url((image.get("source") or {}).get("url") or "")
         if u:
             out.append(u)
 
-    # Some QC posts are crossposts. Treat the original post's images as belonging to this QC
-    # post, but keep the physical-watch identity anchored to the RepTimeQC post itself.
     for parent in post.get("crosspost_parent_list") or []:
         out.extend(_post_image_urls(parent))
 
@@ -93,23 +90,34 @@ def _post_image_urls(post: dict) -> list[str]:
 
 
 def reddit_image_refs(source_url: str, http, max_images: int) -> list[ImageRef]:
+    """Best-effort legacy enrichment for posts with no RSS media hint.
+
+    Cloud CI can block anonymous Reddit JSON, so callers must not depend on this succeeding.
+    """
     post_id = reddit_post_id(source_url)
     if not post_id:
         return []
     api_url = f"https://www.reddit.com/comments/{post_id}.json?raw_json=1"
-    response = http.get(api_url, api=True)
     try:
+        response = http.get(api_url, api=True)
         payload = json.loads(response.text)
         post = payload[0]["data"]["children"][0]["data"]
-    except (ValueError, TypeError, KeyError, IndexError) as exc:
-        raise FetchError("reddit_json_invalid", source_url, retryable=True) from exc
+    except Exception:
+        return []
     return [ImageRef(url=u) for u in _post_image_urls(post)[:max_images]]
 
 
 def resolve_candidate(row: dict, http, work: Path, max_images: int):
-    # Existing Imgur handling remains first choice when the post supplies an album.
+    # Existing Imgur handling remains first choice because it can provide the complete QC set.
     if (row.get("image_album_url") or "").strip():
         return ORIGINAL_RESOLVE(row, http, work, max_images)
+
+    # Reddit RSS discovery can carry the first native image forward. This is the critical
+    # cloud-safe path: no second Reddit metadata request is needed in acquisition.
+    direct = _image_url(row.get("direct_image_url") or "")
+    if direct:
+        return [ImageRef(url=direct)]
+
     source = (row.get("source_url") or "").strip()
     if source and "reddit.com/" in source.lower():
         refs = reddit_image_refs(source, http, max_images)
