@@ -106,7 +106,7 @@ public final class SubGmtLessonsStudy {
                 Bitmap target=crop!=null?crop.bitmap:preview;
                 Sub124060QcAnalyzer.Result s=Sub124060QcAnalyzer.analyse(target,null);
                 int ow=full!=null?full.width():preview.getWidth(),oh=full!=null?full.height():preview.getHeight();
-                pho.printf(Locale.US,"%s,%d,%d,%d,%d,%s,%s,%s,%s,%d,%d%n",q(p),ow,oh,target.getWidth(),target.getHeight(),b(crop!=null),q(s.dialSource),B(s.dialReproducible),b(s.triangle!=null),s.batonsFound(),s.roundsFound());
+                pho.printf(Locale.US,"%s,%d,%d,%d,%d,%s,%s,%s,%s,%d,%d%n",q(p),ow,oh,target.getWidth(),target.getHeight(),b(crop!=null),q(String.valueOf(s.dialSource)),B(s.dialReproducible),b(s.triangle!=null),s.batonsFound(),s.roundsFound());
 
                 Mat src=new Mat();
                 try{
