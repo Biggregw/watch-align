@@ -1,119 +1,137 @@
-# Rolex Submariner 124060 — checkpoint (paused)
+# Rolex Submariner 124060 — alpha70 checkpoint
 
-Status: an experimental 124060 option exists in the debug APK. It measures, but it does not judge. GMT is unchanged.
+Status: the experimental 124060 measurement route is merged to `main` and ready for user testing. It measures, but it still does not judge. GMT production behaviour is intended to remain unchanged.
 
-- **Branch:** `feature/android-sub124060-qc`, based on `main` at `69be8e7`.
-- **Commit:** the commit that adds this file (`git log -1 -- docs/124060_CHECKPOINT.md`).
-- **App version:** 1.3.0-alpha69.
-- **Not merged to `main`.**
+- **Main merge:** PR #37, merge commit `b402cdeb776f185523f5d2cc5ab79d8107479b3f`.
+- **App version:** `1.3.0-alpha70` (`versionCode 13070`).
+- **Route:** `Sub124060QcAnalyzer`, selected before the GMT/legacy analysis path.
+- **Policy:** no 124060 pass/fail tolerance, score, authenticity rule or verdict exists.
+
+## What alpha70 adds
+
+The 124060 route keeps the frozen Submariner-specific 12-triangle detector and the existing shared GMT dial/marker primitives, but now reuses more of the reliability framework that made the GMT path robust.
+
+### 12 triangle
+
+The existing fail-closed requirements remain:
+
+- the dial edge must be fitted, automatically or from a hand alignment;
+- the dial edge must reproduce at 94% and 88% scale;
+- the triangle must be at least 40 px wide;
+- no hand may obstruct 12;
+- the same physical triangle outline must reappear at 94% and 88%.
+
+Alpha70 adds a second, independent check: the **actual numeric measurements** are re-measured at 100%, 94% and 88%.
+
+- rotation, gap and centring are checked independently;
+- each metric is converted to an approximate source-pixel movement;
+- if one metric moves by more than about one source pixel, only that metric is withheld;
+- another stable metric can still be reported;
+- this is a measurement-quality gate, not a watch QC tolerance.
+
+The Submariner dial-radial rotation remains the primary rotation measurement. The local 59/01 chord and the triangle base-edge angle are retained as diagnostics only; they do not alter the reported rotation or create a verdict.
+
+### Batons and round markers
+
+The 3/6/9 batons use `GmtSixLandmarkAnalyzer` and the eight round markers use `GmtRoundMarkerAnalyzer` as before.
+
+Alpha70 also runs the mature GMT resize/re-measure diagnostics for these shared markers, but **does not import GMT decision thresholds**:
+
+- baton resize movement is recorded diagnostically only;
+- round-marker centre resize movement is recorded diagnostically only;
+- if a round marker changes between lume and surround edge identity under resize, its centre can remain usable while its size comparison is suppressed;
+- no otherwise stable 124060 baton or round marker is downgraded merely because a GMT-calibrated decision rule would do so.
+
+### Photo pose
+
+`GmtMarkerPose` is reused as a round-marker-layout pose estimator and shown diagnostically in Full results. The GMT 5° near-frontal threshold is **not** applied to the 124060.
+
+## Development evidence behind alpha70
+
+The bounded alpha70 reliability study used **39 existing development photos from 13 physical 124060 watches**. Validation and holdout were not inspected.
+
+Among the 25 photos where the triangle was large enough, the same outline repeated and the dial fit was reproducible:
+
+- rotation repeated within about one source pixel on **21/25**;
+- gap repeated within about one source pixel on **18/25**;
+- centring repeated within about one source pixel on **21/25**;
+- median movement was about **0.32 px rotation**, **0.41 px gap** and **0.34 px centring**;
+- worst observed movement was **1.51 px rotation-tip travel**, **4.07 px gap** and **1.36 px centring**.
+
+A strict one-pixel marker-status gate was deliberately rejected. In the development study it would have demoted **44/83** otherwise stable/found baton readings and **60/232** otherwise stable/found round-marker readings without a 124060 calibration basis. Those marker checks therefore remain diagnostic.
+
+See `docs/research/submariner/sub124060_reliability_framework_alpha70_2026-10-01.md` and `docs/ENGINEERING_LESSONS.md`.
 
 ## What works in the APK
 
-The model selector on the main screen now offers two models:
+The main screen offers:
 
-- **GMT-Master II 126710** — the default. It runs the unchanged GMT check.
-- **Submariner 124060 (experimental)** — runs its own route (`Sub124060QcAnalyzer`). It never reaches the GMT analyser or the old legacy non-GMT analysers.
+- **GMT-Master II 126710** — the mature GMT route;
+- **Submariner 124060 (experimental)** — the isolated 124060 route.
 
-The 124060 route uses the existing flow unchanged: choose photo, Check watch, summary, close-up, Inspect overlay, Full results, Export card, and Align dial edge by hand.
+The 124060 flow supports choosing a photo, Check watch, summary, close-up, Inspect overlay, Full results, Export card and manual dial-edge alignment.
 
-What the 124060 route does:
+The report continues to label 124060 values **MEASURED / NOT YET JUDGED** and states that experimental support is not yet a QC pass/fail result.
 
-1. **Dial.** It uses the existing dial seed and edge fit, unchanged, and reports which of these it got:
-   - automatic edge fit;
-   - hand-aligned, then the dial edge was re-fitted;
-   - hand-aligned circle only;
-   - not assessable.
+The neutral overlay draws only detected/measured geometry. It does not draw warning colours, expected-template verdicts or scores.
 
-   Align dial edge by hand is offered whenever the dial or the 12 is not found.
-2. **12 triangle.** It uses the frozen Submariner detector v2, ported from the research branch as `SubTwelveTriangle`.
-   - Single photo only, with no perturbation consensus.
-   - No GMT 44.3° apex gate.
-   - On the 25 development 124060 photos where both production and research found a triangle, the production selection is in the same place as the frozen research selection: at most 0.94 px apart in original pixels.
-   - On 2 further photos research found a triangle and production did not. Production's dial fit there differs from the research fit, so the route fails closed.
-3. **Batons 3/6/9 and round markers 1, 2, 4, 5, 7, 8, 10, 11.** These use the existing GMT detectors, unchanged. The layout comes from the model, so there is no date window and no date-side logic.
-4. **Summary.** It shows:
-   - dial source;
-   - whether the 12 was found;
-   - 12 rotation, gap to the minute track and centring, each labelled **MEASURED / NOT YET JUDGED**;
-   - how many batons and round markers were found.
+## Still deliberately missing
 
-   It always shows: "124060 experimental support: measurements are not yet QC pass/fail results." It never says OK, worth a look or check closely.
-5. **Overlay** (neutral). It draws only what was found:
-   - the dial boundary;
-   - the 12 triangle, plus the minute-track arc and the 59/60/01 points it was measured against;
-   - the radial through the 60 tick;
-   - the batons and the round markers.
+- **No 124060 tolerances or verdicts.**
+- **No authenticity classification.**
+- **No imported GMT pose or marker thresholds.**
+- Bezel/pearl, rehaut, hands, printing and lume are not production 124060 QC checks yet.
+- Validation and holdout remain reserved for later calibration work.
 
-   Cyan means found and measured. Grey dashed means found but not measured, with the reason beside it. There are no ticks, no warning colours, no scores and no expected template geometry.
+## Current verification
 
-### Fail-closed rules for the three 12 values
+- **Android JVM suite:** alpha70 CI passed with 253 tests and 0 failures.
+- **Build/signing:** alpha70 standalone APK build and signing verification passed.
+- **Merge review:** independent review after PR #37 found no GMT behavioural code change apart from the version label and confirmed the 124060 route still exits before GMT QC logic.
+- **GMT golden fixture:** the committed fixture remains the SHA-keyed 337-photo baseline. The last full image-backed run was 337/337 identical at the preceding checkpoint. The alpha70 code review shows no shared GMT detector change, but an alpha70 image-backed rerun still requires the third-party 337-photo corpus because those image bytes are intentionally not committed.
 
-The three 12 values are shown only when all of these hold:
+## User-testing checkpoint
 
-- the dial edge was fitted, automatically or from a hand alignment;
-- the edge fit gives the same dial when the photo is reduced to 94% and 88% (centre within 0.01 R, radius within 2%);
-- the triangle is at least 40 px wide;
-- no hand is at 12;
-- the same outline is found again at 94% and 88%.
+The next step is phone testing, not another broad redesign.
 
-Gap and centring also need the outer (surround) outline and a located minute track.
+When testing alpha70, record cases where:
 
-Why the dial-reproducibility rule matters: the development photos with the worst 12 readings were the ones whose dial fit did not reproduce. For example, one genuine watch read 8.9° rotation while turned 8° in the photo.
+1. the dial or marker outline is visibly on the wrong physical edge;
+2. a value is withheld even though the geometry looks stable;
+3. a value is reported even though the measurement visibly looks unreliable;
+4. analysis speed is unacceptable;
+5. report wording is confusing.
 
-## What is experimental or missing
+Fix those issues one at a time.
 
-- **No 124060 tolerances.** Nothing is flagged, cleared, scored or passed. The numbers are for looking, not for judging.
-- **Not checked:** bezel and pearl, rehaut, hands, printing, lume, and the photo-angle rating.
-- **No device proof.** OpenCV loading, run time and analysis on a phone are not proven by the build. On desktop, the 124060 route takes a median of about 5.6 s per photo, and up to about 45 s while another job was running.
+## Follow-up before production tolerances
 
-## Known limitation: automatic dial-edge fit on replica QC photos
+Add a direct pure unit test for **independent per-metric 12 withholding**. The desired cases are explicit, for example:
 
-On the 80 development 124060 photos:
+- unstable rotation while gap and centring remain available;
+- unstable gap while rotation and centring remain available;
+- unstable centring while rotation and gap remain available.
 
-| | Photos | Automatic dial-edge fit | 12 measured |
-|---|---|---|---|
-| Genuine dealer photos | 36 | 22 | 9 |
-| Replica QC photos | 44 | 14 | 5 |
+The current OpenCV route implements this behaviour, but the final min/max-to-withhold decision should be extracted to a pure helper before production tolerances are introduced so it can be regression-tested directly.
 
-Most failures are a seed-circle fallback, or low resolution: a 12 triangle under 40 px wide. In those cases, use Align dial edge by hand.
+## Reuse-first rule
 
-## Blockers when the project resumes
+Before adding any new 124060 detector, measurement, confidence rule or QC decision, audit the closest mature GMT mechanism first. Reuse its proven primitives and reliability lessons where they apply, while keeping model-specific geometry and calibration separate when evidence says they differ.
 
-- **B1 — improve automatic dial-edge fitting on replica QC photos.** Start with the development replica photos where the edge fit fails, and classify why it fails before changing anything. `DialEdgeEllipseFit` is shared with GMT, so any fix must keep the GMT golden comparison identical.
-- **B2 — establish conservative 124060 tolerances.**
-  - Use the development partition: genuine watches, with the physical watch as the unit, plus replica photos.
-  - Candidate checks: 12 gap to minute track, 12 rotation, 12 centring.
-  - Check once on validation; use the holdout once at the end.
-  - Apply the same fail-closed rules as above.
-- **126610LN / 126610LV** remain future work. They have the date at 3 and batons at 6 and 9; the explicit layout already exists on the research branch.
-
-## Exact next step when resuming
-
-1. Install this APK and run the 124060 route on real replica QC photos. Note where the overlay outlines are wrong, and where Align dial edge by hand succeeds when the automatic fit fails.
-2. Use those notes to decide whether B1 (dial fit) or B2 (tolerances) comes first.
-   - If the dial or 12 is missed on most real QC photos, do B1 first.
-   - Do B2 only after the outlines are reliably on the right markers.
-
-## Verification at this checkpoint
-
-- **Android JVM suite:** 247 tests, 0 failures. This includes `Sub124060Test` (13), `SubmarinerProductionIsolationTest` (6), `GmtConstantsSnapshotTest` (3) and `GenericGmtTest` (7).
-- **GMT golden comparison:** 337 of 337 photos, 0 differences. This covers the GMT analyser outputs and every round-marker row.
-- **GMT whole-route check:** `CoreReport` ran `WatchAlignCoreV13.analyse` on 16 GMT photos, built from both `main` and this branch.
-  - Reports, overlay pixels and close-up pixels are identical; only the version label differs.
-  - On 3 of the photos both builds throw the same legacy error, as before.
-- **Debug APK:** `:app:assembleDebug` succeeds. It has not been installed or run on a phone by the developer.
+See `AGENTS.md` and `docs/ENGINEERING_LESSONS.md`.
 
 ## Where things are
 
 | What | Where |
 |---|---|
 | 124060 analysis route | `android/app/src/main/java/com/watchalign/mobile/Sub124060QcAnalyzer.java` |
-| Ported 12-triangle detector | `.../SubTwelveTriangle.java` |
+| 12-triangle detector | `.../SubTwelveTriangle.java` |
 | Layout | `.../Sub124060Layout.java` |
 | Overlay | `.../Sub124060Overlay.java` |
-| Summary and Full results text | `.../Sub124060Summary.java` |
-| Routing and selector | `WatchAlignCoreV13.analyse` (first lines) and `MainActivity.offeredModels` |
-| Tests | `Sub124060Test`, `SubmarinerProductionIsolationTest`, `GmtConstantsSnapshotTest` |
-| GMT golden comparison | `tools/desktop-harness/gmt_golden.py` (337 photos; the images themselves are not committed) |
-| Desktop run of the 124060 route | `tools/desktop-harness/run.sh SubCheck <list.txt> <out_dir>` |
-| Research evidence | Branch `feature/submariner-research-hardening` (`docs/research/submariner/`) |
+| Summary and Full results | `.../Sub124060Summary.java` |
+| Shared pixel-repeatability helper | `.../MeasurementRepeatability.java` |
+| Routing/model selector | `WatchAlignCoreV13` and `MainActivity` |
+| 124060 tests | `Sub124060Test`, `SubReliabilityReuseTest`, `SubmarinerProductionIsolationTest` |
+| GMT protection | `GmtConstantsSnapshotTest`, `GenericGmtTest`, `tools/desktop-harness/gmt_golden.py` |
+| Reliability evidence | `docs/research/submariner/sub124060_reliability_framework_alpha70_2026-10-01.md` |
+| Reusable engineering lessons | `docs/ENGINEERING_LESSONS.md` |
