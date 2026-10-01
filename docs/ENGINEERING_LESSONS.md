@@ -41,6 +41,20 @@ The corrected rule is:
 
 This is the preferred migration sequence for future families: **copy the mature product behaviour, disable or neutralise unsupported judgements, then replace only the model-specific pieces that fail under evidence.** That is safer and usually faster than rebuilding the product experience around a new detector and trying to add parity later.
 
+## Presentation parity must be shared code, not a visual copy
+
+Alpha71 corrected the visible 124060 experience, but initially did so with a second renderer that deliberately mimicked the GMT renderer. That improved the screen while leaving two implementations of the same product behaviour. The next refactor showed the stronger lesson: if the behaviour is intended to be common, the implementation should be common too.
+
+For production-family presentation:
+
+- model-specific analysis ends at a presentation adapter;
+- the adapter supplies marker geometry, measured/not-judged state, reasons and later model-specific QC decisions;
+- whole-dial markup, badges, missing/obscured-marker behaviour, close-up selection, close-up drawing and legend behaviour belong to one shared renderer/planner;
+- pending family calibration is represented as a neutral measured state in the shared renderer, not as a reason to fork the renderer;
+- a copied family renderer is technical debt even when its pixels look similar, because future fixes to the mature path will otherwise have to be rediscovered and copied again.
+
+When adding another family such as 126610, first ask whether the existing shared presentation model can accept its layout and decisions. Extend the shared presentation contract only for genuine cross-family needs; do not start a new production renderer.
+
 ## Reusable lessons from GMT and 124060 work
 
 ### Detection is not trust
