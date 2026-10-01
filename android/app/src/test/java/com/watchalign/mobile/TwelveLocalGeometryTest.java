@@ -32,6 +32,8 @@ public class TwelveLocalGeometryTest {
         double[] t59={-12,-30},t60={2,-30},t01={12,-30};
         TwelveLocalGeometry.Result q=TwelveLocalGeometry.measure(l,r,tip,t59,t60,t01,0,40);
         assertTrue(q.valid);
-        assertEquals(-0.1,q.centringOverWidth,1e-12);
+        // Mature GMT convention: positive is toward the 59 side. With the 60 tick shifted
+        // right of the marker, the marker therefore reads +0.10 widths.
+        assertEquals(0.1,q.centringOverWidth,1e-12);
     }
 }
