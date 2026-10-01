@@ -27,9 +27,21 @@
         "name": "Bob's Watches",
         "id_prefix": "auto_bobs_124060",
         "source_type": "dealer_listing",
-        "target": 18,
+        "target": 20,
         "require_listing_id": true,
-        "seed_urls": ["https://www.bobswatches.com/rolex/submariner-{model}"],
+        "seed_urls": [
+          "https://www.bobswatches.com/rolex/submariner-{model}",
+          "https://www.bobswatches.com/rolex/submariner-{model}?waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=2&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=3&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=4&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=5&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=6&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=7&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=8&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=9&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=10&waitlist=1"
+        ],
         "queries": [
           "site:bobswatches.com \"Rolex Submariner 124060\" \"Sku\"",
           "site:bobswatches.com \"124060\" \"Actual Photo\"",
