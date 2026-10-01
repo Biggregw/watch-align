@@ -1,7 +1,7 @@
 {
   "model": "124060",
   "family": "submariner_12",
-  "acquisition_adapter": "submariner_acquire_v2",
+  "acquisition_adapter": "submariner_acquire_v3",
   "measurement_adapter": "submariner_research_v2",
   "layout": {
     "triangle": [12],
@@ -85,15 +85,16 @@
         "id_prefix": "auto_reptimeqc_124060",
         "source_type": "forum_qc",
         "target": 12,
-        "require_album": true,
+        "require_album": false,
         "require_factory": true,
         "reddit_direct": true,
         "queries": [
-          "site:reddit.com/r/RepTimeQC \"124060\" \"VSF\" \"imgur\"",
-          "site:reddit.com/r/RepTimeQC \"124060\" \"Clean\" \"imgur\"",
-          "site:reddit.com/r/RepTimeQC \"124060\" \"CF\" \"imgur\"",
-          "site:reddit.com/r/RepTimeQC \"124060\" \"ARF\" \"imgur\"",
-          "site:reddit.com/r/RepTimeQC \"124060\" \"QC\" \"imgur\""
+          "site:reddit.com/r/RepTimeQC/comments \"124060\" \"VSF\"",
+          "site:reddit.com/r/RepTimeQC/comments \"124060\" \"Clean\"",
+          "site:reddit.com/r/RepTimeQC/comments \"124060\" \"CF\"",
+          "site:reddit.com/r/RepTimeQC/comments \"124060\" \"ARF\"",
+          "site:reddit.com/r/RepTimeQC/comments \"124060\" \"QC\"",
+          "site:reddit.com/r/RepTimeQC \"124060\" \"imgur\""
         ]
       }
     ]

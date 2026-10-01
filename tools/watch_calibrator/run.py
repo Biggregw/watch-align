@@ -59,10 +59,11 @@ def run(model: str, root: Path, fresh=False) -> dict:
         save({"model":model,"family":config["family"],"state":"NO_CALIBRATABLE_METRICS","metrics":{},"policy":config["calibration_policy"]},P["cal"])
         (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n");return status
 
-    # 2) Acquire. This adapter already performs provenance-aware dealer/Imgur resolution and exact hashes.
-    if config.get("acquisition_adapter")!="submariner_acquire_v2":
+    # 2) Acquire. v3 adds Reddit-native QC gallery/direct-image resolution while retaining the
+    # mature provenance, hashing and storage behaviour of the Submariner acquisition path.
+    if config.get("acquisition_adapter")!="submariner_acquire_v3":
         raise SystemExit(f"Unsupported acquisition adapter {config.get('acquisition_adapter')}")
-    sh([sys.executable,REPO/"tools/dataset_harvester/submariner_acquire.py","--pool",P["pool"],"--out",P["acq"],"--max-images",str(config["discovery"].get("max_images_per_watch",12))])
+    sh([sys.executable,REPO/"tools/watch_calibrator/acquire.py","--pool",P["pool"],"--out",P["acq"],"--max-images",str(config["discovery"].get("max_images_per_watch",12))])
 
     # 3) Build dataset and lock a watch-level split once. The split file is the boundary between discovery and calibration.
     if not P["split"].exists():
