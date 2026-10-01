@@ -5,6 +5,15 @@
 - Never change AGP, Gradle, SDK, Java, or dependency versions merely to make the Copilot environment work.
 - Preserve the existing native Android Java/OpenCV architecture unless explicitly instructed otherwise.
 - For new QC work, read `docs/architecture/QC_PRINCIPLES.md` first and treat it as the governing design direction.
+- Also read `docs/PRODUCT_SCOPE.md` before substantial planning or implementation. It defines the product boundaries and anti-drift rules.
+- Watch Align analyses uploaded dealer/QC photos. Do not redesign it around taking new camera photos.
+- Treat the existing GMT Android QC experience as the product reference for new watch families unless the owner explicitly approves a redesign.
+- Current production target is Rolex Submariner 124060, followed by 126610LN and 126610LV.
+- Preserve GMT production behaviour while adding new families.
+- Research must solve a named production blocker. Do not start open-ended corpus, detector, or calibration work without stating the production decision it enables.
+- If a family-specific check is not reliable enough, suppress or mark that check unavailable rather than redesigning the whole product.
+- Do not turn Watch Align into an authenticity classifier. The product is replica QC.
+- If work begins expanding beyond `docs/PRODUCT_SCOPE.md`, stop before implementing the expansion and report the proposed scope change for approval.
 - Prefer directly observed local landmark ratios for marker QC. Do not introduce global rectification, conic fitting, projective correction or other additional geometry unless evidence shows it materially improves the specific measurement's repeatability or pose invariance.
 - Every proposed QC feature must state the physical landmark relationship it measures and the visible defect it is intended to detect.
 - Keep genuine-watch variation, measurement/repeatability error and genuine-vs-replica separation distinct in analysis and reporting.
