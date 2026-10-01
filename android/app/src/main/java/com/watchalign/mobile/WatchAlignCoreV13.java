@@ -10,7 +10,7 @@ import java.util.List;
 
 /** Alpha40: human GMT12 QC with real-image rehaut direction calibration and stricter pose gating. */
 public final class WatchAlignCoreV13 {
-    public static final String CORE_VERSION="1.3.0-alpha69";
+    public static final String CORE_VERSION="1.3.0-alpha70";
 
     public static final class AnalysisResult {
         public final Bitmap annotated,reference,aligned,perspectiveOverlay,rectified;
@@ -42,8 +42,8 @@ public final class WatchAlignCoreV13 {
 
     /** @param full the original photo, for a full-resolution dial crop when the dial is small (alpha61); may be null */
     public static AnalysisResult analyse(Bitmap watch,List<Bitmap> references,String modelRef,FullResSource full){
-        // Experimental Submariner 124060 route (checkpoint build). It never reaches the GMT analysis below
-        // nor the legacy non-GMT analysers; every other model takes the existing path unchanged.
+        // Experimental Submariner 124060 route. It never reaches the GMT analysis below nor the
+        // legacy non-GMT analysers; every other model takes the existing path unchanged.
         if(Sub124060QcAnalyzer.supports(modelRef))return Sub124060QcAnalyzer.analyseForCore(watch,full,manualSeed());
         List<Bitmap> refs=references==null?Collections.emptyList():new ArrayList<>(references);Bitmap primary=refs.isEmpty()?null:refs.get(0);
         WatchAlignCoreV11.AnalysisResult base=WatchAlignCoreV11.analyse(watch,primary,modelRef);
