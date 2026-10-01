@@ -59,21 +59,21 @@ public class Sub124060Test {
             SubTwelveTriangle.Cand c=clean();c.apex=apex;judged(c);
             assertTrue("apex "+apex,c.plausible);
         }
-        SubTwelveTriangle.Cand c=clean();c.apex=62.0;judged(c);   // an inscribed shape in a round marker
+        SubTwelveTriangle.Cand c=clean();c.apex=62.0;judged(c);
         assertFalse(c.plausible);assertEquals("shape",c.implausible);
     }
 
     @Test public void implausibleCandidatesAreRejectedWithAReason(){
-        SubTwelveTriangle.Cand a=clean();a.rho=0.50;judged(a);assertEquals("rho",a.implausible);       // e.g. the crown logo
+        SubTwelveTriangle.Cand a=clean();a.rho=0.50;judged(a);assertEquals("rho",a.implausible);
         SubTwelveTriangle.Cand b=clean();b.widthR=0.40;judged(b);assertEquals("width",b.implausible);
-        SubTwelveTriangle.Cand g=clean();g.gapR=0.15;judged(g);assertEquals("track_gap",g.implausible);  // track found on the bezel
+        SubTwelveTriangle.Cand g=clean();g.gapR=0.15;judged(g);assertEquals("track_gap",g.implausible);
         SubTwelveTriangle.Cand s=clean();s.sym=0.30;s.square=9;s.completeness=0.2;judged(s);assertEquals("score",s.implausible);
     }
 
     @Test public void selectionIsTheLowestScoringPlausibleCandidate(){
         SubTwelveTriangle.Cand worse=clean();worse.dthetaDeg=6.0;judged(worse);
         SubTwelveTriangle.Cand best=judged(clean());
-        SubTwelveTriangle.Cand bad=clean();bad.rho=0.5;judged(bad);bad.score=-5;   // implausible ranks last whatever its score
+        SubTwelveTriangle.Cand bad=clean();bad.rho=0.5;judged(bad);bad.score=-5;
         List<SubTwelveTriangle.Cand> l=new ArrayList<>();l.add(bad);l.add(worse);l.add(best);
         SubTwelveTriangle.rank(l);
         SubTwelveTriangle.Result r=new SubTwelveTriangle.Result();r.cands=l;
@@ -91,16 +91,16 @@ public class Sub124060Test {
 
     // ---------------------------------------------------------------------------------------- fail-closed gates
     @Test public void dialReproducibilityUsesTheResearchRule(){
-        assertTrue(Sub124060QcAnalyzer.sameDial(500,500,400,503,502,406));      // 3.6 px < 4 px, +1.5%
-        assertFalse(Sub124060QcAnalyzer.sameDial(500,500,400,505,500,400));     // 5 px > 0.01 R
-        assertFalse(Sub124060QcAnalyzer.sameDial(500,500,400,500,500,410));     // +2.5%
+        assertTrue(Sub124060QcAnalyzer.sameDial(500,500,400,503,502,406));
+        assertFalse(Sub124060QcAnalyzer.sameDial(500,500,400,505,500,400));
+        assertFalse(Sub124060QcAnalyzer.sameDial(500,500,400,500,500,410));
         assertFalse(Sub124060QcAnalyzer.sameDial(500,500,0,500,500,0));
     }
 
     @Test public void sameOutlineUsesTheResearchGrouping(){
-        assertTrue(Sub124060QcAnalyzer.sameOutline(100,100,0.25,105,100,0.27,400));   // 5 px < 8 px, +8%
-        assertFalse(Sub124060QcAnalyzer.sameOutline(100,100,0.25,110,100,0.25,400));  // 10 px > 0.02 R
-        assertFalse(Sub124060QcAnalyzer.sameOutline(100,100,0.25,100,100,0.19,400));  // lume vs surround width
+        assertTrue(Sub124060QcAnalyzer.sameOutline(100,100,0.25,105,100,0.27,400));
+        assertFalse(Sub124060QcAnalyzer.sameOutline(100,100,0.25,110,100,0.25,400));
+        assertFalse(Sub124060QcAnalyzer.sameOutline(100,100,0.25,100,100,0.19,400));
     }
 
     // ---------------------------------------------------------------------------------------- summary: no verdicts
@@ -127,9 +127,19 @@ public class Sub124060Test {
         assertEquals(3,count(s,Sub124060Summary.MEASURED));
         assertTrue(s.contains("Dial: automatic edge fit"));
         assertTrue(s.contains("+0.40°"));assertTrue(s.contains("0.041"));assertTrue(s.contains("+0.006"));
-        assertTrue(s.contains("Batons 3/6/9: 3 of 3 found"));
-        assertTrue(s.contains("Round markers: 8 of 8 found (8: hand in the way)"));
+        assertTrue(s.contains("Batons 3/6/9: 3/3 detected, 3/3 measurable"));
+        assertTrue(s.contains("Round markers: 8/8 detected, 7/8 measurable (8: detected, not measured (hand in the way))"));
+        assertTrue(s.contains("GMT-style whole-dial markup"));
         assertTrue(s.contains(Sub124060Summary.NOT_CHECKED));
+        assertNoVerdict(s);
+    }
+
+    @Test public void detectedAndMeasurableAreNotConflated(){
+        Sub124060QcAnalyzer.Result r=measured();
+        r.batons.get(1).status=Sub124060QcAnalyzer.Status.HAND;
+        String s=Sub124060Summary.build(r);
+        assertTrue(s.contains("Batons 3/6/9: 3/3 detected, 2/3 measurable"));
+        assertTrue(s.contains("6: detected, not measured (hand in the way)"));
         assertNoVerdict(s);
     }
 
@@ -160,6 +170,12 @@ public class Sub124060Test {
     @Test public void overlayDrawingIsEmptyWithoutDialGeometry(){
         Sub124060Overlay.Drawing d=Sub124060Overlay.Drawing.of(new Sub124060QcAnalyzer.Result());
         assertFalse(d.hasAnything());
+    }
+
+    @Test public void overlayLegendDoesNotPretendMeasuredMeansPassed(){
+        assertTrue(Sub124060Overlay.BANNER.contains("QC limits not calibrated"));
+        assertFalse(Sub124060Overlay.BANNER.contains("pass"));
+        assertFalse(Sub124060Overlay.BANNER.contains("clear"));
     }
 
     private static int count(String s,String w){int n=0,i=0;while((i=s.indexOf(w,i))>=0){n++;i+=w.length();}return n;}
