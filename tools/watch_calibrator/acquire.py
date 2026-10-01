@@ -26,6 +26,7 @@ import submariner_acquire as base  # noqa: E402
 from harvester.http import FetchError  # noqa: E402
 from harvester.resolvers import ImageRef  # noqa: E402
 
+ORIGINAL_RESOLVE = base.resolve_candidate
 REDDIT_POST = re.compile(r"reddit\.com/(?:r/[^/]+/)?comments/([a-z0-9]+)", re.I)
 REDDIT_IMAGE_HOSTS = {"i.redd.it", "preview.redd.it", "external-preview.redd.it"}
 
@@ -108,13 +109,13 @@ def reddit_image_refs(source_url: str, http, max_images: int) -> list[ImageRef]:
 def resolve_candidate(row: dict, http, work: Path, max_images: int):
     # Existing Imgur handling remains first choice when the post supplies an album.
     if (row.get("image_album_url") or "").strip():
-        return base.resolve_candidate(row, http, work, max_images)
+        return ORIGINAL_RESOLVE(row, http, work, max_images)
     source = (row.get("source_url") or "").strip()
     if source and "reddit.com/" in source.lower():
         refs = reddit_image_refs(source, http, max_images)
         if refs:
             return refs
-    return base.resolve_candidate(row, http, work, max_images)
+    return ORIGINAL_RESOLVE(row, http, work, max_images)
 
 
 def run(pool, out: Path, max_images: int = 12) -> dict:
