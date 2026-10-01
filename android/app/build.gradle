@@ -8,13 +8,36 @@ android {
         applicationId 'com.watchalign.mobile'
         minSdk 28
         targetSdk 35
-        versionCode 13068
-        versionName '1.3.0-alpha68'
+        versionCode 13070
+        versionName '1.3.0-alpha70'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
+    // One fixed signing key for every build (local and CI), so Android sees the same developer each
+    // time and a new build installs over the old one. The key itself is never committed: it comes from
+    // WATCHALIGN_KEYSTORE_FILE + WATCHALIGN_KEYSTORE_PASSWORD (in CI, from the GitHub secrets
+    // WATCHALIGN_KEYSTORE_B64 and WATCHALIGN_KEYSTORE_PASSWORD). Without them the build falls back to
+    // the machine's default debug key. android/signing/README.md has the details.
+    def sharedKeystore = System.getenv('WATCHALIGN_KEYSTORE_FILE')
+    def sharedKeyReady = sharedKeystore && file(sharedKeystore).exists() && System.getenv('WATCHALIGN_KEYSTORE_PASSWORD')
+    signingConfigs {
+        if (sharedKeyReady) {
+            watchalign {
+                storeFile file(sharedKeystore)
+                storeType 'pkcs12'
+                storePassword System.getenv('WATCHALIGN_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('WATCHALIGN_KEY_ALIAS') ?: 'watchalign'
+                keyPassword System.getenv('WATCHALIGN_KEY_PASSWORD') ?: System.getenv('WATCHALIGN_KEYSTORE_PASSWORD')
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            if (sharedKeyReady) signingConfig signingConfigs.watchalign
+        }
         release {
+            if (sharedKeyReady) signingConfig signingConfigs.watchalign
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }

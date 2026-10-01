@@ -26,3 +26,18 @@ Before substantial planning or implementation, read `docs/PRODUCT_SCOPE.md`.
 - Do not turn Watch Align into an authenticity classifier. The product is replica QC.
 - Family work should end in working Android QC support and a testable APK, not indefinitely expanding research statistics.
 - If a task begins expanding beyond `docs/PRODUCT_SCOPE.md`, stop before implementing the expansion and report the proposed scope change for approval.
+
+# Reuse-first engineering workflow
+
+Before creating or substantially changing family-specific detector, geometry, confidence, recovery or QC logic, read `docs/ENGINEERING_LESSONS.md` and audit the closest mature implementation first.
+
+- Start from the mature analogue, normally GMT. Identify what problem it solved, the failure modes it encountered, and the guardrails added around it.
+- Reuse lessons as well as code. Minimum pixel support, resize repeatability, local-frame quality, hand checks, alternate-reference cross-checks, recovery behaviour, fail-closed rules and regression strategy are all candidates for reuse even when marker geometry differs.
+- Before writing a parallel algorithm, make a reuse map: **shared unchanged / shared with parameters or model layout / deliberately model-specific / not applicable**.
+- Prefer composition, parameterisation or extraction of proven primitives over copying or rebuilding. Do not force a shared abstraction when measured evidence shows a family-specific method is more reliable.
+- If a new family deliberately diverges from the mature method, record the evidence or concrete assumption that makes the mature method worse or inapplicable.
+- Before declaring a new-family metric too noisy or unusable, check whether the mature path addressed the same failure with a different reference frame, cross-check, confidence gate, pixel floor, resize test, recovery path, pose gate or normalization.
+- Before sourcing new images or starting a new corpus, check whether existing project datasets, artifacts and prior experiments can answer the question.
+- Cross-family experiments should start diagnostic-only. Preserve mature GMT outputs and thresholds until equivalence/non-regression is demonstrated.
+- Every substantial experiment or handoff must state **Lessons reused**, **Deliberate divergences**, and any **New reusable lesson**.
+- When a reusable lesson is established, update `docs/ENGINEERING_LESSONS.md` in the same branch so future work does not have to rediscover it.
