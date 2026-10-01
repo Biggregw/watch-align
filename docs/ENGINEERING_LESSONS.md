@@ -55,6 +55,20 @@ The most valuable transferable work is often the guardrail around an algorithm: 
 
 When adapting a mature check, audit these before writing a new detector or measurement formula.
 
+### Reuse a stability mechanism separately from its decision policy
+
+A mature stability routine can mix two different things: generic evidence about how much a measurement moves, and family-specific knowledge about whether that movement could change a QC verdict. Reuse the evidence first. Do not silently import the second part.
+
+The alpha70 124060 work exposed this clearly. A strict one-pixel diagnostic would classify 44 of 83 otherwise stable/found baton readings and 60 of 232 otherwise stable/found round-marker readings as numerically jumpy. The mature GMT `resampleStable()` accepts many of those because every re-measurement remains safely below GMT-calibrated QC levels. Neither rule is a justified 124060 marker-status boundary before 124060 marker tolerances exist.
+
+Therefore:
+- run the shared 100/94/88 re-measurement machinery;
+- record physical-pixel movement and edge identity;
+- use inherently model-neutral consequences immediately, such as refusing a size comparison when the physical edge changes;
+- keep user-facing marker status unchanged by numeric movement until the new family has evidence for the corresponding decision boundary.
+
+The 12 can be stricter when the question is only whether to display a precise informational number: B2 directly showed that same-outline 12 values can move by several pixels, so alpha70 withholds that individual number when it is not repeatable to about one pixel. This is a measurement-quality rule, not a watch tolerance.
+
 ### Quantity-specific confidence should travel with a shared detector
 
 A shared detector can return several quantities whose reliability differs. Reuse the mature confidence policy per quantity, not just the detector implementation.
@@ -106,7 +120,7 @@ The generic part is usually the relationship being tested: alignment to the nomi
 
 GMT and 124060 already share dial localisation, baton detection, round-marker detection and hand-obstruction machinery. Prefer model layout/configuration around shared marker primitives instead of parallel copies.
 
-The shared confidence layer matters too. In the 124060 development study, applying the already-existing GMT baton resize check rejected 5/83 readings that the Sub route had previously called `FOUND`; no new baton detector was needed.
+The shared re-measurement machinery matters too. In the 124060 development study, the existing GMT baton stability routine identified 5/83 readings as unstable under its own GMT-calibrated policy. Treat that as evidence that the shared mechanism is useful, not as permission to import GMT marker thresholds into the 124060.
 
 ### Before declaring a metric unusable, check the mature path
 
