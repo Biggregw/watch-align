@@ -82,8 +82,33 @@ jobs:
           grep -q 'rolex' app/src/androidTest/assets/genuine/126710BLNR/sources.tsv
           grep -q 'rolex' app/src/androidTest/assets/genuine/124060/sources.tsv
           echo 'Official genuine fixtures prepared.'
+      - name: Prepare the shared signing key
+        env:
+          WATCHALIGN_KEYSTORE_B64: ${{ secrets.WATCHALIGN_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$WATCHALIGN_KEYSTORE_B64" ]; then
+            echo "$WATCHALIGN_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/watchalign-release.p12"
+            echo "WATCHALIGN_KEYSTORE_FILE=$RUNNER_TEMP/watchalign-release.p12" >> "$GITHUB_ENV"
+            echo "Shared Watch Align signing key prepared."
+          else
+            echo "::warning::WATCHALIGN_KEYSTORE_B64 secret not set: this APK is signed with a throwaway debug key and will not install over other builds."
+          fi
       - name: Build standalone APK
+        env:
+          WATCHALIGN_KEYSTORE_PASSWORD: ${{ secrets.WATCHALIGN_KEYSTORE_PASSWORD }}
         run: bash ./gradlew :app:assembleDebug --stacktrace
+      - name: Check the APK signing certificate
+        env:
+          HAS_KEY: ${{ secrets.WATCHALIGN_KEYSTORE_B64 != '' }}
+        run: |
+          APKSIGNER=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)apksigner
+          "$APKSIGNER" verify --print-certs app/build/outputs/apk/debug/app-debug.apk | tee signer.txt
+          if [ "$HAS_KEY" = "true" ]; then
+            want=$(tr -d ':\n ' < signing/watchalign-cert-sha256.txt | tr 'A-F' 'a-f')
+            got=$(grep -m1 'certificate SHA-256 digest' signer.txt | awk '{print $NF}')
+            [ "$got" = "$want" ] || { echo "APK is not signed with the shared Watch Align key ($got)"; exit 1; }
+            echo "Signed with the shared Watch Align key."
+          fi
       - name: Read app version
         id: version
         shell: bash
