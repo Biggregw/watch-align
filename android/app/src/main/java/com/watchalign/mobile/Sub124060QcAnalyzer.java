@@ -280,6 +280,14 @@ final class Sub124060QcAnalyzer {
             if(hi.present){o.status=Status.HAND;o.note="a hand is next to it";return o;}
         }
         if(!b.stable){o.status=Status.LOW_CONFIDENCE;o.note=b.lowReason;return o;}
+        // Reuse the mature GMT 94%/88% repeatability gate. This changes confidence only;
+        // it does not apply a GMT QC threshold or issue a 124060 verdict.
+        GmtSixLandmarkAnalyzer.measureStability(src,cx,cy,r,b);
+        if(!b.resampleStable()){
+            o.status=Status.LOW_CONFIDENCE;
+            o.note="the baton measurement changes when the photo is reduced by 6% or 12%";
+            return o;
+        }
         if(!Double.isFinite(twelveClockDeg)){o.status=Status.LOW_CONFIDENCE;o.note="the 12 was not found, so the dial orientation is unknown";return o;}
         o.status=Status.FOUND;
         return o;
@@ -288,6 +296,8 @@ final class Sub124060QcAnalyzer {
     // ------------------------------------------------------------------------------------------ round markers
     static void rounds(Mat src,DialEdgeEllipseFit.Intensity img,int w,int h,Result res){
         List<GmtRoundMarkerAnalyzer.Marker> ms=GmtRoundMarkerAnalyzer.analyse(src,res.frame,res.tick60);
+        // Same production GMT repeatability check, used only as a fail-closed confidence gate.
+        GmtRoundMarkerAnalyzer.measureStability(src,res.frame,res.tick60,ms);
         double cx=res.frame.cx,cy=res.frame.cy;
         for(GmtRoundMarkerAnalyzer.Marker m:ms){
             if(!m.found){res.rounds.add(new Round(m,Status.NOT_FOUND,m.reason));continue;}
@@ -304,6 +314,7 @@ final class Sub124060QcAnalyzer {
             m.attention=GmtHumanQcMath.Attention.UNASSESSABLE;   // never judged on the 124060 path
             if(hand)res.rounds.add(new Round(m,Status.HAND,"a hand is over or next to it"));
             else if(!m.stable)res.rounds.add(new Round(m,Status.LOW_CONFIDENCE,m.lowReason));
+            else if(!m.resampleStable())res.rounds.add(new Round(m,Status.LOW_CONFIDENCE,"the marker measurement changes when the photo is reduced by 6% or 12%"));
             else res.rounds.add(new Round(m,Status.FOUND,""));
         }
     }
