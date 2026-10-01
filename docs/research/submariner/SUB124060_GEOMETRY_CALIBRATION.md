@@ -32,7 +32,13 @@ Frozen results are in `docs/research/submariner/geometry/`:
 
 The CI workflow re-runs the study on its own measurement (step "Genuine 124060 geometry study") and
 uploads it under `geometry124060/`. The committed tables come from the fixed local development image
-set used for the triangle work. CI results may differ slightly if a dealer CDN served different bytes.
+set used for the triangle work.
+
+CI re-downloads some listing photos as re-encoded bytes of the same picture: 26 of the 72 in-scope
+dataset rows in run 36824496660. The review file therefore matches a photo by `sha_prefix` **or** by
+`(physical_watch_id, image_index)`, which stays fixed across re-encoding. Any usable photo the review
+does not cover is listed as `usable_photos_not_visually_reviewed` and flagged per row
+(`visually_reviewed`). There were none, locally or in CI.
 
 ## 1. Dataset
 
@@ -259,6 +265,30 @@ flags are expected by chance.
   multi-photo watches, though, it would be fitted and judged on the same handful of pairs. It is left
   for a larger development set.
 
+### Sensitivity to re-encoding (local bytes vs CI bytes)
+
+The CI measurement of run 36824496660 was re-analysed with the same review. It has the same 9 watches
+and 19 usable photos, but 26 dataset rows hold re-encoded bytes. This acts as an unplanned
+perturbation: the same pictures, different JPEG encodings.
+
+| | Metrics |
+|---|---|
+| Same class in both | 91 of 139 |
+| Noise-dominated in both | 55 |
+| "Clearly exceeds noise" in both | only `r1_inset` and `r4_fitted_edge_radius_r` |
+
+Metrics with a ratio of at least 1 in both versions:
+
+- **Round markers:** `r1_inset`, `r1_rho`, `r1_dtheta_deg`, `r1_fitted_edge_radius_r`,
+  `r4_fitted_edge_radius_r`, `r4_inset`, `r5_fitted_edge_radius_r`, `r5_gap_to_track_r`,
+  `r8_fitted_edge_radius_r`, `r10_rho`, `r10_dtheta_deg`, `r11_gap_to_track_r`, `opp_r4_r10_rho_diff`.
+- **Triangle:** `t12_surround_rotation_deg` and `t12_surround_gap_to_track_r`.
+- **Track, dial and rehaut:** `track_spread_r`, `rehaut_rh_w3_r`, `dial_fit_rms_over_r` and `dial_r_px`.
+  These last four describe the photo, not the watch.
+
+This is the most defensible "worth further study" list. The other classes move with the encoding,
+which confirms that most ratios in this sample are not well determined.
+
 ## 7. Limits from sample size
 
 - **Small numbers.** There are 9 physical watches. Only 7 have two or more usable photos, and for most
@@ -274,6 +304,8 @@ flags are expected by chance.
 - **Remaining contamination.** Some within-watch spread may still come from unflagged partial
   occlusion, or from the most oblique photos (axis ratios 0.94–0.96: `6a4ce9c64f`, `32736f25fb` and
   `98dd3ab2d8`). This would inflate the noise estimates.
+- **Re-encoding moves the classes.** About a third of the metrics change class between two encodings
+  of the same photos (see above).
 - **Not a population model.** Nothing here describes the genuine population beyond these 9 watches.
 
 ## 8. Why no QC thresholds were derived

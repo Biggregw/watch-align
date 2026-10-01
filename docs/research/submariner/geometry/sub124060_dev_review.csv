@@ -1,23 +1,23 @@
-sha_prefix,physical_watch_id,excluded_landmarks,reason
-15149ae289,bobs_124060_151200,all,watch upside down (12 at the bottom) and small in frame; detections fall on the bezel
-b240dfce8a,bobs_124060_174149,all,watch upside down (12 at the bottom) and small in frame; detections fall on the bezel
-5d746bafb7,bobs_124060_182455,all,watch upside down (12 at the bottom) and small in frame; detections fall on the bezel
-211999e931,bobs_124060_151200,r8,hand crossing (minute hand over the 8)
-4bf250413f,bobs_124060_151200,r2,hand crossing (minute hand tip over the 2)
-6a4ce9c64f,bobs_124060_174149,12;r5,hand crossing (seconds-hand tip/lume dot at the 12 apex; minute hand over the 5)
-c84ee1426d,bobs_124060_174149,12;r5,hand crossing (seconds-hand tip/lume dot at the 12 apex; minute hand over the 5)
-cbf87c6069,bobs_124060_174149,r1,hand crossing (seconds-hand lume dot at the 1)
-50418ff952,bobs_124060_182386pl,r2,hand crossing (minute hand tip at the 2)
-31edfb66b6,bobs_124060_182455,r4,hand crossing (seconds-hand lume dot at the 4)
-98dd3ab2d8,bobs_124060_182455,b3;r7,hand crossing (minute hand along the 3 baton; seconds hand over the 7)
-fa86078e31,bobs_124060_182455,r7,hand crossing (hour hand over the 7)
-06166e7935,bobs_124060_182482,r11,hand crossing (minute hand over the 11)
-32736f25fb,bobs_124060_182482,r1,hand crossing (minute hand over the 1)
-cec3df9313,bobs_124060_182482,r2;r8,hand crossing (minute hand at the 2; seconds hand at the 8)
-ab5aeaf2e1,bobs_124060_187439,r2;r4,hand crossing (minute hand at the 2; seconds-hand lume dot at the 4)
-ece0886178,bobs_124060_187439,r4,unusable fit: the circle found for the 4 is on the bezel (oblique photo)
-b316d6b31f,bobs_124060_187502pl,r1;r2,hand crossing (seconds hand over the 1; minute hand at the 2)
-5aefb6a02a,bobs_124060_190837,r2;r8,hand crossing (minute hand at the 2; seconds-hand lume dot near the 8)
-a205de17a5,bobs_124060_190837,12;r2;r4,hand crossing (seconds hand along the 12 axis to the triangle); unusable fits: circles for the 2 and 4 are on the bezel numerals (oblique photo)
-8c94e8fafc,bobs_124060_191110,r8,unusable fit: the circle found for the 8 is on the rehaut/bezel
-c14f8b3abb,bobs_124060_191110,r1;r2,hand crossing (seconds hand over the 1; minute hand at the 2)
+sha_prefix,physical_watch_id,image_index,image_url,excluded_landmarks,reason
+4bf250413f,bobs_124060_151200,1,https://www.bobswatches.com/images/zMens-Rolex-Submariner-124060-151200.jpg,r2,hand crossing (minute hand tip over the 2)
+15149ae289,bobs_124060_151200,4,https://www.bobswatches.com/images/zRolex-Submariner-124060-151200w.jpg,all,watch upside down (12 at the bottom) and small in frame; detections fall on the bezel
+211999e931,bobs_124060_151200,5,https://www.bobswatches.com/images/zRolex-Submariner-124060-151200s.jpg,r8,hand crossing (minute hand over the 8)
+cbf87c6069,bobs_124060_174149,1,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU174149-Black-Dial.jpg,r1,hand crossing (seconds-hand lume dot at the 1)
+6a4ce9c64f,bobs_124060_174149,3,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-Black-Dial-SKU174149.jpg,12;r5,hand crossing (seconds-hand tip/lume dot at the 12 apex; minute hand over the 5)
+b240dfce8a,bobs_124060_174149,6,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-Black-Dial-SKU174149w.jpg,all,watch upside down (12 at the bottom) and small in frame; detections fall on the bezel
+c84ee1426d,bobs_124060_174149,7,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-Black-Dial-SKU174149s.jpg,12;r5,hand crossing (seconds-hand tip/lume dot at the 12 apex; minute hand over the 5)
+50418ff952,bobs_124060_182386pl,1,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-Black-Chromalight-Dial-SKU182386PL.jpg,r2,hand crossing (minute hand tip at the 2)
+31edfb66b6,bobs_124060_182455,1,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU182455.jpg,r4,hand crossing (seconds-hand lume dot at the 4)
+98dd3ab2d8,bobs_124060_182455,3,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-Black-Dial-SKU182455.jpg,b3;r7,hand crossing (minute hand along the 3 baton; seconds hand over the 7)
+5d746bafb7,bobs_124060_182455,6,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-Black-Dial-SKU182455w.jpg,all,watch upside down (12 at the bottom) and small in frame; detections fall on the bezel
+fa86078e31,bobs_124060_182455,7,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-Black-Dial-SKU182455s.jpg,r7,hand crossing (hour hand over the 7)
+cec3df9313,bobs_124060_182482,1,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU182482.jpg,r2;r8,hand crossing (minute hand at the 2; seconds hand at the 8)
+32736f25fb,bobs_124060_182482,3,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-Black-Dial-SKU182482.jpg,r1,hand crossing (minute hand over the 1)
+06166e7935,bobs_124060_182482,7,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-Black-Dial-SKU182482s.jpg,r11,hand crossing (minute hand over the 11)
+ab5aeaf2e1,bobs_124060_187439,1,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-187439.jpg,r2;r4,hand crossing (minute hand at the 2; seconds-hand lume dot at the 4)
+ece0886178,bobs_124060_187439,3,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-Black-Dial-SKU187439.jpg,r4,unusable fit: the circle found for the 4 is on the bezel (oblique photo)
+b316d6b31f,bobs_124060_187502pl,1,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU187502-PL.jpg,r1;r2,hand crossing (seconds hand over the 1; minute hand at the 2)
+5aefb6a02a,bobs_124060_190837,1,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU190837.jpg,r2;r8,hand crossing (minute hand at the 2; seconds-hand lume dot near the 8)
+a205de17a5,bobs_124060_190837,3,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-Black-Dial-SKU190837.jpg,12;r2;r4,hand crossing (seconds hand along the 12 axis to the triangle); unusable fits: circles for the 2 and 4 are on the bezel numerals (oblique photo)
+c14f8b3abb,bobs_124060_191110,1,https://www.bobswatches.com/images/z191110-Used-Rolex-Submariner-124060-SKU191110.jpg,r1;r2,hand crossing (seconds hand over the 1; minute hand at the 2)
+8c94e8fafc,bobs_124060_191110,3,https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU191110-Black-Dial.jpg,r8,unusable fit: the circle found for the 8 is on the rehaut/bezel

@@ -7,6 +7,7 @@ Development genuine 124060 only. Descriptive repeatability; no thresholds, no re
 - Usable photos by watch: {'bobs_124060_151200': 2, 'bobs_124060_174149': 3, 'bobs_124060_182386pl': 1, 'bobs_124060_182455': 3, 'bobs_124060_182482': 3, 'bobs_124060_187439': 2, 'bobs_124060_187502pl': 1, 'bobs_124060_190837': 2, 'bobs_124060_191110': 2}
 - Excluded photos: {'no_dial': 10, 'review:watch upside down (12 at the bottom) and small in frame; detections fall on the bezel': 3, 'dial_not_edge_fitted_or_fallback': 4}
 - Landmark exclusions from visual review: {'06166e7935': ['r11'], '211999e931': ['r8'], '31edfb66b6': ['r4'], '32736f25fb': ['r1'], '4bf250413f': ['r2'], '50418ff952': ['r2'], '5aefb6a02a': ['r2', 'r8'], '6a4ce9c64f': ['12', 'r5'], '8c94e8fafc': ['r8'], '98dd3ab2d8': ['b3', 'r7'], 'a205de17a5': ['12', 'r2', 'r4'], 'ab5aeaf2e1': ['r2', 'r4'], 'b316d6b31f': ['r1', 'r2'], 'c14f8b3abb': ['r1', 'r2'], 'c84ee1426d': ['12', 'r5'], 'cbf87c6069': ['r1'], 'cec3df9313': ['r2', 'r8'], 'ece0886178': ['r4'], 'fa86078e31': ['r7']}
+- Usable photos not covered by the visual review: none
 
 Ratio = between-watch MAD of watch medians / median within-watch MAD. Descriptive only; the class labels are not pass/fail and no threshold is derived.
 

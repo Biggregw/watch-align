@@ -227,14 +227,25 @@ def load(measure_dir: Path):
 
 
 def read_review(path: Path | None) -> dict:
-    """sha_prefix -> {"exclude_photo": bool, "landmarks": set, "reason": str}."""
+    """Visual-review entries keyed by sha_prefix and by (physical_watch_id, image_index).
+
+    The second key is stable when a dealer CDN serves the same listing photo re-encoded (new bytes,
+    same picture), so a review of the fixed local image set still applies to a CI re-download."""
     out = {}
     if path and path.exists():
         with path.open(newline="", encoding="utf-8") as fh:
             for r in csv.DictReader(fh):
                 lms = {x.strip() for x in (r.get("excluded_landmarks") or "").split(";") if x.strip()}
-                out[r["sha_prefix"]] = {"exclude_photo": "all" in lms, "landmarks": lms, "reason": r.get("reason", "")}
+                e = {"exclude_photo": "all" in lms, "landmarks": lms, "reason": r.get("reason", ""), "reviewed": True}
+                out[r["sha_prefix"]] = e
+                if r.get("physical_watch_id") and r.get("image_index") not in (None, ""):
+                    out[(r["physical_watch_id"], str(r["image_index"]))] = e
     return out
+
+
+def review_for(review: dict, sha: str, watch: str, image_index) -> dict:
+    e = review.get(sha[:10]) or review.get((watch, str(image_index)))
+    return e or {"exclude_photo": False, "landmarks": set(), "reason": "", "reviewed": False}
 
 
 def photo_records(imgs, lms, review):
@@ -247,10 +258,10 @@ def photo_records(imgs, lms, review):
     photos, excluded = [], defaultdict(list)
     for sha, vs in sorted(by.items()):
         o = vs.get("orig")
-        rv = review.get(sha[:10], {"exclude_photo": False, "landmarks": set(), "reason": ""})
         if o is None or o.get("dial_found") != "True":
             excluded["no_dial"].append(sha)
             continue
+        rv = review_for(review, sha, o["physical_watch_id"], o["image_index"])
         if o.get("edge_fit_valid") != "True" or o.get("dial_source") != "edge_fit":
             excluded["dial_not_edge_fitted_or_fallback"].append(sha)
             continue
@@ -331,7 +342,8 @@ def analyse(photos):
                     d = x - o[mname]
                     shifts[v] = wrap180(d) if mname.endswith("_deg") else d
             row = {"physical_watch_id": p["physical_watch_id"], "sha256": p["sha256"], "source_id": p["source_id"],
-                   "image_index": p["image_index"], "metric": mname, "value": o[mname],
+                   "image_index": p["image_index"], "visually_reviewed": p["review"].get("reviewed", False),
+                   "metric": mname, "value": o[mname],
                    "perturbation_variants": len(vv), "perturbation_range": rng(vv), "perturbation_mad": mad(vv),
                    "shift_s88": shifts.get("s88", math.nan), "shift_r_plus5": shifts.get("r+5", math.nan),
                    "shift_r_minus5": shifts.get("r-5", math.nan)}
@@ -441,7 +453,8 @@ def markdown(summ: dict, rep_rows: list) -> str:
          f"- Photos in scope: {summ['photos_in_scope']}; usable: {summ['usable_photos']} from {summ['watches_used']} physical watches",
          f"- Usable photos by watch: {summ['usable_photos_by_watch']}",
          f"- Excluded photos: {summ['excluded_photos']}",
-         f"- Landmark exclusions from visual review: {summ['landmark_exclusions']}", "",
+         f"- Landmark exclusions from visual review: {summ['landmark_exclusions']}",
+         f"- Usable photos not covered by the visual review: {summ['usable_photos_not_visually_reviewed'] or 'none'}", "",
          "Ratio = between-watch MAD of watch medians / median within-watch MAD. Descriptive only; the class "
          "labels are not pass/fail and no threshold is derived.", ""]
     for cls in ("between-watch variation clearly exceeds measurement noise", "similar scale", "measurement noise dominates",
@@ -481,6 +494,7 @@ def main(argv=None) -> int:
             "usable_photos_by_watch": dict(sorted(usable.items())),
             "excluded_photos": {k: len(v) for k, v in excluded.items()},
             "excluded_photo_ids": {k: [s[:10] for s in v] for k, v in excluded.items()},
+            "usable_photos_not_visually_reviewed": [p["sha256"][:10] for p in photos if not p["review"].get("reviewed")],
             "landmark_exclusions": {p["sha256"][:10]: sorted(p["review"]["landmarks"]) for p in photos if p["review"]["landmarks"]},
             "classes": {c: [r["metric"] for r in rep_rows if r["repeatability_class"] == c] for c in sorted({r["repeatability_class"] for r in rep_rows})},
             "pose_sensitive": {r["metric"]: r["pose_sensitive"] for r in rep_rows if r["pose_sensitive"]}}

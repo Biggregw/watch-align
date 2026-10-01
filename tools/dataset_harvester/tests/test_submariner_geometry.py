@@ -140,6 +140,19 @@ class ScopeTest(unittest.TestCase):
         # Without the triangle there is no 60-tick reference, so angular offsets are undefined.
         self.assertTrue(math.isnan(o["orig"]["r7_dtheta_deg"]))
 
+    def test_review_matches_reencoded_photo_by_watch_and_index(self):
+        with tempfile.TemporaryDirectory() as t:
+            p = Path(t) / "review.csv"
+            write_csv(p, [{"sha_prefix": "oldbytes00", "physical_watch_id": "w1", "image_index": "0",
+                           "excluded_landmarks": "r8", "reason": "hand"}],
+                      ["sha_prefix", "physical_watch_id", "image_index", "excluded_landmarks", "reason"])
+            review = G.read_review(p)
+        photos, _ = G.photo_records([img("newbytes", "w1"), img("other", "w2")], lms("newbytes") + lms("other"), review)
+        by = {p["sha256"]: p for p in photos}
+        self.assertNotIn("r8_rho", by["newbytes"]["variants"]["orig"])
+        self.assertTrue(by["newbytes"]["review"]["reviewed"])
+        self.assertFalse(by["other"]["review"]["reviewed"])
+
     def test_lume_and_surround_kept_separate(self):
         lm = lms("a")
         lm[0]["outline_class"] = "inner"
