@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Plain-English summary for the experimental 124060 path. Every value is labelled MEASURED / NOT YET
- * JUDGED; no QC verdict word (OK, worth a look, check closely, pass, fail) is ever produced, and there
- * is no date-window or GMT date-side wording.
+ * Plain-English summary for the experimental 124060 path. Geometry that survives the confidence
+ * gates is labelled MEASURED / NOT YET JUDGED. The presentation now follows the mature GMT user
+ * experience, but no GMT QC tolerance or verdict is imported.
  */
 final class Sub124060Summary {
-    static final String EXPERIMENTAL="124060 experimental support: measurements are not yet QC pass/fail results.";
+    static final String EXPERIMENTAL="124060 experimental support: geometry is measured where reliable, but 124060 QC limits are not calibrated yet.";
     static final String MEASURED="MEASURED / NOT YET JUDGED";
     static final String NOT_CHECKED="Not checked: bezel and pearl, rehaut, hands, printing, lume.";
 
@@ -36,7 +36,7 @@ final class Sub124060Summary {
         s.append("Batons 3/6/9: ").append(batonLine(r)).append("\n");
         s.append("Round markers: ").append(roundLine(r)).append("\n");
         s.append(NOT_CHECKED).append("\n");
-        s.append("Overlay: cyan outlines are landmarks found and measured; grey dashed outlines were found but not measured (reason beside them). Nothing is marked as passing or failing.\n");
+        s.append("Overlay: GMT-style whole-dial markup. Cyan M = measured but not yet judged; grey dash = not judged on this photo, with the reason beside it. Every hour position is accounted for.\n");
         if(r.needsManual())s.append("\nNext: if the outlines are not on the right markers, try Align dial edge by hand below.\n");
         return s.toString();
     }
@@ -57,28 +57,36 @@ final class Sub124060Summary {
 
     static String triangleLine(Sub124060QcAnalyzer.Result r){
         if(r.triangle==null)return "not found ("+r.triangleReason+")";
-        String what=r.lumeOutline?"found (inner lume outline)":"found";
-        return r.twelveWithheld!=null?what+", not measured: "+r.twelveWithheld:what;
+        String what=r.lumeOutline?"detected (inner lume outline)":"detected";
+        return r.twelveWithheld!=null?what+", not measured: "+r.twelveWithheld:what+", measured";
     }
 
     static String batonLine(Sub124060QcAnalyzer.Result r){
-        List<String> parts=new ArrayList<>();
-        for(Sub124060QcAnalyzer.Baton b:r.batons)parts.add(b.position.label+": "+word(b.status));
-        return r.batonsFound()+" of 3 found ("+String.join(" · ",parts)+")";
+        List<String> parts=new ArrayList<>();int detected=0,measurable=0;
+        for(Sub124060QcAnalyzer.Baton b:r.batons){
+            boolean seen=b.status!=Sub124060QcAnalyzer.Status.NOT_FOUND&&b.status!=Sub124060QcAnalyzer.Status.WRONG_PLACE;
+            if(seen)detected++;if(b.status==Sub124060QcAnalyzer.Status.FOUND)measurable++;
+            parts.add(b.position.label+": "+word(b.status));
+        }
+        return detected+"/3 detected, "+measurable+"/3 measurable ("+String.join(" · ",parts)+")";
     }
 
     static String roundLine(Sub124060QcAnalyzer.Result r){
-        List<String> parts=new ArrayList<>();
-        for(Sub124060QcAnalyzer.Round m:r.rounds)if(m.status!=Sub124060QcAnalyzer.Status.FOUND)parts.add(m.marker.hour+": "+word(m.status));
+        List<String> parts=new ArrayList<>();int detected=0,measurable=0;
+        for(Sub124060QcAnalyzer.Round m:r.rounds){
+            if(m.status!=Sub124060QcAnalyzer.Status.NOT_FOUND)detected++;
+            if(m.status==Sub124060QcAnalyzer.Status.FOUND)measurable++;
+            if(m.status!=Sub124060QcAnalyzer.Status.FOUND)parts.add(m.marker.hour+": "+word(m.status));
+        }
         int n=r.rounds.isEmpty()?Sub124060Layout.ROUND_HOURS.length:r.rounds.size();
-        return r.roundsFound()+" of "+n+" found"+(parts.isEmpty()?"":" ("+String.join(" · ",parts)+")");
+        return detected+"/"+n+" detected, "+measurable+"/"+n+" measurable"+(parts.isEmpty()?"":" ("+String.join(" · ",parts)+")");
     }
 
     static String word(Sub124060QcAnalyzer.Status s){
         switch(s){
-            case FOUND:return "found";
-            case LOW_CONFIDENCE:return "found, low confidence";
-            case HAND:return "hand in the way";
+            case FOUND:return "measured";
+            case LOW_CONFIDENCE:return "detected, not measured (low confidence)";
+            case HAND:return "detected, not measured (hand in the way)";
             case WRONG_PLACE:return "not found where expected";
             default:return "not found";
         }
@@ -87,7 +95,7 @@ final class Sub124060Summary {
     /** The Full results detail: raw measurements, reused confidence diagnostics and why anything was withheld. */
     static String details(Sub124060QcAnalyzer.Result r,String cropNote){
         StringBuilder s=new StringBuilder();
-        s.append("Experimental Submariner 124060 path: the dial is located with the same dial seed and edge fit as the GMT check; the 12 triangle uses the Submariner detector (research v2, no GMT apex gate); the 3/6/9 batons and round markers use the GMT marker detectors. The mature GMT resize/re-measure and marker-layout pose lessons are reused as confidence diagnostics. Nothing is compared with a 124060 QC tolerance.\n");
+        s.append("Submariner 124060 path: the user-facing presentation follows the mature GMT QC contract (whole-dial marker markup and detailed 12 geometry), while the measurements remain model-specific where evidence requires it. The dial uses the shared GMT seed and edge fit; the 12 uses the Submariner detector and radial rotation reference; the 3/6/9 batons and round markers reuse the GMT marker detectors. Mature GMT resize/re-measure and marker-layout pose lessons are reused as confidence diagnostics. No GMT QC tolerance is copied into the 124060.\n");
         if(cropNote!=null)s.append(cropNote).append("\n");
         s.append(String.format(Locale.US,"Dial seed: centre %.1f, %.1f; radius %.1f px; quality %.2f.\n",r.seedX,r.seedY,r.seedR,r.seedQuality));
         s.append("Dial source: ").append(r.dialSource.words).append(".\n");
@@ -153,7 +161,7 @@ final class Sub124060Summary {
                     r.markerPose.tiltDeg,r.markerPose.tiltHighDeg,r.markerPose.markers,
                     r.markerPose.dropped.isEmpty()?"":", marker "+r.markerPose.dropped+" left out by the robust fit",r.markerPose.residual));
 
-        s.append("\nNo 124060 QC tolerances exist yet, so none of these geometric values is used as a pass/fail or authenticity decision.\n");
+        s.append("\nPresentation parity does not imply calibration parity: the overlay deliberately mirrors GMT, but no 124060 QC tolerances exist yet, so none of these geometric values is used as a pass/fail or authenticity decision.\n");
         return s.toString();
     }
 
