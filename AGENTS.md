@@ -29,9 +29,13 @@ Before substantial planning or implementation, read `docs/PRODUCT_SCOPE.md`.
 
 # Reuse-first engineering workflow
 
-Before creating or substantially changing family-specific detector, geometry, confidence, recovery or QC logic, read `docs/ENGINEERING_LESSONS.md` and audit the closest mature implementation first.
+Before creating or substantially changing family-specific detector, geometry, confidence, recovery, presentation or QC logic, read `docs/ENGINEERING_LESSONS.md` and audit the closest mature implementation first.
 
 - Start from the mature analogue, normally GMT. Identify what problem it solved, the failure modes it encountered, and the guardrails added around it.
+- For a new production family, start from the mature **end-to-end user experience**, not just its low-level detectors. Reuse the workflow, whole-dial presentation, missing/obscured-marker behaviour, close-up structure, confidence wording and interaction contract unless a concrete model difference prevents it.
+- Prefer **mature workflow + family adapter** over a second family-specific app experience. Swap only the parts that are genuinely model-specific: layout, detector geometry, measurement reference, calibration and decision thresholds.
+- If the mature renderer can express a result as measured/not judged, use it or mirror that contract before building a separate research-only overlay. A research/debug presentation must not quietly become the user-test checkpoint for a production family.
+- When exact mature verdict thresholds cannot transfer, keep the mature presentation and show a neutral measured/not-judged state. Do not rebuild the UI merely because calibration is pending.
 - Reuse lessons as well as code. Minimum pixel support, resize repeatability, local-frame quality, hand checks, alternate-reference cross-checks, recovery behaviour, fail-closed rules and regression strategy are all candidates for reuse even when marker geometry differs.
 - Before writing a parallel algorithm, make a reuse map: **shared unchanged / shared with parameters or model layout / deliberately model-specific / not applicable**.
 - Prefer composition, parameterisation or extraction of proven primitives over copying or rebuilding. Do not force a shared abstraction when measured evidence shows a family-specific method is more reliable.
