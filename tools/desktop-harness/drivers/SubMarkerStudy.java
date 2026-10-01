@@ -1,7 +1,6 @@
 package com.watchalign.mobile;
 
 import android.graphics.Bitmap;
-import android.opengl.*;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
