@@ -24,7 +24,7 @@ permissions:
 
 concurrency:
   group: watch-family-calibrator-${{ github.ref }}-${{ github.event.inputs.model || '124060' }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   calibrate:
