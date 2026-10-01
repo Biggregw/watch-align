@@ -11,17 +11,17 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Experimental Rolex Submariner 124060 analysis (checkpoint build). It finds and measures the dial
- * landmarks and reports MEASURED / NOT YET JUDGED values. It issues no QC verdict of any kind: there
- * are no 124060 tolerances yet (see docs/124060_CHECKPOINT.md).
+ * Experimental Rolex Submariner 124060 analysis. It finds and measures the dial landmarks and
+ * reports MEASURED / NOT YET JUDGED values. It issues no QC verdict of any kind: there are no
+ * 124060 tolerances yet (see docs/124060_CHECKPOINT.md).
  *
  * Reused unchanged from the GMT path: the dark-dial seed (GmtDialSeedAnalyzer), the dial-edge fit
  * (DialEdgeFitter), the baton detector (GmtSixLandmarkAnalyzer, with Position.THREE), the round-marker
  * detector (GmtRoundMarkerAnalyzer; its seed priors, 0.816 R ring and 0.088 R surround, match the
- * 124060 measurements of the research study: ring 0.817 R, fitted radius about 0.083-0.090 R) and the
- * hand checks (HandIntrusion). Not used: GmtHumanQcAnalyzerV2, the GMT pose policy, GMT thresholds,
- * GmtDialLayout (date side) and the GMT 12-triangle detector with its 44.3 deg apex gate. The 12 comes
- * from SubTwelveTriangle (frozen research v2, single photo).
+ * 124060 measurements of the research study: ring 0.817 R, fitted radius about 0.083-0.090 R), the
+ * hand checks (HandIntrusion), marker-layout pose diagnostic and resize/re-measure reliability
+ * pattern. Not used: GMT QC thresholds, GmtDialLayout (date side) or the GMT 12-triangle detector
+ * with its 44.3 deg apex gate. The 12 comes from SubTwelveTriangle (frozen research v2).
  *
  * Fail-closed rules (each only withholds, none can produce a verdict):
  *  - no dial geometry unless the dial edge was fitted (automatically or from a hand alignment);
@@ -29,7 +29,8 @@ import java.util.Locale;
  *  - 12 measurements need an automatic or hand-seeded edge fit that is reproduced on the photo reduced
  *    to 94% and 88% (centre within 0.01 R, radius within 2%: the research dial-consistency rule);
  *  - and a 12 triangle at least MIN_TRIANGLE_PX wide, with no hand at 12, found as the same outline at
- *    94% and 88%; gap and centring also need the outer (surround) outline and a minute track.
+ *    94% and 88%; each reported fine measurement must itself also repeat to about one source pixel;
+ *  - shared baton and round-marker measurements reuse the same pixel-space resize reliability lesson.
  */
 final class Sub124060QcAnalyzer {
     static final double[] RESIZE_SCALES = GmtTwelveLandmarkAnalyzer.STABILITY_SCALES;   // 0.94, 0.88
@@ -78,17 +79,25 @@ final class Sub124060QcAnalyzer {
         SubTwelveTriangle.Result triangles;
         SubTwelveTriangle.Cand triangle;
         String triangleReason="";
-        /** Why the 12 measurements are withheld, or null when they are reported. */
+        /** Why all 12 measurements are withheld, or null when per-metric checks may report them. */
         String twelveWithheld;
         boolean handAtTwelve,tooSmall,lumeOutline;
         Boolean triangleResizeStable;String triangleResizeNote="";
         double[] tick59,tick60,tick01;
+
+        /** Numeric resize repeatability, independent for each 12 measurement. */
+        Boolean rotationResizeStable,gapResizeStable,centringResizeStable;
+        double rotationMin=Double.NaN,rotationMax=Double.NaN,rotationShiftPx=Double.NaN;
+        double gapMin=Double.NaN,gapMax=Double.NaN,gapShiftPx=Double.NaN;
+        double centringMin=Double.NaN,centringMax=Double.NaN,centringShiftPx=Double.NaN;
 
         double rotationDeg=Double.NaN,gapR=Double.NaN,centringW=Double.NaN;
         String rotationWithheld,gapWithheld,centringWithheld;
 
         final List<Baton> batons=new ArrayList<>();
         final List<Round> rounds=new ArrayList<>();
+        /** GMT-developed round-marker layout pose estimator, diagnostic only on 124060. */
+        GmtMarkerPose.Result markerPose;
         Sub124060Overlay.Drawing drawing=new Sub124060Overlay.Drawing();
 
         boolean dialAssessable(){return dialSource!=DialSource.UNAVAILABLE;}
@@ -101,9 +110,7 @@ final class Sub124060QcAnalyzer {
 
     static boolean supports(String modelRef){return Sub124060Layout.supports(modelRef);}
 
-    /**
-     * @param manual hand-aligned dial (12/6 dial-edge taps), used instead of the automatic seed, or null
-     */
+    /** @param manual hand-aligned dial (12/6 dial-edge taps), used instead of the automatic seed, or null */
     static Result analyse(Bitmap watch,PerspectiveGmtOverlay.DialSeed manual){
         Result res=new Result();
         if(watch==null){res.dialReason="watch image missing";return res;}
@@ -225,21 +232,33 @@ final class Sub124060QcAnalyzer {
             res.rotationWithheld=res.gapWithheld=res.centringWithheld=res.twelveWithheld;
             return;
         }
-        if(Double.isFinite(c.tickAngle)&&Double.isFinite(c.rotationDeg))res.rotationDeg=c.rotationDeg;
-        else res.rotationWithheld="the 60-minute tick was not located";
+        if(Double.isFinite(c.tickAngle)&&Double.isFinite(c.rotationDeg)){
+            if(Boolean.FALSE.equals(res.rotationResizeStable))res.rotationWithheld=resizeReason("rotation",res.rotationShiftPx);
+            else res.rotationDeg=c.rotationDeg;
+        }else res.rotationWithheld="the 60-minute tick was not located";
+
         if(res.lumeOutline){
             res.gapWithheld=res.centringWithheld="only the inner (lume) outline of the triangle was found";
         }else if(!Double.isFinite(c.gapR)||!Double.isFinite(c.centring)){
             res.gapWithheld=res.centringWithheld="the minute track next to the 12 was not located";
         }else{
-            res.gapR=c.gapR;res.centringW=c.centring;
+            if(Boolean.FALSE.equals(res.gapResizeStable))res.gapWithheld=resizeReason("gap",res.gapShiftPx);
+            else res.gapR=c.gapR;
+            if(Boolean.FALSE.equals(res.centringResizeStable))res.centringWithheld=resizeReason("centring",res.centringShiftPx);
+            else res.centringW=c.centring;
         }
     }
 
-    /** The selected outline must be selected again, as the same outline, at 94% and 88%. */
+    /**
+     * The selected outline must be selected again at 94% and 88%, and the fine measurements are
+     * independently checked for approximately one-pixel repeatability. This is the mature GMT
+     * lesson applied without any GMT QC threshold.
+     */
     static void checkTriangleResize(Mat src,Result res){
         SubTwelveTriangle.Cand c=res.triangle;GmtRoundMarkerAnalyzer.DialFrame f=res.frame;
         StringBuilder note=new StringBuilder();boolean all=true;
+        boolean rotOk=Double.isFinite(c.rotationDeg),gapOk=Double.isFinite(c.gapR),cenOk=Double.isFinite(c.centring);
+        double rMin=c.rotationDeg,rMax=c.rotationDeg,gMin=c.gapR,gMax=c.gapR,cMin=c.centring,cMax=c.centring;
         for(double k:RESIZE_SCALES){
             Mat m=new Mat();
             try{
@@ -248,10 +267,40 @@ final class Sub124060QcAnalyzer {
                 boolean same=b!=null&&sameOutline(c.cx,c.cy,c.widthR,b.cx/k,b.cy/k,b.widthR,f.r);
                 all&=same;
                 note.append(String.format(Locale.US,"%s%.0f%%: %s",note.length()>0?", ":"",100*k,b==null?"not found":same?"same outline":"a different outline"));
+                if(!same)continue;
+                if(rotOk&&Double.isFinite(b.rotationDeg)){rMin=Math.min(rMin,b.rotationDeg);rMax=Math.max(rMax,b.rotationDeg);}else rotOk=false;
+                if(gapOk&&Double.isFinite(b.gapR)){gMin=Math.min(gMin,b.gapR);gMax=Math.max(gMax,b.gapR);}else gapOk=false;
+                if(cenOk&&Double.isFinite(b.centring)){cMin=Math.min(cMin,b.centring);cMax=Math.max(cMax,b.centring);}else cenOk=false;
             }finally{m.release();}
         }
         res.triangleResizeStable=all;res.triangleResizeNote=note.toString();
-        if(!all)res.twelveWithheld="the 12 triangle is not found as the same outline when the photo is reduced by 6% and 12%";
+        if(!all){
+            res.twelveWithheld="the 12 triangle is not found as the same outline when the photo is reduced by 6% and 12%";
+            return;
+        }
+
+        double widthPx=c.widthR*f.r,heightPx=c.heightR*f.r;
+        if(rotOk){
+            res.rotationMin=rMin;res.rotationMax=rMax;
+            res.rotationShiftPx=MeasurementRepeatability.angleShiftPx(rMin,rMax,heightPx);
+            res.rotationResizeStable=MeasurementRepeatability.stable(res.rotationShiftPx);
+        }else res.rotationResizeStable=false;
+        if(gapOk){
+            res.gapMin=gMin;res.gapMax=gMax;
+            res.gapShiftPx=MeasurementRepeatability.radiusShiftPx(gMin,gMax,f.r);
+            res.gapResizeStable=MeasurementRepeatability.stable(res.gapShiftPx);
+        }else res.gapResizeStable=false;
+        if(cenOk){
+            res.centringMin=cMin;res.centringMax=cMax;
+            res.centringShiftPx=MeasurementRepeatability.widthShiftPx(cMin,cMax,widthPx);
+            res.centringResizeStable=MeasurementRepeatability.stable(res.centringShiftPx);
+        }else res.centringResizeStable=false;
+    }
+
+    static String resizeReason(String what,double shiftPx){
+        return Double.isFinite(shiftPx)
+                ?String.format(Locale.US,"the %s measurement moves by %.1f px when the photo is reduced by 6%% and 12%%",what,shiftPx)
+                :"the "+what+" measurement is not reproduced at both resize scales";
     }
 
     static boolean sameOutline(double x,double y,double widthR,double x2,double y2,double widthR2,double dialR){
@@ -281,13 +330,36 @@ final class Sub124060QcAnalyzer {
         }
         if(!b.stable){o.status=Status.LOW_CONFIDENCE;o.note=b.lowReason;return o;}
         if(!Double.isFinite(twelveClockDeg)){o.status=Status.LOW_CONFIDENCE;o.note="the 12 was not found, so the dial orientation is unknown";return o;}
+
+        GmtSixLandmarkAnalyzer.measureStability(src,cx,cy,r,b);
+        if(!batonRepeatable(b)){
+            o.status=Status.LOW_CONFIDENCE;o.note=batonResizeReason(b);return o;
+        }
         o.status=Status.FOUND;
         return o;
+    }
+
+    static boolean batonRepeatable(GmtSixLandmarkAnalyzer.Result b){
+        if(b==null||!b.stabilityRun||!b.stabilitySameEdge)return false;
+        double c=MeasurementRepeatability.widthShiftPx(b.centringMin,b.centringMax,b.widthPx);
+        double r=MeasurementRepeatability.angleShiftPx(b.rotMin,b.rotMax,b.lengthPx);
+        return MeasurementRepeatability.stable(c)&&MeasurementRepeatability.stable(r);
+    }
+
+    static String batonResizeReason(GmtSixLandmarkAnalyzer.Result b){
+        if(b==null||!b.stabilityRun)return "resize repeatability was not measured";
+        if(!b.stabilitySameEdge)return "the baton is not found as the same physical edge at 94% and 88%";
+        double c=MeasurementRepeatability.widthShiftPx(b.centringMin,b.centringMax,b.widthPx);
+        double r=MeasurementRepeatability.angleShiftPx(b.rotMin,b.rotMax,b.lengthPx);
+        if(!Double.isFinite(c)||!Double.isFinite(r))return "the baton measurement is not reproduced at both resize scales";
+        return String.format(Locale.US,"the baton measurement moves under resize (centring %.1f px; rotation end %.1f px)",c,r);
     }
 
     // ------------------------------------------------------------------------------------------ round markers
     static void rounds(Mat src,DialEdgeEllipseFit.Intensity img,int w,int h,Result res){
         List<GmtRoundMarkerAnalyzer.Marker> ms=GmtRoundMarkerAnalyzer.analyse(src,res.frame,res.tick60);
+        GmtRoundMarkerAnalyzer.measureStability(src,res.frame,res.tick60,ms);
+        res.markerPose=GmtMarkerPose.estimate(ms,res.frame.r);   // diagnostic only; no Sub pose threshold
         double cx=res.frame.cx,cy=res.frame.cy;
         for(GmtRoundMarkerAnalyzer.Marker m:ms){
             if(!m.found){res.rounds.add(new Round(m,Status.NOT_FOUND,m.reason));continue;}
@@ -302,10 +374,29 @@ final class Sub124060QcAnalyzer {
             if((m.ringBright>HandIntrusion.MAX_RING_BRIGHT_FRACTION&&!m.handBeside)||m.coloured>GmtRoundMarkerAnalyzer.MAX_COLOURED_FRACTION)hand=true;
             m.hand=hand;
             m.attention=GmtHumanQcMath.Attention.UNASSESSABLE;   // never judged on the 124060 path
-            if(hand)res.rounds.add(new Round(m,Status.HAND,"a hand is over or next to it"));
-            else if(!m.stable)res.rounds.add(new Round(m,Status.LOW_CONFIDENCE,m.lowReason));
-            else res.rounds.add(new Round(m,Status.FOUND,""));
+            if(hand){res.rounds.add(new Round(m,Status.HAND,"a hand is over or next to it"));continue;}
+            if(!m.stable){res.rounds.add(new Round(m,Status.LOW_CONFIDENCE,m.lowReason));continue;}
+            if(!roundOffsetRepeatable(m)){
+                res.rounds.add(new Round(m,Status.LOW_CONFIDENCE,roundResizeReason(m)));continue;
+            }
+            // GMT lesson: a changed lume/surround edge invalidates size comparison, not the repeatable centre.
+            if(m.stabilityRun&&!m.stabilitySameEdge){
+                m.sizeRatio=Double.NaN;
+                res.rounds.add(new Round(m,Status.FOUND,"centre repeats under resize; outline edge identity changes, so size is not compared"));
+            }else res.rounds.add(new Round(m,Status.FOUND,""));
         }
+    }
+
+    static boolean roundOffsetRepeatable(GmtRoundMarkerAnalyzer.Marker m){
+        if(m==null||!m.stabilityRun)return false;
+        return MeasurementRepeatability.stable(MeasurementRepeatability.widthShiftPx(m.offMin,m.offMax,m.diameterPx()));
+    }
+
+    static String roundResizeReason(GmtRoundMarkerAnalyzer.Marker m){
+        if(m==null||!m.stabilityRun)return "resize repeatability was not measured";
+        double p=MeasurementRepeatability.widthShiftPx(m.offMin,m.offMax,m.diameterPx());
+        return Double.isFinite(p)?String.format(Locale.US,"the marker centre offset moves by %.1f px under resize",p)
+                :"the marker centre is not reproduced at both resize scales";
     }
 
     // ------------------------------------------------------------------------------------------ core entry
