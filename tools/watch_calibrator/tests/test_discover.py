@@ -88,6 +88,25 @@ class DiscoverTest(unittest.TestCase):
         for banned in ("bing.com", "duckduckgo", "google.com/search", "Mozilla/", ".rss", "comments/{", ".json?raw_json"):
             self.assertNotIn(banned, code, banned)
 
+    def test_curated_replica_seeds_need_model_factory_and_imgur_album(self):
+        with tempfile.TemporaryDirectory(dir=HERE.parents[1] / "calibration") as td:
+            seeds = Path(td) / "seeds.csv"
+            seeds.write_text(
+                "candidate_id,model,factory,source_url,image_album_url,provenance_note\n"
+                "ok,124060,VSF,https://www.reddit.com/r/RepTimeQC/comments/a1,https://imgur.com/a/AAA,n\n"
+                "nofac,124060,,https://www.reddit.com/r/RepTimeQC/comments/a2,https://imgur.com/a/BBB,n\n"
+                "wrongmodel,126610LN,VSF,https://www.reddit.com/r/RepTimeQC/comments/a3,https://imgur.com/a/CCC,n\n"
+                "noalbum,124060,VSF,https://www.reddit.com/r/RepTimeQC/comments/a4,,n\n", encoding="utf-8")
+            cfg = self._cfg({"class": "gen", "domain": "bobswatches.com", "name": "B", "source_type": "dealer_listing", "seed_urls": []})
+            cfg["discovery"]["replica_seed_csv"] = str(seeds.relative_to(HERE.parents[1]))
+            out = Path(td) / "c.csv"
+            report = discover.discover(cfg, out)
+            with out.open(newline="", encoding="utf-8") as fh:
+                rows = list(csv.DictReader(fh))
+        self.assertEqual(1, report["replica_seed_candidates"])
+        self.assertEqual(["ok"], [r["candidate_id"] for r in rows])
+        self.assertEqual("https://imgur.com/a/AAA", rows[0]["image_album_url"])
+
     def test_shipped_model_configs_pass_source_policy(self):
         import json
         for fn in (HERE.parents[1] / "calibration" / "models").glob("*.json"):
