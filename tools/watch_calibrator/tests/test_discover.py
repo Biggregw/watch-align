@@ -66,6 +66,46 @@ class DiscoverTest(unittest.TestCase):
                 rows = list(csv.DictReader(fh))
             self.assertEqual("174149", rows[0]["listing_id"])
 
+    def test_reviewed_listing_seed_is_a_normal_clean_discovery_candidate(self):
+        cfg = {
+            "model": "124060",
+            "family": "submariner_12",
+            "replica_factories": [],
+            "discovery": {
+                "minimum_gen_candidates": 1,
+                "allow_bootstrap": False,
+                "sources": [{
+                    "class": "gen",
+                    "domain": "europeanwatch.com",
+                    "name": "European Watch Company",
+                    "id_prefix": "auto_ewc",
+                    "source_type": "dealer_listing",
+                    "target": 1,
+                    "require_listing_id": True,
+                    "seed_urls": [],
+                    "listing_seed_urls": [
+                        "https://www.europeanwatch.com/watch/rolex-124060-submariner-71272"
+                    ],
+                }],
+            },
+        }
+        page = (
+            "https://www.europeanwatch.com/watch/rolex-124060-submariner-71272",
+            "Rolex 124060 Submariner Stock 71272",
+            200,
+        )
+        with tempfile.TemporaryDirectory() as td, \
+             patch.object(discover, "page_links", return_value=[]), \
+             patch.object(discover, "fetch_page", return_value=page):
+            out = Path(td) / "candidates.csv"
+            report = discover.discover(cfg, out)
+            with out.open(newline="", encoding="utf-8") as fh:
+                rows = list(csv.DictReader(fh))
+        self.assertTrue(report["clean_discovery"])
+        self.assertEqual(1, report["web_candidates"])
+        self.assertEqual("71272", rows[0]["listing_id"])
+        self.assertEqual("European Watch Company", rows[0]["source_name"])
+
     def _cfg(self, src):
         return {"model": "124060", "family": "submariner_12", "replica_factories": [],
                 "discovery": {"minimum_gen_candidates": 0, "sources": [src]}}

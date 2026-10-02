@@ -1,9 +1,10 @@
 """Locked watch-level development / validation / holdout split for the watch-family calibrator.
 
-Unit: physical_watch_id, so every photo of a watch shares one partition. Stratified by class
-(and factory for replicas) with largest-remainder 60/20/20 quotas; order inside a stratum is
-sha256(seed + watch id). A split file is written once and never regenerated (create() refuses to
-overwrite), so a watch can never move between partitions across reruns.
+Unit: physical_watch_id, so every photo of a watch shares one partition. Genuine watches are
+stratified by dealer/source and replicas by factory, with largest-remainder 60/20/20 quotas;
+order inside a stratum is sha256(seed + watch id). A split file is written once and never
+regenerated (create() refuses to overwrite), so a watch can never move between partitions across
+reruns.
 """
 from __future__ import annotations
 
@@ -15,12 +16,15 @@ from pathlib import Path
 SEED = "watch-align-family-calibrator-split-v1"
 PARTS = ("development", "validation", "holdout")
 TARGET = {"development": 0.6, "validation": 0.2, "holdout": 0.2}
-FIELDS = ["physical_watch_id", "partition", "stratum", "class_label", "model", "factory", "added_in"]
+FIELDS = ["physical_watch_id", "partition", "stratum", "class_label", "model", "factory", "source_name", "added_in"]
 
 
 def stratum(w: dict) -> tuple:
-    rep = w["class_label"] == "rep"
-    return (w["class_label"], w["model"], (w.get("factory") or "unknown") if rep else "Rolex")
+    if w["class_label"] == "rep":
+        group = w.get("factory") or "unknown_factory"
+    else:
+        group = w.get("source_name") or "unknown_source"
+    return (w["class_label"], w["model"], group)
 
 
 def make_split(watches: list[dict], seed: str = SEED) -> list[dict]:
@@ -40,9 +44,16 @@ def make_split(watches: list[dict], seed: str = SEED) -> list[dict]:
             for _ in range(quota[p]):
                 w = ws[i]
                 i += 1
-                out.append({"physical_watch_id": w["physical_watch_id"], "partition": p, "stratum": "/".join(key),
-                            "class_label": w["class_label"], "model": w["model"], "factory": w.get("factory", ""),
-                            "added_in": "locked_split"})
+                out.append({
+                    "physical_watch_id": w["physical_watch_id"],
+                    "partition": p,
+                    "stratum": "/".join(key),
+                    "class_label": w["class_label"],
+                    "model": w["model"],
+                    "factory": w.get("factory", ""),
+                    "source_name": w.get("source_name", ""),
+                    "added_in": "locked_split",
+                })
     return sorted(out, key=lambda r: (PARTS.index(r["partition"]), r["stratum"], r["physical_watch_id"]))
 
 
@@ -54,8 +65,13 @@ def watches_from_acquisition(acquired_csv: Path) -> list[dict]:
                 continue
             wid = r.get("physical_watch_id") or r.get("candidate_id")
             if wid and wid not in seen:
-                seen[wid] = {"physical_watch_id": wid, "class_label": (r.get("class_label") or "").lower(),
-                             "model": r.get("model", ""), "factory": r.get("factory", "")}
+                seen[wid] = {
+                    "physical_watch_id": wid,
+                    "class_label": (r.get("class_label") or "").lower(),
+                    "model": r.get("model", ""),
+                    "factory": r.get("factory", ""),
+                    "source_name": r.get("source_name", ""),
+                }
     return [w for w in seen.values() if w["class_label"] in ("gen", "rep")]
 
 

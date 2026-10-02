@@ -2,10 +2,10 @@
 """Watch-calibrator acquisition adapter with first-class Reddit QC media support.
 
 The mature Submariner acquisition path remains the provenance/dedupe/storage authority. This
-adapter adds Reddit-hosted media support and then delegates the complete acquisition run to
-submariner_acquire. One Reddit post remains one physical watch because discovery assigns one
-candidate/watch id per post. No replica image is used to set a genuine tolerance; replica images
-are downstream stress-test evidence only.
+adapter adds Reddit-hosted media support and narrow resolvers for verified dealer gallery layouts,
+then delegates the complete acquisition run to submariner_acquire. One Reddit post remains one
+physical watch because discovery assigns one candidate/watch id per post. No replica image is used
+to set a genuine tolerance; replica images are downstream stress-test evidence only.
 
 Reddit is reached only through the official OAuth API (reddit_oauth, credentials from
 REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET). Anonymous JSON, RSS and HTML Reddit surfaces are not
@@ -15,6 +15,7 @@ discovery, or nothing.
 from __future__ import annotations
 
 import argparse
+import csv
 import html
 import json
 import re
@@ -31,7 +32,9 @@ sys.path.insert(0, str(HARVESTER))
 sys.path.insert(0, str(HERE))
 
 import submariner_acquire as base  # noqa: E402
+import dealer_media  # noqa: E402
 import reddit_oauth  # noqa: E402
+import source_diversity  # noqa: E402
 from harvester.resolvers import ImageRef  # noqa: E402
 
 ORIGINAL_RESOLVE = base.resolve_candidate
@@ -162,8 +165,6 @@ def _merge_refs(groups: list[list[ImageRef]], max_images: int) -> list[ImageRef]
 
 
 def resolve_candidate(row: dict, http, work: Path, max_images: int):
-    # Existing Imgur handling remains first choice because it provides the complete QC set without
-    # requiring Reddit metadata access.
     if (row.get("image_album_url") or "").strip():
         return ORIGINAL_RESOLVE(row, http, work, max_images)
 
@@ -173,20 +174,49 @@ def resolve_candidate(row: dict, http, work: Path, max_images: int):
         direct = _image_url(row.get("direct_image_url") or "")
         direct_refs = [ImageRef(url=direct)] if direct else []
         refs = _merge_refs([oauth_refs, direct_refs], max_images)
-        # Never fall through to the generic resolver for a Reddit page: that would fetch Reddit
-        # HTML anonymously. No official-API media means no images for this watch.
         return refs
 
+    verified = dealer_media.resolve_verified_dealer(row, http, max_images)
+    if verified is not None:
+        return verified
+
     return ORIGINAL_RESOLVE(row, http, work, max_images)
+
+
+def _config_for_pool(pool) -> dict | None:
+    """Infer the single model config represented by an acquisition pool."""
+    models = set()
+    pools = [Path(p) for p in (pool if isinstance(pool, (list, tuple)) else [pool])]
+    for path in pools:
+        if not path.exists():
+            continue
+        with path.open(newline="", encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                model = (row.get("model") or "").strip().upper()
+                if model:
+                    models.add(model)
+    if len(models) != 1:
+        return None
+    path = REPO / "calibration" / "models" / f"{next(iter(models))}.json"
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def run(pool, out: Path, max_images: int = 12) -> dict:
     original = base.resolve_candidate
     base.resolve_candidate = resolve_candidate
     try:
-        return base.run(pool, out, max_images)
+        result = base.run(pool, out, max_images)
     finally:
         base.resolve_candidate = original
+
+    config = _config_for_pool(pool)
+    if config is not None:
+        report = source_diversity.evaluate(config, out / "acquired_images.csv")
+        source_diversity.save(report, out / "source_diversity.json")
+        result["source_diversity"] = report
+    return result
 
 
 def main(argv=None) -> int:
@@ -195,7 +225,11 @@ def main(argv=None) -> int:
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--max-images", type=int, default=12)
     a = ap.parse_args(argv)
-    print(json.dumps(run(a.pool, a.out, a.max_images), indent=2, sort_keys=True))
+    result = run(a.pool, a.out, a.max_images)
+    print(json.dumps(result, indent=2, sort_keys=True))
+    diversity = result.get("source_diversity") or {}
+    if diversity.get("required") and not diversity.get("passed"):
+        return 3
     return 0
 
 
