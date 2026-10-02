@@ -10,7 +10,7 @@
   },
   "replica_factories": ["VSF", "Clean", "CF", "ARF"],
   "discovery": {
-    "target_gen": 50,
+    "target_gen": 65,
     "target_rep": 12,
     "minimum_gen_candidates": 24,
     "per_source_target": 10,
@@ -18,10 +18,10 @@
     "require_clean_discovery": true,
     "allow_bootstrap": false,
     "genuine_source_diversity": {
-      "minimum_sources": 4,
+      "minimum_sources": 5,
       "minimum_watches_per_source": 4,
-      "minimum_acquired_watches": 20,
-      "max_single_source_share": 0.5
+      "minimum_acquired_watches": 28,
+      "max_single_source_share": 0.45
     },
     "sources": [
       {
@@ -138,6 +138,59 @@
           "https://www.grayandsons.com/w527167-unused-rolex-submariner-41mm-124060/"
         ],
         "note": "Verified public Submariner inventory/listings; supplementary source because current 124060 inventory can be sparse."
+      },
+      {
+        "class": "gen",
+        "domain": "watchesofswitzerland.com",
+        "name": "Watches of Switzerland Rolex CPO",
+        "id_prefix": "auto_wos_cpo_124060",
+        "source_type": "rolex_cpo",
+        "target": 6,
+        "require_listing_id": true,
+        "seed_urls": [],
+        "listing_seed_urls": [
+          "https://www.watchesofswitzerland.com/products/submariner-m124060-0001-40411297",
+          "https://www.watchesofswitzerland.com/products/submariner-m124060-0001-40411298",
+          "https://www.watchesofswitzerland.com/en-int/products/submariner-m124060-0001-40410494",
+          "https://www.watchesofswitzerland.com/en-int/products/submariner-m124060-0001-40410234",
+          "https://www.watchesofswitzerland.com/products/submariner-m124060-0001-40410136",
+          "https://www.watchesofswitzerland.com/products/submariner-m124060-0001-40410472"
+        ],
+        "note": "Reuses a provenance class already used by the GMT genuine control set. Each listing is Rolex Certified Pre-Owned and officially confirms the watch is genuine. Acquisition keeps only gallery images labelled with exact model 124060."
+      },
+      {
+        "class": "gen",
+        "domain": "sothebys.com",
+        "name": "Sotheby's",
+        "id_prefix": "auto_sothebys_124060",
+        "source_type": "auction_house",
+        "target": 6,
+        "require_listing_id": false,
+        "seed_urls": [],
+        "listing_seed_urls": [
+          "https://www.sothebys.com/en/buy/auction/2026/fine-watches-9/reference-124060-submariner-a-stainless-steel",
+          "https://www.sothebys.com/en/buy/auction/2024/fine-watches/submariner-reference-124060-montre-bracelet-en",
+          "https://www.sothebys.com/en/buy/auction/2023/important-watches-online/submariner-124060",
+          "https://www.sothebys.com/en/buy/auction/2024/fine-watches-6/reference-124060-submariner-a-stainless-steel",
+          "https://www.sothebys.com/en/buy/_submariner-no-date-reference-124060-90f3",
+          "https://www.sothebys.com/en/buy/_rolex-submariner-non-date-reference-124060-a-stainless-steel-automatic-wristwatch-4fe5"
+        ],
+        "note": "Reuses the auction-house provenance class already used by the GMT genuine control set. Exact-reference pages are authenticity/catalogue evidence; acquisition keeps only exact-model-labelled gallery images plus the item hero."
+      },
+      {
+        "class": "gen",
+        "domain": "phillips.com",
+        "name": "Phillips",
+        "id_prefix": "auto_phillips_124060",
+        "source_type": "auction_house",
+        "target": 2,
+        "require_listing_id": true,
+        "seed_urls": [],
+        "listing_seed_urls": [
+          "https://www.phillips.com/detail/rolex/206976",
+          "https://www.phillips.com/detail/rolex/217746"
+        ],
+        "note": "Reuses the auction-house provenance class already used by the GMT genuine control set. Exact-reference fully catalogued lots contribute their item-specific hero image only."
       },
       {
         "class": "rep",
