@@ -22,13 +22,14 @@ The existing GMT experience is the product reference. New watch families should 
 12. GMT production behaviour must remain regression-protected while Submariner support is added.
 13. Real dealer/QC photos are the target input. Production validation must include them.
 14. The end state of a family implementation is working Android QC support and a testable APK, not indefinitely expanding research statistics.
-15. If a requested task begins expanding beyond these boundaries, stop before implementing the expansion and report the proposed scope change for approval.
+15. Calibration is conservative replica QC. Every reliable measurement observed on a genuine watch belongs inside the accepted genuine envelope, including small genuine imperfections. A replica is highlighted only when its reliable measurement is outside supported genuine variation. Only obvious measurement failures may be excluded, and replica measurements never move a genuine-derived boundary.
+16. If a requested task begins expanding beyond these boundaries, stop before implementing the expansion and report the proposed scope change for approval.
 
 ## Current Submariner direction
 
 The Submariner research work is supporting evidence, not a new product architecture. The production objective is to add 124060 support into the existing GMT-style Android QC experience, carrying across only the research findings and family-specific components that are actually needed.
 
-Do not assume that every research metric must become a production check. Use conservative production behaviour where evidence is weak.
+Do not assume that every research metric must become a production check. Use conservative production behaviour where evidence is weak. When genuine and replica distributions overlap for a metric, that metric must not flag values inside the supported genuine envelope merely because the same value is undesirable on a replica.
 
 ## Decision rule for future work
 
@@ -37,7 +38,7 @@ Before adding work, ask:
 - What user-facing QC capability does this enable?
 - Is this needed for the existing GMT-style workflow?
 - Is there a smaller production-focused solution?
-- Does it preserve GMT behaviour?
+- Does it preserve GMT behaviour, except for an explicitly approved cross-family product-rule change?
 - Does it move the family toward a usable APK?
 
 If those questions cannot be answered clearly, the work is probably outside current scope.

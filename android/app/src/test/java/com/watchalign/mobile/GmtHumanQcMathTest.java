@@ -5,10 +5,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class GmtHumanQcMathTest {
-    @Test public void subLikeSlightVisibleRotationIsHighlighted() {
+    @Test public void genuineEnvelopeTurnStaysClearBelowTwoDegrees() {
         GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(
                 -1.8,-1.6,0.07,34.0,GmtHumanQcMath.PoseLabel.GOOD,true);
-        assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,r.attention);
         assertTrue(r.visibleRisePx>1.0);
     }
 
@@ -143,19 +143,27 @@ public class GmtHumanQcMathTest {
         assertTrue(s<1.0);
     }
 
-    /** alpha58: genuine Phillips Pepsi photos lean up to 1.4 deg with a level top edge. */
-    @Test public void smallLeanWithLevelTopEdgeIsNotFlagged() {
-        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(1.39,-0.66,-0.057,70.0,GmtHumanQcMath.PoseLabel.CORRECTABLE,true);
+    @Test public void genuineLevelTopSkewStaysClearThroughObservedRange() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(
+                2.2,0.2,0.04,70.0,GmtHumanQcMath.PoseLabel.GOOD,true);
         assertEquals(GmtHumanQcMath.Attention.CLEAR,r.attention);
     }
 
-    @Test public void largeLeanWithLevelTopEdgeIsStillChecked() {
-        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(2.4,0.2,0.07,70.0,GmtHumanQcMath.PoseLabel.GOOD,true);
-        org.junit.Assert.assertNotEquals(GmtHumanQcMath.Attention.CLEAR,r.attention);
+    @Test public void levelTopSkewBeyondGenuineEnvelopeIsChecked() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(
+                2.6,0.2,0.07,70.0,GmtHumanQcMath.PoseLabel.GOOD,true);
+        assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
     }
 
-    @Test public void smallTurnWithMatchingTopEdgeIsChecked() {
-        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(1.2,1.0,0.0,70.0,GmtHumanQcMath.PoseLabel.GOOD,true);
+    @Test public void smallTurnWithMatchingTopEdgeInsideGenuineEnvelopeIsClear() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(
+                1.2,1.0,0.0,70.0,GmtHumanQcMath.PoseLabel.GOOD,true);
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,r.attention);
+    }
+
+    @Test public void corroboratedTurnBeyondGenuineEnvelopeIsChecked() {
+        GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(
+                2.2,2.0,0.0,70.0,GmtHumanQcMath.PoseLabel.GOOD,true);
         assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
     }
 }
