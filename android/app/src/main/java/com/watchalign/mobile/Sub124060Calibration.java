@@ -31,6 +31,14 @@ final class Sub124060Calibration {
         }
     }
 
+    static final class Assessment {
+        Verdict rotation=Verdict.UNJUDGED,centring=Verdict.UNJUDGED;
+        Verdict roundRing=Verdict.UNJUDGED,roundSpacing=Verdict.UNJUDGED;
+        Verdict baton39=Verdict.UNJUDGED,axis126=Verdict.UNJUDGED;
+        double roundRingRho=Double.NaN,roundSpacingRmsDeg=Double.NaN;
+        double baton39LineOffsetR=Double.NaN,axis126LineOffsetR=Double.NaN;
+    }
+
     static final Band TWELVE_ROTATION=new Band("twelve.rotation_deg",
             -13.88038488935,15.22676818935,-21.157173159025,22.503556459025);
     static final Band TWELVE_CENTRING=new Band("twelve.centring_w",
@@ -55,16 +63,17 @@ final class Sub124060Calibration {
         }
     }
 
-    /** Apply only to measurements already accepted by the existing alpha70 reliability gates. */
-    static void apply(Sub124060QcAnalyzer.Result r){
-        if(r==null)return;
+    /** Assess only measurements already accepted by the existing alpha70 reliability gates. */
+    static Assessment assess(Sub124060QcAnalyzer.Result r){
+        Assessment a=new Assessment();
+        if(r==null)return a;
 
         if(r.rotationWithheld==null&&Double.isFinite(r.rotationDeg)&&Boolean.TRUE.equals(r.rotationResizeStable))
-            r.rotationQc=TWELVE_ROTATION.judge(r.rotationDeg);
+            a.rotation=TWELVE_ROTATION.judge(r.rotationDeg);
         if(r.centringWithheld==null&&Double.isFinite(r.centringW)&&Boolean.TRUE.equals(r.centringResizeStable))
-            r.centringQc=TWELVE_CENTRING.judge(r.centringW);
+            a.centring=TWELVE_CENTRING.judge(r.centringW);
 
-        if(r.frame==null||r.edge==null||!Boolean.TRUE.equals(r.dialReproducible))return;
+        if(r.frame==null||r.edge==null||!Boolean.TRUE.equals(r.dialReproducible))return a;
 
         double ref12=rectClock(r.frame,r.tick60);
         List<Double> rho=new ArrayList<>(),angleErrors=new ArrayList<>();
@@ -77,12 +86,12 @@ final class Sub124060Calibration {
             if(Double.isFinite(ref12))angleErrors.add(wrap180(rectClock(r.frame,m.x,m.y)-ref12-m.hour*30.0));
         }
         if(rho.size()>=4){
-            r.roundRingRho=median(rho);
-            r.roundRingQc=ROUND_RING_RHO.judge(r.roundRingRho);
+            a.roundRingRho=median(rho);
+            a.roundRing=ROUND_RING_RHO.judge(a.roundRingRho);
         }
         if(angleErrors.size()>=4){
-            r.roundSpacingRmsDeg=spacingRms(angleErrors);
-            r.roundSpacingQc=ROUND_SPACING_RMS.judge(r.roundSpacingRmsDeg);
+            a.roundSpacingRmsDeg=spacingRms(angleErrors);
+            a.roundSpacing=ROUND_SPACING_RMS.judge(a.roundSpacingRmsDeg);
         }
 
         Sub124060QcAnalyzer.Baton b3=baton(r,GmtSixLandmarkAnalyzer.Position.THREE);
@@ -91,16 +100,17 @@ final class Sub124060Calibration {
 
         double[] p3=batonPoint(r.frame,b3),p9=batonPoint(r.frame,b9);
         if(p3!=null&&p9!=null){
-            r.baton39LineOffsetR=lineOffset(p3,p9);
-            r.baton39Qc=BATON_3_9_LINE_OFFSET.judge(r.baton39LineOffsetR);
+            a.baton39LineOffsetR=lineOffset(p3,p9);
+            a.baton39=BATON_3_9_LINE_OFFSET.judge(a.baton39LineOffsetR);
         }
 
         double[] p12=r.triangle!=null&&r.twelveWithheld==null?rectNorm(r.frame,r.triangle.cx,r.triangle.cy):null;
         double[] p6=batonPoint(r.frame,b6);
         if(p12!=null&&p6!=null){
-            r.axis126LineOffsetR=lineOffset(p12,p6);
-            r.axis126Qc=AXIS_12_6_LINE_OFFSET.judge(r.axis126LineOffsetR);
+            a.axis126LineOffsetR=lineOffset(p12,p6);
+            a.axis126=AXIS_12_6_LINE_OFFSET.judge(a.axis126LineOffsetR);
         }
+        return a;
     }
 
     static Sub124060QcAnalyzer.Baton baton(Sub124060QcAnalyzer.Result r,GmtSixLandmarkAnalyzer.Position p){
