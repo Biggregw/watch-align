@@ -70,6 +70,10 @@ public class Sub124060CalibrationTest {
         assertEquals(0.10,Sub124060Calibration.lineOffset(new double[]{-0.8,0.1},new double[]{0.8,0.1}),1e-12);
     }
 
+    @Test public void ringRadiusIsMeasuredButNeverJudged(){
+        assertFalse(Sub124060Calibration.RING_JUDGED);
+    }
+
     @Test public void gapIsMeasuredButNeverJudged(){
         assertFalse(Sub124060Calibration.GAP_JUDGED);
         Sub124060QcAnalyzer.Result r=new Sub124060QcAnalyzer.Result();

@@ -72,6 +72,8 @@ final class Sub124060Calibration {
     static final Band TWELVE_ROTATION=new Band("twelve.rotation_deg",
             -1.18473115495,1.58789615495,-2.10894025825,2.51210525825);
     static final boolean GAP_JUDGED=false;
+    /** Measured-only until calibration covers several dealers/photo styles (alpha76). */
+    static final boolean RING_JUDGED=false;
     static final Band TWELVE_GAP=new Band("twelve.gap_r",
             0.0247193049,0.0523356951,0.0155138415,0.0615411585);
     static final Band TWELVE_CENTRING=new Band("twelve.centring_w",
@@ -155,7 +157,9 @@ final class Sub124060Calibration {
         }
         if(rho.size()>=4){
             a.roundRingRho=median(rho);a.roundRingMeasured=true;
-            if(judge)a.roundRing=ROUND_RING_RHO.judge(a.roundRingRho);
+            // Ring radius is relative to the fitted dial edge, whose position shifts with photo style:
+            // a genuine Watchfinder photo read 0.782 R against a Bob's-only band of 0.811-0.823.
+            if(judge&&RING_JUDGED)a.roundRing=ROUND_RING_RHO.judge(a.roundRingRho);
         }
         if(angleErrors.size()>=4){
             a.roundSpacingRmsDeg=spacingRms(angleErrors);a.roundSpacingMeasured=Double.isFinite(a.roundSpacingRmsDeg);
