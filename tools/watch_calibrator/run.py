@@ -2,7 +2,8 @@
 """End-to-end autonomous Watch Align family calibrator.
 
 Input is a model id only. The model config defines approved source discovery, layout, measurement
-adapter and calibration metrics. The runner discovers source watches, acquires images, locks a
+adapter and calibration metrics. Measurement runs the production app route (desktop harness
+CalibMeasure), so only values that pass the app's reliability gates can shape a limit. The runner discovers source watches, acquires images, locks a
 watch-level split, measures development/validation, freezes candidate limits, and only then opens
 holdout. It never lets replica data move a limit.
 """
@@ -17,7 +18,8 @@ REPO=HERE.parents[1]
 sys.path.insert(0,str(HERE))
 from discover import discover  # noqa: E402
 from reddit_evidence import enrich as enrich_reddit_evidence  # noqa: E402
-from geometry import extract  # noqa: E402
+import split as locked_split  # noqa: E402
+from production_measure import measure as production_measure  # noqa: E402
 from calibrate import propose, finalize, save  # noqa: E402
 
 
@@ -35,19 +37,8 @@ def config_path(model: str)->Path:
 def paths(model: str, root: Path):
     m=model.upper();base=root/m
     return {"base":base,"pool":base/"discovered_candidates.csv","acq":base/"dataset","split":base/"locked_split.csv",
-            "devval":base/"measure_devval","holdout":base/"measure_holdout","geom":base/"geometry","cal":base/"calibration.json",
+            "geom":base/"geometry","cal":base/"calibration.json",
             "replica":base/"replica_evidence.json"}
-
-
-def measure(config, root, out, split, partitions, include_holdout=False):
-    if config.get("measurement_adapter")!="submariner_research_v2":
-        raise SystemExit(f"Unsupported measurement adapter {config.get('measurement_adapter')}")
-    cmd=[sys.executable,REPO/"tools/dataset_harvester/submariner_measure.py","--root",root,"--out",out,"--split",split,
-         "--model",str(config["model"]),"--variants",config.get("variants","orig,s94,s88,x+1,x-1,x+2,x-2,y+1,y-1,y+2,y-2,r+5,r-5"),
-         "--shards",str(config.get("shards",2))]
-    for p in partitions: cmd += ["--partition",p]
-    if include_holdout: cmd += ["--include-holdout"]
-    sh(cmd)
 
 
 def replica_evidence(config: dict, acquisition_root: Path, output: Path) -> dict:
@@ -105,30 +96,31 @@ def run(model: str, root: Path, fresh=False) -> dict:
         (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n");return status
 
     # 2) Acquire. v3 resolves Imgur albums, official Reddit OAuth galleries when credentials are
-    # available, public RSS evidence where exposed, and the discovery-time direct image fallback.
+    # available, and the image URL the official API gave discovery. No anonymous Reddit surfaces.
     if config.get("acquisition_adapter")!="submariner_acquire_v3":
         raise SystemExit(f"Unsupported acquisition adapter {config.get('acquisition_adapter')}")
     sh([sys.executable,REPO/"tools/watch_calibrator/acquire.py","--pool",P["pool"],"--out",P["acq"],"--max-images",str(config["discovery"].get("max_images_per_watch",12))])
     rep_ev=replica_evidence(config,P["acq"],P["replica"])
 
-    # 3) Build dataset and lock a watch-level split once. The split file is the boundary between discovery and calibration.
+    # 3) Lock a watch-level split once. The split file is the boundary between discovery and calibration.
     if not P["split"].exists():
-        sh([sys.executable,REPO/"tools/dataset_harvester/submariner_measure.py","--root",P["acq"],"--out",P["base"]/"dataset_stage",
-            "--split",P["split"],"--create-split","--dataset-only"])
+        locked_split.create(locked_split.watches_from_acquisition(P["acq"]/"acquired_images.csv"),P["split"])
 
-    # 4) Development + validation only. Holdout remains unopened.
-    measure(config,P["acq"],P["devval"],P["split"],["development","validation"],False)
-    gd=extract(P["devval"],P["geom"],config,"development","gen")
-    gv=extract(P["devval"],P["geom"],config,"validation","gen")
-    try: rd=extract(P["devval"],P["geom"],config,"development","rep")
-    except BaseException: rd=None
+    # 4) Development + validation only, measured through the production app route (alpha70 gates).
+    # Holdout remains unopened.
+    if config.get("measurement_adapter")!="production_app_route_v1":
+        raise SystemExit(f"Unsupported measurement adapter {config.get('measurement_adapter')}")
+    gd=production_measure(config,P["acq"],P["split"],P["geom"],"development","gen")
+    gv=production_measure(config,P["acq"],P["split"],P["geom"],"validation","gen")
+    rd=production_measure(config,P["acq"],P["split"],P["geom"],"development","rep")
 
     pref=f"{config['model']}_"
     frozen=propose(config,
         P["geom"]/f"{pref}development_gen_watch.csv",
         P["geom"]/f"{pref}development_gen_repeatability.csv",
         P["geom"]/f"{pref}validation_gen_watch.csv",
-        P["geom"]/f"{pref}development_rep_watch.csv" if rd else None)
+        P["geom"]/f"{pref}development_rep_watch.csv" if rd.get("photos") else None,
+        evidence_root=REPO)
     save(frozen,P["base"]/"frozen_before_holdout.json")
     if frozen["state"]!="FROZEN_PENDING_HOLDOUT":
         save(frozen,P["cal"])
@@ -137,8 +129,7 @@ def run(model: str, root: Path, fresh=False) -> dict:
         (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n");return status
 
     # 5) Limits are now frozen. Open holdout exactly once for confirmation. No value below can move a limit.
-    measure(config,P["acq"],P["holdout"],P["split"],["holdout"],True)
-    gh=extract(P["holdout"],P["geom"],config,"holdout","gen")
+    gh=production_measure(config,P["acq"],P["split"],P["geom"],"holdout","gen")
     final=finalize(frozen,P["geom"]/f"{pref}holdout_gen_watch.csv")
     save(final,P["cal"])
     status={"model":model,"state":final["state"],"stage":"complete","discovery":d,"replica_evidence":rep_ev,

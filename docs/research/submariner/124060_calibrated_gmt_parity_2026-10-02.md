@@ -1,5 +1,10 @@
 # 124060 calibrated GMT-parity checkpoint — 2026-10-02
 
+> **Superseded by alpha73 (same day).** The verdicts described below are switched off
+> (`Sub124060Calibration.VERDICTS_ENABLED=false`); the app shows MEASURED / NOT YET JUDGED.
+> The run 36927036008 bands were too wide to flag anything, and the calibrator that produced them has
+> since been repaired. See `tools/watch_calibrator/README.md` and `docs/124060_CHECKPOINT.md`.
+
 ## Canonical product baseline
 
 The production baseline for the Rolex Submariner 124060 is the GMT-style parity implementation originally frozen at:

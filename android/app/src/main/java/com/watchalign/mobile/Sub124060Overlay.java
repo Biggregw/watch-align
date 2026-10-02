@@ -16,12 +16,18 @@ import java.util.Locale;
  * This keeps the alpha71 GMT-parity product contract and changes only the verdict source: reliable
  * measurements are now judged against the frozen 124060 family calibration. The same four visual
  * states as GMT are used: green tick, amber !, red !! and grey dash. No GMT tolerance is copied.
+ *
+ * While Sub124060Calibration.VERDICTS_ENABLED is false, reliable measurements are drawn solid in a
+ * neutral MEASURED blue with a dot badge instead of a verdict colour; unmeasured items keep the
+ * grey dashed / dash-badge state.
  */
 final class Sub124060Overlay {
     static final int CLEAR=Color.rgb(40,210,120), CHECK=Color.rgb(255,176,0),
             STRONG=Color.rgb(255,45,45), WITHHELD=Color.rgb(165,175,190),
-            TICK=Color.rgb(90,220,255), WHITE=Color.WHITE;
-    static final String BANNER="124060 experimental · provisional family calibration";
+            TICK=Color.rgb(90,220,255), WHITE=Color.WHITE, MEASURED=Color.rgb(110,160,255);
+    static final String BANNER=Sub124060Calibration.VERDICTS_ENABLED
+            ?"124060 experimental · provisional family calibration"
+            :"124060 experimental · measured, not yet judged";
 
     static final class Baton {
         String label;
@@ -94,7 +100,7 @@ final class Sub124060Overlay {
                 d.triAttention=d.triMeasured?d.calibration.twelve():GmtHumanQcMath.Attention.UNASSESSABLE;
                 d.triNote=res.twelveWithheld!=null?shortReason(res.twelveWithheld)
                         :!d.triMeasured?"not measured"
-                        :d.triAttention==GmtHumanQcMath.Attention.UNASSESSABLE?"not enough calibrated evidence":null;
+                        :d.triAttention==GmtHumanQcMath.Attention.UNASSESSABLE&&Sub124060Calibration.VERDICTS_ENABLED?"not enough calibrated evidence":null;
             }
 
             double phi12=res.tick60!=null?res.frame.phiOf(res.tick60[0],res.tick60[1]):-Math.PI/2.0;
@@ -103,7 +109,7 @@ final class Sub124060Overlay {
                 x.measured=b.status==Sub124060QcAnalyzer.Status.FOUND;
                 x.attention=x.measured?d.calibration.baton(x.label):GmtHumanQcMath.Attention.UNASSESSABLE;
                 x.note=statusReason(b.status,b.note);
-                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note="not enough calibrated evidence";
+                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note=Sub124060Calibration.VERDICTS_ENABLED?"not enough calibrated evidence":null;
                 double[] expected=res.frame.at(phi12+Math.toRadians(b.position.angleFromTwelveDeg),0.817);
                 x.expectedX=expected[0];x.expectedY=expected[1];
                 if(b.result!=null&&b.result.geometry!=null){
@@ -121,7 +127,7 @@ final class Sub124060Overlay {
                 x.found=m.found;x.measured=r.status==Sub124060QcAnalyzer.Status.FOUND;
                 x.attention=x.measured?roundAttention:GmtHumanQcMath.Attention.UNASSESSABLE;
                 x.note=statusReason(r.status,r.note);
-                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note="not enough calibrated evidence";
+                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note=Sub124060Calibration.VERDICTS_ENABLED?"not enough calibrated evidence":null;
                 x.x=m.x;x.y=m.y;x.radius=m.radiusPx;
                 x.expectedX=m.seedX;x.expectedY=m.seedY;x.expectedRadius=m.expectedRadiusPx;
                 if(!Double.isFinite(x.expectedX)||!Double.isFinite(x.expectedY)){
@@ -161,6 +167,10 @@ final class Sub124060Overlay {
         switch(a){case CLEAR:return CLEAR;case CHECK:return CHECK;case STRONG:return STRONG;default:return WITHHELD;}
     }
     static boolean judged(GmtHumanQcMath.Attention a){return a!=null&&a!=GmtHumanQcMath.Attention.UNASSESSABLE;}
+    /** Reliable value shown without a verdict (measured-only mode). */
+    static boolean neutral(GmtHumanQcMath.Attention a,boolean measured){return !judged(a)&&measured&&!Sub124060Calibration.VERDICTS_ENABLED;}
+    static boolean solid(GmtHumanQcMath.Attention a,boolean measured){return judged(a)||neutral(a,measured);}
+    static int ink(GmtHumanQcMath.Attention a,boolean measured){return judged(a)?colour(a):neutral(a,measured)?MEASURED:WITHHELD;}
     static boolean flagged(GmtHumanQcMath.Attention a){return a==GmtHumanQcMath.Attention.CHECK||a==GmtHumanQcMath.Attention.STRONG;}
 
     static Bitmap render(Bitmap watch,Drawing d){
@@ -179,22 +189,22 @@ final class Sub124060Overlay {
             double rad=r.found&&r.radius>0?r.radius:r.expectedRadius;
             if(!Double.isFinite(x)||!Double.isFinite(y)||!(rad>0))continue;
             float lw=(float)Math.max(1.0,2*rad/22.0);
-            if(judged(r.attention))c.drawCircle((float)x,(float)y,(float)rad,stroke(colour(r.attention),lw,235));
+            if(solid(r.attention,r.measured))c.drawCircle((float)x,(float)y,(float)rad,stroke(ink(r.attention,r.measured),lw,235));
             else circleDashed(c,x,y,rad,stroke(WITHHELD,lw,205));
-            badge(c,x,y,badge,r.attention);
+            badge(c,x,y,badge,r.attention,r.measured);
             String w=flagged(r.attention)?"position":r.note;
-            if(w!=null)word(c,d,x,y,rad,w,judged(r.attention)?colour(r.attention):WITHHELD,text);
+            if(w!=null)word(c,d,x,y,rad,w,ink(r.attention,r.measured),text);
         }
 
         for(Baton b:d.batons){
             double x=b.centreX(),y=b.centreY();
             if(b.poly!=null){
                 double w=b.width();float lw=(float)Math.max(1.0,(Double.isFinite(w)?w:badge)/16.0);
-                if(judged(b.attention))poly(c,b.poly,true,stroke(colour(b.attention),lw,235));
+                if(solid(b.attention,b.measured))poly(c,b.poly,true,stroke(ink(b.attention,b.measured),lw,235));
                 else for(int i=0;i<b.poly.length;i++)dashed(c,b.poly[i],b.poly[(i+1)%b.poly.length],Math.max(3,w/4.0),stroke(WITHHELD,lw,215));
-                badge(c,x,y,badge,b.attention);
+                badge(c,x,y,badge,b.attention,b.measured);
                 String why=flagged(b.attention)?"axis":b.note;
-                if(why!=null)word(c,d,x,y,Math.max(badge*2,w),why,judged(b.attention)?colour(b.attention):WITHHELD,text);
+                if(why!=null)word(c,d,x,y,Math.max(badge*2,w),why,ink(b.attention,b.measured),text);
             }else if(Double.isFinite(x)&&Double.isFinite(y)){
                 badge(c,x,y,badge,GmtHumanQcMath.Attention.UNASSESSABLE);
                 word(c,d,x,y,badge*2.5,b.note!=null?b.note:"not found",WITHHELD,text);
@@ -205,11 +215,11 @@ final class Sub124060Overlay {
             double width=Math.hypot(d.triR[0]-d.triL[0],d.triR[1]-d.triL[1]);
             float lw=(float)Math.max(1.0,width/40.0);double[][] tri={d.triL,d.triR,d.triT};
             double x=(d.triL[0]+d.triR[0]+d.triT[0])/3.0,y=(d.triL[1]+d.triR[1]+d.triT[1])/3.0;
-            if(judged(d.triAttention))poly(c,tri,true,stroke(colour(d.triAttention),lw,235));
+            if(solid(d.triAttention,d.triMeasured))poly(c,tri,true,stroke(ink(d.triAttention,d.triMeasured),lw,235));
             else for(int i=0;i<3;i++)dashed(c,tri[i],tri[(i+1)%3],width/8.0,stroke(WITHHELD,lw,220));
-            badge(c,x,y,badge,d.triAttention);
+            badge(c,x,y,badge,d.triAttention,d.triMeasured);
             String why=flagged(d.triAttention)?"alignment":d.triNote;
-            if(why!=null)word(c,d,x,y,width*0.5,why,judged(d.triAttention)?colour(d.triAttention):WITHHELD,text);
+            if(why!=null)word(c,d,x,y,width*0.5,why,ink(d.triAttention,d.triMeasured),text);
         }else if(Double.isFinite(d.dialCx)){
             double[] p=ellipsePoint(d,-90,0.78);badge(c,p[0],p[1],badge,GmtHumanQcMath.Attention.UNASSESSABLE);word(c,d,p[0],p[1],badge*2.5,"12 not found",WITHHELD,text);
         }
@@ -232,7 +242,7 @@ final class Sub124060Overlay {
         if(!d.hasTriangle())return out;
         double width=Math.hypot(d.triR[0]-d.triL[0],d.triR[1]-d.triL[1]);
         float lw=(float)Math.max(1.0,width/40.0);double[][] tri={d.triL,d.triR,d.triT};
-        if(judged(d.triAttention))poly(c,tri,true,stroke(colour(d.triAttention),lw,240));
+        if(solid(d.triAttention,d.triMeasured))poly(c,tri,true,stroke(ink(d.triAttention,d.triMeasured),lw,240));
         else for(int i=0;i<3;i++)dashed(c,tri[i],tri[(i+1)%3],width/8.0,stroke(WITHHELD,lw,220));
 
         if(d.tick59!=null&&d.tick60!=null&&d.tick01!=null){
@@ -251,7 +261,7 @@ final class Sub124060Overlay {
                 c.drawLine((float)(mx-tx),(float)(my-ty),(float)(mx+tx),(float)(my+ty),gp);
                 c.drawLine((float)(foot[0]-tx),(float)(foot[1]-ty),(float)(foot[0]+tx),(float)(foot[1]+ty),gp);}
 
-            Paint sp=stroke(judged(d.triAttention)?colour(d.triAttention):WITHHELD,Math.max(1f,lw*0.75f),210);
+            Paint sp=stroke(ink(d.triAttention,d.triMeasured),Math.max(1f,lw*0.75f),210);
             c.drawLine((float)d.triL[0],(float)d.triL[1],(float)d.tick59[0],(float)d.tick59[1],sp);
             c.drawLine((float)d.triR[0],(float)d.triR[1],(float)d.tick01[0],(float)d.tick01[1],sp);
         }
@@ -277,8 +287,8 @@ final class Sub124060Overlay {
 
         int strip=Math.max(56,size/7);Bitmap out=Bitmap.createBitmap(size,size+strip,Bitmap.Config.ARGB_8888);
         Canvas oc=new Canvas(out);oc.drawBitmap(square,0,0,null);oc.drawRect(0,size,size,size+strip,fill(Color.rgb(12,16,22),245));
-        float ts=Math.max(14,size/28f);Paint t=fill(colour(d.triAttention),255);t.setTextSize(ts);t.setFakeBoldText(true);
-        String l1="12  "+symbol(d.triAttention)+"  "+label(d.triAttention);
+        float ts=Math.max(14,size/28f);Paint t=fill(ink(d.triAttention,d.triMeasured),255);t.setTextSize(ts);t.setFakeBoldText(true);
+        String l1=neutral(d.triAttention,d.triMeasured)?"12  •  measured, not judged":"12  "+symbol(d.triAttention)+"  "+label(d.triAttention);
         oc.drawText(l1,ts*0.7f,size+ts*1.25f,t);
         t.setFakeBoldText(false);t.setColor(Color.rgb(205,215,228));t.setTextSize(ts*0.90f);
         String l2=triangleValues(d);
@@ -304,7 +314,7 @@ final class Sub124060Overlay {
 
     private static void drawBatonDetail(Canvas c,Baton b){
         if(b.poly==null)return;double w=b.width();float lw=(float)Math.max(1.0,w/16.0);
-        if(judged(b.attention))poly(c,b.poly,true,stroke(colour(b.attention),lw,235));
+        if(solid(b.attention,b.measured))poly(c,b.poly,true,stroke(ink(b.attention,b.measured),lw,235));
         else for(int i=0;i<b.poly.length;i++)dashed(c,b.poly[i],b.poly[(i+1)%b.poly.length],Math.max(3,w/4),stroke(WITHHELD,lw,210));
         if(b.tickBefore!=null&&b.tickAfter!=null){
             Paint tick=stroke(TICK,Math.max(1f,lw*0.8f),230);
@@ -317,7 +327,7 @@ final class Sub124060Overlay {
     private static void drawRoundDetail(Canvas c,Round r){
         if(!r.found||!Double.isFinite(r.x)||!(r.radius>0))return;
         float lw=(float)Math.max(1.0,2*r.radius/22.0);
-        if(judged(r.attention))c.drawCircle((float)r.x,(float)r.y,(float)r.radius,stroke(colour(r.attention),lw,235));
+        if(solid(r.attention,r.measured))c.drawCircle((float)r.x,(float)r.y,(float)r.radius,stroke(ink(r.attention,r.measured),lw,235));
         else circleDashed(c,r.x,r.y,r.radius,stroke(WITHHELD,lw,210));
         if(r.tickBefore!=null&&r.tickAfter!=null){
             Paint tick=stroke(TICK,Math.max(1f,lw*0.8f),230);
@@ -372,6 +382,14 @@ final class Sub124060Overlay {
         double t=((x-a[0])*dx+(y-a[1])*dy)/q;return new double[]{a[0]+t*dx,a[1]+t*dy};
     }
 
+    /** Measured-only badge: neutral blue disc with a centre dot; otherwise the GMT verdict badge. */
+    private static void badge(Canvas c,double x,double y,float r,GmtHumanQcMath.Attention a,boolean measured){
+        if(!neutral(a,measured)){badge(c,x,y,r,a);return;}
+        c.drawCircle((float)x,(float)y,r*1.12f,fill(Color.rgb(12,16,22),210));
+        c.drawCircle((float)x,(float)y,r,fill(MEASURED,245));
+        c.drawCircle((float)x,(float)y,Math.max(1.5f,r*0.30f),fill(Color.WHITE,255));
+    }
+
     /** Same symbol contract as the mature GMT overlay. */
     private static void badge(Canvas c,double x,double y,float r,GmtHumanQcMath.Attention a){
         int col=colour(a);
@@ -401,15 +419,18 @@ final class Sub124060Overlay {
 
     private static void legend(Canvas c,int W,int H,double centreX,double dialBottom,double maxWidth,float badge){
         float r=Math.max(5f,badge*0.80f),size=r*1.9f,gap=size*0.8f;
-        String[] words={"nothing flagged","worth a look","check closely","not judged"};
-        GmtHumanQcMath.Attention[] as={GmtHumanQcMath.Attention.CLEAR,GmtHumanQcMath.Attention.CHECK,GmtHumanQcMath.Attention.STRONG,GmtHumanQcMath.Attention.UNASSESSABLE};
+        boolean v=Sub124060Calibration.VERDICTS_ENABLED;
+        String[] words=v?new String[]{"nothing flagged","worth a look","check closely","not judged"}:new String[]{"measured (not judged)","not measured"};
+        GmtHumanQcMath.Attention[] as=v?new GmtHumanQcMath.Attention[]{GmtHumanQcMath.Attention.CLEAR,GmtHumanQcMath.Attention.CHECK,GmtHumanQcMath.Attention.STRONG,GmtHumanQcMath.Attention.UNASSESSABLE}
+                :new GmtHumanQcMath.Attention[]{GmtHumanQcMath.Attention.UNASSESSABLE,GmtHumanQcMath.Attention.UNASSESSABLE};
+        boolean[] ms=v?new boolean[]{false,false,false,false}:new boolean[]{true,false};
         Paint t=fill(Color.WHITE,255);t.setTextSize(size);float total=0;
         for(String w:words)total+=2*r+size*0.35f+t.measureText(w)+gap;total-=gap;
         float lim=(float)Math.min(W*0.96,maxWidth);if(total>lim){float k=lim/total;r*=k;size*=k;gap*=k;t.setTextSize(size);total*=k;}
         float y=(float)Math.min(H-r*1.6f,Double.isFinite(dialBottom)&&dialBottom+r*2.4f<H?dialBottom+r*1.8f:H-r*1.6f);
         float x=(float)Math.max(r,Math.min(W-total-r,centreX-total/2));
         c.drawRect(x-r,y-r*1.45f,x+total+r,y+r*1.45f,fill(Color.rgb(12,16,22),185));
-        for(int i=0;i<4;i++){badge(c,x+r,y,r,as[i]);x+=2*r+size*0.35f;c.drawText(words[i],x,y+size*0.35f,t);x+=t.measureText(words[i])+gap;}
+        for(int i=0;i<words.length;i++){badge(c,x+r,y,r,as[i],ms[i]);x+=2*r+size*0.35f;c.drawText(words[i],x,y+size*0.35f,t);x+=t.measureText(words[i])+gap;}
     }
 
     private static void banner(Canvas c,String text,double cx,double top,double maxWidth,int W,float badge){

@@ -7,18 +7,23 @@ import java.util.List;
 /**
  * Frozen family-specific alignment calibration for the Rolex Submariner 124060.
  *
- * Source: Watch-family Calibrator run 36927036008, artifact
- * watch-calibrator-124060-36927036008, SHA-256
- * 5a23dcf54486d99aa6a0b50cbd7b7027c0a190a777030ff67586706b88d311da.
+ * Source: repaired Watch-family Calibrator run 37004915187 (branch fix/124060-measured-only,
+ * 2026-10-02): production-route measurement with the alpha70 gates, Hampel outlier rejection,
+ * one-sided bands for spacing RMS and the 12-6 axis offset. 12 development genuine watches set the
+ * limits; validation (3) and holdout (3-4) genuine watches were 100% clear; 0 outliers rejected.
+ * Accepted by the product owner as PROVISIONAL limits: the calibrator could not prove sensitivity
+ * (no replica/defect evidence in that run), so these are alignment-QC prompts, not proven tolerances.
+ * The 12 gap and the 3-9 baton axis had too little repeat data and stay measured-only.
  *
- * The calibrator froze limits from development genuine watches, then validation and holdout could
- * reject them but never move them. Replica evidence was stress-test evidence only. These limits are
- * provisional alignment-QC tolerances, not authenticity thresholds.
+ * History: alpha72 used run 36927036008, whose bands were far too wide; alpha73 disabled them.
  *
  * The 12-gap metric is deliberately absent. Calibration marked it INSUFFICIENT because it was
  * pose/scale sensitive, so the product continues to measure it but never uses it for a verdict.
  */
 final class Sub124060Calibration {
+    /** Single switch: no CLEAR/CHECK/CHECK CLOSELY verdict reaches the user while this is false. */
+    static final boolean VERDICTS_ENABLED=true;
+    static final String MEASURED_ONLY="MEASURED / NOT YET JUDGED";
     static final class Band {
         final String key;
         final double clearLow,clearHigh,checkLow,checkHigh;
@@ -42,6 +47,16 @@ final class Sub124060Calibration {
         GmtHumanQcMath.Attention axis126=GmtHumanQcMath.Attention.UNASSESSABLE;
         double roundRingRho=Double.NaN,roundSpacingRmsDeg=Double.NaN;
         double baton39LineOffsetR=Double.NaN,axis126LineOffsetR=Double.NaN;
+        /** A reliable value exists (passed the alpha70 gates), whether or not it was judged. */
+        boolean rotationMeasured,centringMeasured,roundRingMeasured,roundSpacingMeasured,baton39Measured,axis126Measured;
+
+        boolean twelveMeasured(){return rotationMeasured||centringMeasured||axis126Measured;}
+        boolean roundsMeasured(){return roundRingMeasured||roundSpacingMeasured;}
+        boolean batonMeasured(String label){
+            if("3".equals(label)||"9".equals(label))return baton39Measured;
+            if("6".equals(label))return axis126Measured;
+            return false;
+        }
 
         GmtHumanQcMath.Attention twelve(){return worst(rotation,centring,axis126);}
         GmtHumanQcMath.Attention rounds(){return worst(roundRing,roundSpacing);}
@@ -53,17 +68,19 @@ final class Sub124060Calibration {
     }
 
     static final Band TWELVE_ROTATION=new Band("twelve.rotation_deg",
-            -13.88038488935,15.22676818935,-21.157173159025,22.503556459025);
+            -0.9604778124,1.4000408124,-1.747317354,2.186880354);
     static final Band TWELVE_CENTRING=new Band("twelve.centring_w",
-            -0.147616360146,0.136472106146,-0.233275680438,0.222131426438);
+            -0.0188698722,0.0202618722,-0.031913787,0.033305787);
     static final Band ROUND_RING_RHO=new Band("round.ring_rho",
-            0.7826128775166086,0.8526717081695576,0.7650981698533712,0.870186415832795);
+            0.8085422397,0.8280102603,0.8020528995,0.8344996005);
+    /** One-sided: an RMS cannot be negative, so only an upper limit exists. */
     static final Band ROUND_SPACING_RMS=new Band("round.spacing_rms_deg",
-            -5.587231836527973,6.370183430972006,-9.573036925694634,10.355988520138666);
-    static final Band BATON_3_9_LINE_OFFSET=new Band("baton.3_9_line_offset_r",
-            -0.08170984795356724,0.09378104194951688,-0.14020681125459528,0.1522780052505449);
+            Double.NEGATIVE_INFINITY,0.74475573385,Double.NEGATIVE_INFINITY,1.05287188975);
+    /** Not calibrated (insufficient repeat data in run 37004915187): measured only. */
+    static final Band BATON_3_9_LINE_OFFSET=null;
+    /** One-sided: an absolute offset cannot be negative. */
     static final Band AXIS_12_6_LINE_OFFSET=new Band("axis.12_6_line_offset_r",
-            -0.1343132175899482,0.1396427365740998,-0.21825249276636563,0.22358201175051726);
+            Double.NEGATIVE_INFINITY,0.0052681464,Double.NEGATIVE_INFINITY,0.007901244);
 
     private Sub124060Calibration(){}
 
@@ -74,6 +91,12 @@ final class Sub124060Calibration {
             case STRONG:return "CHECK CLOSELY";
             default:return "NOT JUDGED";
         }
+    }
+
+    /** User-facing word for a metric: the verdict if judged, otherwise whether a reliable value exists. */
+    static String label(boolean measured,GmtHumanQcMath.Attention a){
+        if(a!=null&&a!=GmtHumanQcMath.Attention.UNASSESSABLE)return words(a);
+        return measured?MEASURED_ONLY:"NOT JUDGED";
     }
 
     static GmtHumanQcMath.Attention worst(GmtHumanQcMath.Attention... values){
@@ -90,14 +113,19 @@ final class Sub124060Calibration {
     }
 
     /** Evaluate only measurements that survive the existing alpha70/alpha71 reliability gates. */
-    static Assessment assess(Sub124060QcAnalyzer.Result r){
+    static Assessment assess(Sub124060QcAnalyzer.Result r){return assess(r,VERDICTS_ENABLED);}
+
+    /** judge=false computes the same gated values but leaves every verdict UNASSESSABLE. */
+    static Assessment assess(Sub124060QcAnalyzer.Result r,boolean judge){
         Assessment a=new Assessment();
         if(r==null)return a;
 
-        if(r.rotationWithheld==null&&Double.isFinite(r.rotationDeg)&&Boolean.TRUE.equals(r.rotationResizeStable))
-            a.rotation=TWELVE_ROTATION.judge(r.rotationDeg);
-        if(r.centringWithheld==null&&Double.isFinite(r.centringW)&&Boolean.TRUE.equals(r.centringResizeStable))
-            a.centring=TWELVE_CENTRING.judge(r.centringW);
+        if(r.rotationWithheld==null&&Double.isFinite(r.rotationDeg)&&Boolean.TRUE.equals(r.rotationResizeStable)){
+            a.rotationMeasured=true;if(judge)a.rotation=TWELVE_ROTATION.judge(r.rotationDeg);
+        }
+        if(r.centringWithheld==null&&Double.isFinite(r.centringW)&&Boolean.TRUE.equals(r.centringResizeStable)){
+            a.centringMeasured=true;if(judge)a.centring=TWELVE_CENTRING.judge(r.centringW);
+        }
 
         // Relational calibration was performed on ellipse-corrected coordinates and requires a
         // reproducible edge-fitted dial. Never invent a verdict on a manual-circle fallback.
@@ -114,12 +142,12 @@ final class Sub124060Calibration {
             if(Double.isFinite(ref12))angleErrors.add(wrap180(rectClock(r.frame,m.x,m.y)-ref12-m.hour*30.0));
         }
         if(rho.size()>=4){
-            a.roundRingRho=median(rho);
-            a.roundRing=ROUND_RING_RHO.judge(a.roundRingRho);
+            a.roundRingRho=median(rho);a.roundRingMeasured=true;
+            if(judge)a.roundRing=ROUND_RING_RHO.judge(a.roundRingRho);
         }
         if(angleErrors.size()>=4){
-            a.roundSpacingRmsDeg=spacingRms(angleErrors);
-            a.roundSpacing=ROUND_SPACING_RMS.judge(a.roundSpacingRmsDeg);
+            a.roundSpacingRmsDeg=spacingRms(angleErrors);a.roundSpacingMeasured=Double.isFinite(a.roundSpacingRmsDeg);
+            if(judge)a.roundSpacing=ROUND_SPACING_RMS.judge(a.roundSpacingRmsDeg);
         }
 
         Sub124060QcAnalyzer.Baton b3=baton(r,GmtSixLandmarkAnalyzer.Position.THREE);
@@ -128,15 +156,15 @@ final class Sub124060Calibration {
 
         double[] p3=batonPoint(r.frame,b3),p9=batonPoint(r.frame,b9);
         if(p3!=null&&p9!=null){
-            a.baton39LineOffsetR=lineOffset(p3,p9);
-            a.baton39=BATON_3_9_LINE_OFFSET.judge(a.baton39LineOffsetR);
+            a.baton39LineOffsetR=lineOffset(p3,p9);a.baton39Measured=Double.isFinite(a.baton39LineOffsetR);
+            if(judge&&BATON_3_9_LINE_OFFSET!=null)a.baton39=BATON_3_9_LINE_OFFSET.judge(a.baton39LineOffsetR);
         }
 
         double[] p12=r.triangle!=null&&r.twelveWithheld==null?rectNorm(r.frame,r.triangle.cx,r.triangle.cy):null;
         double[] p6=batonPoint(r.frame,b6);
         if(p12!=null&&p6!=null){
-            a.axis126LineOffsetR=lineOffset(p12,p6);
-            a.axis126=AXIS_12_6_LINE_OFFSET.judge(a.axis126LineOffsetR);
+            a.axis126LineOffsetR=lineOffset(p12,p6);a.axis126Measured=Double.isFinite(a.axis126LineOffsetR);
+            if(judge)a.axis126=AXIS_12_6_LINE_OFFSET.judge(a.axis126LineOffsetR);
         }
         return a;
     }

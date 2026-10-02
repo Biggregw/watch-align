@@ -53,5 +53,18 @@ class RedditEvidenceTest(unittest.TestCase):
         self.assertEqual(1, report["replica_media_candidates"]["native_direct_fallback"])
 
 
+    def test_imgur_discovery_uses_official_api_and_needs_factory(self):
+        import reddit_oauth
+        posts = [
+            {"title": "VSF 124060 QC", "selftext": "https://imgur.com/a/one", "permalink": "/r/RepTimeQC/comments/p1/x/"},
+            {"title": "124060 QC no factory", "selftext": "https://imgur.com/a/two", "permalink": "/r/RepTimeQC/comments/p2/x/"},
+        ]
+        cfg = {"model": "124060", "replica_factories": ["VSF"]}
+        with patch.object(reddit_oauth, "search", return_value=posts) as s:
+            out = reddit_evidence.discover_imgur_qc(cfg, 5)
+        self.assertEqual(["https://imgur.com/a/one"], [o["album"] for o in out])
+        self.assertTrue(all(c.args[0] == "RepTimeQC" for c in s.call_args_list))
+
+
 if __name__ == "__main__":
     unittest.main()

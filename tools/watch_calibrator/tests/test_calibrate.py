@@ -32,7 +32,9 @@ class CalibrationTest(unittest.TestCase):
             self.assertEqual("FROZEN_PENDING_HOLDOUT",r["metrics"]["m"]["status"])
             lo,hi=r["metrics"]["m"]["clear_low"],r["metrics"]["m"]["clear_high"]
             f=finalize(r,p/"hold.csv")
-            self.assertEqual("CALIBRATED",f["metrics"]["m"]["status"])
+            # Genuine watches stay clear, but no sensitivity evidence was configured.
+            self.assertEqual("HOLDOUT_PASSED_SENSITIVITY_UNPROVEN",f["metrics"]["m"]["status"])
+            self.assertEqual("SENSITIVITY_UNPROVEN",f["state"])
             self.assertEqual(lo,f["metrics"]["m"]["clear_low"]);self.assertEqual(hi,f["metrics"]["m"]["clear_high"])
 
     def test_pose_sensitive_metric_is_rejected(self):
@@ -44,5 +46,52 @@ class CalibrationTest(unittest.TestCase):
             r=propose(self.config(),p/"dev.csv",p/"rep.csv",p/"val.csv")
             self.assertEqual("INSUFFICIENT",r["metrics"]["m"]["status"])
             self.assertIn("pose",r["metrics"]["m"]["reason"])
+
+    def _files(self,p,dev,val,hold=None,within="0.002"):
+        write_csv(p/"dev.csv",[{"physical_watch_id":str(i),"metric":"m","median":v} for i,v in enumerate(dev)])
+        write_csv(p/"rep.csv",[{"metric":"m","repeatability_class":"measured","pose_sensitive":"","within_watch_mad_median":within}])
+        write_csv(p/"val.csv",[{"physical_watch_id":f"v{i}","metric":"m","median":v} for i,v in enumerate(val)])
+        if hold is not None:
+            write_csv(p/"hold.csv",[{"physical_watch_id":f"h{i}","metric":"m","median":v} for i,v in enumerate(hold)])
+
+    def test_one_extreme_development_watch_does_not_set_the_band(self):
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td);self._files(p,[0.0,0.01,-0.01,0.005,-0.005,0.002,1.0],[0.0,0.01])
+            r=propose(self.config(),p/"dev.csv",p/"rep.csv",p/"val.csv")["metrics"]["m"]
+            self.assertEqual(1,r["development_outliers_rejected"])
+            self.assertLess(r["clear_high"],0.1)
+            self.assertNotIn("development_max_abs_from_center",r)
+
+    def test_upper_sided_metric_has_no_lower_limit(self):
+        c=self.config();c["calibration_metrics"][0]["sided"]="upper"
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td);self._files(p,[0.02,0.03,0.025,0.035,0.028],[0.0,0.03])
+            r=propose(c,p/"dev.csv",p/"rep.csv",p/"val.csv")["metrics"]["m"]
+            self.assertIsNone(r["clear_low"]);self.assertIsNone(r["check_low"])
+            self.assertEqual(1.0,r["validation_clear_rate"])  # 0.0 is a perfect value, never flagged
+
+    def test_band_wider_than_product_cap_is_rejected(self):
+        c=self.config();c["calibration_metrics"][0]["max_clear_half_width"]=0.001
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td);self._files(p,[0.0,0.01,-0.01,0.005],[0.0,0.01])
+            r=propose(c,p/"dev.csv",p/"rep.csv",p/"val.csv")["metrics"]["m"]
+            self.assertEqual("REJECTED_SENSITIVITY",r["status"])
+
+    def test_sensitivity_evidence_allows_calibrated(self):
+        c=self.config();c["calibration_metrics"][0]["max_clear_half_width"]=1.0
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td);self._files(p,[0.0,0.01,-0.01,0.005],[0.0,0.01],[0.0,-0.01])
+            r=propose(c,p/"dev.csv",p/"rep.csv",p/"val.csv")
+            self.assertTrue(r["metrics"]["m"]["sensitivity_proven"])
+            self.assertEqual("CALIBRATED",finalize(r,p/"hold.csv")["metrics"]["m"]["status"])
+
+    def test_known_defects_inside_clear_reject_the_band(self):
+        c=self.config();c["calibration_metrics"][0]["defect_evidence"]="defects.csv"
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td);self._files(p,[0.0,0.01,-0.01,0.005],[0.0,0.01])
+            write_csv(p/"defects.csv",[{"metric":"m","value":"0.003"},{"metric":"m","value":"0.5"}])
+            r=propose(c,p/"dev.csv",p/"rep.csv",p/"val.csv",evidence_root=p)["metrics"]["m"]
+            self.assertEqual(0.5,r["defect_outside_clear_rate"])
+            self.assertEqual("REJECTED_SENSITIVITY",r["status"])
 
 if __name__=="__main__": unittest.main()

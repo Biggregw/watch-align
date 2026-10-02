@@ -10,6 +10,8 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .families import GMT_12
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DATA_DIR = REPO_ROOT / "datasets" / "harvest"
 HARNESS_DIR = REPO_ROOT / "tools" / "desktop-harness"
@@ -19,15 +21,10 @@ USER_AGENT = os.environ.get(
     "WatchAlignDatasetHarvester/1.0 (+https://github.com/Biggregw/watch-align; research test set)",
 )
 
-# GMT-Master II references the app supports (same list as the phone's TestSetStore.MODELS).
-SUPPORTED_MODELS = (
-    "126710BLNR", "126710BLRO", "126710GRNR", "126711CHNR", "126713GRNR", "126715CHNR",
-    "126718GRNR", "126719BLRO", "126720VTNR", "126729VTNR",
-)
-# Models that are recognisably GMT-Master but not supported by the current geometry.
-# A confidently identified one of these is rejected (unsupported model); an unidentified model
-# is quarantined instead.
-UNSUPPORTED_GMT_MODELS = ("16710", "16713", "16718", "16760", "116710", "116713", "116718", "116719", "116759")
+# Backwards-compatible aliases for the existing GMT harvester. Submariner acquisition must select
+# its own family configuration and must not inherit these GMT geometry/pose assumptions implicitly.
+SUPPORTED_MODELS = GMT_12.models
+UNSUPPORTED_GMT_MODELS = GMT_12.unsupported_predecessors
 
 
 @dataclass(frozen=True)

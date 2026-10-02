@@ -39,7 +39,7 @@ class DiscoverTest(unittest.TestCase):
                     "source_type": "dealer_listing",
                     "target": 1,
                     "require_listing_id": True,
-                    "queries": ["site:bobswatches.com {model}"],
+                    "seed_urls": ["https://www.bobswatches.com/rolex/submariner-{model}"],
                 }],
             },
         }
@@ -54,7 +54,7 @@ class DiscoverTest(unittest.TestCase):
             200,
         )
         with tempfile.TemporaryDirectory() as td, \
-             patch.object(discover, "search_web", return_value=[hit]), \
+             patch.object(discover, "page_links", return_value=[hit]), \
              patch.object(discover, "fetch_page", return_value=page), \
              patch.object(discover, "add_bootstrap", side_effect=AssertionError("bootstrap used")):
             out = Path(td) / "candidates.csv"
@@ -66,38 +66,33 @@ class DiscoverTest(unittest.TestCase):
                 rows = list(csv.DictReader(fh))
             self.assertEqual("174149", rows[0]["listing_id"])
 
-    def test_reddit_album_and_factory_can_be_discovered_from_search_text(self):
-        cfg = {
-            "model": "124060",
-            "family": "submariner_12",
-            "replica_factories": ["VSF"],
-            "discovery": {
-                "minimum_gen_candidates": 0,
-                "sources": [{
-                    "class": "rep",
-                    "domain": "reddit.com",
-                    "name": "r/RepTimeQC",
-                    "id_prefix": "auto_rep",
-                    "source_type": "forum_qc",
-                    "target": 1,
-                    "require_album": True,
-                    "require_factory": True,
-                    "queries": ["site:reddit.com {model} VSF imgur"],
-                }],
-            },
-        }
-        hit = (
-            "https://www.reddit.com/r/RepTimeQC/comments/abc123/qc/",
-            "QC VSF 124060",
-            "https://imgur.com/a/TestAlbum",
-        )
-        with tempfile.TemporaryDirectory() as td, \
-             patch.object(discover, "search_web", return_value=[hit]), \
-             patch.object(discover, "reddit_album", return_value=("https://imgur.com/a/TestAlbum", "QC VSF 124060")):
-            out = Path(td) / "candidates.csv"
-            report = discover.discover(cfg, out)
-            self.assertEqual(1, report["by_class"]["rep"])
-            self.assertEqual(0, report["bootstrap_candidates"])
+    def _cfg(self, src):
+        return {"model": "124060", "family": "submariner_12", "replica_factories": [],
+                "discovery": {"minimum_gen_candidates": 0, "sources": [src]}}
+
+    def test_search_engine_queries_are_rejected(self):
+        src = {"class": "gen", "domain": "bobswatches.com", "name": "B", "source_type": "dealer_listing",
+               "queries": ["site:bobswatches.com {model}"]}
+        with tempfile.TemporaryDirectory() as td, self.assertRaises(ValueError):
+            discover.discover(self._cfg(src), Path(td) / "c.csv")
+
+    def test_quarantined_watchfinder_is_rejected(self):
+        src = {"class": "gen", "domain": "watchfinder.co.uk", "name": "Watchfinder",
+               "source_type": "dealer_listing", "seed_urls": ["https://www.watchfinder.co.uk/x"]}
+        with tempfile.TemporaryDirectory() as td, self.assertRaises(ValueError):
+            discover.discover(self._cfg(src), Path(td) / "c.csv")
+
+    def test_no_search_engine_or_browser_ua_code_remains(self):
+        code = (HERE / "discover.py").read_text() + (HERE / "reddit_evidence.py").read_text() \
+            + (HERE / "acquire.py").read_text() + (HERE / "reddit_oauth.py").read_text()
+        for banned in ("bing.com", "duckduckgo", "google.com/search", "Mozilla/", ".rss", "comments/{", ".json?raw_json"):
+            self.assertNotIn(banned, code, banned)
+
+    def test_shipped_model_configs_pass_source_policy(self):
+        import json
+        for fn in (HERE.parents[1] / "calibration" / "models").glob("*.json"):
+            for src in json.loads(fn.read_text())["discovery"]["sources"]:
+                discover.check_source_policy(src)
 
 
 if __name__ == "__main__":

@@ -7,22 +7,18 @@ submariner_acquire. One Reddit post remains one physical watch because discovery
 candidate/watch id per post. No replica image is used to set a genuine tolerance; replica images
 are downstream stress-test evidence only.
 
-Native Reddit gallery metadata is not exposed by the anonymous public post RSS feed on current
-GitHub-hosted runners, and anonymous JSON/gallery pages return 403. When REDDIT_CLIENT_ID and
-REDDIT_CLIENT_SECRET are configured, the resolver therefore uses Reddit's official OAuth API to
-obtain gallery_data/media_metadata. Without credentials it prefers complete external albums and
-keeps public RSS/direct-image evidence as a fail-closed fallback.
+Reddit is reached only through the official OAuth API (reddit_oauth, credentials from
+REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET). Anonymous JSON, RSS and HTML Reddit surfaces are not
+used; without credentials a Reddit post yields only the image URL the official API already gave
+discovery, or nothing.
 """
 from __future__ import annotations
 
 import argparse
-import base64
 import html
 import json
-import os
 import re
 import sys
-import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -32,17 +28,15 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 HARVESTER = REPO / "tools" / "dataset_harvester"
 sys.path.insert(0, str(HARVESTER))
+sys.path.insert(0, str(HERE))
 
 import submariner_acquire as base  # noqa: E402
+import reddit_oauth  # noqa: E402
 from harvester.resolvers import ImageRef  # noqa: E402
 
 ORIGINAL_RESOLVE = base.resolve_candidate
 REDDIT_POST = re.compile(r"reddit\.com/(?:r/[^/]+/)?comments/([a-z0-9]+)", re.I)
 REDDIT_IMAGE_HOSTS = {"i.redd.it", "preview.redd.it", "external-preview.redd.it"}
-ATOM = {"a": "http://www.w3.org/2005/Atom"}
-RSS_HEADERS = {"Accept": "application/atom+xml, application/xml, text/xml"}
-OAUTH_UA = "WatchAlignResearch/1.3 by Biggregw"
-_OAUTH_TOKEN: str | None = None
 
 
 def reddit_post_id(url: str) -> str:
@@ -134,85 +128,20 @@ def _post_image_urls(post: dict) -> list[str]:
 
 def reddit_oauth_image_refs(source_url: str, http, max_images: int) -> list[ImageRef]:
     """Resolve a native gallery through Reddit's documented app-only OAuth API when configured."""
-    global _OAUTH_TOKEN
-    client_id = (os.environ.get("REDDIT_CLIENT_ID") or "").strip()
-    client_secret = (os.environ.get("REDDIT_CLIENT_SECRET") or "").strip()
     post_id = reddit_post_id(source_url)
-    if not (client_id and client_secret and post_id):
+    if not (reddit_oauth.configured() and post_id):
         return []
     try:
-        if not _OAUTH_TOKEN:
-            basic = base64.b64encode(f"{client_id}:{client_secret}".encode("utf-8")).decode("ascii")
-            token_response = http.post(
-                "https://www.reddit.com/api/v1/access_token",
-                data={"grant_type": "client_credentials"},
-                headers={"User-Agent": OAUTH_UA, "Authorization": f"Basic {basic}"},
-                api=True,
-            )
-            token_payload = json.loads(token_response.text)
-            _OAUTH_TOKEN = str(token_payload.get("access_token") or "")
-            if not _OAUTH_TOKEN:
-                return []
+        tok = reddit_oauth.token()
+        if not tok:
+            return []
         response = http.get(
             f"https://oauth.reddit.com/by_id/t3_{post_id}",
-            headers={"Authorization": f"bearer {_OAUTH_TOKEN}", "User-Agent": OAUTH_UA},
+            headers={"Authorization": f"bearer {tok}", "User-Agent": reddit_oauth.UA},
             api=True,
         )
         payload = json.loads(response.text)
         post = payload["data"]["children"][0]["data"]
-    except Exception:
-        return []
-    return [ImageRef(url=u) for u in _post_image_urls(post)[:max_images]]
-
-
-def reddit_rss_image_refs(source_url: str, http, max_images: int) -> list[ImageRef]:
-    """Read any image references that happen to be exposed in a public Reddit post Atom feed."""
-    post_id = reddit_post_id(source_url)
-    if not post_id:
-        return []
-    rss_url = source_url.rstrip("/") + "/.rss"
-    try:
-        response = http.get(rss_url, headers=RSS_HEADERS, api=True)
-        root = ET.fromstring(response.text)
-    except Exception:
-        return []
-
-    entries = root.findall("a:entry", ATOM)
-    ordered = []
-    remainder = []
-    source_norm = source_url.rstrip("/")
-    for entry in entries:
-        link = ""
-        for node in entry.findall("a:link", ATOM):
-            href = (node.attrib.get("href") or "").rstrip("/")
-            if href:
-                link = href
-                if node.attrib.get("rel", "alternate") == "alternate":
-                    break
-        if link == source_norm:
-            ordered.append(entry)
-        else:
-            remainder.append(entry)
-    ordered.extend(remainder)
-
-    for entry in ordered:
-        content = entry.findtext("a:content", default="", namespaces=ATOM) or ""
-        urls = _html_image_urls(content, max_images)
-        if urls:
-            return [ImageRef(url=u) for u in urls]
-    return []
-
-
-def reddit_image_refs(source_url: str, http, max_images: int) -> list[ImageRef]:
-    """Legacy anonymous Reddit JSON enrichment; kept only as a best-effort fallback."""
-    post_id = reddit_post_id(source_url)
-    if not post_id:
-        return []
-    api_url = f"https://www.reddit.com/comments/{post_id}.json?raw_json=1"
-    try:
-        response = http.get(api_url, api=True)
-        payload = json.loads(response.text)
-        post = payload[0]["data"]["children"][0]["data"]
     except Exception:
         return []
     return [ImageRef(url=u) for u in _post_image_urls(post)[:max_images]]
@@ -241,13 +170,12 @@ def resolve_candidate(row: dict, http, work: Path, max_images: int):
     source = (row.get("source_url") or "").strip()
     if source and "reddit.com/" in source.lower():
         oauth_refs = reddit_oauth_image_refs(source, http, max_images)
-        rss_refs = reddit_rss_image_refs(source, http, max_images)
-        json_refs = reddit_image_refs(source, http, max_images) if len(oauth_refs) < max_images else []
         direct = _image_url(row.get("direct_image_url") or "")
         direct_refs = [ImageRef(url=direct)] if direct else []
-        refs = _merge_refs([oauth_refs, rss_refs, json_refs, direct_refs], max_images)
-        if refs:
-            return refs
+        refs = _merge_refs([oauth_refs, direct_refs], max_images)
+        # Never fall through to the generic resolver for a Reddit page: that would fetch Reddit
+        # HTML anonymously. No official-API media means no images for this watch.
+        return refs
 
     return ORIGINAL_RESOLVE(row, http, work, max_images)
 
