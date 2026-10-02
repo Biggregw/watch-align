@@ -11,6 +11,12 @@ on:
         description: "Discard this model's cached calibration workspace and discover again"
         type: boolean
         default: true
+  pull_request:
+    paths:
+      - 'tools/watch_calibrator/**'
+      - 'tools/dataset_harvester/submariner_acquire.py'
+      - 'calibration/models/**'
+      - '.github/workflows/watch-family-calibrator.yml'
   push:
     branches:
       - feature/watch-family-calibrator
@@ -79,7 +85,9 @@ jobs:
           F="datasets/watch_calibrator/$MODEL/calibration.md"
           S="datasets/watch_calibrator/$MODEL/run_status.json"
           R="datasets/watch_calibrator/$MODEL/replica_evidence.json"
+          D="datasets/watch_calibrator/$MODEL/dataset/source_diversity.json"
           if [ -f "$F" ]; then cat "$F" >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$D" ]; then echo '### Genuine source diversity' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$D" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$R" ]; then echo '### Replica stress evidence' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$R" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$S" ]; then echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$S" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Upload complete calibration evidence
@@ -93,6 +101,7 @@ jobs:
             datasets/watch_calibrator/${{ env.MODEL }}/dataset/acquired_images.csv
             datasets/watch_calibrator/${{ env.MODEL }}/dataset/candidate_summary.csv
             datasets/watch_calibrator/${{ env.MODEL }}/dataset/acquisition_report.*
+            datasets/watch_calibrator/${{ env.MODEL }}/dataset/source_diversity.json
             datasets/watch_calibrator/${{ env.MODEL }}/replica_evidence.json
             datasets/watch_calibrator/${{ env.MODEL }}/locked_split.csv
             datasets/watch_calibrator/${{ env.MODEL }}/geometry/
