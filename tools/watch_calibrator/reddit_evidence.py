@@ -1,10 +1,8 @@
 """Autonomous RepTimeQC evidence enrichment for the watch-family calibrator.
 
-Reddit's anonymous JSON/gallery pages are blocked from GitHub-hosted runners, while public
-per-post Atom feeds remain readable. Discovery therefore prefers QC posts that expose a complete
-Imgur album in their public post feed, then fills any remaining replica target with the native
-single-image evidence already found by the normal Reddit RSS search. If official Reddit OAuth
-credentials are configured, acquisition can expand native Reddit galleries later as well.
+Album-backed RepTimeQC posts are found through Reddit's official OAuth API only (see
+reddit_oauth). Without credentials nothing is added. Full Imgur albums are preferred over
+single-image native posts because they carry stronger repeatability evidence.
 
 This module changes only the replica stress-test evidence pool. Genuine watches remain the only
 population allowed to set calibration limits.
@@ -12,20 +10,12 @@ population allowed to set calibration limits.
 from __future__ import annotations
 
 import csv
-import html
 import json
 import re
-import time
-import xml.etree.ElementTree as ET
 from pathlib import Path
-from urllib.parse import urlparse
 
-import requests
-from bs4 import BeautifulSoup
-
-from discover import ATOM, FIELDS, RSS_UA, canonical, search_web, stable_id, _reddit_media_from_html
-
-TIMEOUT = 20
+import reddit_oauth
+from discover import FIELDS, canonical, stable_id
 
 
 def _factory(detail: str, factories: list[str]) -> str:
@@ -35,94 +25,31 @@ def _factory(detail: str, factories: list[str]) -> str:
     return ""
 
 
-def _post_rss_album(post_url: str, model: str, factories: list[str]) -> dict | None:
-    """Resolve one public Reddit post feed to a verified model/factory/Imgur album tuple."""
-    try:
-        r = requests.get(
-            post_url.rstrip("/") + "/.rss",
-            headers={
-                "User-Agent": RSS_UA,
-                "Accept": "application/atom+xml, application/xml, text/xml",
-            },
-            timeout=TIMEOUT,
-        )
-        r.raise_for_status()
-        root = ET.fromstring(r.text)
-    except Exception:
-        return None
-
-    source = canonical(post_url)
-    entries = root.findall("a:entry", ATOM)
-    preferred, other = [], []
-    for entry in entries:
-        link = ""
-        for node in entry.findall("a:link", ATOM):
-            href = node.attrib.get("href") or ""
-            if href:
-                link = canonical(href)
-                if node.attrib.get("rel", "alternate") == "alternate":
-                    break
-        (preferred if link == source else other).append(entry)
-
-    for entry in preferred + other:
-        title = entry.findtext("a:title", default="", namespaces=ATOM) or ""
-        content = entry.findtext("a:content", default="", namespaces=ATOM) or ""
-        raw = html.unescape(content)
-        text = BeautifulSoup(raw, "html.parser").get_text(" ", strip=True)
-        detail = f"{title} {text} {raw}"
-        if not re.search(rf"(?<!\d){re.escape(model)}(?!\d)", detail, re.I):
-            continue
-        album, direct = _reddit_media_from_html(content)
-        if not album:
-            m = re.search(r"https?://(?:www\.)?imgur\.com/a/[A-Za-z0-9_-]+", raw, re.I)
-            album = m.group(0) if m else ""
-        factory = _factory(detail, factories)
-        if album and factory:
-            return {
-                "source_url": source,
-                "title": title,
-                "factory": factory,
-                "album": album,
-                "direct": direct,
-            }
-    return None
-
-
 def discover_imgur_qc(config: dict, wanted: int) -> list[dict]:
-    """Find independent album-backed RepTimeQC watches without repository bootstrap data."""
+    """Find album-backed QC posts through the official Reddit API (fails closed without credentials)."""
     if wanted <= 0:
         return []
     model = str(config["model"]).upper()
     factories = list(config.get("replica_factories", []))
-    pages = int(config.get("discovery", {}).get("search_pages", 4))
-    queries = [
-        f'site:reddit.com/r/RepTimeQC/comments "{model}" "imgur.com/a"',
-        f'site:reddit.com/r/RepTimeQC/comments "{model}" "imgur"',
-        f'site:reddit.com/r/RepTimeQC/comments "{model}" QC album',
-    ]
-    hits = []
-    seen_posts = set()
-    for query in queries:
-        for raw, title, snippet in search_web(query, pages):
-            url = canonical(raw)
-            host = urlparse(url).netloc.lower() if url else ""
-            if not url or "reddit.com" not in host or "/comments/" not in url or url in seen_posts:
+    out, seen_posts, seen_albums = [], set(), set()
+    for query in (f"{model} imgur", f"{model} QC album"):
+        for post in reddit_oauth.search("RepTimeQC", query, 100):
+            if len(out) >= wanted:
+                return out
+            url = canonical(reddit_oauth.post_url(post))
+            detail = reddit_oauth.post_text(post)
+            if not url or url in seen_posts:
                 continue
             seen_posts.add(url)
-            hits.append((url, title, snippet))
-
-    out = []
-    seen_albums = set()
-    for url, _, _ in hits:
-        if len(out) >= wanted:
-            break
-        resolved = _post_rss_album(url, model, factories)
-        # Keep the public feed polite and avoid burst-rate failures.
-        time.sleep(0.75)
-        if not resolved or resolved["album"] in seen_albums:
-            continue
-        seen_albums.add(resolved["album"])
-        out.append(resolved)
+            if not re.search(rf"(?<!\d){re.escape(model)}(?!\d)", detail, re.I):
+                continue
+            album = reddit_oauth.imgur_album(detail)
+            factory = _factory(detail, factories)
+            if not (album and factory) or album in seen_albums:
+                continue
+            seen_albums.add(album)
+            out.append({"source_url": url, "title": post.get("title") or "", "factory": factory,
+                        "album": album, "direct": ""})
     return out
 
 
@@ -170,7 +97,7 @@ def enrich(config: dict, pool_csv: Path, report: dict) -> dict:
             "source_url": url,
             "image_album_url": album,
             "direct_image_url": item.get("direct", ""),
-            "provenance_note": "auto-discovered multi-photo RepTimeQC album from public search/post RSS",
+            "provenance_note": "auto-discovered multi-photo RepTimeQC album via official Reddit API",
             "candidate_status": "candidate",
             "listing_id": "",
         })

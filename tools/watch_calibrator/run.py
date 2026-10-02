@@ -105,7 +105,7 @@ def run(model: str, root: Path, fresh=False) -> dict:
         (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n");return status
 
     # 2) Acquire. v3 resolves Imgur albums, official Reddit OAuth galleries when credentials are
-    # available, public RSS evidence where exposed, and the discovery-time direct image fallback.
+    # available, and the image URL the official API gave discovery. No anonymous Reddit surfaces.
     if config.get("acquisition_adapter")!="submariner_acquire_v3":
         raise SystemExit(f"Unsupported acquisition adapter {config.get('acquisition_adapter')}")
     sh([sys.executable,REPO/"tools/watch_calibrator/acquire.py","--pool",P["pool"],"--out",P["acq"],"--max-images",str(config["discovery"].get("max_images_per_watch",12))])

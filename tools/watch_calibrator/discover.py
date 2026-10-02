@@ -5,11 +5,9 @@ start from zero repository source rows. Existing curated pools may be used only
 when a model explicitly opts into bootstrap fallback; they are never required
 for a clean proof run.
 
-Reddit note: anonymous Reddit JSON endpoints are frequently blocked from cloud
-runners. RepTimeQC discovery therefore uses Reddit's public Atom/RSS search feed
-as the primary zero-credential path. When the feed exposes a native Reddit image
-or an Imgur album, that media hint is carried into acquisition so acquisition
-does not need a second Reddit metadata request.
+Permitted surfaces only: configured dealer seed pages (fetched with an honest User-Agent) and
+Reddit through its official OAuth API (reddit_oauth). Search-engine result pages, Reddit RSS/JSON
+endpoints and quarantined dealers are rejected by check_source_policy / not implemented.
 """
 from __future__ import annotations
 
@@ -20,19 +18,18 @@ import html
 import json
 import re
 import time
-import xml.etree.ElementTree as ET
 from pathlib import Path
-from urllib.parse import parse_qs, quote_plus, unquote, urljoin, urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
 
+import reddit_oauth
+
 REPO = Path(__file__).resolve().parents[2]
-UA = "WatchAlignResearch/1.2 (+https://github.com/Biggregw/watch-align)"
-RSS_UA = (
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/140.0 Safari/537.36 WatchAlignResearch/1.2"
-)
+UA = "WatchAlignResearch/1.4 (+https://github.com/Biggregw/watch-align)"
+# Sources whose bot protection must not be bypassed; configuring them is an error.
+QUARANTINED_DOMAINS = {"watchfinder.co.uk", "watchfinder.com"}
 TIMEOUT = 20
 FIELDS = [
     "candidate_id", "physical_watch_id", "family", "model", "class_tag",
@@ -40,7 +37,6 @@ FIELDS = [
     "direct_image_url", "provenance_note", "candidate_status", "listing_id",
 ]
 CLASS = {"gen": "gen", "genuine": "gen", "rep": "rep", "replica": "rep"}
-ATOM = {"a": "http://www.w3.org/2005/Atom"}
 REDDIT_IMAGE_HOSTS = {"i.redd.it", "preview.redd.it", "external-preview.redd.it"}
 
 
@@ -48,98 +44,22 @@ def canonical(url: str) -> str:
     if not url:
         return ""
     u = html.unescape(url.strip())
-    if "duckduckgo.com/l/?" in u:
-        q = parse_qs(urlparse(u).query).get("uddg")
-        if q:
-            u = unquote(q[0])
     p = urlparse(u)
     if not p.netloc:
         return ""
     return f"{p.scheme or 'https'}://{p.netloc.lower()}{p.path.rstrip('/')}"
 
 
-def _xml_hits(text: str):
-    root = ET.fromstring(text)
-    for it in root.findall(".//item"):
-        yield (
-            it.findtext("link") or "",
-            it.findtext("title") or "",
-            it.findtext("description") or "",
+def check_source_policy(src: dict) -> None:
+    """Fail loudly on any configuration that would reintroduce a prohibited source surface."""
+    dom = (src.get("domain") or "").lower()
+    if any(dom == q or dom.endswith("." + q) for q in QUARANTINED_DOMAINS):
+        raise ValueError(f"source {src.get('name')!r} uses quarantined domain {dom}")
+    if src.get("queries"):
+        raise ValueError(
+            f"source {src.get('name')!r} has search-engine queries; web-search scraping is not permitted. "
+            "Use dealer seed_urls or the official Reddit API (reddit_direct) instead."
         )
-
-
-def bing_rss(query: str, pages: int = 3):
-    out = []
-    for page in range(max(1, pages)):
-        first = 1 + page * 10
-        url = (
-            "https://www.bing.com/search?format=rss"
-            f"&count=50&first={first}&q={quote_plus(query)}"
-        )
-        try:
-            r = requests.get(url, headers={"User-Agent": UA}, timeout=TIMEOUT)
-            r.raise_for_status()
-            out.extend(_xml_hits(r.text))
-        except Exception:
-            break
-    return out
-
-
-def bing_html(query: str, pages: int = 3):
-    out = []
-    for page in range(max(1, pages)):
-        first = 1 + page * 10
-        try:
-            r = requests.get(
-                "https://www.bing.com/search",
-                params={"q": query, "count": 50, "first": first},
-                headers={"User-Agent": UA},
-                timeout=TIMEOUT,
-            )
-            r.raise_for_status()
-            s = BeautifulSoup(r.text, "html.parser")
-            for item in s.select("li.b_algo"):
-                a = item.select_one("h2 a")
-                if not a:
-                    continue
-                sn = item.select_one(".b_caption p")
-                out.append((
-                    a.get("href") or "",
-                    a.get_text(" ", strip=True),
-                    sn.get_text(" ", strip=True) if sn else "",
-                ))
-        except Exception:
-            break
-    return out
-
-
-def duck(query: str):
-    try:
-        r = requests.get(
-            "https://html.duckduckgo.com/html/",
-            params={"q": query},
-            headers={"User-Agent": UA},
-            timeout=TIMEOUT,
-        )
-        r.raise_for_status()
-        s = BeautifulSoup(r.text, "html.parser")
-        out = []
-        for a in s.select("a.result__a"):
-            row = a.find_parent(class_="result")
-            sn = row.select_one(".result__snippet") if row else None
-            out.append((
-                a.get("href") or "",
-                a.get_text(" ", strip=True),
-                sn.get_text(" ", strip=True) if sn else "",
-            ))
-        return out
-    except Exception:
-        return []
-
-
-def search_web(query: str, pages: int):
-    """Use independent public search surfaces and leave dedupe to discovery."""
-    return bing_rss(query, pages) + bing_html(query, pages) + duck(query)
 
 
 def fetch_page(url: str):
@@ -185,7 +105,7 @@ def page_links(url: str, domain: str, model: str):
 
 
 def _promote_reddit_image(url: str) -> str:
-    """Prefer the original i.redd.it object when RSS gives a preview rendition."""
+    """Prefer the original i.redd.it object when the API gives a preview rendition."""
     u = html.unescape((url or "").strip())
     if not u:
         return ""
@@ -200,111 +120,29 @@ def _promote_reddit_image(url: str) -> str:
     return u
 
 
-def _reddit_media_from_html(content_html: str) -> tuple[str, str]:
-    """Return (imgur_album, first_reddit_image) from an Atom entry's HTML."""
-    raw = html.unescape(content_html or "")
-    album_match = re.search(r"https?://(?:www\.)?imgur\.com/a/[A-Za-z0-9_-]+", raw, re.I)
-    album = album_match.group(0) if album_match else ""
-    soup = BeautifulSoup(raw, "html.parser")
-    candidates = []
-    for tag in soup.find_all(["a", "img"]):
-        candidates.extend([tag.get("href") or "", tag.get("src") or ""])
-    for candidate in candidates:
-        image = _promote_reddit_image(candidate)
-        if image:
-            return album, image
-    return album, ""
+def reddit_search(model: str, subreddit: str = "RepTimeQC", limit: int = 100):
+    """Search a QC subreddit through Reddit's official OAuth API only.
 
-
-def reddit_rss_search(model: str, limit: int = 100):
-    """Search RepTimeQC through Reddit's public Atom feed.
-
-    Returns five-tuples: URL, title, searchable detail, direct image hint, album hint.
-    A single feed request is intentional: Reddit's anonymous RSS surface is rate-limited and the
-    target calibration set only needs a modest number of independent watches.
+    Returns five-tuples: URL, title, searchable detail, direct image hint, album hint. Without
+    REDDIT_CLIENT_ID/REDDIT_CLIENT_SECRET this returns nothing (fail closed).
     """
-    url = "https://www.reddit.com/r/RepTimeQC/search.rss"
-    try:
-        r = requests.get(
-            url,
-            params={
-                "q": model,
-                "restrict_sr": "1",
-                "sort": "new",
-                "t": "all",
-                "limit": min(max(int(limit), 1), 100),
-            },
-            headers={
-                "User-Agent": RSS_UA,
-                "Accept": "application/atom+xml, application/xml, text/xml",
-            },
-            timeout=TIMEOUT,
-        )
-        r.raise_for_status()
-        root = ET.fromstring(r.text)
-    except Exception:
-        return []
-
-    out = []
-    seen = set()
-    for entry in root.findall("a:entry", ATOM):
-        title = entry.findtext("a:title", default="", namespaces=ATOM) or ""
-        content = entry.findtext("a:content", default="", namespaces=ATOM) or ""
-        link = ""
-        for node in entry.findall("a:link", ATOM):
-            href = node.attrib.get("href") or ""
-            if node.attrib.get("rel", "alternate") == "alternate" and href:
-                link = href
-                break
-            if not link and href:
-                link = href
-        link = canonical(link)
+    out, seen = [], set()
+    for post in reddit_oauth.search(subreddit, model, limit):
+        link = canonical(reddit_oauth.post_url(post))
+        detail = reddit_oauth.post_text(post)
         if not link or link in seen:
             continue
-        detail_text = BeautifulSoup(html.unescape(content), "html.parser").get_text(" ", strip=True)
-        detail = f"{title} {detail_text} {content}"
         if not re.search(rf"(?<!\d){re.escape(model)}(?!\d)", detail, re.I):
             continue
-        album, direct_image = _reddit_media_from_html(content)
-        out.append((link, title, detail, direct_image, album))
+        direct = _promote_reddit_image(post.get("url_overridden_by_dest") or post.get("url") or "")
+        out.append((link, post.get("title") or "", detail, direct, reddit_oauth.imgur_album(detail)))
         seen.add(link)
     return out
 
 
-def reddit_search(model: str, factories: list[str], limit: int = 100):
-    """Compatibility name for the primary public Reddit discovery path.
-
-    Factory identification is performed later from each post's title/body, so one model-level RSS
-    request is enough and avoids hammering the anonymous feed with one request per factory.
-    """
-    return reddit_rss_search(model, limit)
-
-
 def reddit_album(url: str, model: str, hint: str = ""):
-    """Extract an Imgur album from already-discovered text.
-
-    JSON enrichment is retained only as a best-effort legacy assist. Discovery does not depend on
-    it because cloud runners can receive 403 from Reddit's anonymous JSON endpoints.
-    """
-    text = hint or ""
-    mm = re.search(r"https?://(?:www\.)?imgur\.com/a/[A-Za-z0-9_-]+", text, re.I)
-    if mm:
-        return mm.group(0), text
-    m = re.search(r"reddit\.com/(?:r/[^/]+/)?comments/([a-z0-9]+)", url, re.I)
-    if m:
-        try:
-            jurl = f"https://www.reddit.com/comments/{m.group(1)}.json?raw_json=1"
-            r = requests.get(jurl, headers={"User-Agent": UA}, timeout=TIMEOUT)
-            r.raise_for_status()
-            post = r.json()[0]["data"]["children"][0]["data"]
-            text = " ".join([
-                text, post.get("title", ""), post.get("selftext", ""),
-                post.get("url_overridden_by_dest", ""),
-            ])
-        except Exception:
-            pass
-    mm = re.search(r"https?://(?:www\.)?imgur\.com/a/[A-Za-z0-9_-]+", text, re.I)
-    return (mm.group(0) if mm else ""), text
+    """Extract an Imgur album from already-discovered (official API) text. No network access."""
+    return reddit_oauth.imgur_album(hint or ""), hint or ""
 
 
 def listing_id(url: str, text: str = "", model: str = "") -> str:
@@ -384,20 +222,22 @@ def discover(config: dict, out_csv: Path) -> dict:
     source_counts = {}
     source_raw_hits = {}
     web_candidates = 0
+    reddit_status = "not requested"
 
     # Web/source discovery happens first and is sufficient by itself for a clean run.
     for src in dc["sources"]:
+        check_source_policy(src)
         wanted = int(src.get("target", dc.get("per_source_target", 8)))
         hits = []
-        pages = int(src.get("search_pages", dc.get("search_pages", 3)))
-        for templ in src.get("queries", []):
-            for raw, title, snip in search_web(templ.format(model=model), pages):
-                hits.append((raw, title, snip, "", ""))
         for seed in src.get("seed_urls", []):
             for raw, title, snip in page_links(seed.format(model=model), src["domain"].lower(), model):
                 hits.append((raw, title, snip, "", ""))
         if src.get("reddit_direct", False):
-            hits.extend(reddit_search(model, config.get("replica_factories", [])))
+            if not reddit_oauth.configured():
+                reddit_status = "skipped: REDDIT_CLIENT_ID/REDDIT_CLIENT_SECRET not configured"
+            else:
+                reddit_status = "official OAuth API"
+            hits.extend(reddit_search(model, src.get("subreddit", "RepTimeQC")))
 
         source_raw_hits[src["name"]] = len(hits)
         accepted_here = 0
@@ -505,6 +345,7 @@ def discover(config: dict, out_csv: Path) -> dict:
         "web_candidates": web_candidates,
         "bootstrap_candidates": bootstrap,
         "clean_discovery": bootstrap == 0,
+        "reddit_api": reddit_status,
         "output": str(out_csv),
     }
     out_csv.with_suffix(".json").write_text(
