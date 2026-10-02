@@ -19,24 +19,49 @@ public class Sub124060CalibrationTest {
         assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,b.judge(Double.NaN));
     }
 
-    @Test public void exactFrozenLimitsArePresent(){
-        // Repaired calibrator run 37008521836 (44 genuine listings; provisional, accepted 2026-10-02).
-        assertEquals(-1.18473115495,Sub124060Calibration.TWELVE_ROTATION.clearLow,0);
-        assertEquals(1.58789615495,Sub124060Calibration.TWELVE_ROTATION.clearHigh,0);
-        assertEquals(2.51210525825,Sub124060Calibration.TWELVE_ROTATION.checkHigh,0);
-        assertEquals(0.0247193049,Sub124060Calibration.TWELVE_GAP.clearLow,0);
-        assertEquals(0.0523356951,Sub124060Calibration.TWELVE_GAP.clearHigh,0);
-        assertEquals(-0.0204445564,Sub124060Calibration.TWELVE_CENTRING.clearLow,0);
-        assertEquals(0.031007594,Sub124060Calibration.TWELVE_CENTRING.checkHigh,0);
-        assertEquals(0.8112316335,Sub124060Calibration.ROUND_RING_RHO.clearLow,0);
-        assertEquals(0.8233963665,Sub124060Calibration.ROUND_RING_RHO.clearHigh,0);
-        // One-sided metrics have no lower limit.
+    @Test public void exactGenuineEnvelopeLimitsArePresent(){
+        // Calibrator run 37054338303: 40 genuine 124060s, six acquired sources, zero rejected
+        // photo-level outliers for all seven metrics. Every retained genuine observation is CLEAR.
+        assertEquals(-1.438497,Sub124060Calibration.TWELVE_ROTATION.clearLow,0);
+        assertEquals(3.555616,Sub124060Calibration.TWELVE_ROTATION.clearHigh,0);
+        assertEquals(-1.638497,Sub124060Calibration.TWELVE_ROTATION.checkLow,0);
+        assertEquals(3.755616,Sub124060Calibration.TWELVE_ROTATION.checkHigh,0);
+        assertEquals(0.0155867,Sub124060Calibration.TWELVE_GAP.clearLow,0);
+        assertEquals(0.0463993,Sub124060Calibration.TWELVE_GAP.clearHigh,0);
+        assertEquals(0.0131864,Sub124060Calibration.TWELVE_GAP.checkLow,0);
+        assertEquals(0.0487996,Sub124060Calibration.TWELVE_GAP.checkHigh,0);
+        assertEquals(-0.080044,Sub124060Calibration.TWELVE_CENTRING.clearLow,0);
+        assertEquals(0.050926,Sub124060Calibration.TWELVE_CENTRING.clearHigh,0);
+        assertEquals(-0.090044,Sub124060Calibration.TWELVE_CENTRING.checkLow,0);
+        assertEquals(0.060926,Sub124060Calibration.TWELVE_CENTRING.checkHigh,0);
+        assertEquals(0.784912,Sub124060Calibration.ROUND_RING_RHO.clearLow,0);
+        assertEquals(0.827718,Sub124060Calibration.ROUND_RING_RHO.clearHigh,0);
+        assertEquals(0.782912,Sub124060Calibration.ROUND_RING_RHO.checkLow,0);
+        assertEquals(0.829718,Sub124060Calibration.ROUND_RING_RHO.checkHigh,0);
+        // One-sided metrics have no lower warning boundary.
         assertEquals(Double.NEGATIVE_INFINITY,Sub124060Calibration.ROUND_SPACING_RMS.clearLow,0);
-        assertEquals(0.8017853513,Sub124060Calibration.ROUND_SPACING_RMS.clearHigh,0);
+        assertEquals(4.033474,Sub124060Calibration.ROUND_SPACING_RMS.clearHigh,0);
+        assertEquals(4.133474,Sub124060Calibration.ROUND_SPACING_RMS.checkHigh,0);
         assertEquals(Double.NEGATIVE_INFINITY,Sub124060Calibration.BATON_3_9_LINE_OFFSET.clearLow,0);
-        assertEquals(0.0094181512,Sub124060Calibration.BATON_3_9_LINE_OFFSET.clearHigh,0);
+        assertEquals(0.023287,Sub124060Calibration.BATON_3_9_LINE_OFFSET.clearHigh,0);
+        assertEquals(0.025287,Sub124060Calibration.BATON_3_9_LINE_OFFSET.checkHigh,0);
         assertEquals(Double.NEGATIVE_INFINITY,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.checkLow,0);
-        assertEquals(0.0056572452,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.clearHigh,0);
+        assertEquals(0.014611,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.clearHigh,0);
+        assertEquals(0.016611,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.checkHigh,0);
+    }
+
+    @Test public void observedGenuineExtremesStayClear(){
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.TWELVE_ROTATION.judge(3.355616));
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.TWELVE_ROTATION.judge(-1.238497));
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.TWELVE_GAP.judge(0.017987));
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.TWELVE_GAP.judge(0.043999));
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.TWELVE_CENTRING.judge(-0.070044));
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.TWELVE_CENTRING.judge(0.040926));
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.ROUND_RING_RHO.judge(0.786912));
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.ROUND_RING_RHO.judge(0.825718));
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.ROUND_SPACING_RMS.judge(3.933474));
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.BATON_3_9_LINE_OFFSET.judge(0.021287));
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.judge(0.012611));
     }
 
     @Test public void worstUsesTheMatureGmtSeverityOrdering(){
@@ -75,32 +100,31 @@ public class Sub124060CalibrationTest {
         assertFalse(GmtSixLandmarkAnalyzer.MIXED_EDGE_PASS.get());
     }
 
-    @Test public void ringRadiusIsMeasuredButNeverJudged(){
-        assertFalse(Sub124060Calibration.RING_JUDGED);
-    }
-
-    @Test public void gapIsMeasuredButNeverJudged(){
-        assertFalse(Sub124060Calibration.GAP_JUDGED);
+    @Test public void gapAndRingAreJudgedFromTheDiverseGenuineEnvelope(){
+        assertTrue(Sub124060Calibration.GAP_JUDGED);
+        assertTrue(Sub124060Calibration.RING_JUDGED);
         Sub124060QcAnalyzer.Result r=new Sub124060QcAnalyzer.Result();
-        r.gapR=0.023;r.gapResizeStable=true;   // genuine stock photo value that the band flagged
+        r.gapR=0.023;r.gapResizeStable=true;
         Sub124060Calibration.Assessment a=Sub124060Calibration.assess(r);
         assertTrue(a.gapMeasured);
-        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.gap);
-        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.twelve());
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,a.gap);
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,a.twelve());
     }
 
-    @Test public void provisionalBandsJudgeAndFlagRealDeviations(){
+    @Test public void genuineEnvelopeBandsOnlyFlagBeyondSupportedVariation(){
         assertTrue(Sub124060Calibration.VERDICTS_ENABLED);
         Sub124060QcAnalyzer.Result r=new Sub124060QcAnalyzer.Result();
         r.rotationResizeStable=true;r.centringResizeStable=true;
         r.rotationDeg=0.3;r.centringW=0.005;
         Sub124060Calibration.Assessment a=Sub124060Calibration.assess(r);
         assertEquals(GmtHumanQcMath.Attention.CLEAR,a.twelve());
-        r.rotationDeg=1.8;   // between clear and check
+        r.rotationDeg=3.65;   // beyond CLEAR but still within CHECK
         assertEquals(GmtHumanQcMath.Attention.CHECK,Sub124060Calibration.assess(r).rotation);
-        r.rotationDeg=3.0;   // beyond check
+        r.rotationDeg=4.0;    // beyond the outer CHECK guard
         assertEquals(GmtHumanQcMath.Attention.STRONG,Sub124060Calibration.assess(r).twelve());
-        r.rotationDeg=0.3;r.centringW=0.05;
+        r.rotationDeg=0.3;r.centringW=0.055;
+        assertEquals(GmtHumanQcMath.Attention.CHECK,Sub124060Calibration.assess(r).centring);
+        r.centringW=0.08;
         assertEquals(GmtHumanQcMath.Attention.STRONG,Sub124060Calibration.assess(r).centring);
         // An unstable value is never judged.
         r.rotationResizeStable=false;
