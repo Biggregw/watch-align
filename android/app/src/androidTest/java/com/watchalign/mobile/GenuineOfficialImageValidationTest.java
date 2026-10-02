@@ -46,6 +46,8 @@ public class GenuineOfficialImageValidationTest {
         Arrays.sort(names);
 
         boolean visualFirstGmt = CanonicalGmtGeometryAnalyzer.supports(modelRef);
+        // The experimental 124060 route (alpha69+) has its own report and no GMT registration score.
+        boolean sub124060 = Sub124060Layout.supports(modelRef);
         List<String> failures = new ArrayList<>();
         int checked = 0;
         for (String name : names) {
@@ -60,11 +62,22 @@ public class GenuineOfficialImageValidationTest {
                 WatchAlignCoreV13.AnalysisResult r = WatchAlignCoreV13.analyse(b, b, modelRef);
                 checked++;
                 String rep = r.report == null ? "" : r.report;
-                if (!Double.isFinite(r.registrationConfidence) || r.registrationConfidence < 0.90) {
+                if (!sub124060 && (!Double.isFinite(r.registrationConfidence) || r.registrationConfidence < 0.90)) {
                     failures.add("registration=" + r.registrationConfidence + " @ " + name);
                 }
 
-                if (visualFirstGmt) {
+                if (sub124060) {
+                    // Measured-only contract: a summary exists, the dial is found, and nothing is judged.
+                    if (!rep.contains("SUMMARY\n") || !rep.contains(Sub124060Summary.EXPERIMENTAL)) {
+                        failures.add("124060 summary missing @ " + name + "\n" + rep);
+                    }
+                    if (rep.contains("Dial: not assessable")) {
+                        failures.add("124060 dial not found on genuine official image @ " + name + "\n" + rep);
+                    }
+                    if (rep.contains("CHECK CLOSELY") || rep.contains("· CHECK")) {
+                        failures.add("124060 verdict shown while verdicts are disabled @ " + name + "\n" + rep);
+                    }
+                } else if (visualFirstGmt) {
                     // Current GMT report contract (alpha45+): plain-English summary first, the
                     // measured 12-marker section below. A genuine official image must not be
                     // flagged at 12. (The old "VISUAL INSPECTION MODE" / "VISUAL QC MASTER"
