@@ -32,6 +32,7 @@ public class Sub124060CalibrationTest {
 
     @Test public void existingReliabilityGateStillControlsTwelveJudgement(){
         Sub124060QcAnalyzer.Result r=new Sub124060QcAnalyzer.Result();
+        r.dialSource=Sub124060QcAnalyzer.DialSource.AUTO_EDGE_FIT;
         r.rotationDeg=0.5;r.centringW=0.0;r.gapR=0.03;
         r.rotationResizeStable=true;r.centringResizeStable=true;r.gapResizeStable=true;
         Sub124060Calibration.Assessment a=Sub124060Calibration.assess(r);
