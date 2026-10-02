@@ -32,6 +32,8 @@ jobs:
     timeout-minutes: 350
     env:
       IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
       MODEL: ${{ github.event.inputs.model || '124060' }}
     steps:
       - uses: actions/checkout@v4
@@ -76,7 +78,9 @@ jobs:
         run: |
           F="datasets/watch_calibrator/$MODEL/calibration.md"
           S="datasets/watch_calibrator/$MODEL/run_status.json"
+          R="datasets/watch_calibrator/$MODEL/replica_evidence.json"
           if [ -f "$F" ]; then cat "$F" >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$R" ]; then echo '### Replica stress evidence' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$R" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$S" ]; then echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$S" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Upload complete calibration evidence
         if: always()
@@ -89,6 +93,7 @@ jobs:
             datasets/watch_calibrator/${{ env.MODEL }}/dataset/acquired_images.csv
             datasets/watch_calibrator/${{ env.MODEL }}/dataset/candidate_summary.csv
             datasets/watch_calibrator/${{ env.MODEL }}/dataset/acquisition_report.*
+            datasets/watch_calibrator/${{ env.MODEL }}/replica_evidence.json
             datasets/watch_calibrator/${{ env.MODEL }}/locked_split.csv
             datasets/watch_calibrator/${{ env.MODEL }}/geometry/
             datasets/watch_calibrator/${{ env.MODEL }}/frozen_before_holdout.*
