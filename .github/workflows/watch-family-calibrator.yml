@@ -106,6 +106,7 @@ jobs:
             datasets/watch_calibrator/${{ env.MODEL }}/locked_split.csv
             datasets/watch_calibrator/${{ env.MODEL }}/geometry/
             datasets/watch_calibrator/${{ env.MODEL }}/frozen_before_holdout.*
+            datasets/watch_calibrator/${{ env.MODEL }}/legacy_split_calibration.*
             datasets/watch_calibrator/${{ env.MODEL }}/calibration.*
             datasets/watch_calibrator/${{ env.MODEL }}/run_status.json
             watch-calibrator.log
