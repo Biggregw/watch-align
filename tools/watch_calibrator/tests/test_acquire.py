@@ -38,8 +38,8 @@ class FakeHttp:
             return Response([{"data": {"children": [{"data": self.post}]}}])
         raise AssertionError(f"unexpected url {url}")
 
-    def post(self, url, data, headers=None, auth=None):
-        self.post_calls.append((url, data, auth))
+    def post(self, url, data=None, headers=None, api=False):
+        self.post_calls.append((url, data, headers or {}, api))
         return Response({"access_token": "test-token", "token_type": "bearer"})
 
 
@@ -86,13 +86,15 @@ class RedditAcquireTest(unittest.TestCase):
                 "b": {"s": {"u": "https://i.redd.it/b.jpg"}},
             },
         })
+        url = "https://www.reddit.com/r/RepTimeQC/comments/abc123/qc/"
+        self.assertEqual("abc123", acquire.reddit_post_id(url))
         with patch.dict(os.environ, {"REDDIT_CLIENT_ID": "id", "REDDIT_CLIENT_SECRET": "secret"}):
-            refs = acquire.reddit_oauth_image_refs(
-                "https://www.reddit.com/r/RepTimeQC/comments/abc123/qc/", http, 10
-            )
+            self.assertEqual("id", os.environ.get("REDDIT_CLIENT_ID"))
+            refs = acquire.reddit_oauth_image_refs(url, http, 10)
         self.assertTrue(http.post_calls, "OAuth token request was not attempted")
         self.assertEqual("https://www.reddit.com/api/v1/access_token", http.post_calls[0][0])
-        self.assertEqual(("id", "secret"), http.post_calls[0][2])
+        self.assertTrue(http.post_calls[0][2].get("Authorization", "").startswith("Basic "))
+        self.assertTrue(http.post_calls[0][3])
         self.assertTrue(any("oauth.reddit.com/by_id/t3_abc123" in u for u, _ in http.calls), "OAuth post lookup was not attempted")
         self.assertEqual(["https://i.redd.it/a.jpg", "https://i.redd.it/b.jpg"], [r.url for r in refs])
 
