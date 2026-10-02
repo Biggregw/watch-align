@@ -15,10 +15,20 @@ import java.util.List;
  * reject them but never move them. Replica evidence was stress-test evidence only. These limits are
  * provisional alignment-QC tolerances, not authenticity thresholds.
  *
+ * ALPHA73: VERDICTS ARE SWITCHED OFF (VERDICTS_ENABLED=false). Review of run 36927036008 found the
+ * bands too wide to flag anything (limits were stretched to the most extreme development watch,
+ * the research measurement path skipped the alpha70 gates, one-sided metrics got symmetric bands,
+ * and no evidence showed a band could flag a deviation). The values below are kept for provenance
+ * only; the app reports MEASURED / NOT YET JUDGED until a repaired calibrator run passes its
+ * sensitivity requirement and new bands are frozen here.
+ *
  * The 12-gap metric is deliberately absent. Calibration marked it INSUFFICIENT because it was
  * pose/scale sensitive, so the product continues to measure it but never uses it for a verdict.
  */
 final class Sub124060Calibration {
+    /** Single switch: no CLEAR/CHECK/CHECK CLOSELY verdict reaches the user while this is false. */
+    static final boolean VERDICTS_ENABLED=false;
+    static final String MEASURED_ONLY="MEASURED / NOT YET JUDGED";
     static final class Band {
         final String key;
         final double clearLow,clearHigh,checkLow,checkHigh;
@@ -42,6 +52,16 @@ final class Sub124060Calibration {
         GmtHumanQcMath.Attention axis126=GmtHumanQcMath.Attention.UNASSESSABLE;
         double roundRingRho=Double.NaN,roundSpacingRmsDeg=Double.NaN;
         double baton39LineOffsetR=Double.NaN,axis126LineOffsetR=Double.NaN;
+        /** A reliable value exists (passed the alpha70 gates), whether or not it was judged. */
+        boolean rotationMeasured,centringMeasured,roundRingMeasured,roundSpacingMeasured,baton39Measured,axis126Measured;
+
+        boolean twelveMeasured(){return rotationMeasured||centringMeasured||axis126Measured;}
+        boolean roundsMeasured(){return roundRingMeasured||roundSpacingMeasured;}
+        boolean batonMeasured(String label){
+            if("3".equals(label)||"9".equals(label))return baton39Measured;
+            if("6".equals(label))return axis126Measured;
+            return false;
+        }
 
         GmtHumanQcMath.Attention twelve(){return worst(rotation,centring,axis126);}
         GmtHumanQcMath.Attention rounds(){return worst(roundRing,roundSpacing);}
@@ -76,6 +96,12 @@ final class Sub124060Calibration {
         }
     }
 
+    /** User-facing word for a metric: the verdict if judged, otherwise whether a reliable value exists. */
+    static String label(boolean measured,GmtHumanQcMath.Attention a){
+        if(a!=null&&a!=GmtHumanQcMath.Attention.UNASSESSABLE)return words(a);
+        return measured?MEASURED_ONLY:"NOT JUDGED";
+    }
+
     static GmtHumanQcMath.Attention worst(GmtHumanQcMath.Attention... values){
         boolean any=false;
         GmtHumanQcMath.Attention out=GmtHumanQcMath.Attention.UNASSESSABLE;
@@ -90,14 +116,19 @@ final class Sub124060Calibration {
     }
 
     /** Evaluate only measurements that survive the existing alpha70/alpha71 reliability gates. */
-    static Assessment assess(Sub124060QcAnalyzer.Result r){
+    static Assessment assess(Sub124060QcAnalyzer.Result r){return assess(r,VERDICTS_ENABLED);}
+
+    /** judge=false computes the same gated values but leaves every verdict UNASSESSABLE. */
+    static Assessment assess(Sub124060QcAnalyzer.Result r,boolean judge){
         Assessment a=new Assessment();
         if(r==null)return a;
 
-        if(r.rotationWithheld==null&&Double.isFinite(r.rotationDeg)&&Boolean.TRUE.equals(r.rotationResizeStable))
-            a.rotation=TWELVE_ROTATION.judge(r.rotationDeg);
-        if(r.centringWithheld==null&&Double.isFinite(r.centringW)&&Boolean.TRUE.equals(r.centringResizeStable))
-            a.centring=TWELVE_CENTRING.judge(r.centringW);
+        if(r.rotationWithheld==null&&Double.isFinite(r.rotationDeg)&&Boolean.TRUE.equals(r.rotationResizeStable)){
+            a.rotationMeasured=true;if(judge)a.rotation=TWELVE_ROTATION.judge(r.rotationDeg);
+        }
+        if(r.centringWithheld==null&&Double.isFinite(r.centringW)&&Boolean.TRUE.equals(r.centringResizeStable)){
+            a.centringMeasured=true;if(judge)a.centring=TWELVE_CENTRING.judge(r.centringW);
+        }
 
         // Relational calibration was performed on ellipse-corrected coordinates and requires a
         // reproducible edge-fitted dial. Never invent a verdict on a manual-circle fallback.
@@ -114,12 +145,12 @@ final class Sub124060Calibration {
             if(Double.isFinite(ref12))angleErrors.add(wrap180(rectClock(r.frame,m.x,m.y)-ref12-m.hour*30.0));
         }
         if(rho.size()>=4){
-            a.roundRingRho=median(rho);
-            a.roundRing=ROUND_RING_RHO.judge(a.roundRingRho);
+            a.roundRingRho=median(rho);a.roundRingMeasured=true;
+            if(judge)a.roundRing=ROUND_RING_RHO.judge(a.roundRingRho);
         }
         if(angleErrors.size()>=4){
-            a.roundSpacingRmsDeg=spacingRms(angleErrors);
-            a.roundSpacing=ROUND_SPACING_RMS.judge(a.roundSpacingRmsDeg);
+            a.roundSpacingRmsDeg=spacingRms(angleErrors);a.roundSpacingMeasured=Double.isFinite(a.roundSpacingRmsDeg);
+            if(judge)a.roundSpacing=ROUND_SPACING_RMS.judge(a.roundSpacingRmsDeg);
         }
 
         Sub124060QcAnalyzer.Baton b3=baton(r,GmtSixLandmarkAnalyzer.Position.THREE);
@@ -128,15 +159,15 @@ final class Sub124060Calibration {
 
         double[] p3=batonPoint(r.frame,b3),p9=batonPoint(r.frame,b9);
         if(p3!=null&&p9!=null){
-            a.baton39LineOffsetR=lineOffset(p3,p9);
-            a.baton39=BATON_3_9_LINE_OFFSET.judge(a.baton39LineOffsetR);
+            a.baton39LineOffsetR=lineOffset(p3,p9);a.baton39Measured=Double.isFinite(a.baton39LineOffsetR);
+            if(judge)a.baton39=BATON_3_9_LINE_OFFSET.judge(a.baton39LineOffsetR);
         }
 
         double[] p12=r.triangle!=null&&r.twelveWithheld==null?rectNorm(r.frame,r.triangle.cx,r.triangle.cy):null;
         double[] p6=batonPoint(r.frame,b6);
         if(p12!=null&&p6!=null){
-            a.axis126LineOffsetR=lineOffset(p12,p6);
-            a.axis126=AXIS_12_6_LINE_OFFSET.judge(a.axis126LineOffsetR);
+            a.axis126LineOffsetR=lineOffset(p12,p6);a.axis126Measured=Double.isFinite(a.axis126LineOffsetR);
+            if(judge)a.axis126=AXIS_12_6_LINE_OFFSET.judge(a.axis126LineOffsetR);
         }
         return a;
     }

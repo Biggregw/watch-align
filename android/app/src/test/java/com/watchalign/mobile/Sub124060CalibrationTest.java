@@ -1,6 +1,8 @@
 package com.watchalign.mobile;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -64,12 +66,12 @@ public class Sub124060CalibrationTest {
         Sub124060QcAnalyzer.Result r=new Sub124060QcAnalyzer.Result();
         r.rotationDeg=0.5;r.centringW=0.0;
         r.rotationResizeStable=true;r.centringResizeStable=true;
-        Sub124060Calibration.Assessment a=Sub124060Calibration.assess(r);
+        Sub124060Calibration.Assessment a=Sub124060Calibration.assess(r,true);
         assertEquals(GmtHumanQcMath.Attention.CLEAR,a.rotation);
         assertEquals(GmtHumanQcMath.Attention.CLEAR,a.centring);
 
         r.rotationResizeStable=false;r.centringResizeStable=null;
-        a=Sub124060Calibration.assess(r);
+        a=Sub124060Calibration.assess(r,true);
         assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.rotation);
         assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.centring);
     }
@@ -82,6 +84,23 @@ public class Sub124060CalibrationTest {
 
     @Test public void gapHasNoCalibrationBand(){
         // Deliberately no TWELVE_GAP constant. The public contract is measured-only.
-        assertEquals("MEASURED / NOT JUDGED",Sub124060Summary.MEASURED);
+        assertEquals("MEASURED / NOT YET JUDGED",Sub124060Summary.MEASURED);
+    }
+
+    @Test public void verdictsAreSwitchedOffUntilARepairedCalibrationIsFrozen(){
+        assertFalse(Sub124060Calibration.VERDICTS_ENABLED);
+        Sub124060QcAnalyzer.Result r=new Sub124060QcAnalyzer.Result();
+        r.rotationDeg=40;r.centringW=0.9;
+        r.rotationResizeStable=true;r.centringResizeStable=true;
+        Sub124060Calibration.Assessment a=Sub124060Calibration.assess(r);
+        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.rotation);
+        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.centring);
+        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.twelve());
+        assertTrue(a.rotationMeasured);assertTrue(a.centringMeasured);
+        assertEquals("MEASURED / NOT YET JUDGED",Sub124060Calibration.label(a.rotationMeasured,a.rotation));
+        r.rotationResizeStable=false;
+        a=Sub124060Calibration.assess(r);
+        assertFalse(a.rotationMeasured);
+        assertEquals("NOT JUDGED",Sub124060Calibration.label(a.rotationMeasured,a.rotation));
     }
 }

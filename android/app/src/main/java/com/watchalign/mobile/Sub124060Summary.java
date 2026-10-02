@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Plain-English report for the GMT-style 124060 path with frozen provisional family calibration. */
+/** Plain-English report for the GMT-style 124060 path. Verdicts appear only when calibration is enabled. */
 final class Sub124060Summary {
-    static final String EXPERIMENTAL="124060 experimental support: frozen provisional family calibration is applied after the existing reliability checks.";
-    static final String MEASURED="MEASURED / NOT JUDGED";
+    static final String EXPERIMENTAL=Sub124060Calibration.VERDICTS_ENABLED
+            ?"124060 experimental support: frozen provisional family calibration is applied after the existing reliability checks."
+            :"124060 experimental support: values are measured after the reliability checks but NOT YET JUDGED. This is not a QC pass/fail result.";
+    static final String MEASURED=Sub124060Calibration.MEASURED_ONLY;
     static final String NOT_CHECKED="Not checked: bezel and pearl, rehaut, hands, printing, lume.";
 
     private Sub124060Summary(){}
@@ -25,16 +27,18 @@ final class Sub124060Summary {
         }
         s.append("12 triangle: ").append(triangleLine(r)).append("\n");
         s.append("12 rotation: ").append(r.rotationWithheld!=null?"not measured ("+r.rotationWithheld+")"
-                :String.format(Locale.US,"%+.2f° against the line from the dial centre through the 60-minute tick (+ = clockwise) · %s",r.rotationDeg,Sub124060Calibration.words(a.rotation))).append("\n");
+                :String.format(Locale.US,"%+.2f° against the line from the dial centre through the 60-minute tick (+ = clockwise) · %s",r.rotationDeg,Sub124060Calibration.label(a.rotationMeasured,a.rotation))).append("\n");
         s.append("12 gap to minute track: ").append(r.gapWithheld!=null?"not measured ("+r.gapWithheld+")"
                 :String.format(Locale.US,"%.3f of the dial radius between the triangle's top edge and the minute-track inner edge · %s (calibration rejected this metric as pose/scale sensitive)",r.gapR,MEASURED)).append("\n");
         s.append("12 centring: ").append(r.centringWithheld!=null?"not measured ("+r.centringWithheld+")"
-                :String.format(Locale.US,"%+.3f of the triangle width from the 60-minute tick (+ = towards 01) · %s",r.centringW,Sub124060Calibration.words(a.centring))).append("\n");
-        s.append("12 overall alignment: ").append(Sub124060Calibration.words(a.twelve())).append("\n");
+                :String.format(Locale.US,"%+.3f of the triangle width from the 60-minute tick (+ = towards 01) · %s",r.centringW,Sub124060Calibration.label(a.centringMeasured,a.centring))).append("\n");
+        s.append("12 overall alignment: ").append(Sub124060Calibration.label(a.twelveMeasured(),a.twelve())).append("\n");
         s.append("Batons 3/6/9: ").append(batonLine(r,a)).append("\n");
         s.append("Round markers: ").append(roundLine(r,a)).append("\n");
         s.append(NOT_CHECKED).append("\n");
-        s.append("Overlay: GMT-style whole-dial markup. Tick = nothing flagged, ! = worth a look, !! = check closely, dash = not judged. Verdicts use only frozen 124060 calibration; no GMT tolerance is reused.\n");
+        s.append(Sub124060Calibration.VERDICTS_ENABLED
+                ?"Overlay: GMT-style whole-dial markup. Tick = nothing flagged, ! = worth a look, !! = check closely, dash = not judged. Verdicts use only frozen 124060 calibration; no GMT tolerance is reused.\n"
+                :"Overlay: GMT-style whole-dial markup. Blue outline and dot = measured (not judged), dashed grey with dash = not measured. No 124060 tolerance is applied yet and no GMT tolerance is reused.\n");
         if(r.needsManual())s.append("\nNext: if the outlines are not on the right markers, try Align dial edge by hand below.\n");
         return s.toString();
     }
@@ -67,8 +71,8 @@ final class Sub124060Summary {
             parts.add(b.position.label+": "+word(b.status));
         }
         String out=detected+"/3 detected, "+measurable+"/3 measurable ("+String.join(" · ",parts)+")";
-        if(Double.isFinite(a.baton39LineOffsetR))out+=String.format(Locale.US," · 3-9 axis %.4f R · %s",a.baton39LineOffsetR,Sub124060Calibration.words(a.baton39));
-        if(Double.isFinite(a.axis126LineOffsetR))out+=String.format(Locale.US," · 12-6 axis %.4f R · %s",a.axis126LineOffsetR,Sub124060Calibration.words(a.axis126));
+        if(Double.isFinite(a.baton39LineOffsetR))out+=String.format(Locale.US," · 3-9 axis %.4f R · %s",a.baton39LineOffsetR,Sub124060Calibration.label(a.baton39Measured,a.baton39));
+        if(Double.isFinite(a.axis126LineOffsetR))out+=String.format(Locale.US," · 12-6 axis %.4f R · %s",a.axis126LineOffsetR,Sub124060Calibration.label(a.axis126Measured,a.axis126));
         return out;
     }
 
@@ -81,8 +85,8 @@ final class Sub124060Summary {
         }
         int n=r.rounds.isEmpty()?Sub124060Layout.ROUND_HOURS.length:r.rounds.size();
         String out=detected+"/"+n+" detected, "+measurable+"/"+n+" measurable"+(parts.isEmpty()?"":" ("+String.join(" · ",parts)+")");
-        if(Double.isFinite(a.roundRingRho))out+=String.format(Locale.US," · ring %.4f R · %s",a.roundRingRho,Sub124060Calibration.words(a.roundRing));
-        if(Double.isFinite(a.roundSpacingRmsDeg))out+=String.format(Locale.US," · spacing RMS %.2f° · %s",a.roundSpacingRmsDeg,Sub124060Calibration.words(a.roundSpacing));
+        if(Double.isFinite(a.roundRingRho))out+=String.format(Locale.US," · ring %.4f R · %s",a.roundRingRho,Sub124060Calibration.label(a.roundRingMeasured,a.roundRing));
+        if(Double.isFinite(a.roundSpacingRmsDeg))out+=String.format(Locale.US," · spacing RMS %.2f° · %s",a.roundSpacingRmsDeg,Sub124060Calibration.label(a.roundSpacingMeasured,a.roundSpacing));
         return out;
     }
 
@@ -100,8 +104,13 @@ final class Sub124060Summary {
     static String details(Sub124060QcAnalyzer.Result r,String cropNote){
         Sub124060Calibration.Assessment a=Sub124060Calibration.assess(r);
         StringBuilder s=new StringBuilder();
-        s.append("Submariner 124060 path: the user-facing workflow and presentation follow the mature GMT QC contract, while model-specific 124060 geometry and frozen family calibration supply the verdicts. No GMT QC tolerance is copied into the 124060.\n");
-        s.append("Calibration provenance: Watch-family Calibrator run 36927036008; artifact watch-calibrator-124060-36927036008; development genuine froze the limits, validation/holdout could reject only, and replica evidence never moved a limit.\n");
+        if(Sub124060Calibration.VERDICTS_ENABLED){
+            s.append("Submariner 124060 path: the user-facing workflow and presentation follow the mature GMT QC contract, while model-specific 124060 geometry and frozen family calibration supply the verdicts. No GMT QC tolerance is copied into the 124060.\n");
+            s.append("Calibration provenance: Watch-family Calibrator run 36927036008; artifact watch-calibrator-124060-36927036008; development genuine froze the limits, validation/holdout could reject only, and replica evidence never moved a limit.\n");
+        }else{
+            s.append("Submariner 124060 path: the user-facing workflow and presentation follow the mature GMT QC contract with model-specific 124060 geometry. Values are measured only; no 124060 tolerance is applied and no GMT QC tolerance is copied into the 124060.\n");
+            s.append("Calibration status: provisional bands from calibrator run 36927036008 are disabled pending a repaired calibration (bands were too wide to flag deviations).\n");
+        }
         if(cropNote!=null)s.append(cropNote).append("\n");
         s.append(String.format(Locale.US,"Dial seed: centre %.1f, %.1f; radius %.1f px; quality %.2f.\n",r.seedX,r.seedY,r.seedR,r.seedQuality));
         s.append("Dial source: ").append(r.dialSource.words).append(".\n");
@@ -123,10 +132,10 @@ final class Sub124060Summary {
             if(r.triangleResizeStable!=null)s.append("Resize outline check (94%, 88%): ").append(r.triangleResizeNote).append(".\n");
             appendTriangleRepeatability(s,r);
             s.append(String.format(Locale.US,"Raw values: rotation %+.2f°, gap %.4f R, centring %+.4f of width.\n",c.rotationDeg,c.gapR,c.centring));
-            s.append("Rotation verdict: ").append(r.rotationWithheld!=null?"withheld: "+r.rotationWithheld:Sub124060Calibration.words(a.rotation)).append(".\n");
+            s.append("Rotation verdict: ").append(r.rotationWithheld!=null?"withheld: "+r.rotationWithheld:Sub124060Calibration.label(a.rotationMeasured,a.rotation)).append(".\n");
             s.append("Gap verdict: ").append(r.gapWithheld!=null?"withheld: "+r.gapWithheld:MEASURED+"; no calibrated tolerance").append(".\n");
-            s.append("Centring verdict: ").append(r.centringWithheld!=null?"withheld: "+r.centringWithheld:Sub124060Calibration.words(a.centring)).append(".\n");
-            s.append("12 overall alignment: ").append(Sub124060Calibration.words(a.twelve())).append(".\n");
+            s.append("Centring verdict: ").append(r.centringWithheld!=null?"withheld: "+r.centringWithheld:Sub124060Calibration.label(a.centringMeasured,a.centring)).append(".\n");
+            s.append("12 overall alignment: ").append(Sub124060Calibration.label(a.twelveMeasured(),a.twelve())).append(".\n");
         }
 
         s.append("\nBATONS 3/6/9\n");
@@ -145,8 +154,8 @@ final class Sub124060Summary {
             }
             s.append(".\n");
         }
-        if(Double.isFinite(a.baton39LineOffsetR))s.append(String.format(Locale.US,"3-9 calibrated axis offset: %.4f R · %s.\n",a.baton39LineOffsetR,Sub124060Calibration.words(a.baton39)));
-        if(Double.isFinite(a.axis126LineOffsetR))s.append(String.format(Locale.US,"12-6 calibrated axis offset: %.4f R · %s.\n",a.axis126LineOffsetR,Sub124060Calibration.words(a.axis126)));
+        if(Double.isFinite(a.baton39LineOffsetR))s.append(String.format(Locale.US,"3-9 axis offset: %.4f R · %s.\n",a.baton39LineOffsetR,Sub124060Calibration.label(a.baton39Measured,a.baton39)));
+        if(Double.isFinite(a.axis126LineOffsetR))s.append(String.format(Locale.US,"12-6 axis offset: %.4f R · %s.\n",a.axis126LineOffsetR,Sub124060Calibration.label(a.axis126Measured,a.axis126)));
 
         s.append("\nROUND MARKERS\n");
         for(Sub124060QcAnalyzer.Round m:r.rounds){
@@ -162,8 +171,8 @@ final class Sub124060Summary {
             }
             s.append(".\n");
         }
-        if(Double.isFinite(a.roundRingRho))s.append(String.format(Locale.US,"Calibrated round-marker ring radius: %.4f R · %s.\n",a.roundRingRho,Sub124060Calibration.words(a.roundRing)));
-        if(Double.isFinite(a.roundSpacingRmsDeg))s.append(String.format(Locale.US,"Calibrated round-marker spacing RMS: %.2f° · %s.\n",a.roundSpacingRmsDeg,Sub124060Calibration.words(a.roundSpacing)));
+        if(Double.isFinite(a.roundRingRho))s.append(String.format(Locale.US,"Round-marker ring radius: %.4f R · %s.\n",a.roundRingRho,Sub124060Calibration.label(a.roundRingMeasured,a.roundRing)));
+        if(Double.isFinite(a.roundSpacingRmsDeg))s.append(String.format(Locale.US,"Round-marker spacing RMS: %.2f° · %s.\n",a.roundSpacingRmsDeg,Sub124060Calibration.label(a.roundSpacingMeasured,a.roundSpacing)));
 
         s.append("\nROUND-MARKER POSE DIAGNOSTIC\n");
         if(r.markerPose==null)s.append("Not run.\n");
@@ -172,7 +181,9 @@ final class Sub124060Summary {
                     r.markerPose.tiltDeg,r.markerPose.tiltHighDeg,r.markerPose.markers,
                     r.markerPose.dropped.isEmpty()?"":", marker "+r.markerPose.dropped+" left out by the robust fit",r.markerPose.residual));
 
-        s.append("\nThe frozen bands are provisional alignment QC only. They are not an authenticity classifier or an overall watch-quality verdict.\n");
+        s.append(Sub124060Calibration.VERDICTS_ENABLED
+                ?"\nThe frozen bands are provisional alignment QC only. They are not an authenticity classifier or an overall watch-quality verdict.\n"
+                :"\nThese are measurements only. They are not a QC pass/fail, an authenticity classifier or an overall watch-quality verdict.\n");
         return s.toString();
     }
 
