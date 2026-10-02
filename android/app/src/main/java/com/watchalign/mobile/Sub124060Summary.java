@@ -29,7 +29,7 @@ final class Sub124060Summary {
         s.append("12 rotation: ").append(r.rotationWithheld!=null?"not measured ("+r.rotationWithheld+")"
                 :String.format(Locale.US,"%+.2f° against the line from the dial centre through the 60-minute tick (+ = clockwise) · %s",r.rotationDeg,Sub124060Calibration.label(a.rotationMeasured,a.rotation))).append("\n");
         s.append("12 gap to minute track: ").append(r.gapWithheld!=null?"not measured ("+r.gapWithheld+")"
-                :String.format(Locale.US,"%.3f of the dial radius between the triangle's top edge and the minute-track inner edge · %s (calibration rejected this metric as pose/scale sensitive)",r.gapR,MEASURED)).append("\n");
+                :String.format(Locale.US,"%.3f of the dial radius between the triangle's top edge and the minute-track inner edge · %s",r.gapR,Sub124060Calibration.label(a.gapMeasured,a.gap))).append("\n");
         s.append("12 centring: ").append(r.centringWithheld!=null?"not measured ("+r.centringWithheld+")"
                 :String.format(Locale.US,"%+.3f of the triangle width from the 60-minute tick (+ = towards 01) · %s",r.centringW,Sub124060Calibration.label(a.centringMeasured,a.centring))).append("\n");
         s.append("12 overall alignment: ").append(Sub124060Calibration.label(a.twelveMeasured(),a.twelve())).append("\n");
@@ -106,7 +106,7 @@ final class Sub124060Summary {
         StringBuilder s=new StringBuilder();
         if(Sub124060Calibration.VERDICTS_ENABLED){
             s.append("Submariner 124060 path: the user-facing workflow and presentation follow the mature GMT QC contract, while model-specific 124060 geometry and frozen family calibration supply the verdicts. No GMT QC tolerance is copied into the 124060.\n");
-            s.append("Calibration provenance: repaired Watch-family Calibrator run 37004915187; 12 development genuine watches froze the limits, validation/holdout genuine watches were all clear. Provisional: sensitivity to real defects is not yet proven. The 12 gap and 3-9 axis stay measured-only.\n");
+            s.append("Calibration provenance: repaired Watch-family Calibrator run 37008521836; 25 development genuine watches froze the limits, validation/holdout genuine watches were all clear on all seven checks. Provisional: sensitivity to real defects is not yet proven.\n");
         }else{
             s.append("Submariner 124060 path: the user-facing workflow and presentation follow the mature GMT QC contract with model-specific 124060 geometry. Values are measured only; no 124060 tolerance is applied and no GMT QC tolerance is copied into the 124060.\n");
             s.append("Calibration status: provisional bands from calibrator run 36927036008 are disabled pending a repaired calibration (bands were too wide to flag deviations).\n");
@@ -133,7 +133,7 @@ final class Sub124060Summary {
             appendTriangleRepeatability(s,r);
             s.append(String.format(Locale.US,"Raw values: rotation %+.2f°, gap %.4f R, centring %+.4f of width.\n",c.rotationDeg,c.gapR,c.centring));
             s.append("Rotation verdict: ").append(r.rotationWithheld!=null?"withheld: "+r.rotationWithheld:Sub124060Calibration.label(a.rotationMeasured,a.rotation)).append(".\n");
-            s.append("Gap verdict: ").append(r.gapWithheld!=null?"withheld: "+r.gapWithheld:MEASURED+"; no calibrated tolerance").append(".\n");
+            s.append("Gap verdict: ").append(r.gapWithheld!=null?"withheld: "+r.gapWithheld:Sub124060Calibration.label(a.gapMeasured,a.gap)).append(".\n");
             s.append("Centring verdict: ").append(r.centringWithheld!=null?"withheld: "+r.centringWithheld:Sub124060Calibration.label(a.centringMeasured,a.centring)).append(".\n");
             s.append("12 overall alignment: ").append(Sub124060Calibration.label(a.twelveMeasured(),a.twelve())).append(".\n");
         }

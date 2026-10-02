@@ -251,7 +251,7 @@ final class Sub124060Overlay {
             Paint dot=fill(TICK,230);float dr=(float)Math.max(1.5,width/30.0);
             for(double[] q:new double[][]{d.tick59,d.tick60,d.tick01})c.drawCircle((float)q[0],(float)q[1],dr,dot);
 
-            // Gap remains measured-only because calibration rejected it as pose/scale sensitive.
+            // Gap line: drawn in the tick colour; its verdict is part of the 12 overall badge.
             double mx=(d.triL[0]+d.triR[0])/2,my=(d.triL[1]+d.triR[1])/2;
             double[] foot=footOnLine(mx,my,d.tick59,d.tick01);
             Paint gp=stroke(d.gapNote==null?TICK:WITHHELD,Math.max(1f,lw*1.4f),235);
@@ -340,7 +340,7 @@ final class Sub124060Overlay {
     private static String triangleValues(Drawing d){
         List<String> p=new ArrayList<>();
         p.add(d.rotationNote==null&&Double.isFinite(d.rotationDeg)?String.format(Locale.US,"rot %+.2f°",d.rotationDeg):"rot –");
-        p.add(d.gapNote==null&&Double.isFinite(d.gapR)?String.format(Locale.US,"gap %.3fR measured only",d.gapR):"gap –");
+        p.add(d.gapNote==null&&Double.isFinite(d.gapR)?String.format(Locale.US,"gap %.3fR",d.gapR):"gap –");
         p.add(d.centringNote==null&&Double.isFinite(d.centringW)?String.format(Locale.US,"centre %+.3fw",d.centringW):"centre –");
         return String.join(" · ",p);
     }
@@ -356,7 +356,7 @@ final class Sub124060Overlay {
     }
     private static String shortReason(String s){
         if(s==null)return null;String x=s.toLowerCase(Locale.US);
-        if(x.contains("hand"))return "hand in the way";
+        if(x.contains("hand"))return "hand beside 12";
         if(x.contains("small"))return "too small";
         if(x.contains("resize")||x.contains("reduced")||x.contains("reprodu"))return "measurement unstable";
         if(x.contains("dial"))return "dial fit uncertain";

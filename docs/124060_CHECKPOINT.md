@@ -1,5 +1,21 @@
 # Rolex Submariner 124060 — alpha70 checkpoint (alpha73 status below)
 
+## alpha75 status (2026-10-02)
+
+The calibrator was re-run with 44 genuine Bob's listings (run `37008521836`): 25 development, 8 validation and 9 holdout watches. All seven checks passed validation and holdout with 0 outliers, so the 3–9 axis and the 12 gap are now judged too.
+
+| Check | Clear | Check closely beyond |
+|---|---|---|
+| 12 rotation | −1.18° to +1.59° | −2.11° / +2.51° |
+| 12 gap | 0.025–0.052 R | 0.016 / 0.062 R |
+| 12 centring | −0.020 to +0.018 w | −0.033 / +0.031 w |
+| Ring radius | 0.811–0.823 R | 0.807 / 0.827 R |
+| Spacing RMS | ≤ 0.80° | > 1.13° |
+| 3–9 axis | ≤ 0.0094 R | > 0.0130 R |
+| 12–6 axis | ≤ 0.0057 R | > 0.0084 R |
+
+The 12 hand check now reads "a hand is touching or right beside the 12 triangle". A hand beside the triangle can merge with its outline (the GMT field set showed false STRONG results), so withholding is deliberate. The shared HandIntrusion code is unchanged.
+
 ## alpha74 status (2026-10-02)
 
 Verdicts are back on with **provisional** bands from the repaired calibrator run `37004915187`. Measurement went through the production route. 12 development genuine watches set the limits; 0 outliers were rejected; validation and holdout genuine watches were 100% clear. The product owner accepted these bands as provisional.
