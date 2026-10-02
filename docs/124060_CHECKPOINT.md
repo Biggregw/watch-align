@@ -1,5 +1,12 @@
 # Rolex Submariner 124060 — alpha70 checkpoint (alpha73 status below)
 
+## alpha76 status (2026-10-02)
+
+- **12 gap is back to measured-only** (`GAP_JUDGED=false`). Its band flagged a genuine stock photo at 0.023 R, and the B2 study showed genuine and replica gaps overlap and depend on photo style.
+- **New 124060-only hand check:** a hand lying along a baton (the seconds hand over the 9 in a user photo) shows as a dark stripe with bright lume on both sides. That baton is now "hand in the way" instead of measured. There were 0 false flags on the 63-photo batch.
+- **Overlay wording:** a measured 3 or 9 without a verdict says "needs the 3/9 baton" or "reading not steady enough".
+- **Known open issue:** a clean 3 baton on one user photo is rejected as low confidence: the shared GMT baton detector fits its long edges about 5° apart. Fixing that touches shared GMT code and needs approval.
+
 ## alpha75 status (2026-10-02)
 
 The calibrator was re-run with 44 genuine Bob's listings (run `37008521836`): 25 development, 8 validation and 9 holdout watches. All seven checks passed validation and holdout with 0 outliers, so the 3–9 axis and the 12 gap are now judged too.

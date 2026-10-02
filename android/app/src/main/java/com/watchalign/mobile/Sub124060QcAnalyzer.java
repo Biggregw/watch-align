@@ -330,6 +330,7 @@ final class Sub124060QcAnalyzer {
             HandIntrusion.Result hi=HandIntrusion.measure(img,w,h,cx,cy,r,g.polygon(),g.tickAfter,g.tickCentre,g.tickBefore);
             if(hi.present){o.status=Status.HAND;o.note="a hand is next to it";return o;}
         }
+        if(g!=null&&handAlongBaton(img,w,h,g)){o.status=Status.HAND;o.note="a hand lies across it";return o;}
         if(!b.stable){o.status=Status.LOW_CONFIDENCE;o.note=b.lowReason;return o;}
         if(!Double.isFinite(twelveClockDeg)){o.status=Status.LOW_CONFIDENCE;o.note="the 12 was not found, so the dial orientation is unknown";return o;}
 
@@ -340,6 +341,47 @@ final class Sub124060QcAnalyzer {
         if(!batonRepeatable(b))o.note="resize diagnostic only: "+batonResizeReason(b)+"; no 124060 marker tolerance uses this yet";
         o.status=Status.FOUND;
         return o;
+    }
+
+    /**
+     * 124060-only (alpha76): a thin hand lying ALONG a baton (user photo: the seconds hand over the 9)
+     * barely touches the wedge HandIntrusion samples, and inside the baton it shows as a DARK stripe
+     * across the bright lume. Sample the lume interior row by row (rows across the baton width, at
+     * 15-85% of its length, central 70% of its width): a clean baton is uniformly bright, a hand
+     * leaves a notch darker than HAND_NOTCH of the row's bright level. A hand is present when more
+     * than HAND_ROW_FRACTION of rows carry a notch. Shared GMT code is not touched.
+     */
+    static final double HAND_NOTCH=0.6, HAND_ROW_FRACTION=0.4;
+    static boolean handAlongBaton(DialEdgeEllipseFit.Intensity img,int w,int h,GmtSixLandmarkAnalyzer.Geometry g){
+        if(img==null||g==null||g.outerLeft==null||g.outerRight==null||g.innerLeft==null||g.innerRight==null)return false;
+        double[] il=g.innerLeft,ir=g.innerRight,ol=g.outerLeft,or=g.outerRight;
+        double width=Math.hypot(ol[0]-or[0],ol[1]-or[1]);
+        if(!(width>=8))return false;
+        int rows=24,cols=Math.max(9,(int)Math.round(width*0.7));
+        int notched=0,used=0;
+        for(int i=0;i<rows;i++){
+            double t=0.15+0.70*i/(rows-1.0);
+            double lx=il[0]+t*(ol[0]-il[0]),ly=il[1]+t*(ol[1]-il[1]),rx=ir[0]+t*(or[0]-ir[0]),ry=ir[1]+t*(or[1]-ir[1]);
+            double[] v=new double[cols];boolean ok=true;
+            for(int j=0;j<cols;j++){
+                double u=0.15+0.70*j/(cols-1.0),x=lx+u*(rx-lx),y=ly+u*(ry-ly);
+                if(x<1||y<1||x>=w-2||y>=h-2){ok=false;break;}
+                v[j]=img.at(x,y);
+            }
+            if(!ok)continue;
+            double[] sorted=v.clone();java.util.Arrays.sort(sorted);
+            double bright=sorted[(int)(0.75*(cols-1))];
+            if(!(bright>40))continue;
+            used++;
+            // A hand is a dark notch with bright lume on BOTH sides. A misfitted outline that
+            // reaches the dark surround on one side is not a hand.
+            int k=0;for(int j=1;j<cols;j++)if(v[j]<v[k])k=j;
+            double leftMax=0,rightMax=0;
+            for(int j=0;j<k;j++)leftMax=Math.max(leftMax,v[j]);
+            for(int j=k+1;j<cols;j++)rightMax=Math.max(rightMax,v[j]);
+            if(v[k]<HAND_NOTCH*bright&&leftMax>=0.85*bright&&rightMax>=0.85*bright)notched++;
+        }
+        return used>=rows/2&&notched>HAND_ROW_FRACTION*used;
     }
 
     /** Strict one-pixel diagnostic only. It is not currently a 124060 FOUND/LOW_CONFIDENCE gate. */

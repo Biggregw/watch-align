@@ -127,7 +127,7 @@ public class Sub124060Test {
         assertTrue(s.contains("12 overall alignment: CLEAR"));
         assertFalse(s.contains("CHECK CLOSELY"));
         assertTrue(s.contains("12 gap to minute track: 0.041"));
-        assertFalse(s.contains(Sub124060Summary.MEASURED));   // every 12 value is now judged
+        assertTrue(s.contains("0.041 of the dial radius between the triangle's top edge and the minute-track inner edge · "+Sub124060Summary.MEASURED));   // gap measured-only
         assertTrue(s.contains("Batons 3/6/9: 3/3 detected, 3/3 measurable"));
         assertTrue(s.contains("Round markers: 8/8 detected, 7/8 measurable (8: detected, not measured (hand in the way))"));
         assertTrue(s.contains("GMT-style whole-dial markup"));
