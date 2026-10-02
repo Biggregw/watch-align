@@ -1,0 +1,103 @@
+name: Watch family calibrator
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Exact watch reference configured under calibration/models"
+        required: true
+        default: "124060"
+      fresh:
+        description: "Discard this model's cached calibration workspace and discover again"
+        type: boolean
+        default: true
+  push:
+    branches:
+      - feature/watch-family-calibrator
+    paths:
+      - 'tools/watch_calibrator/**'
+      - 'calibration/models/**'
+      - '.github/workflows/watch-family-calibrator.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: watch-family-calibrator-${{ github.ref }}-${{ github.event.inputs.model || '124060' }}
+  cancel-in-progress: true
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+      MODEL: ${{ github.event.inputs.model || '124060' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Python dependencies
+        run: python -m pip install -q -r tools/dataset_harvester/requirements.txt
+      - name: Install Android platform for shared detector compilation
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Pure calibrator tests
+        run: python -m unittest discover -s tools/watch_calibrator/tests -v
+      - name: Existing harvester/research regression tests
+        run: python -m unittest discover -s tools/dataset_harvester/tests -v
+      - name: Restore OpenCV desktop-harness jar
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Restore autonomous image cache
+        uses: actions/cache@v4
+        with:
+          path: datasets/watch_calibrator/${{ env.MODEL }}/dataset/images
+          key: watch-calibrator-${{ env.MODEL }}-images-${{ github.run_id }}
+          restore-keys: |
+            watch-calibrator-${{ env.MODEL }}-images-
+            submariner-research-images-
+      - name: End-to-end autonomous discovery, measurement and calibration
+        run: |
+          fresh=""
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event.inputs.fresh }}" = "true" ]; then fresh="--fresh"; fi
+          python3 tools/watch_calibrator/run.py "$MODEL" $fresh | tee watch-calibrator.log
+      - name: Summary
+        if: always()
+        run: |
+          F="datasets/watch_calibrator/$MODEL/calibration.md"
+          S="datasets/watch_calibrator/$MODEL/run_status.json"
+          R="datasets/watch_calibrator/$MODEL/replica_evidence.json"
+          if [ -f "$F" ]; then cat "$F" >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$R" ]; then echo '### Replica stress evidence' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$R" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$S" ]; then echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$S" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Upload complete calibration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: watch-calibrator-${{ env.MODEL }}-${{ github.run_id }}
+          path: |
+            datasets/watch_calibrator/${{ env.MODEL }}/discovered_candidates.csv
+            datasets/watch_calibrator/${{ env.MODEL }}/discovered_candidates.json
+            datasets/watch_calibrator/${{ env.MODEL }}/dataset/acquired_images.csv
+            datasets/watch_calibrator/${{ env.MODEL }}/dataset/candidate_summary.csv
+            datasets/watch_calibrator/${{ env.MODEL }}/dataset/acquisition_report.*
+            datasets/watch_calibrator/${{ env.MODEL }}/replica_evidence.json
+            datasets/watch_calibrator/${{ env.MODEL }}/locked_split.csv
+            datasets/watch_calibrator/${{ env.MODEL }}/geometry/
+            datasets/watch_calibrator/${{ env.MODEL }}/frozen_before_holdout.*
+            datasets/watch_calibrator/${{ env.MODEL }}/calibration.*
+            datasets/watch_calibrator/${{ env.MODEL }}/run_status.json
+            watch-calibrator.log
+          if-no-files-found: warn
