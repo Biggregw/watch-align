@@ -16,6 +16,7 @@ keeps public RSS/direct-image evidence as a fail-closed fallback.
 from __future__ import annotations
 
 import argparse
+import base64
 import html
 import json
 import os
@@ -141,11 +142,12 @@ def reddit_oauth_image_refs(source_url: str, http, max_images: int) -> list[Imag
         return []
     try:
         if not _OAUTH_TOKEN:
+            basic = base64.b64encode(f"{client_id}:{client_secret}".encode("utf-8")).decode("ascii")
             token_response = http.post(
                 "https://www.reddit.com/api/v1/access_token",
                 data={"grant_type": "client_credentials"},
-                headers={"User-Agent": OAUTH_UA},
-                auth=(client_id, client_secret),
+                headers={"User-Agent": OAUTH_UA, "Authorization": f"Basic {basic}"},
+                api=True,
             )
             token_payload = json.loads(token_response.text)
             _OAUTH_TOKEN = str(token_payload.get("access_token") or "")
