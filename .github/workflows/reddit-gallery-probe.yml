@@ -35,3 +35,15 @@ jobs:
             iredd=$(grep -oE 'https?[^" ]*i\\.redd\\.it[^" ]*' /tmp/reddit-probe.out | sort -u | wc -l || true)
             echo "status=$code bytes=$bytes media_metadata=$media gallery_data=$gallery i_redd_it_refs=$iredd"
           done
+
+          echo '--- RepTimeQC RSS album coverage'
+          for query in '124060' '124060 imgur' '124060 VSF imgur' '124060 Clean imgur' '124060 ARF imgur'; do
+            encoded=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote_plus(sys.argv[1]))' "$query")
+            url="https://www.reddit.com/r/RepTimeQC/search.rss?q=$encoded&restrict_sr=1&sort=relevance&t=all&limit=100"
+            code=$(curl -L -A "$UA" -H 'Accept: application/atom+xml,application/xml,text/xml' -sS -o /tmp/reddit-search.rss -w '%{http_code}' --max-time 20 "$url")
+            entries=$(grep -o '<entry>' /tmp/reddit-search.rss | wc -l || true)
+            albums=$(grep -oE 'https?://(www\\.)?imgur\\.com/a/[A-Za-z0-9_-]+' /tmp/reddit-search.rss | sed 's/&amp;.*//' | sort -u || true)
+            album_count=$(printf '%s\n' "$albums" | sed '/^$/d' | wc -l)
+            echo "query=$query status=$code entries=$entries unique_imgur_albums=$album_count"
+            printf '%s\n' "$albums" | sed '/^$/d' | head -20
+          done
