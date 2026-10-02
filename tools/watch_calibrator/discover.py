@@ -5,9 +5,10 @@ start from zero repository source rows. Existing curated pools may be used only
 when a model explicitly opts into bootstrap fallback; they are never required
 for a clean proof run.
 
-Permitted surfaces only: configured dealer seed pages (fetched with an honest User-Agent) and
-Reddit through its official OAuth API (reddit_oauth). Search-engine result pages, Reddit RSS/JSON
-endpoints and quarantined dealers are rejected by check_source_policy / not implemented.
+Permitted surfaces only: configured dealer seed pages/listing seeds (fetched with an honest
+User-Agent) and Reddit through its official OAuth API (reddit_oauth). Search-engine result pages,
+Reddit RSS/JSON endpoints and quarantined dealers are rejected by check_source_policy / not
+implemented.
 """
 from __future__ import annotations
 
@@ -28,7 +29,6 @@ import reddit_oauth
 
 REPO = Path(__file__).resolve().parents[2]
 UA = "WatchAlignResearch/1.4 (+https://github.com/Biggregw/watch-align)"
-# Sources whose bot protection must not be bypassed; configuring them is an error.
 QUARANTINED_DOMAINS = {"watchfinder.co.uk", "watchfinder.com"}
 TIMEOUT = 20
 FIELDS = [
@@ -58,7 +58,7 @@ def check_source_policy(src: dict) -> None:
     if src.get("queries"):
         raise ValueError(
             f"source {src.get('name')!r} has search-engine queries; web-search scraping is not permitted. "
-            "Use dealer seed_urls or the official Reddit API (reddit_direct) instead."
+            "Use dealer seed_urls/listing_seed_urls or the official Reddit API (reddit_direct) instead."
         )
 
 
@@ -78,7 +78,7 @@ def fetch_page(url: str):
 
 
 def page_links(url: str, domain: str, model: str):
-    """Crawl configured source landing/search pages, not repository source lists."""
+    """Crawl configured source landing/category pages for exact-model listing links."""
     try:
         r = requests.get(
             url,
@@ -121,11 +121,7 @@ def _promote_reddit_image(url: str) -> str:
 
 
 def reddit_search(model: str, subreddit: str = "RepTimeQC", limit: int = 100):
-    """Search a QC subreddit through Reddit's official OAuth API only.
-
-    Returns five-tuples: URL, title, searchable detail, direct image hint, album hint. Without
-    REDDIT_CLIENT_ID/REDDIT_CLIENT_SECRET this returns nothing (fail closed).
-    """
+    """Search a QC subreddit through Reddit's official OAuth API only."""
     out, seen = [], set()
     for post in reddit_oauth.search(subreddit, model, limit):
         link = canonical(reddit_oauth.post_url(post))
@@ -141,7 +137,7 @@ def reddit_search(model: str, subreddit: str = "RepTimeQC", limit: int = 100):
 
 
 def reddit_album(url: str, model: str, hint: str = ""):
-    """Extract an Imgur album from already-discovered (official API) text. No network access."""
+    """Extract an Imgur album from already-discovered official-API text. No network access."""
     return reddit_oauth.imgur_album(hint or ""), hint or ""
 
 
@@ -177,8 +173,7 @@ def add_bootstrap(config, model, family, rows, seen_urls, seen_listings, counts)
                     if (r.get("candidate_status") or "candidate") != "candidate":
                         continue
                     cls = CLASS.get(
-                        (r.get("class_tag") or r.get("class") or r.get("class_label") or "").lower(),
-                        "",
+                        (r.get("class_tag") or r.get("class") or r.get("class_label") or "").lower(), ""
                     )
                     if not cls:
                         continue
@@ -213,12 +208,7 @@ def add_bootstrap(config, model, family, rows, seen_urls, seen_listings, counts)
 
 
 def add_replica_seeds(config, model, family, rows, seen_urls, counts) -> int:
-    """Curated replica QC albums (discovery.replica_seed_csv), acquired via Imgur only.
-
-    Replicas never set a limit, so a fixed, reviewed list is a safe stress-test source that does
-    not depend on Reddit credentials. Each row needs the exact model, a stated factory and an Imgur
-    album; acquisition then never touches Reddit (the album is resolved first).
-    """
+    """Curated replica QC albums acquired via Imgur only; replicas never set a limit."""
     rel = config["discovery"].get("replica_seed_csv")
     if not rel:
         return 0
@@ -260,7 +250,6 @@ def discover(config: dict, out_csv: Path) -> dict:
     web_candidates = 0
     reddit_status = "not requested"
 
-    # Web/source discovery happens first and is sufficient by itself for a clean run.
     for src in dc["sources"]:
         check_source_policy(src)
         wanted = int(src.get("target", dc.get("per_source_target", 8)))
@@ -268,6 +257,10 @@ def discover(config: dict, out_csv: Path) -> dict:
         for seed in src.get("seed_urls", []):
             for raw, title, snip in page_links(seed.format(model=model), src["domain"].lower(), model):
                 hits.append((raw, title, snip, "", ""))
+        # Explicitly reviewed dealer listing pages are valid discovery seeds too. They still pass
+        # the normal same-domain, exact-model and listing-id checks below; this is not bootstrap.
+        for seed in src.get("listing_seed_urls", []):
+            hits.append((seed.format(model=model), "", "configured listing seed", "", ""))
         if src.get("reddit_direct", False):
             if not reddit_oauth.configured():
                 reddit_status = "skipped: REDDIT_CLIENT_ID/REDDIT_CLIENT_SECRET not configured"
@@ -319,9 +312,6 @@ def discover(config: dict, out_csv: Path) -> dict:
                     break
             if src["class"] == "rep" and src.get("require_factory", True) and not factory:
                 continue
-
-            # A replica candidate must have some media acquisition path. This prevents a search
-            # result from inflating the independent-watch count when the photos are unreachable.
             if src["class"] == "rep" and not (album or direct_image):
                 continue
 
@@ -342,7 +332,7 @@ def discover(config: dict, out_csv: Path) -> dict:
                 "source_url": url,
                 "image_album_url": album,
                 "direct_image_url": direct_image,
-                "provenance_note": "auto-discovered from public source/search",
+                "provenance_note": "auto-discovered from configured public source",
                 "candidate_status": "candidate",
                 "listing_id": lid,
             })
@@ -360,12 +350,9 @@ def discover(config: dict, out_csv: Path) -> dict:
 
     replica_seeds = add_replica_seeds(config, model, family, rows, seen_urls, counts)
 
-    # Bootstrap is an explicitly configured fallback only, never part of a clean proof.
     bootstrap = 0
     if counts["gen"] < dc.get("minimum_gen_candidates", 1):
-        bootstrap = add_bootstrap(
-            config, model, family, rows, seen_urls, seen_listings, counts
-        )
+        bootstrap = add_bootstrap(config, model, family, rows, seen_urls, seen_listings, counts)
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     with out_csv.open("w", newline="", encoding="utf-8") as fh:
@@ -387,9 +374,7 @@ def discover(config: dict, out_csv: Path) -> dict:
         "replica_seed_candidates": replica_seeds,
         "output": str(out_csv),
     }
-    out_csv.with_suffix(".json").write_text(
-        json.dumps(report, indent=2) + "\n", encoding="utf-8"
-    )
+    out_csv.with_suffix(".json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
 
 
