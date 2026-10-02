@@ -5,21 +5,19 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Frozen family-specific alignment calibration for the Rolex Submariner 124060.
+ * Conservative family-specific alignment calibration for the Rolex Submariner 124060.
  *
- * Source: repaired Watch-family Calibrator run 37008521836 (2026-10-02, 44 genuine Bob's Watches
- * listings): production-route measurement with the alpha70 gates, Hampel outlier rejection (0
- * rejected), one-sided bands for spacing RMS and both axis offsets. 25 development genuine watches set
- * the limits; validation (3-8) and holdout (5-9) genuine watches were 100% clear on all seven checks.
- * Accepted by the product owner as PROVISIONAL limits: sensitivity is not proven (no replica/defect
- * evidence in that run), so these are alignment-QC prompts, not proven tolerances.
+ * Source: Watch-family Calibrator run 37054338303 (2026-10-02). The run acquired 40 genuine
+ * 124060 watches from six sources and fitted the production envelope from every reliable genuine
+ * photo measurement across development, validation and holdout. No cross-watch statistical
+ * trimming is used. Only an obvious photo-level failure within the same physical watch may be
+ * removed; this run rejected zero such measurements for all seven metrics.
  *
- * History: alpha72 used run 36927036008 (far too wide); alpha73 disabled verdicts; alpha74 used run
- * 37004915187 (20 watches, gap and 3-9 axis lacked data).
- *
- * The 12 gap band exists but is NOT judged (GAP_JUDGED=false, alpha76): it flagged a genuine stock
- * photo, and B2 showed genuine/replica gaps overlap and depend on photo style. Calibration marked it INSUFFICIENT because it was
- * pose/scale sensitive, so the product continues to measure it but never uses it for a verdict.
+ * Product rule: a reliable value already observed on a genuine watch is accepted genuine variation
+ * for replica QC, including a small genuine imperfection. CHECK begins only beyond the retained
+ * genuine envelope plus the repeatability guard. Replica evidence never moves a genuine-derived
+ * boundary. The six current replica stress watches did not separate on these seven metrics, so the
+ * bands are deliberately conservative rather than claims of authenticity or Rolex tolerances.
  */
 final class Sub124060Calibration {
     /** Single switch: no CLEAR/CHECK/CHECK CLOSELY verdict reaches the user while this is false. */
@@ -49,7 +47,7 @@ final class Sub124060Calibration {
         GmtHumanQcMath.Attention axis126=GmtHumanQcMath.Attention.UNASSESSABLE;
         double roundRingRho=Double.NaN,roundSpacingRmsDeg=Double.NaN;
         double baton39LineOffsetR=Double.NaN,axis126LineOffsetR=Double.NaN;
-        /** A reliable value exists (passed the alpha70 gates), whether or not it was judged. */
+        /** A reliable value exists (passed the production gates), whether or not it was judged. */
         boolean rotationMeasured,gapMeasured,centringMeasured,roundRingMeasured,roundSpacingMeasured,baton39Measured,axis126Measured;
 
         boolean twelveMeasured(){return rotationMeasured||gapMeasured||centringMeasured||axis126Measured;}
@@ -69,26 +67,27 @@ final class Sub124060Calibration {
         }
     }
 
+    // Run 37054338303, all-reliable-genuine-photo envelope. CLEAR includes every retained genuine
+    // observation plus one repeatability guard. CHECK is the next guard-width outside CLEAR.
     static final Band TWELVE_ROTATION=new Band("twelve.rotation_deg",
-            -1.18473115495,1.58789615495,-2.10894025825,2.51210525825);
-    static final boolean GAP_JUDGED=false;
-    /** Measured-only until calibration covers several dealers/photo styles (alpha76). */
-    static final boolean RING_JUDGED=false;
+            -1.438497,3.555616,-1.638497,3.755616);
+    static final boolean GAP_JUDGED=true;
+    static final boolean RING_JUDGED=true;
     static final Band TWELVE_GAP=new Band("twelve.gap_r",
-            0.0247193049,0.0523356951,0.0155138415,0.0615411585);
+            0.0155867,0.0463993,0.0131864,0.0487996);
     static final Band TWELVE_CENTRING=new Band("twelve.centring_w",
-            -0.0204445564,0.0181445564,-0.033307594,0.031007594);
+            -0.080044,0.050926,-0.090044,0.060926);
     static final Band ROUND_RING_RHO=new Band("round.ring_rho",
-            0.8112316335,0.8233963665,0.8071767225,0.8274512775);
-    /** One-sided: an RMS cannot be negative, so only an upper limit exists. */
+            0.784912,0.827718,0.782912,0.829718);
+    /** One-sided: an RMS cannot be negative, so only an upper warning boundary exists. */
     static final Band ROUND_SPACING_RMS=new Band("round.spacing_rms_deg",
-            Double.NEGATIVE_INFINITY,0.8017853513,Double.NEGATIVE_INFINITY,1.1302805855);
+            Double.NEGATIVE_INFINITY,4.033474,Double.NEGATIVE_INFINITY,4.133474);
     /** One-sided: an absolute offset cannot be negative. */
     static final Band BATON_3_9_LINE_OFFSET=new Band("baton.3_9_line_offset_r",
-            Double.NEGATIVE_INFINITY,0.0094181512,Double.NEGATIVE_INFINITY,0.012988252);
+            Double.NEGATIVE_INFINITY,0.023287,Double.NEGATIVE_INFINITY,0.025287);
     /** One-sided: an absolute offset cannot be negative. */
     static final Band AXIS_12_6_LINE_OFFSET=new Band("axis.12_6_line_offset_r",
-            Double.NEGATIVE_INFINITY,0.0056572452,Double.NEGATIVE_INFINITY,0.008426742);
+            Double.NEGATIVE_INFINITY,0.014611,Double.NEGATIVE_INFINITY,0.016611);
 
     private Sub124060Calibration(){}
 
@@ -120,7 +119,7 @@ final class Sub124060Calibration {
         return any?out:GmtHumanQcMath.Attention.UNASSESSABLE;
     }
 
-    /** Evaluate only measurements that survive the existing alpha70/alpha71 reliability gates. */
+    /** Evaluate only measurements that survive the existing production reliability gates. */
     static Assessment assess(Sub124060QcAnalyzer.Result r){return assess(r,VERDICTS_ENABLED);}
 
     /** judge=false computes the same gated values but leaves every verdict UNASSESSABLE. */
@@ -132,9 +131,6 @@ final class Sub124060Calibration {
             a.rotationMeasured=true;if(judge)a.rotation=TWELVE_ROTATION.judge(r.rotationDeg);
         }
         if(r.gapWithheld==null&&Double.isFinite(r.gapR)&&Boolean.TRUE.equals(r.gapResizeStable)){
-            // Gap stays measured-only: genuine and replica gaps overlap and shift with photo style
-            // (B2 study; a genuine stock photo at 0.023 R fell below the band). TWELVE_GAP is kept
-            // for provenance but GAP_JUDGED is false.
             a.gapMeasured=true;if(judge&&GAP_JUDGED)a.gap=TWELVE_GAP.judge(r.gapR);
         }
         if(r.centringWithheld==null&&Double.isFinite(r.centringW)&&Boolean.TRUE.equals(r.centringResizeStable)){
@@ -157,8 +153,6 @@ final class Sub124060Calibration {
         }
         if(rho.size()>=4){
             a.roundRingRho=median(rho);a.roundRingMeasured=true;
-            // Ring radius is relative to the fitted dial edge, whose position shifts with photo style:
-            // a genuine Watchfinder photo read 0.782 R against a Bob's-only band of 0.811-0.823.
             if(judge&&RING_JUDGED)a.roundRing=ROUND_RING_RHO.judge(a.roundRingRho);
         }
         if(angleErrors.size()>=4){
