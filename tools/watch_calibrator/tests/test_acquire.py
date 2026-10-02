@@ -1,6 +1,8 @@
 import json
+import os
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 import sys
 
 HERE = Path(__file__).resolve().parents[1]
@@ -20,6 +22,7 @@ class FakeHttp:
         self.json_fail = json_fail
         self.rss_fail = rss_fail
         self.calls = []
+        self.post_calls = []
 
     def get(self, url, headers=None, api=False):
         self.calls.append((url, api))
@@ -27,14 +30,23 @@ class FakeHttp:
             if self.rss_fail:
                 raise RuntimeError("rss blocked")
             return Response(text=self.rss)
+        if "oauth.reddit.com/by_id/" in url:
+            return Response({"data": {"children": [{"data": self.post}]}})
         if ".json" in url:
             if self.json_fail:
                 raise RuntimeError("json blocked")
             return Response([{"data": {"children": [{"data": self.post}]}}])
         raise AssertionError(f"unexpected url {url}")
 
+    def post(self, url, data, headers=None, auth=None):
+        self.post_calls.append((url, data, auth))
+        return Response({"access_token": "test-token", "token_type": "bearer"})
+
 
 class RedditAcquireTest(unittest.TestCase):
+    def setUp(self):
+        acquire._OAUTH_TOKEN = None
+
     def test_direct_reddit_image_is_acquired_from_post_json(self):
         http = FakeHttp(post={
             "url_overridden_by_dest": "https://i.redd.it/watch123.jpg",
@@ -66,7 +78,24 @@ class RedditAcquireTest(unittest.TestCase):
             [r.url for r in refs],
         )
 
-    def test_public_post_rss_expands_multiple_native_images_when_json_is_blocked(self):
+    def test_oauth_expands_native_gallery_when_credentials_are_configured(self):
+        http = FakeHttp(post={
+            "gallery_data": {"items": [{"media_id": "a"}, {"media_id": "b"}]},
+            "media_metadata": {
+                "a": {"s": {"u": "https://i.redd.it/a.jpg"}},
+                "b": {"s": {"u": "https://i.redd.it/b.jpg"}},
+            },
+        })
+        with patch.dict(os.environ, {"REDDIT_CLIENT_ID": "id", "REDDIT_CLIENT_SECRET": "secret"}):
+            refs = acquire.reddit_oauth_image_refs(
+                "https://www.reddit.com/r/RepTimeQC/comments/abc123/qc/", http, 10
+            )
+        self.assertEqual(["https://i.redd.it/a.jpg", "https://i.redd.it/b.jpg"], [r.url for r in refs])
+        self.assertEqual("https://www.reddit.com/api/v1/access_token", http.post_calls[0][0])
+        self.assertEqual(("id", "secret"), http.post_calls[0][2])
+        self.assertTrue(any("oauth.reddit.com/by_id/t3_abc123" in u for u, _ in http.calls))
+
+    def test_public_post_rss_expands_multiple_images_if_the_feed_exposes_them(self):
         rss = '''<?xml version="1.0" encoding="UTF-8"?>
         <feed xmlns="http://www.w3.org/2005/Atom">
           <entry>
@@ -92,7 +121,7 @@ class RedditAcquireTest(unittest.TestCase):
         )
         self.assertTrue(any(url.endswith("/.rss") for url, _ in http.calls))
 
-    def test_direct_hint_survives_when_both_reddit_metadata_paths_are_blocked(self):
+    def test_direct_hint_survives_when_both_anonymous_metadata_paths_are_blocked(self):
         http = FakeHttp(json_fail=True, rss_fail=True)
         row = {
             "source_url": "https://www.reddit.com/r/RepTimeQC/comments/abc123/qc/",
