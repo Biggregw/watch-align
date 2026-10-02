@@ -109,7 +109,7 @@ final class Sub124060Overlay {
                 x.measured=b.status==Sub124060QcAnalyzer.Status.FOUND;
                 x.attention=x.measured?d.calibration.baton(x.label):GmtHumanQcMath.Attention.UNASSESSABLE;
                 x.note=statusReason(b.status,b.note);
-                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note=Sub124060Calibration.VERDICTS_ENABLED?"measured, not judged":null;
+                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note=Sub124060Calibration.VERDICTS_ENABLED?unjudgedBatonNote(res,b):null;
                 double[] expected=res.frame.at(phi12+Math.toRadians(b.position.angleFromTwelveDeg),0.817);
                 x.expectedX=expected[0];x.expectedY=expected[1];
                 if(b.result!=null&&b.result.geometry!=null){
@@ -162,6 +162,18 @@ final class Sub124060Overlay {
     }
 
     private Sub124060Overlay(){}
+
+    /** Why a measured baton has no verdict: 3 and 9 are judged as a pair (the 3-9 axis). */
+    static String unjudgedBatonNote(Sub124060QcAnalyzer.Result res,Sub124060QcAnalyzer.Baton b){
+        String l=b.position.label;
+        if("3".equals(l)||"9".equals(l)){
+            String other="3".equals(l)?"9":"3";
+            for(Sub124060QcAnalyzer.Baton o:res.batons)
+                if(o.position.label.equals(other)&&o.status!=Sub124060QcAnalyzer.Status.FOUND)return "needs the "+other+" baton";
+            return "reading not steady enough";
+        }
+        return "reading not steady enough";
+    }
 
     static int colour(GmtHumanQcMath.Attention a){
         switch(a){case CLEAR:return CLEAR;case CHECK:return CHECK;case STRONG:return STRONG;default:return WITHHELD;}

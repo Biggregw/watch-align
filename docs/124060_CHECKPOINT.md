@@ -1,5 +1,13 @@
 # Rolex Submariner 124060 — alpha70 checkpoint (alpha73 status below)
 
+## alpha76 status (2026-10-02)
+
+- **12 gap is back to measured-only** (`GAP_JUDGED=false`). Its band flagged a genuine stock photo at 0.023 R, and the B2 study showed genuine and replica gaps overlap and depend on photo style.
+- **Ring radius is back to measured-only** (`RING_JUDGED=false`). A genuine Watchfinder photo read 0.782 R against the Bob's-only band of 0.811–0.823 and flagged all 8 markers. Ring radius and gap are relative to the fitted dial edge, which shifts with photo style, so they need multi-dealer calibration before they can judge. Rotation, centring, spacing and the axis offsets stay judged.
+- **New 124060-only hand check:** a hand lying along a baton (the seconds hand over the 9 in a user photo) shows as a dark stripe with bright lume on both sides. That baton is now "hand in the way" instead of measured. There were 0 false flags on the 63-photo batch.
+- **Overlay wording:** a measured 3 or 9 without a verdict says "needs the 3/9 baton" or "reading not steady enough".
+- **Clean 3 baton no longer rejected:** both edge-level passes traced one long side about 5° off. A third "mixed" pass takes each side from the pass that traced it parallel (0.4°). It is gated by `GmtSixLandmarkAnalyzer.MIXED_EDGE_PASS`, which only the 124060 route sets; GMT never runs it (GMT golden check confirms).
+
 ## alpha75 status (2026-10-02)
 
 The calibrator was re-run with 44 genuine Bob's listings (run `37008521836`): 25 development, 8 validation and 9 holdout watches. All seven checks passed validation and holdout with 0 outliers, so the 3–9 axis and the 12 gap are now judged too.

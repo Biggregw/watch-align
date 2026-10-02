@@ -17,7 +17,8 @@ import java.util.List;
  * History: alpha72 used run 36927036008 (far too wide); alpha73 disabled verdicts; alpha74 used run
  * 37004915187 (20 watches, gap and 3-9 axis lacked data).
  *
- * The 12 gap is calibrated from alpha75 (it passed the pose-sensitivity check with the larger set). Calibration marked it INSUFFICIENT because it was
+ * The 12 gap band exists but is NOT judged (GAP_JUDGED=false, alpha76): it flagged a genuine stock
+ * photo, and B2 showed genuine/replica gaps overlap and depend on photo style. Calibration marked it INSUFFICIENT because it was
  * pose/scale sensitive, so the product continues to measure it but never uses it for a verdict.
  */
 final class Sub124060Calibration {
@@ -70,6 +71,9 @@ final class Sub124060Calibration {
 
     static final Band TWELVE_ROTATION=new Band("twelve.rotation_deg",
             -1.18473115495,1.58789615495,-2.10894025825,2.51210525825);
+    static final boolean GAP_JUDGED=false;
+    /** Measured-only until calibration covers several dealers/photo styles (alpha76). */
+    static final boolean RING_JUDGED=false;
     static final Band TWELVE_GAP=new Band("twelve.gap_r",
             0.0247193049,0.0523356951,0.0155138415,0.0615411585);
     static final Band TWELVE_CENTRING=new Band("twelve.centring_w",
@@ -128,7 +132,10 @@ final class Sub124060Calibration {
             a.rotationMeasured=true;if(judge)a.rotation=TWELVE_ROTATION.judge(r.rotationDeg);
         }
         if(r.gapWithheld==null&&Double.isFinite(r.gapR)&&Boolean.TRUE.equals(r.gapResizeStable)){
-            a.gapMeasured=true;if(judge)a.gap=TWELVE_GAP.judge(r.gapR);
+            // Gap stays measured-only: genuine and replica gaps overlap and shift with photo style
+            // (B2 study; a genuine stock photo at 0.023 R fell below the band). TWELVE_GAP is kept
+            // for provenance but GAP_JUDGED is false.
+            a.gapMeasured=true;if(judge&&GAP_JUDGED)a.gap=TWELVE_GAP.judge(r.gapR);
         }
         if(r.centringWithheld==null&&Double.isFinite(r.centringW)&&Boolean.TRUE.equals(r.centringResizeStable)){
             a.centringMeasured=true;if(judge)a.centring=TWELVE_CENTRING.judge(r.centringW);
@@ -150,7 +157,9 @@ final class Sub124060Calibration {
         }
         if(rho.size()>=4){
             a.roundRingRho=median(rho);a.roundRingMeasured=true;
-            if(judge)a.roundRing=ROUND_RING_RHO.judge(a.roundRingRho);
+            // Ring radius is relative to the fitted dial edge, whose position shifts with photo style:
+            // a genuine Watchfinder photo read 0.782 R against a Bob's-only band of 0.811-0.823.
+            if(judge&&RING_JUDGED)a.roundRing=ROUND_RING_RHO.judge(a.roundRingRho);
         }
         if(angleErrors.size()>=4){
             a.roundSpacingRmsDeg=spacingRms(angleErrors);a.roundSpacingMeasured=Double.isFinite(a.roundSpacingRmsDeg);
