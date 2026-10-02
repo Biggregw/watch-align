@@ -2,6 +2,7 @@ package com.watchalign.mobile;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -20,35 +21,21 @@ public class Sub124060CalibrationTest {
     }
 
     @Test public void exactFrozenLimitsArePresent(){
-        assertEquals(-13.88038488935,Sub124060Calibration.TWELVE_ROTATION.clearLow,0);
-        assertEquals(15.22676818935,Sub124060Calibration.TWELVE_ROTATION.clearHigh,0);
-        assertEquals(-21.157173159025,Sub124060Calibration.TWELVE_ROTATION.checkLow,0);
-        assertEquals(22.503556459025,Sub124060Calibration.TWELVE_ROTATION.checkHigh,0);
-
-        assertEquals(-0.147616360146,Sub124060Calibration.TWELVE_CENTRING.clearLow,0);
-        assertEquals(0.136472106146,Sub124060Calibration.TWELVE_CENTRING.clearHigh,0);
-        assertEquals(-0.233275680438,Sub124060Calibration.TWELVE_CENTRING.checkLow,0);
-        assertEquals(0.222131426438,Sub124060Calibration.TWELVE_CENTRING.checkHigh,0);
-
-        assertEquals(0.7826128775166086,Sub124060Calibration.ROUND_RING_RHO.clearLow,0);
-        assertEquals(0.8526717081695576,Sub124060Calibration.ROUND_RING_RHO.clearHigh,0);
-        assertEquals(0.7650981698533712,Sub124060Calibration.ROUND_RING_RHO.checkLow,0);
-        assertEquals(0.870186415832795,Sub124060Calibration.ROUND_RING_RHO.checkHigh,0);
-
-        assertEquals(-5.587231836527973,Sub124060Calibration.ROUND_SPACING_RMS.clearLow,0);
-        assertEquals(6.370183430972006,Sub124060Calibration.ROUND_SPACING_RMS.clearHigh,0);
-        assertEquals(-9.573036925694634,Sub124060Calibration.ROUND_SPACING_RMS.checkLow,0);
-        assertEquals(10.355988520138666,Sub124060Calibration.ROUND_SPACING_RMS.checkHigh,0);
-
-        assertEquals(-0.08170984795356724,Sub124060Calibration.BATON_3_9_LINE_OFFSET.clearLow,0);
-        assertEquals(0.09378104194951688,Sub124060Calibration.BATON_3_9_LINE_OFFSET.clearHigh,0);
-        assertEquals(-0.14020681125459528,Sub124060Calibration.BATON_3_9_LINE_OFFSET.checkLow,0);
-        assertEquals(0.1522780052505449,Sub124060Calibration.BATON_3_9_LINE_OFFSET.checkHigh,0);
-
-        assertEquals(-0.1343132175899482,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.clearLow,0);
-        assertEquals(0.1396427365740998,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.clearHigh,0);
-        assertEquals(-0.21825249276636563,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.checkLow,0);
-        assertEquals(0.22358201175051726,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.checkHigh,0);
+        // Repaired calibrator run 37004915187 (provisional, accepted 2026-10-02).
+        assertEquals(-0.9604778124,Sub124060Calibration.TWELVE_ROTATION.clearLow,0);
+        assertEquals(1.4000408124,Sub124060Calibration.TWELVE_ROTATION.clearHigh,0);
+        assertEquals(2.186880354,Sub124060Calibration.TWELVE_ROTATION.checkHigh,0);
+        assertEquals(-0.0188698722,Sub124060Calibration.TWELVE_CENTRING.clearLow,0);
+        assertEquals(0.033305787,Sub124060Calibration.TWELVE_CENTRING.checkHigh,0);
+        assertEquals(0.8085422397,Sub124060Calibration.ROUND_RING_RHO.clearLow,0);
+        assertEquals(0.8280102603,Sub124060Calibration.ROUND_RING_RHO.clearHigh,0);
+        // One-sided metrics have no lower limit.
+        assertEquals(Double.NEGATIVE_INFINITY,Sub124060Calibration.ROUND_SPACING_RMS.clearLow,0);
+        assertEquals(0.74475573385,Sub124060Calibration.ROUND_SPACING_RMS.clearHigh,0);
+        assertEquals(Double.NEGATIVE_INFINITY,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.checkLow,0);
+        assertEquals(0.0052681464,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.clearHigh,0);
+        // Insufficient repeat data: measured only.
+        assertNull(Sub124060Calibration.BATON_3_9_LINE_OFFSET);
     }
 
     @Test public void worstUsesTheMatureGmtSeverityOrdering(){
@@ -87,20 +74,32 @@ public class Sub124060CalibrationTest {
         assertEquals("MEASURED / NOT YET JUDGED",Sub124060Summary.MEASURED);
     }
 
-    @Test public void verdictsAreSwitchedOffUntilARepairedCalibrationIsFrozen(){
-        assertFalse(Sub124060Calibration.VERDICTS_ENABLED);
+    @Test public void provisionalBandsJudgeAndFlagRealDeviations(){
+        assertTrue(Sub124060Calibration.VERDICTS_ENABLED);
         Sub124060QcAnalyzer.Result r=new Sub124060QcAnalyzer.Result();
-        r.rotationDeg=40;r.centringW=0.9;
         r.rotationResizeStable=true;r.centringResizeStable=true;
+        r.rotationDeg=0.3;r.centringW=0.005;
         Sub124060Calibration.Assessment a=Sub124060Calibration.assess(r);
-        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.rotation);
-        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.centring);
-        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.twelve());
-        assertTrue(a.rotationMeasured);assertTrue(a.centringMeasured);
-        assertEquals("MEASURED / NOT YET JUDGED",Sub124060Calibration.label(a.rotationMeasured,a.rotation));
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,a.twelve());
+        r.rotationDeg=1.8;   // between clear and check
+        assertEquals(GmtHumanQcMath.Attention.CHECK,Sub124060Calibration.assess(r).rotation);
+        r.rotationDeg=3.0;   // beyond check
+        assertEquals(GmtHumanQcMath.Attention.STRONG,Sub124060Calibration.assess(r).twelve());
+        r.rotationDeg=0.3;r.centringW=0.05;
+        assertEquals(GmtHumanQcMath.Attention.STRONG,Sub124060Calibration.assess(r).centring);
+        // An unstable value is never judged.
         r.rotationResizeStable=false;
         a=Sub124060Calibration.assess(r);
         assertFalse(a.rotationMeasured);
         assertEquals("NOT JUDGED",Sub124060Calibration.label(a.rotationMeasured,a.rotation));
+    }
+
+    @Test public void judgeFalseStillMeasuresWithoutVerdicts(){
+        Sub124060QcAnalyzer.Result r=new Sub124060QcAnalyzer.Result();
+        r.rotationDeg=5;r.rotationResizeStable=true;
+        Sub124060Calibration.Assessment a=Sub124060Calibration.assess(r,false);
+        assertTrue(a.rotationMeasured);
+        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.rotation);
+        assertEquals("MEASURED / NOT YET JUDGED",Sub124060Calibration.label(a.rotationMeasured,a.rotation));
     }
 }

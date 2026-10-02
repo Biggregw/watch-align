@@ -7,27 +7,22 @@ import java.util.List;
 /**
  * Frozen family-specific alignment calibration for the Rolex Submariner 124060.
  *
- * Source: Watch-family Calibrator run 36927036008, artifact
- * watch-calibrator-124060-36927036008, SHA-256
- * 5a23dcf54486d99aa6a0b50cbd7b7027c0a190a777030ff67586706b88d311da.
+ * Source: repaired Watch-family Calibrator run 37004915187 (branch fix/124060-measured-only,
+ * 2026-10-02): production-route measurement with the alpha70 gates, Hampel outlier rejection,
+ * one-sided bands for spacing RMS and the 12-6 axis offset. 12 development genuine watches set the
+ * limits; validation (3) and holdout (3-4) genuine watches were 100% clear; 0 outliers rejected.
+ * Accepted by the product owner as PROVISIONAL limits: the calibrator could not prove sensitivity
+ * (no replica/defect evidence in that run), so these are alignment-QC prompts, not proven tolerances.
+ * The 12 gap and the 3-9 baton axis had too little repeat data and stay measured-only.
  *
- * The calibrator froze limits from development genuine watches, then validation and holdout could
- * reject them but never move them. Replica evidence was stress-test evidence only. These limits are
- * provisional alignment-QC tolerances, not authenticity thresholds.
- *
- * ALPHA73: VERDICTS ARE SWITCHED OFF (VERDICTS_ENABLED=false). Review of run 36927036008 found the
- * bands too wide to flag anything (limits were stretched to the most extreme development watch,
- * the research measurement path skipped the alpha70 gates, one-sided metrics got symmetric bands,
- * and no evidence showed a band could flag a deviation). The values below are kept for provenance
- * only; the app reports MEASURED / NOT YET JUDGED until a repaired calibrator run passes its
- * sensitivity requirement and new bands are frozen here.
+ * History: alpha72 used run 36927036008, whose bands were far too wide; alpha73 disabled them.
  *
  * The 12-gap metric is deliberately absent. Calibration marked it INSUFFICIENT because it was
  * pose/scale sensitive, so the product continues to measure it but never uses it for a verdict.
  */
 final class Sub124060Calibration {
     /** Single switch: no CLEAR/CHECK/CHECK CLOSELY verdict reaches the user while this is false. */
-    static final boolean VERDICTS_ENABLED=false;
+    static final boolean VERDICTS_ENABLED=true;
     static final String MEASURED_ONLY="MEASURED / NOT YET JUDGED";
     static final class Band {
         final String key;
@@ -73,17 +68,19 @@ final class Sub124060Calibration {
     }
 
     static final Band TWELVE_ROTATION=new Band("twelve.rotation_deg",
-            -13.88038488935,15.22676818935,-21.157173159025,22.503556459025);
+            -0.9604778124,1.4000408124,-1.747317354,2.186880354);
     static final Band TWELVE_CENTRING=new Band("twelve.centring_w",
-            -0.147616360146,0.136472106146,-0.233275680438,0.222131426438);
+            -0.0188698722,0.0202618722,-0.031913787,0.033305787);
     static final Band ROUND_RING_RHO=new Band("round.ring_rho",
-            0.7826128775166086,0.8526717081695576,0.7650981698533712,0.870186415832795);
+            0.8085422397,0.8280102603,0.8020528995,0.8344996005);
+    /** One-sided: an RMS cannot be negative, so only an upper limit exists. */
     static final Band ROUND_SPACING_RMS=new Band("round.spacing_rms_deg",
-            -5.587231836527973,6.370183430972006,-9.573036925694634,10.355988520138666);
-    static final Band BATON_3_9_LINE_OFFSET=new Band("baton.3_9_line_offset_r",
-            -0.08170984795356724,0.09378104194951688,-0.14020681125459528,0.1522780052505449);
+            Double.NEGATIVE_INFINITY,0.74475573385,Double.NEGATIVE_INFINITY,1.05287188975);
+    /** Not calibrated (insufficient repeat data in run 37004915187): measured only. */
+    static final Band BATON_3_9_LINE_OFFSET=null;
+    /** One-sided: an absolute offset cannot be negative. */
     static final Band AXIS_12_6_LINE_OFFSET=new Band("axis.12_6_line_offset_r",
-            -0.1343132175899482,0.1396427365740998,-0.21825249276636563,0.22358201175051726);
+            Double.NEGATIVE_INFINITY,0.0052681464,Double.NEGATIVE_INFINITY,0.007901244);
 
     private Sub124060Calibration(){}
 
@@ -160,7 +157,7 @@ final class Sub124060Calibration {
         double[] p3=batonPoint(r.frame,b3),p9=batonPoint(r.frame,b9);
         if(p3!=null&&p9!=null){
             a.baton39LineOffsetR=lineOffset(p3,p9);a.baton39Measured=Double.isFinite(a.baton39LineOffsetR);
-            if(judge)a.baton39=BATON_3_9_LINE_OFFSET.judge(a.baton39LineOffsetR);
+            if(judge&&BATON_3_9_LINE_OFFSET!=null)a.baton39=BATON_3_9_LINE_OFFSET.judge(a.baton39LineOffsetR);
         }
 
         double[] p12=r.triangle!=null&&r.twelveWithheld==null?rectNorm(r.frame,r.triangle.cx,r.triangle.cy):null;

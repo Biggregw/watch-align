@@ -67,7 +67,7 @@ public class GenuineOfficialImageValidationTest {
                 }
 
                 if (sub124060) {
-                    // Measured-only contract: a summary exists, the dial is found, and nothing is judged.
+                    // A genuine official image must be found and must not be flagged by the 124060 calibration.
                     if (!rep.contains("SUMMARY\n") || !rep.contains(Sub124060Summary.EXPERIMENTAL)) {
                         failures.add("124060 summary missing @ " + name + "\n" + rep);
                     }
@@ -75,7 +75,7 @@ public class GenuineOfficialImageValidationTest {
                         failures.add("124060 dial not found on genuine official image @ " + name + "\n" + rep);
                     }
                     if (rep.contains("CHECK CLOSELY") || rep.contains("· CHECK")) {
-                        failures.add("124060 verdict shown while verdicts are disabled @ " + name + "\n" + rep);
+                        failures.add("genuine official image flagged by 124060 calibration @ " + name + "\n" + rep);
                     }
                 } else if (visualFirstGmt) {
                     // Current GMT report contract (alpha45+): plain-English summary first, the

@@ -106,7 +106,7 @@ final class Sub124060Summary {
         StringBuilder s=new StringBuilder();
         if(Sub124060Calibration.VERDICTS_ENABLED){
             s.append("Submariner 124060 path: the user-facing workflow and presentation follow the mature GMT QC contract, while model-specific 124060 geometry and frozen family calibration supply the verdicts. No GMT QC tolerance is copied into the 124060.\n");
-            s.append("Calibration provenance: Watch-family Calibrator run 36927036008; artifact watch-calibrator-124060-36927036008; development genuine froze the limits, validation/holdout could reject only, and replica evidence never moved a limit.\n");
+            s.append("Calibration provenance: repaired Watch-family Calibrator run 37004915187; 12 development genuine watches froze the limits, validation/holdout genuine watches were all clear. Provisional: sensitivity to real defects is not yet proven. The 12 gap and 3-9 axis stay measured-only.\n");
         }else{
             s.append("Submariner 124060 path: the user-facing workflow and presentation follow the mature GMT QC contract with model-specific 124060 geometry. Values are measured only; no 124060 tolerance is applied and no GMT QC tolerance is copied into the 124060.\n");
             s.append("Calibration status: provisional bands from calibrator run 36927036008 are disabled pending a repaired calibration (bands were too wide to flag deviations).\n");

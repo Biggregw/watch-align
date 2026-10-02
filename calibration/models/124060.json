@@ -165,5 +165,18 @@
       "defect_evidence": null
     }
   ],
-  "sensitivity_note": "max_clear_half_width (the largest clear band that is still useful for QC) and defect_evidence (CSV of metric,value for confirmed defective watches) are product decisions, deliberately left null. Until one is set for a metric it can reach at most HOLDOUT_PASSED_SENSITIVITY_UNPROVEN, never CALIBRATED."
+  "sensitivity_note": "max_clear_half_width (the largest clear band that is still useful for QC) and defect_evidence (CSV of metric,value for confirmed defective watches) are product decisions, deliberately left null. Until one is set for a metric it can reach at most HOLDOUT_PASSED_SENSITIVITY_UNPROVEN, never CALIBRATED.",
+  "accepted_provisional": {
+    "run": 37004915187,
+    "date": "2026-10-02",
+    "by": "product owner",
+    "metrics": [
+      "twelve.rotation_deg",
+      "twelve.centring_w",
+      "round.ring_rho",
+      "round.spacing_rms_deg",
+      "axis.12_6_line_offset_r"
+    ],
+    "note": "Bands frozen into Sub124060Calibration (alpha74) as provisional QC prompts; sensitivity not yet proven (no replica/defect evidence in that run)."
+  }
 }

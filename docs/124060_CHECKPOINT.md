@@ -1,5 +1,19 @@
 # Rolex Submariner 124060 — alpha70 checkpoint (alpha73 status below)
 
+## alpha74 status (2026-10-02)
+
+Verdicts are back on with **provisional** bands from the repaired calibrator run `37004915187`. Measurement went through the production route. 12 development genuine watches set the limits; 0 outliers were rejected; validation and holdout genuine watches were 100% clear. The product owner accepted these bands as provisional.
+
+| Check | Clear | Check closely beyond |
+|---|---|---|
+| 12 rotation | −0.96° to +1.40° | −1.75° / +2.19° |
+| 12 centring | −0.019 to +0.020 of triangle width | ±0.032 |
+| Round-marker ring radius | 0.8085–0.8280 R | 0.8021 / 0.8345 R |
+| Round-marker spacing RMS | ≤ 0.74° | > 1.05° |
+| 12–6 axis offset | ≤ 0.0053 R | > 0.0079 R |
+
+The 12 gap and the 3–9 axis did not have enough repeat data and stay measured-only. Sensitivity to real defects is not yet proven: the run had no replica evidence because the Reddit API secrets are not set. Expect some false alarms on oblique photos, and record them.
+
 ## alpha73 status (2026-10-02)
 
 - **App:** `1.3.0-alpha73` keeps the alpha71/72 GMT-style 124060 UI, but `Sub124060Calibration.VERDICTS_ENABLED=false`. Reliable values show as **MEASURED / NOT YET JUDGED** (neutral blue outline, dot badge); unmeasured items keep the grey dashed / dash state. No 124060 verdict reaches the user.

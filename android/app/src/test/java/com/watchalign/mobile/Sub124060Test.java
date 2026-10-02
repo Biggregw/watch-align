@@ -118,22 +118,21 @@ public class Sub124060Test {
         return r;
     }
 
-    @Test public void measuredTwelveIsReportedButNotJudged(){
+    @Test public void measuredTwelveIsJudgedByProvisionalCalibration(){
         String s=Sub124060Summary.build(measured());
         assertTrue(s.startsWith("SUMMARY\n"+Sub124060Summary.EXPERIMENTAL));
         assertTrue(s.contains("Dial: automatic edge fit"));
         assertTrue(s.contains("12 rotation: +0.40°"));
         assertTrue(s.contains("12 centring: +0.006"));
-        assertTrue(s.contains("12 overall alignment: MEASURED / NOT YET JUDGED"));
-        assertFalse(s.contains("CLEAR"));assertFalse(s.contains("CHECK CLOSELY"));
-        assertTrue(s.contains("NOT YET JUDGED. This is not a QC pass/fail result."));
+        assertTrue(s.contains("12 overall alignment: CLEAR"));
+        assertFalse(s.contains("CHECK CLOSELY"));
         assertTrue(s.contains("12 gap to minute track: 0.041"));
         assertTrue(s.contains(Sub124060Summary.MEASURED));
         assertTrue(s.contains("pose/scale sensitive"));
         assertTrue(s.contains("Batons 3/6/9: 3/3 detected, 3/3 measurable"));
         assertTrue(s.contains("Round markers: 8/8 detected, 7/8 measurable (8: detected, not measured (hand in the way))"));
         assertTrue(s.contains("GMT-style whole-dial markup"));
-        assertTrue(s.contains("Blue outline and dot = measured (not judged)"));
+        assertTrue(s.contains("Tick = nothing flagged"));
         assertTrue(s.contains(Sub124060Summary.NOT_CHECKED));
         assertNoGmtContamination(s);
     }
@@ -187,13 +186,11 @@ public class Sub124060Test {
         assertFalse(d.hasAnything());
     }
 
-    @Test public void overlayUsesGmtStyleContractInMeasuredOnlyMode(){
-        assertTrue(Sub124060Overlay.BANNER.contains("measured, not yet judged"));
+    @Test public void overlayUsesGmtStyleVerdictContract(){
+        assertTrue(Sub124060Overlay.BANNER.contains("provisional family calibration"));
         GmtHumanQcMath.Attention u=GmtHumanQcMath.Attention.UNASSESSABLE;
-        assertTrue(Sub124060Overlay.neutral(u,true));
-        assertEquals(Sub124060Overlay.MEASURED,Sub124060Overlay.ink(u,true));
-        assertEquals(Sub124060Overlay.WITHHELD,Sub124060Overlay.ink(u,false));
-        assertFalse(Sub124060Overlay.solid(u,false));
+        assertFalse(Sub124060Overlay.neutral(u,true));
+        assertEquals(Sub124060Overlay.WITHHELD,Sub124060Overlay.ink(u,true));
         assertEquals(Sub124060Overlay.CLEAR,Sub124060Overlay.colour(GmtHumanQcMath.Attention.CLEAR));
         assertEquals(Sub124060Overlay.CHECK,Sub124060Overlay.colour(GmtHumanQcMath.Attention.CHECK));
         assertEquals(Sub124060Overlay.STRONG,Sub124060Overlay.colour(GmtHumanQcMath.Attention.STRONG));
