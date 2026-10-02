@@ -9,26 +9,34 @@ import acquire  # noqa: E402
 
 
 class Response:
-    def __init__(self, payload):
-        self.text = json.dumps(payload)
+    def __init__(self, payload=None, text=None):
+        self.text = text if text is not None else json.dumps(payload)
 
 
 class FakeHttp:
-    def __init__(self, post=None, fail=False):
+    def __init__(self, post=None, rss=None, json_fail=False, rss_fail=False):
         self.post = post or {}
-        self.fail = fail
+        self.rss = rss or ""
+        self.json_fail = json_fail
+        self.rss_fail = rss_fail
         self.calls = []
 
-    def get(self, url, api=False):
+    def get(self, url, headers=None, api=False):
         self.calls.append((url, api))
-        if self.fail:
-            raise RuntimeError("blocked")
-        return Response([{"data": {"children": [{"data": self.post}]}}])
+        if url.endswith("/.rss"):
+            if self.rss_fail:
+                raise RuntimeError("rss blocked")
+            return Response(text=self.rss)
+        if ".json" in url:
+            if self.json_fail:
+                raise RuntimeError("json blocked")
+            return Response([{"data": {"children": [{"data": self.post}]}}])
+        raise AssertionError(f"unexpected url {url}")
 
 
 class RedditAcquireTest(unittest.TestCase):
     def test_direct_reddit_image_is_acquired_from_post_json(self):
-        http = FakeHttp({
+        http = FakeHttp(post={
             "url_overridden_by_dest": "https://i.redd.it/watch123.jpg",
             "preview": {"images": [{"source": {"url": "https://preview.redd.it/watch123.jpg?width=1080&amp;format=pjpg"}}]},
         })
@@ -41,7 +49,7 @@ class RedditAcquireTest(unittest.TestCase):
         self.assertTrue(http.calls[0][1])
 
     def test_native_gallery_keeps_gallery_order_and_full_resolution_sources(self):
-        http = FakeHttp({
+        http = FakeHttp(post={
             "gallery_data": {"items": [{"media_id": "two"}, {"media_id": "one"}]},
             "media_metadata": {
                 "one": {"s": {"u": "https://i.redd.it/one.jpg?x=1&amp;y=2"}},
@@ -58,8 +66,34 @@ class RedditAcquireTest(unittest.TestCase):
             [r.url for r in refs],
         )
 
-    def test_rss_direct_image_hint_requires_no_reddit_metadata_call(self):
-        http = FakeHttp(fail=True)
+    def test_public_post_rss_expands_multiple_native_images_when_json_is_blocked(self):
+        rss = '''<?xml version="1.0" encoding="UTF-8"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <entry>
+            <title>QC VSF 124060</title>
+            <link rel="alternate" href="https://www.reddit.com/r/RepTimeQC/comments/abc123/qc/" />
+            <content type="html">&lt;div&gt;
+              &lt;img src="https://preview.redd.it/one.jpg?width=1080&amp;amp;format=pjpg" /&gt;
+              &lt;a href="https://i.redd.it/two.png"&gt;second&lt;/a&gt;
+              &lt;img src="https://i.redd.it/three.jpg" /&gt;
+            &lt;/div&gt;</content>
+          </entry>
+        </feed>'''
+        http = FakeHttp(rss=rss, json_fail=True)
+        row = {
+            "source_url": "https://www.reddit.com/r/RepTimeQC/comments/abc123/qc/",
+            "image_album_url": "",
+            "direct_image_url": "https://i.redd.it/one.jpg",
+        }
+        refs = acquire.resolve_candidate(row, http, Path("."), 10)
+        self.assertEqual(
+            ["https://i.redd.it/one.jpg", "https://i.redd.it/two.png", "https://i.redd.it/three.jpg"],
+            [r.url for r in refs],
+        )
+        self.assertTrue(any(url.endswith("/.rss") for url, _ in http.calls))
+
+    def test_direct_hint_survives_when_both_reddit_metadata_paths_are_blocked(self):
+        http = FakeHttp(json_fail=True, rss_fail=True)
         row = {
             "source_url": "https://www.reddit.com/r/RepTimeQC/comments/abc123/qc/",
             "image_album_url": "",
@@ -67,17 +101,16 @@ class RedditAcquireTest(unittest.TestCase):
         }
         refs = acquire.resolve_candidate(row, http, Path("."), 10)
         self.assertEqual(["https://i.redd.it/qcface.jpg"], [r.url for r in refs])
-        self.assertEqual([], http.calls)
 
     def test_blocked_json_fails_closed_instead_of_crashing(self):
-        http = FakeHttp(fail=True)
+        http = FakeHttp(json_fail=True)
         refs = acquire.reddit_image_refs(
             "https://reddit.com/r/RepTimeQC/comments/abc123/qc/", http, 10
         )
         self.assertEqual([], refs)
 
     def test_non_reddit_media_hosts_are_not_silently_downloaded(self):
-        http = FakeHttp({"url_overridden_by_dest": "https://example.com/not-a-reddit-image.jpg"})
+        http = FakeHttp(post={"url_overridden_by_dest": "https://example.com/not-a-reddit-image.jpg"})
         refs = acquire.reddit_image_refs(
             "https://reddit.com/r/RepTimeQC/comments/abc123/qc/",
             http,
