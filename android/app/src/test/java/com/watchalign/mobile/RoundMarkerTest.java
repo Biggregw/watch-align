@@ -257,12 +257,13 @@ public class RoundMarkerTest {
         assertTrue(s,s.contains("All markers: 12 hand in the way"));
     }
 
-    @Test public void smallTurnIsNotStrongAtHighResolution(){
+    @Test public void genuineEnvelopeTurnIsClearEvenAtHighResolution(){
         // Genuine WOS CPO on a full-resolution crop: -1.6 deg, top edge agreeing, 105 px triangle.
         GmtHumanQcMath.RotationDecision r=GmtHumanQcMath.assessRotation(-1.6,-1.4,-0.02,105,GOOD,true);
-        assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,r.attention);
+        // A larger corroborated turn beyond the supported genuine envelope still receives attention.
         r=GmtHumanQcMath.assessRotation(-2.4,-2.2,-0.02,105,GOOD,true);
-        assertEquals(GmtHumanQcMath.Attention.STRONG,r.attention);
+        assertEquals(GmtHumanQcMath.Attention.CHECK,r.attention);
     }
 
     @Test public void lumeAndSurroundEdgesCountAsOneOutline(){
