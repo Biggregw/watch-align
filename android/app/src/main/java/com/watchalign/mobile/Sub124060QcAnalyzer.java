@@ -313,7 +313,10 @@ final class Sub124060QcAnalyzer {
     static Baton baton(Mat src,DialEdgeEllipseFit.Intensity img,int w,int h,double cx,double cy,double r,
                        GmtSixLandmarkAnalyzer.Position pos,double twelveClockDeg){
         Baton o=new Baton(pos);
-        GmtSixLandmarkAnalyzer.Result b=GmtSixLandmarkAnalyzer.analyse(src,cx,cy,r,pos,Double.NaN);
+        GmtSixLandmarkAnalyzer.Result b;
+        GmtSixLandmarkAnalyzer.MIXED_EDGE_PASS.set(Boolean.TRUE);
+        try{b=GmtSixLandmarkAnalyzer.analyse(src,cx,cy,r,pos,Double.NaN);}
+        finally{GmtSixLandmarkAnalyzer.MIXED_EDGE_PASS.set(Boolean.FALSE);}
         o.result=b;
         if(!b.valid){o.status=Status.NOT_FOUND;o.note=b.reason;return o;}
         GmtSixLandmarkAnalyzer.Geometry g=b.geometry;
@@ -337,7 +340,9 @@ final class Sub124060QcAnalyzer {
         // Reuse the mature GMT re-measurement machinery, but keep it diagnostic until the 124060
         // has its own marker tolerances. GMT's resampleStable() contains GMT verdict levels, so using
         // it here to change status would silently import GMT calibration into the Sub path.
-        GmtSixLandmarkAnalyzer.measureStability(src,cx,cy,r,b);
+        GmtSixLandmarkAnalyzer.MIXED_EDGE_PASS.set(Boolean.TRUE);
+        try{GmtSixLandmarkAnalyzer.measureStability(src,cx,cy,r,b);}
+        finally{GmtSixLandmarkAnalyzer.MIXED_EDGE_PASS.set(Boolean.FALSE);}
         if(!batonRepeatable(b))o.note="resize diagnostic only: "+batonResizeReason(b)+"; no 124060 marker tolerance uses this yet";
         o.status=Status.FOUND;
         return o;

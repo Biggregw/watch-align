@@ -6,7 +6,7 @@
 - **Ring radius is back to measured-only** (`RING_JUDGED=false`). A genuine Watchfinder photo read 0.782 R against the Bob's-only band of 0.811–0.823 and flagged all 8 markers. Ring radius and gap are relative to the fitted dial edge, which shifts with photo style, so they need multi-dealer calibration before they can judge. Rotation, centring, spacing and the axis offsets stay judged.
 - **New 124060-only hand check:** a hand lying along a baton (the seconds hand over the 9 in a user photo) shows as a dark stripe with bright lume on both sides. That baton is now "hand in the way" instead of measured. There were 0 false flags on the 63-photo batch.
 - **Overlay wording:** a measured 3 or 9 without a verdict says "needs the 3/9 baton" or "reading not steady enough".
-- **Known open issue:** a clean 3 baton on one user photo is rejected as low confidence: the shared GMT baton detector fits its long edges about 5° apart. Fixing that touches shared GMT code and needs approval.
+- **Clean 3 baton no longer rejected:** both edge-level passes traced one long side about 5° off. A third "mixed" pass takes each side from the pass that traced it parallel (0.4°). It is gated by `GmtSixLandmarkAnalyzer.MIXED_EDGE_PASS`, which only the 124060 route sets; GMT never runs it (GMT golden check confirms).
 
 ## alpha75 status (2026-10-02)
 

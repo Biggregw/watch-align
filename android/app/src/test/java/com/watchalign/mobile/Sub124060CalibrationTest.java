@@ -70,6 +70,11 @@ public class Sub124060CalibrationTest {
         assertEquals(0.10,Sub124060Calibration.lineOffset(new double[]{-0.8,0.1},new double[]{0.8,0.1}),1e-12);
     }
 
+    @Test public void mixedBatonEdgePassIsOffOutsideThe124060Route(){
+        // GMT calls GmtSixLandmarkAnalyzer without this pass; only Sub124060QcAnalyzer enables it.
+        assertFalse(GmtSixLandmarkAnalyzer.MIXED_EDGE_PASS.get());
+    }
+
     @Test public void ringRadiusIsMeasuredButNeverJudged(){
         assertFalse(Sub124060Calibration.RING_JUDGED);
     }

@@ -350,17 +350,39 @@ final class GmtSixLandmarkAnalyzer {
      * (user photo, date 4: 4.2 deg; with the band level 0.3 deg). Genuine batons fit within
      * 1.6 deg either way.
      */
+    /**
+     * 124060 only (alpha76): when both level passes fail the parallel test, retry with each long
+     * side taken from whichever pass traced it parallel to the other side (user photo, 3 baton:
+     * calibrated level traced the right side, band level the left; each pass alone fitted 5 deg
+     * apart, the mixed pair 0.4 deg). Off by default; only Sub124060QcAnalyzer turns it on, so the
+     * GMT route never runs this pass.
+     */
+    static final ThreadLocal<Boolean> MIXED_EDGE_PASS=ThreadLocal.withInitial(()->Boolean.FALSE);
+
     private static double[][] refine(Mat gray,double[][] q,double[][] frame,double r,String[] why,double[] parOut){
-        double[][] a=refine(gray,q,frame,r,why,parOut,false);
+        double[][] sa=new double[2][],sb=new double[2][];
+        double[][] a=refine(gray,q,frame,r,why,parOut,false,sa,null,null);
         if(a!=null)return a;
         String firstWhy=why[0];double firstPar=parOut[0];
-        double[][] b=refine(gray,q,frame,r,why,parOut,true);
+        double[][] b=refine(gray,q,frame,r,why,parOut,true,sb,null,null);
         if(b!=null){why[0]="";return b;}
+        if(Boolean.TRUE.equals(MIXED_EDGE_PASS.get())&&sa[0]!=null&&sa[1]!=null&&sb[0]!=null&&sb[1]!=null){
+            double p1=parallelDeg(sa[0],sb[1]),p2=parallelDeg(sb[0],sa[1]);
+            double[] L=p1<=p2?sa[0]:sb[0],R=p1<=p2?sb[1]:sa[1];
+            double[] parMix=new double[1];String[] whyMix={""};
+            double[][] c=refine(gray,q,frame,r,whyMix,parMix,false,null,L,R);
+            if(c!=null){why[0]="";parOut[0]=parMix[0];return c;}
+        }
         why[0]=firstWhy;parOut[0]=firstPar;
         return null;
     }
 
-    private static double[][] refine(Mat gray,double[][] q,double[][] frame,double r,String[] why,double[] parOut,boolean band){
+    private static double parallelDeg(double[] a,double[] b){
+        return Math.toDegrees(Math.acos(Math.min(1,Math.abs(a[2]*b[2]+a[3]*b[3]))));
+    }
+
+    private static double[][] refine(Mat gray,double[][] q,double[][] frame,double r,String[] why,double[] parOut,boolean band,
+                                     double[][] sidesOut,double[] forceLeft,double[] forceRight){
         try{
             final int w=gray.cols(),h=gray.rows();
             final byte[] px=new byte[w*h];gray.get(0,0,px);
@@ -370,8 +392,9 @@ final class GmtSixLandmarkAnalyzer {
                 return (a*(1-ffx)+b*ffx)*(1-ffy)+(c*(1-ffx)+d*ffx)*ffy;
             };
             double gx=(q[0][0]+q[1][0]+q[2][0]+q[3][0])/4,gy=(q[0][1]+q[1][1]+q[2][1]+q[3][1])/4;
-            double[] left=TriangleEdgeRefiner.fitSide(img,w,h,q[0],q[1],gx,gy,r,0.15,0.85,0.035,null,null,band);
-            double[] right=TriangleEdgeRefiner.fitSide(img,w,h,q[3],q[2],gx,gy,r,0.15,0.85,0.035,null,null,band);
+            double[] left=forceLeft!=null?forceLeft:TriangleEdgeRefiner.fitSide(img,w,h,q[0],q[1],gx,gy,r,0.15,0.85,0.035,null,null,band);
+            double[] right=forceRight!=null?forceRight:TriangleEdgeRefiner.fitSide(img,w,h,q[3],q[2],gx,gy,r,0.15,0.85,0.035,null,null,band);
+            if(sidesOut!=null){sidesOut[0]=left;sidesOut[1]=right;}
             double[] end=TriangleEdgeRefiner.fitSide(img,w,h,q[1],q[2],gx,gy,r,0.15,0.85,0.045,frame[0],frame[2],band);
             double[] inner=TriangleEdgeRefiner.fitSide(img,w,h,q[0],q[3],gx,gy,r,0.15,0.85,0.035,null,null,band);
             if(DEBUG)System.err.println("six refine: left="+(left!=null)+" right="+(right!=null)+" end="+(end!=null)+" inner="+(inner!=null));
