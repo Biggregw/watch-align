@@ -7,7 +7,7 @@ pass the app's own reliability gates. Gated-out values are blank and never reach
 
 Outputs, per (partition, class):
   {model}_{partition}_{class}_photo.csv         one row per photo (gated values)
-  {model}_{partition}_{class}_watch.csv         metric, physical_watch_id, median, photos
+  {model}_{partition}_{class}_watch.csv         metric, physical_watch_id, source_name, median, photos
   {model}_{partition}_{class}_repeatability.csv metric-level spread and pose-sensitivity evidence
 """
 from __future__ import annotations
@@ -68,6 +68,19 @@ def spearman(x: list[float], y: list[float]) -> float:
     return num / den if den > 0 else math.nan
 
 
+def source_map(split_csv: Path) -> dict[str, str]:
+    """Physical watch -> genuine dealer/source recorded in the locked split."""
+    out: dict[str, str] = {}
+    if not split_csv.exists():
+        return out
+    with split_csv.open(newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            wid = (r.get("physical_watch_id") or "").strip()
+            if wid:
+                out[wid] = (r.get("source_name") or "").strip()
+    return out
+
+
 def photo_list(acq_root: Path, split_csv: Path, partition: str, cls: str) -> list[tuple[str, Path]]:
     parts = locked_split.load(split_csv)
     out = []
@@ -89,9 +102,11 @@ def run_harness(photos: list[tuple[str, Path]], out_csv: Path) -> None:
     subprocess.run(["bash", str(HARNESS), "CalibMeasure", str(lst), str(out_csv)], cwd=REPO, check=True)
 
 
-def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: Path) -> dict:
+def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: Path,
+              source_by_watch: dict[str, str] | None = None) -> dict:
     with photo_csv.open(newline="", encoding="utf-8") as fh:
         rows = list(csv.DictReader(fh))
+    source_by_watch = source_by_watch or {}
     by_watch: dict[str, dict[str, list[tuple[float, float]]]] = defaultdict(lambda: defaultdict(list))
     for r in rows:
         tilt = _f(r.get("pose_tilt_deg"))
@@ -110,7 +125,13 @@ def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: 
             vals = [x for x, _ in pts]
             med = statistics.median(vals)
             medians.append(med)
-            watch_rows.append({"metric": m, "physical_watch_id": wid, "median": f"{med:.8g}", "photos": len(vals)})
+            watch_rows.append({
+                "metric": m,
+                "physical_watch_id": wid,
+                "source_name": source_by_watch.get(wid, ""),
+                "median": f"{med:.8g}",
+                "photos": len(vals),
+            })
             if len(vals) >= 2:
                 within.append(mad(vals))
                 tilts = [t for _, t in pts if math.isfinite(t)]
@@ -133,14 +154,21 @@ def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: 
             "repeatability_class": "insufficient data" if len(within) < 3 else "measured",
         })
 
-    for path, data, fields in ((watch_csv, watch_rows, ["metric", "physical_watch_id", "median", "photos"]),
-                               (repeat_csv, repeat_rows, list(repeat_rows[0]) if repeat_rows else ["metric"])):
+    for path, data, fields in (
+        (watch_csv, watch_rows, ["metric", "physical_watch_id", "source_name", "median", "photos"]),
+        (repeat_csv, repeat_rows, list(repeat_rows[0]) if repeat_rows else ["metric"]),
+    ):
         with path.open("w", newline="", encoding="utf-8") as fh:
             w = csv.DictWriter(fh, fieldnames=fields)
             w.writeheader()
             w.writerows(data)
-    return {"photos": len(rows), "watches": len(by_watch),
-            "photos_with_any_gated_value": sum(any(math.isfinite(_f(r.get(m))) for m in metrics) for r in rows)}
+    return {
+        "photos": len(rows),
+        "watches": len(by_watch),
+        "photos_with_any_gated_value": sum(
+            any(math.isfinite(_f(r.get(m))) for m in metrics) for r in rows
+        ),
+    }
 
 
 def measure(config: dict, acq_root: Path, split_csv: Path, out_dir: Path, partition: str, cls: str) -> dict:
@@ -153,4 +181,10 @@ def measure(config: dict, acq_root: Path, split_csv: Path, out_dir: Path, partit
     else:
         out_dir.mkdir(parents=True, exist_ok=True)
         photo_csv.write_text("physical_watch_id,path\n", encoding="utf-8")
-    return summarise(photo_csv, metrics, Path(f"{pref}_watch.csv"), Path(f"{pref}_repeatability.csv"))
+    return summarise(
+        photo_csv,
+        metrics,
+        Path(f"{pref}_watch.csv"),
+        Path(f"{pref}_repeatability.csv"),
+        source_map(split_csv),
+    )

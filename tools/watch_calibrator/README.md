@@ -15,7 +15,7 @@ The original run that produced the alpha72 bands is preserved at branch
 
 | Allowed | Not allowed (rejected or not implemented) |
 |---|---|
-| Configured dealer `seed_urls`, fetched with an honest User-Agent; bot challenges are recorded, never bypassed | Search-engine result pages (Bing, DuckDuckGo, Google). `check_source_policy` rejects any `queries` |
+| Configured dealer `seed_urls` / reviewed `listing_seed_urls`, fetched with an honest User-Agent; bot challenges are recorded, never bypassed | Search-engine result pages (Bing, DuckDuckGo, Google). `check_source_policy` rejects any `queries` |
 | Reddit via the official OAuth API only (`reddit_oauth.py`; `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET`) | Anonymous Reddit `.json`, RSS/Atom feeds or HTML; browser-like User-Agents |
 | Imgur albums via the harvester's Imgur API path (`IMGUR_CLIENT_ID`) | Quarantined dealers (Watchfinder) |
 
@@ -24,9 +24,10 @@ Without Reddit credentials, Reddit contributes nothing. It fails closed.
 ## Genuine source diversity
 
 Calibration is gated on **acquired genuine physical watches**, not discovery hits or raw image count.
-A dealer only counts after usable images have actually been downloaded for enough independent watches.
-Model config controls `minimum_sources`, `minimum_watches_per_source`, `minimum_acquired_watches` and
-`max_single_source_share` under `discovery.genuine_source_diversity`.
+A dealer only counts after usable, non-duplicate images have actually been downloaded for enough
+independent watches. Model config controls `minimum_sources`, `minimum_watches_per_source`,
+`minimum_acquired_watches` and `max_single_source_share` under
+`discovery.genuine_source_diversity`.
 
 For 124060 a fresh calibration currently requires at least four genuine sources with at least four
 acquired watches each, at least 20 acquired genuine watches overall, and no single dealer may provide
@@ -36,6 +37,23 @@ calibration limit is fitted. The report is written as `dataset/source_diversity.
 The locked split preserves `source_name` and stratifies genuine watches by dealer/source. Replica
 watches remain stratified by factory. Existing locked split files are never regenerated; a new source
 population therefore requires an intentional fresh calibration run.
+
+### Per-metric diversity
+
+Passing the acquisition gate is not enough. A dealer can download successfully yet contribute no
+reliable value for a particular metric after the production reliability gates. Therefore each metric
+is source-gated again **after reliability gating and development outlier rejection**.
+
+With a diversity-enabled model the defaults are:
+
+- development: at least 3 sources, each contributing at least 2 independent watches with that metric;
+- validation: at least 2 sources with that metric;
+- untouched holdout: at least 2 sources with that metric.
+
+These defaults can be overridden with `metric_min_development_sources`,
+`metric_min_validation_sources`, `metric_min_holdout_sources` and their corresponding
+`*_watches_per_source` fields inside `genuine_source_diversity`. A metric that fails this test remains
+INSUFFICIENT and cannot produce a calibration band, regardless of the total number of watches.
 
 ## Measurement
 
