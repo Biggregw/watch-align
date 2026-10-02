@@ -2,7 +2,7 @@
   "model": "124060",
   "family": "submariner_12",
   "acquisition_adapter": "submariner_acquire_v3",
-  "measurement_adapter": "submariner_research_v2",
+  "measurement_adapter": "production_app_route_v1",
   "layout": {
     "triangle": [
       12
@@ -29,8 +29,6 @@
     "CF",
     "ARF"
   ],
-  "variants": "orig,s94,s88,x+1,x-1,x+2,x-2,y+1,y-1,y+2,y-2,r+5,r-5",
-  "shards": 4,
   "discovery": {
     "target_gen": 24,
     "target_rep": 12,
@@ -98,50 +96,74 @@
     "validation_clear_rate_min": 0.75,
     "validation_check_rate_min": 1.0,
     "holdout_clear_rate_min": 0.75,
-    "holdout_check_rate_min": 1.0
+    "holdout_check_rate_min": 1.0,
+    "outlier_mad_k": 3.5,
+    "defect_flag_rate_min": 1.0
   },
   "calibration_metrics": [
     {
-      "metric": "t12_surround_rotation_deg",
+      "metric": "twelve.rotation_deg",
       "app_key": "twelve.rotation_deg",
+      "sided": "two",
       "minimum_half_width": 0.2,
-      "allow_pose_sensitive": false
+      "allow_pose_sensitive": false,
+      "max_clear_half_width": null,
+      "defect_evidence": null
     },
     {
-      "metric": "t12_surround_gap_to_track_r",
+      "metric": "twelve.gap_r",
       "app_key": "twelve.gap_r",
+      "sided": "two",
       "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false
+      "allow_pose_sensitive": false,
+      "max_clear_half_width": null,
+      "defect_evidence": null
     },
     {
-      "metric": "t12_surround_lateral_offset_from_60tick_w",
+      "metric": "twelve.centring_w",
       "app_key": "twelve.centring_w",
+      "sided": "two",
       "minimum_half_width": 0.01,
-      "allow_pose_sensitive": false
+      "allow_pose_sensitive": false,
+      "max_clear_half_width": null,
+      "defect_evidence": null
     },
     {
-      "metric": "ring_round_rho_median",
+      "metric": "round.ring_rho",
       "app_key": "round.ring_rho",
+      "sided": "two",
       "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false
+      "allow_pose_sensitive": false,
+      "max_clear_half_width": null,
+      "defect_evidence": null
     },
     {
-      "metric": "ring_round_spacing_rms_deg",
+      "metric": "round.spacing_rms_deg",
       "app_key": "round.spacing_rms_deg",
+      "sided": "upper",
       "minimum_half_width": 0.1,
-      "allow_pose_sensitive": false
+      "allow_pose_sensitive": false,
+      "max_clear_half_width": null,
+      "defect_evidence": null
     },
     {
-      "metric": "b3_b9_line_centre_offset_r",
+      "metric": "baton.3_9_line_offset_r",
       "app_key": "baton.3_9_line_offset_r",
+      "sided": "upper",
       "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false
+      "allow_pose_sensitive": false,
+      "max_clear_half_width": null,
+      "defect_evidence": null
     },
     {
-      "metric": "t12_b6_line_centre_offset_r",
+      "metric": "axis.12_6_line_offset_r",
       "app_key": "axis.12_6_line_offset_r",
+      "sided": "upper",
       "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false
+      "allow_pose_sensitive": false,
+      "max_clear_half_width": null,
+      "defect_evidence": null
     }
-  ]
+  ],
+  "sensitivity_note": "max_clear_half_width (the largest clear band that is still useful for QC) and defect_evidence (CSV of metric,value for confirmed defective watches) are product decisions, deliberately left null. Until one is set for a metric it can reach at most HOLDOUT_PASSED_SENSITIVITY_UNPROVEN, never CALIBRATED."
 }

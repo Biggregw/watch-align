@@ -1,4 +1,11 @@
-# Rolex Submariner 124060 — alpha70 checkpoint
+# Rolex Submariner 124060 — alpha70 checkpoint (alpha73 status below)
+
+## alpha73 status (2026-10-02)
+
+- **App:** `1.3.0-alpha73` keeps the alpha71/72 GMT-style 124060 UI, but `Sub124060Calibration.VERDICTS_ENABLED=false`. Reliable values show as **MEASURED / NOT YET JUDGED** (neutral blue outline, dot badge); unmeasured items keep the grey dashed / dash state. No 124060 verdict reaches the user.
+- **Why:** the alpha72 bands from calibrator run 36927036008 were too wide to flag anything. For example, rotation was clear between −13.9° and +15.2°, and spacing RMS / axis offsets had symmetric bands on metrics that cannot go negative. In that run's development and validation data, 0 of 6–7 replica watches fell outside clear on any metric except ring radius (1 of 7).
+- **Calibrator repaired** (`tools/watch_calibrator`, see its README): official Reddit API only, no search-engine scraping, Watchfinder rejected; measurement through the production app route with alpha70 gates; outlier-robust limits; one-sided bands; and a sensitivity requirement before anything is CALIBRATED.
+- **Next decision (product owner):** for each metric, set either the largest useful clear band (`max_clear_half_width`) or a small set of confirmed-defect cases (`defect_evidence`) in `calibration/models/124060.json`, then re-run the calibrator. Only metrics that come back CALIBRATED may be frozen into the app and `VERDICTS_ENABLED` turned on.
 
 Status: the experimental 124060 measurement route is merged to `main` and ready for user testing. It measures, but it still does not judge. GMT production behaviour is intended to remain unchanged.
 
