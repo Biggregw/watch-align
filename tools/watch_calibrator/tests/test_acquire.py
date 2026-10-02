@@ -17,7 +17,7 @@ class Response:
 
 class FakeHttp:
     def __init__(self, post=None, rss=None, json_fail=False, rss_fail=False):
-        self.post = post or {}
+        self.post_data = post or {}
         self.rss = rss or ""
         self.json_fail = json_fail
         self.rss_fail = rss_fail
@@ -31,11 +31,11 @@ class FakeHttp:
                 raise RuntimeError("rss blocked")
             return Response(text=self.rss)
         if "oauth.reddit.com/by_id/" in url:
-            return Response({"data": {"children": [{"data": self.post}]}})
+            return Response({"data": {"children": [{"data": self.post_data}]}})
         if ".json" in url:
             if self.json_fail:
                 raise RuntimeError("json blocked")
-            return Response([{"data": {"children": [{"data": self.post}]}}])
+            return Response([{"data": {"children": [{"data": self.post_data}]}}])
         raise AssertionError(f"unexpected url {url}")
 
     def post(self, url, data=None, headers=None, api=False):
