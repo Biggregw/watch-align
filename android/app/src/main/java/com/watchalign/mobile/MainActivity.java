@@ -313,7 +313,7 @@ public class MainActivity extends Activity {
                     manualButton.setVisibility(r.dialNeedsManual||manual?View.VISIBLE:View.GONE);
                     status.setText(r.dialNeedsManual&&!manual
                             ?"Done, but the dial or the 12 could not be located automatically. Try Align dial edge by hand below."
-                            :"Done (124060 experimental). Landmarks found are outlined; measurements are shown but not judged. Tap the close-up to enlarge it.");
+                            :(Sub124060Calibration.VERDICTS_ENABLED?"Done (124060 experimental). Rotation, centring, marker spacing and the 3-9 / 12-6 alignment are judged against provisional limits; other values are measured only. Tap the close-up to enlarge it.":"Done (124060 experimental). Landmarks found are outlined; measurements are shown but not judged. Tap the close-up to enlarge it."));
                     resultsButton.setEnabled(true);exportButton.setEnabled(true);inspectButton.setEnabled(r.perspectiveOverlay!=null);
                     return;
                 }
