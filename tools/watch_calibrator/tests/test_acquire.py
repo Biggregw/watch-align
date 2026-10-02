@@ -90,10 +90,11 @@ class RedditAcquireTest(unittest.TestCase):
             refs = acquire.reddit_oauth_image_refs(
                 "https://www.reddit.com/r/RepTimeQC/comments/abc123/qc/", http, 10
             )
-        self.assertEqual(["https://i.redd.it/a.jpg", "https://i.redd.it/b.jpg"], [r.url for r in refs])
+        self.assertTrue(http.post_calls, "OAuth token request was not attempted")
         self.assertEqual("https://www.reddit.com/api/v1/access_token", http.post_calls[0][0])
         self.assertEqual(("id", "secret"), http.post_calls[0][2])
-        self.assertTrue(any("oauth.reddit.com/by_id/t3_abc123" in u for u, _ in http.calls))
+        self.assertTrue(any("oauth.reddit.com/by_id/t3_abc123" in u for u, _ in http.calls), "OAuth post lookup was not attempted")
+        self.assertEqual(["https://i.redd.it/a.jpg", "https://i.redd.it/b.jpg"], [r.url for r in refs])
 
     def test_public_post_rss_expands_multiple_images_if_the_feed_exposes_them(self):
         rss = '''<?xml version="1.0" encoding="UTF-8"?>
