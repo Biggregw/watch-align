@@ -28,10 +28,11 @@ public class GmtConstantsSnapshotTest {
         assertEquals(0.123, Gmt126710BlnrMaster.TRI_HALF_BASE, E);
     }
 
-    @Test public void gmtVerdictThresholdsAreUnchanged() {
+    @Test public void gmtVerdictThresholdsMatchApprovedGenuineEnvelope() {
         assertEquals(0.070, GmtHumanQcMath.LOW_CLEARANCE_ATTENTION, E);
         assertEquals(8.0, GmtHumanQcMath.MAX_PLAUSIBLE_ROTATION_DEG, E);
-        assertEquals(2.0, GmtHumanQcMath.SKEW_ONLY_MIN_DEG, E);
+        assertEquals(2.0, GmtHumanQcMath.ROTATION_CHECK_DEG, E);
+        assertEquals(2.5, GmtHumanQcMath.SKEW_ONLY_MIN_DEG, E);
         assertEquals(0.10, GmtHumanQcMath.OFF_CENTRE_CHECK, E);
         assertEquals(0.15, GmtHumanQcMath.OFF_CENTRE_STRONG, E);
         assertEquals(0.10, GmtHumanQcMath.SIX_CENTRING_CHECK, E);
