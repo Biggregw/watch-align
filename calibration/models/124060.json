@@ -19,7 +19,7 @@
     "allow_bootstrap": false,
     "genuine_source_diversity": {
       "minimum_sources": 4,
-      "minimum_watches_per_source": 3,
+      "minimum_watches_per_source": 4,
       "minimum_acquired_watches": 20,
       "max_single_source_share": 0.5
     },
