@@ -30,7 +30,7 @@
     "ARF"
   ],
   "discovery": {
-    "target_gen": 24,
+    "target_gen": 48,
     "target_rep": 12,
     "minimum_gen_candidates": 12,
     "per_source_target": 10,
@@ -44,7 +44,7 @@
         "name": "Bob's Watches",
         "id_prefix": "auto_bobs_124060",
         "source_type": "dealer_listing",
-        "target": 20,
+        "target": 44,
         "require_listing_id": true,
         "seed_urls": [
           "https://www.bobswatches.com/rolex/submariner-{model}",
@@ -57,7 +57,12 @@
           "https://www.bobswatches.com/rolex/submariner-{model}?page=7&waitlist=1",
           "https://www.bobswatches.com/rolex/submariner-{model}?page=8&waitlist=1",
           "https://www.bobswatches.com/rolex/submariner-{model}?page=9&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=10&waitlist=1"
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=10&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=11&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=12&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=13&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=14&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=15&waitlist=1"
         ]
       },
       {

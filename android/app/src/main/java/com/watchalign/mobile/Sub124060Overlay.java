@@ -100,7 +100,7 @@ final class Sub124060Overlay {
                 d.triAttention=d.triMeasured?d.calibration.twelve():GmtHumanQcMath.Attention.UNASSESSABLE;
                 d.triNote=res.twelveWithheld!=null?shortReason(res.twelveWithheld)
                         :!d.triMeasured?"not measured"
-                        :d.triAttention==GmtHumanQcMath.Attention.UNASSESSABLE&&Sub124060Calibration.VERDICTS_ENABLED?"not enough calibrated evidence":null;
+                        :d.triAttention==GmtHumanQcMath.Attention.UNASSESSABLE&&Sub124060Calibration.VERDICTS_ENABLED?"measured, not judged":null;
             }
 
             double phi12=res.tick60!=null?res.frame.phiOf(res.tick60[0],res.tick60[1]):-Math.PI/2.0;
@@ -109,7 +109,7 @@ final class Sub124060Overlay {
                 x.measured=b.status==Sub124060QcAnalyzer.Status.FOUND;
                 x.attention=x.measured?d.calibration.baton(x.label):GmtHumanQcMath.Attention.UNASSESSABLE;
                 x.note=statusReason(b.status,b.note);
-                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note=Sub124060Calibration.VERDICTS_ENABLED?"not enough calibrated evidence":null;
+                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note=Sub124060Calibration.VERDICTS_ENABLED?"measured, not judged":null;
                 double[] expected=res.frame.at(phi12+Math.toRadians(b.position.angleFromTwelveDeg),0.817);
                 x.expectedX=expected[0];x.expectedY=expected[1];
                 if(b.result!=null&&b.result.geometry!=null){
@@ -127,7 +127,7 @@ final class Sub124060Overlay {
                 x.found=m.found;x.measured=r.status==Sub124060QcAnalyzer.Status.FOUND;
                 x.attention=x.measured?roundAttention:GmtHumanQcMath.Attention.UNASSESSABLE;
                 x.note=statusReason(r.status,r.note);
-                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note=Sub124060Calibration.VERDICTS_ENABLED?"not enough calibrated evidence":null;
+                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note=Sub124060Calibration.VERDICTS_ENABLED?"measured, not judged":null;
                 x.x=m.x;x.y=m.y;x.radius=m.radiusPx;
                 x.expectedX=m.seedX;x.expectedY=m.seedY;x.expectedRadius=m.expectedRadiusPx;
                 if(!Double.isFinite(x.expectedX)||!Double.isFinite(x.expectedY)){
