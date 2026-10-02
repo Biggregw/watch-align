@@ -52,7 +52,13 @@
         "seed_urls": [
           "https://www.swisswatchexpo.com/watches/rolex/submariner/"
         ],
-        "note": "Verified category/archive with individual 124060 listings and actual-watch photography."
+        "listing_seed_urls": [
+          "https://www.swisswatchexpo.com/watches/rolex-submariner-non-date-ceramic-bezel-steel-mens-watch-124060-47665/",
+          "https://www.swisswatchexpo.com/watches/rolex-submariner-non-date-ceramic-bezel-steel-mens-watch-124060-box-card-70263/",
+          "https://www.swisswatchexpo.com/watches/rolex-submariner-non-date-ceramic-bezel-steel-mens-watch-124060-box-card-70059/",
+          "https://www.swisswatchexpo.com/watches/rolex-submariner-non-date-ceramic-bezel-steel-mens-watch-124060-unworn-57216/"
+        ],
+        "note": "Verified category/archive plus reviewed individual 124060 listings with actual-watch photography."
       },
       {
         "class": "gen",
@@ -64,6 +70,14 @@
         "require_listing_id": true,
         "seed_urls": [
           "https://www.europeanwatch.com/brand/rolex/submariner"
+        ],
+        "listing_seed_urls": [
+          "https://www.europeanwatch.com/watch/rolex-124060-124060-submariner-no-date-41mm-ss-black-dial-2025-71272",
+          "https://www.europeanwatch.com/watch/rolex-124060-124060-submariner-no-date-41mm-ss-black-dial-71758",
+          "https://www.europeanwatch.com/watch/rolex-124060-124060-submariner-no-date-41mm-ss-black-dial-2026-68145",
+          "https://www.europeanwatch.com/watch/rolex-124060-124060-submariner-no-date-41mm-ss-black-dial-39410",
+          "https://www.europeanwatch.com/watch/rolex-124060-124060-submariner-no-date-41mm-ss-black-dial-46216",
+          "https://www.europeanwatch.com/watch/rolex-124060-124060-submariner-no-date-41mm-ss-black-dial-49845"
         ],
         "note": "Verified 124060 listing archive. Acquisition unwraps the listing's Next.js gallery URLs to the stock-numbered image CDN target."
       },
@@ -78,6 +92,14 @@
         "seed_urls": [
           "https://davidsw.com/product-category/watch/rolex/submariner/"
         ],
+        "listing_seed_urls": [
+          "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-53/",
+          "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-35/",
+          "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-155/",
+          "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-26/",
+          "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-14/",
+          "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-46/"
+        ],
         "note": "Verified 124060 product listings. Acquisition is restricted to the WooCommerce product gallery."
       },
       {
@@ -90,6 +112,13 @@
         "require_listing_id": false,
         "seed_urls": [
           "https://nashvillewatch.com/product-category/watch/?filter_brand=rolex"
+        ],
+        "listing_seed_urls": [
+          "https://nashvillewatch.com/product/rolex-submariner-no-date-41-black-dial-124060-2026-3/",
+          "https://nashvillewatch.com/product/rolex-submariner-no-date-41-black-dial-124060-2026-4/",
+          "https://nashvillewatch.com/product/rolex-submariner-no-date-41-black-dial-124060-2026-2/",
+          "https://nashvillewatch.com/product/rolex-submariner-no-date-41-black-dial-124060-2026-unworn-7/",
+          "https://nashvillewatch.com/product/rolex-submariner-no-date-41-black-dial-124060-2026-unworn-8/"
         ],
         "note": "Verified 124060 product listings. Acquisition is restricted to the WooCommerce product gallery."
       },
@@ -104,7 +133,11 @@
         "seed_urls": [
           "https://www.grayandsons.com/fine-watches/rolex/rolex-submariner-watch/"
         ],
-        "note": "Verified public Submariner inventory/listings; contributes when 124060 inventory is exposed by the category page."
+        "listing_seed_urls": [
+          "https://www.grayandsons.com/w529078-rolex-submariner-41mm-124060/",
+          "https://www.grayandsons.com/w527167-unused-rolex-submariner-41mm-124060/"
+        ],
+        "note": "Verified public Submariner inventory/listings; supplementary source because current 124060 inventory can be sparse."
       },
       {
         "class": "rep",
@@ -137,84 +170,20 @@
     "defect_flag_rate_min": 1.0
   },
   "calibration_metrics": [
-    {
-      "metric": "twelve.rotation_deg",
-      "app_key": "twelve.rotation_deg",
-      "sided": "two",
-      "minimum_half_width": 0.2,
-      "allow_pose_sensitive": false,
-      "max_clear_half_width": null,
-      "defect_evidence": null
-    },
-    {
-      "metric": "twelve.gap_r",
-      "app_key": "twelve.gap_r",
-      "sided": "two",
-      "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false,
-      "max_clear_half_width": null,
-      "defect_evidence": null
-    },
-    {
-      "metric": "twelve.centring_w",
-      "app_key": "twelve.centring_w",
-      "sided": "two",
-      "minimum_half_width": 0.01,
-      "allow_pose_sensitive": false,
-      "max_clear_half_width": null,
-      "defect_evidence": null
-    },
-    {
-      "metric": "round.ring_rho",
-      "app_key": "round.ring_rho",
-      "sided": "two",
-      "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false,
-      "max_clear_half_width": null,
-      "defect_evidence": null
-    },
-    {
-      "metric": "round.spacing_rms_deg",
-      "app_key": "round.spacing_rms_deg",
-      "sided": "upper",
-      "minimum_half_width": 0.1,
-      "allow_pose_sensitive": false,
-      "max_clear_half_width": null,
-      "defect_evidence": null
-    },
-    {
-      "metric": "baton.3_9_line_offset_r",
-      "app_key": "baton.3_9_line_offset_r",
-      "sided": "upper",
-      "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false,
-      "max_clear_half_width": null,
-      "defect_evidence": null
-    },
-    {
-      "metric": "axis.12_6_line_offset_r",
-      "app_key": "axis.12_6_line_offset_r",
-      "sided": "upper",
-      "minimum_half_width": 0.002,
-      "allow_pose_sensitive": false,
-      "max_clear_half_width": null,
-      "defect_evidence": null
-    }
+    {"metric": "twelve.rotation_deg", "app_key": "twelve.rotation_deg", "sided": "two", "minimum_half_width": 0.2, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "twelve.gap_r", "app_key": "twelve.gap_r", "sided": "two", "minimum_half_width": 0.002, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "twelve.centring_w", "app_key": "twelve.centring_w", "sided": "two", "minimum_half_width": 0.01, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "round.ring_rho", "app_key": "round.ring_rho", "sided": "two", "minimum_half_width": 0.002, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "round.spacing_rms_deg", "app_key": "round.spacing_rms_deg", "sided": "upper", "minimum_half_width": 0.1, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "baton.3_9_line_offset_r", "app_key": "baton.3_9_line_offset_r", "sided": "upper", "minimum_half_width": 0.002, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "axis.12_6_line_offset_r", "app_key": "axis.12_6_line_offset_r", "sided": "upper", "minimum_half_width": 0.002, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null}
   ],
   "sensitivity_note": "max_clear_half_width (the largest clear band that is still useful for QC) and defect_evidence (CSV of metric,value for confirmed defective watches) are product decisions, deliberately left null. Until one is set for a metric it can reach at most HOLDOUT_PASSED_SENSITIVITY_UNPROVEN, never CALIBRATED.",
   "accepted_provisional": {
     "run": 37008521836,
     "date": "2026-10-02",
     "by": "product owner",
-    "metrics": [
-      "twelve.rotation_deg",
-      "twelve.gap_r",
-      "twelve.centring_w",
-      "round.ring_rho",
-      "round.spacing_rms_deg",
-      "baton.3_9_line_offset_r",
-      "axis.12_6_line_offset_r"
-    ],
+    "metrics": ["twelve.rotation_deg", "twelve.gap_r", "twelve.centring_w", "round.ring_rho", "round.spacing_rms_deg", "baton.3_9_line_offset_r", "axis.12_6_line_offset_r"],
     "note": "All seven bands frozen into Sub124060Calibration (alpha75) as provisional QC prompts; sensitivity not yet proven (no replica/defect evidence). This historical run predates the acquired-source-diversity gate."
   }
 }
