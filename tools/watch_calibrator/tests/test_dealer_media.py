@@ -70,6 +70,53 @@ class DealerMediaTest(unittest.TestCase):
         self.assertNotIn("https://example.com/site-logo.jpg", urls)
         self.assertNotIn("https://davidsw.com/uploads/another-watch.jpg", urls)
 
+    def test_model_label_gallery_excludes_unrelated_watch_images(self):
+        page = """
+        <html><head><meta property="og:image" content="https://cdn.example.com/hero.jpg"></head><body>
+          <img alt="Rolex Certified Pre-owned Submariner M124060-0001 front" src="https://cdn.example.com/124060-front.jpg">
+          <img alt="Rolex Certified Pre-owned Submariner M124060-0001 side" data-src="https://cdn.example.com/124060-side.jpg">
+          <img alt="Related Rolex Submariner M126610LN" src="https://cdn.example.com/126610.jpg">
+          <img alt="Site logo" src="https://cdn.example.com/logo.jpg">
+        </body></html>
+        """
+        http = FakeHttp(page, "https://www.watchesofswitzerland.com/products/submariner-m124060-0001-40411298")
+        refs = dealer_media.model_label_gallery_refs(
+            {"source_url": http.url, "model": "124060"}, http, 10, include_og=False
+        )
+        self.assertEqual(
+            ["https://cdn.example.com/124060-front.jpg", "https://cdn.example.com/124060-side.jpg"],
+            [r.url for r in refs],
+        )
+
+    def test_sothebys_can_keep_exact_model_gallery_and_item_hero(self):
+        page = """
+        <html><head><meta property="og:image" content="https://sothebys.example/item-hero.jpg"></head><body>
+          <img alt="Reference 124060 Submariner view 1" src="https://sothebys.example/lot-1.jpg">
+          <img alt="Recommended Rolex 126610" src="https://sothebys.example/related.jpg">
+        </body></html>
+        """
+        http = FakeHttp(page, "https://www.sothebys.com/en/buy/auction/x/reference-124060-submariner")
+        refs = dealer_media.model_label_gallery_refs(
+            {"source_url": http.url, "model": "124060"}, http, 10, include_og=True
+        )
+        self.assertEqual(
+            ["https://sothebys.example/item-hero.jpg", "https://sothebys.example/lot-1.jpg"],
+            [r.url for r in refs],
+        )
+
+    def test_phillips_uses_only_item_specific_social_hero(self):
+        page = """
+        <html><head>
+          <meta property="og:image" content="https://assets.phillips.com/lot-206976.jpg">
+          <meta name="twitter:image" content="https://assets.phillips.com/lot-206976.jpg">
+        </head><body>
+          <img alt="Lot 1" src="https://assets.phillips.com/other-watch.jpg">
+        </body></html>
+        """
+        http = FakeHttp(page, "https://www.phillips.com/detail/rolex/206976")
+        refs = dealer_media.phillips_refs({"source_url": http.url, "model": "124060"}, http, 10)
+        self.assertEqual(["https://assets.phillips.com/lot-206976.jpg"], [r.url for r in refs])
+
     def test_unknown_dealer_returns_none_for_strict_fallback(self):
         row = {"source_url": "https://www.bobswatches.com/example"}
         self.assertIsNone(dealer_media.resolve_verified_dealer(row, object(), 10))
