@@ -113,19 +113,31 @@ def run(model: str, root: Path, fresh=False) -> dict:
     gd=production_measure(config,P["acq"],P["split"],P["geom"],"development","gen")
     gv=production_measure(config,P["acq"],P["split"],P["geom"],"validation","gen")
     rd=production_measure(config,P["acq"],P["split"],P["geom"],"development","rep")
+    rv=production_measure(config,P["acq"],P["split"],P["geom"],"validation","rep")
+    # Replica stress evidence (never moves a limit): development + validation replicas together.
+    rep_csv=P["geom"]/f"{config['model']}_devval_rep_watch.csv"
+    with rep_csv.open("w",newline="",encoding="utf-8") as out:
+        w=None
+        for part in ("development","validation"):
+            src=P["geom"]/f"{config['model']}_{part}_rep_watch.csv"
+            if not src.exists(): continue
+            with src.open(newline="",encoding="utf-8") as fh:
+                for row in csv.DictReader(fh):
+                    if w is None: w=csv.DictWriter(out,fieldnames=list(row));w.writeheader()
+                    w.writerow(row)
 
     pref=f"{config['model']}_"
     frozen=propose(config,
         P["geom"]/f"{pref}development_gen_watch.csv",
         P["geom"]/f"{pref}development_gen_repeatability.csv",
         P["geom"]/f"{pref}validation_gen_watch.csv",
-        P["geom"]/f"{pref}development_rep_watch.csv" if rd.get("photos") else None,
+        rep_csv if (rd.get("photos") or rv.get("photos")) else None,
         evidence_root=REPO)
     save(frozen,P["base"]/"frozen_before_holdout.json")
     if frozen["state"]!="FROZEN_PENDING_HOLDOUT":
         save(frozen,P["cal"])
         status={"model":model,"state":frozen["state"],"stage":"validation","discovery":d,"replica_evidence":rep_ev,
-                "development":gd,"validation":gv}
+                "development":gd,"validation":gv,"replica_measured":{"development":rd,"validation":rv}}
         (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n");return status
 
     # 5) Limits are now frozen. Open holdout exactly once for confirmation. No value below can move a limit.
@@ -133,7 +145,7 @@ def run(model: str, root: Path, fresh=False) -> dict:
     final=finalize(frozen,P["geom"]/f"{pref}holdout_gen_watch.csv")
     save(final,P["cal"])
     status={"model":model,"state":final["state"],"stage":"complete","discovery":d,"replica_evidence":rep_ev,
-            "development":gd,"validation":gv,"holdout":gh,"calibration":str(P["cal"])}
+            "development":gd,"validation":gv,"replica_measured":{"development":rd,"validation":rv},"holdout":gh,"calibration":str(P["cal"])}
     (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n",encoding="utf-8")
     return status
 

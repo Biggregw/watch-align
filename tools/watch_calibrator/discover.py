@@ -212,6 +212,42 @@ def add_bootstrap(config, model, family, rows, seen_urls, seen_listings, counts)
     return added
 
 
+def add_replica_seeds(config, model, family, rows, seen_urls, counts) -> int:
+    """Curated replica QC albums (discovery.replica_seed_csv), acquired via Imgur only.
+
+    Replicas never set a limit, so a fixed, reviewed list is a safe stress-test source that does
+    not depend on Reddit credentials. Each row needs the exact model, a stated factory and an Imgur
+    album; acquisition then never touches Reddit (the album is resolved first).
+    """
+    rel = config["discovery"].get("replica_seed_csv")
+    if not rel:
+        return 0
+    path = REPO / rel
+    if not path.exists():
+        return 0
+    added = 0
+    with path.open(newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            album = (r.get("image_album_url") or "").strip()
+            if (r.get("model") or "").upper() != model or not (r.get("factory") or "").strip():
+                continue
+            if not re.match(r"https?://(?:www\.)?imgur\.com/a/", album, re.I) or album in seen_urls:
+                continue
+            cid = (r.get("candidate_id") or stable_id("seed_rep", album)).strip()
+            rows.append({
+                "candidate_id": cid, "physical_watch_id": cid, "family": family, "model": model,
+                "class_tag": "rep", "factory": r["factory"].strip(), "source_type": "forum_qc",
+                "source_name": "curated replica seeds", "source_url": canonical(r.get("source_url") or ""),
+                "image_album_url": album, "direct_image_url": "",
+                "provenance_note": ((r.get("provenance_note") or "") + f"; curated seed {path.name}").strip("; "),
+                "candidate_status": "candidate", "listing_id": "",
+            })
+            seen_urls.add(album)
+            counts["rep"] += 1
+            added += 1
+    return added
+
+
 def discover(config: dict, out_csv: Path) -> dict:
     model = str(config["model"]).upper()
     family = config["family"]
@@ -322,6 +358,8 @@ def discover(config: dict, out_csv: Path) -> dict:
         source_counts[src["name"]] = accepted_here
         time.sleep(0.1)
 
+    replica_seeds = add_replica_seeds(config, model, family, rows, seen_urls, counts)
+
     # Bootstrap is an explicitly configured fallback only, never part of a clean proof.
     bootstrap = 0
     if counts["gen"] < dc.get("minimum_gen_candidates", 1):
@@ -346,6 +384,7 @@ def discover(config: dict, out_csv: Path) -> dict:
         "bootstrap_candidates": bootstrap,
         "clean_discovery": bootstrap == 0,
         "reddit_api": reddit_status,
+        "replica_seed_candidates": replica_seeds,
         "output": str(out_csv),
     }
     out_csv.with_suffix(".json").write_text(

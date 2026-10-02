@@ -89,7 +89,8 @@
         "subreddit": "RepTimeQC",
         "note": "Official Reddit OAuth API only (REDDIT_CLIENT_ID/REDDIT_CLIENT_SECRET); no candidates without credentials."
       }
-    ]
+    ],
+    "replica_seed_csv": "calibration/sources/124060_replica_seeds.csv"
   },
   "calibration_policy": {
     "min_development_watches": 6,
