@@ -11,22 +11,17 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * GMT-style measured overlay for the experimental 124060 path.
+ * GMT-style whole-dial and close-up presentation for the 124060.
  *
- * The interaction contract deliberately mirrors the mature GMT overlay: the fitted dial is shown,
- * every hour position is accounted for, found marker outlines are drawn, unavailable measurements
- * are dashed with a short reason, and the 12 close-up shows the local minute-track geometry used by
- * the measurement. The difference is semantic, not visual: 124060 tolerances are not calibrated yet,
- * so a solid cyan marker with an M badge means "measured", never "passed". A grey dash means the
- * marker/measurement was not usable on this photo. No green/amber/red GMT verdict is imported.
- *
- * This class exists as a model adapter around the mature presentation contract. New model work should
- * start from that contract rather than inventing a second research-only UI (see ENGINEERING_LESSONS).
+ * This keeps the alpha71 GMT-parity product contract and changes only the verdict source: reliable
+ * measurements are now judged against the frozen 124060 family calibration. The same four visual
+ * states as GMT are used: green tick, amber !, red !! and grey dash. No GMT tolerance is copied.
  */
 final class Sub124060Overlay {
-    static final int MEASURED=Color.rgb(50,213,242), WITHHELD=Color.rgb(165,175,190),
+    static final int CLEAR=Color.rgb(40,210,120), CHECK=Color.rgb(255,176,0),
+            STRONG=Color.rgb(255,45,45), WITHHELD=Color.rgb(165,175,190),
             TICK=Color.rgb(90,220,255), WHITE=Color.WHITE;
-    static final String BANNER="124060 experimental · geometry measured · QC limits not calibrated";
+    static final String BANNER="124060 experimental · provisional family calibration";
 
     static final class Baton {
         String label;
@@ -34,6 +29,7 @@ final class Sub124060Overlay {
         double[] tickBefore,tickCentre,tickAfter;
         double expectedX=Double.NaN,expectedY=Double.NaN;
         boolean measured;
+        GmtHumanQcMath.Attention attention=GmtHumanQcMath.Attention.UNASSESSABLE;
         String note;
         double centreX(){
             if(poly==null||poly.length==0)return expectedX;
@@ -52,6 +48,7 @@ final class Sub124060Overlay {
     static final class Round {
         int hour;
         boolean found,measured;
+        GmtHumanQcMath.Attention attention=GmtHumanQcMath.Attention.UNASSESSABLE;
         double x=Double.NaN,y=Double.NaN,radius=Double.NaN;
         double expectedX=Double.NaN,expectedY=Double.NaN,expectedRadius=Double.NaN;
         double[] tickBefore,tickCentre,tickAfter;
@@ -64,10 +61,12 @@ final class Sub124060Overlay {
 
         double[] triL,triR,triT,tick59,tick60,tick01;
         boolean triMeasured;
+        GmtHumanQcMath.Attention triAttention=GmtHumanQcMath.Attention.UNASSESSABLE;
         String triNote;
         double rotationDeg=Double.NaN,gapR=Double.NaN,centringW=Double.NaN;
         String rotationNote,gapNote,centringNote;
 
+        Sub124060Calibration.Assessment calibration=new Sub124060Calibration.Assessment();
         final List<Baton> batons=new ArrayList<>();
         final List<Round> rounds=new ArrayList<>();
 
@@ -76,6 +75,7 @@ final class Sub124060Overlay {
 
         static Drawing of(Sub124060QcAnalyzer.Result res){
             Drawing d=new Drawing();
+            d.calibration=Sub124060Calibration.assess(res);
             if(!res.dialAssessable()||res.frame==null)return d;
             if(res.edge!=null){
                 d.dialCx=res.edge.cx;d.dialCy=res.edge.cy;d.dialA=res.edge.axisA;d.dialB=res.edge.axisB;
@@ -91,15 +91,19 @@ final class Sub124060Overlay {
                 d.rotationDeg=res.rotationDeg;d.gapR=res.gapR;d.centringW=res.centringW;
                 d.rotationNote=res.rotationWithheld;d.gapNote=res.gapWithheld;d.centringNote=res.centringWithheld;
                 d.triMeasured=res.rotationWithheld==null||res.gapWithheld==null||res.centringWithheld==null;
+                d.triAttention=d.triMeasured?d.calibration.twelve():GmtHumanQcMath.Attention.UNASSESSABLE;
                 d.triNote=res.twelveWithheld!=null?shortReason(res.twelveWithheld)
-                        :!d.triMeasured?"not measured":null;
+                        :!d.triMeasured?"not measured"
+                        :d.triAttention==GmtHumanQcMath.Attention.UNASSESSABLE?"not enough calibrated evidence":null;
             }
 
             double phi12=res.tick60!=null?res.frame.phiOf(res.tick60[0],res.tick60[1]):-Math.PI/2.0;
             for(Sub124060QcAnalyzer.Baton b:res.batons){
                 Baton x=new Baton();x.label=b.position.label;
                 x.measured=b.status==Sub124060QcAnalyzer.Status.FOUND;
+                x.attention=x.measured?d.calibration.baton(x.label):GmtHumanQcMath.Attention.UNASSESSABLE;
                 x.note=statusReason(b.status,b.note);
+                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note="not enough calibrated evidence";
                 double[] expected=res.frame.at(phi12+Math.toRadians(b.position.angleFromTwelveDeg),0.817);
                 x.expectedX=expected[0];x.expectedY=expected[1];
                 if(b.result!=null&&b.result.geometry!=null){
@@ -111,10 +115,13 @@ final class Sub124060Overlay {
                 d.batons.add(x);
             }
 
+            GmtHumanQcMath.Attention roundAttention=d.calibration.rounds();
             for(Sub124060QcAnalyzer.Round r:res.rounds){
                 GmtRoundMarkerAnalyzer.Marker m=r.marker;Round x=new Round();x.hour=m.hour;
                 x.found=m.found;x.measured=r.status==Sub124060QcAnalyzer.Status.FOUND;
+                x.attention=x.measured?roundAttention:GmtHumanQcMath.Attention.UNASSESSABLE;
                 x.note=statusReason(r.status,r.note);
+                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note="not enough calibrated evidence";
                 x.x=m.x;x.y=m.y;x.radius=m.radiusPx;
                 x.expectedX=m.seedX;x.expectedY=m.seedY;x.expectedRadius=m.expectedRadiusPx;
                 if(!Double.isFinite(x.expectedX)||!Double.isFinite(x.expectedY)){
@@ -150,6 +157,12 @@ final class Sub124060Overlay {
 
     private Sub124060Overlay(){}
 
+    static int colour(GmtHumanQcMath.Attention a){
+        switch(a){case CLEAR:return CLEAR;case CHECK:return CHECK;case STRONG:return STRONG;default:return WITHHELD;}
+    }
+    static boolean judged(GmtHumanQcMath.Attention a){return a!=null&&a!=GmtHumanQcMath.Attention.UNASSESSABLE;}
+    static boolean flagged(GmtHumanQcMath.Attention a){return a==GmtHumanQcMath.Attention.CHECK||a==GmtHumanQcMath.Attention.STRONG;}
+
     static Bitmap render(Bitmap watch,Drawing d){
         if(watch==null||d==null||!d.hasAnything())return null;
         Bitmap out=Bitmap.createBitmap(watch.getWidth(),watch.getHeight(),Bitmap.Config.ARGB_8888);
@@ -160,53 +173,45 @@ final class Sub124060Overlay {
 
         drawDial(c,d,base);
 
-        // Round markers: mirror GMT's whole-dial contract. Every position is accounted for.
         for(Round r:d.rounds){
             double x=r.found&&Double.isFinite(r.x)?r.x:r.expectedX;
             double y=r.found&&Double.isFinite(r.y)?r.y:r.expectedY;
             double rad=r.found&&r.radius>0?r.radius:r.expectedRadius;
             if(!Double.isFinite(x)||!Double.isFinite(y)||!(rad>0))continue;
             float lw=(float)Math.max(1.0,2*rad/22.0);
-            if(r.measured){
-                c.drawCircle((float)x,(float)y,(float)rad,stroke(MEASURED,lw,235));
-                measuredBadge(c,x,y,badge);
-            }else{
-                circleDashed(c,x,y,rad,stroke(WITHHELD,lw,205));
-                dashBadge(c,x,y,badge);
-                String w=r.note!=null?r.note:r.found?"not measured":"not found";
-                word(c,d,x,y,rad,w,WITHHELD,text);
-            }
+            if(judged(r.attention))c.drawCircle((float)x,(float)y,(float)rad,stroke(colour(r.attention),lw,235));
+            else circleDashed(c,x,y,rad,stroke(WITHHELD,lw,205));
+            badge(c,x,y,badge,r.attention);
+            String w=flagged(r.attention)?"position":r.note;
+            if(w!=null)word(c,d,x,y,rad,w,judged(r.attention)?colour(r.attention):WITHHELD,text);
         }
 
-        // All three 124060 batons. GMT only has two because the other side is the date; the Sub layout
-        // is supplied explicitly rather than forcing the GMT date-side assumption into the renderer.
         for(Baton b:d.batons){
             double x=b.centreX(),y=b.centreY();
             if(b.poly!=null){
                 double w=b.width();float lw=(float)Math.max(1.0,(Double.isFinite(w)?w:badge)/16.0);
-                if(b.measured){poly(c,b.poly,true,stroke(MEASURED,lw,235));measuredBadge(c,x,y,badge);}
-                else{
-                    for(int i=0;i<b.poly.length;i++)dashed(c,b.poly[i],b.poly[(i+1)%b.poly.length],Math.max(3,w/4.0),stroke(WITHHELD,lw,215));
-                    dashBadge(c,x,y,badge);word(c,d,x,y,Math.max(badge*2,w),b.note!=null?b.note:"not measured",WITHHELD,text);
-                }
+                if(judged(b.attention))poly(c,b.poly,true,stroke(colour(b.attention),lw,235));
+                else for(int i=0;i<b.poly.length;i++)dashed(c,b.poly[i],b.poly[(i+1)%b.poly.length],Math.max(3,w/4.0),stroke(WITHHELD,lw,215));
+                badge(c,x,y,badge,b.attention);
+                String why=flagged(b.attention)?"axis":b.note;
+                if(why!=null)word(c,d,x,y,Math.max(badge*2,w),why,judged(b.attention)?colour(b.attention):WITHHELD,text);
             }else if(Double.isFinite(x)&&Double.isFinite(y)){
-                dashBadge(c,x,y,badge);word(c,d,x,y,badge*2.5,b.note!=null?b.note:"not found",WITHHELD,text);
+                badge(c,x,y,badge,GmtHumanQcMath.Attention.UNASSESSABLE);
+                word(c,d,x,y,badge*2.5,b.note!=null?b.note:"not found",WITHHELD,text);
             }
         }
 
-        // 12 triangle. A measured 12 gets the same at-a-glance marker treatment as GMT, but the badge
-        // says M rather than a green tick because no 124060 pass/fail tolerance exists yet.
         if(d.hasTriangle()){
             double width=Math.hypot(d.triR[0]-d.triL[0],d.triR[1]-d.triL[1]);
             float lw=(float)Math.max(1.0,width/40.0);double[][] tri={d.triL,d.triR,d.triT};
             double x=(d.triL[0]+d.triR[0]+d.triT[0])/3.0,y=(d.triL[1]+d.triR[1]+d.triT[1])/3.0;
-            if(d.triMeasured){poly(c,tri,true,stroke(MEASURED,lw,235));measuredBadge(c,x,y,badge);}
-            else{
-                for(int i=0;i<3;i++)dashed(c,tri[i],tri[(i+1)%3],width/8.0,stroke(WITHHELD,lw,220));
-                dashBadge(c,x,y,badge);word(c,d,x,y,width*0.5,d.triNote!=null?d.triNote:"not measured",WITHHELD,text);
-            }
+            if(judged(d.triAttention))poly(c,tri,true,stroke(colour(d.triAttention),lw,235));
+            else for(int i=0;i<3;i++)dashed(c,tri[i],tri[(i+1)%3],width/8.0,stroke(WITHHELD,lw,220));
+            badge(c,x,y,badge,d.triAttention);
+            String why=flagged(d.triAttention)?"alignment":d.triNote;
+            if(why!=null)word(c,d,x,y,width*0.5,why,judged(d.triAttention)?colour(d.triAttention):WITHHELD,text);
         }else if(Double.isFinite(d.dialCx)){
-            double[] p=ellipsePoint(d,-90,0.78);dashBadge(c,p[0],p[1],badge);word(c,d,p[0],p[1],badge*2.5,"12 not found",WITHHELD,text);
+            double[] p=ellipsePoint(d,-90,0.78);badge(c,p[0],p[1],badge,GmtHumanQcMath.Attention.UNASSESSABLE);word(c,d,p[0],p[1],badge*2.5,"12 not found",WITHHELD,text);
         }
 
         banner(c,BANNER,d.dialCx,d.dialCy-R,2*R,out.getWidth(),badge);
@@ -214,7 +219,7 @@ final class Sub124060Overlay {
         return out;
     }
 
-    /** Detail overlay used by the close-up. This mirrors the GMT 12 close-up primitives. */
+    /** Detail overlay used by the close-up. Geometry is unchanged; verdict colour comes from calibration. */
     static Bitmap renderDetail(Bitmap watch,Drawing d){
         if(watch==null||d==null||!d.hasAnything())return null;
         Bitmap out=Bitmap.createBitmap(watch.getWidth(),watch.getHeight(),Bitmap.Config.ARGB_8888);
@@ -227,7 +232,7 @@ final class Sub124060Overlay {
         if(!d.hasTriangle())return out;
         double width=Math.hypot(d.triR[0]-d.triL[0],d.triR[1]-d.triL[1]);
         float lw=(float)Math.max(1.0,width/40.0);double[][] tri={d.triL,d.triR,d.triT};
-        if(d.triMeasured)poly(c,tri,true,stroke(MEASURED,lw,240));
+        if(judged(d.triAttention))poly(c,tri,true,stroke(colour(d.triAttention),lw,240));
         else for(int i=0;i<3;i++)dashed(c,tri[i],tri[(i+1)%3],width/8.0,stroke(WITHHELD,lw,220));
 
         if(d.tick59!=null&&d.tick60!=null&&d.tick01!=null){
@@ -236,25 +241,24 @@ final class Sub124060Overlay {
             Paint dot=fill(TICK,230);float dr=(float)Math.max(1.5,width/30.0);
             for(double[] q:new double[][]{d.tick59,d.tick60,d.tick01})c.drawCircle((float)q[0],(float)q[1],dr,dot);
 
-            // Gap bracket from the triangle base midpoint to the local 59/01 track line.
+            // Gap remains measured-only because calibration rejected it as pose/scale sensitive.
             double mx=(d.triL[0]+d.triR[0])/2,my=(d.triL[1]+d.triR[1])/2;
             double[] foot=footOnLine(mx,my,d.tick59,d.tick01);
-            Paint gp=stroke(d.gapNote==null?MEASURED:WITHHELD,Math.max(1f,lw*1.4f),235);
+            Paint gp=stroke(d.gapNote==null?TICK:WITHHELD,Math.max(1f,lw*1.4f),235);
             c.drawLine((float)mx,(float)my,(float)foot[0],(float)foot[1],gp);
             double tx=d.tick01[0]-d.tick59[0],ty=d.tick01[1]-d.tick59[1],tl=Math.hypot(tx,ty);
             if(tl>1e-9){tx=tx/tl*width*0.08;ty=ty/tl*width*0.08;
                 c.drawLine((float)(mx-tx),(float)(my-ty),(float)(mx+tx),(float)(my+ty),gp);
                 c.drawLine((float)(foot[0]-tx),(float)(foot[1]-ty),(float)(foot[0]+tx),(float)(foot[1]+ty),gp);}
 
-            // Left/right spacing lines, as on the GMT close-up.
-            Paint sp=stroke(d.centringNote==null?MEASURED:WITHHELD,Math.max(1f,lw*0.75f),210);
+            Paint sp=stroke(judged(d.triAttention)?colour(d.triAttention):WITHHELD,Math.max(1f,lw*0.75f),210);
             c.drawLine((float)d.triL[0],(float)d.triL[1],(float)d.tick59[0],(float)d.tick59[1],sp);
             c.drawLine((float)d.triR[0],(float)d.triR[1],(float)d.tick01[0],(float)d.tick01[1],sp);
         }
         return out;
     }
 
-    /** Enlarged 12 region with GMT-style measurement detail and a status strip. */
+    /** Enlarged 12 region with the same status hierarchy as the mature GMT close-up. */
     static Bitmap closeUp(Bitmap watch,Bitmap ignored,Drawing d,int size){
         if(watch==null||d==null||!d.hasTriangle())return null;
         Bitmap detail=renderDetail(watch,d);
@@ -273,8 +277,8 @@ final class Sub124060Overlay {
 
         int strip=Math.max(56,size/7);Bitmap out=Bitmap.createBitmap(size,size+strip,Bitmap.Config.ARGB_8888);
         Canvas oc=new Canvas(out);oc.drawBitmap(square,0,0,null);oc.drawRect(0,size,size,size+strip,fill(Color.rgb(12,16,22),245));
-        float ts=Math.max(14,size/28f);Paint t=fill(Color.WHITE,255);t.setTextSize(ts);t.setFakeBoldText(true);
-        String l1=d.triMeasured?"12  M  measured · not yet judged":"12  –  not judged";
+        float ts=Math.max(14,size/28f);Paint t=fill(colour(d.triAttention),255);t.setTextSize(ts);t.setFakeBoldText(true);
+        String l1="12  "+symbol(d.triAttention)+"  "+label(d.triAttention);
         oc.drawText(l1,ts*0.7f,size+ts*1.25f,t);
         t.setFakeBoldText(false);t.setColor(Color.rgb(205,215,228));t.setTextSize(ts*0.90f);
         String l2=triangleValues(d);
@@ -293,7 +297,6 @@ final class Sub124060Overlay {
             if(i==0)p.moveTo(px,py);else p.lineTo(px,py);
         }
         if(d.dialEdgeFitted)c.drawPath(p,ring);else{
-            // A hand-aligned circle is context only, so keep it visibly provisional.
             double[][] pts=new double[73][];for(int i=0;i<73;i++)pts[i]=ellipsePoint(d,-180+5*i,1.0);
             for(int i=0;i<72;i+=2)c.drawLine((float)pts[i][0],(float)pts[i][1],(float)pts[i+1][0],(float)pts[i+1][1],ring);
         }
@@ -301,7 +304,7 @@ final class Sub124060Overlay {
 
     private static void drawBatonDetail(Canvas c,Baton b){
         if(b.poly==null)return;double w=b.width();float lw=(float)Math.max(1.0,w/16.0);
-        if(b.measured)poly(c,b.poly,true,stroke(MEASURED,lw,235));
+        if(judged(b.attention))poly(c,b.poly,true,stroke(colour(b.attention),lw,235));
         else for(int i=0;i<b.poly.length;i++)dashed(c,b.poly[i],b.poly[(i+1)%b.poly.length],Math.max(3,w/4),stroke(WITHHELD,lw,210));
         if(b.tickBefore!=null&&b.tickAfter!=null){
             Paint tick=stroke(TICK,Math.max(1f,lw*0.8f),230);
@@ -314,7 +317,7 @@ final class Sub124060Overlay {
     private static void drawRoundDetail(Canvas c,Round r){
         if(!r.found||!Double.isFinite(r.x)||!(r.radius>0))return;
         float lw=(float)Math.max(1.0,2*r.radius/22.0);
-        if(r.measured)c.drawCircle((float)r.x,(float)r.y,(float)r.radius,stroke(MEASURED,lw,235));
+        if(judged(r.attention))c.drawCircle((float)r.x,(float)r.y,(float)r.radius,stroke(colour(r.attention),lw,235));
         else circleDashed(c,r.x,r.y,r.radius,stroke(WITHHELD,lw,210));
         if(r.tickBefore!=null&&r.tickAfter!=null){
             Paint tick=stroke(TICK,Math.max(1f,lw*0.8f),230);
@@ -327,7 +330,7 @@ final class Sub124060Overlay {
     private static String triangleValues(Drawing d){
         List<String> p=new ArrayList<>();
         p.add(d.rotationNote==null&&Double.isFinite(d.rotationDeg)?String.format(Locale.US,"rot %+.2f°",d.rotationDeg):"rot –");
-        p.add(d.gapNote==null&&Double.isFinite(d.gapR)?String.format(Locale.US,"gap %.3fR",d.gapR):"gap –");
+        p.add(d.gapNote==null&&Double.isFinite(d.gapR)?String.format(Locale.US,"gap %.3fR measured only",d.gapR):"gap –");
         p.add(d.centringNote==null&&Double.isFinite(d.centringW)?String.format(Locale.US,"centre %+.3fw",d.centringW):"centre –");
         return String.join(" · ",p);
     }
@@ -351,6 +354,13 @@ final class Sub124060Overlay {
         return s.length()>28?s.substring(0,28)+"…":s;
     }
 
+    private static String symbol(GmtHumanQcMath.Attention a){
+        switch(a){case CLEAR:return "✓";case CHECK:return "!";case STRONG:return "!!";default:return "–";}
+    }
+    private static String label(GmtHumanQcMath.Attention a){
+        switch(a){case CLEAR:return "nothing flagged";case CHECK:return "worth a look";case STRONG:return "check closely";default:return "not judged";}
+    }
+
     private static double[] cloneP(double[] p){return p==null?null:p.clone();}
     private static double[] ellipsePoint(Drawing d,double clockDeg,double rho){
         double phi=Math.toRadians(clockDeg-90.0),u=d.dialA*Math.cos(phi)*rho,v=d.dialB*Math.sin(phi)*rho;
@@ -362,14 +372,22 @@ final class Sub124060Overlay {
         double t=((x-a[0])*dx+(y-a[1])*dy)/q;return new double[]{a[0]+t*dx,a[1]+t*dy};
     }
 
-    private static void measuredBadge(Canvas c,double x,double y,float r){
-        Paint bg=fill(Color.rgb(12,16,22),225);c.drawCircle((float)x,(float)y,r,bg);c.drawCircle((float)x,(float)y,r,stroke(MEASURED,Math.max(1.4f,r*0.12f),255));
-        Paint t=fill(MEASURED,255);t.setFakeBoldText(true);t.setTextAlign(Paint.Align.CENTER);t.setTextSize(r*1.35f);
-        c.drawText("M",(float)x,(float)(y+r*0.46),t);
+    /** Same symbol contract as the mature GMT overlay. */
+    private static void badge(Canvas c,double x,double y,float r,GmtHumanQcMath.Attention a){
+        int col=colour(a);
+        c.drawCircle((float)x,(float)y,r*1.12f,fill(Color.rgb(12,16,22),210));
+        c.drawCircle((float)x,(float)y,r,fill(col,245));
+        int ink=a==GmtHumanQcMath.Attention.CHECK?Color.rgb(20,20,20):Color.WHITE;
+        float sw=Math.max(1.5f,r*0.26f);Paint pen=stroke(ink,sw,255);
+        switch(a){
+            case CLEAR:{Path t=new Path();t.moveTo((float)(x-r*0.48),(float)(y+r*0.02));t.lineTo((float)(x-r*0.12),(float)(y+r*0.38));t.lineTo((float)(x+r*0.50),(float)(y-r*0.36));c.drawPath(t,pen);break;}
+            case CHECK:bang(c,x,y,r,pen,sw,ink);break;
+            case STRONG:bang(c,x-r*0.30,y,r,pen,sw,ink);bang(c,x+r*0.30,y,r,pen,sw,ink);break;
+            default:c.drawLine((float)(x-r*0.45),(float)y,(float)(x+r*0.45),(float)y,pen);
+        }
     }
-    private static void dashBadge(Canvas c,double x,double y,float r){
-        Paint bg=fill(Color.rgb(12,16,22),225);c.drawCircle((float)x,(float)y,r,bg);c.drawCircle((float)x,(float)y,r,stroke(WITHHELD,Math.max(1.4f,r*0.12f),255));
-        Paint p=stroke(WITHHELD,Math.max(1.5f,r*0.16f),255);c.drawLine((float)(x-r*0.42),(float)y,(float)(x+r*0.42),(float)y,p);
+    private static void bang(Canvas c,double x,double y,float r,Paint pen,float sw,int ink){
+        c.drawLine((float)x,(float)(y-r*0.55),(float)x,(float)(y+r*0.12),pen);c.drawCircle((float)x,(float)(y+r*0.45),sw*0.62f,fill(ink,255));
     }
 
     private static void word(Canvas c,Drawing d,double x,double y,double clearance,String w,int col,float size){
@@ -382,15 +400,16 @@ final class Sub124060Overlay {
     }
 
     private static void legend(Canvas c,int W,int H,double centreX,double dialBottom,double maxWidth,float badge){
-        float r=Math.max(5f,badge*0.80f),size=r*1.9f,gap=size*1.0f;String[] words={"measured · not yet judged","not judged"};
+        float r=Math.max(5f,badge*0.80f),size=r*1.9f,gap=size*0.8f;
+        String[] words={"nothing flagged","worth a look","check closely","not judged"};
+        GmtHumanQcMath.Attention[] as={GmtHumanQcMath.Attention.CLEAR,GmtHumanQcMath.Attention.CHECK,GmtHumanQcMath.Attention.STRONG,GmtHumanQcMath.Attention.UNASSESSABLE};
         Paint t=fill(Color.WHITE,255);t.setTextSize(size);float total=0;
         for(String w:words)total+=2*r+size*0.35f+t.measureText(w)+gap;total-=gap;
         float lim=(float)Math.min(W*0.96,maxWidth);if(total>lim){float k=lim/total;r*=k;size*=k;gap*=k;t.setTextSize(size);total*=k;}
         float y=(float)Math.min(H-r*1.6f,Double.isFinite(dialBottom)&&dialBottom+r*2.4f<H?dialBottom+r*1.8f:H-r*1.6f);
         float x=(float)Math.max(r,Math.min(W-total-r,centreX-total/2));
         c.drawRect(x-r,y-r*1.45f,x+total+r,y+r*1.45f,fill(Color.rgb(12,16,22),185));
-        measuredBadge(c,x+r,y,r);x+=2*r+size*0.35f;c.drawText(words[0],x,y+size*0.35f,t);x+=t.measureText(words[0])+gap;
-        dashBadge(c,x+r,y,r);x+=2*r+size*0.35f;c.drawText(words[1],x,y+size*0.35f,t);
+        for(int i=0;i<4;i++){badge(c,x+r,y,r,as[i]);x+=2*r+size*0.35f;c.drawText(words[i],x,y+size*0.35f,t);x+=t.measureText(words[i])+gap;}
     }
 
     private static void banner(Canvas c,String text,double cx,double top,double maxWidth,int W,float badge){
