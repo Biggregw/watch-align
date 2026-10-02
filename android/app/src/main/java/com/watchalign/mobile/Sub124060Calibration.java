@@ -7,17 +7,17 @@ import java.util.List;
 /**
  * Frozen family-specific alignment calibration for the Rolex Submariner 124060.
  *
- * Source: repaired Watch-family Calibrator run 37004915187 (branch fix/124060-measured-only,
- * 2026-10-02): production-route measurement with the alpha70 gates, Hampel outlier rejection,
- * one-sided bands for spacing RMS and the 12-6 axis offset. 12 development genuine watches set the
- * limits; validation (3) and holdout (3-4) genuine watches were 100% clear; 0 outliers rejected.
- * Accepted by the product owner as PROVISIONAL limits: the calibrator could not prove sensitivity
- * (no replica/defect evidence in that run), so these are alignment-QC prompts, not proven tolerances.
- * The 12 gap and the 3-9 baton axis had too little repeat data and stay measured-only.
+ * Source: repaired Watch-family Calibrator run 37008521836 (2026-10-02, 44 genuine Bob's Watches
+ * listings): production-route measurement with the alpha70 gates, Hampel outlier rejection (0
+ * rejected), one-sided bands for spacing RMS and both axis offsets. 25 development genuine watches set
+ * the limits; validation (3-8) and holdout (5-9) genuine watches were 100% clear on all seven checks.
+ * Accepted by the product owner as PROVISIONAL limits: sensitivity is not proven (no replica/defect
+ * evidence in that run), so these are alignment-QC prompts, not proven tolerances.
  *
- * History: alpha72 used run 36927036008, whose bands were far too wide; alpha73 disabled them.
+ * History: alpha72 used run 36927036008 (far too wide); alpha73 disabled verdicts; alpha74 used run
+ * 37004915187 (20 watches, gap and 3-9 axis lacked data).
  *
- * The 12-gap metric is deliberately absent. Calibration marked it INSUFFICIENT because it was
+ * The 12 gap is calibrated from alpha75 (it passed the pose-sensitivity check with the larger set). Calibration marked it INSUFFICIENT because it was
  * pose/scale sensitive, so the product continues to measure it but never uses it for a verdict.
  */
 final class Sub124060Calibration {
@@ -41,6 +41,7 @@ final class Sub124060Calibration {
     static final class Assessment {
         GmtHumanQcMath.Attention rotation=GmtHumanQcMath.Attention.UNASSESSABLE;
         GmtHumanQcMath.Attention centring=GmtHumanQcMath.Attention.UNASSESSABLE;
+        GmtHumanQcMath.Attention gap=GmtHumanQcMath.Attention.UNASSESSABLE;
         GmtHumanQcMath.Attention roundRing=GmtHumanQcMath.Attention.UNASSESSABLE;
         GmtHumanQcMath.Attention roundSpacing=GmtHumanQcMath.Attention.UNASSESSABLE;
         GmtHumanQcMath.Attention baton39=GmtHumanQcMath.Attention.UNASSESSABLE;
@@ -48,9 +49,9 @@ final class Sub124060Calibration {
         double roundRingRho=Double.NaN,roundSpacingRmsDeg=Double.NaN;
         double baton39LineOffsetR=Double.NaN,axis126LineOffsetR=Double.NaN;
         /** A reliable value exists (passed the alpha70 gates), whether or not it was judged. */
-        boolean rotationMeasured,centringMeasured,roundRingMeasured,roundSpacingMeasured,baton39Measured,axis126Measured;
+        boolean rotationMeasured,gapMeasured,centringMeasured,roundRingMeasured,roundSpacingMeasured,baton39Measured,axis126Measured;
 
-        boolean twelveMeasured(){return rotationMeasured||centringMeasured||axis126Measured;}
+        boolean twelveMeasured(){return rotationMeasured||gapMeasured||centringMeasured||axis126Measured;}
         boolean roundsMeasured(){return roundRingMeasured||roundSpacingMeasured;}
         boolean batonMeasured(String label){
             if("3".equals(label)||"9".equals(label))return baton39Measured;
@@ -58,7 +59,7 @@ final class Sub124060Calibration {
             return false;
         }
 
-        GmtHumanQcMath.Attention twelve(){return worst(rotation,centring,axis126);}
+        GmtHumanQcMath.Attention twelve(){return worst(rotation,gap,centring,axis126);}
         GmtHumanQcMath.Attention rounds(){return worst(roundRing,roundSpacing);}
         GmtHumanQcMath.Attention baton(String label){
             if("3".equals(label)||"9".equals(label))return baton39;
@@ -68,19 +69,22 @@ final class Sub124060Calibration {
     }
 
     static final Band TWELVE_ROTATION=new Band("twelve.rotation_deg",
-            -0.9604778124,1.4000408124,-1.747317354,2.186880354);
+            -1.18473115495,1.58789615495,-2.10894025825,2.51210525825);
+    static final Band TWELVE_GAP=new Band("twelve.gap_r",
+            0.0247193049,0.0523356951,0.0155138415,0.0615411585);
     static final Band TWELVE_CENTRING=new Band("twelve.centring_w",
-            -0.0188698722,0.0202618722,-0.031913787,0.033305787);
+            -0.0204445564,0.0181445564,-0.033307594,0.031007594);
     static final Band ROUND_RING_RHO=new Band("round.ring_rho",
-            0.8085422397,0.8280102603,0.8020528995,0.8344996005);
+            0.8112316335,0.8233963665,0.8071767225,0.8274512775);
     /** One-sided: an RMS cannot be negative, so only an upper limit exists. */
     static final Band ROUND_SPACING_RMS=new Band("round.spacing_rms_deg",
-            Double.NEGATIVE_INFINITY,0.74475573385,Double.NEGATIVE_INFINITY,1.05287188975);
-    /** Not calibrated (insufficient repeat data in run 37004915187): measured only. */
-    static final Band BATON_3_9_LINE_OFFSET=null;
+            Double.NEGATIVE_INFINITY,0.8017853513,Double.NEGATIVE_INFINITY,1.1302805855);
+    /** One-sided: an absolute offset cannot be negative. */
+    static final Band BATON_3_9_LINE_OFFSET=new Band("baton.3_9_line_offset_r",
+            Double.NEGATIVE_INFINITY,0.0094181512,Double.NEGATIVE_INFINITY,0.012988252);
     /** One-sided: an absolute offset cannot be negative. */
     static final Band AXIS_12_6_LINE_OFFSET=new Band("axis.12_6_line_offset_r",
-            Double.NEGATIVE_INFINITY,0.0052681464,Double.NEGATIVE_INFINITY,0.007901244);
+            Double.NEGATIVE_INFINITY,0.0056572452,Double.NEGATIVE_INFINITY,0.008426742);
 
     private Sub124060Calibration(){}
 
@@ -122,6 +126,9 @@ final class Sub124060Calibration {
 
         if(r.rotationWithheld==null&&Double.isFinite(r.rotationDeg)&&Boolean.TRUE.equals(r.rotationResizeStable)){
             a.rotationMeasured=true;if(judge)a.rotation=TWELVE_ROTATION.judge(r.rotationDeg);
+        }
+        if(r.gapWithheld==null&&Double.isFinite(r.gapR)&&Boolean.TRUE.equals(r.gapResizeStable)){
+            a.gapMeasured=true;if(judge)a.gap=TWELVE_GAP.judge(r.gapR);
         }
         if(r.centringWithheld==null&&Double.isFinite(r.centringW)&&Boolean.TRUE.equals(r.centringResizeStable)){
             a.centringMeasured=true;if(judge)a.centring=TWELVE_CENTRING.judge(r.centringW);

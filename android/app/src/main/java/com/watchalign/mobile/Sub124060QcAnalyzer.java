@@ -222,7 +222,7 @@ final class Sub124060QcAnalyzer {
             res.twelveWithheld=String.format(Locale.US,"the 12 triangle is only %.0f px wide in this photo (minimum %.0f)",Math.floor(widthPx),MIN_TRIANGLE_PX);
         }else if(res.tick60!=null&&res.tick59!=null&&res.tick01!=null){
             HandIntrusion.Result hi=HandIntrusion.measure(img,w,h,cx,cy,f.r,new double[][]{c.L,c.R,c.T},res.tick59,res.tick60,res.tick01);
-            if(hi.present){res.handAtTwelve=true;res.twelveWithheld="a hand is at the 12 triangle";}
+            if(hi.present){res.handAtTwelve=true;res.twelveWithheld="a hand is touching or right beside the 12 triangle, which can shift its measured outline";}
         }
         if(res.twelveWithheld==null)checkTriangleResize(src,res);
         if(res.twelveWithheld==null&&res.dialSource==DialSource.MANUAL_CIRCLE)

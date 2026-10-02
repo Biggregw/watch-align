@@ -30,7 +30,7 @@
     "ARF"
   ],
   "discovery": {
-    "target_gen": 24,
+    "target_gen": 48,
     "target_rep": 12,
     "minimum_gen_candidates": 12,
     "per_source_target": 10,
@@ -44,7 +44,7 @@
         "name": "Bob's Watches",
         "id_prefix": "auto_bobs_124060",
         "source_type": "dealer_listing",
-        "target": 20,
+        "target": 44,
         "require_listing_id": true,
         "seed_urls": [
           "https://www.bobswatches.com/rolex/submariner-{model}",
@@ -57,7 +57,12 @@
           "https://www.bobswatches.com/rolex/submariner-{model}?page=7&waitlist=1",
           "https://www.bobswatches.com/rolex/submariner-{model}?page=8&waitlist=1",
           "https://www.bobswatches.com/rolex/submariner-{model}?page=9&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=10&waitlist=1"
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=10&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=11&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=12&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=13&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=14&waitlist=1",
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=15&waitlist=1"
         ]
       },
       {
@@ -167,16 +172,18 @@
   ],
   "sensitivity_note": "max_clear_half_width (the largest clear band that is still useful for QC) and defect_evidence (CSV of metric,value for confirmed defective watches) are product decisions, deliberately left null. Until one is set for a metric it can reach at most HOLDOUT_PASSED_SENSITIVITY_UNPROVEN, never CALIBRATED.",
   "accepted_provisional": {
-    "run": 37004915187,
+    "run": 37008521836,
     "date": "2026-10-02",
     "by": "product owner",
     "metrics": [
       "twelve.rotation_deg",
+      "twelve.gap_r",
       "twelve.centring_w",
       "round.ring_rho",
       "round.spacing_rms_deg",
+      "baton.3_9_line_offset_r",
       "axis.12_6_line_offset_r"
     ],
-    "note": "Bands frozen into Sub124060Calibration (alpha74) as provisional QC prompts; sensitivity not yet proven (no replica/defect evidence in that run)."
+    "note": "All seven bands frozen into Sub124060Calibration (alpha75) as provisional QC prompts; sensitivity not yet proven (no replica/defect evidence)."
   }
 }

@@ -2,7 +2,6 @@ package com.watchalign.mobile;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -21,21 +20,23 @@ public class Sub124060CalibrationTest {
     }
 
     @Test public void exactFrozenLimitsArePresent(){
-        // Repaired calibrator run 37004915187 (provisional, accepted 2026-10-02).
-        assertEquals(-0.9604778124,Sub124060Calibration.TWELVE_ROTATION.clearLow,0);
-        assertEquals(1.4000408124,Sub124060Calibration.TWELVE_ROTATION.clearHigh,0);
-        assertEquals(2.186880354,Sub124060Calibration.TWELVE_ROTATION.checkHigh,0);
-        assertEquals(-0.0188698722,Sub124060Calibration.TWELVE_CENTRING.clearLow,0);
-        assertEquals(0.033305787,Sub124060Calibration.TWELVE_CENTRING.checkHigh,0);
-        assertEquals(0.8085422397,Sub124060Calibration.ROUND_RING_RHO.clearLow,0);
-        assertEquals(0.8280102603,Sub124060Calibration.ROUND_RING_RHO.clearHigh,0);
+        // Repaired calibrator run 37008521836 (44 genuine listings; provisional, accepted 2026-10-02).
+        assertEquals(-1.18473115495,Sub124060Calibration.TWELVE_ROTATION.clearLow,0);
+        assertEquals(1.58789615495,Sub124060Calibration.TWELVE_ROTATION.clearHigh,0);
+        assertEquals(2.51210525825,Sub124060Calibration.TWELVE_ROTATION.checkHigh,0);
+        assertEquals(0.0247193049,Sub124060Calibration.TWELVE_GAP.clearLow,0);
+        assertEquals(0.0523356951,Sub124060Calibration.TWELVE_GAP.clearHigh,0);
+        assertEquals(-0.0204445564,Sub124060Calibration.TWELVE_CENTRING.clearLow,0);
+        assertEquals(0.031007594,Sub124060Calibration.TWELVE_CENTRING.checkHigh,0);
+        assertEquals(0.8112316335,Sub124060Calibration.ROUND_RING_RHO.clearLow,0);
+        assertEquals(0.8233963665,Sub124060Calibration.ROUND_RING_RHO.clearHigh,0);
         // One-sided metrics have no lower limit.
         assertEquals(Double.NEGATIVE_INFINITY,Sub124060Calibration.ROUND_SPACING_RMS.clearLow,0);
-        assertEquals(0.74475573385,Sub124060Calibration.ROUND_SPACING_RMS.clearHigh,0);
+        assertEquals(0.8017853513,Sub124060Calibration.ROUND_SPACING_RMS.clearHigh,0);
+        assertEquals(Double.NEGATIVE_INFINITY,Sub124060Calibration.BATON_3_9_LINE_OFFSET.clearLow,0);
+        assertEquals(0.0094181512,Sub124060Calibration.BATON_3_9_LINE_OFFSET.clearHigh,0);
         assertEquals(Double.NEGATIVE_INFINITY,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.checkLow,0);
-        assertEquals(0.0052681464,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.clearHigh,0);
-        // Insufficient repeat data: measured only.
-        assertNull(Sub124060Calibration.BATON_3_9_LINE_OFFSET);
+        assertEquals(0.0056572452,Sub124060Calibration.AXIS_12_6_LINE_OFFSET.clearHigh,0);
     }
 
     @Test public void worstUsesTheMatureGmtSeverityOrdering(){
@@ -69,9 +70,14 @@ public class Sub124060CalibrationTest {
         assertEquals(0.10,Sub124060Calibration.lineOffset(new double[]{-0.8,0.1},new double[]{0.8,0.1}),1e-12);
     }
 
-    @Test public void gapHasNoCalibrationBand(){
-        // Deliberately no TWELVE_GAP constant. The public contract is measured-only.
-        assertEquals("MEASURED / NOT YET JUDGED",Sub124060Summary.MEASURED);
+    @Test public void gapIsJudgedOnlyWhenResizeStable(){
+        Sub124060QcAnalyzer.Result r=new Sub124060QcAnalyzer.Result();
+        r.gapR=0.035;r.gapResizeStable=true;
+        assertEquals(GmtHumanQcMath.Attention.CLEAR,Sub124060Calibration.assess(r).gap);
+        r.gapR=0.08;
+        assertEquals(GmtHumanQcMath.Attention.STRONG,Sub124060Calibration.assess(r).twelve());
+        r.gapResizeStable=false;
+        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,Sub124060Calibration.assess(r).gap);
     }
 
     @Test public void provisionalBandsJudgeAndFlagRealDeviations(){
