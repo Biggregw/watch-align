@@ -4,39 +4,25 @@
   "acquisition_adapter": "submariner_acquire_v3",
   "measurement_adapter": "production_app_route_v1",
   "layout": {
-    "triangle": [
-      12
-    ],
-    "batons": [
-      3,
-      6,
-      9
-    ],
-    "rounds": [
-      1,
-      2,
-      4,
-      5,
-      7,
-      8,
-      10,
-      11
-    ]
+    "triangle": [12],
+    "batons": [3, 6, 9],
+    "rounds": [1, 2, 4, 5, 7, 8, 10, 11]
   },
-  "replica_factories": [
-    "VSF",
-    "Clean",
-    "CF",
-    "ARF"
-  ],
+  "replica_factories": ["VSF", "Clean", "CF", "ARF"],
   "discovery": {
-    "target_gen": 48,
+    "target_gen": 50,
     "target_rep": 12,
-    "minimum_gen_candidates": 12,
+    "minimum_gen_candidates": 24,
     "per_source_target": 10,
     "max_images_per_watch": 10,
     "require_clean_discovery": true,
     "allow_bootstrap": false,
+    "genuine_source_diversity": {
+      "minimum_sources": 4,
+      "minimum_watches_per_source": 3,
+      "minimum_acquired_watches": 20,
+      "max_single_source_share": 0.5
+    },
     "sources": [
       {
         "class": "gen",
@@ -44,26 +30,16 @@
         "name": "Bob's Watches",
         "id_prefix": "auto_bobs_124060",
         "source_type": "dealer_listing",
-        "target": 44,
+        "target": 12,
         "require_listing_id": true,
         "seed_urls": [
           "https://www.bobswatches.com/rolex/submariner-{model}",
           "https://www.bobswatches.com/rolex/submariner-{model}?waitlist=1",
           "https://www.bobswatches.com/rolex/submariner-{model}?page=2&waitlist=1",
           "https://www.bobswatches.com/rolex/submariner-{model}?page=3&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=4&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=5&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=6&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=7&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=8&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=9&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=10&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=11&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=12&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=13&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=14&waitlist=1",
-          "https://www.bobswatches.com/rolex/submariner-{model}?page=15&waitlist=1"
-        ]
+          "https://www.bobswatches.com/rolex/submariner-{model}?page=4&waitlist=1"
+        ],
+        "note": "Known working source, deliberately capped so it cannot dominate a fresh calibration."
       },
       {
         "class": "gen",
@@ -71,10 +47,64 @@
         "name": "SwissWatchExpo",
         "id_prefix": "auto_swe_124060",
         "source_type": "dealer_listing",
-        "target": 8,
+        "target": 10,
+        "require_listing_id": true,
+        "seed_urls": [
+          "https://www.swisswatchexpo.com/watches/rolex/submariner/"
+        ],
+        "note": "Verified category/archive with individual 124060 listings and actual-watch photography."
+      },
+      {
+        "class": "gen",
+        "domain": "europeanwatch.com",
+        "name": "European Watch Company",
+        "id_prefix": "auto_ewc_124060",
+        "source_type": "dealer_listing",
+        "target": 10,
+        "require_listing_id": true,
+        "seed_urls": [
+          "https://www.europeanwatch.com/brand/rolex/submariner"
+        ],
+        "note": "Verified 124060 listing archive. Acquisition unwraps the listing's Next.js gallery URLs to the stock-numbered image CDN target."
+      },
+      {
+        "class": "gen",
+        "domain": "davidsw.com",
+        "name": "DavidSW",
+        "id_prefix": "auto_davidsw_124060",
+        "source_type": "dealer_listing",
+        "target": 10,
         "require_listing_id": false,
-        "seed_urls": [],
-        "note": "No permitted seed page configured yet; search-engine queries were removed. Contributes 0 until a dealer category URL is added."
+        "seed_urls": [
+          "https://davidsw.com/product-category/watch/rolex/submariner/"
+        ],
+        "note": "Verified 124060 product listings. Acquisition is restricted to the WooCommerce product gallery."
+      },
+      {
+        "class": "gen",
+        "domain": "nashvillewatch.com",
+        "name": "Nashville Watch",
+        "id_prefix": "auto_nashville_124060",
+        "source_type": "dealer_listing",
+        "target": 10,
+        "require_listing_id": false,
+        "seed_urls": [
+          "https://nashvillewatch.com/product-category/watch/?filter_brand=rolex"
+        ],
+        "note": "Verified 124060 product listings. Acquisition is restricted to the WooCommerce product gallery."
+      },
+      {
+        "class": "gen",
+        "domain": "grayandsons.com",
+        "name": "Gray & Sons",
+        "id_prefix": "auto_gray_124060",
+        "source_type": "dealer_listing",
+        "target": 6,
+        "require_listing_id": true,
+        "seed_urls": [
+          "https://www.grayandsons.com/fine-watches/rolex/rolex-submariner-watch/"
+        ],
+        "note": "Verified public Submariner inventory/listings; contributes when 124060 inventory is exposed by the category page."
       },
       {
         "class": "rep",
@@ -185,6 +215,6 @@
       "baton.3_9_line_offset_r",
       "axis.12_6_line_offset_r"
     ],
-    "note": "All seven bands frozen into Sub124060Calibration (alpha75) as provisional QC prompts; sensitivity not yet proven (no replica/defect evidence)."
+    "note": "All seven bands frozen into Sub124060Calibration (alpha75) as provisional QC prompts; sensitivity not yet proven (no replica/defect evidence). This historical run predates the acquired-source-diversity gate."
   }
 }
