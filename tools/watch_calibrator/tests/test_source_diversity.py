@@ -9,7 +9,10 @@ sys.path.insert(0, str(HERE))
 import source_diversity  # noqa: E402
 
 
-FIELDS = ["candidate_id", "physical_watch_id", "class_label", "source_name", "images_acquired"]
+FIELDS = [
+    "candidate_id", "physical_watch_id", "class_label", "source_name",
+    "acquisition_status", "exact_duplicate_of"
+]
 
 
 def config():
@@ -25,7 +28,7 @@ def config():
     }
 
 
-def write_summary(path: Path, counts: dict[str, int]):
+def write_acquired(path: Path, counts: dict[str, int]):
     with path.open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=FIELDS)
         w.writeheader()
@@ -38,15 +41,16 @@ def write_summary(path: Path, counts: dict[str, int]):
                     "physical_watch_id": f"w{n}",
                     "class_label": "gen",
                     "source_name": source,
-                    "images_acquired": 3,
+                    "acquisition_status": "acquired",
+                    "exact_duplicate_of": "",
                 })
 
 
 class SourceDiversityTest(unittest.TestCase):
     def test_diverse_acquired_population_passes(self):
         with tempfile.TemporaryDirectory() as td:
-            path = Path(td) / "candidate_summary.csv"
-            write_summary(path, {"A": 6, "B": 5, "C": 5, "D": 4})
+            path = Path(td) / "acquired_images.csv"
+            write_acquired(path, {"A": 6, "B": 5, "C": 5, "D": 4})
             report = source_diversity.evaluate(config(), path)
         self.assertTrue(report["passed"])
         self.assertEqual(4, report["qualifying_source_count"])
@@ -54,20 +58,21 @@ class SourceDiversityTest(unittest.TestCase):
 
     def test_one_large_dealer_cannot_hide_missing_diversity(self):
         with tempfile.TemporaryDirectory() as td:
-            path = Path(td) / "candidate_summary.csv"
-            write_summary(path, {"Bob": 18, "B": 2, "C": 2, "D": 2})
+            path = Path(td) / "acquired_images.csv"
+            write_acquired(path, {"Bob": 18, "B": 2, "C": 2, "D": 2})
             report = source_diversity.evaluate(config(), path)
         self.assertFalse(report["passed"])
         self.assertEqual("NEEDS_MORE_SOURCE_DIVERSITY", report["state"])
         self.assertTrue(any("maximum allowed" in x for x in report["reasons"]))
         self.assertTrue(any("genuine sources" in x for x in report["reasons"]))
 
-    def test_discovered_but_unacquired_watches_do_not_count(self):
+    def test_failed_or_duplicate_only_watch_does_not_count(self):
         with tempfile.TemporaryDirectory() as td:
-            path = Path(td) / "candidate_summary.csv"
-            write_summary(path, {"A": 5, "B": 5, "C": 5, "D": 5})
-            rows = list(csv.DictReader(path.open(newline="", encoding="utf-8")))
-            rows[-1]["images_acquired"] = "0"
+            path = Path(td) / "acquired_images.csv"
+            write_acquired(path, {"A": 5, "B": 5, "C": 5, "D": 5})
+            with path.open(newline="", encoding="utf-8") as fh:
+                rows = list(csv.DictReader(fh))
+            rows[-1]["exact_duplicate_of"] = "some-other-image.jpg"
             with path.open("w", newline="", encoding="utf-8") as fh:
                 w = csv.DictWriter(fh, fieldnames=FIELDS)
                 w.writeheader(); w.writerows(rows)
