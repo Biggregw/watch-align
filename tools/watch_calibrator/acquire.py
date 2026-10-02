@@ -6,6 +6,12 @@ adapter adds Reddit-hosted media support and then delegates the complete acquisi
 submariner_acquire. One Reddit post remains one physical watch because discovery assigns one
 candidate/watch id per post. No replica image is used to set a genuine tolerance; replica images
 are downstream stress-test evidence only.
+
+For native Reddit QC posts the resolver now tries the public per-post Atom/RSS feed first. That
+surface remains available on cloud runners even when anonymous Reddit JSON is blocked and can
+expose the complete gallery. JSON is retained as a best-effort enrichment path. The direct image
+hint carried by discovery is always kept as a fail-closed fallback, so a temporary metadata
+failure cannot turn an otherwise usable QC post into zero evidence.
 """
 from __future__ import annotations
 
@@ -14,8 +20,11 @@ import html
 import json
 import re
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.parse import urlparse
+
+from bs4 import BeautifulSoup
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
@@ -23,12 +32,13 @@ HARVESTER = REPO / "tools" / "dataset_harvester"
 sys.path.insert(0, str(HARVESTER))
 
 import submariner_acquire as base  # noqa: E402
-from harvester.http import FetchError  # noqa: E402
 from harvester.resolvers import ImageRef  # noqa: E402
 
 ORIGINAL_RESOLVE = base.resolve_candidate
 REDDIT_POST = re.compile(r"reddit\.com/(?:r/[^/]+/)?comments/([a-z0-9]+)", re.I)
 REDDIT_IMAGE_HOSTS = {"i.redd.it", "preview.redd.it", "external-preview.redd.it"}
+ATOM = {"a": "http://www.w3.org/2005/Atom"}
+RSS_HEADERS = {"Accept": "application/atom+xml, application/xml, text/xml"}
 
 
 def reddit_post_id(url: str) -> str:
@@ -37,7 +47,7 @@ def reddit_post_id(url: str) -> str:
 
 
 def _image_url(url: str) -> str:
-    u = html.unescape((url or "").strip())
+    u = html.unescape((url or "").strip()).replace("\\/", "/")
     if not u:
         return ""
     p = urlparse(u)
@@ -53,8 +63,44 @@ def _image_url(url: str) -> str:
     return u
 
 
+def _dedupe_urls(urls: list[str], max_images: int) -> list[str]:
+    seen, keep = set(), []
+    for raw in urls:
+        u = _image_url(raw)
+        if not u or u in seen:
+            continue
+        seen.add(u)
+        keep.append(u)
+        if len(keep) >= max_images:
+            break
+    return keep
+
+
+def _html_image_urls(content_html: str, max_images: int) -> list[str]:
+    """Extract every Reddit-hosted still image from HTML/escaped HTML, preserving order."""
+    raw = html.unescape(content_html or "").replace("\\/", "/")
+    candidates: list[str] = []
+    soup = BeautifulSoup(raw, "html.parser")
+    for tag in soup.find_all(["a", "img", "source"]):
+        for attr in ("href", "src", "srcset"):
+            value = tag.get(attr) or ""
+            if attr == "srcset":
+                candidates.extend(part.strip().split(" ")[0] for part in value.split(",") if part.strip())
+            elif value:
+                candidates.append(value)
+    # Embedded state can carry media URLs outside ordinary HTML attributes.
+    candidates.extend(
+        re.findall(
+            r"https?://(?:i|preview|external-preview)\.redd\.it/[^\s\"'<>]+",
+            raw,
+            re.I,
+        )
+    )
+    return _dedupe_urls(candidates, max_images)
+
+
 def _post_image_urls(post: dict) -> list[str]:
-    """Return still-image URLs in gallery order where Reddit supplies that order."""
+    """Return still-image URLs in gallery order where Reddit JSON supplies that order."""
     out: list[str] = []
     metadata = post.get("media_metadata") or {}
     gallery = (post.get("gallery_data") or {}).get("items") or []
@@ -80,17 +126,51 @@ def _post_image_urls(post: dict) -> list[str]:
     for parent in post.get("crosspost_parent_list") or []:
         out.extend(_post_image_urls(parent))
 
-    seen, keep = set(), []
-    for u in out:
-        key = html.unescape(u)
-        if key not in seen:
-            seen.add(key)
-            keep.append(key)
-    return keep
+    return _dedupe_urls(out, 1000)
+
+
+def reddit_rss_image_refs(source_url: str, http, max_images: int) -> list[ImageRef]:
+    """Expand a Reddit post through its public Atom feed without requiring Reddit JSON."""
+    post_id = reddit_post_id(source_url)
+    if not post_id:
+        return []
+    rss_url = source_url.rstrip("/") + "/.rss"
+    try:
+        response = http.get(rss_url, headers=RSS_HEADERS, api=True)
+        root = ET.fromstring(response.text)
+    except Exception:
+        return []
+
+    entries = root.findall("a:entry", ATOM)
+    # The submission is normally the first entry. Prefer an exact post permalink when available,
+    # then fall back to the first entry that actually contains Reddit-hosted media.
+    ordered = []
+    remainder = []
+    source_norm = source_url.rstrip("/")
+    for entry in entries:
+        link = ""
+        for node in entry.findall("a:link", ATOM):
+            href = (node.attrib.get("href") or "").rstrip("/")
+            if href:
+                link = href
+                if node.attrib.get("rel", "alternate") == "alternate":
+                    break
+        if link == source_norm:
+            ordered.append(entry)
+        else:
+            remainder.append(entry)
+    ordered.extend(remainder)
+
+    for entry in ordered:
+        content = entry.findtext("a:content", default="", namespaces=ATOM) or ""
+        urls = _html_image_urls(content, max_images)
+        if urls:
+            return [ImageRef(url=u) for u in urls]
+    return []
 
 
 def reddit_image_refs(source_url: str, http, max_images: int) -> list[ImageRef]:
-    """Best-effort legacy enrichment for posts with no RSS media hint.
+    """Best-effort Reddit JSON gallery enrichment.
 
     Cloud CI can block anonymous Reddit JSON, so callers must not depend on this succeeding.
     """
@@ -107,22 +187,37 @@ def reddit_image_refs(source_url: str, http, max_images: int) -> list[ImageRef]:
     return [ImageRef(url=u) for u in _post_image_urls(post)[:max_images]]
 
 
+def _merge_refs(groups: list[list[ImageRef]], max_images: int) -> list[ImageRef]:
+    seen, keep = set(), []
+    for group in groups:
+        for ref in group:
+            u = _image_url(ref.url or "")
+            if not u or u in seen:
+                continue
+            seen.add(u)
+            keep.append(ImageRef(url=u))
+            if len(keep) >= max_images:
+                return keep
+    return keep
+
+
 def resolve_candidate(row: dict, http, work: Path, max_images: int):
     # Existing Imgur handling remains first choice because it can provide the complete QC set.
     if (row.get("image_album_url") or "").strip():
         return ORIGINAL_RESOLVE(row, http, work, max_images)
 
-    # Reddit RSS discovery can carry the first native image forward. This is the critical
-    # cloud-safe path: no second Reddit metadata request is needed in acquisition.
-    direct = _image_url(row.get("direct_image_url") or "")
-    if direct:
-        return [ImageRef(url=direct)]
-
     source = (row.get("source_url") or "").strip()
     if source and "reddit.com/" in source.lower():
-        refs = reddit_image_refs(source, http, max_images)
+        # Public RSS is the primary cloud-safe gallery expansion path. JSON can add full-resolution
+        # gallery ordering when Reddit permits it. The discovery-time direct image remains fallback.
+        rss_refs = reddit_rss_image_refs(source, http, max_images)
+        json_refs = reddit_image_refs(source, http, max_images) if len(rss_refs) < max_images else []
+        direct = _image_url(row.get("direct_image_url") or "")
+        direct_refs = [ImageRef(url=direct)] if direct else []
+        refs = _merge_refs([rss_refs, json_refs, direct_refs], max_images)
         if refs:
             return refs
+
     return ORIGINAL_RESOLVE(row, http, work, max_images)
 
 
