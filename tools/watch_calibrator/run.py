@@ -8,13 +8,15 @@ holdout. It never lets replica data move a limit.
 """
 from __future__ import annotations
 
-import argparse, json, shutil, subprocess, sys
+import argparse, csv, json, os, shutil, subprocess, sys
+from collections import Counter
 from pathlib import Path
 
 HERE=Path(__file__).resolve().parent
 REPO=HERE.parents[1]
 sys.path.insert(0,str(HERE))
 from discover import discover  # noqa: E402
+from reddit_evidence import enrich as enrich_reddit_evidence  # noqa: E402
 from geometry import extract  # noqa: E402
 from calibrate import propose, finalize, save  # noqa: E402
 
@@ -33,7 +35,8 @@ def config_path(model: str)->Path:
 def paths(model: str, root: Path):
     m=model.upper();base=root/m
     return {"base":base,"pool":base/"discovered_candidates.csv","acq":base/"dataset","split":base/"locked_split.csv",
-            "devval":base/"measure_devval","holdout":base/"measure_holdout","geom":base/"geometry","cal":base/"calibration.json"}
+            "devval":base/"measure_devval","holdout":base/"measure_holdout","geom":base/"geometry","cal":base/"calibration.json",
+            "replica":base/"replica_evidence.json"}
 
 
 def measure(config, root, out, split, partitions, include_holdout=False):
@@ -47,23 +50,66 @@ def measure(config, root, out, split, partitions, include_holdout=False):
     sh(cmd)
 
 
+def replica_evidence(config: dict, acquisition_root: Path, output: Path) -> dict:
+    """Summarise whether replica stress evidence is single-shot or repeatable multi-photo data."""
+    summary=acquisition_root/"candidate_summary.csv"
+    minimum=int(config.get("discovery",{}).get("minimum_replica_multi_photo_watches",6))
+    if not summary.exists():
+        result={"state":"NO_DATA","watches":0,"images":0,"with_2plus_photos":0,
+                "minimum_multi_photo_watches":minimum,"oauth_configured":False}
+    else:
+        with summary.open(newline="",encoding="utf-8") as fh:
+            rows=[r for r in csv.DictReader(fh) if (r.get("class_label") or r.get("class") or "").lower()=="rep"]
+        counts=[]
+        factories=Counter()
+        album_backed=0
+        for row in rows:
+            try: n=int(row.get("images_acquired") or 0)
+            except ValueError: n=0
+            if n<=0: continue
+            counts.append(n)
+            factories[(row.get("factory") or "unknown")]+=1
+            if (row.get("image_album_url") or "").strip(): album_backed+=1
+        multi=sum(n>=2 for n in counts)
+        result={
+            "state":"ADEQUATE" if multi>=minimum else "PARTIAL",
+            "watches":len(counts),
+            "images":sum(counts),
+            "with_2plus_photos":multi,
+            "with_5plus_photos":sum(n>=5 for n in counts),
+            "single_photo_watches":sum(n==1 for n in counts),
+            "album_backed_watches":album_backed,
+            "max_images_for_one_watch":max(counts,default=0),
+            "minimum_multi_photo_watches":minimum,
+            "by_factory":dict(sorted(factories.items())),
+            "oauth_configured":bool(os.environ.get("REDDIT_CLIENT_ID") and os.environ.get("REDDIT_CLIENT_SECRET")),
+            "note":"Replica evidence is a stress test only and never moves genuine-derived limits.",
+        }
+    output.write_text(json.dumps(result,indent=2)+"\n",encoding="utf-8")
+    return result
+
+
 def run(model: str, root: Path, fresh=False) -> dict:
     cp=config_path(model); config=json.loads(cp.read_text(encoding="utf-8")); P=paths(model,root)
     if fresh and P["base"].exists(): shutil.rmtree(P["base"])
     P["base"].mkdir(parents=True,exist_ok=True)
 
-    # 1) Discover from the public web. No manually supplied pool is required.
+    # 1) Discover from the public web. No manually supplied pool is required. RepTimeQC evidence
+    # is then enriched with independently discovered album-backed posts before native single-image
+    # posts are used as fallback.
     d=discover(config,P["pool"])
+    d=enrich_reddit_evidence(config,P["pool"],d)
     if d["by_class"].get("gen",0) < config["discovery"].get("minimum_gen_candidates",1):
         status={"model":model,"state":"NEEDS_MORE_SOURCES","stage":"discovery","discovery":d}
         save({"model":model,"family":config["family"],"state":"NO_CALIBRATABLE_METRICS","metrics":{},"policy":config["calibration_policy"]},P["cal"])
         (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n");return status
 
-    # 2) Acquire. v3 adds Reddit-native QC gallery/direct-image resolution while retaining the
-    # mature provenance, hashing and storage behaviour of the Submariner acquisition path.
+    # 2) Acquire. v3 resolves Imgur albums, official Reddit OAuth galleries when credentials are
+    # available, public RSS evidence where exposed, and the discovery-time direct image fallback.
     if config.get("acquisition_adapter")!="submariner_acquire_v3":
         raise SystemExit(f"Unsupported acquisition adapter {config.get('acquisition_adapter')}")
     sh([sys.executable,REPO/"tools/watch_calibrator/acquire.py","--pool",P["pool"],"--out",P["acq"],"--max-images",str(config["discovery"].get("max_images_per_watch",12))])
+    rep_ev=replica_evidence(config,P["acq"],P["replica"])
 
     # 3) Build dataset and lock a watch-level split once. The split file is the boundary between discovery and calibration.
     if not P["split"].exists():
@@ -86,7 +132,8 @@ def run(model: str, root: Path, fresh=False) -> dict:
     save(frozen,P["base"]/"frozen_before_holdout.json")
     if frozen["state"]!="FROZEN_PENDING_HOLDOUT":
         save(frozen,P["cal"])
-        status={"model":model,"state":frozen["state"],"stage":"validation","discovery":d,"development":gd,"validation":gv}
+        status={"model":model,"state":frozen["state"],"stage":"validation","discovery":d,"replica_evidence":rep_ev,
+                "development":gd,"validation":gv}
         (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n");return status
 
     # 5) Limits are now frozen. Open holdout exactly once for confirmation. No value below can move a limit.
@@ -94,8 +141,8 @@ def run(model: str, root: Path, fresh=False) -> dict:
     gh=extract(P["holdout"],P["geom"],config,"holdout","gen")
     final=finalize(frozen,P["geom"]/f"{pref}holdout_gen_watch.csv")
     save(final,P["cal"])
-    status={"model":model,"state":final["state"],"stage":"complete","discovery":d,"development":gd,"validation":gv,"holdout":gh,
-            "calibration":str(P["cal"])}
+    status={"model":model,"state":final["state"],"stage":"complete","discovery":d,"replica_evidence":rep_ev,
+            "development":gd,"validation":gv,"holdout":gh,"calibration":str(P["cal"])}
     (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n",encoding="utf-8")
     return status
 
