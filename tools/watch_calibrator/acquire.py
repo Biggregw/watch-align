@@ -165,8 +165,6 @@ def _merge_refs(groups: list[list[ImageRef]], max_images: int) -> list[ImageRef]
 
 
 def resolve_candidate(row: dict, http, work: Path, max_images: int):
-    # Existing Imgur handling remains first choice because it provides the complete QC set without
-    # requiring Reddit metadata access.
     if (row.get("image_album_url") or "").strip():
         return ORIGINAL_RESOLVE(row, http, work, max_images)
 
@@ -176,13 +174,8 @@ def resolve_candidate(row: dict, http, work: Path, max_images: int):
         direct = _image_url(row.get("direct_image_url") or "")
         direct_refs = [ImageRef(url=direct)] if direct else []
         refs = _merge_refs([oauth_refs, direct_refs], max_images)
-        # Never fall through to the generic resolver for a Reddit page: that would fetch Reddit
-        # HTML anonymously. No official-API media means no images for this watch.
         return refs
 
-    # A few manually verified dealer layouts need a safer source-specific gallery parser because
-    # their full-size image paths do not contain the listing SKU. Unknown dealers still use the
-    # mature strict resolver, including its listing-id-in-image-path contamination guard.
     verified = dealer_media.resolve_verified_dealer(row, http, max_images)
     if verified is not None:
         return verified
@@ -218,12 +211,9 @@ def run(pool, out: Path, max_images: int = 12) -> dict:
     finally:
         base.resolve_candidate = original
 
-    # Source diversity is based on acquired genuine physical watches, not discovery hits. A failed
-    # gate is persisted for diagnosis and the CLI exits non-zero before run.py can create a split or
-    # fit any calibration limits.
     config = _config_for_pool(pool)
     if config is not None:
-        report = source_diversity.evaluate(config, out / "candidate_summary.csv")
+        report = source_diversity.evaluate(config, out / "acquired_images.csv")
         source_diversity.save(report, out / "source_diversity.json")
         result["source_diversity"] = report
     return result
