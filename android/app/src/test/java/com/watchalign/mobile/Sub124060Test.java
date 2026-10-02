@@ -12,7 +12,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Experimental 124060 path: layout, frozen triangle selection rules, fail-closed gates, no-verdict summary. */
+/** 124060 path: layout, frozen triangle rules, fail-closed gates and calibrated GMT-style presentation. */
 public class Sub124060Test {
 
     // ---------------------------------------------------------------------------------------- layout
@@ -54,7 +54,6 @@ public class Sub124060Test {
     }
 
     @Test public void noGmtApexGate(){
-        // 38 and 50 deg are far outside the GMT 44.3 +-2 deg gate but inside the broad 124060 shape window.
         for(double apex:new double[]{38.0,50.0}){
             SubTwelveTriangle.Cand c=clean();c.apex=apex;judged(c);
             assertTrue("apex "+apex,c.plausible);
@@ -103,11 +102,8 @@ public class Sub124060Test {
         assertFalse(Sub124060QcAnalyzer.sameOutline(100,100,0.25,100,100,0.19,400));
     }
 
-    // ---------------------------------------------------------------------------------------- summary: no verdicts
-    static final String[] VERDICT_WORDS={"OK","worth a look","CHECK CLOSELY","Check closely","!!","STRONG","CLEAR","PASS","FAIL","nothing flagged"};
-
-    static void assertNoVerdict(String s){
-        for(String w:VERDICT_WORDS)assertFalse("verdict word '"+w+"' in:\n"+s,s.contains(w));
+    // ---------------------------------------------------------------------------------------- calibrated summary
+    static void assertNoGmtContamination(String s){
         for(String gmt:new String[]{"date window","Sprite","date side","GMT-Master"})assertFalse(gmt,s.contains(gmt));
     }
 
@@ -115,23 +111,29 @@ public class Sub124060Test {
         Sub124060QcAnalyzer.Result r=new Sub124060QcAnalyzer.Result();
         r.dialSource=Sub124060QcAnalyzer.DialSource.AUTO_EDGE_FIT;r.dialReproducible=true;
         r.triangle=clean();r.rotationDeg=0.4;r.gapR=0.041;r.centringW=0.006;
+        r.rotationResizeStable=true;r.gapResizeStable=true;r.centringResizeStable=true;
         for(GmtSixLandmarkAnalyzer.Position p:Sub124060Layout.BATONS){Sub124060QcAnalyzer.Baton b=new Sub124060QcAnalyzer.Baton(p);b.status=Sub124060QcAnalyzer.Status.FOUND;r.batons.add(b);}
         for(int h:Sub124060Layout.ROUND_HOURS){GmtRoundMarkerAnalyzer.Marker m=new GmtRoundMarkerAnalyzer.Marker(h);m.found=true;
             r.rounds.add(new Sub124060QcAnalyzer.Round(m,h==8?Sub124060QcAnalyzer.Status.HAND:Sub124060QcAnalyzer.Status.FOUND,""));}
         return r;
     }
 
-    @Test public void measuredValuesAreLabelledMeasuredNotYetJudged(){
+    @Test public void measuredTwelveUsesFrozenCalibrationAndGapStaysUnjudged(){
         String s=Sub124060Summary.build(measured());
         assertTrue(s.startsWith("SUMMARY\n"+Sub124060Summary.EXPERIMENTAL));
-        assertEquals(3,count(s,Sub124060Summary.MEASURED));
         assertTrue(s.contains("Dial: automatic edge fit"));
-        assertTrue(s.contains("+0.40°"));assertTrue(s.contains("0.041"));assertTrue(s.contains("+0.006"));
+        assertTrue(s.contains("12 rotation: +0.40°"));
+        assertTrue(s.contains("12 centring: +0.006"));
+        assertTrue(s.contains("12 overall alignment: CLEAR"));
+        assertTrue(s.contains("12 gap to minute track: 0.041"));
+        assertTrue(s.contains(Sub124060Summary.MEASURED));
+        assertTrue(s.contains("pose/scale sensitive"));
         assertTrue(s.contains("Batons 3/6/9: 3/3 detected, 3/3 measurable"));
         assertTrue(s.contains("Round markers: 8/8 detected, 7/8 measurable (8: detected, not measured (hand in the way))"));
         assertTrue(s.contains("GMT-style whole-dial markup"));
+        assertTrue(s.contains("Tick = nothing flagged"));
         assertTrue(s.contains(Sub124060Summary.NOT_CHECKED));
-        assertNoVerdict(s);
+        assertNoGmtContamination(s);
     }
 
     @Test public void detectedAndMeasurableAreNotConflated(){
@@ -140,17 +142,28 @@ public class Sub124060Test {
         String s=Sub124060Summary.build(r);
         assertTrue(s.contains("Batons 3/6/9: 3/3 detected, 2/3 measurable"));
         assertTrue(s.contains("6: detected, not measured (hand in the way)"));
-        assertNoVerdict(s);
+        assertNoGmtContamination(s);
     }
 
-    @Test public void withheldValuesSayWhyAndCarryNoNumber(){
+    @Test public void withheldValuesSayWhyAndDoNotReceiveVerdicts(){
         Sub124060QcAnalyzer.Result r=measured();
         r.rotationDeg=r.gapR=r.centringW=Double.NaN;
         r.twelveWithheld=r.rotationWithheld=r.gapWithheld=r.centringWithheld="a hand is at the 12 triangle";
         String s=Sub124060Summary.build(r);
-        assertEquals(0,count(s,Sub124060Summary.MEASURED));
         assertEquals(3,count(s,"not measured (a hand is at the 12 triangle)"));
-        assertNoVerdict(s);
+        assertTrue(s.contains("12 overall alignment: NOT JUDGED"));
+        assertNoGmtContamination(s);
+    }
+
+    @Test public void unstableTwelveMeasurementsStayUnjudged(){
+        Sub124060QcAnalyzer.Result r=measured();
+        r.rotationResizeStable=false;r.centringResizeStable=null;
+        Sub124060Calibration.Assessment a=Sub124060Calibration.assess(r);
+        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.rotation);
+        assertEquals(GmtHumanQcMath.Attention.UNASSESSABLE,a.centring);
+        String s=Sub124060Summary.build(r);
+        assertTrue(s.contains("12 rotation: +0.40°"));
+        assertTrue(s.contains("· NOT JUDGED"));
     }
 
     @Test public void dialSourcesAreDistinguished(){
@@ -164,7 +177,7 @@ public class Sub124060Test {
         assertTrue(s.contains("Dial: not assessable: the dial edge could not be fitted automatically"));
         assertTrue(s.contains("Align dial edge by hand"));
         assertTrue(u.needsManual());
-        assertNoVerdict(s);
+        assertNoGmtContamination(s);
     }
 
     @Test public void overlayDrawingIsEmptyWithoutDialGeometry(){
@@ -172,10 +185,12 @@ public class Sub124060Test {
         assertFalse(d.hasAnything());
     }
 
-    @Test public void overlayLegendDoesNotPretendMeasuredMeansPassed(){
-        assertTrue(Sub124060Overlay.BANNER.contains("QC limits not calibrated"));
-        assertFalse(Sub124060Overlay.BANNER.contains("pass"));
-        assertFalse(Sub124060Overlay.BANNER.contains("clear"));
+    @Test public void overlayUsesGmtStyleVerdictContractWith124060Calibration(){
+        assertTrue(Sub124060Overlay.BANNER.contains("provisional family calibration"));
+        assertEquals(Sub124060Overlay.CLEAR,Sub124060Overlay.colour(GmtHumanQcMath.Attention.CLEAR));
+        assertEquals(Sub124060Overlay.CHECK,Sub124060Overlay.colour(GmtHumanQcMath.Attention.CHECK));
+        assertEquals(Sub124060Overlay.STRONG,Sub124060Overlay.colour(GmtHumanQcMath.Attention.STRONG));
+        assertEquals(Sub124060Overlay.WITHHELD,Sub124060Overlay.colour(GmtHumanQcMath.Attention.UNASSESSABLE));
     }
 
     private static int count(String s,String w){int n=0,i=0;while((i=s.indexOf(w,i))>=0){n++;i+=w.length();}return n;}
