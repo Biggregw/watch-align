@@ -9,9 +9,10 @@ import java.io.*;import java.nio.file.*;import java.util.*;
  * silently measured as a 124060. A model is accepted here only when WatchAlignCoreV13 routes it
  * through the Submariner production analyser; unsupported models fail before any CSV is written.
  *
- * Only values that pass the app's own reliability gates are written
- * (Sub124060Calibration.assess(r,false): same gates, no verdict). A gated-out value is left blank,
- * so the calibrator can never fit limits to measurements the app would not report.
+ * Only values that pass the app's own reliability gates are written: the eligible value of each
+ * accepted Sub124060Calibration.decide() decision, the same decision the app's verdicts project. A
+ * gated-out value is left blank, so the calibrator can never fit limits to measurements the app
+ * would not report.
  *
  *   tools/desktop-harness/run.sh CalibMeasure <model> <list.tsv: physical_watch_id \t image_path> <out.csv>
  *
@@ -42,14 +43,8 @@ public class CalibMeasure{
       if(s==null)throw new IllegalStateException("configured model did not return Submariner measurements");
       src=String.valueOf(s.dialSource);repro=String.valueOf(s.dialReproducible);
       if(s.markerPose!=null&&s.markerPose.valid)tilt=s.markerPose.tiltDeg;
-      Sub124060Calibration.Assessment c=Sub124060Calibration.assess(s,false);
-      if(c.rotationMeasured)v[0]=s.rotationDeg;
-      if(s.gapWithheld==null&&Boolean.TRUE.equals(s.gapResizeStable)&&Double.isFinite(s.gapR))v[1]=s.gapR;
-      if(c.centringMeasured)v[2]=s.centringW;
-      if(c.roundRingMeasured)v[3]=c.roundRingRho;
-      if(c.roundSpacingMeasured)v[4]=c.roundSpacingRmsDeg;
-      if(c.baton39Measured)v[5]=c.baton39LineOffsetR;
-      if(c.axis126Measured)v[6]=c.axis126LineOffsetR;
+      MeasurementDecisions.Photo d=Sub124060Calibration.decide(s);
+      for(int i=0;i<KEYS.length;i++){MeasurementDecisions.Metric m=d.metric(KEYS[i]);if(m.accepted())v[i]=m.eligible;}
      }
     }catch(Throwable t){src="error:"+t.getClass().getSimpleName();}
     StringBuilder o=new StringBuilder();

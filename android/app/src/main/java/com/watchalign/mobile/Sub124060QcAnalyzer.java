@@ -71,6 +71,8 @@ final class Sub124060QcAnalyzer {
     static final class Result {
         DialSource dialSource=DialSource.UNAVAILABLE;
         String dialReason="";
+        /** Registered reason code (CoreReasons / Sub12Reasons), set in the same branch as dialReason. */
+        String dialReasonCode;
         double seedX=Double.NaN,seedY=Double.NaN,seedR=Double.NaN,seedQuality=Double.NaN;
         DialEdgeEllipseFit.Fit edge;
         GmtRoundMarkerAnalyzer.DialFrame frame;
@@ -83,6 +85,8 @@ final class Sub124060QcAnalyzer {
         String triangleReason="";
         /** Why all 12 measurements are withheld, or null when per-metric checks may report them. */
         String twelveWithheld;
+        /** Registered reason code set in the same branch as twelveWithheld. */
+        String twelveWithheldCode;
         boolean handAtTwelve,tooSmall,lumeOutline;
         Boolean triangleResizeStable;String triangleResizeNote="";
         double[] tick59,tick60,tick01;
@@ -95,6 +99,8 @@ final class Sub124060QcAnalyzer {
 
         double rotationDeg=Double.NaN,gapR=Double.NaN,centringW=Double.NaN;
         String rotationWithheld,gapWithheld,centringWithheld;
+        /** Registered reason codes set in the same branch as the three withheld messages. */
+        String rotationWithheldCode,gapWithheldCode,centringWithheldCode;
 
         final List<Baton> batons=new ArrayList<>();
         final List<Round> rounds=new ArrayList<>();
@@ -115,13 +121,13 @@ final class Sub124060QcAnalyzer {
     /** @param manual hand-aligned dial (12/6 dial-edge taps), used instead of the automatic seed, or null */
     static Result analyse(Bitmap watch,PerspectiveGmtOverlay.DialSeed manual){
         Result res=new Result();
-        if(watch==null){res.dialReason="watch image missing";return res;}
+        if(watch==null){res.dialReason="watch image missing";res.dialReasonCode=CoreReasons.IMAGE_UNREADABLE;return res;}
         Mat src=new Mat();
         try{
             Utils.bitmapToMat(watch,src);Imgproc.cvtColor(src,src,Imgproc.COLOR_RGBA2BGR);
             analyseBgr(src,manual,res);
         }catch(Throwable t){
-            res.dialReason="analysis failed closed: "+t.getClass().getSimpleName();
+            res.dialReason="analysis failed closed: "+t.getClass().getSimpleName();res.dialReasonCode=CoreReasons.ANALYSIS_EXCEPTION;
             res.dialSource=DialSource.UNAVAILABLE;res.triangle=null;
         }finally{src.release();}
         res.drawing=Sub124060Overlay.Drawing.of(res);
@@ -135,9 +141,9 @@ final class Sub124060QcAnalyzer {
             res.seedX=manual.x;res.seedY=manual.y;res.seedR=manual.r;res.seedQuality=manual.quality;
         }else{
             GmtDialSeedAnalyzer.Result seed=GmtDialSeedAnalyzer.analyse(src);
-            if(!seed.valid){res.dialReason="no dial found in the photo ("+seed.reason+")";return;}
+            if(!seed.valid){res.dialReason="no dial found in the photo ("+seed.reason+")";res.dialReasonCode=Sub12Reasons.DIAL_NOT_FOUND;return;}
             res.seedX=seed.x;res.seedY=seed.y;res.seedR=seed.r;res.seedQuality=seed.quality;
-            if(!(seed.r>20)||seed.quality<0.45){res.dialReason="dial location confidence is too low";return;}
+            if(!(seed.r>20)||seed.quality<0.45){res.dialReason="dial location confidence is too low";res.dialReasonCode=Sub12Reasons.DIAL_SEED_LOW_CONFIDENCE;return;}
         }
         DialEdgeEllipseFit.Fit edge=DialEdgeFitter.fitBgr(src,res.seedX,res.seedY,res.seedR);
         if(edge!=null){
@@ -150,7 +156,7 @@ final class Sub124060QcAnalyzer {
             res.frame=GmtRoundMarkerAnalyzer.DialFrame.circle(manual.x,manual.y,manual.r);
             res.dialReproNote="no edge fit to re-check";
         }else{
-            res.dialReason="the dial edge could not be fitted automatically";
+            res.dialReason="the dial edge could not be fitted automatically";res.dialReasonCode=Sub12Reasons.DIAL_EDGE_FIT_FAILED;
             return;
         }
         cx=res.frame.cx;cy=res.frame.cy;r=res.frame.r;
@@ -205,8 +211,9 @@ final class Sub124060QcAnalyzer {
             res.triangleReason=!tr.reason.isEmpty()?tr.reason
                     :tr.cands.isEmpty()?"no triangle-shaped outline near 12"
                     :"no candidate passed the 12-triangle plausibility checks (best: "+tr.cands.get(0).implausible+")";
-            res.twelveWithheld="12 triangle not found";
+            res.twelveWithheld="12 triangle not found";res.twelveWithheldCode=Sub12Reasons.TRIANGLE_NOT_FOUND;
             res.rotationWithheld=res.gapWithheld=res.centringWithheld=res.twelveWithheld;
+            res.rotationWithheldCode=res.gapWithheldCode=res.centringWithheldCode=res.twelveWithheldCode;
             return;
         }
         res.triangle=c;
@@ -220,35 +227,58 @@ final class Sub124060QcAnalyzer {
         if(widthPx<MIN_TRIANGLE_PX){
             res.tooSmall=true;
             res.twelveWithheld=String.format(Locale.US,"the 12 triangle is only %.0f px wide in this photo (minimum %.0f)",Math.floor(widthPx),MIN_TRIANGLE_PX);
+            res.twelveWithheldCode=Sub12Reasons.TRIANGLE_TOO_SMALL;
         }else if(res.tick60!=null&&res.tick59!=null&&res.tick01!=null){
             HandIntrusion.Result hi=HandIntrusion.measure(img,w,h,cx,cy,f.r,new double[][]{c.L,c.R,c.T},res.tick59,res.tick60,res.tick01);
-            if(hi.present){res.handAtTwelve=true;res.twelveWithheld="a hand is touching or right beside the 12 triangle, which can shift its measured outline";}
+            if(hi.present){res.handAtTwelve=true;res.twelveWithheld="a hand is touching or right beside the 12 triangle, which can shift its measured outline";res.twelveWithheldCode=Sub12Reasons.HAND_AT_TWELVE;}
         }
         if(res.twelveWithheld==null)checkTriangleResize(src,res);
-        if(res.twelveWithheld==null&&res.dialSource==DialSource.MANUAL_CIRCLE)
-            res.twelveWithheld="the dial is a hand-aligned circle whose edge could not be re-fitted";
-        if(res.twelveWithheld==null&&Boolean.FALSE.equals(res.dialReproducible))
-            res.twelveWithheld="the dial-edge fit changes when the photo is reduced by 6% or 12%";
+        if(res.twelveWithheld==null&&res.dialSource==DialSource.MANUAL_CIRCLE){
+            res.twelveWithheld="the dial is a hand-aligned circle whose edge could not be re-fitted";res.twelveWithheldCode=Sub12Reasons.DIAL_MANUAL_CIRCLE;}
+        if(res.twelveWithheld==null&&Boolean.FALSE.equals(res.dialReproducible)){
+            res.twelveWithheld="the dial-edge fit changes when the photo is reduced by 6% or 12%";res.twelveWithheldCode=Sub12Reasons.DIAL_EDGE_NOT_REPRODUCIBLE;}
 
         if(res.twelveWithheld!=null){
             res.rotationWithheld=res.gapWithheld=res.centringWithheld=res.twelveWithheld;
+            res.rotationWithheldCode=res.gapWithheldCode=res.centringWithheldCode=res.twelveWithheldCode;
             return;
         }
-        if(Double.isFinite(c.tickAngle)&&Double.isFinite(c.rotationDeg)){
-            if(Boolean.FALSE.equals(res.rotationResizeStable))res.rotationWithheld=resizeReason("rotation",res.rotationShiftPx);
+        String rotation=rotationFailure(c);
+        if(rotation==null){
+            if(Boolean.FALSE.equals(res.rotationResizeStable)){res.rotationWithheld=resizeReason("rotation",res.rotationShiftPx);res.rotationWithheldCode=Sub12Reasons.ROTATION_RESIZE_UNSTABLE;}
             else res.rotationDeg=c.rotationDeg;
-        }else res.rotationWithheld="the 60-minute tick was not located";
+        }else{res.rotationWithheld="the 60-minute tick was not located";res.rotationWithheldCode=rotation;}
 
-        if(res.lumeOutline){
-            res.gapWithheld=res.centringWithheld="only the inner (lume) outline of the triangle was found";
-        }else if(!Double.isFinite(c.gapR)||!Double.isFinite(c.centring)){
-            res.gapWithheld=res.centringWithheld="the minute track next to the 12 was not located";
+        String track=minuteTrackFailure(c,res.lumeOutline);
+        if(track!=null){
+            res.gapWithheld=res.centringWithheld=Sub12Reasons.LUME_OUTLINE_ONLY.equals(track)
+                    ?"only the inner (lume) outline of the triangle was found":"the minute track next to the 12 was not located";
+            res.gapWithheldCode=res.centringWithheldCode=track;
         }else{
-            if(Boolean.FALSE.equals(res.gapResizeStable))res.gapWithheld=resizeReason("gap",res.gapShiftPx);
+            if(Boolean.FALSE.equals(res.gapResizeStable)){res.gapWithheld=resizeReason("gap",res.gapShiftPx);res.gapWithheldCode=Sub12Reasons.GAP_RESIZE_UNSTABLE;}
             else res.gapR=c.gapR;
-            if(Boolean.FALSE.equals(res.centringResizeStable))res.centringWithheld=resizeReason("centring",res.centringShiftPx);
+            if(Boolean.FALSE.equals(res.centringResizeStable)){res.centringWithheld=resizeReason("centring",res.centringShiftPx);res.centringWithheldCode=Sub12Reasons.CENTRING_RESIZE_UNSTABLE;}
             else res.centringW=c.centring;
         }
+    }
+
+    /**
+     * Why the 12 rotation is not measured on this triangle candidate (null: it is). This is the raw
+     * rotation's only definition: the analyser gates on it and Sub124060Calibration.decide reads it.
+     */
+    static String rotationFailure(SubTwelveTriangle.Cand c){
+        if(c==null)return Sub12Reasons.TRIANGLE_NOT_FOUND;
+        return Double.isFinite(c.tickAngle)&&Double.isFinite(c.rotationDeg)?null:Sub12Reasons.MINUTE_TICK_NOT_FOUND;
+    }
+
+    /**
+     * Why the 12 gap and centring are not measured on this candidate (null: both are). Only the outer
+     * outline is the gap edge: an inner (lume) outline measures a different edge, so it yields no gap.
+     */
+    static String minuteTrackFailure(SubTwelveTriangle.Cand c,boolean lumeOutline){
+        if(c==null)return Sub12Reasons.TRIANGLE_NOT_FOUND;
+        if(lumeOutline)return Sub12Reasons.LUME_OUTLINE_ONLY;
+        return Double.isFinite(c.gapR)&&Double.isFinite(c.centring)?null:Sub12Reasons.MINUTE_TRACK_NOT_FOUND;
     }
 
     /**
@@ -278,6 +308,7 @@ final class Sub124060QcAnalyzer {
         res.triangleResizeStable=all;res.triangleResizeNote=note.toString();
         if(!all){
             res.twelveWithheld="the 12 triangle is not found as the same outline when the photo is reduced by 6% and 12%";
+            res.twelveWithheldCode=Sub12Reasons.TRIANGLE_RESIZE_OUTLINE_CHANGED;
             return;
         }
 

@@ -37,6 +37,8 @@ final class Sub124060Overlay {
         boolean measured;
         GmtHumanQcMath.Attention attention=GmtHumanQcMath.Attention.UNASSESSABLE;
         String note;
+        /** Authoritative reason a measured baton has no verdict (its 3-9 or 12-6 decision); not shown yet. */
+        MeasurementDecisions.Reason reason;
         double centreX(){
             if(poly==null||poly.length==0)return expectedX;
             double x=0;for(double[] p:poly)x+=p[0];return x/poly.length;
@@ -73,6 +75,8 @@ final class Sub124060Overlay {
         String rotationNote,gapNote,centringNote;
 
         Sub124060Calibration.Assessment calibration=new Sub124060Calibration.Assessment();
+        /** The decisions the calibration assessment above was projected from. */
+        MeasurementDecisions.Photo decisions;
         final List<Baton> batons=new ArrayList<>();
         final List<Round> rounds=new ArrayList<>();
 
@@ -81,7 +85,8 @@ final class Sub124060Overlay {
 
         static Drawing of(Sub124060QcAnalyzer.Result res){
             Drawing d=new Drawing();
-            d.calibration=Sub124060Calibration.assess(res);
+            d.decisions=Sub124060Calibration.decide(res);
+            d.calibration=Sub124060Calibration.project(d.decisions,Sub124060Calibration.VERDICTS_ENABLED);
             if(!res.dialAssessable()||res.frame==null)return d;
             if(res.edge!=null){
                 d.dialCx=res.edge.cx;d.dialCy=res.edge.cy;d.dialA=res.edge.axisA;d.dialB=res.edge.axisB;
@@ -109,7 +114,11 @@ final class Sub124060Overlay {
                 x.measured=b.status==Sub124060QcAnalyzer.Status.FOUND;
                 x.attention=x.measured?d.calibration.baton(x.label):GmtHumanQcMath.Attention.UNASSESSABLE;
                 x.note=statusReason(b.status,b.note);
-                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE)x.note=Sub124060Calibration.VERDICTS_ENABLED?unjudgedBatonNote(res,b):null;
+                if(x.measured&&x.attention==GmtHumanQcMath.Attention.UNASSESSABLE){
+                    MeasurementDecisions.Metric why=d.decisions.metric(Sub124060Calibration.batonMetric(x.label));
+                    x.reason=why.reason;
+                    x.note=Sub124060Calibration.VERDICTS_ENABLED?unjudgedBatonNote(why,x.label):null;
+                }
                 double[] expected=res.frame.at(phi12+Math.toRadians(b.position.angleFromTwelveDeg),0.817);
                 x.expectedX=expected[0];x.expectedY=expected[1];
                 if(b.result!=null&&b.result.geometry!=null){
@@ -163,13 +172,16 @@ final class Sub124060Overlay {
 
     private Sub124060Overlay(){}
 
-    /** Why a measured baton has no verdict: 3 and 9 are judged as a pair (the 3-9 axis). */
-    static String unjudgedBatonNote(Sub124060QcAnalyzer.Result res,Sub124060QcAnalyzer.Baton b){
-        String l=b.position.label;
-        if("3".equals(l)||"9".equals(l)){
-            String other="3".equals(l)?"9":"3";
-            for(Sub124060QcAnalyzer.Baton o:res.batons)
-                if(o.position.label.equals(other)&&o.status!=Sub124060QcAnalyzer.Status.FOUND)return "needs the "+other+" baton";
+    /**
+     * Visible words for a measured baton with no verdict, from its authoritative 3-9 or 12-6 decision.
+     * The wording is unchanged: "needs the other baton" when the pair decision cites the partner
+     * baton's own detection status, otherwise "reading not steady enough" whatever the cited reason
+     * (production follow-up: show the authoritative reason after a separately approved change).
+     */
+    static String unjudgedBatonNote(MeasurementDecisions.Metric pair,String label){
+        if("3".equals(label)||"9".equals(label)){
+            String other="3".equals(label)?"9":"3",subject=Sub12Reasons.batonSubject(other);
+            for(String code:Sub12Reasons.BATON_STATUS_CODES)if(pair.cites(code,subject))return "needs the "+other+" baton";
             return "reading not steady enough";
         }
         return "reading not steady enough";

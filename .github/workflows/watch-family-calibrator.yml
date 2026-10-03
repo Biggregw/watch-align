@@ -13,6 +13,8 @@ on:
         default: true
   pull_request:
     paths:
+      # The harness measures through the app's own Java sources, so app changes re-run calibration.
+      - 'android/app/src/main/java/**'
       - 'tools/watch_calibrator/**'
       - 'tools/desktop-harness/drivers/**'
       - 'tools/desktop-harness/run.sh'
@@ -113,6 +115,17 @@ jobs:
             ' replay "$SNAP" "$(id -u):$(id -g)" | tee watch-calibrator-replay.log
       - name: Require exact calibration equivalence
         run: cmp "datasets/watch_calibrator/$MODEL/calibration.json" "datasets/watch_calibrator_replay/$MODEL/calibration.json"
+      - name: Require the frozen-evidence calibration bytes
+        run: |
+          # On the frozen evidence snapshot proven before measurement contract v2, live calibration
+          # through this build must reproduce the checkpoint calibration exactly.
+          SNAP_ID=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['snapshot_id'])" "datasets/watch_calibrator/$MODEL/evidence_snapshot_v1/snapshot.json")
+          SHA=$(sha256sum "datasets/watch_calibrator/$MODEL/calibration.json" | cut -d' ' -f1)
+          echo "snapshot $SNAP_ID calibration.json sha256 $SHA"
+          case "$SNAP_ID" in
+            ca23588a*) [ "$SHA" = 3ae71e98a533be4e87cbdfc48b0d893118ebe2c6d761eeb34ca981a90fb2b796 ] || { echo "calibration bytes changed on the frozen snapshot" >&2; exit 1; } ;;
+            *) echo "::warning::snapshot $SNAP_ID is not the frozen v1 proof snapshot; only live/replay equality is checked" ;;
+          esac
       - name: Verify replay evidence, adapter and contract identity
         run: |
           python3 tools/watch_calibrator/replay_acceptance.py \
@@ -121,6 +134,28 @@ jobs:
             --live-adapter production_app_route_v1 \
             --replay-adapter submariner12_measured_v1 \
             --out "datasets/watch_calibrator_replay/$MODEL/replay_acceptance.json"
+      - name: Prove v1/v2 measurement-contract equivalence on frozen evidence
+        env:
+          IMGUR_CLIENT_ID: ''
+          REDDIT_CLIENT_ID: ''
+          REDDIT_CLIENT_SECRET: ''
+          WATCH_ALIGN_HARNESS_OFFLINE: '1'
+        run: |
+          SNAP="datasets/watch_calibrator/$MODEL/evidence_snapshot_v1"
+          OUT="datasets/watch_calibrator_replay/$MODEL/geometry/phase2c_equivalence.json"
+          mapfile -d '' -t STEP_ENV < <(env -0)
+          sudo unshare --net -- \
+            setpriv --reuid="$(id -u)" --regid="$(id -g)" --init-groups -- \
+            env -i "${STEP_ENV[@]}" \
+            bash -eo pipefail -c '
+              [ "$(id -u):$(id -g)" = "$3" ] || { echo "Phase 2C proof is not running as the runner user" >&2; exit 1; }
+              python3 tools/watch_calibrator/network_isolation.py
+              python3 tools/watch_calibrator/phase2c_equivalence.py "$1" --replay-root datasets/watch_calibrator_replay --out "$2"
+            ' phase2c "$SNAP" "$OUT" "$(id -u):$(id -g)" | tee watch-calibrator-phase2c.log
+          echo '### Phase 2C v1/v2 equivalence' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
       - name: Summary
         if: always()
         run: |
