@@ -134,6 +134,28 @@ jobs:
             --live-adapter production_app_route_v1 \
             --replay-adapter submariner12_measured_v1 \
             --out "datasets/watch_calibrator_replay/$MODEL/replay_acceptance.json"
+      - name: Prove v1/v2 measurement-contract equivalence on frozen evidence
+        env:
+          IMGUR_CLIENT_ID: ''
+          REDDIT_CLIENT_ID: ''
+          REDDIT_CLIENT_SECRET: ''
+          WATCH_ALIGN_HARNESS_OFFLINE: '1'
+        run: |
+          SNAP="datasets/watch_calibrator/$MODEL/evidence_snapshot_v1"
+          OUT="datasets/watch_calibrator_replay/$MODEL/geometry/phase2c_equivalence.json"
+          mapfile -d '' -t STEP_ENV < <(env -0)
+          sudo unshare --net -- \
+            setpriv --reuid="$(id -u)" --regid="$(id -g)" --init-groups -- \
+            env -i "${STEP_ENV[@]}" \
+            bash -eo pipefail -c '
+              [ "$(id -u):$(id -g)" = "$3" ] || { echo "Phase 2C proof is not running as the runner user" >&2; exit 1; }
+              python3 tools/watch_calibrator/network_isolation.py
+              python3 tools/watch_calibrator/phase2c_equivalence.py "$1" --replay-root datasets/watch_calibrator_replay --out "$2"
+            ' phase2c "$SNAP" "$OUT" "$(id -u):$(id -g)" | tee watch-calibrator-phase2c.log
+          echo '### Phase 2C v1/v2 equivalence' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
       - name: Summary
         if: always()
         run: |
