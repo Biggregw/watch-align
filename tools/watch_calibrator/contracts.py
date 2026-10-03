@@ -1,8 +1,8 @@
 """Fail-closed contracts for the watch calibration pipeline.
 
 These checks are intentionally independent of any watch family. They protect the calibration
-platform from silent model substitution, malformed metric definitions and contradictory layouts.
-Watch-specific measurement semantics belong in adapters, not here.
+platform from silent model substitution and malformed generic metric definitions. Watch-specific
+layout and measurement semantics belong in adapters, not in the calibration core.
 """
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ from pathlib import Path
 SUPPORTED_ACQUISITION_ADAPTERS = {"submariner_acquire_v3"}
 SUPPORTED_MEASUREMENT_ADAPTERS = {"production_app_route_v1"}
 SUPPORTED_SIDEDNESS = {"two", "upper", "lower"}
-LAYOUT_MARKER_KEYS = ("triangle", "batons", "rounds")
 
 
 class ContractError(ValueError):
@@ -40,10 +39,11 @@ def _finite_nonnegative(value: object, where: str) -> float:
 
 
 def validate_config(config: dict, requested_model: str, config_path: Path | None = None) -> dict:
-    """Validate the generic parts of a model config before discovery or measurement starts.
+    """Validate generic model-config invariants before discovery or measurement starts.
 
     Returns the same dict for convenient use by callers. No defaults that can change model
-    identity, metric semantics or adapter routing are invented here.
+    identity, metric semantics or adapter routing are invented here. The selected adapter remains
+    responsible for validating its own layout schema.
     """
     if not isinstance(config, dict):
         raise ContractError("config: expected a JSON object")
@@ -70,23 +70,8 @@ def validate_config(config: dict, requested_model: str, config_path: Path | None
         raise ContractError(f"unsupported measurement adapter {measure!r}")
 
     layout = config.get("layout")
-    if not isinstance(layout, dict):
-        raise ContractError("layout must be an object")
-    occupied: dict[int, str] = {}
-    for key in LAYOUT_MARKER_KEYS:
-        values = layout.get(key)
-        if not isinstance(values, list):
-            raise ContractError(f"layout.{key} must be a list")
-        seen = set()
-        for raw in values:
-            if isinstance(raw, bool) or not isinstance(raw, int) or raw < 1 or raw > 12:
-                raise ContractError(f"layout.{key} contains invalid hour {raw!r}")
-            if raw in seen:
-                raise ContractError(f"layout.{key} contains duplicate hour {raw}")
-            seen.add(raw)
-            if raw in occupied:
-                raise ContractError(f"layout hour {raw} is declared as both {occupied[raw]} and {key}")
-            occupied[raw] = key
+    if not isinstance(layout, dict) or not layout:
+        raise ContractError("layout must be a non-empty object")
 
     metrics = config.get("calibration_metrics")
     if not isinstance(metrics, list) or not metrics:
