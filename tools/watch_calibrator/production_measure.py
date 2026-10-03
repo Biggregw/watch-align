@@ -2,8 +2,12 @@
 
 Replaces the research-path adapter (subresearch.geometry124060 with an empty review), which
 measured values the app itself would withhold. Here every value comes from the desktop harness
-driver CalibMeasure, which runs WatchAlignCoreV13 for the model and keeps only measurements that
-pass the app's own reliability gates. Gated-out values are blank and never reach calibration.
+driver CalibMeasure, which runs WatchAlignCoreV13 for the configured model and keeps only
+measurements that pass that route's reliability gates. Gated-out values are blank and never reach
+calibration.
+
+The exact model id is passed all the way into the harness. This is deliberately explicit: a new
+Submariner reference must never be calibrated by silently running the 124060 route.
 
 Outputs, per (partition, class):
   {model}_{partition}_{class}_photo.csv         one row per photo (gated values)
@@ -95,11 +99,19 @@ def photo_list(acq_root: Path, split_csv: Path, partition: str, cls: str) -> lis
     return out
 
 
-def run_harness(photos: list[tuple[str, Path]], out_csv: Path) -> None:
+def run_harness(model: str, photos: list[tuple[str, Path]], out_csv: Path) -> None:
+    """Run the exact configured model route; never allow an implicit 124060 fallback."""
+    model = (model or "").strip().upper()
+    if not model:
+        raise ValueError("calibrator model is required")
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     lst = out_csv.with_suffix(".list.tsv")
     lst.write_text("".join(f"{w}\t{p}\n" for w, p in photos), encoding="utf-8")
-    subprocess.run(["bash", str(HARNESS), "CalibMeasure", str(lst), str(out_csv)], cwd=REPO, check=True)
+    subprocess.run(
+        ["bash", str(HARNESS), "CalibMeasure", model, str(lst), str(out_csv)],
+        cwd=REPO,
+        check=True,
+    )
 
 
 def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: Path,
@@ -172,15 +184,18 @@ def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: 
 
 
 def measure(config: dict, acq_root: Path, split_csv: Path, out_dir: Path, partition: str, cls: str) -> dict:
+    model = str(config.get("model") or "").strip().upper()
+    if not model:
+        raise ValueError("calibrator config must contain an exact model")
     metrics = [s["metric"] for s in config["calibration_metrics"]]
-    pref = out_dir / f"{config['model']}_{partition}_{cls}"
+    pref = out_dir / f"{model}_{partition}_{cls}"
     photos = photo_list(acq_root, split_csv, partition, cls)
     photo_csv = Path(f"{pref}_photo.csv")
     if photos:
-        run_harness(photos, photo_csv)
+        run_harness(model, photos, photo_csv)
     else:
         out_dir.mkdir(parents=True, exist_ok=True)
-        photo_csv.write_text("physical_watch_id,path\n", encoding="utf-8")
+        photo_csv.write_text("physical_watch_id,model,path\n", encoding="utf-8")
     return summarise(
         photo_csv,
         metrics,
