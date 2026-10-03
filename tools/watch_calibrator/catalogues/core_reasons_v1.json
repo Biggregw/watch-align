@@ -1,0 +1,11 @@
+{
+  "schema": "watch_align.reason_catalogue",
+  "catalogue_id": "core.reasons",
+  "version": 1,
+  "namespace": "core",
+  "reasons": [
+    {"code": "core.analysis_exception", "class": "internal_error", "meaning": "Analysis raised an exception; downstream measurement may be unavailable or flagged depending on how far analysis progressed.", "contract_valid": true},
+    {"code": "core.image_unreadable", "class": "input", "meaning": "The input image could not be read into the analysis pipeline.", "contract_valid": true},
+    {"code": "core.stage_not_applicable", "class": "policy", "meaning": "The pipeline stage is deliberately not applicable for this adapter/version.", "contract_valid": true}
+  ]
+}
