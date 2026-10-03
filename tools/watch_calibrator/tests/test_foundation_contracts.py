@@ -53,10 +53,12 @@ class ContractTest(unittest.TestCase):
         with self.assertRaisesRegex(contracts.ContractError,"duplicate metric id"):
             contracts.validate_config(cfg,"124060",Path("124060.json"))
 
-    def test_layout_cannot_assign_one_hour_two_marker_types(self):
-        cfg=valid_config();cfg["layout"]["rounds"].append(3)
-        with self.assertRaisesRegex(contracts.ContractError,"declared as both"):
+    def test_layout_must_exist_but_semantics_are_adapter_owned(self):
+        cfg=valid_config();cfg["layout"]={}
+        with self.assertRaisesRegex(contracts.ContractError,"non-empty object"):
             contracts.validate_config(cfg,"124060",Path("124060.json"))
+        cfg=valid_config();cfg["layout"]={"subdials":[3,6,9],"date_window":"4:30"}
+        self.assertIs(cfg,contracts.validate_config(cfg,"124060",Path("124060.json")))
 
     def test_csv_model_boundary_rejects_mismatch(self):
         with tempfile.TemporaryDirectory() as td:
