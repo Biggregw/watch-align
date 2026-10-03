@@ -3,7 +3,8 @@
 
 The snapshot supplies the exact config, acquired-image manifest, locked split and image bytes. The
 current checked-out measurement/calibration code is deliberately used so detector or architecture
-changes can be evaluated against identical evidence.
+changes can be evaluated against identical evidence. A candidate measurement adapter may be
+selected explicitly without editing the frozen evidence config.
 """
 from __future__ import annotations
 
@@ -34,7 +35,8 @@ def paths(model: str, root: Path) -> dict[str, Path]:
     }
 
 
-def replay(snapshot_dir: Path, root: Path, fresh: bool = False) -> dict:
+def replay(snapshot_dir: Path, root: Path, fresh: bool = False,
+           measurement_adapter_id: str | None = None) -> dict:
     snapshot = evidence_snapshot.verify(snapshot_dir)
     model = contracts.exact_model(snapshot.get("model"), "snapshot model")
     family = str(snapshot.get("family") or "").strip()
@@ -62,13 +64,20 @@ def replay(snapshot_dir: Path, root: Path, fresh: bool = False) -> dict:
     manifest_tools.attach_snapshot(manifest, snapshot, snapshot_dir, P["base"])
     manifest["mode"] = "offline_snapshot_replay"
     manifest["replay_snapshot_id"] = snapshot["snapshot_id"]
+    manifest["requested_measurement_adapter_override"] = measurement_adapter_id
     manifest_tools.save(manifest, P["manifest"])
     P["snapshot_copy"].write_text(
         json.dumps(snapshot, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
 
-    execution = calibration_execution.execute(config, P["acq"], P["split"], P["geom"], P["cal"], P["base"])
+    execution = calibration_execution.execute(
+        config, P["acq"], P["split"], P["geom"], P["cal"], P["base"],
+        measurement_adapter_id=measurement_adapter_id,
+    )
     final = execution.pop("final")
+    manifest_tools.bind_measurement_adapter(manifest, config, execution["measurement_adapter"])
+    manifest_tools.save(manifest, P["manifest"])
+
     calibration_sha = manifest_tools.sha256_file(P["cal"])
     status = {
         "mode": "offline_snapshot_replay",
@@ -92,8 +101,10 @@ def main(argv=None) -> int:
     ap.add_argument("snapshot", type=Path, help="immutable evidence_snapshot_v1 directory")
     ap.add_argument("--root", type=Path, default=REPO / "datasets" / "watch_calibrator_replay")
     ap.add_argument("--fresh", action="store_true")
+    ap.add_argument("--measurement-adapter", default=None,
+                    help="candidate adapter id to evaluate without changing the frozen snapshot config")
     a = ap.parse_args(argv)
-    print(json.dumps(replay(a.snapshot, a.root, a.fresh), indent=2, sort_keys=True))
+    print(json.dumps(replay(a.snapshot, a.root, a.fresh, a.measurement_adapter), indent=2, sort_keys=True))
     return 0
 
 
