@@ -14,6 +14,7 @@ on:
   pull_request:
     paths:
       - 'tools/watch_calibrator/**'
+      - 'tools/desktop-harness/drivers/**'
       - 'tools/dataset_harvester/submariner_acquire.py'
       - 'calibration/models/**'
       - '.github/workflows/watch-family-calibrator.yml'
@@ -22,6 +23,7 @@ on:
       - feature/watch-family-calibrator
     paths:
       - 'tools/watch_calibrator/**'
+      - 'tools/desktop-harness/drivers/**'
       - 'calibration/models/**'
       - '.github/workflows/watch-family-calibrator.yml'
 
@@ -76,16 +78,17 @@ jobs:
           restore-keys: |
             watch-calibrator-${{ env.MODEL }}-images-
             submariner-research-images-
-      - name: End-to-end autonomous discovery, snapshot, measurement and calibration
+      - name: End-to-end autonomous discovery, snapshot, legacy measurement and calibration
         run: |
           fresh=""
           if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event.inputs.fresh }}" = "true" ]; then fresh="--fresh"; fi
           python3 tools/watch_calibrator/run.py "$MODEL" $fresh | tee watch-calibrator.log
-      - name: Offline snapshot replay and calibration equivalence
+      - name: Replay same frozen evidence through measured-only adapter
         run: |
           SNAP="datasets/watch_calibrator/$MODEL/evidence_snapshot_v1"
-          python3 tools/watch_calibrator/replay.py "$SNAP" --root datasets/watch_calibrator_replay --fresh | tee watch-calibrator-replay.log
-          cmp "datasets/watch_calibrator/$MODEL/calibration.json" "datasets/watch_calibrator_replay/$MODEL/calibration.json"
+          python3 tools/watch_calibrator/replay.py "$SNAP" --root datasets/watch_calibrator_replay --fresh --measurement-adapter submariner12_measured_v1 | tee watch-calibrator-replay.log
+      - name: Require exact calibration equivalence
+        run: cmp "datasets/watch_calibrator/$MODEL/calibration.json" "datasets/watch_calibrator_replay/$MODEL/calibration.json"
       - name: Summary
         if: always()
         run: |
@@ -95,11 +98,13 @@ jobs:
           R="datasets/watch_calibrator/$MODEL/replica_evidence.json"
           D="datasets/watch_calibrator/$MODEL/dataset/source_diversity.json"
           RS="datasets/watch_calibrator_replay/$MODEL/run_status.json"
+          RM="datasets/watch_calibrator_replay/$MODEL/run_manifest.json"
           if [ -f "$F" ]; then cat "$F" >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$D" ]; then echo '### Genuine source diversity' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$D" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$R" ]; then echo '### Replica stress evidence' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$R" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
-          if [ -f "$M" ]; then echo '### Run manifest' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$M" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
-          if [ -f "$RS" ]; then echo '### Offline replay' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$RS" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$M" ]; then echo '### Live run manifest' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$M" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$RM" ]; then echo '### Measured-only replay manifest' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$RM" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$RS" ]; then echo '### Measured-only replay' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$RS" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$S" ]; then echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$S" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Upload complete calibration evidence
         if: always()
@@ -126,6 +131,7 @@ jobs:
             datasets/watch_calibrator_replay/${{ env.MODEL }}/frozen_config.json
             datasets/watch_calibrator_replay/${{ env.MODEL }}/run_manifest.json
             datasets/watch_calibrator_replay/${{ env.MODEL }}/snapshot_source.json
+            datasets/watch_calibrator_replay/${{ env.MODEL }}/geometry/
             datasets/watch_calibrator_replay/${{ env.MODEL }}/calibration.*
             datasets/watch_calibrator_replay/${{ env.MODEL }}/run_status.json
             watch-calibrator.log
