@@ -1,4 +1,6 @@
 import csv
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -50,21 +52,33 @@ class GenuineEnvelopeTest(unittest.TestCase):
             })
         write_csv(p / "split.csv", rows)
 
-    def build_simple(self, p, dev, val, hold, rep=None, config=None):
+    def with_photos(self, workspace, name, rows, identity):
+        """Give each measured row a workspace path, as the harness does, and its stable identity."""
+        out = []
+        for i, row in enumerate(rows):
+            local = f"images/{row['physical_watch_id']}/{name}_{i:02d}.jpg"
+            path = str(Path(workspace) / "dataset" / local)
+            identity[path] = {"local_path": local, "image_sha256": hashlib.sha256(local.encode()).hexdigest()}
+            out.append({**row, "path": path})
+        return out
+
+    def build_simple(self, p, dev, val, hold, rep=None, config=None, workspace=None):
         config = config or self.config()
+        workspace = workspace or str(p)
+        identity = {}
         watches = sorted({r["physical_watch_id"] for group in (dev, val, hold) for r in group})
         self.make_split(p, watches)
         files = {}
         for name, rows in (("development", dev), ("validation", val), ("holdout", hold)):
             path = p / f"{name}.csv"
-            write_csv(path, rows)
+            write_csv(path, self.with_photos(workspace, name, rows, identity))
             files[name] = path
         rep_files = {}
         if rep is not None:
             path = p / "rep.csv"
-            write_csv(path, rep)
+            write_csv(path, self.with_photos(workspace, "rep", rep, identity))
             rep_files["development"] = path
-        return build(config, files, p / "split.csv", replica_photo_files=rep_files)
+        return build(config, files, p / "split.csv", replica_photo_files=rep_files, photo_identity=identity)
 
     def test_validation_and_holdout_genuine_values_expand_final_envelope(self):
         with tempfile.TemporaryDirectory() as td:
@@ -115,6 +129,37 @@ class GenuineEnvelopeTest(unittest.TestCase):
             rec = self.build_simple(p, dev, val, hold)["metrics"]["m"]
             self.assertEqual(1, rec["obvious_photo_outliers_rejected"])
             self.assertLess(rec["observed_genuine_max"], 0.1)
+
+    def test_rejected_outlier_identity_does_not_depend_on_workspace(self):
+        # A live run and an offline replay measure the same frozen photos from different workspaces.
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            dev = [
+                {"physical_watch_id": "w1", "m": "0.00"},
+                {"physical_watch_id": "w1", "m": "0.01"},
+                {"physical_watch_id": "w1", "m": "-0.01"},
+                {"physical_watch_id": "w1", "m": "1.00"},
+                {"physical_watch_id": "w2", "m": "0.02"},
+            ]
+            val = [{"physical_watch_id": "w3", "m": "0.03"}]
+            hold = [{"physical_watch_id": "w4", "m": "0.04"}]
+            live = self.build_simple(p / "live", dev, val, hold, workspace="/home/runner/work/live/124060")
+            replay = self.build_simple(p / "replay", dev, val, hold, workspace="datasets/watch_calibrator_replay/124060")
+            self.assertEqual(json.dumps(live, sort_keys=True), json.dumps(replay, sort_keys=True))
+            rejected = live["metrics"]["m"]["obvious_photo_outliers"]
+            self.assertEqual(1, len(rejected))
+            self.assertNotIn("path", rejected[0])
+            self.assertEqual("images/w1/development_03.jpg", rejected[0]["local_path"])
+            self.assertEqual(hashlib.sha256(b"images/w1/development_03.jpg").hexdigest(), rejected[0]["image_sha256"])
+            self.assertEqual(1.0, rejected[0]["value"])
+
+    def test_measured_photo_without_stable_identity_fails_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            self.make_split(p, ["w1"])
+            write_csv(p / "development.csv", [{"physical_watch_id": "w1", "path": "/elsewhere/01.jpg", "m": "0.1"}])
+            with self.assertRaisesRegex(ValueError, "no workspace-independent identity"):
+                build(self.config(), {"development": p / "development.csv"}, p / "split.csv", photo_identity={})
 
     def test_extreme_single_photo_genuine_watch_is_not_trimmed(self):
         with tempfile.TemporaryDirectory() as td:

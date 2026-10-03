@@ -80,13 +80,16 @@ class RunManifestTest(unittest.TestCase):
             "sided":"two","app_key":"m.two","metric":"m.two"}
         self.assertEqual(run_manifest.metric_definition_fingerprint(a),run_manifest.metric_definition_fingerprint(b))
 
-    def test_measurement_fingerprint_changes_with_source_or_metrics(self):
+    def test_measurement_fingerprint_changes_with_source_metrics_or_effective_adapter(self):
         a=valid_config()
         fp=run_manifest.measurement_fingerprint(a,"abc","tree1")
         self.assertNotEqual(fp,run_manifest.measurement_fingerprint(a,"def","tree1"))
         self.assertNotEqual(fp,run_manifest.measurement_fingerprint(a,"abc","tree2"))
         b=json.loads(json.dumps(a));b["calibration_metrics"][0]["minimum_half_width"]=0.11
         self.assertNotEqual(fp,run_manifest.measurement_fingerprint(b,"abc","tree1"))
+        candidate={"id":"submariner12_measured_v1","version":"1",
+                   "reliability_policy":"sub124060_production_reliability_v1","contract_schema_version":1}
+        self.assertNotEqual(fp,run_manifest.measurement_fingerprint(a,"abc","tree1",candidate))
 
     def test_build_freezes_exact_config_and_evidence_hash_with_portable_paths(self):
         with tempfile.TemporaryDirectory() as td:
@@ -99,9 +102,22 @@ class RunManifestTest(unittest.TestCase):
             self.assertEqual(run_manifest.sha256_file(evidence),manifest["evidence_manifest"]["sha256"])
             self.assertEqual("dataset/acquired.csv",manifest["evidence_manifest"]["path"])
             self.assertEqual("frozen_config.json",manifest["config"]["frozen_path"])
-            self.assertEqual(2,manifest["schema_version"])
+            self.assertEqual(3,manifest["schema_version"])
             self.assertIn("checkout_sha",manifest["source"])
             self.assertIn("checkout_tree_sha",manifest["source"])
+            self.assertIsNone(manifest["adapters"]["measurement_effective"])
+
+    def test_bind_measurement_adapter_updates_manifest_and_fingerprint(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);base=root/"out";base.mkdir();repo=root/"repo";repo.mkdir()
+            cfg=valid_config();cp=root/"124060.json";cp.write_text(json.dumps(cfg)+"\n")
+            manifest=run_manifest.build(cfg,cp,base,repo)
+            before=manifest["versions"]["measurement_fingerprint"]
+            adapter={"id":"submariner12_measured_v1","version":"1",
+                     "reliability_policy":"sub124060_production_reliability_v1","contract_schema_version":1}
+            run_manifest.bind_measurement_adapter(manifest,cfg,adapter)
+            self.assertEqual(adapter,manifest["adapters"]["measurement_effective"])
+            self.assertNotEqual(before,manifest["versions"]["measurement_fingerprint"])
 
     def test_attach_snapshot_records_identity_not_runner_absolute_path(self):
         with tempfile.TemporaryDirectory() as td:

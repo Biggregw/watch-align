@@ -45,6 +45,38 @@ class ProductionMeasureTest(unittest.TestCase):
             self.assertEqual("",rep["round.ring_rho"]["pose_sensitive"])
             self.assertEqual("measured",rep["round.ring_rho"]["repeatability_class"])
 
+    def test_photo_identities_name_measured_paths_by_manifest_identity(self):
+        rows=[
+            {"physical_watch_id":"w1","model":"124060","class_label":"gen","local_path":"images/w1/01,a.jpg",
+             "sha256":"A"*64,"acquisition_status":"acquired","exact_duplicate_of":""},
+            {"physical_watch_id":"w1","model":"124060","class_label":"gen","local_path":"images/w1/02.jpg",
+             "sha256":"b"*64,"acquisition_status":"acquired","exact_duplicate_of":"w1:1"},
+            {"physical_watch_id":"w2","model":"124060","class_label":"gen","local_path":"",
+             "sha256":"","acquisition_status":"failed","exact_duplicate_of":""},
+        ]
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td)
+            write(p/"split.csv",[{"physical_watch_id":"w1","partition":"development","stratum":"gen/124060/s",
+                                  "class_label":"gen","model":"124060","factory":"","source_name":"s","added_in":"locked_split"}])
+            identities=[]
+            for root in (p/"live"/"dataset",p/"replay"/"124060"/"dataset"):
+                root.mkdir(parents=True);write(root/"acquired_images.csv",rows)
+                ids=pm.photo_identities(root)
+                # Keys are exactly the path text measurement routes write for photo_list() photos.
+                measured=[str(photo).replace(",",";") for _,photo in pm.photo_list(root,p/"split.csv","development","gen","124060")]
+                self.assertEqual(measured,list(ids))
+                identities.append(list(ids.values()))
+            self.assertEqual([{"local_path":"images/w1/01,a.jpg","image_sha256":"a"*64}],identities[0])
+            self.assertEqual(identities[0],identities[1])
+
+    def test_photo_identities_fail_closed_without_image_hash(self):
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td)
+            write(p/"acquired_images.csv",[{"physical_watch_id":"w1","local_path":"images/w1/01.jpg","sha256":"",
+                                            "acquisition_status":"acquired","exact_duplicate_of":""}])
+            with self.assertRaisesRegex(contracts.ContractError,"sha256 are required"):
+                pm.photo_identities(p)
+
     def test_run_harness_passes_exact_model_instead_of_implicit_124060(self):
         with tempfile.TemporaryDirectory() as td:
             p=Path(td);out=p/"photo.csv"

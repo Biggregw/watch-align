@@ -14,6 +14,8 @@ on:
   pull_request:
     paths:
       - 'tools/watch_calibrator/**'
+      - 'tools/desktop-harness/drivers/**'
+      - 'tools/desktop-harness/run.sh'
       - 'tools/dataset_harvester/submariner_acquire.py'
       - 'calibration/models/**'
       - '.github/workflows/watch-family-calibrator.yml'
@@ -22,6 +24,8 @@ on:
       - feature/watch-family-calibrator
     paths:
       - 'tools/watch_calibrator/**'
+      - 'tools/desktop-harness/drivers/**'
+      - 'tools/desktop-harness/run.sh'
       - 'calibration/models/**'
       - '.github/workflows/watch-family-calibrator.yml'
 
@@ -36,6 +40,10 @@ jobs:
   calibrate:
     runs-on: ubuntu-latest
     timeout-minutes: 350
+    defaults:
+      run:
+        # Explicit bash runs with -eo pipefail, so `cmd | tee log` fails when cmd fails.
+        shell: bash
     env:
       IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
       REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
@@ -76,16 +84,43 @@ jobs:
           restore-keys: |
             watch-calibrator-${{ env.MODEL }}-images-
             submariner-research-images-
-      - name: End-to-end autonomous discovery, snapshot, measurement and calibration
+      - name: End-to-end autonomous discovery, snapshot, legacy measurement and calibration
         run: |
           fresh=""
           if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event.inputs.fresh }}" = "true" ]; then fresh="--fresh"; fi
           python3 tools/watch_calibrator/run.py "$MODEL" $fresh | tee watch-calibrator.log
-      - name: Offline snapshot replay and calibration equivalence
+      - name: Replay same frozen evidence through measured-only adapter with no network
+        env:
+          # Replay never needs acquisition credentials, and the harness must not fetch tooling.
+          IMGUR_CLIENT_ID: ''
+          REDDIT_CLIENT_ID: ''
+          REDDIT_CLIENT_SECRET: ''
+          WATCH_ALIGN_HARNESS_OFFLINE: '1'
         run: |
           SNAP="datasets/watch_calibrator/$MODEL/evidence_snapshot_v1"
-          python3 tools/watch_calibrator/replay.py "$SNAP" --root datasets/watch_calibrator_replay --fresh | tee watch-calibrator-replay.log
-          cmp "datasets/watch_calibrator/$MODEL/calibration.json" "datasets/watch_calibrator_replay/$MODEL/calibration.json"
+          # Root is used only to create an empty network namespace. setpriv immediately drops back to
+          # this runner user (real, effective and saved ids), and env -i restores this step's exact,
+          # credential-free environment, which sudo would otherwise reset. No kernel or AppArmor
+          # setting is changed. The probe must prove isolation inside that namespace first.
+          mapfile -d '' -t STEP_ENV < <(env -0)
+          sudo unshare --net -- \
+            setpriv --reuid="$(id -u)" --regid="$(id -g)" --init-groups -- \
+            env -i "${STEP_ENV[@]}" \
+            bash -eo pipefail -c '
+              [ "$(id -u):$(id -g)" = "$2" ] || { echo "replay is not running as the runner user" >&2; exit 1; }
+              python3 tools/watch_calibrator/network_isolation.py
+              python3 tools/watch_calibrator/replay.py "$1" --root datasets/watch_calibrator_replay --fresh --measurement-adapter submariner12_measured_v1
+            ' replay "$SNAP" "$(id -u):$(id -g)" | tee watch-calibrator-replay.log
+      - name: Require exact calibration equivalence
+        run: cmp "datasets/watch_calibrator/$MODEL/calibration.json" "datasets/watch_calibrator_replay/$MODEL/calibration.json"
+      - name: Verify replay evidence, adapter and contract identity
+        run: |
+          python3 tools/watch_calibrator/replay_acceptance.py \
+            --live "datasets/watch_calibrator/$MODEL" \
+            --replay "datasets/watch_calibrator_replay/$MODEL" \
+            --live-adapter production_app_route_v1 \
+            --replay-adapter submariner12_measured_v1 \
+            --out "datasets/watch_calibrator_replay/$MODEL/replay_acceptance.json"
       - name: Summary
         if: always()
         run: |
@@ -95,11 +130,15 @@ jobs:
           R="datasets/watch_calibrator/$MODEL/replica_evidence.json"
           D="datasets/watch_calibrator/$MODEL/dataset/source_diversity.json"
           RS="datasets/watch_calibrator_replay/$MODEL/run_status.json"
+          RM="datasets/watch_calibrator_replay/$MODEL/run_manifest.json"
+          RA="datasets/watch_calibrator_replay/$MODEL/replay_acceptance.json"
           if [ -f "$F" ]; then cat "$F" >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$D" ]; then echo '### Genuine source diversity' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$D" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$R" ]; then echo '### Replica stress evidence' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$R" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
-          if [ -f "$M" ]; then echo '### Run manifest' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$M" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
-          if [ -f "$RS" ]; then echo '### Offline replay' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$RS" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$M" ]; then echo '### Live run manifest' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$M" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$RM" ]; then echo '### Measured-only replay manifest' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$RM" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$RS" ]; then echo '### Measured-only replay' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$RS" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$RA" ]; then echo '### Replay acceptance' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$RA" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$S" ]; then echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$S" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Upload complete calibration evidence
         if: always()
@@ -126,8 +165,10 @@ jobs:
             datasets/watch_calibrator_replay/${{ env.MODEL }}/frozen_config.json
             datasets/watch_calibrator_replay/${{ env.MODEL }}/run_manifest.json
             datasets/watch_calibrator_replay/${{ env.MODEL }}/snapshot_source.json
+            datasets/watch_calibrator_replay/${{ env.MODEL }}/geometry/
             datasets/watch_calibrator_replay/${{ env.MODEL }}/calibration.*
             datasets/watch_calibrator_replay/${{ env.MODEL }}/run_status.json
+            datasets/watch_calibrator_replay/${{ env.MODEL }}/replay_acceptance.json
             watch-calibrator.log
             watch-calibrator-replay.log
           if-no-files-found: warn

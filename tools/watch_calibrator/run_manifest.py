@@ -8,7 +8,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 CALIBRATION_ENGINE_VERSION = "genuine_envelope_v1"
 
 
@@ -72,19 +72,21 @@ def metric_definition_fingerprint(config: dict) -> str:
     return sha256_bytes(_canonical(config.get("calibration_metrics") or []))
 
 
-def measurement_fingerprint(config: dict, commit: str, tree_sha: str | None = None) -> str:
-    """Conservative v2 fingerprint for the code/contract that produces measurements.
+def measurement_fingerprint(config: dict, commit: str, tree_sha: str | None = None,
+                            adapter: dict | None = None) -> str:
+    """Conservative fingerprint for the code and effective measurement contract.
 
-    It deliberately includes the checked-out source identity. The later versioned adapter contract
-    can narrow this to adapter-specific source blobs without weakening fail-closed invalidation.
+    The effective adapter id/version/reliability policy are explicit. A candidate adapter replay can
+    therefore never inherit the fingerprint of the adapter named in an older frozen config.
     """
+    effective = adapter or {"id": config.get("measurement_adapter")}
     payload = {
-        "version": 2,
+        "version": 3,
         "checkout_sha": commit,
         "checkout_tree_sha": tree_sha or "unknown",
         "model": str(config.get("model") or "").strip().upper(),
         "family": config.get("family"),
-        "measurement_adapter": config.get("measurement_adapter"),
+        "measurement_adapter": effective,
         "metric_definition_fingerprint": metric_definition_fingerprint(config),
     }
     return sha256_bytes(_canonical(payload))
@@ -130,6 +132,7 @@ def build(config: dict, config_path: Path, base: Path, repo: Path, *, acquired_c
         "adapters": {
             "acquisition": config.get("acquisition_adapter"),
             "measurement": config.get("measurement_adapter"),
+            "measurement_effective": None,
         },
         "versions": {
             "calibration_engine": CALIBRATION_ENGINE_VERSION,
@@ -139,6 +142,27 @@ def build(config: dict, config_path: Path, base: Path, repo: Path, *, acquired_c
         "evidence_manifest": evidence_manifest_identity(acquired_csv, base),
         "evidence_snapshot": None,
     }
+
+
+def bind_measurement_adapter(manifest: dict, config: dict, adapter: dict) -> None:
+    """Bind the adapter actually used and refresh the measurement fingerprint."""
+    required = ("id", "version", "reliability_policy")
+    if not isinstance(adapter, dict) or any(not str(adapter.get(k) or "").strip() for k in required):
+        raise ValueError("effective measurement adapter requires id, version and reliability_policy")
+    frozen = {
+        "id": str(adapter["id"]),
+        "version": str(adapter["version"]),
+        "reliability_policy": str(adapter["reliability_policy"]),
+        "contract_schema_version": adapter.get("contract_schema_version"),
+    }
+    manifest.setdefault("adapters", {})["measurement_effective"] = frozen
+    source = manifest.get("source") or {}
+    manifest.setdefault("versions", {})["measurement_fingerprint"] = measurement_fingerprint(
+        config,
+        str(source.get("checkout_sha") or "unknown"),
+        str(source.get("checkout_tree_sha") or "unknown"),
+        frozen,
+    )
 
 
 def attach_snapshot(manifest: dict, snapshot: dict, snapshot_path: Path, base: Path) -> None:
