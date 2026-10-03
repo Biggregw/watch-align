@@ -1,5 +1,6 @@
 import csv, tempfile, unittest
 from pathlib import Path
+from unittest import mock
 import sys
 
 HERE=Path(__file__).resolve().parents[1]
@@ -42,6 +43,24 @@ class ProductionMeasureTest(unittest.TestCase):
             self.assertEqual("1",rep["twelve.rotation_deg"]["pose_sensitive"])
             self.assertEqual("",rep["round.ring_rho"]["pose_sensitive"])
             self.assertEqual("measured",rep["round.ring_rho"]["repeatability_class"])
+
+    def test_run_harness_passes_exact_model_instead_of_implicit_124060(self):
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td);out=p/"photo.csv"
+            photos=[("w1",p/"one.jpg")]
+            with mock.patch.object(pm.subprocess,"run") as run:
+                pm.run_harness("126610lv",photos,out)
+            cmd=run.call_args.args[0]
+            self.assertEqual("CalibMeasure",cmd[2])
+            self.assertEqual("126610LV",cmd[3])
+            self.assertEqual(str(out.with_suffix(".list.tsv")),cmd[4])
+            self.assertEqual(str(out),cmd[5])
+            self.assertTrue(run.call_args.kwargs["check"])
+
+    def test_run_harness_rejects_missing_model(self):
+        with tempfile.TemporaryDirectory() as td:
+            with self.assertRaises(ValueError):
+                pm.run_harness("",[],Path(td)/"photo.csv")
 
 
 class SplitTest(unittest.TestCase):
