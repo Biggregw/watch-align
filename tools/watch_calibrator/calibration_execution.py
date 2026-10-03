@@ -1,14 +1,16 @@
 """Shared post-acquisition measurement/calibration execution.
 
 Live acquisition and offline evidence replay must execute the same code path after evidence has
-been fixed. Network discovery/acquisition intentionally lives outside this module.
+been fixed. Network discovery/acquisition intentionally lives outside this module. Measurement is
+resolved through a fail-closed adapter registry so the generic statistical engine contains no
+watch-family routing logic.
 """
 from __future__ import annotations
 
 import csv
 from pathlib import Path
 
-from production_measure import measure as production_measure
+import measurement_adapters
 from calibrate import propose as legacy_propose, finalize as legacy_finalize, save as save_legacy
 from genuine_envelope import build as build_genuine_envelope, save as save_genuine_envelope
 
@@ -17,17 +19,22 @@ REPO = HERE.parents[1]
 
 
 def execute(config: dict, acquisition_root: Path, split_path: Path, geometry_dir: Path,
-            calibration_path: Path, base: Path) -> dict:
-    """Measure fixed evidence and produce both audit and genuine-envelope calibrations."""
-    if config.get("measurement_adapter") != "production_app_route_v1":
-        raise ValueError(f"Unsupported measurement adapter {config.get('measurement_adapter')}")
+            calibration_path: Path, base: Path, measurement_adapter_id: str | None = None) -> dict:
+    """Measure fixed evidence and produce both audit and genuine-envelope calibrations.
+
+    measurement_adapter_id is intentionally optional so an immutable snapshot can be replayed
+    through a candidate adapter without editing the frozen config that defines the evidence.
+    """
+    configured = str(config.get("measurement_adapter") or "").strip()
+    adapter = measurement_adapters.resolve(measurement_adapter_id or configured)
+    measure = adapter.measure
 
     model = str(config["model"]).strip().upper()
-    gd = production_measure(config, acquisition_root, split_path, geometry_dir, "development", "gen")
-    gv = production_measure(config, acquisition_root, split_path, geometry_dir, "validation", "gen")
-    gh = production_measure(config, acquisition_root, split_path, geometry_dir, "holdout", "gen")
-    rd = production_measure(config, acquisition_root, split_path, geometry_dir, "development", "rep")
-    rv = production_measure(config, acquisition_root, split_path, geometry_dir, "validation", "rep")
+    gd = measure(config, acquisition_root, split_path, geometry_dir, "development", "gen")
+    gv = measure(config, acquisition_root, split_path, geometry_dir, "validation", "gen")
+    gh = measure(config, acquisition_root, split_path, geometry_dir, "holdout", "gen")
+    rd = measure(config, acquisition_root, split_path, geometry_dir, "development", "rep")
+    rv = measure(config, acquisition_root, split_path, geometry_dir, "validation", "rep")
 
     pref = f"{model}_"
     rep_watch = geometry_dir / f"{model}_devval_rep_watch.csv"
@@ -73,6 +80,8 @@ def execute(config: dict, acquisition_root: Path, split_path: Path, geometry_dir
     save_genuine_envelope(final, calibration_path)
 
     return {
+        "measurement_adapter": adapter.info(),
+        "configured_measurement_adapter": configured,
         "development": gd,
         "validation": gv,
         "holdout": gh,
