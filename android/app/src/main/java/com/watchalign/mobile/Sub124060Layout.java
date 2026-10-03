@@ -14,6 +14,8 @@ final class Sub124060Layout {
             GmtSixLandmarkAnalyzer.Position.THREE, GmtSixLandmarkAnalyzer.Position.SIX, GmtSixLandmarkAnalyzer.Position.NINE};
     static final int[] ROUND_HOURS = {1, 2, 4, 5, 7, 8, 10, 11};
     static final boolean HAS_DATE = false;
+    /** The 12-series family layout this model claims (measurement contract layout evidence). */
+    static final MeasurementDecisions.LayoutSpec EXPECTED_LAYOUT = new MeasurementDecisions.LayoutSpec("sub12.no_date_v1", 1);
 
     private Sub124060Layout(){}
 

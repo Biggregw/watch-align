@@ -13,6 +13,8 @@ on:
         default: true
   pull_request:
     paths:
+      # The harness measures through the app's own Java sources, so app changes re-run calibration.
+      - 'android/app/src/main/java/**'
       - 'tools/watch_calibrator/**'
       - 'tools/desktop-harness/drivers/**'
       - 'tools/desktop-harness/run.sh'
@@ -113,6 +115,17 @@ jobs:
             ' replay "$SNAP" "$(id -u):$(id -g)" | tee watch-calibrator-replay.log
       - name: Require exact calibration equivalence
         run: cmp "datasets/watch_calibrator/$MODEL/calibration.json" "datasets/watch_calibrator_replay/$MODEL/calibration.json"
+      - name: Require the frozen-evidence calibration bytes
+        run: |
+          # On the frozen evidence snapshot proven before measurement contract v2, live calibration
+          # through this build must reproduce the checkpoint calibration exactly.
+          SNAP_ID=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['snapshot_id'])" "datasets/watch_calibrator/$MODEL/evidence_snapshot_v1/snapshot.json")
+          SHA=$(sha256sum "datasets/watch_calibrator/$MODEL/calibration.json" | cut -d' ' -f1)
+          echo "snapshot $SNAP_ID calibration.json sha256 $SHA"
+          case "$SNAP_ID" in
+            ca23588a*) [ "$SHA" = 3ae71e98a533be4e87cbdfc48b0d893118ebe2c6d761eeb34ca981a90fb2b796 ] || { echo "calibration bytes changed on the frozen snapshot" >&2; exit 1; } ;;
+            *) echo "::warning::snapshot $SNAP_ID is not the frozen v1 proof snapshot; only live/replay equality is checked" ;;
+          esac
       - name: Verify replay evidence, adapter and contract identity
         run: |
           python3 tools/watch_calibrator/replay_acceptance.py \
