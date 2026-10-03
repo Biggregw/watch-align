@@ -139,7 +139,10 @@ def validate(path: Path, config: dict, adapter: dict, photos: list[tuple[str, Pa
             raw_values += raw is not None
             eligible_values += eligible is not None
 
-    actual_photos = Counter(rows_by_photo)
+    # Each grouped contract photo represents one requested photo. Do not pass the grouped row lists
+    # themselves into Counter: Counter(mapping) treats mapping values as counts, which would compare
+    # lists of metric rows against the expected integer multiplicities.
+    actual_photos = Counter(rows_by_photo.keys())
     if actual_photos != expected_photos:
         raise MeasurementContractError(
             f"measurement contract photo population {dict(actual_photos)} does not match requested {dict(expected_photos)}"
