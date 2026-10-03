@@ -80,23 +80,39 @@ class RunManifestTest(unittest.TestCase):
             "sided":"two","app_key":"m.two","metric":"m.two"}
         self.assertEqual(run_manifest.metric_definition_fingerprint(a),run_manifest.metric_definition_fingerprint(b))
 
-    def test_measurement_fingerprint_changes_with_commit_or_metrics(self):
+    def test_measurement_fingerprint_changes_with_source_or_metrics(self):
         a=valid_config()
-        fp=run_manifest.measurement_fingerprint(a,"abc")
-        self.assertNotEqual(fp,run_manifest.measurement_fingerprint(a,"def"))
+        fp=run_manifest.measurement_fingerprint(a,"abc","tree1")
+        self.assertNotEqual(fp,run_manifest.measurement_fingerprint(a,"def","tree1"))
+        self.assertNotEqual(fp,run_manifest.measurement_fingerprint(a,"abc","tree2"))
         b=json.loads(json.dumps(a));b["calibration_metrics"][0]["minimum_half_width"]=0.11
-        self.assertNotEqual(fp,run_manifest.measurement_fingerprint(b,"abc"))
+        self.assertNotEqual(fp,run_manifest.measurement_fingerprint(b,"abc","tree1"))
 
-    def test_build_freezes_exact_config_and_evidence_hash(self):
+    def test_build_freezes_exact_config_and_evidence_hash_with_portable_paths(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td);base=root/"out";base.mkdir();repo=root/"repo";repo.mkdir()
             cfg=valid_config();cp=root/"124060.json";cp.write_text(json.dumps(cfg,indent=2)+"\n",encoding="utf-8")
-            evidence=root/"acquired.csv";evidence.write_text("model\n124060\n",encoding="utf-8")
+            evidence=base/"dataset"/"acquired.csv";evidence.parent.mkdir();evidence.write_text("model\n124060\n",encoding="utf-8")
             manifest=run_manifest.build(cfg,cp,base,repo,acquired_csv=evidence)
             self.assertEqual(cp.read_bytes(),(base/"frozen_config.json").read_bytes())
             self.assertEqual(run_manifest.sha256_file(cp),manifest["config"]["sha256"])
             self.assertEqual(run_manifest.sha256_file(evidence),manifest["evidence_manifest"]["sha256"])
-            self.assertEqual(1,manifest["schema_version"])
+            self.assertEqual("dataset/acquired.csv",manifest["evidence_manifest"]["path"])
+            self.assertEqual("frozen_config.json",manifest["config"]["frozen_path"])
+            self.assertEqual(2,manifest["schema_version"])
+            self.assertIn("checkout_sha",manifest["source"])
+            self.assertIn("checkout_tree_sha",manifest["source"])
+
+    def test_attach_snapshot_records_identity_not_runner_absolute_path(self):
+        with tempfile.TemporaryDirectory() as td:
+            base=Path(td)/"base";base.mkdir();snap=base/"evidence_snapshot_v1";snap.mkdir()
+            manifest={"evidence_snapshot":None}
+            run_manifest.attach_snapshot(manifest,{
+                "schema_version":1,"snapshot_id":"abc","acquired_images_sha256":"a",
+                "locked_split_sha256":"b","counts":{"unique_image_objects":3,"unique_image_bytes":99},
+            },snap,base)
+            self.assertEqual("evidence_snapshot_v1",manifest["evidence_snapshot"]["path"])
+            self.assertEqual("abc",manifest["evidence_snapshot"]["snapshot_id"])
 
 
 if __name__=="__main__": unittest.main()
