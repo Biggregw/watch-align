@@ -57,11 +57,16 @@ class ReplayTest(unittest.TestCase):
     def test_replay_uses_frozen_snapshot_and_shared_execution(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td);snap=make_snapshot(root);out=root/"out"
-            def fake_execute(config, acquisition_root, split_path, geometry_dir, calibration_path, base):
+            def fake_execute(config, acquisition_root, split_path, geometry_dir, calibration_path, base,
+                             measurement_adapter_id=None):
+                self.assertIsNone(measurement_adapter_id)
                 self.assertEqual(b"image",(acquisition_root/"images"/"w1"/"01.jpg").read_bytes())
                 self.assertTrue(split_path.is_file())
                 calibration_path.write_text(json.dumps({"state":"READY"},sort_keys=True)+"\n")
-                return {"development":{"photos":1},"validation":{},"holdout":{},
+                return {"measurement_adapter":{"id":"production_app_route_v1","version":"1",
+                            "reliability_policy":"legacy_production_gate_v1","contract_schema_version":None},
+                        "configured_measurement_adapter":"production_app_route_v1",
+                        "development":{"photos":1},"validation":{},"holdout":{},
                         "replica_measured":{},"legacy_split_state":"TEST","final":{"state":"READY"}}
             with mock.patch.object(replay.calibration_execution,"execute",side_effect=fake_execute) as execute:
                 status=replay.replay(snap,out)
@@ -72,6 +77,25 @@ class ReplayTest(unittest.TestCase):
             manifest=json.loads((out/"124060"/"run_manifest.json").read_text())
             self.assertEqual("offline_snapshot_replay",manifest["mode"])
             self.assertEqual(status["snapshot_id"],manifest["replay_snapshot_id"])
+            self.assertEqual("production_app_route_v1",manifest["adapters"]["measurement_effective"]["id"])
+
+    def test_candidate_adapter_override_is_passed_and_recorded(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);snap=make_snapshot(root);out=root/"out"
+            adapter={"id":"submariner12_measured_v1","version":"1",
+                     "reliability_policy":"sub124060_production_reliability_v1","contract_schema_version":1}
+            def fake_execute(config, acquisition_root, split_path, geometry_dir, calibration_path, base,
+                             measurement_adapter_id=None):
+                self.assertEqual("submariner12_measured_v1",measurement_adapter_id)
+                calibration_path.write_text(json.dumps({"state":"READY"},sort_keys=True)+"\n")
+                return {"measurement_adapter":adapter,"configured_measurement_adapter":"production_app_route_v1",
+                        "development":{},"validation":{},"holdout":{},"replica_measured":{},
+                        "legacy_split_state":"TEST","final":{"state":"READY"}}
+            with mock.patch.object(replay.calibration_execution,"execute",side_effect=fake_execute):
+                replay.replay(snap,out,measurement_adapter_id="submariner12_measured_v1")
+            manifest=json.loads((out/"124060"/"run_manifest.json").read_text())
+            self.assertEqual("submariner12_measured_v1",manifest["requested_measurement_adapter_override"])
+            self.assertEqual(adapter,manifest["adapters"]["measurement_effective"])
 
     def test_replay_refuses_tampered_snapshot_before_execution(self):
         with tempfile.TemporaryDirectory() as td:
