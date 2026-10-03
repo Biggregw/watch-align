@@ -23,6 +23,7 @@ import subprocess
 from collections import defaultdict
 from pathlib import Path
 
+import contracts
 import split as locked_split
 
 HERE = Path(__file__).resolve().parent
@@ -85,11 +86,17 @@ def source_map(split_csv: Path) -> dict[str, str]:
     return out
 
 
-def photo_list(acq_root: Path, split_csv: Path, partition: str, cls: str) -> list[tuple[str, Path]]:
+def photo_list(acq_root: Path, split_csv: Path, partition: str, cls: str, expected_model: str) -> list[tuple[str, Path]]:
+    expected_model = contracts.exact_model(expected_model, "measurement expected model")
     parts = locked_split.load(split_csv)
     out = []
     with (acq_root / "acquired_images.csv").open(newline="", encoding="utf-8") as fh:
-        for r in csv.DictReader(fh):
+        for line_no, r in enumerate(csv.DictReader(fh), start=2):
+            actual = contracts.exact_model(r.get("model"), f"acquired images line {line_no}")
+            if actual != expected_model:
+                raise contracts.ContractError(
+                    f"acquired images line {line_no}: model {actual} does not match requested model {expected_model}"
+                )
             wid = r.get("physical_watch_id") or r.get("candidate_id")
             if parts.get(wid) != partition or (r.get("class_label") or "").lower() != cls:
                 continue
@@ -112,6 +119,23 @@ def run_harness(model: str, photos: list[tuple[str, Path]], out_csv: Path) -> No
         cwd=REPO,
         check=True,
     )
+
+
+def validate_harness_output(photo_csv: Path, model: str, photos: list[tuple[str, Path]]) -> None:
+    """Verify that the measurement boundary returned the requested model and expected rows."""
+    expected_model = contracts.exact_model(model, "harness expected model")
+    contracts.validate_csv_exact_model(photo_csv, expected_model, "measurement output")
+    with photo_csv.open(newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    if len(rows) != len(photos):
+        raise contracts.ContractError(
+            f"measurement output row count {len(rows)} does not match requested photo count {len(photos)}"
+        )
+    expected_watches = {wid for wid, _ in photos}
+    for line_no, row in enumerate(rows, start=2):
+        wid = (row.get("physical_watch_id") or "").strip()
+        if not wid or wid not in expected_watches:
+            raise contracts.ContractError(f"measurement output line {line_no}: unexpected physical_watch_id {wid!r}")
 
 
 def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: Path,
@@ -189,13 +213,14 @@ def measure(config: dict, acq_root: Path, split_csv: Path, out_dir: Path, partit
         raise ValueError("calibrator config must contain an exact model")
     metrics = [s["metric"] for s in config["calibration_metrics"]]
     pref = out_dir / f"{model}_{partition}_{cls}"
-    photos = photo_list(acq_root, split_csv, partition, cls)
+    photos = photo_list(acq_root, split_csv, partition, cls, model)
     photo_csv = Path(f"{pref}_photo.csv")
     if photos:
         run_harness(model, photos, photo_csv)
     else:
         out_dir.mkdir(parents=True, exist_ok=True)
         photo_csv.write_text("physical_watch_id,model,path\n", encoding="utf-8")
+    validate_harness_output(photo_csv, model, photos)
     return summarise(
         photo_csv,
         metrics,
