@@ -33,6 +33,11 @@ class ContractTest(unittest.TestCase):
         cfg=valid_config()
         self.assertIs(cfg,contracts.validate_config(cfg,"124060",Path("124060.json")))
 
+    def test_repository_124060_config_passes_contract(self):
+        cp=HERE.parents[1]/"calibration"/"models"/"124060.json"
+        cfg=json.loads(cp.read_text(encoding="utf-8"))
+        self.assertIs(cfg,contracts.validate_config(cfg,"124060",cp))
+
     def test_requested_model_must_match_config_and_filename(self):
         cfg=valid_config()
         with self.assertRaisesRegex(contracts.ContractError,"does not match requested model"):
