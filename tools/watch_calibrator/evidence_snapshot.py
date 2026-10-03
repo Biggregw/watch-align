@@ -254,7 +254,7 @@ def verify(snapshot_dir: Path) -> dict:
 
 def materialize(snapshot_dir: Path, acquisition_root: Path, split_path: Path,
                 config_path: Path | None = None) -> dict:
-    """Restore a verified snapshot to the workspace shape expected by the measurement pipeline."""
+    """Restore a verified snapshot without sharing writable inodes with immutable objects."""
     manifest = verify(snapshot_dir)
     if acquisition_root.exists() and any(acquisition_root.iterdir()):
         raise SnapshotError(f"replay acquisition root must be empty: {acquisition_root}")
@@ -278,10 +278,9 @@ def materialize(snapshot_dir: Path, acquisition_root: Path, split_path: Path,
         source = snapshot_dir / _object_rel(sha)
         target = acquisition_root / rel
         target.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            os.link(source, target)
-        except OSError:
-            shutil.copyfile(source, target)
+        # Always copy. A hardlink would allow accidental downstream writes to mutate the supposedly
+        # immutable snapshot object through the replay workspace.
+        shutil.copyfile(source, target)
         if _sha256_file(target) != sha:
             raise SnapshotError(f"materialized image hash mismatch: {rel}")
     return manifest
