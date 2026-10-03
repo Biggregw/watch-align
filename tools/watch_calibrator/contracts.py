@@ -11,7 +11,7 @@ import math
 from pathlib import Path
 
 SUPPORTED_ACQUISITION_ADAPTERS = {"submariner_acquire_v3"}
-SUPPORTED_MEASUREMENT_ADAPTERS = {"production_app_route_v1"}
+SUPPORTED_MEASUREMENT_ADAPTERS = {"production_app_route_v1", "submariner12_measured_v1"}
 SUPPORTED_SIDEDNESS = {"two", "upper", "lower"}
 
 
