@@ -70,14 +70,14 @@ class ProductionMeasureTest(unittest.TestCase):
             with self.assertRaisesRegex(contracts.ContractError,"does not match requested model"):
                 pm.validate_harness_output(out,"124060",[("w1",photo)])
 
-    def test_measurement_output_rejects_missing_or_unexpected_rows(self):
+    def test_measurement_output_rejects_missing_or_wrong_population(self):
         with tempfile.TemporaryDirectory() as td:
             p=Path(td);one=p/"one.jpg";two=p/"two.jpg";out=p/"photo.csv"
             write(out,[{"physical_watch_id":"wrong","model":"124060","path":str(one)}])
             with self.assertRaisesRegex(contracts.ContractError,"row count"):
                 pm.validate_harness_output(out,"124060",[("w1",one),("w2",two)])
             write(out,[{"physical_watch_id":"wrong","model":"124060","path":str(one)}])
-            with self.assertRaisesRegex(contracts.ContractError,"unexpected physical_watch_id"):
+            with self.assertRaisesRegex(contracts.ContractError,"physical-watch population"):
                 pm.validate_harness_output(out,"124060",[("w1",one)])
 
 
