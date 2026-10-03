@@ -26,6 +26,8 @@ import split as locked_split  # noqa: E402
 from production_measure import measure as production_measure  # noqa: E402
 from calibrate import propose as legacy_propose, finalize as legacy_finalize, save as save_legacy  # noqa: E402
 from genuine_envelope import build as build_genuine_envelope, save as save_genuine_envelope  # noqa: E402
+import contracts  # noqa: E402
+import run_manifest as manifest_tools  # noqa: E402
 
 
 def sh(cmd, cwd=REPO):
@@ -43,7 +45,7 @@ def paths(model: str, root: Path):
     m=model.upper();base=root/m
     return {"base":base,"pool":base/"discovered_candidates.csv","acq":base/"dataset","split":base/"locked_split.csv",
             "geom":base/"geometry","cal":base/"calibration.json",
-            "replica":base/"replica_evidence.json"}
+            "replica":base/"replica_evidence.json","manifest":base/"run_manifest.json"}
 
 
 def replica_evidence(config: dict, acquisition_root: Path, output: Path) -> dict:
@@ -86,17 +88,27 @@ def replica_evidence(config: dict, acquisition_root: Path, output: Path) -> dict
 
 
 def run(model: str, root: Path, fresh=False) -> dict:
-    cp=config_path(model); config=json.loads(cp.read_text(encoding="utf-8")); P=paths(model,root)
+    requested=contracts.exact_model(model,"requested model")
+    cp=config_path(requested)
+    config=json.loads(cp.read_text(encoding="utf-8"))
+    contracts.validate_config(config,requested,cp)
+    P=paths(requested,root)
     if fresh and P["base"].exists(): shutil.rmtree(P["base"])
     P["base"].mkdir(parents=True,exist_ok=True)
+
+    # Freeze the exact config and code/config fingerprints before any network discovery. This makes
+    # an otherwise successful run auditable even if it fails later in acquisition or measurement.
+    manifest=manifest_tools.build(config,cp,P["base"],REPO)
+    manifest_tools.save(manifest,P["manifest"])
 
     # 1) Discover from approved public sources. RepTimeQC evidence is enriched with independently
     # discovered album-backed posts before native single-image posts are used as fallback.
     d=discover(config,P["pool"])
     d=enrich_reddit_evidence(config,P["pool"],d)
+    contracts.validate_csv_exact_model(P["pool"],requested,"discovery candidates")
     if d["by_class"].get("gen",0) < config["discovery"].get("minimum_gen_candidates",1):
-        status={"model":model,"state":"NEEDS_MORE_SOURCES","stage":"discovery","discovery":d}
-        empty={"model":model,"family":config["family"],"state":"NO_CALIBRATABLE_METRICS","method":"all_reliable_genuine_photo_envelope_v1","metrics":{}}
+        status={"model":requested,"state":"NEEDS_MORE_SOURCES","stage":"discovery","discovery":d}
+        empty={"model":requested,"family":config["family"],"state":"NO_CALIBRATABLE_METRICS","method":"all_reliable_genuine_photo_envelope_v1","metrics":{}}
         save_genuine_envelope(empty,P["cal"])
         (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n");return status
 
@@ -104,12 +116,16 @@ def run(model: str, root: Path, fresh=False) -> dict:
     if config.get("acquisition_adapter")!="submariner_acquire_v3":
         raise SystemExit(f"Unsupported acquisition adapter {config.get('acquisition_adapter')}")
     sh([sys.executable,REPO/"tools/watch_calibrator/acquire.py","--pool",P["pool"],"--out",P["acq"],"--max-images",str(config["discovery"].get("max_images_per_watch",12))])
+    acquired=P["acq"]/"acquired_images.csv"
+    contracts.validate_csv_exact_model(acquired,requested,"acquired images")
+    manifest["evidence_manifest"]=manifest_tools.evidence_manifest_identity(acquired)
+    manifest_tools.save(manifest,P["manifest"])
     rep_ev=replica_evidence(config,P["acq"],P["replica"])
 
     # 3) Lock a watch-level split once. It is now a diagnostic boundary, not permission to ignore
     # a valid genuine observation in the final envelope.
     if not P["split"].exists():
-        locked_split.create(locked_split.watches_from_acquisition(P["acq"]/"acquired_images.csv"),P["split"])
+        locked_split.create(locked_split.watches_from_acquisition(acquired),P["split"])
 
     # 4) Measure every genuine partition through the production app route. A value exists only if
     # the app's reliability gates would expose it to the user.
@@ -166,11 +182,11 @@ def run(model: str, root: Path, fresh=False) -> dict:
     final=build_genuine_envelope(config,gen_photo,P["split"],gen_repeat,rep_photo)
     save_genuine_envelope(final,P["cal"])
 
-    status={"model":model,"state":final["state"],"stage":"complete","discovery":d,"replica_evidence":rep_ev,
+    status={"model":requested,"state":final["state"],"stage":"complete","discovery":d,"replica_evidence":rep_ev,
             "development":gd,"validation":gv,"holdout":gh,
             "replica_measured":{"development":rd,"validation":rv},
             "legacy_split_state":legacy.get("state"),
-            "calibration":str(P["cal"])}
+            "calibration":str(P["cal"]),"run_manifest":str(P["manifest"])}
     (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n",encoding="utf-8")
     return status
 
