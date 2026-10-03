@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
 """End-to-end autonomous Watch Align family calibrator.
 
-Input is a model id only. The model config defines approved source discovery, layout, measurement
-adapter and calibration metrics. Measurement runs the production app route (desktop harness
-CalibMeasure), so only values that pass the app's reliability gates can shape a limit.
-
-The locked development/validation/holdout split is retained as a diagnostic for generalisation, but
-it no longer decides which genuine observations count as normal. After all three genuine partitions
-have been measured, the final production envelope is fitted from every reliable genuine photo.
-Only obvious within-watch photo-level failures may be removed. Replica data is stress evidence only
-and never moves a genuine-derived limit.
+Live mode discovers and acquires public evidence, freezes the exact bytes into an immutable
+content-addressed snapshot, then measures/calibrates from the fixed workspace. Offline replay uses
+that snapshot through the same post-acquisition execution path.
 """
 from __future__ import annotations
 
@@ -23,11 +17,11 @@ sys.path.insert(0,str(HERE))
 from discover import discover  # noqa: E402
 from reddit_evidence import enrich as enrich_reddit_evidence  # noqa: E402
 import split as locked_split  # noqa: E402
-from production_measure import measure as production_measure  # noqa: E402
-from calibrate import propose as legacy_propose, finalize as legacy_finalize, save as save_legacy  # noqa: E402
-from genuine_envelope import build as build_genuine_envelope, save as save_genuine_envelope  # noqa: E402
+from genuine_envelope import save as save_genuine_envelope  # noqa: E402
 import contracts  # noqa: E402
 import run_manifest as manifest_tools  # noqa: E402
+import evidence_snapshot  # noqa: E402
+import calibration_execution  # noqa: E402
 
 
 def sh(cmd, cwd=REPO):
@@ -43,9 +37,12 @@ def config_path(model: str)->Path:
 
 def paths(model: str, root: Path):
     m=model.upper();base=root/m
-    return {"base":base,"pool":base/"discovered_candidates.csv","acq":base/"dataset","split":base/"locked_split.csv",
-            "geom":base/"geometry","cal":base/"calibration.json",
-            "replica":base/"replica_evidence.json","manifest":base/"run_manifest.json"}
+    return {
+        "base":base,"pool":base/"discovered_candidates.csv","acq":base/"dataset",
+        "split":base/"locked_split.csv","geom":base/"geometry","cal":base/"calibration.json",
+        "replica":base/"replica_evidence.json","manifest":base/"run_manifest.json",
+        "snapshot":base/"evidence_snapshot_v1",
+    }
 
 
 def replica_evidence(config: dict, acquisition_root: Path, output: Path) -> dict:
@@ -94,15 +91,15 @@ def run(model: str, root: Path, fresh=False) -> dict:
     contracts.validate_config(config,requested,cp)
     P=paths(requested,root)
     if fresh and P["base"].exists(): shutil.rmtree(P["base"])
+    if P["base"].exists() and P["snapshot"].exists():
+        raise SystemExit(f"immutable snapshot already exists for this workspace: {P['snapshot']}; use --fresh or replay it")
     P["base"].mkdir(parents=True,exist_ok=True)
 
-    # Freeze the exact config and code/config fingerprints before any network discovery. This makes
-    # an otherwise successful run auditable even if it fails later in acquisition or measurement.
+    # Freeze code/config provenance before any network work.
     manifest=manifest_tools.build(config,cp,P["base"],REPO)
     manifest_tools.save(manifest,P["manifest"])
 
-    # 1) Discover from approved public sources. RepTimeQC evidence is enriched with independently
-    # discovered album-backed posts before native single-image posts are used as fallback.
+    # 1) Discover from approved public sources.
     d=discover(config,P["pool"])
     d=enrich_reddit_evidence(config,P["pool"],d)
     contracts.validate_csv_exact_model(P["pool"],requested,"discovery candidates")
@@ -112,81 +109,39 @@ def run(model: str, root: Path, fresh=False) -> dict:
         save_genuine_envelope(empty,P["cal"])
         (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n");return status
 
-    # 2) Acquire. No anonymous Reddit surfaces and no search-engine result pages are used.
+    # 2) Acquire. Caches may help acquisition speed, but they are never the evidence identity.
     if config.get("acquisition_adapter")!="submariner_acquire_v3":
         raise SystemExit(f"Unsupported acquisition adapter {config.get('acquisition_adapter')}")
     sh([sys.executable,REPO/"tools/watch_calibrator/acquire.py","--pool",P["pool"],"--out",P["acq"],"--max-images",str(config["discovery"].get("max_images_per_watch",12))])
     acquired=P["acq"]/"acquired_images.csv"
     contracts.validate_csv_exact_model(acquired,requested,"acquired images")
-    manifest["evidence_manifest"]=manifest_tools.evidence_manifest_identity(acquired)
+    manifest["evidence_manifest"]=manifest_tools.evidence_manifest_identity(acquired,P["base"])
     manifest_tools.save(manifest,P["manifest"])
     rep_ev=replica_evidence(config,P["acq"],P["replica"])
 
-    # 3) Lock a watch-level split once. It is now a diagnostic boundary, not permission to ignore
-    # a valid genuine observation in the final envelope.
+    # 3) Lock watch-level partitioning before snapshot creation so replay freezes the exact split.
     if not P["split"].exists():
         locked_split.create(locked_split.watches_from_acquisition(acquired),P["split"])
 
-    # 4) Measure every genuine partition through the production app route. A value exists only if
-    # the app's reliability gates would expose it to the user.
-    if config.get("measurement_adapter")!="production_app_route_v1":
-        raise SystemExit(f"Unsupported measurement adapter {config.get('measurement_adapter')}")
-    gd=production_measure(config,P["acq"],P["split"],P["geom"],"development","gen")
-    gv=production_measure(config,P["acq"],P["split"],P["geom"],"validation","gen")
-    gh=production_measure(config,P["acq"],P["split"],P["geom"],"holdout","gen")
-    rd=production_measure(config,P["acq"],P["split"],P["geom"],"development","rep")
-    rv=production_measure(config,P["acq"],P["split"],P["geom"],"validation","rep")
+    # 4) Freeze exact bytes. From this point on, this run has a durable replay identity independent
+    # of dealer/CDN behaviour. The live workspace remains the measurement source for this run, but
+    # every byte is verified while entering the snapshot.
+    snapshot=evidence_snapshot.create(
+        requested,config["family"],cp,acquired,P["acq"],P["split"],P["snapshot"]
+    )
+    manifest_tools.attach_snapshot(manifest,snapshot,P["snapshot"],P["base"])
+    manifest_tools.save(manifest,P["manifest"])
 
-    pref=f"{config['model']}_"
+    # 5) Measure/calibrate through the same execution function used by offline replay.
+    execution=calibration_execution.execute(config,P["acq"],P["split"],P["geom"],P["cal"],P["base"])
+    final=execution.pop("final")
 
-    # 5) Preserve the old split/freeze calculation as an audit comparison only. It can show which
-    # validation/holdout genuine values would have rejected the old narrow statistical band, but it
-    # no longer controls the production calibration.
-    rep_watch=P["geom"]/f"{config['model']}_devval_rep_watch.csv"
-    with rep_watch.open("w",newline="",encoding="utf-8") as out:
-        writer=None
-        for part in ("development","validation"):
-            src=P["geom"]/f"{config['model']}_{part}_rep_watch.csv"
-            if not src.exists(): continue
-            with src.open(newline="",encoding="utf-8") as fh:
-                for row in csv.DictReader(fh):
-                    if writer is None:
-                        writer=csv.DictWriter(out,fieldnames=list(row));writer.writeheader()
-                    writer.writerow(row)
-
-    legacy=legacy_propose(config,
-        P["geom"]/f"{pref}development_gen_watch.csv",
-        P["geom"]/f"{pref}development_gen_repeatability.csv",
-        P["geom"]/f"{pref}validation_gen_watch.csv",
-        rep_watch if (rd.get("photos") or rv.get("photos")) else None,
-        evidence_root=REPO)
-    save_legacy(legacy,P["base"]/"frozen_before_holdout.json")
-    if legacy.get("state")=="FROZEN_PENDING_HOLDOUT":
-        legacy=legacy_finalize(legacy,P["geom"]/f"{pref}holdout_gen_watch.csv")
-    save_legacy(legacy,P["base"]/"legacy_split_calibration.json")
-
-    # 6) Final production calibration: every reliable genuine photo from every split defines the
-    # accepted genuine envelope. Only obvious within-watch measurement spikes may be discarded.
-    gen_photo={
-        part:P["geom"]/f"{pref}{part}_gen_photo.csv"
-        for part in ("development","validation","holdout")
+    status={
+        "model":requested,"state":final["state"],"stage":"complete","discovery":d,
+        "replica_evidence":rep_ev,**execution,
+        "calibration":str(P["cal"]),"run_manifest":str(P["manifest"]),
+        "evidence_snapshot":str(P["snapshot"]),"snapshot_id":snapshot["snapshot_id"],
     }
-    gen_repeat={
-        part:P["geom"]/f"{pref}{part}_gen_repeatability.csv"
-        for part in ("development","validation","holdout")
-    }
-    rep_photo={
-        part:P["geom"]/f"{pref}{part}_rep_photo.csv"
-        for part in ("development","validation")
-    }
-    final=build_genuine_envelope(config,gen_photo,P["split"],gen_repeat,rep_photo)
-    save_genuine_envelope(final,P["cal"])
-
-    status={"model":requested,"state":final["state"],"stage":"complete","discovery":d,"replica_evidence":rep_ev,
-            "development":gd,"validation":gv,"holdout":gh,
-            "replica_measured":{"development":rd,"validation":rv},
-            "legacy_split_state":legacy.get("state"),
-            "calibration":str(P["cal"]),"run_manifest":str(P["manifest"])}
     (P["base"]/"run_status.json").write_text(json.dumps(status,indent=2)+"\n",encoding="utf-8")
     return status
 
