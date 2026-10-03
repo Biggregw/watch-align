@@ -59,6 +59,11 @@ def _path_text(path: Path) -> str:
     return str(path).replace(",", ";")
 
 
+def output_path(out_dir: Path, model: str, partition: str, cls: str) -> Path:
+    """Canonical location of one partition/class contract inside a calibration geometry directory."""
+    return out_dir / f"{model}_{partition}_{cls}_measurement_contract.csv"
+
+
 def write_empty(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as fh:

@@ -51,7 +51,7 @@ def measure(config: dict, acq_root: Path, split_csv: Path, out_dir: Path,
     metrics = [str(m["app_key"]) for m in config["calibration_metrics"]]
     pref = out_dir / f"{model}_{partition}_{cls}"
     photos = production_measure.photo_list(acq_root, split_csv, partition, cls, model)
-    contract_csv = Path(f"{pref}_measurement_contract.csv")
+    contract_csv = measurement_contract.output_path(out_dir, model, partition, cls)
     wide_csv = Path(f"{pref}_photo.csv")
 
     if photos:

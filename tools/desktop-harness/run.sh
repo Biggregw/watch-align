@@ -12,6 +12,10 @@ JAR="$HERE/.cache/opencv-4.9.0-0.jar"; OUT="$HERE/.cache/classes"
 mkdir -p "$HERE/.cache"
 # A rate-limited Maven Central returns a tiny text body; treat anything under 1 MB as missing.
 if [ ! -f "$JAR" ] || [ "$(stat -c %s "$JAR")" -lt 1000000 ]; then
+  # Offline calibration replay must use tooling that is already present, never download it.
+  if [ "${WATCH_ALIGN_HARNESS_OFFLINE:-}" = "1" ]; then
+    echo "WATCH_ALIGN_HARNESS_OFFLINE=1: $JAR is missing; refusing to download during an offline run" >&2; exit 1
+  fi
   curl -fsSL -o "$JAR.part" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar && mv "$JAR.part" "$JAR" \
     || { echo "Could not download opencv-4.9.0-0.jar (Maven Central may be rate limiting; retry later or copy it to $JAR)" >&2; exit 1; }
 fi
