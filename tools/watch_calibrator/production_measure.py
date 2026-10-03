@@ -20,7 +20,7 @@ import csv
 import math
 import statistics
 import subprocess
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import contracts
@@ -122,7 +122,7 @@ def run_harness(model: str, photos: list[tuple[str, Path]], out_csv: Path) -> No
 
 
 def validate_harness_output(photo_csv: Path, model: str, photos: list[tuple[str, Path]]) -> None:
-    """Verify that the measurement boundary returned the requested model and expected rows."""
+    """Verify that the measurement boundary returned the exact requested population."""
     expected_model = contracts.exact_model(model, "harness expected model")
     contracts.validate_csv_exact_model(photo_csv, expected_model, "measurement output")
     with photo_csv.open(newline="", encoding="utf-8") as fh:
@@ -131,11 +131,12 @@ def validate_harness_output(photo_csv: Path, model: str, photos: list[tuple[str,
         raise contracts.ContractError(
             f"measurement output row count {len(rows)} does not match requested photo count {len(photos)}"
         )
-    expected_watches = {wid for wid, _ in photos}
-    for line_no, row in enumerate(rows, start=2):
-        wid = (row.get("physical_watch_id") or "").strip()
-        if not wid or wid not in expected_watches:
-            raise contracts.ContractError(f"measurement output line {line_no}: unexpected physical_watch_id {wid!r}")
+    actual_watches = Counter((row.get("physical_watch_id") or "").strip() for row in rows)
+    expected_watches = Counter(wid for wid, _ in photos)
+    if actual_watches != expected_watches:
+        raise contracts.ContractError(
+            f"measurement output physical-watch population {dict(actual_watches)} does not match requested population {dict(expected_watches)}"
+        )
 
 
 def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: Path,
