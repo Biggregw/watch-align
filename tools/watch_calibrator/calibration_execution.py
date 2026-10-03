@@ -11,6 +11,7 @@ import csv
 from pathlib import Path
 
 import measurement_adapters
+from production_measure import photo_identities
 from calibrate import propose as legacy_propose, finalize as legacy_finalize, save as save_legacy
 from genuine_envelope import build as build_genuine_envelope, save as save_genuine_envelope
 
@@ -76,7 +77,10 @@ def execute(config: dict, acquisition_root: Path, split_path: Path, geometry_dir
         part: geometry_dir / f"{pref}{part}_rep_photo.csv"
         for part in ("development", "validation")
     }
-    final = build_genuine_envelope(config, gen_photo, split_path, gen_repeat, rep_photo)
+    final = build_genuine_envelope(
+        config, gen_photo, split_path, gen_repeat, rep_photo,
+        photo_identity=photo_identities(acquisition_root),
+    )
     save_genuine_envelope(final, calibration_path)
 
     return {

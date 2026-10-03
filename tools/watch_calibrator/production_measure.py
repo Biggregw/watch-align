@@ -106,6 +106,30 @@ def photo_list(acq_root: Path, split_csv: Path, partition: str, cls: str, expect
     return out
 
 
+def photo_identities(acq_root: Path) -> dict[str, dict[str, str]]:
+    """Workspace-independent identity of every photo photo_list() can hand to a measurement route.
+
+    Measurement outputs name a photo by workspace path text (acq_root / local_path, with commas
+    replaced as the harness writes them), which differs between a live workspace and an offline
+    replay of the same frozen evidence. The acquisition manifest's local_path and image SHA-256 are
+    identical in both, so calibration outputs identify photos by those instead.
+    """
+    out: dict[str, dict[str, str]] = {}
+    with (acq_root / "acquired_images.csv").open(newline="", encoding="utf-8") as fh:
+        for line_no, r in enumerate(csv.DictReader(fh), start=2):
+            if (r.get("acquisition_status") or "acquired") != "acquired" or r.get("exact_duplicate_of"):
+                continue
+            local = r.get("local_path") or ""
+            sha = (r.get("sha256") or "").strip().lower()
+            if not local.strip() or not sha:
+                raise contracts.ContractError(f"acquired images line {line_no}: local_path and sha256 are required")
+            key = str(acq_root / local).replace(",", ";")
+            identity = {"local_path": local, "image_sha256": sha}
+            if out.setdefault(key, identity) != identity:
+                raise contracts.ContractError(f"acquired images line {line_no}: conflicting identity for photo {key!r}")
+    return out
+
+
 def run_harness(model: str, photos: list[tuple[str, Path]], out_csv: Path) -> None:
     """Run the exact configured model route; never allow an implicit 124060 fallback."""
     model = (model or "").strip().upper()

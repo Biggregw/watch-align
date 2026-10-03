@@ -10,6 +10,10 @@ cross-watch statistical trimming. Development/validation/holdout splits remain u
 but they do not make genuine observations disappear from the final production envelope.
 
 Replica data is stress evidence only and never moves a genuine-derived limit.
+
+Photos are identified by their acquisition-manifest local_path and image SHA-256, never by a
+workspace path, so a live run and an offline replay of the same frozen evidence produce identical
+calibration bytes.
 """
 from __future__ import annotations
 
@@ -18,6 +22,7 @@ import json
 import math
 import statistics
 from collections import defaultdict
+from collections.abc import Mapping
 from pathlib import Path
 
 MAD_TO_SIGMA = 1.4826
@@ -62,21 +67,32 @@ def _source_map(split_csv: Path) -> dict[str, str]:
     return out
 
 
-def _collect(photo_files: dict[str, Path], metrics: list[str]) -> dict[str, list[dict]]:
+def _photo(photo_identity: Mapping[str, dict], path_text: str) -> dict:
+    identity = photo_identity.get(path_text)
+    if identity is None:
+        raise ValueError(f"measured photo {path_text!r} has no workspace-independent identity")
+    return {"local_path": identity["local_path"], "image_sha256": identity["image_sha256"]}
+
+
+def _collect(photo_files: dict[str, Path], metrics: list[str],
+             photo_identity: Mapping[str, dict]) -> dict[str, list[dict]]:
     out: dict[str, list[dict]] = {m: [] for m in metrics}
     for partition, path in photo_files.items():
         for r in _rows(path):
             wid = (r.get("physical_watch_id") or "").strip()
             if not wid:
                 continue
+            photo = None
             for metric in metrics:
                 value = _f(r.get(metric))
                 if math.isfinite(value):
+                    if photo is None:
+                        photo = _photo(photo_identity, r.get("path") or "")
                     out[metric].append({
                         "physical_watch_id": wid,
                         "partition": partition,
                         "value": value,
-                        "path": r.get("path") or "",
+                        "photo": photo,
                     })
     return out
 
@@ -128,7 +144,8 @@ def _obvious_outlier_filter(records: list[dict], spec: dict, policy: dict) -> tu
         rejected.append({
             "physical_watch_id": wid,
             "partition": rec["partition"],
-            "path": rec.get("path") or "",
+            "local_path": rec["photo"]["local_path"],
+            "image_sha256": rec["photo"]["image_sha256"],
             "value": rec["value"],
             "watch_median": center,
             "absolute_deviation": deviations[farthest],
@@ -230,11 +247,14 @@ def build(config: dict,
           genuine_photo_files: dict[str, Path],
           split_csv: Path,
           repeatability_files: dict[str, Path] | None = None,
-          replica_photo_files: dict[str, Path] | None = None) -> dict:
+          replica_photo_files: dict[str, Path] | None = None,
+          *,
+          photo_identity: Mapping[str, dict]) -> dict:
+    """photo_identity maps each measured photo's workspace path text to its stable identity."""
     metrics = [s["metric"] for s in config["calibration_metrics"]]
     specs = {s["metric"]: s for s in config["calibration_metrics"]}
-    genuine = _collect(genuine_photo_files, metrics)
-    replica = _collect(replica_photo_files or {}, metrics)
+    genuine = _collect(genuine_photo_files, metrics, photo_identity)
+    replica = _collect(replica_photo_files or {}, metrics, photo_identity)
     source_by_watch = _source_map(split_csv)
     pose_sensitive = _pose_sensitive_metrics(repeatability_files or {})
     policy = config.get("calibration_policy") or {}

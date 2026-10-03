@@ -60,21 +60,23 @@ def value(photo):
     return 1.0+n/65536.0, 0.5+n/131072.0
 
 
-def fake_legacy_harness(model,photos,out_csv):
-    rows=[]
-    for wid,photo in photos:
-        a,_=value(photo)
-        rows.append({"physical_watch_id":wid,"model":model,"path":str(photo).replace(",",";"),
-                     "dial_source":"AUTO_EDGE_FIT","dial_reproducible":"true","pose_tilt_deg":"2.000000",
-                     "m.a":f"{a:.6f}","m.b":""})
-    write_csv(out_csv,["physical_watch_id","model","path","dial_source","dial_reproducible","pose_tilt_deg","m.a","m.b"],rows)
-
-
-def contract_harness(withhold_all=False):
+def legacy_harness(values=value):
     def fake(model,photos,out_csv):
         rows=[]
         for wid,photo in photos:
-            a,b=value(photo)
+            a,_=values(photo)
+            rows.append({"physical_watch_id":wid,"model":model,"path":str(photo).replace(",",";"),
+                         "dial_source":"AUTO_EDGE_FIT","dial_reproducible":"true","pose_tilt_deg":"2.000000",
+                         "m.a":f"{a:.6f}","m.b":""})
+        write_csv(out_csv,["physical_watch_id","model","path","dial_source","dial_reproducible","pose_tilt_deg","m.a","m.b"],rows)
+    return fake
+
+
+def contract_harness(withhold_all=False,values=value):
+    def fake(model,photos,out_csv):
+        rows=[]
+        for wid,photo in photos:
+            a,b=values(photo)
             base={"schema_version":"1","physical_watch_id":wid,"model":model,"family":"submariner_12",
                   "path":str(photo).replace(",",";"),"adapter_id":CANDIDATE,"adapter_version":"1",
                   "reliability_policy":"sub124060_production_reliability_v1","dial_source":"AUTO_EDGE_FIT",
@@ -92,14 +94,14 @@ def contract_harness(withhold_all=False):
     return fake
 
 
-def build_live(root):
+def build_live(root,photos=2,values=value):
     """The post-acquisition half of run.run(): freeze, measure through the legacy route, record."""
     base=root/"live"/MODEL;acq=base/"dataset";base.mkdir(parents=True)
     acquired_rows,split_rows=[],[]
     for wid,partition in WATCHES:
-        for i in (1,2):
+        for i in range(1,photos+1):
             data=f"{wid}-{i}".encode()
-            local=f"images/{wid}/0{i}.jpg";(acq/local).parent.mkdir(parents=True,exist_ok=True);(acq/local).write_bytes(data)
+            local=f"images/{wid}/{i:02d}.jpg";(acq/local).parent.mkdir(parents=True,exist_ok=True);(acq/local).write_bytes(data)
             acquired_rows.append({"physical_watch_id":wid,"candidate_id":wid,"model":MODEL,"family":"submariner_12",
                 "class_label":"gen","local_path":local,"sha256":hashlib.sha256(data).hexdigest(),"bytes":str(len(data)),
                 "width":"10","height":"10","exact_duplicate_of":"","acquisition_status":"acquired"})
@@ -113,7 +115,7 @@ def build_live(root):
     manifest["evidence_manifest"]=manifest_tools.evidence_manifest_identity(acquired,base)
     snap=evidence_snapshot.create(MODEL,"submariner_12",cfg_path,acquired,acq,split,base/"evidence_snapshot_v1")
     manifest_tools.attach_snapshot(manifest,snap,base/"evidence_snapshot_v1",base)
-    with mock.patch.object(production_measure,"run_harness",side_effect=fake_legacy_harness):
+    with mock.patch.object(production_measure,"run_harness",side_effect=legacy_harness(values)):
         execution=calibration_execution.execute(config,acq,split,base/"geometry",base/"calibration.json",base)
     final=execution.pop("final")
     manifest_tools.bind_measurement_adapter(manifest,config,execution["measurement_adapter"])
@@ -124,9 +126,9 @@ def build_live(root):
     return base
 
 
-def build(root,adapter=CANDIDATE,withhold_all=False):
-    live=build_live(root)
-    with mock.patch.object(sub12,"run_harness",side_effect=contract_harness(withhold_all)):
+def build(root,adapter=CANDIDATE,withhold_all=False,photos=2,values=value):
+    live=build_live(root,photos,values)
+    with mock.patch.object(sub12,"run_harness",side_effect=contract_harness(withhold_all,values)):
         replay.replay(live/"evidence_snapshot_v1",root/"replay",fresh=True,measurement_adapter_id=adapter)
     return live,root/"replay"/MODEL
 
@@ -141,6 +143,20 @@ class ReplayAcceptanceTest(unittest.TestCase):
             self.assertEqual(CANDIDATE,report["replay_adapter"]["id"])
             self.assertEqual({"photos":6,"metric_rows":12,"raw_values":12,"eligible_values":6},report["contract_totals"])
 
+    def test_rejected_outlier_keeps_live_and_replay_calibration_identical(self):
+        # Five photos per watch; one obvious spike on w1 is rejected from both workspaces. Rejected
+        # photos must be identified by manifest identity, not by live/replay workspace paths.
+        def values(photo):
+            spike=Path(photo).parent.name=="w1" and Path(photo).name=="05.jpg"
+            return (5.0 if spike else 1.0+int(Path(photo).stem)/1000.0),0.5
+        with tempfile.TemporaryDirectory() as td:
+            live,rep=build(Path(td),photos=5,values=values)
+            rejected=json.loads((rep/"calibration.json").read_text())["metrics"]["m.a"]["obvious_photo_outliers"]
+            self.assertEqual([("w1","images/w1/05.jpg")],[(r["physical_watch_id"],r["local_path"]) for r in rejected])
+            self.assertEqual(hashlib.sha256(b"w1-5").hexdigest(),rejected[0]["image_sha256"])
+            self.assertEqual((live/"calibration.json").read_bytes(),(rep/"calibration.json").read_bytes())
+            self.assertEqual("ACCEPTED",ra.verify(live,rep,LIVE,CANDIDATE)["state"])
+
     def test_refuses_vacuous_comparison_and_contractless_candidate(self):
         with tempfile.TemporaryDirectory() as td:
             live,rep=build(Path(td))
@@ -152,7 +168,7 @@ class ReplayAcceptanceTest(unittest.TestCase):
     def test_rejects_replay_that_did_not_use_the_candidate_adapter(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td);live=build_live(root)
-            with mock.patch.object(production_measure,"run_harness",side_effect=fake_legacy_harness):
+            with mock.patch.object(production_measure,"run_harness",side_effect=legacy_harness()):
                 replay.replay(live/"evidence_snapshot_v1",root/"replay",fresh=True)
             with self.assertRaisesRegex(ra.AcceptanceError,"replay override None"):
                 ra.verify(live,root/"replay"/MODEL,LIVE,CANDIDATE)
