@@ -135,6 +135,8 @@ def run(model: str, root: Path, fresh=False) -> dict:
     # 5) Measure/calibrate through the same execution function used by offline replay.
     execution=calibration_execution.execute(config,P["acq"],P["split"],P["geom"],P["cal"],P["base"])
     final=execution.pop("final")
+    manifest_tools.bind_measurement_adapter(manifest,config,execution["measurement_adapter"])
+    manifest_tools.save(manifest,P["manifest"])
 
     status={
         "model":requested,"state":final["state"],"stage":"complete","discovery":d,
