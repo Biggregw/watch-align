@@ -84,11 +84,13 @@ jobs:
         run: |
           F="datasets/watch_calibrator/$MODEL/calibration.md"
           S="datasets/watch_calibrator/$MODEL/run_status.json"
+          M="datasets/watch_calibrator/$MODEL/run_manifest.json"
           R="datasets/watch_calibrator/$MODEL/replica_evidence.json"
           D="datasets/watch_calibrator/$MODEL/dataset/source_diversity.json"
           if [ -f "$F" ]; then cat "$F" >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$D" ]; then echo '### Genuine source diversity' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$D" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$R" ]; then echo '### Replica stress evidence' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$R" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$M" ]; then echo '### Run manifest' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$M" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$S" ]; then echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$S" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Upload complete calibration evidence
         if: always()
@@ -96,6 +98,8 @@ jobs:
         with:
           name: watch-calibrator-${{ env.MODEL }}-${{ github.run_id }}
           path: |
+            datasets/watch_calibrator/${{ env.MODEL }}/frozen_config.json
+            datasets/watch_calibrator/${{ env.MODEL }}/run_manifest.json
             datasets/watch_calibrator/${{ env.MODEL }}/discovered_candidates.csv
             datasets/watch_calibrator/${{ env.MODEL }}/discovered_candidates.json
             datasets/watch_calibrator/${{ env.MODEL }}/dataset/acquired_images.csv
