@@ -2,7 +2,7 @@
 
 Status: **active governing research protocol**
 
-Protocol version: **v0.1**
+Protocol version: **v0.2**
 
 This document defines the reusable calibration method for Watch Align. It is deliberately independent of the Android production implementation.
 
@@ -94,19 +94,40 @@ Useful paired checks may include:
 
 The exact relationship must be validated per feature; do not assume cancellation works merely because markers are opposite.
 
+### Perspective must be spatially coherent
+
+An opposing-marker difference is evidence of perspective, but **one bad marker must never be excused as perspective on the strength of its opposite alone**.
+
+Perspective is a smooth whole-plane effect. Neighbouring markers should therefore share the same general distortion trend to a degree. For example, if 12 is compressed because the top of the dial is farther from the camera, 11 and 1 should usually show related compression, while 5, 6 and 7 should usually show related expansion. The exact magnitude need not be identical because marker geometry and local measurement definitions differ, but the sign and broad spatial gradient should be coherent.
+
+Before attributing an outlying marker to pose, require supporting evidence from more than one relationship where those measurements are available:
+
+- its opposing marker should move in the expected complementary direction;
+- one or both neighbouring markers should move in a direction consistent with the same smooth perspective field;
+- other nearby geometry such as minute-track spacing or dial/rehaut asymmetry may corroborate the same direction;
+- the suspected marker should not be a lone local outlier against otherwise coherent neighbours.
+
+A **single-marker anomaly with normal neighbours is evidence of a real local deviation or a local detection error, not sufficient evidence of perspective**. Do not correct it away merely because the opposing marker happens to differ.
+
+A practical distinction is:
+
+- **coherent regional gradient around the dial** -> likely pose contamination;
+- **isolated local spike at one marker** -> investigate the marker/detection as a genuine local defect candidate;
+- **incoherent/noisy pattern** -> measurement quality problem; withhold rather than correct.
+
 When pose contamination is supported, either:
 
-- derive a validated paired/corrected quantity;
+- derive a validated paired/regional corrected quantity;
 - exclude the contaminated raw measurement from tolerance estimation; or
 - mark it unassessable.
 
-Do **not** widen the genuine manufacturing envelope simply to include a bad photograph.
+Do **not** widen the genuine manufacturing envelope simply to include a bad photograph, and do **not** use pose correction to make an isolated genuinely bad marker pass.
 
 ## 6. Prefer relational correction before complex pose reconstruction
 
 Do not calculate camera tilt, homography or projective correction unless the feature requires it.
 
-First test whether directly observed relationships around the dial explain the distortion sufficiently. A simple paired residual that restores the known genuine value is preferable to a more complex pose model that does not improve repeatability.
+First test whether directly observed relationships around the dial explain the distortion sufficiently. A simple paired or regional residual pattern that restores the known genuine value is preferable to a more complex pose model that does not improve repeatability.
 
 Complex perspective machinery must earn its place by improving held-out measurement accuracy.
 
@@ -211,15 +232,9 @@ Use the **known-working GMT path** as the control:
 2. use existing proven-genuine GMT images first;
 3. select the best genuine nominal candidate;
 4. remeasure the feature on a small set of independent genuine watches;
-5. apply related/opposing-marker checks for perspective contamination;
+5. apply opposing-marker **and neighbourhood-coherence** checks for perspective contamination;
 6. compare the independently derived result with the existing GMT calibration;
 7. refine the protocol only through held-out testing;
 8. expand to the next GMT feature only if the first control succeeds.
 
 Production GMT code remains unchanged during this research stage.
-
-## Success criterion
-
-The protocol is successful when it repeatedly reproduces known genuine geometry and useful real-world QC findings with low false-flag rates, while abstaining when the photo cannot support the measurement.
-
-Population-level genuine-vs-replica separation is **not** the success criterion.
