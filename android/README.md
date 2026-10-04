@@ -1,32 +1,46 @@
 # Watch Align Android
 
-Watch Align Android is a standalone on-device QC and comparison app. It does not require a hosted Watch Align backend: watch analysis, marker geometry, QC annotations and reference registration run locally with OpenCV Android. Internet access is used only to discover/download an exact-model official manufacturer reference when that model has a verified source configured and the user has not supplied a reference photo; downloaded references are cached locally.
+The supported application lives in this directory.
 
-Current working version: **1.3.0-alpha29**
+Watch Align analyses **uploaded dealer/QC watch photos** and reports measurable deviations from a proven-genuine reference. It is not an authenticity classifier.
 
-Alpha29 introduces CLAHE glare pre-processing, interactive fullscreen micro-nudge controls (center translate, rotate, scale), customizable overlay colors, manual 3-point seed support, sub-pixel dial detection, 12 o'clock shape-aware radial compensation, and one-tap QC summary card export.
+The current repository direction is governed by:
 
-Where a genuine/reference image is available, the app also compares the apparent date-numeral height normalized to dial radius and reports it as a percentage of the genuine reference (`100% = genuine`). This is an image-based apparent magnification comparison, not a laboratory measurement of the cyclops optical magnification factor. Perspective mismatch between candidate and reference causes the result to be marked advisory.
+- `../docs/PRODUCT_SCOPE.md`
+- `../docs/CALIBRATION_PROTOCOL.md`
+- `../docs/HANDOFF.md`
+- `../docs/architecture/QC_PRINCIPLES.md`
 
-Cyclops position is now primarily described relative to the detected date aperture (tangential/radial centre separation plus lens rotation). Its apparent position against the minute track remains explicitly perspective-sensitive because the cyclops sits above the dial plane and is subject to parallax. If the lens boundary cannot be isolated reliably the app does not draw a cyclops box or invent a lens verdict.
+## Current baseline
 
-The model catalog covers recurring RepTimeQC-style families: Rolex GMT-Master II, Submariner/Date, Daytona, Datejust, Day-Date, Yacht-Master, Explorer and Oyster Perpetual; Omega Seamaster Diver 300M, Aqua Terra and Planet Ocean; Audemars Piguet Royal Oak; Patek Philippe Nautilus/Aquanaut; Tudor Black Bay/Pelagos; Vacheron Constantin Overseas; and Cartier Santos/Tank. Round/indexed models use the common geometry engine when the photograph supports it. Cartier Santos/Tank profiles deliberately use a visual-only QC mode rather than pretending circular marker geometry applies.
+The existing GMT route is the known-working production control and must remain unchanged while the new calibration protocol is validated offline.
 
-Other QC includes dial detection, perspective suitability, roll-corrected hour-marker geometry, marker-to-minute-track checks, shaped-marker body rotation, model-aware bezel/pip inspection, date-wheel/numeral centring, Rolex rehaut inspection, dial-print quality regions, model-aware SEL dark-gap evidence, and perspective-gated advisory wording. Fine-grained outputs are withheld or qualified when geometry cannot support a strong verdict.
+The repository also contains an experimental 124060 route and historical research tooling. Preserve them, but do not treat old alpha-era notes or thresholds as the active roadmap.
 
-Automatic official-reference discovery is currently enabled only for exact models whose manufacturer source has been verified in the app (currently 126710BLNR and 124060). Other catalog models still receive local QC and can use a user-supplied genuine/reference image for comparison. This avoids silently substituting a similar or wrong reference.
+The immediate project task is **not** an Android implementation change. It is to recalibrate one known-working GMT feature offline from existing genuine evidence, compare it with the established GMT result, and refine the reusable calibration protocol.
 
-Reference comparison uses deterministic geometry-first registration. The app refuses an overlay when geometry cannot be validated rather than lowering the safety threshold. Official reference images are not stored in the repository.
+Only after a research rule is validated should production Android code be changed.
 
-The Android project lives alongside the Windows application so the two implementations can continue converging toward a shared cross-platform core. Android remains an alpha and is not presented as proof of authenticity.
+## Build
 
-Open this android/ directory in Android Studio. Use Gradle JDK 17, the committed Gradle 8.14.5 wrapper, and Android SDK Platform 35. OpenCV uses the official org.opencv:opencv:4.9.0 Android AAR from Maven Central.
+Use JDK 17 and the committed Gradle wrapper.
 
-Build from this directory in Windows PowerShell:
+From this directory:
 
-    .\gradlew.bat :app:testDebugUnitTest --stacktrace
-    .\gradlew.bat :app:assembleDebug --stacktrace
+```bash
+./gradlew :app:testDebugUnitTest :app:assembleDebug
+```
 
-APK output:
+Do not build an APK or trigger CI merely to answer a research question that can be tested offline.
 
-    app/build/outputs/apk/debug/app-debug.apk
+## Engineering rules
+
+- Preserve GMT behaviour unless an explicitly validated change requires otherwise.
+- Reuse existing images and artifacts before searching for new data.
+- Keep detector output, numeric measurement, confidence/assessability and QC judgement separate.
+- Do not widen genuine limits to accommodate poor photographic pose.
+- Prefer simple directly observed relationships; complex perspective correction must demonstrate a held-out accuracy benefit.
+- Replica evidence validates usefulness but never moves a genuine-derived reference range.
+- A feature may ultimately be deterministic code, vision AI, hybrid, or not reliable enough; let validation decide.
+
+Historical implementation details remain available in Git history and `docs/research/` when needed.
