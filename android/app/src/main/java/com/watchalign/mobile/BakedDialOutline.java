@@ -20,7 +20,8 @@ import android.graphics.Path;
 final class BakedDialOutline {
     static final int W=1024,H=1024;
     static final double CX=512.0,CY=512.0,R=480.0;
-    private static final int BRIGHT=Color.rgb(45,245,255);
+    // Magenta deliberately contrasts with white lume, black dial, steel and blue bezel.
+    private static final int BRIGHT=Color.rgb(255,0,180);
 
     private BakedDialOutline(){}
 
@@ -31,7 +32,7 @@ final class BakedDialOutline {
 
         Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
         p.setStyle(Paint.Style.STROKE);
-        p.setStrokeWidth(3.2f);
+        p.setStrokeWidth(3.8f);
         p.setStrokeCap(Paint.Cap.ROUND);
         p.setStrokeJoin(Paint.Join.ROUND);
         p.setColor(BRIGHT);
@@ -40,17 +41,20 @@ final class BakedDialOutline {
         // Physical black-dial edge.
         c.drawCircle((float)CX,(float)CY,(float)(R*Gmt126710BlnrMaster.DIAL_EDGE_R),p);
 
-        // All 60 minute ticks. The projective refiner uses the same measured
-        // centre radius and +/-0.025R radial tick extent.
-        final double tickCenter=Gmt126710BlnrMaster.MINUTE_TRACK_R;
-        final double tickHalf=0.025;
+        // All 60 minute ticks.
+        // Gmt126710BlnrMaster.MINUTE_TRACK_R is the INNER tick end, not the tick centre.
+        // The previous proof incorrectly drew +/-0.025R around it, which extended every
+        // tick too far inward. Keep the inner end fixed and draw only outward to the
+        // visible outer minute-track end.
+        final double tickInner=Gmt126710BlnrMaster.MINUTE_TRACK_R;
+        final double tickOuter=0.972;
         for(int i=0;i<60;i++){
             double a=Math.toRadians(i*6.0-90.0);
             double ca=Math.cos(a),sa=Math.sin(a);
-            float x1=(float)(CX+R*(tickCenter-tickHalf)*ca);
-            float y1=(float)(CY+R*(tickCenter-tickHalf)*sa);
-            float x2=(float)(CX+R*(tickCenter+tickHalf)*ca);
-            float y2=(float)(CY+R*(tickCenter+tickHalf)*sa);
+            float x1=(float)(CX+R*tickInner*ca);
+            float y1=(float)(CY+R*tickInner*sa);
+            float x2=(float)(CX+R*tickOuter*ca);
+            float y2=(float)(CY+R*tickOuter*sa);
             c.drawLine(x1,y1,x2,y2,p);
         }
 
