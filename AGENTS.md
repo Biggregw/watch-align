@@ -1,47 +1,91 @@
-# Build instructions for Watch Align
+# Watch Align agent instructions
 
-The supported app is in android/. Open that directory as the Android Studio Gradle project.
+Read these before substantial work:
 
-- Use JDK 17 and the committed Gradle 8.14.5 wrapper. Do not upgrade the build toolchain as part of unrelated fixes.
-- Windows: from android/, run .\gradlew.bat :app:testDebugUnitTest :app:assembleDebug --stacktrace. Linux/macOS: bash ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace.
-- Verify a dependency's exact published coordinates and Android AAR packaging before changing it. OpenCV uses the official org.opencv:opencv package on Maven Central.
-- Diagnose the first underlying failed task and its original error. Missing reports after a failed build are symptoms, not evidence of failing tests.
-- Do not disable validation tasks, skip tests, or weaken QC thresholds to make a build pass.
-- Validate locally before proposing a commit or push. If a command fails twice for the same reason, inspect the cause and change the approach instead of repeating it.
-- Use PowerShell-compatible syntax on Windows. Keep independent commands separate and inspect exit codes.
-- Do not commit, push, publish releases, or send messages unless the user requests those actions.
-- Report which checks actually passed and which checks remain blocked. APK compilation does not establish camera, native OpenCV, or image-analysis correctness on a device.
+1. `docs/PRODUCT_SCOPE.md`
+2. `docs/CALIBRATION_PROTOCOL.md`
+3. `docs/HANDOFF.md`
+4. `docs/architecture/QC_PRINCIPLES.md`
 
-# Product-scope guardrails
+## Product guardrails
 
-Before substantial planning or implementation, read `docs/PRODUCT_SCOPE.md`.
+- Watch Align analyses uploaded dealer/QC photos. Do not redesign it around guided capture or multiple runtime photos.
+- The product reports **deviation from a proven-genuine reference**. It is not a genuine/fake classifier.
+- A replica may legitimately show no detectable deviation in the features assessed from a photo.
+- Genuine data defines the reference envelope. Replica data is validation/stress evidence only and must never move a genuine-derived boundary.
+- Preserve the existing working GMT behaviour until a replacement calibration method has been proven offline.
 
-- Watch Align analyses uploaded dealer/QC photos. Do not redesign it around taking new camera photos.
-- The existing GMT Android QC experience is the reference workflow for new watch families.
-- Current production target: Rolex Submariner 124060, then 126610LN/LV.
-- Preserve GMT production behaviour and regression protection.
-- Reuse generic infrastructure only where the assumptions are genuinely generic. Never silently reuse GMT-specific geometry, thresholds, pose policy, or date-side logic for another family.
-- Research must address a specific production blocker. Do not start open-ended corpus, detector, or calibration work without stating the production decision it enables.
-- If one family-specific check is unreliable, suppress or mark that check unavailable rather than redesigning the whole product.
-- Do not turn Watch Align into an authenticity classifier. The product is replica QC.
-- Family work should end in working Android QC support and a testable APK, not indefinitely expanding research statistics.
-- If a task begins expanding beyond `docs/PRODUCT_SCOPE.md`, stop before implementing the expansion and report the proposed scope change for approval.
+## Research-first rule
 
-# Reuse-first engineering workflow
+Before changing production code, answer the research question outside production code if possible.
 
-Before creating or substantially changing family-specific detector, geometry, confidence, recovery, presentation or QC logic, read `docs/ENGINEERING_LESSONS.md` and audit the closest mature implementation first.
+Preferred order:
 
-- Start from the mature analogue, normally GMT. Identify what problem it solved, the failure modes it encountered, and the guardrails added around it.
-- For a new production family, start from the mature **end-to-end user experience**, not just its low-level detectors. Reuse the workflow, whole-dial presentation, missing/obscured-marker behaviour, close-up structure, confidence wording and interaction contract unless a concrete model difference prevents it.
-- Prefer **mature workflow + family adapter** over a second family-specific app experience. Swap only the parts that are genuinely model-specific: layout, detector geometry, measurement reference, calibration and decision thresholds.
-- If the mature renderer can express a result as measured/not judged, use it or mirror that contract before building a separate research-only overlay. A research/debug presentation must not quietly become the user-test checkpoint for a production family.
-- When exact mature verdict thresholds cannot transfer, keep the mature presentation and show a neutral measured/not-judged state. Do not rebuild the UI merely because calibration is pending.
-- Reuse lessons as well as code. Minimum pixel support, resize repeatability, local-frame quality, hand checks, alternate-reference cross-checks, recovery behaviour, fail-closed rules and regression strategy are all candidates for reuse even when marker geometry differs.
-- Before writing a parallel algorithm, make a reuse map: **shared unchanged / shared with parameters or model layout / deliberately model-specific / not applicable**.
-- Prefer composition, parameterisation or extraction of proven primitives over copying or rebuilding. Do not force a shared abstraction when measured evidence shows a family-specific method is more reliable.
-- If a new family deliberately diverges from the mature method, record the evidence or concrete assumption that makes the mature method worse or inapplicable.
-- Before declaring a new-family metric too noisy or unusable, check whether the mature path addressed the same failure with a different reference frame, cross-check, confidence gate, pixel floor, resize test, recovery path, pose gate or normalization.
-- Before sourcing new images or starting a new corpus, check whether existing project datasets, artifacts and prior experiments can answer the question.
-- Cross-family experiments should start diagnostic-only. Preserve mature GMT outputs and thresholds until equivalence/non-regression is demonstrated.
-- Every substantial experiment or handoff must state **Lessons reused**, **Deliberate divergences**, and any **New reusable lesson**.
-- When a reusable lesson is established, update `docs/ENGINEERING_LESSONS.md` in the same branch so future work does not have to rediscover it.
+1. reuse existing project images/artifacts;
+2. run a small offline measurement experiment;
+3. compare against a known result or held-out reference;
+4. tighten the measurement prompt/protocol;
+5. repeat on fresh/held-out images;
+6. only then implement a proven rule in the app.
+
+Do **not** use GitHub Actions, a full calibrator run, an APK build, or a new architectural layer merely to answer a question that can be tested with a few images and a local script/notebook.
+
+## Calibration rules
+
+- Start with the best available proven-genuine near-frontal image as the nominal master for the feature.
+- A clean loose dial is preferred when it materially improves geometry, but do not delay work searching for one if existing images already answer the question.
+- Separate nominal design geometry, genuine watch-to-watch variation, and photo/detector uncertainty.
+- Treat multiple photos of one physical watch as repeatability evidence, not independent watches.
+- Check opposing or related markers for coherent pose distortion before allowing an outlier to widen the genuine envelope.
+- If one side expands while the opposite side compresses in a pattern consistent with perspective, first classify it as photo contamination. Correct, pair, or exclude the affected raw value instead of enlarging tolerance.
+- Keep marker position separate from marker size. Do not let uncertain lume/white-gold thresholding contaminate a centre-position measurement.
+- Normalize to a clearly defined dial boundary; do not silently switch between dial/rehaut, crystal or bezel edges.
+- Report exclusions and uncertainty rather than guessing.
+
+## Golden prompt development
+
+`docs/CALIBRATION_PROTOCOL.md` is versioned research infrastructure.
+
+When the protocol is tested against a feature whose answer is already known:
+
+- record the independent result;
+- compare it quantitatively with the established result;
+- diagnose the error source;
+- improve the protocol;
+- retest on held-out images rather than tuning only to the original sample.
+
+A protocol version is promoted only when it repeatedly reproduces known measurements without hidden manual fitting to the answer.
+
+## Validation against replica QC
+
+After a genuine envelope is frozen:
+
+- use independent RepTimeQC examples with a clearly stated visible defect;
+- keep the defect label separate while measuring where practical;
+- test whether the frozen genuine-reference comparison finds the same issue;
+- also run accepted/GL examples to measure false positives;
+- classify the eventual implementation per feature as deterministic code, vision AI, hybrid, or not reliable enough.
+
+The success criterion is useful specimen-specific QC, not universal replica-vs-genuine separation.
+
+## Current task order
+
+1. Recalibrate one known-working GMT feature with the new protocol.
+2. Compare it with the existing GMT result.
+3. Improve and freeze the reusable prompt/protocol.
+4. Expand to other GMT features only if the control succeeds.
+5. Validate against real RepTimeQC defects and accepted controls.
+6. Only then revisit Submariner calibration/production changes.
+
+Do not restart the old measurement-contract, coverage-funnel, large-corpus, or projective-refinement programmes unless a new validated feature proves they are necessary.
+
+## Engineering/build rules
+
+- Supported app: `android/`.
+- Use JDK 17 and the committed Gradle wrapper.
+- Do not upgrade dependencies/toolchains during unrelated work.
+- Diagnose the first underlying failure; do not disable tests or weaken checks to get green CI.
+- Prefer small, reversible changes.
+- Do not create long stacked PR chains. One focused proven change at a time.
+- Do not commit/push/build/run CI unless the user asked for it or it is genuinely required by the approved implementation step.
+- Historical branches and `docs/research/` are evidence, not active instructions.
