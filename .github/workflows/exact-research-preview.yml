@@ -1,0 +1,45 @@
+name: Exact research test-photo preview
+
+on:
+  push:
+    branches:
+      - research/opposing-minute-perspective
+    paths:
+      - '.github/workflows/exact-research-preview.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install fetch dependencies
+        run: python -m pip install -q -r datasets/126710BLNR/requirements.txt pillow
+      - name: Fetch exact source and create preview
+        run: |
+          python3 datasets/126710BLNR/fetch_images.py --clean --source gen_wex_1TDYtpN
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          src=Path('datasets/126710BLNR/gen/validation/gen_wex_1TDYtpN/image_05.jpg')
+          dst=Path('docs/calibration/opposing-minute-real/exact-test-photo-gen_wex_1TDYtpN-image_05.jpg')
+          dst.parent.mkdir(parents=True, exist_ok=True)
+          im=Image.open(src).convert('RGB')
+          im.thumbnail((1000,1000))
+          im.save(dst, quality=88, optimize=True)
+          print(dst, im.size)
+          PY
+      - name: Commit exact preview
+        run: |
+          git config user.name 'watch-align-research-bot'
+          git config user.email 'watch-align-research-bot@users.noreply.github.com'
+          git add docs/calibration/opposing-minute-real/exact-test-photo-gen_wex_1TDYtpN-image_05.jpg
+          git commit -m 'Add exact real-photo test preview'
+          git push origin HEAD:research/opposing-minute-perspective
