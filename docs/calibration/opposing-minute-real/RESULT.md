@@ -2,34 +2,47 @@
 
 Status: **research only; no production GMT change**
 
-- source watches attempted: **6**
-- watches with a measurable opposing-pair field: **2**
-- measurable images: **3 / 33**
-- high-coherence images: **0**
+Revision: self-phasing minute track; even/odd opposing-pair cross-validation.
 
-## Watch-level result
+- source watches successfully fetched: **8**
+- watches with independently cross-fittable opposing pairs: **7**
+- measurable images: **28 / 44**
+- descriptively coherent images: **7**
 
-One image per physical watch is selected only for this summary, preferring the most complete pair set and then the lowest residual. All image-level data remain in `image_results.csv`.
+## Watch-level cross-validation
 
-- median reduction in opposing-pair radial asymmetry: **19.3%**
-- median projective-fit residual: **0.02049**
-- median fitted projective magnitude: **0.03328**
+Each pair is corrected only by a projective vector fitted to the opposite parity of pairs. The evaluated pair therefore did not train its own correction.
 
-| watch | split | pairs | residual | raw asym | corrected asym | improvement |
-|---|---|---:|---:|---:|---:|---:|
-| gen_wex_3KSuGhC | calibration | 15 | 0.02258 | 0.05666 | 0.04372 | 22.8% |
-| gen_wex_1TDYtpN | validation | 21 | 0.01841 | 0.03984 | 0.03354 | 15.8% |
+- median cross-fitted reduction in opposing-pair radial asymmetry: **-1.2%**
+- median even/odd projective-vector disagreement: **0.01814**
+- median fitted projective magnitude: **0.01983**
+
+| watch | split | pairs | vector disagree | raw asym | cross-fit corrected | cross-fit improvement | status |
+|---|---|---:|---:|---:|---:|---:|---|
+| gen_wex_3KSuGhC | calibration | 25 | 0.01001 | 0.02967 | 0.03002 | -1.2% | MEASURED |
+| gen_wex_K4gqk6U | calibration | 17 | 0.05102 | 0.06061 | 0.07188 | -18.6% | MEASURED |
+| gen_wex_e99gXKb | calibration | 27 | 0.00548 | 0.03297 | 0.02483 | 24.7% | COHERENT |
+| gen_wex_1TDYtpN | validation | 26 | 0.01063 | 0.04073 | 0.04431 | -8.8% | MEASURED |
+| gen_wex_8Rg3vqJ | validation | 28 | 0.02810 | 0.05679 | 0.05469 | 3.7% | MEASURED |
+| gen_wex_bRffRhD | validation | 23 | 0.01814 | 0.05241 | 0.06135 | -17.1% | MEASURED |
+| gen_wex_vmbUDwy | validation | 24 | 0.02193 | 0.03884 | 0.02762 | 28.9% | MEASURED |
 
 ## Calibration partition
 
-- measurable watches: **1**
-- median pair-asymmetry improvement: **22.8%**
+- measurable watches: **3**
+- median cross-fit improvement: **-1.2%**
 
 ## Validation partition
 
-- measurable watches: **1**
-- median pair-asymmetry improvement: **15.8%**
+- measurable watches: **4**
+- median cross-fit improvement: **-2.5%**
+
+## Unassessable-image reasons
+
+- insufficient independent even/odd opposing-pair coverage: **7**
+- outer ellipse not stable: **5**
+- 60-fold minute-track phase not found: **4**
 
 ## Gate
 
-This run tests only whether the minute-pair field is measurable and spatially coherent on real genuine photographs. It does **not** yet authorize correction of the 12-marker QC measurement. The next gate is whether using this field reduces the spread of an independent genuine landmark measurement on validation watches without absorbing an intentionally local defect.
+This run does not authorize a perspective correction. A useful result requires the cross-fitted improvement to persist on independent validation watches and the even/odd fitted projective vectors to agree. Only after that should an independent landmark such as a common-normalized 12/6 clearance be corrected, followed by an intentional local-defect test to prove the pose model does not absorb a genuine marker error.
