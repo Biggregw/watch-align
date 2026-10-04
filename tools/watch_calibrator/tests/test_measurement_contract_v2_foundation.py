@@ -52,7 +52,25 @@ class CatalogueFoundationTest(unittest.TestCase):
 
 class CanonicalJsonlFoundationTest(unittest.TestCase):
     def header(self):
-        return {"record_type":"header","schema":v2.SCHEMA,"schema_version":v2.SCHEMA_VERSION,"snapshot_id":"snapshot","claimed_model":"124060","family":"submariner_12","partition":"development","class_label":"gen","adapter":{"id":"submariner12_measured_v2","version":"2"},"reliability_policy":{"id":"sub124060_production_reliability","version":1},"metric_catalogue":{"id":"sub12.124060.metrics","version":1,"sha256":"0"*64},"reason_catalogues":[],"stage_map":list(v2.PHOTO_STAGES)+list(v2.METRIC_STAGES),"measurement_fingerprint":"f"*64}
+        return {
+            "record_type": "header",
+            "schema": v2.SCHEMA,
+            "schema_version": v2.SCHEMA_VERSION,
+            "snapshot_id": "snapshot",
+            "claimed_model": "124060",
+            "family": "submariner_12",
+            "partition": "development",
+            "class_label": "gen",
+            "adapter": {"id": "submariner12_measured_v2", "version": "2"},
+            "reliability_policy": {"id": "sub124060_production_reliability", "version": 1},
+            "metric_catalogue": {"id": "sub12.124060.metrics", "version": 1, "sha256": "0" * 64},
+            "reason_catalogues": [
+                {"id": "core.reasons", "version": 1, "sha256": "1" * 64},
+                {"id": "sub12.reasons", "version": 1, "sha256": "2" * 64},
+            ],
+            "stage_map": list(v2.PHOTO_STAGES) + list(v2.METRIC_STAGES),
+            "measurement_fingerprint": "f" * 64,
+        }
 
     def test_canonical_round_trip_is_byte_identical_and_normalises_negative_zero(self):
         with tempfile.TemporaryDirectory() as td:
@@ -67,7 +85,7 @@ class CanonicalJsonlFoundationTest(unittest.TestCase):
             with self.assertRaisesRegex(v2.MeasurementContractV2Error, "not canonical"): v2.read_canonical(p)
 
     def test_nonfinite_values_are_rejected_before_serialisation(self):
-        with self.assertRaises(cr.CatalogueError): v2.canonical_line({"x": math.nan})
+        with self.assertRaises(v2.MeasurementContractV2Error): v2.canonical_line({"x": math.nan})
 
     def test_header_foundation_requires_identity_fields(self):
         h = self.header(); v2.validate_header_foundation(h); del h["snapshot_id"]
