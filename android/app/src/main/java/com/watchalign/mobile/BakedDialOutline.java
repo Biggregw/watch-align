@@ -1,52 +1,103 @@
 package com.watchalign.mobile;
 
 import android.graphics.Bitmap;
-
-import org.opencv.android.Utils;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.Size;
-import org.opencv.imgproc.Imgproc;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
 
 /**
- * Converts the baked photographic dial into a single-colour transparent outline.
- * The geometry still comes from the real dial image, but no photographic fill is shown.
+ * Clean 126710BLNR dial outline for the perspective proof.
+ *
+ * This deliberately does NOT trace a photograph. The geometry is taken from
+ * Gmt126710BlnrMaster, which was measured from the official front-on current
+ * 126710BLNR image and cross-checked against an independent real photo.
+ *
+ * Only stable dial geometry is drawn: dial edge, 60 minute ticks, eight round
+ * surrounds, 6/9 batons and the 12 triangle. No hands, text, centre stack,
+ * date/cyclops, reflections or photographic texture can contaminate the overlay.
  */
 final class BakedDialOutline {
+    static final int W=1024,H=1024;
+    static final double CX=512.0,CY=512.0,R=480.0;
+    private static final int BRIGHT=Color.rgb(45,245,255);
+
     private BakedDialOutline(){}
 
     static Bitmap bitmap(){
-        Bitmap ref=BakedDialOverlay.bitmap();
-        Mat rgba=new Mat(),gray=new Mat(),blur=new Mat(),edges=new Mat(),dilated=new Mat();
-        try{
-            Utils.bitmapToMat(ref,rgba);
-            Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
-            Imgproc.GaussianBlur(gray,blur,new Size(3,3),0.7);
-            Imgproc.Canny(blur,edges,28,85);
+        Bitmap out=Bitmap.createBitmap(W,H,Bitmap.Config.ARGB_8888);
+        Canvas c=new Canvas(out);
+        c.drawColor(Color.TRANSPARENT);
 
-            // Make the line visible after the reference is scaled to a phone photo.
-            Mat kernel=Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE,new Size(2,2));
-            try{Imgproc.dilate(edges,dilated,kernel);}finally{kernel.release();}
+        Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(3.2f);
+        p.setStrokeCap(Paint.Cap.ROUND);
+        p.setStrokeJoin(Paint.Join.ROUND);
+        p.setColor(BRIGHT);
+        p.setAlpha(255);
 
-            int w=dilated.cols(),h=dilated.rows();
-            byte[] e=new byte[w*h];dilated.get(0,0,e);
-            Mat out=new Mat(h,w,CvType.CV_8UC4);
-            byte[] px=new byte[w*h*4];
-            for(int i=0;i<e.length;i++){
-                if((e[i]&0xff)==0)continue;
-                int j=i*4;
-                px[j]=(byte)70;      // R
-                px[j+1]=(byte)245;   // G
-                px[j+2]=(byte)255;   // B
-                px[j+3]=(byte)255;   // A
-            }
-            out.put(0,0,px);
-            Bitmap result=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(out,result);
-            out.release();
-            return result;
-        }finally{
-            dilated.release();edges.release();blur.release();gray.release();rgba.release();
+        // Physical black-dial edge.
+        c.drawCircle((float)CX,(float)CY,(float)(R*Gmt126710BlnrMaster.DIAL_EDGE_R),p);
+
+        // All 60 minute ticks. The projective refiner uses the same measured
+        // centre radius and +/-0.025R radial tick extent.
+        final double tickCenter=Gmt126710BlnrMaster.MINUTE_TRACK_R;
+        final double tickHalf=0.025;
+        for(int i=0;i<60;i++){
+            double a=Math.toRadians(i*6.0-90.0);
+            double ca=Math.cos(a),sa=Math.sin(a);
+            float x1=(float)(CX+R*(tickCenter-tickHalf)*ca);
+            float y1=(float)(CY+R*(tickCenter-tickHalf)*sa);
+            float x2=(float)(CX+R*(tickCenter+tickHalf)*ca);
+            float y2=(float)(CY+R*(tickCenter+tickHalf)*sa);
+            c.drawLine(x1,y1,x2,y2,p);
         }
+
+        // Eight round hour-marker surrounds.
+        for(int hour:new int[]{1,2,4,5,7,8,10,11}){
+            double a=Gmt126710BlnrMaster.angleForHour(hour);
+            float x=(float)(CX+R*Gmt126710BlnrMaster.ROUND_CENTER_R*Math.cos(a));
+            float y=(float)(CY+R*Gmt126710BlnrMaster.ROUND_CENTER_R*Math.sin(a));
+            c.drawCircle(x,y,(float)(R*Gmt126710BlnrMaster.ROUND_OUTER_R),p);
+        }
+
+        // 6 and 9 baton surrounds.
+        drawBaton(c,p,6);
+        drawBaton(c,p,9);
+
+        // 12 triangle surround: base outward, apex inward.
+        drawTriangle(c,p);
+        return out;
+    }
+
+    private static void drawBaton(Canvas c,Paint p,int hour){
+        double a=Gmt126710BlnrMaster.angleForHour(hour);
+        double ca=Math.cos(a),sa=Math.sin(a);
+        double tx=-sa,ty=ca;
+        double cr=Gmt126710BlnrMaster.MARKER_CENTER_R;
+        double rh=Gmt126710BlnrMaster.BATON_RADIAL_HALF;
+        double th=Gmt126710BlnrMaster.BATON_TANGENTIAL_HALF;
+        Path path=new Path();
+        for(int k=0;k<4;k++){
+            double rr=cr+((k==0||k==1)?rh:-rh);
+            double tt=((k==0||k==3)?-th:th);
+            float x=(float)(CX+R*(rr*ca+tt*tx));
+            float y=(float)(CY+R*(rr*sa+tt*ty));
+            if(k==0)path.moveTo(x,y);else path.lineTo(x,y);
+        }
+        path.close();c.drawPath(path,p);
+    }
+
+    private static void drawTriangle(Canvas c,Paint p){
+        double cr=Gmt126710BlnrMaster.TRI_CENTER_R;
+        double baseR=cr+Gmt126710BlnrMaster.TRI_BASE_OUTWARD;
+        double apexR=cr-Gmt126710BlnrMaster.TRI_APEX_INWARD;
+        double half=Gmt126710BlnrMaster.TRI_HALF_BASE;
+        Path path=new Path();
+        path.moveTo((float)(CX-R*half),(float)(CY-R*baseR));
+        path.lineTo((float)(CX+R*half),(float)(CY-R*baseR));
+        path.lineTo((float)CX,(float)(CY-R*apexR));
+        path.close();c.drawPath(path,p);
     }
 }
