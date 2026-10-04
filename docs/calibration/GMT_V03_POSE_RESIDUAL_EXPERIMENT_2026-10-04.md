@@ -12,7 +12,7 @@ This experiment reuses historical measurements from the same proven-genuine cand
 
 For marker residuals around the dial, consider three components:
 
-1. **common-mode** — a near-uniform shift caused by frame/edge/reference placement;
+1. **common-mode** — a near-uniform shift caused by frame/reference placement;
 2. **directional pose field** — a smooth change with dial angle, expected to reverse across opposing regions and be shared by neighbouring markers;
 3. **local residual** — an isolated departure after the first two components are accounted for; this remains a QC-defect or local-measurement candidate.
 
@@ -22,101 +22,109 @@ Do not call a single marker perspective merely because its opposite differs. Per
 
 Historical Phase-A work selected `gen_wex_3KSuGhC/image_04.jpg` as the strongest near-frontal actual-watch image in its tranche. `image_00` was a mildly angled runner-up and `image_02` had appreciably stronger tilt.
 
-The existing round-marker local-gap values were compared against image_04. These legacy gaps are not the new common physical 12↔6 gap definition; they are useful here only as an already-measured residual field around the same physical dial.
+The existing round-marker measurements were compared against image_04. The most useful quantity is **centre-based inset**, matching the lesson already recorded in `GMT_V03_CONTROL_2026-10-04.md`: it is less dependent on which lume/surround edge is traced than outer-edge gap.
 
-### image_04 reference values
+### Centre-based inset: image_04 reference
 
-| hour | local gap |
+| hour | inset |
 |---:|---:|
-| 1 | 0.1210 |
-| 2 | 0.1169 |
-| 4 | 0.1260 |
-| 5 | 0.1228 |
-| 7 | 0.1199 |
-| 8 | 0.1314 |
-| 10 | 0.1326 |
-| 11 | 0.1423 |
+| 1 | 0.5887 |
+| 2 | 0.5861 |
+| 4 | 0.5859 |
+| 5 | 0.5882 |
+| 7 | 0.5869 |
+| 8 | 0.5923 |
+| 10 | 0.5972 |
+| 11 | 0.6081 |
 
-Existing 12-triangle gap: **0.0922**.
+### Centre-based inset: image_00 residuals versus image_04
 
-### image_00 residuals versus image_04
+Clean common hours: 1, 2, 4, 5, 7, 8, 10.
 
-| hour | residual |
-|---:|---:|
-| 1 | +0.0075 |
-| 2 | +0.0060 |
-| 4 | +0.0061 |
-| 5 | +0.0059 |
-| 7 | +0.0083 |
-| 8 | +0.0050 |
-| 10 | +0.0036 |
+Residuals: **+0.0076, +0.0074, +0.0130, +0.0013, +0.0040, +0.0037, +0.0052**.
 
 Summary:
-- mean residual: **+0.00606**
-- median residual: **+0.0060**
-- residual SD: **0.00154**
-- first-harmonic directional amplitude: **~0.00093**
-- first-harmonic R²: **~0.184**
-- 12-triangle residual: **+0.0100**
+- mean/common shift: **+0.00603**
+- median: **+0.0052**
+- first-harmonic directional amplitude: **~0.00268**
+- first-harmonic R²: **~0.336**
+- residual RMSE after common + directional fit: **~0.00285**
 
-Interpretation: this image is dominated by a common-mode shift rather than a strong directional perspective field. Removing the round-marker common mode from the 12 residual leaves roughly **+0.004**, reducing the apparent discrepancy by about 60% without invoking a marker-specific excuse.
+Interpretation: this mildly different view is dominated by a small common-mode shift. There is little coherent directional distortion.
 
-### image_02 residuals versus image_04
+### Centre-based inset: image_02 residuals versus image_04
 
-| hour | residual |
-|---:|---:|
-| 1 | -0.0019 |
-| 2 | -0.0352 |
-| 4 | -0.0443 |
-| 5 | -0.0120 |
-| 7 | +0.0443 |
-| 8 | +0.0318 |
-| 10 | +0.0541 |
-| 11 | +0.0231 |
+Clean common hours: 1, 2, 4, 5, 7, 8, 10. Hour 11 was excluded because the stored measurement marks a hand beside it.
+
+Residuals: **+0.0051, -0.0425, -0.0427, -0.0035, +0.0480, +0.0321, +0.0438**.
 
 Summary:
-- mean residual: **+0.00748**
-- residual SD: **0.03569**
-- first-harmonic directional amplitude: **~0.0460**
-- first-harmonic RMSE: **~0.01044**
-- first-harmonic R²: **~0.907**
-- 12-triangle gap: **0.1285** versus **0.0922** on image_04
+- mean/common shift: **+0.00576**
+- first-harmonic directional amplitude: **~0.04454**
+- first-harmonic R²: **~0.850**
+- residual RMSE after common + directional fit: **~0.01366**
 
-Interpretation: the more tilted image produces a strong, smooth directional field around the same physical genuine dial. Neighbouring markers move together and the sign reverses across the dial. This is exactly the type of evidence that should be treated as photographic perspective rather than allowed to widen genuine manufacturing tolerance.
+Interpretation: the more tilted image produces a strong smooth directional field on the **same physical genuine dial**. Hours 2/4 move strongly one way, 7/8/10 move strongly the other way, and neighbouring markers agree. This is the exact signature required before a deviation may be attributed to perspective.
+
+## Cross-check with legacy outer-edge local gap
+
+The same-watch outer-edge round-marker gap values tell the same story, although they are a noisier quantity:
+
+- image_00 versus image_04: directional amplitude **~0.00093**, R² **~0.184**;
+- image_02 versus image_04: directional amplitude **~0.0460**, R² **~0.907**.
+
+The agreement between the centre-based and outer-edge views on the strongly tilted image makes the pose result materially stronger than relying on either metric alone.
+
+The 12-triangle gap itself changed from **0.0922** on image_04 to **0.1022** on image_00 and **0.1285** on image_02. The production 12-gap metric is not in the same units as the round-marker inset, so the harmonic field must not be used as a numerical 12 correction yet.
 
 ## Result
 
-**SUPPORTED.** The core v0.3 idea is strongly supported on this same-watch control: substantial pose produces a spatially coherent, approximately low-order residual field, while a milder view is largely common-mode in the legacy local measurements.
+**SUPPORTED.** The core v0.3 idea is strongly supported on a same-watch genuine control:
 
-This does **not** justify correcting any isolated marker. The correction/withholding rule must require regional coherence.
+- mild view change: mostly common-mode, very small directional amplitude;
+- stronger tilt: large coherent directional field with opposite regions moving in opposite directions and neighbours moving together.
+
+This is better evidence than comparing different watches because genuine manufacturing geometry is held constant.
+
+This still does **not** justify correcting an isolated marker. A marker may only be treated as perspective-contaminated when its local value participates in the coherent regional field.
 
 ## Important measurement-definition issue
 
-The existing production outputs cannot yet be used for a literal 12↔6 equality test because the two stored gaps use different denominators:
+A literal 12↔6 equality test still cannot be recovered directly from the historical summary CSV because the production gaps use different denominators:
 
 - 12 gap is normalised by the 12-triangle width;
 - 6 gap is normalised by the 6-baton width.
 
 The 6 analyzer internally calculates its gap but the historical batch CSV does not export that field.
 
-For the direct opposing-gap test, convert both to one physical definition:
+For the direct opposing-gap test, put both into one physical definition:
 
 - `g12_px = twelve_gap * triangle_width_px`
 - `g6_px = six_gap * six_width_px`
 - `g12_R = g12_px / dial_radius_px`
 - `g6_R = g6_px / dial_radius_px`
 
-Then compare `g12_R` and `g6_R`, and use neighbouring positions to confirm any perspective field.
+Then compare `g12_R` and `g6_R`, with neighbouring positions confirming the regional trend.
 
-## Lessons learned
+## Additional calibration consequence
 
-1. **Pair symmetry alone is not sufficient to choose the master.** Use multiple pairs plus image quality and neighbourhood coherence.
-2. The useful model is likely `residual = common_mode + directional_pose + local_residual`.
-3. Common-mode shifts should be separated from directional perspective before estimating genuine manufacturing variation.
-4. A first-harmonic/dipole model is a promising simple description of pose, but it must remain a research model until validated on more genuine images.
-5. Legacy local-gap metrics can already reveal the spatial pose pattern, but the direct 12↔6 test must use a shared physical gap definition.
-6. Do not alter `docs/CALIBRATION_PROTOCOL.md` during this experiment. These lessons should be promoted only after the direct shared-definition test and a fresh/held-out genuine check.
+This result changes how genuine calibration outliers should be handled. A genuine image with an extreme feature reading should not automatically widen the genuine manufacturing envelope. First ask whether the rest of the dial shows a coherent pose field.
+
+- coherent opposite/nearby trend -> mark that image/feature as pose-contaminated or correct only after a validated same-definition model exists;
+- isolated feature departure with normal neighbours -> **do not call it perspective**; investigate local detection and, if measurement is sound, retain it as possible real genuine variation.
+
+This is especially important because the earlier v0.3 control found globally symmetric genuine photos with materially different 12-gap readings. Global frontalness cannot erase a local anomaly.
+
+## LESSONS LEARNED
+
+1. **Centre-based inset is the better existing pose signal.** The same-watch test supports the earlier v0.3 control conclusion.
+2. **The useful decomposition is `common_mode + directional_pose + local_residual`.** This is simpler and more explainable than attempting to infer a full camera homography.
+3. **Neighbourhood coherence is essential.** Opposing movement plus nearby markers sharing the trend is what distinguishes perspective from a single bad marker.
+4. **Same-watch multi-view evidence is extremely valuable.** It isolates photographic effects from Rolex manufacturing variation and should be used wherever available.
+5. **A first-harmonic/dipole field is a promising compact pose descriptor**, but it remains a research model until it survives additional genuine validation.
+6. **Do not numerically correct the 12 gap from round-marker inset.** The units/features differ; the direct 12↔6 common-definition test is still required.
+7. **Do not alter `docs/CALIBRATION_PROTOCOL.md` yet.** Promote these lessons only after the shared-definition 12↔6 test and a separate validation check.
 
 ## Next experiment
 
-Use an **existing corpus image**, not a new search. Prefer a high-resolution genuine GMT already accepted in the project (for example SWE 60177 or another direct-source image). Measure 12 and 6 with the same physical radial-gap definition, then test one more angled genuine image and inspect neighbouring markers. Keep the experiment offline and do not change production code or thresholds.
+Use an **existing corpus image**, not a new search. Recover or remeasure 12 and 6 with one common radial-gap definition. Then test a near-frontal and a more angled genuine example, requiring neighbouring-marker coherence. Keep the work offline and do not change production code or thresholds.
