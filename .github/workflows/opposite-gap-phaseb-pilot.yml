@@ -1,0 +1,132 @@
+name: Phase-B direct same-unit 12 to 6 pilot
+
+on:
+  push:
+    branches:
+      - research/opposing-minute-perspective
+    paths:
+      - '.github/workflows/opposite-gap-phaseb-pilot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phaseb-direct-gap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install fetch dependencies
+        run: |
+          python -m pip install -q --upgrade pip
+          python -m pip install -q Pillow numpy requests beautifulsoup4
+
+      - name: Fetch known genuine Phase-B watches
+        run: |
+          python3 tools/research/phase_b_fetch_genuine.py "bobs_175818,bobs_185749,wos_cpo_40616911,phillips_181407,phillips_ch080423_22"
+          cat datasets/gmt_phase_b_genuine/candidate_status.csv
+
+      - name: Measure production 12 and 6 geometry in common units
+        run: |
+          mkdir -p /tmp/phaseb-direct-gap
+          tools/desktop-harness/run.sh OppositeGap \
+            datasets/gmt_phase_b_genuine/candidate_status.csv \
+            . > /tmp/phaseb-direct-gap/measurements.csv
+          cat /tmp/phaseb-direct-gap/measurements.csv
+
+      - name: Evaluate predeclared development and held-out watches
+        run: |
+          python3 - <<'PY'
+          import csv, math, statistics
+          from pathlib import Path
+          import numpy as np
+
+          path=Path('/tmp/phaseb-direct-gap/measurements.csv')
+          with path.open(newline='',encoding='utf-8') as f:
+              rows=list(csv.DictReader(f))
+
+          def num(r,k):
+              try:
+                  v=float(r.get(k,'')); return v if math.isfinite(v) else None
+              except Exception:return None
+          def yes(r,k):return str(r.get(k,'')).lower()=='true'
+
+          usable=[r for r in rows if yes(r,'twelve_stable') and yes(r,'six_stable') and num(r,'gap12_r') is not None and num(r,'gap6_r') is not None]
+          by={}
+          for r in usable:by.setdefault(r['watch'],[]).append(r)
+
+          dev_id='bobs_175818'
+          dev=by.get(dev_id,[])
+          beta=float('nan'); dev_corr=float('nan')
+          if len(dev)>=3:
+              g6=np.array([num(r,'gap6_r') for r in dev],float)
+              g12=np.array([num(r,'gap12_r') for r in dev],float)
+              x=g6-np.median(g6); y=g12-np.median(g12)
+              den=float(x@x)
+              beta=float((x@y)/den) if den>1e-12 else float('nan')
+              if np.std(g6)>0 and np.std(g12)>0:dev_corr=float(np.corrcoef(g6,g12)[0,1])
+
+          print('# Phase-B direct same-unit 12 to 6 pilot')
+          print()
+          print(f'total stable paired images: {len(usable)}')
+          for wid,rs in sorted(by.items()):print(f'{wid}: {len(rs)} stable paired image(s)')
+          print()
+          print(f'predeclared development watch: {dev_id}')
+          print(f'development beta d12/d6: {beta:+.6f}')
+          print(f'development within-watch correlation: {dev_corr:+.4f}')
+          print('Expected perspective-complement sign: negative')
+          print()
+          print('| watch | role | n | median 12/R | median 6/R | corr | raw 12 SD | corrected 12 SD | improvement |')
+          print('|---|---|---:|---:|---:|---:|---:|---:|---:|')
+          held=[]
+          for wid,rs in sorted(by.items()):
+              if len(rs)<2:continue
+              g12=np.array([num(r,'gap12_r') for r in rs],float)
+              g6=np.array([num(r,'gap6_r') for r in rs],float)
+              corr=float(np.corrcoef(g6,g12)[0,1]) if len(rs)>=3 and np.std(g6)>0 and np.std(g12)>0 else float('nan')
+              raw=float(np.std(g12,ddof=1)) if len(rs)>1 else float('nan')
+              corrected=g12-beta*(g6-np.median(g6)) if math.isfinite(beta) else np.full_like(g12,np.nan)
+              csd=float(np.std(corrected,ddof=1)) if len(rs)>1 and math.isfinite(beta) else float('nan')
+              imp=100*(1-csd/raw) if raw>1e-12 and math.isfinite(csd) else float('nan')
+              role='development' if wid==dev_id else 'held-out'
+              print(f'| {wid} | {role} | {len(rs)} | {np.median(g12):.6f} | {np.median(g6):.6f} | {corr:+.3f} | {raw:.6f} | {csd:.6f} | {imp:+.1f}% |')
+              if role=='held-out' and len(rs)>=3 and math.isfinite(imp):held.append((wid,imp,corr))
+
+          print()
+          if not math.isfinite(beta):
+              print('DECISION: INCONCLUSIVE, development watch has fewer than 3 stable paired images or no usable variation.')
+          elif beta>=0:
+              print('DECISION: FAIL, development relationship does not have the expected complementary sign.')
+          elif not held:
+              print('DECISION: INCONCLUSIVE, no held-out watch has at least 3 stable paired images.')
+          elif all(x[1]>0 for x in held):
+              print('DECISION: PROMISING LOCAL SIGNAL, all measurable held-out watches improve. Still no production change until neighbouring corroboration and intentional-local-defect tests pass.')
+          else:
+              print('DECISION: FAIL AS CORRECTION, at least one held-out watch becomes less repeatable.')
+          if held:
+              print('held-out improvements:', ', '.join(f'{w}={imp:+.1f}%' for w,imp,_ in held))
+              print(f'held-out median improvement: {statistics.median([x[1] for x in held]):+.1f}%')
+          print()
+          print('Manufacturing differences between watches are not used to fit the correction. Only repeated photos of the same watch can establish a pose relationship.')
+          PY
+
+      - name: Upload numeric results
+        uses: actions/upload-artifact@v4
+        with:
+          name: phaseb-direct-gap-pilot
+          path: /tmp/phaseb-direct-gap/measurements.csv
+          retention-days: 7
