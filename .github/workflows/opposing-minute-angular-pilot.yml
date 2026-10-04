@@ -1,0 +1,163 @@
+name: Opposing minute angular pilot
+
+on:
+  push:
+    branches:
+      - research/opposing-minute-perspective
+    paths:
+      - 'tools/research/opposing_minute_angular.py'
+      - '.github/workflows/opposing-minute-angular-pilot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: opposing-minute-angular-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  angular-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install research dependencies
+        run: |
+          python -m pip install -q --upgrade pip
+          python -m pip install -q -r datasets/126710BLNR/requirements.txt opencv-python-headless numpy
+
+      - name: Run bounded genuine pilot
+        shell: bash
+        run: |
+          set -u
+          mkdir -p /tmp/opposing-minute-angular
+          SOURCES=(
+            gen_wex_e99gXKb
+            gen_wex_1TDYtpN
+            gen_wex_vmbUDwy
+          )
+          for SOURCE in "${SOURCES[@]}"; do
+            echo "=== $SOURCE ==="
+            python3 datasets/126710BLNR/fetch_images.py --clean --source "$SOURCE" || true
+            PYTHONPATH=tools/research python3 tools/research/opposing_minute_angular.py \
+              --resolved datasets/126710BLNR/resolved_images.csv \
+              --root datasets/126710BLNR \
+              --summary "/tmp/opposing-minute-angular/${SOURCE}_summary.csv" \
+              --pairs "/tmp/opposing-minute-angular/${SOURCE}_pairs.csv" || true
+          done
+
+      - name: Summarize held-out angular result
+        run: |
+          python3 - <<'PY'
+          import csv, math, statistics
+          from pathlib import Path
+
+          src=Path('/tmp/opposing-minute-angular')
+          out=Path('docs/calibration/opposing-minute-angular-pilot')
+          out.mkdir(parents=True, exist_ok=True)
+
+          def read_many(pattern):
+              rows=[]
+              for p in sorted(src.glob(pattern)):
+                  if p.exists() and p.stat().st_size:
+                      with p.open(newline='',encoding='utf-8') as f:
+                          rows.extend(csv.DictReader(f))
+              return rows
+
+          def write_union(path, rows):
+              keys=[]
+              for r in rows:
+                  for k in r:
+                      if k not in keys: keys.append(k)
+              with path.open('w',newline='',encoding='utf-8') as f:
+                  if keys:
+                      w=csv.DictWriter(f,fieldnames=keys);w.writeheader();w.writerows(rows)
+
+          def num(r,k):
+              try:
+                  v=float(r.get(k,''));return v if math.isfinite(v) else None
+              except Exception:return None
+
+          rows=read_many('*_summary.csv')
+          pairs=read_many('*_pairs.csv')
+          write_union(out/'image_results.csv',rows)
+          write_union(out/'pair_results.csv',pairs)
+
+          measured=[r for r in rows if r.get('status') in ('MEASURED','COHERENT')]
+          coherent=[r for r in rows if r.get('status')=='COHERENT']
+          watches=sorted({r.get('physical_watch_id','') for r in rows if r.get('physical_watch_id')})
+          best={}
+          for r in measured:
+              wid=r.get('physical_watch_id','')
+              dis=num(r,'model_disagreement_median_deg')
+              key=(int(float(r.get('usable_pairs') or 0)),-(dis if dis is not None else 999))
+              if wid not in best or key>best[wid][0]:best[wid]=(key,r)
+          best_rows=[v[1] for v in best.values()]
+
+          lines=['# Opposing minute angular homography pilot','',
+                 'Status: **research only; no production change**','',
+                 'This pilot replaces radial tick-end ratios with angular positions after ellipse normalisation. Even and odd opposing pairs are cross-fitted so no evaluated pair trains its own homography.','',
+                 f'- source watches fetched: **{len(watches)}**',
+                 f'- measurable images: **{len(measured)} / {len(rows)}**',
+                 f'- descriptively coherent images: **{len(coherent)}**','']
+          if best_rows:
+              imp=[num(r,'crossfit_improvement_pct') for r in best_rows];imp=[x for x in imp if x is not None]
+              dis=[num(r,'model_disagreement_median_deg') for r in best_rows];dis=[x for x in dis if x is not None]
+              raw=[num(r,'raw_opposite_error_median_deg') for r in best_rows];raw=[x for x in raw if x is not None]
+              cor=[num(r,'crossfit_opposite_error_median_deg') for r in best_rows];cor=[x for x in cor if x is not None]
+              lines += ['## Watch-level held-out result','']
+              if imp:lines.append(f'- median cross-fitted improvement: **{statistics.median(imp):.1f}%**')
+              if raw:lines.append(f'- median raw opposing angular error: **{statistics.median(raw):.3f}°**')
+              if cor:lines.append(f'- median corrected opposing angular error: **{statistics.median(cor):.3f}°**')
+              if dis:lines.append(f'- median even/odd homography disagreement: **{statistics.median(dis):.3f}°**')
+              lines += ['', '| watch | split | pairs | raw error | corrected error | improvement | model disagree | status |',
+                        '|---|---|---:|---:|---:|---:|---:|---|']
+              for r in sorted(best_rows,key=lambda q:(q.get('split',''),q.get('physical_watch_id',''))):
+                  def fmt(k,n=3):
+                      v=num(r,k);return '' if v is None else f'{v:.{n}f}'
+                  lines.append(f"| {r.get('physical_watch_id','')} | {r.get('split','')} | {r.get('usable_pairs','')} | {fmt('raw_opposite_error_median_deg')}° | {fmt('crossfit_opposite_error_median_deg')}° | {fmt('crossfit_improvement_pct',1)}% | {fmt('model_disagreement_median_deg')}° | {r.get('status','')} |")
+
+          cal=[r for r in best_rows if r.get('split')=='calibration']
+          val=[r for r in best_rows if r.get('split')=='validation']
+          for label,sr in [('Calibration',cal),('Validation',val)]:
+              vals=[num(r,'crossfit_improvement_pct') for r in sr];vals=[x for x in vals if x is not None]
+              if sr:
+                  lines += ['',f'## {label}','',f'- measurable watches: **{len(sr)}**']
+                  if vals:lines.append(f'- median held-out improvement: **{statistics.median(vals):.1f}%**')
+
+          reasons={}
+          for r in rows:
+              if r.get('status')=='UNASSESSABLE':
+                  why=r.get('reason','unknown') or 'unknown';reasons[why]=reasons.get(why,0)+1
+          if reasons:
+              lines += ['','## Unassessable-image reasons','']
+              for why,n in sorted(reasons.items(),key=lambda x:(-x[1],x[0])):lines.append(f'- {why}: **{n}**')
+
+          lines += ['','## Gate','',
+                    'Promising means positive held-out improvement on both validation watches with reasonably agreeing even/odd homographies. Failure means opposing minute ticks may still be useful as a photo-quality or perspective-coherence check, but not as an automatic correction source.','']
+          (out/'RESULT.md').write_text('\n'.join(lines),encoding='utf-8')
+          print('\n'.join(lines))
+          PY
+
+      - name: Commit pixel-free pilot outputs
+        shell: bash
+        run: |
+          git config user.name 'watch-align-research-bot'
+          git config user.email 'watch-align-research-bot@users.noreply.github.com'
+          git add docs/calibration/opposing-minute-angular-pilot/
+          if git diff --cached --quiet; then
+            echo 'No pilot result changes to commit'
+            exit 0
+          fi
+          git commit -m 'Record angular opposing-minute pilot'
+          git push origin HEAD:${{ github.ref_name }}
