@@ -1,173 +1,169 @@
 # Watch Align engineering lessons
 
-This is the short, living index of lessons that should be reused across watch families.
-It is not a tolerance table and it does not make model-specific geometry generic by assertion.
-The purpose is to stop a new family from rediscovering problems already solved elsewhere.
+Status: **living lessons for future work**
 
-Before designing or changing a detector, measurement, confidence rule, recovery path, presentation, or QC decision:
+This file captures lessons that should influence new research and implementation. It is not a roadmap and not a tolerance table.
 
-1. Read this file.
-2. Find the closest mature implementation, normally the GMT path.
-3. Read the relevant handoff/research note for that implementation.
-4. Separate what is genuinely generic from what is model-specific.
-5. Try reuse/adaptation diagnostically before creating a parallel algorithm or user experience.
-6. Preserve the mature family's regression behaviour while experimenting.
+## 1. The product is reference deviation, not classification
 
-## Reuse-first checklist
+The useful product question is not whether all replicas separate statistically from all genuine watches. It is whether a submitted watch shows a measurable deviation from a proven-genuine reference in the features that can be assessed from that photo.
 
-For every new family-specific check, answer these before implementation:
+If a replica sits inside the genuine reference on every assessed feature, report no detectable deviation. Do not invent a tell.
 
-- What is the equivalent mature check, if any?
-- Which detector primitives, coordinate frames, confidence gates, recovery rules, presentation components and tests already exist?
-- Which parts are pure geometry or image-quality logic and which parts depend on model dimensions/layout?
-- What known failure modes did the mature path already solve?
-- Can the existing implementation be parameterised or composed rather than copied?
-- If we intentionally diverge, what measured evidence shows the mature approach is worse or inapplicable?
+## 2. Establish nominal geometry before tolerance
 
-A new family-specific implementation should not be created just because the marker shape or model name is different.
-Equally, shared code must not be forced when the evidence shows a genuinely different measurement strategy is more reliable.
+A clean, high-quality genuine reference gives a better zero point than averaging noisy photographs together from the start.
 
-## Start from the mature product, not only the mature algorithm
+Use the best available proven-genuine near-frontal image as the nominal candidate, then use independent genuine watches to estimate variation around it.
 
-The alpha69-alpha70 124060 work exposed an important process mistake. We reused many GMT detector and confidence ideas but allowed the Submariner to grow a separate research-style overlay and wording. By the time the measurements were reliable enough for phone testing, the app did not feel like Watch Align's mature GMT experience even though much of the underlying engineering had already been reused.
+A loose genuine dial can be especially useful because the centre hole and absence of crystal/rehaut distortion simplify geometry, but it is not required if existing images are already adequate.
 
-The corrected rule is:
+## 3. Genuine-photo extremes are not automatically manufacturing variation
 
-- when a mature family already exists, the default starting point for a new production family is its **end-to-end workflow and presentation contract**;
-- keep model-specific layout, geometry, references, calibration and thresholds behind an adapter;
-- where thresholds are not yet calibrated, preserve the mature UI and show **measured / not yet judged** rather than replacing the UI with a separate research presentation;
-- a family-specific debug/research overlay may exist for diagnostics, but it must not become the user-test checkpoint by accident;
-- missing markers, hand obstruction, confidence withholding, whole-dial markup, close-up structure, summary hierarchy and interaction flow should be assumed reusable until a real model difference says otherwise.
+A genuine watch photographed at an angle can produce extreme measurements. Accepting every such value directly into the genuine envelope turns the envelope partly into a camera-angle tolerance.
 
-This is the preferred migration sequence for future families: **copy the mature product behaviour, disable or neutralise unsupported judgements, then replace only the model-specific pieces that fail under evidence.** That is safer and usually faster than rebuilding the product experience around a new detector and trying to add parity later.
+Before widening the range, inspect related/opposing geometry. Coherent opposite-signed deviations can reveal perspective contamination.
 
-## Reusable lessons from GMT and 124060 work
+Correct, pair, exclude or withhold contaminated measurements instead of automatically broadening tolerance.
 
-### Detection is not trust
+## 4. Opposing markers may solve pose more cheaply than explicit pose reconstruction
 
-Finding a plausible marker is only the first stage. Fine QC measurements need independent confidence checks before they can support a judgement. Keep detection, measurement, confidence and QC decision separate.
+Perspective often creates structured distortion: one side expands while the opposite side compresses.
 
-### Re-measure before judging fine geometry
+Testing residual relationships such as 12/6, 3/9 and diagonal pairs may provide enough pose evidence for a feature without estimating camera tilt, homography or full projective geometry.
 
-The mature GMT path re-measures important landmarks at 94% and 88% image scale. This catches results that depend on a particular decode/resample rather than the physical watch. The same principle should be considered for every fine marker measurement before adding a tolerance.
+This must be validated per feature. It is a promising simplification, not a universal assumption.
 
-### Marker identity stability and metric stability are separate
+## 5. Keep nominal variation and measurement uncertainty separate
 
-Re-detecting the same physical marker at 100%, 94% and 88% does not prove that its fine geometry is stable. On the 124060 development study, all 31 measured 12 triangles returned the same outline at every scale, but several gap, rotation and centring readings still moved by more than one image pixel.
+Three spreads matter:
 
-Therefore:
-- first verify that the same physical outline was found;
-- then re-measure each numeric quantity itself;
-- store movement in physical pixels as well as normalized units;
-- allow gap, rotation and centring to become independently assessable or unassessable.
+- nominal/reference geometry;
+- between-watch genuine variation;
+- within-watch/photo/detector variation.
 
-See `docs/research/submariner/gmt_reuse_diagnostics_2026-10-01.md`.
+Multiple photos of the same physical watch are valuable for repeatability but do not increase the independent manufacturing sample size.
 
-### Reuse confidence logic and failure modes, not only detector code
+## 6. One physical watch is one independent sample
 
-The most valuable transferable work is often the guardrail around an algorithm: minimum pixel size, hand obstruction, local-frame quality, resize repeatability, alternate-reference disagreement, recovery confidence and fail-closed behaviour.
+Repeated dealer photos, crops, re-encodes and resolutions of the same watch are not independent watches.
 
-When adapting a mature check, audit these before writing a new detector or measurement formula.
+Use them to measure photo/measurement stability. Count different physical watches for genuine population variation.
 
-### Reuse a stability mechanism separately from its decision policy
+## 7. Source style can masquerade as watch variation
 
-A mature stability routine can mix two different things: generic evidence about how much a measurement moves, and family-specific knowledge about whether that movement could change a QC verdict. Reuse the evidence first. Do not silently import the second part.
+Dealer photography, QC photography, sharpening, compression, lighting and angle can alter apparent geometry.
 
-The alpha70 124060 work exposed this clearly. A strict one-pixel diagnostic would classify 44 of 83 otherwise stable/found baton readings and 60 of 232 otherwise stable/found round-marker readings as numerically jumpy. The mature GMT `resampleStable()` accepts many of those because every re-measurement remains safely below GMT-calibrated QC levels. Neither rule is a justified 124060 marker-status boundary before 124060 marker tolerances exist.
+Cross-source consistency matters. Do not calibrate a physical tolerance from a source-style difference.
 
-Therefore:
-- run the shared 100/94/88 re-measurement machinery;
-- record physical-pixel movement and edge identity;
-- use inherently model-neutral consequences immediately, such as refusing a size comparison when the physical edge changes;
-- keep user-facing marker status unchanged by numeric movement until the new family has evidence for the corresponding decision boundary.
+## 8. Marker position and marker size are different problems
 
-The 12 can be stricter when the question is only whether to display a precise informational number: B2 directly showed that same-outline 12 values can move by several pixels, so alpha70 withholds that individual number when it is not repeatable to about one pixel. This is a measurement-quality rule, not a watch tolerance.
+The quick 6-o'clock Submariner check reproduced marker-centre position very closely while crude thresholding overestimated marker length/thickness because reflections and white-gold surround changed the visible boundary.
 
-### Quantity-specific confidence should travel with a shared detector
+Lesson: define centre, lume boundary, outer metal boundary, size and shape separately. If size is unstable but centre is stable, keep centre and withhold size.
 
-A shared detector can return several quantities whose reliability differs. Reuse the mature confidence policy per quantity, not just the detector implementation.
+## 9. Use a known result to improve the research protocol
 
-The 124060 round-marker study is the current example: 232/232 previously found round-marker offsets passed the existing GMT resize-repeatability rule, while 63/232 changed fitted edge/radius identity across scale. The mature GMT policy correctly allows a stable centre offset to survive while withholding size when the lume/surround edge identity changes.
+A known-working calibration is an answer key for the method, not a target to manually fit.
 
-Do not invalidate every output because one fitted edge changed, and do not keep size/edge-dependent outputs merely because the centre stayed stable.
+Process:
 
-### Local and global references are independent evidence
+1. measure independently;
+2. compare afterwards;
+3. diagnose error;
+4. propose a protocol change;
+5. retest on fresh/held-out evidence;
+6. promote only if the change improves performance.
 
-A local minute-track reference can reject dial-centre error; a dial-radial reference can be less noisy when local tick endpoints jitter. Do not assume one is universally superior.
+This is how the reusable golden research prompt should evolve.
 
-Where both are available:
-- measure both diagnostically;
-- choose the primary reference from repeatability evidence for that marker/model;
-- retain disagreement between the references as possible confidence evidence rather than discarding the losing reference.
+## 10. Self-critique helps; automatic self-rewriting does not
 
-The 124060 12 study is the current example: its dial-radial rotation was more repeatable than the GMT-style 59/01 chord, so GMT geometry should not simply replace the Sub formula. The GMT cross-check concept is still reusable.
+Every research run should end with `LESSONS LEARNED` and proposed prompt/protocol improvements.
 
-### An alternate reference becomes a gate only when evidence supports it
+Do not let the same run automatically rewrite its governing prompt. One unusual image can otherwise cause prompt drift and overfitting.
 
-Do not copy a mature cross-check threshold simply because the same quantities exist on another family. In the 124060 development study, radial/chord disagreement did not correlate with rotation resize error, and stable genuine-source readings could disagree by roughly 2 to 2.7 degrees.
+Validate proposed wording/rule changes separately before promoting a new protocol version.
 
-Keep an alternate reference diagnostic until family-specific evidence shows that disagreement predicts a bad measurement. Independent geometry can still be useful for describing the kind of issue: for example, the triangle base edge can corroborate whether an axis lean is a whole-marker rotation or only a point/shape lean.
+## 11. Use existing evidence before harvesting more
 
-### Recovery must not lower the primary standard
+A recurring process mistake was treating a larger corpus as the answer to every uncertainty.
 
-A mature path may use a bounded recovery detector when the primary detector fails. A recovered result should carry lower confidence where appropriate. Do not widen primary plausibility gates merely to improve coverage.
+Before searching for more images, ask whether the existing datasets, artifacts and known genuine watches can answer the question. Start with the smallest useful sample.
 
-### Pixel support matters
+Only acquire more data for a named evidence gap.
 
-A normalized geometric value is not equally trustworthy at every image size. Fine spacing/rotation checks should establish a minimum usable pixel scale or uncertainty model before production judgement.
+## 12. Research offline before spending CI/build effort
 
-A resolution floor alone is not a substitute for direct repeatability testing: in the 124060 development study, some well-resolved dealer images still showed multi-pixel movement after small resizes.
+Do not use Android builds, GitHub Actions or a calibration platform to discover whether a measurement idea is promising.
 
-### Reuse an estimator before reusing its policy threshold
+Preferred order:
 
-An algorithm can transfer cleanly while its decision boundary does not. `GmtMarkerPose` produced valid marker-layout pose estimates on 29/39 124060 development photos with low affine residuals, showing that the estimator itself is reusable. However, only 5/29 valid Sub estimates met the GMT-specific 5-degree `nearFrontal` policy.
+**existing images -> quick local/offline measurement -> compare to known result -> refine -> held-out test -> production implementation -> build/CI**
 
-Therefore reuse the estimator first, inspect its uncertainty and failure modes, then calibrate any family-specific pose policy separately. Do not invent a new family pose detector until the mature estimator has been tested.
+CI is for validating an implementation, not discovering the measurement rule.
 
-### Model-specific shape priors stay model-specific
+## 13. Detection, measurement, confidence and judgement are separate
 
-Triangle apex angle, marker dimensions, date-side layout, radial spacing and calibrated thresholds may differ by family. These belong in model configuration or family-specific detection where evidence requires it.
+Finding a plausible marker does not mean every quantity derived from it is trustworthy.
 
-The generic part is usually the relationship being tested: alignment to the nominal hour axis, local minute-track geometry, centring, rotation, spacing, symmetry and confidence handling.
+Keep these stages separate:
 
-### Common markers should use common primitives where the assumptions match
+- landmark detection;
+- numeric measurement;
+- measurement stability/assessability;
+- reference comparison;
+- user-facing judgement.
 
-GMT and 124060 already share dial localisation, baton detection, round-marker detection and hand-obstruction machinery. Prefer model layout/configuration around shared marker primitives instead of parallel copies.
+A failure in one quantity should not invalidate unrelated stable quantities.
 
-The shared re-measurement machinery matters too. In the 124060 development study, the existing GMT baton stability routine identified 5/83 readings as unstable under its own GMT-calibrated policy. Treat that as evidence that the shared mechanism is useful, not as permission to import GMT marker thresholds into the 124060.
+## 14. Re-measurement remains valuable
 
-### Before declaring a metric unusable, check the mature path
+The existing 100/94/88 style resize checks proved useful for finding measurements that depend on a particular decode/resample.
 
-If a new-family metric is noisy or fails repeatability, first ask whether the mature path solved the same type of problem with:
-- a different reference frame;
-- a cross-check;
-- a local-frame confidence score;
-- minimum pixel support;
-- resize repeatability;
-- recovery;
-- perspective/pose gating;
-- or a different normalization.
+Use repeatability as evidence about measurement quality, but do not import another family's verdict thresholds simply because the same stability mechanism is reused.
 
-Only after that audit should a new algorithm be proposed.
+## 15. Prefer simple physical relationships
 
-### Physical watch is the independent unit
+Local relationships that correspond directly to what a human reviewer sees are easier to explain and often more robust than reconstructing a theoretically perfect canonical dial.
 
-Repeated files, resolutions or crops of one photograph are not independent watches. Aggregate and split by physical watch. Treat re-encodes/resolutions as measurement-repeatability evidence, not population evidence.
+Use complex rectification/projective methods only when they measurably improve held-out feature accuracy.
 
-### Source style can confound watch class
+## 16. Real QC validation comes after genuine calibration
 
-If genuine images come from dealer photography while replica images come from QC photography, apparent genuine/replica separation can be caused by image domain. Do not set a production tolerance from a class comparison that is also a source-style comparison.
+Once a genuine envelope is frozen, test independent RepTimeQC examples with known visible defects and accepted/GL controls.
 
-### Preserve the mature path while learning
+Measure blind to the stated defect where practical, then check whether the genuine-reference comparison reproduces the human-observed problem.
 
-Cross-family experiments should begin as diagnostics. Do not alter GMT behaviour merely to make a new family fit a shared abstraction. Prove equivalence on GMT and improvement or non-regression on the new family before replacing production logic.
+Misses and false flags are diagnostic evidence. Do not immediately move thresholds to make the examples fit.
 
-## Required experiment/handoff note
+## 17. Let each feature choose its implementation
 
-For any substantial detector, geometry, presentation or QC experiment, include a short section with:
+After validation, a feature may belong in deterministic code, vision AI, hybrid form, or nowhere.
 
-- **Lessons reused:** mature mechanisms deliberately carried over.
-- **Deliberate divergences:** mature mechanisms not reused, with evidence/reason.
-- **New reusable lesson:** anything learned that should affect future families.
+Do not force all checks into OpenCV and do not assume AI is always better. Use the cheapest/repeatable method that actually performs reliably.
 
-If a new reusable lesson is established, update this file in the same branch before the work is considered complete.
+## 18. Preserve the working GMT path as the control
+
+GMT already works well enough to serve as a known control. The new calibration protocol should first reproduce a simple existing GMT result offline.
+
+Do not alter production GMT behaviour until the replacement calibration method has demonstrated equal or better evidence.
+
+## 19. Submariner work remains useful evidence
+
+The 124060 research was not wasted. It produced genuine geometry, repeatability observations and useful failure modes. The mistake was allowing photo/source spread and population-separation thinking to dominate the interpretation.
+
+When Submariner resumes, reuse that evidence under the new calibration protocol rather than restarting a broad platform programme.
+
+## 20. Every substantial experiment should leave a reusable lesson
+
+Research output should include:
+
+- what was measured;
+- what was excluded and why;
+- what matched the known result;
+- what failed;
+- what would improve the protocol;
+- how the proposed improvement will be validated on held-out evidence.
+
+The governing protocol is `docs/CALIBRATION_PROTOCOL.md`.
