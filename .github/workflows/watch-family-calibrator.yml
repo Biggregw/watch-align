@@ -156,6 +156,33 @@ jobs:
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Build Phase 3 calibration outcomes and coverage funnel
+        env:
+          IMGUR_CLIENT_ID: ''
+          REDDIT_CLIENT_ID: ''
+          REDDIT_CLIENT_SECRET: ''
+          WATCH_ALIGN_HARNESS_OFFLINE: '1'
+        run: |
+          SNAP="datasets/watch_calibrator/$MODEL/evidence_snapshot_v1"
+          GEO="datasets/watch_calibrator_replay/$MODEL/geometry"
+          SUMMARY="$GEO/phase3_reporting_summary.json"
+          CAND="datasets/watch_calibrator/$MODEL/dataset/candidate_summary.csv"
+          python3 tools/watch_calibrator/phase3_reporting.py "$SNAP" \
+            --replay-root datasets/watch_calibrator_replay \
+            --candidate-summary "$CAND" | tee "$SUMMARY"
+          python3 - "$SUMMARY" <<'PY'
+          import json, sys
+          report = json.load(open(sys.argv[1], encoding='utf-8'))
+          if report.get('status') != 'PASS':
+              raise SystemExit(f"Phase 3 reporting status is {report.get('status')!r}")
+          print(json.dumps(report, indent=2, sort_keys=True))
+          PY
+          test -s "$GEO/calibration_outcome_v1.jsonl"
+          test -s "$GEO/coverage_funnel_v1.json"
+          echo '### Phase 3 calibration outcome and coverage funnel' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
       - name: Summary
         if: always()
         run: |
@@ -167,6 +194,7 @@ jobs:
           RS="datasets/watch_calibrator_replay/$MODEL/run_status.json"
           RM="datasets/watch_calibrator_replay/$MODEL/run_manifest.json"
           RA="datasets/watch_calibrator_replay/$MODEL/replay_acceptance.json"
+          CF="datasets/watch_calibrator_replay/$MODEL/geometry/coverage_funnel_v1.json"
           if [ -f "$F" ]; then cat "$F" >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$D" ]; then echo '### Genuine source diversity' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$D" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$R" ]; then echo '### Replica stress evidence' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$R" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
@@ -174,6 +202,7 @@ jobs:
           if [ -f "$RM" ]; then echo '### Measured-only replay manifest' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$RM" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$RS" ]; then echo '### Measured-only replay' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$RS" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$RA" ]; then echo '### Replay acceptance' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$RA" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f "$CF" ]; then echo '### Coverage and sufficiency report' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$CF" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$S" ]; then echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$S" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Upload complete calibration evidence
         if: always()
@@ -206,4 +235,5 @@ jobs:
             datasets/watch_calibrator_replay/${{ env.MODEL }}/replay_acceptance.json
             watch-calibrator.log
             watch-calibrator-replay.log
+            watch-calibrator-phase2c.log
           if-no-files-found: warn
