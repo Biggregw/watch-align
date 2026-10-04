@@ -1,0 +1,167 @@
+name: Opposing minute perspective - real genuine control
+
+on:
+  push:
+    branches:
+      - research/opposing-minute-perspective
+    paths:
+      - 'tools/research/opposing_minute_real.py'
+      - '.github/workflows/opposing-minute-real.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: opposing-minute-real-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  genuine-control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install research dependencies
+        run: |
+          python -m pip install -q --upgrade pip
+          python -m pip install -q -r datasets/126710BLNR/requirements.txt opencv-python-headless numpy
+
+      - name: Run independent genuine watches
+        shell: bash
+        run: |
+          set -u
+          mkdir -p /tmp/opposing-minute
+          SOURCES=(
+            gen_wex_K4gqk6U
+            gen_wex_3KSuGhC
+            gen_wex_U2XNblj
+            gen_wex_I9FxPLn
+            gen_wex_vmbUDwy
+            gen_wex_1TDYtpN
+            gen_wex_KWfXz8G
+            gen_wex_8Rg3vqJ
+          )
+          for SOURCE in "${SOURCES[@]}"; do
+            echo "=== $SOURCE ==="
+            python3 datasets/126710BLNR/fetch_images.py --clean --source "$SOURCE" || true
+            PYTHONPATH=tools/research python3 tools/research/opposing_minute_real.py \
+              --resolved datasets/126710BLNR/resolved_images.csv \
+              --root datasets/126710BLNR \
+              --summary "/tmp/opposing-minute/${SOURCE}_summary.csv" \
+              --pairs "/tmp/opposing-minute/${SOURCE}_pairs.csv" || true
+          done
+
+      - name: Combine and summarize pixel-free results
+        run: |
+          python3 - <<'PY'
+          import csv, math, statistics
+          from pathlib import Path
+
+          src = Path('/tmp/opposing-minute')
+          out = Path('docs/calibration/opposing-minute-real')
+          out.mkdir(parents=True, exist_ok=True)
+
+          def read_many(pattern):
+              rows=[]
+              for p in sorted(src.glob(pattern)):
+                  if not p.exists() or p.stat().st_size == 0:
+                      continue
+                  with p.open(newline='', encoding='utf-8') as f:
+                      rows.extend(csv.DictReader(f))
+              return rows
+
+          def write_union(path, rows):
+              keys=[]
+              for r in rows:
+                  for k in r:
+                      if k not in keys: keys.append(k)
+              with path.open('w', newline='', encoding='utf-8') as f:
+                  if not keys: return
+                  w=csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(rows)
+
+          rows=read_many('*_summary.csv')
+          pairs=read_many('*_pairs.csv')
+          write_union(out/'image_results.csv', rows)
+          write_union(out/'pair_results.csv', pairs)
+
+          def num(r,k):
+              try:
+                  v=float(r.get(k,'')); return v if math.isfinite(v) else None
+              except Exception: return None
+
+          measured=[r for r in rows if r.get('status') in ('MEASURED','LOW_COHERENCE')]
+          good=[r for r in rows if r.get('status')=='MEASURED']
+          watches=sorted({r.get('physical_watch_id','') for r in rows if r.get('physical_watch_id')})
+          measured_watches=sorted({r.get('physical_watch_id','') for r in measured})
+
+          # Keep one best image per physical watch: most usable pairs, then lowest residual.
+          best={}
+          for r in measured:
+              wid=r.get('physical_watch_id','')
+              key=(int(float(r.get('usable_pairs') or 0)), -(num(r,'fit_residual_rms') or 999))
+              if wid not in best or key > best[wid][0]: best[wid]=(key,r)
+          best_rows=[x[1] for x in best.values()]
+
+          lines=['# Opposing minute-marker real-photo control', '',
+                 'Status: **research only; no production GMT change**', '',
+                 f'- source watches attempted: **{len(watches)}**',
+                 f'- watches with a measurable opposing-pair field: **{len(measured_watches)}**',
+                 f'- measurable images: **{len(measured)} / {len(rows)}**',
+                 f'- high-coherence images: **{len(good)}**', '']
+
+          if best_rows:
+              imps=[num(r,'pair_asym_improvement_pct') for r in best_rows]
+              imps=[x for x in imps if x is not None]
+              rms=[num(r,'fit_residual_rms') for r in best_rows]
+              rms=[x for x in rms if x is not None]
+              mags=[num(r,'projective_magnitude') for r in best_rows]
+              mags=[x for x in mags if x is not None]
+              lines += ['## Watch-level result', '',
+                        'One image per physical watch is selected only for this summary, preferring the most complete pair set and then the lowest residual. All image-level data remain in `image_results.csv`.', '']
+              if imps: lines.append(f'- median reduction in opposing-pair radial asymmetry: **{statistics.median(imps):.1f}%**')
+              if rms: lines.append(f'- median projective-fit residual: **{statistics.median(rms):.5f}**')
+              if mags: lines.append(f'- median fitted projective magnitude: **{statistics.median(mags):.5f}**')
+              lines += ['', '| watch | split | pairs | residual | raw asym | corrected asym | improvement |',
+                        '|---|---|---:|---:|---:|---:|---:|']
+              for r in sorted(best_rows, key=lambda q:(q.get('split',''),q.get('physical_watch_id',''))):
+                  def fmt(k,n=5):
+                      v=num(r,k); return '' if v is None else f'{v:.{n}f}'
+                  lines.append(f"| {r.get('physical_watch_id','')} | {r.get('split','')} | {r.get('usable_pairs','')} | {fmt('fit_residual_rms')} | {fmt('raw_pair_asym_median')} | {fmt('corrected_pair_asym_median')} | {fmt('pair_asym_improvement_pct',1)}% |")
+
+          for split in ('calibration','validation'):
+              sr=[r for r in best_rows if r.get('split')==split]
+              imp=[num(r,'pair_asym_improvement_pct') for r in sr]; imp=[x for x in imp if x is not None]
+              if sr:
+                  lines += ['', f'## {split.title()} partition', '', f'- measurable watches: **{len(sr)}**']
+                  if imp: lines.append(f'- median pair-asymmetry improvement: **{statistics.median(imp):.1f}%**')
+
+          lines += ['', '## Gate', '',
+                    'This run tests only whether the minute-pair field is measurable and spatially coherent on real genuine photographs. It does **not** yet authorize correction of the 12-marker QC measurement. The next gate is whether using this field reduces the spread of an independent genuine landmark measurement on validation watches without absorbing an intentionally local defect.', '']
+          (out/'RESULT.md').write_text('\n'.join(lines), encoding='utf-8')
+          print('\n'.join(lines))
+          PY
+
+      - name: Commit pixel-free research outputs
+        shell: bash
+        run: |
+          git config user.name 'watch-align-research-bot'
+          git config user.email 'watch-align-research-bot@users.noreply.github.com'
+          git add docs/calibration/opposing-minute-real/image_results.csv \
+                  docs/calibration/opposing-minute-real/pair_results.csv \
+                  docs/calibration/opposing-minute-real/RESULT.md
+          if git diff --cached --quiet; then
+            echo 'No result changes to commit'
+            exit 0
+          fi
+          git commit -m 'Record real-photo opposing-minute control'
+          git push origin HEAD:${{ github.ref_name }}
