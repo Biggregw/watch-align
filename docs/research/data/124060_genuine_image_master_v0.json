@@ -1,0 +1,81 @@
+{
+  "schema": "watch_align.genuine_image_master.v0",
+  "reference": "124060",
+  "status": "research_only",
+  "coordinate_system": {
+    "origin": "dial_center",
+    "x_positive": "right",
+    "y_positive": "down",
+    "dial_radius": 1.0,
+    "canonical_pixels_per_dial_radius": 450
+  },
+  "provenance": {
+    "frozen_calibration_run": 37189145179,
+    "genuine_physical_watches_in_frozen_corpus": 41,
+    "independent_genuine_watches_normalized_for_typography": 24,
+    "normalized_sources": [
+      "Bobs Watches",
+      "European Watch Company",
+      "DavidSW",
+      "SwissWatchExpo"
+    ],
+    "loose_dial_independent_physical_samples": 1,
+    "loose_dial_note": "Seller-claimed genuine Rolex 124060 loose dial; useful corroboration, not treated as Rolex authentication.",
+    "official_reference": "Rolex M124060-0001"
+  },
+  "existing_geometry": {
+    "round.ring_rho": {"n_watches": 29, "median": 0.819038, "mad": 0.001562, "q05": 0.814329, "q95": 0.823763},
+    "round.spacing_rms_deg": {"n_watches": 29, "median": 0.285242, "mad": 0.12278, "q05": 0.09467, "q95": 0.999314},
+    "twelve.rotation_deg": {"n_watches": 29, "median": 0.244362, "mad": 0.226425, "q05": -0.408152, "q95": 1.040082},
+    "twelve.centring_w": {"n_watches": 30, "median": 0.00223925, "mad": 0.0073865, "q05": -0.017759, "q95": 0.014647},
+    "twelve.gap_r": {"n_watches": 22, "median": 0.02825, "mad": 0.001274, "q05": 0.023414, "q95": 0.043237},
+    "baton.3_9_line_offset_r": {"n_watches": 19, "median": 0.004896, "mad": 0.003391, "q05": 0.001076, "q95": 0.016341},
+    "axis.12_6_line_offset_r": {"n_watches": 18, "median": 0.0016355, "mad": 0.00125725, "q05": 0.000173, "q95": 0.004911}
+  },
+  "marker_morphology": {
+    "triangle_12": {"n": 10, "bbox_width_r": 0.21, "bbox_height_r": 0.25555555555555554, "center_x_r": -0.0005555555555555556, "center_y_r": -0.7622222222222222},
+    "baton_3": {"n": 9, "radial_length_r": 0.2777777777777778, "thickness_r": 0.09333333333333334, "center_x_r": 0.7644444444444445, "center_y_r": 0.0},
+    "baton_6": {"n": 11, "radial_length_r": 0.2777777777777778, "thickness_r": 0.09111111111111111, "center_x_r": 0.0011111111111111111, "center_y_r": 0.7644444444444445},
+    "baton_9": {"n": 10, "radial_length_r": 0.2788888888888889, "thickness_r": 0.09111111111111111, "center_x_r": -0.7627777777777778, "center_y_r": 0.0016666666666666668}
+  },
+  "lower_typography": {
+    "SUBMARINER": {"accepted_n": 8, "robust_core_n": 5, "width_r": 0.5533333333333333, "height_r": 0.057777777777777775, "center_x_r": 0.0, "center_y_r": 0.28444444444444444},
+    "1000ft = 300m": {"accepted_n": 8, "robust_core_n": 6, "width_r": 0.51, "height_r": 0.06666666666666667, "center_x_r": 0.0011111111111111111, "center_y_r": 0.36333333333333334},
+    "SUPERLATIVE CHRONOMETER": {"accepted_n": 10, "robust_core_n": 6, "width_r": 0.6933333333333334, "height_r": 0.04777777777777778, "center_x_r": 0.0011111111111111111, "center_y_r": 0.43444444444444447},
+    "OFFICIALLY CERTIFIED": {"accepted_n": 8, "robust_core_n": 7, "width_r": 0.5333333333333333, "height_r": 0.04666666666666667, "center_x_r": 0.0022222222222222222, "center_y_r": 0.4988888888888889}
+  },
+  "lower_line_spacing_r": {
+    "SUBMARINER_to_depth": 0.08,
+    "depth_to_SUPERLATIVE_CHRONOMETER": 0.07111111111111111,
+    "SUPERLATIVE_CHRONOMETER_to_OFFICIALLY_CERTIFIED": 0.06555555555555556,
+    "all_four_lines_common_sample_n": 6
+  },
+  "depth_line_final_m": {
+    "n": 8,
+    "bottom_offset_vs_preceding_300_r": 0.0,
+    "top_offset_vs_preceding_digits_r": 0.011111111111111112,
+    "height_ratio_vs_preceding_digit_height": 0.739,
+    "gap_from_previous_zero_r": 0.0044444444444444444,
+    "note": "Nominal genuine image-space geometry only; not an authenticity threshold."
+  },
+  "SUBMARINER_glyphs": {
+    "status": "provisional_n4",
+    "glyph_order": "SUBMARINER",
+    "median_width_r": [0.05333333333333334, 0.051111111111111114, 0.05444444444444444, 0.06, 0.056666666666666664, 0.05, 0.013333333333333334, 0.051111111111111114, 0.05, 0.051111111111111114],
+    "median_gap_r": [0.006666666666666667, 0.0077777777777777776, 0.006666666666666667, 0.005555555555555556, 0.0044444444444444444, 0.008888888888888889, 0.008888888888888889, 0.008888888888888889, 0.005555555555555556]
+  },
+  "maturity": {
+    "lower_typography": "GO_FOR_EXPERIMENT_4",
+    "marker_morphology": "GO_AS_SUPPLEMENTARY_EVIDENCE",
+    "upper_ROLEX_OYSTER_CORONET": "HOLD_MORE_UNOCCLUDED_DATA",
+    "physical_manufacturing_tolerance": "NOT_ESTABLISHED"
+  },
+  "limitations": [
+    "This is an image-space statistical master, not a Rolex engineering drawing or factory-tolerance specification.",
+    "Observed spread combines manufacturing variation with camera, focus, sharpening, compression, thresholding and normalization error.",
+    "The loose-dial evidence currently represents one independent physical dial and cannot establish population tolerance by itself.",
+    "Upper dial text and coronet are frequently obscured by hands and are not mature in v0.",
+    "SUBMARINER per-glyph geometry is provisional because only four normalized images segmented all ten glyphs cleanly.",
+    "Photometric marker bounding boxes may include lume and/or white-gold surround depending on image and threshold."
+  ]
+}
