@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.CLAHE;
@@ -13,9 +12,10 @@ import org.opencv.imgproc.Imgproc;
 
 /**
  * One-photo proof path. The physical black-dial edge is found automatically, then
- * the minor minute track refines the projective pose. A baked transparent photo of
- * the loose reference dial is warped into that pose. No manual 12/6 points, nudge,
- * measurements, tolerances or QC verdicts.
+ * the minor minute track refines the projective pose. A bright transparent outline
+ * extracted from the user's loose reference dial is warped into that pose. No dial
+ * photograph is shown, and there are no manual 12/6 points, nudges, measurements,
+ * tolerances or QC verdicts.
  */
 final class AutomaticDialOverlay {
     static final class Result {
@@ -86,8 +86,8 @@ final class AutomaticDialOverlay {
             h=refined==null?h0.clone():refined.homography;
             if(h==null||h.empty())return new Result("minute-track perspective fit failed");
 
-            Bitmap overlay=warpBakedOverlay(input.getWidth(),input.getHeight(),h);
-            if(overlay==null)return new Result("dial overlay rendering failed");
+            Bitmap overlay=warpOutline(input.getWidth(),input.getHeight(),h);
+            if(overlay==null)return new Result("dial outline rendering failed");
             return new Result(overlay,edge,twelveUsed,diag);
         }catch(Throwable t){
             return new Result("automatic overlay failed: "+t.getClass().getSimpleName());
@@ -105,8 +105,6 @@ final class AutomaticDialOverlay {
         double a10=sa*e.axisA,a11= ca*e.axisB;
         double det=a00*a11-a01*a10;if(Math.abs(det)<1e-9)return null;
 
-        // Pull the desired image-space radial direction back through the ellipse
-        // transform. R(phi)*(0,-1) must point along this canonical vector.
         double vx=( a11*targetDx-a01*targetDy)/det;
         double vy=(-a10*targetDx+a00*targetDy)/det;
         double vn=Math.hypot(vx,vy);if(!(vn>1e-9)){vx=0;vy=-1;vn=1;}
@@ -121,8 +119,8 @@ final class AutomaticDialOverlay {
         return out;
     }
 
-    private static Bitmap warpBakedOverlay(int w,int h,Mat canonicalToImage){
-        Bitmap ref=BakedDialOverlay.bitmap();
+    private static Bitmap warpOutline(int w,int h,Mat canonicalToImage){
+        Bitmap ref=BakedDialOutline.bitmap();
         Mat src=new Mat(),dst=new Mat(),n=Mat.eye(3,3,CvType.CV_64F),m=null;
         try{
             Utils.bitmapToMat(ref,src);
