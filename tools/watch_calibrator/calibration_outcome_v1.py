@@ -291,6 +291,15 @@ def validate_records(records: list[dict]) -> None:
         seen.add(identity)
         _sha256_text(rec["image_sha256"], f"record {i}.image_sha256")
         _decimal(rec["eligible_value"], f"record {i}.eligible_value")
+        class_label = rec["class_label"]
+        if class_label == "gen":
+            if rec["admission_state"] != "admitted":
+                raise CalibrationOutcomeError(f"record {i}: genuine accepted measurement must be admitted")
+        elif class_label == "rep":
+            if rec["admission_state"] != "excluded":
+                raise CalibrationOutcomeError(f"record {i}: replica accepted measurement must remain stress-only excluded")
+        else:
+            raise CalibrationOutcomeError(f"record {i}: unsupported class_label {class_label!r}")
         if rec["admission_state"] == "admitted":
             if rec["admission_reason_code"] is not None or rec["outcome"] not in {"retained", "rejected_outlier"}:
                 raise CalibrationOutcomeError(f"record {i}: admitted outcome invariant failed")
