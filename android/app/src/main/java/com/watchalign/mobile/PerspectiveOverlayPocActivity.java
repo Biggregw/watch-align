@@ -23,131 +23,107 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Deliberately small overlay-only app used to prove the minute-track perspective idea.
- * No QC measurements, scores, tolerances or verdicts are produced here.
+ * Strict photographic overlay proof. A real front-on dial photo is warped directly onto
+ * a candidate watch photo using matching minor minute ticks only. No measurements or QC.
  */
 public class PerspectiveOverlayPocActivity extends Activity {
-    private static final int PICK_PHOTO = 2101;
-    private static final int ALIGN_DIAL = 2102;
-    private static final int BG = Color.rgb(8,17,31);
-    private static final int ACCENT = Color.rgb(50,213,242);
-    private static final int MUTED = Color.rgb(158,176,201);
+    private static final int PICK_REFERENCE=2201, ALIGN_REFERENCE=2202, PICK_CANDIDATE=2203, ALIGN_CANDIDATE=2204;
+    private static final int BG=Color.rgb(8,17,31),ACCENT=Color.rgb(50,213,242),MUTED=Color.rgb(158,176,201);
+    private final ExecutorService worker=Executors.newSingleThreadExecutor();
 
-    private final ExecutorService worker = Executors.newSingleThreadExecutor();
-    private Bitmap watchBitmap;
-    private ImageView preview;
+    private Bitmap referenceBitmap,candidateBitmap,lastOverlay;
+    private double rcx,rcy,rr,rroll,ccx,ccy,cr,croll;
+    private boolean referenceAligned,candidateAligned;
+    private ImageView referencePreview,candidatePreview;
     private TextView status;
-    private Button alignButton, inspectButton;
-    private Bitmap lastOverlay;
+    private Button alignReferenceButton,pickCandidateButton,alignCandidateButton,inspectButton;
 
-    @Override public void onCreate(Bundle state) {
-        super.onCreate(state);
-        if (!OpenCVLoader.initLocal()) Toast.makeText(this,"OpenCV could not start",Toast.LENGTH_LONG).show();
-        setContentView(buildUi());
+    @Override public void onCreate(Bundle state){
+        super.onCreate(state);if(!OpenCVLoader.initLocal())Toast.makeText(this,"OpenCV could not start",Toast.LENGTH_LONG).show();setContentView(buildUi());
     }
 
-    private View buildUi() {
-        int pad = dp(16);
-        ScrollView scroll = new ScrollView(this); scroll.setBackgroundColor(BG);
-        scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
-        LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(pad,pad,pad,pad);
-        scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
+    private View buildUi(){
+        int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(BG);scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
+        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
+        root.addView(text("Photographic Perspective Overlay",27,Color.WHITE));
+        root.addView(text("Reference photo → minor minute ticks → candidate perspective",14,ACCENT));
+        root.addView(text("This proof uses no canonical marker sizes and no QC measurements. Choose a clean front-on loose-dial photo as the reference, then a candidate GMT photo. The same minor minute ticks are matched in both photos and the actual reference photograph is warped onto the candidate. Hour markers, triangle, text and date window do not drive the fit.",13,MUTED),lp(-1,-2,10));
 
-        root.addView(text("Perspective Overlay POC",28,Color.WHITE));
-        root.addView(text("Minute-track driven · overlay only · no QC measurements",14,ACCENT));
-        root.addView(text("Choose a sharp GMT photo with the full dial visible. Then set the dial edge at 12 and 6. Those two safe points establish only the starting centre/scale/direction; the 48 minor minute ticks drive the projective overlay. Hour markers and the 12 triangle are not used to make themselves fit.",13,MUTED),lp(-1,-2,10));
+        Button pickReference=button("1. Choose front-on reference dial");pickReference.setOnClickListener(v->pick(PICK_REFERENCE));root.addView(pickReference,lp(-1,dp(52),8));
+        alignReferenceButton=button("2. Set reference dial edge at 12 & 6");alignReferenceButton.setEnabled(false);alignReferenceButton.setOnClickListener(v->alignReference());root.addView(alignReferenceButton,lp(-1,dp(50),5));
+        referencePreview=image();root.addView(referencePreview,lp(-1,-2,6));
 
-        Button pick = button("Choose GMT photo"); pick.setOnClickListener(v->pickPhoto()); root.addView(pick,lp(-1,dp(52),10));
-        alignButton = button("Set 12 & 6 dial edge, then build overlay"); alignButton.setBackgroundColor(ACCENT); alignButton.setTextColor(Color.rgb(4,32,42));
-        alignButton.setEnabled(false); alignButton.setOnClickListener(v->startAlignment()); root.addView(alignButton,lp(-1,dp(54),8));
-        inspectButton = button("Inspect last overlay"); inspectButton.setEnabled(false); inspectButton.setOnClickListener(v->openInspector()); root.addView(inspectButton,lp(-1,dp(48),6));
+        pickCandidateButton=button("3. Choose candidate GMT photo");pickCandidateButton.setEnabled(false);pickCandidateButton.setOnClickListener(v->pick(PICK_CANDIDATE));root.addView(pickCandidateButton,lp(-1,dp(52),12));
+        alignCandidateButton=button("4. Set candidate dial edge at 12 & 6, then build");alignCandidateButton.setBackgroundColor(ACCENT);alignCandidateButton.setTextColor(Color.rgb(4,32,42));alignCandidateButton.setEnabled(false);alignCandidateButton.setOnClickListener(v->alignCandidate());root.addView(alignCandidateButton,lp(-1,dp(54),5));
+        candidatePreview=image();root.addView(candidatePreview,lp(-1,-2,6));
 
-        status = text("Choose a photo to begin.",14,MUTED); root.addView(status,lp(-1,-2,12));
-        preview = new ImageView(this); preview.setAdjustViewBounds(true); preview.setScaleType(ImageView.ScaleType.FIT_CENTER); preview.setBackgroundColor(BG);
-        root.addView(preview,lp(-1,-2,8));
-        root.addView(text("In the inspector: cyan is the projected canonical dial; yellow dots are the detected minor minute-tick anchors. Use the opacity slider or hold Blink. Reset restores the automatic result before any optional fine nudge.",12,MUTED),lp(-1,-2,12));
+        inspectButton=button("Inspect photographic overlay");inspectButton.setEnabled(false);inspectButton.setOnClickListener(v->openInspector());root.addView(inspectButton,lp(-1,dp(48),10));
+        status=text("Choose the clean front-on loose-dial reference photo first.",14,MUTED);root.addView(status,lp(-1,-2,10));
+        root.addView(text("Inspector has opacity and hold-to-blink only. There is deliberately no nudge. If it does not line up, the fit has failed.",12,MUTED),lp(-1,-2,10));
         return scroll;
     }
 
-    private void pickPhoto() {
-        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT); i.setType("image/*"); i.addCategory(Intent.CATEGORY_OPENABLE);
-        startActivityForResult(i,PICK_PHOTO);
+    private ImageView image(){ImageView v=new ImageView(this);v.setAdjustViewBounds(true);v.setScaleType(ImageView.ScaleType.FIT_CENTER);v.setBackgroundColor(BG);return v;}
+    private void pick(int request){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("image/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,request);}
+
+    private void alignReference(){
+        if(referenceBitmap==null)return;InspectionImageStore.clearManualSeed();InspectionImageStore.baseBitmap=referenceBitmap;
+        status.setText("Reference: set the physical dial/rehaut boundary at 12, then the opposite boundary at 6.");
+        startActivityForResult(new Intent(this,ManualSeedActivity.class),ALIGN_REFERENCE);
+    }
+    private void alignCandidate(){
+        if(candidateBitmap==null||!referenceAligned)return;InspectionImageStore.clearManualSeed();InspectionImageStore.baseBitmap=candidateBitmap;
+        status.setText("Candidate: set the physical dial/rehaut boundary at 12, then the opposite boundary at 6.");
+        startActivityForResult(new Intent(this,ManualSeedActivity.class),ALIGN_CANDIDATE);
     }
 
-    private void startAlignment() {
-        if (watchBitmap == null) return;
-        InspectionImageStore.clearManualSeed();
-        InspectionImageStore.baseBitmap = watchBitmap;
-        status.setText("Set the DIAL EDGE at 12, then the opposite DIAL EDGE at 6. The existing alignment screen may mention QC, but this POC will build only the overlay.");
-        startActivityForResult(new Intent(this,ManualSeedActivity.class),ALIGN_DIAL);
-    }
-
-    private void buildOverlay() {
-        if (watchBitmap == null || !InspectionImageStore.hasManualSeed) return;
-        final Bitmap photo = watchBitmap;
-        final double cx = InspectionImageStore.manualCx, cy = InspectionImageStore.manualCy;
-        final double r = InspectionImageStore.manualR, roll = InspectionImageStore.manualRoll;
-        alignButton.setEnabled(false); inspectButton.setEnabled(false);
-        status.setText("Building perspective overlay from the minor minute track…");
-        worker.submit(() -> {
-            MinuteTrackPerspectiveOverlay.Result result = MinuteTrackPerspectiveOverlay.build(photo,cx,cy,r,roll);
-            runOnUiThread(() -> {
-                alignButton.setEnabled(true);
-                if (!result.valid) {
-                    lastOverlay = null; inspectButton.setEnabled(false);
-                    status.setText("Could not build a stable minute-track overlay: "+result.reason+". Try a sharper photo or redo the 12/6 dial-edge points.");
-                    return;
-                }
-                lastOverlay = result.overlay; inspectButton.setEnabled(true);
-                status.setText("Overlay ready. Perspective came from minor minute ticks only. Inspect whether the cyan hour markers and 12 triangle land on the real dial.");
+    private void buildOverlay(){
+        if(!referenceAligned||!candidateAligned||referenceBitmap==null||candidateBitmap==null)return;
+        alignCandidateButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Matching minor minute ticks and warping the actual reference dial photograph…");
+        final Bitmap ref=referenceBitmap,cand=candidateBitmap;
+        worker.submit(()->{
+            PhotographicMinuteTrackOverlay.Result q=PhotographicMinuteTrackOverlay.build(ref,rcx,rcy,rr,rroll,cand,ccx,ccy,cr,croll);
+            runOnUiThread(()->{
+                alignCandidateButton.setEnabled(true);
+                if(!q.valid){lastOverlay=null;inspectButton.setEnabled(false);status.setText("Could not build a stable photographic overlay: "+q.reason+". Reference ticks "+q.referenceTicks+", candidate ticks "+q.candidateTicks+", matched "+q.matchedTicks+".");return;}
+                lastOverlay=q.overlay;inspectButton.setEnabled(true);
+                status.setText(String.format(java.util.Locale.US,"Photographic overlay ready. Reference ticks %d · candidate ticks %d · matched %d · inliers %d · mean inlier error %.2f px. No hour marker, triangle or text was used to fit it.",q.referenceTicks,q.candidateTicks,q.matchedTicks,q.inlierTicks,q.meanInlierErrorPx));
                 openInspector();
             });
         });
     }
 
-    private void openInspector() {
-        if (watchBitmap == null || lastOverlay == null) return;
-        InspectionImageStore.setOverlay(watchBitmap,lastOverlay,"Minute-track perspective overlay · hold to blink");
-        startActivity(new Intent(this,FullscreenInspectActivity.class));
+    private void openInspector(){
+        if(candidateBitmap==null||lastOverlay==null)return;InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Photographic perspective overlay");startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
     }
 
-    @Override protected void onActivityResult(int request,int result,Intent data) {
-        if (request == ALIGN_DIAL) {
-            if (result == RESULT_OK && InspectionImageStore.hasManualSeed) buildOverlay();
-            else if (watchBitmap != null) status.setText("Alignment cancelled. Tap the alignment button when ready.");
-            return;
+    @Override protected void onActivityResult(int request,int result,Intent data){
+        if(request==ALIGN_REFERENCE){
+            if(result==RESULT_OK&&InspectionImageStore.hasManualSeed){rcx=InspectionImageStore.manualCx;rcy=InspectionImageStore.manualCy;rr=InspectionImageStore.manualR;rroll=InspectionImageStore.manualRoll;referenceAligned=true;pickCandidateButton.setEnabled(true);status.setText("Reference aligned. Now choose the candidate GMT photo.");}
+            else if(referenceBitmap!=null)status.setText("Reference alignment cancelled.");return;
         }
-        super.onActivityResult(request,result,data);
-        if (request != PICK_PHOTO || result != RESULT_OK || data == null || data.getData() == null) return;
-        try {
-            watchBitmap = readBitmap(data.getData());
-            lastOverlay = null; InspectionImageStore.clearManualSeed();
-            preview.setImageBitmap(watchBitmap); alignButton.setEnabled(true); inspectButton.setEnabled(false);
-            status.setText("Photo ready. Set the 12 and 6 dial edges to build the overlay.");
-        } catch (Exception e) {
-            status.setText("Could not read image: "+e.getMessage());
+        if(request==ALIGN_CANDIDATE){
+            if(result==RESULT_OK&&InspectionImageStore.hasManualSeed){ccx=InspectionImageStore.manualCx;ccy=InspectionImageStore.manualCy;cr=InspectionImageStore.manualR;croll=InspectionImageStore.manualRoll;candidateAligned=true;buildOverlay();}
+            else if(candidateBitmap!=null)status.setText("Candidate alignment cancelled.");return;
         }
+        super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;
+        try{
+            if(request==PICK_REFERENCE){
+                referenceBitmap=readBitmap(data.getData());referenceAligned=false;lastOverlay=null;referencePreview.setImageBitmap(referenceBitmap);alignReferenceButton.setEnabled(true);pickCandidateButton.setEnabled(false);alignCandidateButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Reference photo ready. Set its 12 and 6 dial edges.");
+            }else if(request==PICK_CANDIDATE){
+                candidateBitmap=readBitmap(data.getData());candidateAligned=false;lastOverlay=null;candidatePreview.setImageBitmap(candidateBitmap);alignCandidateButton.setEnabled(referenceAligned);inspectButton.setEnabled(false);status.setText("Candidate ready. Set its 12 and 6 dial edges; the photographic overlay will then build automatically.");
+            }
+        }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
     }
 
-    private Bitmap readBitmap(Uri uri) throws Exception {
-        BitmapFactory.Options opts = new BitmapFactory.Options(); opts.inJustDecodeBounds = true;
-        try (InputStream in = getContentResolver().openInputStream(uri)) { BitmapFactory.decodeStream(in,null,opts); }
-        if (opts.outWidth <= 0 || opts.outHeight <= 0) throw new IllegalArgumentException("Not a readable image");
-        int maxDim = Math.max(opts.outWidth,opts.outHeight), sample = 1;
-        while (maxDim/(sample*2) >= 1600) sample *= 2;
-        opts.inJustDecodeBounds = false; opts.inSampleSize = sample; opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        Bitmap b; try (InputStream in = getContentResolver().openInputStream(uri)) { b = BitmapFactory.decodeStream(in,null,opts); }
-        if (b == null) throw new IllegalArgumentException("Not a readable image");
-        int currentMax = Math.max(b.getWidth(),b.getHeight());
-        if (currentMax <= 1600) return b.copy(Bitmap.Config.ARGB_8888,false);
-        float scale = 1600f/currentMax;
-        return Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*scale),Math.round(b.getHeight()*scale),true).copy(Bitmap.Config.ARGB_8888,false);
+    private Bitmap readBitmap(Uri uri)throws Exception{
+        BitmapFactory.Options opts=new BitmapFactory.Options();opts.inJustDecodeBounds=true;try(InputStream in=getContentResolver().openInputStream(uri)){BitmapFactory.decodeStream(in,null,opts);}if(opts.outWidth<=0||opts.outHeight<=0)throw new IllegalArgumentException("Not a readable image");
+        int maxDim=Math.max(opts.outWidth,opts.outHeight),sample=1;while(maxDim/(sample*2)>=1600)sample*=2;opts.inJustDecodeBounds=false;opts.inSampleSize=sample;opts.inPreferredConfig=Bitmap.Config.ARGB_8888;Bitmap b;try(InputStream in=getContentResolver().openInputStream(uri)){b=BitmapFactory.decodeStream(in,null,opts);}if(b==null)throw new IllegalArgumentException("Not a readable image");int currentMax=Math.max(b.getWidth(),b.getHeight());if(currentMax<=1600)return b.copy(Bitmap.Config.ARGB_8888,false);float s=1600f/currentMax;return Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true).copy(Bitmap.Config.ARGB_8888,false);
     }
 
-    private TextView text(String s,int sp,int color) { TextView v = new TextView(this); v.setText(s); v.setTextSize(sp); v.setTextColor(color); return v; }
-    private Button button(String s) { Button b = new Button(this); b.setText(s); b.setAllCaps(false); return b; }
-    private LinearLayout.LayoutParams lp(int w,int h,int top) { LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(w,h); p.topMargin = dp(top); return p; }
-    private int dp(int n) { return Math.round(n*getResources().getDisplayMetrics().density); }
-
-    @Override protected void onDestroy() { worker.shutdownNow(); super.onDestroy(); }
+    private TextView text(String s,int sp,int color){TextView v=new TextView(this);v.setText(s);v.setTextSize(sp);v.setTextColor(color);return v;}
+    private Button button(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);return b;}
+    private LinearLayout.LayoutParams lp(int w,int h,int top){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(w,h);p.topMargin=dp(top);return p;}
+    private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
+    @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
 }
