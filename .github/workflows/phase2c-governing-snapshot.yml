@@ -1,0 +1,140 @@
+name: Phase 2C governing snapshot proof
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'android/app/src/main/java/**'
+      - 'tools/watch_calibrator/**'
+      - 'tools/desktop-harness/**'
+      - '.github/workflows/phase2c-governing-snapshot.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      MODEL: '124060'
+      WATCH_ALIGN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Python dependencies
+        run: python -m pip install -q -r tools/dataset_harvester/requirements.txt
+      - name: Install Android platform for shared detector compilation
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Restore OpenCV desktop-harness jar
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Download governing v1 checkpoint artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: watch-calibrator-124060-37132463287
+          path: governing-v1-artifact
+          github-token: ${{ github.token }}
+          run-id: 37132463287
+
+      - name: Verify governing snapshot identity
+        run: |
+          SNAP="governing-v1-artifact/datasets/watch_calibrator/$MODEL/evidence_snapshot_v1"
+          python3 - "$SNAP/snapshot.json" <<'PY'
+          import json, sys
+          expected = 'ca23588a8d6ca2b3c888e101d3f36b2f83776c694a05934be1fa1ba627e94610'
+          actual = json.load(open(sys.argv[1], encoding='utf-8'))['snapshot_id']
+          print('governing snapshot', actual)
+          if actual != expected:
+              raise SystemExit(f'wrong governing snapshot: {actual} != {expected}')
+          PY
+
+      - name: Replay governing snapshot through v1 with no network
+        env:
+          IMGUR_CLIENT_ID: ''
+          REDDIT_CLIENT_ID: ''
+          REDDIT_CLIENT_SECRET: ''
+          WATCH_ALIGN_HARNESS_OFFLINE: '1'
+        run: |
+          SNAP="governing-v1-artifact/datasets/watch_calibrator/$MODEL/evidence_snapshot_v1"
+          mapfile -d '' -t STEP_ENV < <(env -0)
+          sudo unshare --net -- \
+            setpriv --reuid="$(id -u)" --regid="$(id -g)" --init-groups -- \
+            env -i "${STEP_ENV[@]}" \
+            bash -eo pipefail -c '
+              [ "$(id -u):$(id -g)" = "$2" ] || { echo "governing replay is not running as the runner user" >&2; exit 1; }
+              python3 tools/watch_calibrator/network_isolation.py
+              python3 tools/watch_calibrator/replay.py "$1" --root datasets/watch_calibrator_replay_governing --fresh --measurement-adapter submariner12_measured_v1
+            ' replay "$SNAP" "$(id -u):$(id -g)" | tee watch-calibrator-governing-v1.log
+
+      - name: Require governing calibration bytes
+        run: |
+          CAL="datasets/watch_calibrator_replay_governing/$MODEL/calibration.json"
+          SHA=$(sha256sum "$CAL" | cut -d' ' -f1)
+          echo "governing calibration.json sha256 $SHA"
+          [ "$SHA" = 3ae71e98a533be4e87cbdfc48b0d893118ebe2c6d761eeb34ca981a90fb2b796 ] || {
+            echo "governing calibration bytes changed" >&2
+            exit 1
+          }
+
+      - name: Prove v1/v2 equivalence on governing snapshot
+        env:
+          IMGUR_CLIENT_ID: ''
+          REDDIT_CLIENT_ID: ''
+          REDDIT_CLIENT_SECRET: ''
+          WATCH_ALIGN_HARNESS_OFFLINE: '1'
+        run: |
+          SNAP="governing-v1-artifact/datasets/watch_calibrator/$MODEL/evidence_snapshot_v1"
+          OUT="datasets/watch_calibrator_replay_governing/$MODEL/geometry/phase2c_equivalence.json"
+          mapfile -d '' -t STEP_ENV < <(env -0)
+          sudo unshare --net -- \
+            setpriv --reuid="$(id -u)" --regid="$(id -g)" --init-groups -- \
+            env -i "${STEP_ENV[@]}" \
+            bash -eo pipefail -c '
+              [ "$(id -u):$(id -g)" = "$3" ] || { echo "governing Phase 2C proof is not running as the runner user" >&2; exit 1; }
+              python3 tools/watch_calibrator/network_isolation.py
+              python3 tools/watch_calibrator/phase2c_equivalence.py "$1" --replay-root datasets/watch_calibrator_replay_governing --out "$2"
+            ' phase2c "$SNAP" "$OUT" "$(id -u):$(id -g)" | tee watch-calibrator-governing-phase2c.log
+          python3 - "$OUT" <<'PY'
+          import json, sys
+          expected = 'ca23588a8d6ca2b3c888e101d3f36b2f83776c694a05934be1fa1ba627e94610'
+          report = json.load(open(sys.argv[1], encoding='utf-8'))
+          if report.get('status') != 'PASS':
+              raise SystemExit(f"Phase 2C status is {report.get('status')!r}")
+          if report.get('snapshot_id') != expected:
+              raise SystemExit('Phase 2C report is not bound to the governing snapshot')
+          print(json.dumps(report['totals'], indent=2, sort_keys=True))
+          PY
+          echo '### Governing-snapshot Phase 2C proof' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload governing proof evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2c-governing-snapshot-${{ github.run_id }}
+          path: |
+            datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/run_manifest.json
+            datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/run_status.json
+            datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/calibration.json
+            datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/geometry/*measurement_contract.csv
+            datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/geometry/*measurement_contract_v2.jsonl
+            datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/geometry/phase2c_equivalence.json
+            watch-calibrator-governing-v1.log
+            watch-calibrator-governing-phase2c.log
+          if-no-files-found: warn
