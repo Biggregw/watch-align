@@ -44,12 +44,15 @@ jobs:
           SOURCES=(
             gen_wex_K4gqk6U
             gen_wex_3KSuGhC
+            gen_wex_e99gXKb
             gen_wex_U2XNblj
+            gen_wex_EZKpLku
             gen_wex_I9FxPLn
             gen_wex_vmbUDwy
             gen_wex_1TDYtpN
             gen_wex_KWfXz8G
             gen_wex_8Rg3vqJ
+            gen_wex_bRffRhD
           )
           for SOURCE in "${SOURCES[@]}"; do
             echo "=== $SOURCE ==="
@@ -89,64 +92,81 @@ jobs:
                   if not keys: return
                   w=csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(rows)
 
-          rows=read_many('*_summary.csv')
-          pairs=read_many('*_pairs.csv')
-          write_union(out/'image_results.csv', rows)
-          write_union(out/'pair_results.csv', pairs)
-
           def num(r,k):
               try:
                   v=float(r.get(k,'')); return v if math.isfinite(v) else None
               except Exception: return None
 
-          measured=[r for r in rows if r.get('status') in ('MEASURED','LOW_COHERENCE')]
-          good=[r for r in rows if r.get('status')=='MEASURED']
+          rows=read_many('*_summary.csv')
+          pairs=read_many('*_pairs.csv')
+          write_union(out/'image_results.csv', rows)
+          write_union(out/'pair_results.csv', pairs)
+
+          measured=[r for r in rows if r.get('status') in ('MEASURED','COHERENT')]
+          coherent=[r for r in rows if r.get('status')=='COHERENT']
           watches=sorted({r.get('physical_watch_id','') for r in rows if r.get('physical_watch_id')})
           measured_watches=sorted({r.get('physical_watch_id','') for r in measured})
 
-          # Keep one best image per physical watch: most usable pairs, then lowest residual.
+          # One image per physical watch for the headline summary. Prefer the
+          # most opposing pairs, then the smallest independent even/odd vector
+          # disagreement. No image is selected by its correction improvement.
           best={}
           for r in measured:
               wid=r.get('physical_watch_id','')
-              key=(int(float(r.get('usable_pairs') or 0)), -(num(r,'fit_residual_rms') or 999))
+              vd=num(r,'vector_disagreement')
+              key=(int(float(r.get('usable_pairs') or 0)), -(vd if vd is not None else 999))
               if wid not in best or key > best[wid][0]: best[wid]=(key,r)
           best_rows=[x[1] for x in best.values()]
 
           lines=['# Opposing minute-marker real-photo control', '',
                  'Status: **research only; no production GMT change**', '',
-                 f'- source watches attempted: **{len(watches)}**',
-                 f'- watches with a measurable opposing-pair field: **{len(measured_watches)}**',
+                 'Revision: self-phasing minute track; even/odd opposing-pair cross-validation.', '',
+                 f'- source watches successfully fetched: **{len(watches)}**',
+                 f'- watches with independently cross-fittable opposing pairs: **{len(measured_watches)}**',
                  f'- measurable images: **{len(measured)} / {len(rows)}**',
-                 f'- high-coherence images: **{len(good)}**', '']
+                 f'- descriptively coherent images: **{len(coherent)}**', '']
 
           if best_rows:
-              imps=[num(r,'pair_asym_improvement_pct') for r in best_rows]
+              imps=[num(r,'crossfit_improvement_pct') for r in best_rows]
               imps=[x for x in imps if x is not None]
-              rms=[num(r,'fit_residual_rms') for r in best_rows]
-              rms=[x for x in rms if x is not None]
+              dis=[num(r,'vector_disagreement') for r in best_rows]
+              dis=[x for x in dis if x is not None]
               mags=[num(r,'projective_magnitude') for r in best_rows]
               mags=[x for x in mags if x is not None]
-              lines += ['## Watch-level result', '',
-                        'One image per physical watch is selected only for this summary, preferring the most complete pair set and then the lowest residual. All image-level data remain in `image_results.csv`.', '']
-              if imps: lines.append(f'- median reduction in opposing-pair radial asymmetry: **{statistics.median(imps):.1f}%**')
-              if rms: lines.append(f'- median projective-fit residual: **{statistics.median(rms):.5f}**')
+              lines += ['## Watch-level cross-validation', '',
+                        'Each pair is corrected only by a projective vector fitted to the opposite parity of pairs. The evaluated pair therefore did not train its own correction.', '']
+              if imps: lines.append(f'- median cross-fitted reduction in opposing-pair radial asymmetry: **{statistics.median(imps):.1f}%**')
+              if dis: lines.append(f'- median even/odd projective-vector disagreement: **{statistics.median(dis):.5f}**')
               if mags: lines.append(f'- median fitted projective magnitude: **{statistics.median(mags):.5f}**')
-              lines += ['', '| watch | split | pairs | residual | raw asym | corrected asym | improvement |',
-                        '|---|---|---:|---:|---:|---:|---:|']
+              lines += ['', '| watch | split | pairs | vector disagree | raw asym | cross-fit corrected | cross-fit improvement | status |',
+                        '|---|---|---:|---:|---:|---:|---:|---|']
               for r in sorted(best_rows, key=lambda q:(q.get('split',''),q.get('physical_watch_id',''))):
                   def fmt(k,n=5):
                       v=num(r,k); return '' if v is None else f'{v:.{n}f}'
-                  lines.append(f"| {r.get('physical_watch_id','')} | {r.get('split','')} | {r.get('usable_pairs','')} | {fmt('fit_residual_rms')} | {fmt('raw_pair_asym_median')} | {fmt('corrected_pair_asym_median')} | {fmt('pair_asym_improvement_pct',1)}% |")
+                  lines.append(f"| {r.get('physical_watch_id','')} | {r.get('split','')} | {r.get('usable_pairs','')} | {fmt('vector_disagreement')} | {fmt('raw_pair_asym_median')} | {fmt('crossfit_corrected_asym_median')} | {fmt('crossfit_improvement_pct',1)}% | {r.get('status','')} |")
 
           for split in ('calibration','validation'):
               sr=[r for r in best_rows if r.get('split')==split]
-              imp=[num(r,'pair_asym_improvement_pct') for r in sr]; imp=[x for x in imp if x is not None]
+              imp=[num(r,'crossfit_improvement_pct') for r in sr]
+              imp=[x for x in imp if x is not None]
               if sr:
                   lines += ['', f'## {split.title()} partition', '', f'- measurable watches: **{len(sr)}**']
-                  if imp: lines.append(f'- median pair-asymmetry improvement: **{statistics.median(imp):.1f}%**')
+                  if imp: lines.append(f'- median cross-fit improvement: **{statistics.median(imp):.1f}%**')
+
+          # Failure reasons are important here because coverage, not just fit
+          # quality, determines whether this is a practical route.
+          reasons={}
+          for r in rows:
+              if r.get('status')=='UNASSESSABLE':
+                  why=r.get('reason','unknown') or 'unknown'
+                  reasons[why]=reasons.get(why,0)+1
+          if reasons:
+              lines += ['', '## Unassessable-image reasons', '']
+              for why,n in sorted(reasons.items(), key=lambda z:(-z[1],z[0])):
+                  lines.append(f'- {why}: **{n}**')
 
           lines += ['', '## Gate', '',
-                    'This run tests only whether the minute-pair field is measurable and spatially coherent on real genuine photographs. It does **not** yet authorize correction of the 12-marker QC measurement. The next gate is whether using this field reduces the spread of an independent genuine landmark measurement on validation watches without absorbing an intentionally local defect.', '']
+                    'This run does not authorize a perspective correction. A useful result requires the cross-fitted improvement to persist on independent validation watches and the even/odd fitted projective vectors to agree. Only after that should an independent landmark such as a common-normalized 12/6 clearance be corrected, followed by an intentional local-defect test to prove the pose model does not absorb a genuine marker error.', '']
           (out/'RESULT.md').write_text('\n'.join(lines), encoding='utf-8')
           print('\n'.join(lines))
           PY
@@ -163,5 +183,5 @@ jobs:
             echo 'No result changes to commit'
             exit 0
           fi
-          git commit -m 'Record real-photo opposing-minute control'
+          git commit -m 'Record cross-validated opposing-minute control'
           git push origin HEAD:${{ github.ref_name }}
