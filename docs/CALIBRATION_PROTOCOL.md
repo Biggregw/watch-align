@@ -2,7 +2,7 @@
 
 Status: **active governing research protocol**
 
-Protocol version: **v0.2**
+Protocol version: **v0.3**
 
 This document defines the reusable calibration method for Watch Align. It is deliberately independent of the Android production implementation.
 
@@ -53,6 +53,29 @@ A clean loose genuine dial is ideal when available because the movement hole can
 
 The master defines the **zero point / nominal geometry**. One image does not define manufacturing tolerance.
 
+### Symmetric-pair frontal-reference rule
+
+A strong nominal-master candidate should show symmetry between genuinely corresponding opposite regions of the dial. For features whose design definition is the same on both sides, a near-perfect frontal image should make opposite measurements equal or extremely close after normalization.
+
+Where the marker shapes or local definitions differ (for example a 12 triangle versus a 6 baton), do **not** assume the raw gap numbers themselves must be identical. Instead record each side's nominal value from the master and compare later photos in **residual space**:
+
+`residual = observed - nominal_for_that_position`
+
+For a truly frontal reproduction of the same geometry, the opposing residuals should both be near zero. Perspective should drive them away from zero in a complementary way.
+
+Useful symmetry pairs include:
+
+- 12 <-> 6;
+- 3 <-> 9 when both positions contain comparable measurable dial geometry;
+- 1 <-> 7;
+- 2 <-> 8;
+- 4 <-> 10;
+- 5 <-> 11.
+
+On date-window models, do not invent a 3-marker measurement where none exists. Use the available clean opposing pairs instead, especially 2 <-> 8 and 4 <-> 10, plus 12 <-> 6 and any other unobstructed symmetric pairs.
+
+The best nominal master is therefore not merely the photo that looks most frontal. It is the photo whose independent opposing and neighbouring measurements are most mutually consistent with a single frontal geometry.
+
 ## 4. Measure genuine variation around the master
 
 Measure independent physical genuine watches against the nominal master.
@@ -82,15 +105,6 @@ For an opposing pair, first express each measurement as a residual from its own 
 `dB = observedB - nominalB`
 
 A coherent opposite-signed pattern can be evidence of pose. For example, if the 12-side relationship compresses while the 6-side relationship expands by a similar amount, treat that first as a photographic perspective signal rather than as two genuine manufacturing extremes.
-
-Useful paired checks may include:
-
-- 12 <-> 6;
-- 3 <-> 9;
-- 1 <-> 7;
-- 2 <-> 8;
-- 4 <-> 10;
-- 5 <-> 11.
 
 The exact relationship must be validated per feature; do not assume cancellation works merely because markers are opposite.
 
@@ -230,7 +244,7 @@ Use the **known-working GMT path** as the control:
 
 1. choose one simple already-working GMT feature;
 2. use existing proven-genuine GMT images first;
-3. select the best genuine nominal candidate;
+3. select the best genuine nominal candidate using multi-pair symmetry rather than appearance alone;
 4. remeasure the feature on a small set of independent genuine watches;
 5. apply opposing-marker **and neighbourhood-coherence** checks for perspective contamination;
 6. compare the independently derived result with the existing GMT calibration;
