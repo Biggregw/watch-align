@@ -2,43 +2,74 @@
 
 ## Product definition
 
-Watch Align is a replica-watch QC application for analysing uploaded dealer/QC photos.
+Watch Align analyses **one uploaded dealer/QC photo** and reports how the measured watch compares with proven-genuine reference geometry for that model or family.
 
-The existing GMT experience is the product reference. New watch families should be added to that same core workflow unless the owner explicitly approves a redesign.
+The product does **not** answer “is this genuine?” and must not output a fake/genuine probability. It answers:
 
-## Non-negotiable rules
+> **Which measurable features differ from the genuine reference, by how much, and with what confidence?**
 
-1. Users upload QC/dealer photos. Do not redesign the product around taking new camera photos.
-2. Preserve the existing GMT workflow and behaviour unless a task explicitly asks to change it.
-3. New watch families should fit the existing GMT-style experience rather than create a separate product flow.
-4. Research exists to unblock production QC features. Research is not the product.
-5. Do not redesign the workflow to solve a measurement problem. Improve, replace, or suppress the individual analyser/check instead.
-6. Reuse generic infrastructure where valid, but never silently reuse GMT-specific geometry, thresholds, detector assumptions, or date-side logic for another family.
-7. If a family-specific check is not reliable enough, mark that check unavailable/insufficient rather than changing the whole product.
-8. Watch Align is for replica QC. Do not turn it into an authenticity classifier.
-9. Do not start open-ended corpus expansion, detector research, or statistical work unless it addresses a named production blocker.
-10. Before beginning any substantial new research phase, state the production problem it solves and the expected production decision it will enable.
-11. The next production family target is Rolex Submariner 124060, followed by 126610LN and 126610LV.
-12. GMT production behaviour must remain regression-protected while Submariner support is added.
-13. Real dealer/QC photos are the target input. Production validation must include them.
-14. The end state of a family implementation is working Android QC support and a testable APK, not indefinitely expanding research statistics.
-15. Calibration is conservative replica QC. Every reliable measurement observed on a genuine watch belongs inside the accepted genuine envelope, including small genuine imperfections. A replica is highlighted only when its reliable measurement is outside supported genuine variation. Only obvious measurement failures may be excluded, and replica measurements never move a genuine-derived boundary.
-16. If a requested task begins expanding beyond these boundaries, stop before implementing the expansion and report the proposed scope change for approval.
+A watch can legitimately return **“no detectable deviation from the genuine reference in the features assessable from this photo.”** That does not mean every unmeasured part of the watch is genuine or perfect.
 
-## Current Submariner direction
+## Governing principles
 
-The Submariner research work is supporting evidence, not a new product architecture. The production objective is to add 124060 support into the existing GMT-style Android QC experience, carrying across only the research findings and family-specific components that are actually needed.
+1. Genuine evidence defines the reference. Replica evidence never moves the genuine envelope.
+2. Establish a clean nominal master first, then estimate genuine variation around it.
+3. Keep three sources of spread separate:
+   - nominal design geometry;
+   - genuine watch-to-watch variation;
+   - photo/detector uncertainty.
+4. A genuine image affected by pose must not widen the manufacturing envelope merely because the watch is genuine.
+5. Prefer relational pose checks over increasingly complex reconstruction when they work. Opposing-marker residuals are a first-class research direction.
+6. Multiple photos of one physical watch estimate repeatability/photo error. They do not count as independent manufacturing samples.
+7. Use existing project photos and artifacts before sourcing more data.
+8. Date Submariner references may contribute to **shared** geometry only when the feature is demonstrably the same. Date-specific areas must be excluded from a no-date calibration.
+9. Research succeeds when it reproduces known genuine measurements and known real-world QC defects, not when it separates every replica from every genuine watch as two populations.
+10. Do not broaden tolerances to accommodate questionable photographs. Correct, pair, or exclude the contaminated measurement instead.
+11. The user input remains an externally supplied QC/dealer photo. Do not redesign the product around guided capture or multiple runtime images.
+12. Every feature must ultimately be classified as one of: **deterministic code**, **vision AI**, **hybrid**, or **not reliable enough**.
+13. Choose that implementation only after empirical validation. Do not force every visual check into OpenCV and do not default everything to AI.
+14. Production output should be feature-by-feature and explainable: measured value, genuine reference/range, deviation, confidence/assessability, and concise interpretation.
+15. If all assessed features sit within the genuine reference, say so plainly. Do not invent a defect and do not force a class verdict.
 
-Do not assume that every research metric must become a production check. Use conservative production behaviour where evidence is weak. When genuine and replica distributions overlap for a metric, that metric must not flag values inside the supported genuine envelope merely because the same value is undesirable on a replica.
+## Current restart plan
 
-## Decision rule for future work
+The restart begins with **GMT**, because the existing GMT implementation is a known-working control.
 
-Before adding work, ask:
+The first experiment is deliberately small:
 
-- What user-facing QC capability does this enable?
-- Is this needed for the existing GMT-style workflow?
-- Is there a smaller production-focused solution?
-- Does it preserve GMT behaviour, except for an explicitly approved cross-family product-rule change?
-- Does it move the family toward a usable APK?
+1. choose one already-working GMT feature;
+2. use existing proven-genuine images before searching for anything new;
+3. select the best genuine image as the nominal candidate;
+4. measure the same feature on several independent genuine watches;
+5. use opposing/shared dial geometry to identify perspective contamination;
+6. derive a prompt-based calibration result offline;
+7. compare it with the existing GMT calibration;
+8. refine the prompt until it reproduces the known answer reliably on fresh held-out images.
 
-If those questions cannot be answered clearly, the work is probably outside current scope.
+Only after this succeeds should the protocol be expanded to more GMT markers.
+
+## Validation stage
+
+Once a genuine feature envelope is frozen, validation moves to independent RepTimeQC examples:
+
+- collect examples where reviewers identified a specific visible QC defect;
+- preserve the reported defect label separately;
+- measure the photo using the frozen protocol, preferably blind to the label;
+- check whether the same defect is supported by the genuine-reference comparison;
+- run accepted/GL cases as negative controls;
+- record misses and false flags and determine whether the failure is calibration, pose, detector, image quality, or an inherently subjective feature.
+
+This stage determines whether a feature should be implemented in code, AI, hybrid form, or withheld.
+
+## What is explicitly paused
+
+Until the GMT control experiment proves the new method, do not restart:
+
+- broad Submariner-family expansion;
+- calibration-platform/contract migrations;
+- open-ended corpus growth;
+- projective/homography research as a goal in itself;
+- authenticity classification;
+- expensive CI jobs whose question can be answered offline.
+
+Historical branches and research documents are reference material only unless their findings are deliberately revalidated under this scope.
