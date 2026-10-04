@@ -29,17 +29,17 @@ jobs:
           from pathlib import Path
           from PIL import Image
           src=Path('datasets/126710BLNR/gen/validation/gen_wex_1TDYtpN/image_05.jpg')
-          dst=Path('docs/calibration/opposing-minute-real/exact-test-photo-gen_wex_1TDYtpN-image_05.jpg')
+          dst=Path('docs/calibration/opposing-minute-real/exact-test-photo-small-gen_wex_1TDYtpN-image_05.jpg')
           dst.parent.mkdir(parents=True, exist_ok=True)
           im=Image.open(src).convert('RGB')
-          im.thumbnail((1000,1000))
-          im.save(dst, quality=88, optimize=True)
+          im.thumbnail((420,420))
+          im.save(dst, quality=55, optimize=True)
           print(dst, im.size)
           PY
       - name: Commit exact preview
         run: |
           git config user.name 'watch-align-research-bot'
           git config user.email 'watch-align-research-bot@users.noreply.github.com'
-          git add docs/calibration/opposing-minute-real/exact-test-photo-gen_wex_1TDYtpN-image_05.jpg
-          git commit -m 'Add exact real-photo test preview'
+          git add docs/calibration/opposing-minute-real/exact-test-photo-small-gen_wex_1TDYtpN-image_05.jpg
+          git commit -m 'Add compact exact real-photo test preview'
           git push origin HEAD:research/opposing-minute-perspective
