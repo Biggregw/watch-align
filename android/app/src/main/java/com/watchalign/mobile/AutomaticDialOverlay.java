@@ -12,10 +12,10 @@ import org.opencv.imgproc.Imgproc;
 
 /**
  * One-photo proof path. The physical black-dial edge is found automatically, then
- * the minor minute track refines the projective pose. A bright transparent outline
- * extracted from the user's loose reference dial is warped into that pose. No dial
- * photograph is shown, and there are no manual 12/6 points, nudges, measurements,
- * tolerances or QC verdicts.
+ * the minor minute track refines the projective pose. A clean bright 126710BLNR
+ * outline, measured from the official straight genuine reference and an independent
+ * real photo, is warped into that pose. No photographic texture, hands, text,
+ * manual 12/6 points, nudges, measurements, tolerances or QC verdicts are shown.
  */
 final class AutomaticDialOverlay {
     static final class Result {
@@ -124,9 +124,9 @@ final class AutomaticDialOverlay {
         Mat src=new Mat(),dst=new Mat(),n=Mat.eye(3,3,CvType.CV_64F),m=null;
         try{
             Utils.bitmapToMat(ref,src);
-            double invR=1.0/BakedDialOverlay.R;
-            n.put(0,0,invR,0,-BakedDialOverlay.CX*invR,
-                    0,invR,-BakedDialOverlay.CY*invR,
+            double invR=1.0/BakedDialOutline.R;
+            n.put(0,0,invR,0,-BakedDialOutline.CX*invR,
+                    0,invR,-BakedDialOutline.CY*invR,
                     0,0,1);
             m=multiply(canonicalToImage,n);
             Imgproc.warpPerspective(src,dst,m,new Size(w,h),Imgproc.INTER_LINEAR,org.opencv.core.Core.BORDER_CONSTANT,new Scalar(0,0,0,0));
