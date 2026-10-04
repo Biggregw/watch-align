@@ -123,6 +123,40 @@ jobs:
           cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Build Phase 3 reporting on the governing snapshot
+        env:
+          IMGUR_CLIENT_ID: ''
+          REDDIT_CLIENT_ID: ''
+          REDDIT_CLIENT_SECRET: ''
+          WATCH_ALIGN_HARNESS_OFFLINE: '1'
+        run: |
+          SNAP="governing-v1-artifact/datasets/watch_calibrator/$MODEL/evidence_snapshot_v1"
+          GEO="datasets/watch_calibrator_replay_governing/$MODEL/geometry"
+          SUMMARY="$GEO/phase3_reporting_summary.json"
+          CAND="governing-v1-artifact/datasets/watch_calibrator/$MODEL/dataset/candidate_summary.csv"
+          python3 tools/watch_calibrator/phase3_reporting.py "$SNAP" \
+            --replay-root datasets/watch_calibrator_replay_governing \
+            --candidate-summary "$CAND" | tee "$SUMMARY"
+          python3 - "$SUMMARY" <<'PY'
+          import json, sys
+          expected_snapshot = 'ca23588a8d6ca2b3c888e101d3f36b2f83776c694a05934be1fa1ba627e94610'
+          expected_calibration = '3ae71e98a533be4e87cbdfc48b0d893118ebe2c6d761eeb34ca981a90fb2b796'
+          report = json.load(open(sys.argv[1], encoding='utf-8'))
+          if report.get('status') != 'PASS':
+              raise SystemExit(f"Phase 3 reporting status is {report.get('status')!r}")
+          if report.get('snapshot_id') != expected_snapshot:
+              raise SystemExit('Phase 3 report is not bound to the governing snapshot')
+          if report.get('calibration_sha256') != expected_calibration:
+              raise SystemExit('Phase 3 report is not bound to the governing calibration bytes')
+          print(json.dumps(report, indent=2, sort_keys=True))
+          PY
+          test -s "$GEO/calibration_outcome_v1.jsonl"
+          test -s "$GEO/coverage_funnel_v1.json"
+          echo '### Governing-snapshot Phase 3 reporting' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload governing proof evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -135,6 +169,9 @@ jobs:
             datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/geometry/*measurement_contract.csv
             datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/geometry/*measurement_contract_v2.jsonl
             datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/geometry/phase2c_equivalence.json
+            datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/geometry/calibration_outcome_v1.jsonl
+            datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/geometry/coverage_funnel_v1.json
+            datasets/watch_calibrator_replay_governing/${{ env.MODEL }}/geometry/phase3_reporting_summary.json
             watch-calibrator-governing-v1.log
             watch-calibrator-governing-phase2c.log
           if-no-files-found: warn
