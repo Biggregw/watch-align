@@ -1,238 +1,128 @@
 # Watch Align QC Principles
 
-Status: governing design direction for new QC work.
+Status: **governing design principles**
 
 ## Product objective
 
-Watch Align has two complementary QC jobs:
+Watch Align answers:
 
-1. **Automated measurement:** quantify simple physical relationships that experienced human reviewers use to recognise visible defects, preferably as dimensionless local ratios or angular deviations measured against directly observed landmarks.
-2. **Human visual assistance:** render an overlay whose construction lines amplify those same defects for the eye. Overlay geometry may deliberately contain global, redundant or long-axis guides even when the automated measurement does not require them.
+> **How does this watch differ from the proven-genuine reference in the features that can be assessed reliably from this photo?**
 
-These jobs share detected landmarks but must not be confused. A useful overlay line is not automatically the best measurement datum, and a simple local automated measurement does not imply that a corresponding global overlay guide should be removed.
+It does not decide whether a watch is genuine or replica.
 
-The objective is not to reconstruct a theoretically perfect canonical watch unless evidence later shows that reconstruction is necessary for a specific validated QC check.
+A result of **no detectable deviation in the assessed features** is valid, including for a very accurate replica.
 
-## Human QC research is the source of feature definitions
+## Reference hierarchy
 
-For each QC feature, use this sequence:
+For each feature keep these concepts separate:
 
-1. Identify defects that experienced reviewers actually report in real QC discussions and examples.
-2. Record how a human recognises the defect by eye, including which nearby features or overlay guides make it obvious.
-3. Separate the **measurement relationship** from the **overlay assistance**.
-4. Translate the human rule into the minimum physical landmarks and simplest candidate dimensionless ratio/angle.
-5. Validate that formulation on suitable frontal images before adding perspective correction or global reconstruction.
-6. Establish the genuine distribution and measurement repeatability before defining pass/fail tolerances.
-7. Test against known replica defects or controlled deviations.
+1. **Nominal genuine geometry** — the best estimate of the intended visual geometry.
+2. **Genuine watch-to-watch variation** — differences among independent genuine physical watches.
+3. **Photo/detector uncertainty** — variation caused by pose, lighting, resolution, sharpening, compression, obstruction and measurement instability.
+4. **Submitted-watch deviation** — how far the specimen differs from the frozen genuine reference after uncertainty is accounted for.
 
-Do not begin from a mathematical primitive already available in the code and subsequently reinterpret its output as a QC feature.
+Do not combine these into one broad tolerance.
 
-Real QC research supports this human-first approach. Reviewers routinely describe individual indices as tilted, shifted, too high/low or off relative to minute markers; use alignment overlays as visual aids; compare rehaut engraving with minute markers; and distinguish image-angle artefacts from real defects. These observations should inform candidate checks, but community comments are evidence of human QC practice, not numerical ground truth.
+## Nominal master first
 
-## Minute track as the primary observed dial reference grid
+Start with the best available proven-genuine near-frontal image for the feature. A clean loose dial can be an especially strong nominal source, but is not mandatory when existing images are adequate.
 
-For Rolex-style dial geometry, the minute track is a particularly strong directly observed reference grid. Human reviewers naturally compare applied markers, the 12 marker, rehaut engraving and bezel alignment with minute-track positions.
+The nominal master defines the zero point. It does not define manufacturing tolerance by itself.
 
-Where appropriate, automated QC should therefore prefer relationships such as:
+## Genuine variation second
 
-- applied marker centre/orientation versus its corresponding and neighbouring minute markers;
-- 12 marker centre/orientation/clearance versus the 60 and neighbouring minute markers;
-- rehaut engraving versus corresponding minute markers;
-- bezel zero/pip versus the 60/dial reference.
+Measure independent genuine physical watches around the nominal master.
 
-A minute-track defect can propagate into multiple dependent relationship failures. That is acceptable. Watch Align should report the measured physical relationship, for example `12 marker is horizontally misaligned with the 60 marker`, rather than over-diagnosing which component was manufactured incorrectly.
+Repeated photos of the same watch estimate measurement/photo uncertainty, not manufacturing variation.
 
-Do not add complexity solely to decide which member of an abnormal physical relationship caused the abnormality unless there is a demonstrated product requirement.
+Source diversity matters. Dealer style, sharpening and camera angle must not be mistaken for watch variation.
 
-## Measurement geometry versus overlay geometry
+## Perspective is contamination until proved otherwise
 
-### Automated measurement
+An outlying measurement on a genuine photo must not automatically widen the genuine envelope.
 
-Automated QC answers: **how far does this physical relationship deviate from the genuine population?**
+Before accepting it as watch variation, inspect related/opposing geometry. Coherent opposite-signed residuals can indicate pose: for example one side of the dial appears expanded while the opposite side appears compressed.
 
-Prefer the simplest directly observed local relationship capable of answering the QC question. Do not introduce dial centre, Hough-circle axes, canonical dials, homographies or global rectification merely because they are available in existing code.
+Where this relationship is validated, use it to correct, pair or exclude the contaminated measurement. Otherwise return unassessable rather than inventing certainty.
 
-### Human overlay
+Prefer simple relational evidence over explicit camera-pose reconstruction when it performs as well or better.
 
-The overlay answers: **how can this deviation be made immediately obvious to a human eye?**
+## Local physical relationships are preferred
 
-The overlay may intentionally use strong global construction geometry and visual redundancy. In particular, a precise orthogonal cross anchored to the minute track is high-value visual assistance:
+Use the simplest directly observed relationship that corresponds to the visible QC feature.
 
-- vertical axis through the 60/top and 30/6 o'clock minute-track positions;
-- horizontal axis through the 45/9 and 15/3 o'clock minute-track positions;
-- intersection at the visual dial centre.
+Examples include:
 
-This cross helps a reviewer perceive displacement, cant and asymmetry at 12, 3, 6 and 9 even when the automated checks for those features use more local relationships. Radial guides, tangent/parallel guides and opposing-position lines may likewise be valuable because they create visual expectations that make small deviations conspicuous.
+- marker centre relative to the corresponding minute marker;
+- marker rotation relative to local minute-track orientation;
+- marker clearance relative to the minute track;
+- opposing-marker residual relationships;
+- date numeral clearances inside the aperture;
+- bezel zero relative to the 12/60 dial reference.
 
-Therefore: **automated QC quantifies what the human eye sees; overlay QC amplifies what the human eye sees.**
+Global rectification, homographies and inferred canonical geometry are supporting tools only. They must demonstrate better held-out accuracy before becoming required.
 
-Do not remove useful overlay geometry merely because the automated measurement no longer depends on it. Conversely, do not force automated measurements to depend on overlay construction geometry solely because it is visually useful.
+## Measurement and visual overlay are separate
 
-## Current human-defined feature map
+Automated measurement asks **how far the physical relationship deviates from genuine reference**.
 
-The following are current design hypotheses derived from direct human input and QC-community research. They are candidate physical formulations, not frozen numerical tolerances.
+The overlay asks **how to make that deviation easy for a human to see**.
 
-### GMT / Rolex-style 12 marker
+They may use different geometry. A useful crosshair or guide line does not have to be the numerical datum, and a good numerical datum does not have to be drawn as the only guide.
 
-**Vertical position**
+## Do not let edge ambiguity contaminate unrelated metrics
 
-Primary human test: visible clearance between the top edge of the 12 triangle/marker and the inner ends of the minute markers immediately above it. This single local gap is often sufficient for the human judgement.
+Marker position, lume boundary, white-gold surround, size and shape are different measurements.
 
-Candidate automated measurement:
+If marker size is sensitive to lighting/thresholding but marker centre is stable, retain the centre measurement and withhold size. Do not invalidate all outputs from one detector simply because one edge definition is unstable.
 
-- detect the marker top edge;
-- detect the local inner/bottom edge of the minute-track markers above it;
-- measure perpendicular/local radial clearance;
-- normalise using an appropriate directly observed local scale;
-- learn the genuine distribution before defining tolerance.
+## Genuine reference is frozen before replica validation
 
-The marker-to-dial-coronet gap may be secondary corroboration, but must not be forced into the primary vertical-position metric unless evidence shows that it adds value.
+Replica evidence never moves the genuine reference range.
 
-**Horizontal alignment**
+After the genuine envelope is frozen, validate it using independent known-defect QC examples and accepted/GL controls.
 
-Primary human test: the 12 marker centreline should align with the centre of the 60/top-middle minute marker.
+Success means useful specimen-specific defect detection with low false flags and sensible abstention. It does **not** require population-level separation of genuine and replica watches.
 
-Candidate automated measurement: lateral displacement of the marker centreline relative to the 60-marker centre, normalised locally. Do not substitute a fitted dial-centre X coordinate for the actually observed 60-marker centre.
+## Implementation is feature-specific
 
-**Rotation / cant**
+After validation, classify each feature as:
 
-Primary human test: imagine a local line through the inner ends of the minute markers immediately above the 12 marker. The relevant top/base orientation of the 12 marker should be parallel to that local reference, and its centreline should therefore be perpendicular to it.
+- deterministic code;
+- vision AI;
+- hybrid code + AI;
+- not reliable enough.
 
-Candidate automated measurement: angular difference between the marker orientation and the directly observed local minute-track orientation.
+A clean geometric relationship should normally become deterministic code. A contextual visual feature may be better served by AI. Do not choose the technology before evidence exists.
 
-**Secondary coronet relationship**
+## Research discipline
 
-A human may extend the 12 marker centreline downward and judge where it points on the printed Rolex coronet. QC-community examples also use the coronet as a visual corroboration for 12-marker alignment. The exact coronet target is not yet frozen and should not be invented without evidence.
+1. Use existing images/artifacts first.
+2. Work on one feature at a time.
+3. Prefer a small offline experiment to CI, APK builds or new infrastructure.
+4. Compare new methods against a known result where possible.
+5. Use held-out images when refining the protocol.
+6. Record exclusions and uncertainty.
+7. End every run with `LESSONS LEARNED`.
+8. Proposed prompt/protocol changes are validated separately before promotion.
+9. Do not silently tune the method until it matches the known answer.
+10. Production code changes happen only after the research rule proves useful.
 
-### Applied hour markers
+## Current control experiment
 
-Human review distinguishes at least three different geometric problems and they must not be collapsed into one generic alignment score:
+GMT is the control because it is already known to work.
 
-1. **Tangential/centre alignment:** the centre of an hour marker should align with its corresponding minute-track marker.
-2. **Local centring/symmetry:** widening the view to neighbouring minute markers should show the hour marker sitting symmetrically within the local minute-track pattern.
-3. **Radial height:** especially for round markers, the marker should have the expected clearance/height relative to an imaginary local line through the inner ends of the surrounding minute markers.
-4. **Rotation/cant:** elongated/baton markers should have the expected orientation relative to the local minute-track geometry.
+Recalibrate one simple existing GMT feature with `docs/CALIBRATION_PROTOCOL.md` using existing proven-genuine images. Compare the independently derived result with the current GMT calibration. Do not change production GMT behaviour during this experiment.
 
-Candidate automated formulations should initially use those local references. Opposing markers or global axes may be tested as corroborating measurements but should not be required merely because they make useful overlay guides.
+Only after the protocol reproduces the control reliably should it expand to more GMT features and then to Submariner.
 
-### Rehaut alignment
+## Governing output language
 
-Rehaut alignment is a separate QC feature and must not contaminate the 12-marker result.
+Prefer feature-level statements such as:
 
-At 12, the engraved rehaut coronet can be compared with the centre of the 60 minute marker. Around the dial, rehaut engraving can be compared with corresponding minute-track positions. Community QC discussions explicitly use minute-marker alignment when assessing rehaut engraving.
+- `within the proven-genuine reference`;
+- `measurable deviation from genuine reference`;
+- `photo does not support a reliable judgement`;
+- `no detectable deviation in the assessed features`.
 
-### Bezel, date, cyclops and hands
-
-Use the strongest immediate physical reference for each feature rather than forcing the minute track everywhere:
-
-- bezel zero/pip: compare with the dial 60/12 reference;
-- date horizontal/vertical position: compare numeral clearances within the date aperture;
-- cyclops position/rotation: compare with the date aperture and appropriate local dial reference;
-- hand alignment: evaluate hands against the relevant hour/minute references at a known display state.
-
-These remain candidate feature definitions until human rules and validation evidence are sufficiently complete.
-
-## First principle: frontal measurement before perspective
-
-Perspective correction is downstream and is explicitly gated behind successful measurement of a high-quality, essentially frontal image.
-
-If Watch Align cannot repeatedly recover the correct physical landmark relationships from a well-aligned image, no perspective model can make the QC system trustworthy. Development must therefore prove the uncorrected frontal measurement system first.
-
-The mandatory order is:
-
-1. Perfect/frontal image measurement: reliably detect the required physical landmarks on carefully selected near-frontal images and calculate the simplest local ratios.
-2. Frontal repeatability: prove that the same image is deterministic and that multiple suitable images of the same physical watch give sufficiently consistent ratios.
-3. Genuine baseline: measure independent genuine watches to establish manufacturing variation for each proven ratio.
-4. Defect sensitivity: demonstrate that known replica defects or controlled geometric deviations move the relevant ratio by more than genuine variation plus measurement uncertainty.
-5. Perspective challenge: only after steps 1-4 pass, introduce progressively off-axis images and quantify how much the proven ratios deteriorate.
-6. Perspective correction: add correction only where step 5 shows a material problem, and accept the correction only if it restores the measurement towards the already-proven frontal reference.
-
-A perspective-corrected image looking visually convincing is not success. The success criterion is recovery of the validated physical landmark ratios.
-
-Until the frontal gate passes, development effort should not be spent improving perspective correction for that feature.
-
-## Image suitability is an input contract
-
-Watch Align's production QC flow receives constrained QC-style photographs: a user deliberately photographing a watch dial for inspection. Replica QC photographs are normally reasonably frontal, show the relevant dial clearly, and expose the features being assessed. That is the input population this system must serve, not arbitrary found photography.
-
-The intended pipeline is:
-
-QC-style image -> suitability/assessability gate -> physical landmark detection -> local dimensionless measurements -> genuine reference/tolerance comparison -> defect findings + human-assist overlay
-
-An image outside the acceptable pose/visibility envelope is not a harder measurement problem to solve with more sophisticated geometry. It is an input to reject as `not assessable / retake photograph`.
-
-Do not diagnose downstream detector or ratio behaviour from an image that has already failed the input contract. First establish that the actual source image, not merely a presentation crop or contact-sheet thumbnail, violates the contract.
-
-Perspective correction may eventually improve measurements within the accepted QC pose envelope. It must never be used to justify accepting photographs that production QC would otherwise reject.
-
-## Governing rules
-
-1. Define each QC feature from the human visual rule first.
-2. Prefer local landmark ratios/angles over absolute pixel distances.
-3. Prefer directly observed neighbouring landmarks over inferred global geometry when both answer the measurement question.
-4. Treat the minute track as a primary observed dial reference grid where it matches human QC practice.
-5. Keep automated measurement geometry and human overlay geometry conceptually separate.
-6. Permit overlay redundancy and global construction guides when they materially improve human perception of defects.
-7. Every automated feature must correspond to a comprehensible physical QC claim.
-8. Report observed relationship failures rather than over-diagnosing which physical component caused them.
-9. Establish genuine distributions before defining pass/fail tolerances.
-10. Measurement repeatability must be substantially tighter than the defect/tolerance the feature is intended to detect.
-11. If acquisition or detection uncertainty is too large, return not-assessable rather than manufacture a pass/fail result.
-12. Do not add projective correction, conic fitting, global rectification or other mathematical machinery unless an experiment demonstrates useful improvement for the specific feature.
-13. Do not rescue an unstable measurement merely by widening thresholds or suppressing inconvenient results.
-14. Keep genuine manufacturing variation, measurement error and genuine-vs-replica separation as distinct quantities.
-15. Do not treat repeated photographs of one physical watch as independent genuine examples.
-16. Frontal landmark measurement is a hard gate. Perspective work cannot substitute for failure at this stage.
-17. Reject unsuitable candidate images explicitly and record the reason.
-18. If a single local visual relationship is sufficient for the human QC judgement, use it as the primary candidate measurement. Additional landmarks must earn their place through evidence.
-19. Do not modify detector or geometry code merely because an individual numerical result looks unusual. Confirm input suitability and physical landmark correctness first, then look for repeatable population-level evidence of a failure mode.
-20. Preserve historical experiments as evidence, but do not let historical implementation choices define new QC features.
-
-## Required evidence for a production QC feature
-
-A feature is eligible for production only after all of the following are demonstrated:
-
-- **Human rule:** what experienced reviewers actually perceive is explicit.
-- **Landmark definition:** the physical points/edges being measured are explicit and reproducible.
-- **Measurement formulation:** the simplest ratio/angle corresponding to that human rule is defined.
-- **Frontal measurement proof:** the feature can be measured reliably without relying on perspective correction.
-- **Repeatability:** bounded realistic captures of the same physical watch produce sufficiently small measurement spread.
-- **Genuine baseline:** multiple independent genuine watches establish manufacturing variation.
-- **Discrimination:** known replica defects or controlled deviations are distinguishable from genuine variation plus measurement error.
-- **Overlay assistance:** where useful, define which visual guides best expose the same defect to a human and validate that they are accurately anchored.
-- **Explainability:** a failure can be reported as an observed physical relationship, for example `12 marker sits proportionally too close to the minute track`.
-
-## Immediate development plan
-
-Do not resume broad detector/perspective development yet.
-
-1. Finish the human-QC feature catalogue using direct human input plus research of real QC discussions. Mark each proposed relationship as `human-confirmed`, `community-supported`, or `candidate/inferred` so hypotheses are not mistaken for established rules.
-2. For each feature, document separately:
-   - defect humans report;
-   - human visual rule;
-   - physical landmarks required;
-   - candidate automated ratio/angle;
-   - best overlay assistance;
-   - source/evidence status;
-   - unresolved questions.
-3. Use the 12 marker as the first implementation proof because its human rules are already comparatively well defined.
-4. Rework the 12-marker experimental measurements around the agreed minute-track-local relationships rather than the old Hough-centre-derived horizontal axis.
-5. Validate on carefully selected frontal inputs, then same-watch repeatability, then an independent genuine population.
-6. Only after the measurement is proven, compare known replica defects and then challenge perspective.
-7. Separately revisit the visual overlay using the same feature catalogue. Preserve strong aids such as the 12-6 / 3-9 cross even when automated measurements use local geometry.
-
-The next implementation must not run ahead of this sequence.
-
-## What is explicitly not frozen
-
-The following must not be treated as established simply because earlier experiments used them:
-
-- current Stage 3 projective feature set;
-- three-point projective radial correction as a required production step;
-- existing experimental guardrail thresholds;
-- old Hough-derived dial-centre axis as the correct datum for local marker alignment;
-- any numerical genuine tolerance not supported by an adequate independent genuine sample;
-- any assumption that more mathematical correction necessarily produces more accurate QC;
-- any assumption that automated measurement and visual overlay must use identical geometry.
-
-Historical experiments should be preserved because they contain useful negative and positive evidence. New work should be evaluated against the principles in this document.
+Do not output `genuine`, `fake`, `perfect replica`, or an authenticity probability.
