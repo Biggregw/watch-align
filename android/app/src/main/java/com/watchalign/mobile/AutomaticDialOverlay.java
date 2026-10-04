@@ -11,11 +11,10 @@ import org.opencv.imgproc.CLAHE;
 import org.opencv.imgproc.Imgproc;
 
 /**
- * One-photo proof path. The physical black-dial edge is found automatically, then
- * the minor minute track refines the projective pose. A clean bright 126710BLNR
- * outline, measured from the official straight genuine reference and an independent
- * real photo, is warped into that pose. No photographic texture, hands, text,
- * manual 12/6 points, nudges, measurements, tolerances or QC verdicts are shown.
+ * One-photo proof path. The physical black-dial edge gives an initial ellipse pose.
+ * Perspective is then solved from EXPLICIT measured minor-minute inner ends, admitted
+ * only as complete opposing pairs. Applied hour markers and the 12 triangle are not
+ * used by the projective fit and remain independent visual checks.
  */
 final class AutomaticDialOverlay {
     static final class Result {
@@ -26,16 +25,19 @@ final class AutomaticDialOverlay {
         final boolean projectiveAccepted;
         final double dialCx,dialCy,dialRadius,ellipseRatio,edgeRms;
         final double fitBefore,fitAfter,holdoutBefore,holdoutAfter;
+        final int detectedTicks,completePairs,inliers;
 
         Result(String reason){
             valid=false;overlay=null;this.reason=reason;twelvePhaseUsed=false;projectiveAccepted=false;
             dialCx=dialCy=dialRadius=ellipseRatio=edgeRms=fitBefore=fitAfter=holdoutBefore=holdoutAfter=Double.NaN;
+            detectedTicks=completePairs=inliers=0;
         }
-        Result(Bitmap overlay,DialEdgeEllipseFit.Fit e,boolean twelve, DialProjectiveRefiner.Result d){
+        Result(Bitmap overlay,DialEdgeEllipseFit.Fit e,boolean twelve, OpposingMinuteHomographyFitter.Result d){
             valid=true;this.overlay=overlay;reason="";twelvePhaseUsed=twelve;projectiveAccepted=d!=null&&d.accepted;
             dialCx=e.cx;dialCy=e.cy;dialRadius=e.meanRadius();ellipseRatio=Math.min(e.axisA,e.axisB)/Math.max(e.axisA,e.axisB);edgeRms=e.rmsPx;
-            fitBefore=d==null?Double.NaN:d.fitBefore;fitAfter=d==null?Double.NaN:d.fitAfter;
-            holdoutBefore=d==null?Double.NaN:d.holdoutBefore;holdoutAfter=d==null?Double.NaN:d.holdoutAfter;
+            fitBefore=d==null?Double.NaN:d.seedRmsPx;fitAfter=d==null?Double.NaN:d.fittedRmsPx;
+            holdoutBefore=holdoutAfter=Double.NaN;
+            detectedTicks=d==null?0:d.detectedTicks;completePairs=d==null?0:d.completePairs;inliers=d==null?0:d.inliers;
         }
     }
 
@@ -43,8 +45,9 @@ final class AutomaticDialOverlay {
 
     static Result build(Bitmap input){
         if(input==null)return new Result("no candidate image");
-        Mat rgba=new Mat(),bgr=new Mat(),gray=new Mat(),enh=new Mat(),edges=new Mat();
+        Mat rgba=new Mat(),bgr=new Mat(),gray=new Mat(),enh=new Mat();
         Mat h0=null,h=null;
+        OpposingMinuteHomographyFitter.Result pairFit=null;
         try{
             Utils.bitmapToMat(input,rgba);
             Imgproc.cvtColor(rgba,bgr,Imgproc.COLOR_RGBA2BGR);
@@ -57,9 +60,8 @@ final class AutomaticDialOverlay {
             if(edge.points<70||edge.rmsPx>Math.max(5.0,edge.meanRadius()*0.030))
                 return new Result("dial boundary fit was not stable enough");
 
-            // Establish only the clock phase automatically. The triangle/60 detector is
-            // never used for scale, centre or projective terms. If it cannot resolve 12,
-            // fall back to the normal upright-photo prior used by this POC.
+            // Local 12 establishes clock phase only. It is never used to change scale,
+            // centre or projective terms, so the triangle cannot align itself.
             boolean twelveUsed=false;
             double targetDx=0.0,targetDy=-1.0;
             try{
@@ -78,22 +80,24 @@ final class AutomaticDialOverlay {
             Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);
             CLAHE clahe=Imgproc.createCLAHE(2.0,new Size(8,8));
             clahe.apply(gray,enh);
-            Imgproc.GaussianBlur(enh,enh,new Size(3,3),0.8);
-            Imgproc.Canny(enh,edges,45,130);
+            Imgproc.GaussianBlur(enh,enh,new Size(3,3),0.65);
 
-            DialProjectiveRefiner.MatResult refined=DialProjectiveRefiner.refineWithDiagnostics(edges,h0);
-            DialProjectiveRefiner.Result diag=refined==null?null:refined.diagnostics;
-            h=refined==null?h0.clone():refined.homography;
-            if(h==null||h.empty())return new Result("minute-track perspective fit failed");
+            // IMPORTANT: unlike the old annular distance-transform refiner, this
+            // explicitly locates each minor minute tick and fits only complete
+            // opposing pairs. No generic outer-ring edges enter this homography.
+            pairFit=OpposingMinuteHomographyFitter.fit(enh,h0);
+            h=(pairFit!=null&&pairFit.homography!=null)?pairFit.homography.clone():h0.clone();
+            if(h==null||h.empty())return new Result("opposing-minute perspective fit failed");
 
             Bitmap overlay=warpOutline(input.getWidth(),input.getHeight(),h);
             if(overlay==null)return new Result("dial outline rendering failed");
-            return new Result(overlay,edge,twelveUsed,diag);
+            return new Result(overlay,edge,twelveUsed,pairFit);
         }catch(Throwable t){
             return new Result("automatic overlay failed: "+t.getClass().getSimpleName());
         }finally{
+            if(pairFit!=null&&pairFit.homography!=null)pairFit.homography.release();
             if(h!=null)h.release();if(h0!=null)h0.release();
-            edges.release();enh.release();gray.release();bgr.release();rgba.release();
+            enh.release();gray.release();bgr.release();rgba.release();
         }
     }
 
