@@ -1,0 +1,10 @@
+{
+  "schema": "watch_align.reason_catalogue",
+  "catalogue_id": "calib.reasons",
+  "version": 1,
+  "namespace": "calib",
+  "reasons": [
+    {"code": "calib.obvious_within_watch_outlier", "class": "policy", "meaning": "A reliability-accepted genuine measurement was excluded from the retained calibration envelope as the one obvious photo-level outlier within a sufficiently repeated physical watch.", "contract_valid": true},
+    {"code": "calib.replica_stress_only", "class": "policy", "meaning": "A reliability-accepted replica measurement is retained for QC-utility stress reporting but is not admitted to the genuine-derived calibration envelope.", "contract_valid": true}
+  ]
+}
