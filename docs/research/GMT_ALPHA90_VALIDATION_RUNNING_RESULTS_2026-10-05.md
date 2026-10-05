@@ -30,14 +30,34 @@ Replacement thread `1ur0ic4`: repeated **UNASSESSABLE**. Alpha90 rejected the mi
 
 ### RL-4 — VSF Pepsi 126710, 12 and 6 reported not centred
 Thread: `1vxcmp9`
-Result: **FAIL-FOLLOW, provisional and important**.
-Observation from accepted Alpha90 overlay: the yellow fixed-master 12 triangle and 6 baton appear to coincide extremely closely with the candidate features. The known reported 12/6 positional defects are not clearly exposed. Round markers and minute track are also broadly coherent, so this cannot be dismissed simply as an obviously bad global fit.
+Static-screenshot result: **FAIL-FOLLOW, provisional**.
+Observation from the accepted Alpha90 still image: the yellow fixed-master 12 triangle and 6 baton appeared to coincide extremely closely with the candidate features. The known reported 12/6 positional defects were not obvious in the static screenshot. Round markers and minute track were also broadly coherent, so this could not simply be dismissed as an obviously bad global fit.
+
+Important follow-up observation from the user on the phone:
+
+- manually turning the overlay on and off produced clearly visible apparent movement/difference in the borderline feature;
+- therefore the static screenshot alone may be under-sensitive for small residuals;
+- the existing bold overlay may still preserve the residual even when a still image makes it look nearly coincident;
+- preserve the original provisional `FAIL-FOLLOW` label for auditability, but do not treat it as a confirmed architecture failure until the frozen round is re-reviewed using blink/close-up inspection and defect-class analysis.
 
 Interpretation to carry forward without changing Alpha90:
-- this is the first clear case where the validation outcome conflicts with the independently reported RL defect;
-- possibilities include pose absorption/contamination, the defect being defined relative to a reference not represented by the current master, master-geometry error, or bold rendering masking a very small residual;
+- this remains the first case where a static screenshot conflicts with the independently reported RL defect;
+- possible explanations include visualisation masking, the defect being defined relative to a reference not represented by the current master, master-geometry error, or pose absorption/contamination;
+- the user's blink observation materially increases the likelihood that visualisation sensitivity is part of the issue;
 - do not explain it away or retune the model until the remaining locked cases are run.
+
+## Product learning captured during validation
+
+The user's observation that small residuals can appear as movement when toggling the fixed overlay is now a planned product concept rather than an incidental behaviour. After the frozen round, the intended direction is:
+
+- main full-watch overlay for overall coherence;
+- enlarged close-ups below the main image for borderline/suspicious features;
+- brief blink/toggle inspection on those close-ups;
+- later deterministic edge-normal residual measurement that quantifies the same apparent movement without feeding it back into pose;
+- future fixed-master text/coronet layers for placement checks such as floating `m` or tilted coronet.
+
+The detailed post-validation implementation plan is `docs/research/GMT_POST_ALPHA90_IMPLEMENTATION_PLAN_2026-10-05.md`.
 
 ## Current status
 
-The fixed-master concept has shown both promising passes and now one meaningful failure. Continue the locked validation queue unchanged. The purpose of the frozen round is to discover exactly this kind of limitation before any new fitting or measurement logic is introduced.
+The fixed-master concept has shown strong passes, weak/visualisation-limited passes, correct fail-closed behaviour, and one static-image conflict that now has a counter-observation from blink inspection. Continue the locked validation queue unchanged. The purpose of the frozen round is to discover exactly these limitations before any new fitting, visualisation or measurement logic is introduced.
