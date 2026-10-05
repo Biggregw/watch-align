@@ -5,16 +5,23 @@ import android.graphics.Bitmap;
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.CLAHE;
 import org.opencv.imgproc.Imgproc;
 
 /**
- * One-photo proof path. The physical black-dial edge gives an initial ellipse pose.
- * Perspective is then solved from EXPLICIT measured minor-minute inner ends, admitted
- * only as complete opposing pairs. Applied hour markers and the 12 triangle are not
- * used by the projective fit and remain independent visual checks.
+ * Strict one-photo proof path.
+ *
+ * Pose evidence is restricted to:
+ *   1) the physical black-dial boundary, and
+ *   2) the 48 printed minor-minute ticks, admitted only as complete opposite pairs.
+ *
+ * Applied hour markers, the 12 triangle, date/cyclops, hands and text are never used
+ * for centre, scale, clock phase, rotation or perspective. Canonical 12 is locked to
+ * image-up in this strict proof build. This intentionally prefers an obvious failure
+ * on a rotated source photo to fitting a judged dial feature and hiding its defect.
  */
 final class AutomaticDialOverlay {
     static final class Result {
@@ -32,8 +39,8 @@ final class AutomaticDialOverlay {
             dialCx=dialCy=dialRadius=ellipseRatio=edgeRms=fitBefore=fitAfter=holdoutBefore=holdoutAfter=Double.NaN;
             detectedTicks=completePairs=inliers=0;
         }
-        Result(Bitmap overlay,DialEdgeEllipseFit.Fit e,boolean twelve, OpposingMinuteHomographyFitter.Result d){
-            valid=true;this.overlay=overlay;reason="";twelvePhaseUsed=twelve;projectiveAccepted=d!=null&&d.accepted;
+        Result(Bitmap overlay,DialEdgeEllipseFit.Fit e, OpposingMinuteHomographyFitter.Result d){
+            valid=true;this.overlay=overlay;reason="";twelvePhaseUsed=false;projectiveAccepted=d!=null&&d.accepted;
             dialCx=e.cx;dialCy=e.cy;dialRadius=e.meanRadius();ellipseRatio=Math.min(e.axisA,e.axisB)/Math.max(e.axisA,e.axisB);edgeRms=e.rmsPx;
             fitBefore=d==null?Double.NaN:d.seedRmsPx;fitAfter=d==null?Double.NaN:d.fittedRmsPx;
             holdoutBefore=holdoutAfter=Double.NaN;
@@ -60,21 +67,10 @@ final class AutomaticDialOverlay {
             if(edge.points<70||edge.rmsPx>Math.max(5.0,edge.meanRadius()*0.030))
                 return new Result("dial boundary fit was not stable enough");
 
-            // Local 12 establishes clock phase only. It is never used to change scale,
-            // centre or projective terms, so the triangle cannot align itself.
-            boolean twelveUsed=false;
-            double targetDx=0.0,targetDy=-1.0;
-            try{
-                GmtTwelveLandmarkAnalyzer.Result twelve=GmtTwelveLandmarkAnalyzer.analyse(bgr,edge.cx,edge.cy,edge.meanRadius());
-                if(twelve!=null&&twelve.valid&&twelve.geometry!=null&&twelve.geometry.tick60!=null){
-                    double dx=twelve.geometry.tick60[0]-edge.cx,dy=twelve.geometry.tick60[1]-edge.cy;
-                    if(Math.hypot(dx,dy)>0.4*edge.meanRadius()){
-                        targetDx=dx;targetDy=dy;twelveUsed=true;
-                    }
-                }
-            }catch(Throwable ignored){}
-
-            h0=ellipsePose(edge,targetDx,targetDy);
+            // CRITICAL: no triangle/hour marker is consulted here. The strict proof locks
+            // canonical 12 to image-up. Minor ticks may refine the pose, but judged dial
+            // features can never rotate or translate the master onto themselves.
+            h0=ellipsePose(edge,0.0,-1.0);
             if(h0==null)return new Result("ellipse pose could not be constructed");
 
             Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);
@@ -82,16 +78,28 @@ final class AutomaticDialOverlay {
             clahe.apply(gray,enh);
             Imgproc.GaussianBlur(enh,enh,new Size(3,3),0.65);
 
-            // IMPORTANT: unlike the old annular distance-transform refiner, this
-            // explicitly locates each minor minute tick and fits only complete
-            // opposing pairs. No generic outer-ring edges enter this homography.
             pairFit=OpposingMinuteHomographyFitter.fit(enh,h0);
+
+            // A generic homography can otherwise absorb too much geometry. Keep a minute
+            // fit only if it also remains physically consistent with the independently
+            // measured black-dial ellipse and stays within modest projective bounds.
+            if(pairFit!=null&&pairFit.accepted&&pairFit.homography!=null){
+                String guard=physicalGuardReason(pairFit.homography,edge);
+                if(guard!=null){
+                    OpposingMinuteHomographyFitter.Result old=pairFit;
+                    pairFit=new OpposingMinuteHomographyFitter.Result(
+                            h0.clone(),false,old.detectedTicks,old.completePairs,old.inliers,
+                            old.seedRmsPx,old.fittedRmsPx,guard);
+                    if(old.homography!=null)old.homography.release();
+                }
+            }
+
             h=(pairFit!=null&&pairFit.homography!=null)?pairFit.homography.clone():h0.clone();
             if(h==null||h.empty())return new Result("opposing-minute perspective fit failed");
 
             Bitmap overlay=warpOutline(input.getWidth(),input.getHeight(),h);
             if(overlay==null)return new Result("dial outline rendering failed");
-            return new Result(overlay,edge,twelveUsed,pairFit);
+            return new Result(overlay,edge,pairFit);
         }catch(Throwable t){
             return new Result("automatic overlay failed: "+t.getClass().getSimpleName());
         }finally{
@@ -101,8 +109,54 @@ final class AutomaticDialOverlay {
         }
     }
 
-    /** Map the canonical unit dial onto the fitted ellipse, choosing the free circle
-     * rotation so canonical 12 points along the detected local-12 direction. */
+    /**
+     * Reject minute solutions that stop looking like the independently fitted physical
+     * dial. This does not use any applied marker. It prevents a low-RMS minute fit from
+     * purchasing that RMS with an implausible global warp.
+     */
+    private static String physicalGuardReason(Mat fitted,DialEdgeEllipseFit.Fit e){
+        double[] m=new double[9];
+        fitted.get(0,0,m);
+        if(m.length<9||!Double.isFinite(m[8])||Math.abs(m[8])<1e-9)
+            return "minute fit rejected by physical-pose guard";
+        double s=m[8];for(int i=0;i<9;i++)m[i]/=s;
+
+        // Canonical radius is one, so h31/h32 directly express denominator change
+        // across the dial. Deliberately conservative for this proof build.
+        double projective=Math.hypot(m[6],m[7]);
+        if(!Double.isFinite(projective)||projective>0.18)
+            return "minute fit rejected: projective warp exceeded proof limit";
+
+        Point c=project(fitted,0,0);
+        if(c==null||Math.hypot(c.x-e.cx,c.y-e.cy)>0.055*e.meanRadius())
+            return "minute fit rejected: projected centre moved too far";
+
+        double edgeRms=ellipseConformanceRms(fitted,e);
+        double limit=Math.max(2.5,e.rmsPx*1.35+0.75);
+        if(!Double.isFinite(edgeRms)||edgeRms>limit)
+            return "minute fit rejected: projected dial no longer matched physical edge";
+        return null;
+    }
+
+    /** Distance of the fitted homography's projected unit circle from the measured ellipse. */
+    private static double ellipseConformanceRms(Mat h,DialEdgeEllipseFit.Fit e){
+        double a=Math.toRadians(e.angleDeg),ca=Math.cos(a),sa=Math.sin(a);
+        double ss=0;int n=0;
+        for(int i=0;i<120;i++){
+            double t=2.0*Math.PI*i/120.0;
+            Point p=project(h,Math.cos(t),Math.sin(t));
+            if(p==null)continue;
+            double dx=p.x-e.cx,dy=p.y-e.cy;
+            double u= ca*dx+sa*dy;
+            double v=-sa*dx+ca*dy;
+            double rho=Math.sqrt((u*u)/(e.axisA*e.axisA)+(v*v)/(e.axisB*e.axisB));
+            double d=(rho-1.0)*e.meanRadius();
+            if(Double.isFinite(d)){ss+=d*d;n++;}
+        }
+        return n<80?Double.NaN:Math.sqrt(ss/n);
+    }
+
+    /** Map the canonical unit dial onto the fitted ellipse with a supplied external phase direction. */
     private static Mat ellipsePose(DialEdgeEllipseFit.Fit e,double targetDx,double targetDy){
         double a=Math.toRadians(e.angleDeg),ca=Math.cos(a),sa=Math.sin(a);
         double a00=ca*e.axisA,a01=-sa*e.axisB;
@@ -121,6 +175,13 @@ final class AutomaticDialOverlay {
         Mat out=Mat.eye(3,3,CvType.CV_64F);
         out.put(0,0,h00,h01,e.cx,h10,h11,e.cy,0,0,1);
         return out;
+    }
+
+    private static Point project(Mat h,double x,double y){
+        double[] m=new double[9];h.get(0,0,m);
+        double w=m[6]*x+m[7]*y+m[8];
+        if(Math.abs(w)<1e-9)return null;
+        return new Point((m[0]*x+m[1]*y+m[2])/w,(m[3]*x+m[4]*y+m[5])/w);
     }
 
     private static Bitmap warpOutline(int w,int h,Mat canonicalToImage){
