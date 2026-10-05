@@ -72,6 +72,44 @@ Six smoke fixtures were processed:
 
 This is useful evidence that the batch harness preserves Alpha90's fail-closed behaviour. It is not evidence that a genuine watch is defective.
 
+## Review learning from the enlarged automated pool
+
+The larger automated pool exposed two different phenomena that must not be confused.
+
+### 1. Local marker rotation is the desired signal
+
+A known RL example such as `EXT_RL_BLRO_ARF_00` can have a coherent full-dial projection while the real 6 baton is visibly rotated relative to the fixed yellow genuine baton. That is exactly the behaviour the proof is trying to establish. Do not classify that local disagreement as a pose failure merely because the close-up shows rotation.
+
+### 2. Global clock-phase mismatch is a separate proof-build limitation
+
+Other accepted photographs can be rolled substantially in the image while Alpha90's canonical 12 remains near image-up. `EXT_RL_BLRO_ARF_01` is an example in which the full-watch composite clearly shows the projected 12/6 axis at a different global clock phase from the photographed watch.
+
+This is consistent with the frozen proof implementation: canonical 12 is seeded to image-up and the 60-position minute system is cyclically repetitive. Therefore deterministic `ACCEPTED` is not, by itself, proof that absolute 12-o'clock phase is correct on an arbitrarily rolled source photograph.
+
+The visual review prompt now requires a mandatory phase pre-check before any local marker verdict:
+
+- `PHASE OK`;
+- `GLOBAL_PHASE_MISMATCH`;
+- `PHASE INDETERMINATE`.
+
+A global-phase mismatch invalidates that image for local-marker conclusions. It does not mean the watch has a defect.
+
+A short-lived attempt to turn this into an automatic phase score was deliberately removed because the repetitive 6-degree minute pattern produced ambiguous competing phase scores. No unvalidated automatic phase threshold is part of the harness.
+
+### 3. The original close-up crop logic was misleading under perspective/roll
+
+The first batch harness placed each close-up using an image-space `hour * 30 degrees` direction from the fitted dial centre. That does not necessarily coincide with the location of the already-projected master marker after the perspective transform. It could therefore make a valid full-watch overlay look absurd in a local crop, for example showing a round marker while the expected 6 baton sat to one side.
+
+This was a test-presentation defect, not an Alpha90 production change.
+
+The harness now finds yellow projected-master marker pixels inside the marker annulus and centres the close-up on that already-projected genuine feature. Candidate pixels are never used to choose the crop centre, so a defective candidate marker cannot pull the crop or the master toward itself. Candidate-only and overlay-on views use the identical crop rectangle.
+
+Current test-only crop-fix commit:
+
+`f86c3685349365af21a92e5fe84583a3863e3f18`
+
+The corresponding CI run is intended only to regenerate a trustworthy review pack. Alpha90 production source remains frozen and unchanged.
+
 ## What this proves
 
 The automation itself is now viable:
@@ -85,7 +123,9 @@ The automation itself is now viable:
 
 ## What it does not prove
 
-The six fallback fixtures are only an automation smoke test. They do not replace the locked Alpha90 validation queue and must not be counted as completion of the frozen 5 RL + 5 GL round unless a fixture is independently promoted under the validation protocol.
+The fallback fixtures and expanded curated pool do not replace the locked Alpha90 validation queue and must not be counted as completion of the frozen 5 RL + 5 GL round unless a fixture is independently promoted under the validation protocol.
+
+`ACCEPTED` means Alpha90 produced a deterministic overlay. It does not automatically mean the absolute clock phase is suitable for local-marker QC. Full-watch phase coherence must be checked first in this proof build.
 
 The direct Reddit acquisition issue must also not be fixed by changing Alpha90. Preferred next options are:
 
@@ -95,4 +135,4 @@ The direct Reddit acquisition issue must also not be fixed by changing Alpha90. 
 
 ## Next implementation step
 
-Keep frozen Alpha90 production code unchanged. Use this harness for the remainder of validation once stable source images are available. After the frozen round, the same review-pack structure can become the prototype for product close-ups and blink inspection, followed later by signed edge-normal residual measurements.
+Keep frozen Alpha90 production code unchanged. Regenerate the enlarged review pack with master-centred close-ups, perform the mandatory full-watch phase pre-check, and only then compare local marker residuals between genuine, GL, borderline and independently known RL controls. After the frozen round, the same review-pack structure can become the prototype for product close-ups and blink inspection, followed later by signed edge-normal residual measurements.
