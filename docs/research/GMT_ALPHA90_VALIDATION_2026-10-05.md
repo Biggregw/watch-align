@@ -98,30 +98,75 @@ The initial pattern is encouraging but not yet enough to change production logic
 
 This is evidence for the concept, not proof. Continue validation before changing the algorithm.
 
-## Next validation round
+## Locked ten-case validation queue
 
-Before changing any Alpha90 code, collect and run at least:
+These cases were selected before running them through Alpha90. Do not replace a case because Alpha90 gives an inconvenient result. A case may be replaced only if the source image is unavailable or too poor for Alpha90, and that failed attempt should be recorded as `UNASSESSABLE` first.
 
-- 5 additional clear RL GMT examples with independently documented visible alignment defects;
-- 5 additional GL/borderline GMT examples, including clean controls and small accepted deviations.
+### Additional clear-RL cases
 
-Prioritise direct Reddit-hosted images or otherwise accessible full-resolution images. Avoid depending on Imgur-only albums where possible because availability has been unreliable during this session.
+**RL-1 — Clean Pepsi 126710BLRO, obvious CCW 6 baton**  
+Thread: https://www.reddit.com/r/RepTimeQC/comments/1ktlzo1  
+Ground truth: multiple commenters independently call the 6 badly canted and recommend RL.  
+Target: 6 baton rotation.
 
-Desired RL defect mix:
+**RL-2 — Clean Pepsi 126710BLRO, rotated-left 6 baton**  
+Thread: https://www.reddit.com/r/RepTimeQC/comments/1jawk9m  
+Ground truth: OP and replies identify the crooked 6; OP explicitly RLs for the 6 marker.  
+Target: second independent 6-baton rotation case.
 
-- rotated 6 baton;
-- rotated/off-centre 12 triangle;
-- displaced 9 baton or individual round marker;
-- whole-dial/marker-set rotational concern;
-- bezel insertion/printing/alignment issue.
+**RL-3 — Clean GMT 126710GRNR, tilted 12 triangle**  
+Thread: https://www.reddit.com/r/RepTimeQC/comments/1gme7m2  
+Ground truth: commenters identify the 12 triangle as tilted and recommend RL, although one comment notes the source picture itself is not perfectly straight.  
+Target: 12 triangle rotation plus perspective robustness.
 
-Desired GL mix:
+**RL-4 — VSF Pepsi 126710, 12 and 6 not centred**  
+Thread: https://www.reddit.com/r/RepTimeQC/comments/1vxcmp9  
+Ground truth: replies call for RL, specifically citing 12 not centred and 6 not centred.  
+Target: positional rather than purely angular error.
 
-- very clean GL;
-- slight 6 or 12 deviation still accepted;
-- perspective-related apparent defect that resolves when viewed correctly;
-- visually busy photo that should either remain acceptable or fail closed;
-- strong replica with near-genuine geometry.
+**RL-5 — VSF Batgirl 126710BLNR, 6 CCW/left and 12 left**  
+Thread: https://www.reddit.com/r/RepTimeQC/comments/1us2fqk  
+Ground truth: multiple replies say the 6 is visibly wrong/awful and recommend RL; OP then RLs.  
+Target: strong 6 defect with a smaller 12 deviation.
+
+### Additional GL / borderline cases
+
+**GL-1 — VSF Pepsi 126710BLRO, very clean easy GL**  
+Thread: https://www.reddit.com/r/RepTimeQC/comments/1rb69zb  
+Ground truth: photos attached directly to the post; multiple independent comments call it easy GL with nothing improperly done.  
+Target: strong clean negative control.
+
+**GL-2 — VSF Pepsi 126710, clean direct-post GL**  
+Thread: https://www.reddit.com/r/RepTimeQC/comments/1rle36t  
+Ground truth: commenter calls it an excellent VSF V3 Pepsi and GL; OP had wondered whether 6 was slightly off.  
+Target: apparently slight 6 concern that should not become an RL-level mismatch.
+
+**GL-3 — VSF Sprite 126720, tiny 3 tilt but GL**  
+Thread: https://www.reddit.com/r/RepTimeQC/comments/1vqizfq  
+Ground truth: experienced reply straightens the photo, finds 12 acceptable and only a tiny 3 clockwise tilt, then recommends GL.  
+Target: perspective correction plus small accepted local deviation. Note that the Sprite is left-crown architecture, so use only if the current Alpha90 canonical orientation/model route accepts the image without silently assuming right-crown GMT geometry.
+
+**GL-4 — VSF Batman 126710BLNR, claimed off-centre triangle but consensus GL**  
+Thread: https://www.reddit.com/r/RepTimeQC/comments/1wldksl  
+Ground truth: OP worried about 8 and 12, but multiple replies say the triangle is acceptable and recommend GL.  
+Target: false-positive control for a user-perceived 12 issue.
+
+**GL-5 — VF Bruce Wayne 126710GRNR, 6 concern judged acceptable**  
+Thread: https://www.reddit.com/r/RepTimeQC/comments/1t5717n  
+Ground truth: OP worried about 6/angle; experienced reviewer says indices are acceptably aligned and recommends GL.  
+Target: borderline 6-control from a different factory.
+
+## Rules for running the ten cases
+
+For each case:
+
+1. Use the clearest reasonably face-on full-watch photo available in the post.
+2. Do not crop so tightly that the solver loses the full minute track; ordinary phone screenshot UI is acceptable only if the watch retains enough resolution.
+3. Run the exact frozen Alpha90 APK.
+4. If Alpha90 refuses the photo, record `UNASSESSABLE` rather than selecting a worse fallback image simply to force an overlay.
+5. Capture one screenshot at the default bold overlay opacity.
+6. Judge the overlay before rereading the detailed Reddit comments when practical.
+7. Record only visible differences supported by the fixed master. Do not infer authenticity.
 
 ## Rules for reading the overlay
 
