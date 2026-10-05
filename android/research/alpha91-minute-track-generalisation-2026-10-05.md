@@ -24,6 +24,19 @@ The previously documented `POOL_GEN_HO_02` sub-pixel pass remains about **1.13 p
 
 These failures are sector-dependent rather than a uniform scale/rotation error. Visual inspection shows the failing photos differ in lighting, blur, hand interference and local tick contrast. The detector sometimes selects nearby radial/reflection structure as the minute-tick evidence and then MAGSAC fits a self-consistent but wrong local geometry.
 
+## Global 60-tick sequence follow-up
+
+A second bounded experiment replaced independent local tick choices with one ordered minute-track sequence in a polar/annular representation. Peaks were constrained to preserve circular order and near-6-degree spacing, then radial endpoints were estimated and one homography fitted from the resulting sequence.
+
+This helped materially on two controls:
+
+- `EXT_EXT_GEN_BLRO_WEX_02`: about **1.58 px mean**, **1.44 px median**, **3.34 px max**.
+- `POOL_GEN_HO_01`: about **2.03 px mean**, **1.72 px median**, **6.76 px max**.
+
+However `EXT_EXT_GEN_BLRO_WEX_01` still failed at about **7.24 px mean**. Inspection showed that its global sequence can choose the wrong nearby minute identity / radial endpoint under the particular reflection and hand pattern even while preserving a superficially regular 60-tick sequence.
+
+So global ordering is necessary, but not sufficient by itself.
+
 ## Important interpretation
 
 This **does not reject the 2D planar approach**.
@@ -34,19 +47,21 @@ The earlier oracle already demonstrated that these same genuine photos admit a l
 
 Do not tune thresholds separately for each photo.
 
-The next solver should make minute-track assignment global rather than local:
+The next solver should keep the global sequence idea but strengthen tick identity and endpoint evidence:
 
 1. rectify coarsely by the dial conic;
 2. construct one polar/annular representation of the full minute track;
-3. recover the complete ordered 60-tick sequence together, enforcing monotonic order and near-6-degree spacing;
-4. estimate each tick centreline/endpoints from that globally assigned sequence;
-5. fit one robust homography from those correspondences;
-6. optionally perform a small edge-distance refinement after the global assignment is frozen.
+3. recover the ordered 60-tick sequence globally, enforcing circular order and near-6-degree spacing;
+4. score each candidate tick using both radial-edge orientation and the full bright-stroke profile, not one local maximum;
+5. use the coarse 12-direction cue only to choose the correct 6-degree sequence branch, never for precision fitting;
+6. reject ambiguous tick endpoints rather than forcing them;
+7. fit one robust homography from the surviving globally assigned correspondences;
+8. optionally perform a small edge-distance refinement after the sequence is frozen.
 
-The key change is that no individual tick should be allowed to jump independently to a nearby reflection/hand edge.
+The key requirement is that no individual tick should be allowed to jump independently to a reflection/hand edge, and the complete sequence must not be allowed to shift by one minute branch.
 
 ## Decision
 
-**Continue with flat 2D Alpha91, but replace independent local tick matching with global 60-tick sequence assignment before any Android integration.**
+**Continue with flat 2D Alpha91.** The perspective model is sufficiently proven. The remaining research target is robust global minute-track correspondence, particularly branch selection and endpoint rejection, before any Android integration.
 
 Do not add depth, bezel geometry, sapphire modelling or QC thresholds at this stage.
