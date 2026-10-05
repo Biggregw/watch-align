@@ -107,7 +107,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run exact Alpha90 path over all fixtures
+      - name: Run exact Alpha90 path and blind selective review over all fixtures
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -115,7 +115,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            bash -lc 'cd android; set +e; bash ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.Alpha90BatchValidationTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace; TEST_EXIT=$?; mkdir -p alpha90-batch-out; PKG=com.watchalign.mobile.poc; echo "Installed package check: $PKG"; if adb shell pm path "$PKG" >/dev/null 2>&1; then adb exec-out run-as "$PKG" tar cf - files/alpha90-batch > alpha90-batch-out/alpha90-batch.tar; tar xf alpha90-batch-out/alpha90-batch.tar -C alpha90-batch-out || true; if [ -f alpha90-batch-out/files/alpha90-batch/results.csv ]; then echo "===== Alpha90 results ====="; cat alpha90-batch-out/files/alpha90-batch/results.csv; fi; fi; exit $TEST_EXIT'
+            bash -lc 'cd android; set +e; bash ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.Alpha90SelectiveReportingTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace; TEST_EXIT=$?; mkdir -p alpha90-batch-out; PKG=com.watchalign.mobile.poc; echo "Installed package check: $PKG"; if adb shell pm path "$PKG" >/dev/null 2>&1; then adb exec-out run-as "$PKG" tar cf - files/alpha90-batch > alpha90-batch-out/alpha90-batch.tar; tar xf alpha90-batch-out/alpha90-batch.tar -C alpha90-batch-out || true; if [ -f alpha90-batch-out/files/alpha90-batch/results.csv ]; then echo "===== Alpha90 results ====="; cat alpha90-batch-out/files/alpha90-batch/results.csv; fi; if [ -f alpha90-batch-out/files/alpha90-batch/selective_report.csv ]; then echo "===== Selective review summary ====="; head -80 alpha90-batch-out/files/alpha90-batch/selective_report.csv; fi; fi; exit $TEST_EXIT'
 
       - name: Upload Alpha90 review pack
         if: always()
