@@ -16,12 +16,17 @@ import android.graphics.Path;
  * Only stable dial geometry is drawn: dial edge, 60 minute ticks, eight round
  * surrounds, 6/9 batons and the 12 triangle. No hands, text, centre stack,
  * date/cyclops, reflections or photographic texture can contaminate the overlay.
+ *
+ * Alpha86 deliberately uses a thin stroke so small marker rotation defects are
+ * not hidden by the overlay itself. The 6/9 batons also carry a thin canonical
+ * centre axis, making a rotated applied baton visibly cross the ideal radial axis.
  */
 final class BakedDialOutline {
     static final int W=1024,H=1024;
     static final double CX=512.0,CY=512.0,R=480.0;
-    // Magenta deliberately contrasts with white lume, black dial, steel and blue bezel.
     private static final int BRIGHT=Color.rgb(255,0,180);
+    private static final float OUTLINE_STROKE=1.45f;
+    private static final float AXIS_STROKE=1.10f;
 
     private BakedDialOutline(){}
 
@@ -32,20 +37,14 @@ final class BakedDialOutline {
 
         Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
         p.setStyle(Paint.Style.STROKE);
-        p.setStrokeWidth(3.8f);
+        p.setStrokeWidth(OUTLINE_STROKE);
         p.setStrokeCap(Paint.Cap.ROUND);
         p.setStrokeJoin(Paint.Join.ROUND);
         p.setColor(BRIGHT);
         p.setAlpha(255);
 
-        // Physical black-dial edge.
         c.drawCircle((float)CX,(float)CY,(float)(R*Gmt126710BlnrMaster.DIAL_EDGE_R),p);
 
-        // All 60 minute ticks.
-        // Gmt126710BlnrMaster.MINUTE_TRACK_R is the INNER tick end, not the tick centre.
-        // The previous proof incorrectly drew +/-0.025R around it, which extended every
-        // tick too far inward. Keep the inner end fixed and draw only outward to the
-        // visible outer minute-track end.
         final double tickInner=Gmt126710BlnrMaster.MINUTE_TRACK_R;
         final double tickOuter=0.972;
         for(int i=0;i<60;i++){
@@ -58,7 +57,6 @@ final class BakedDialOutline {
             c.drawLine(x1,y1,x2,y2,p);
         }
 
-        // Eight round hour-marker surrounds.
         for(int hour:new int[]{1,2,4,5,7,8,10,11}){
             double a=Gmt126710BlnrMaster.angleForHour(hour);
             float x=(float)(CX+R*Gmt126710BlnrMaster.ROUND_CENTER_R*Math.cos(a));
@@ -66,11 +64,8 @@ final class BakedDialOutline {
             c.drawCircle(x,y,(float)(R*Gmt126710BlnrMaster.ROUND_OUTER_R),p);
         }
 
-        // 6 and 9 baton surrounds.
         drawBaton(c,p,6);
         drawBaton(c,p,9);
-
-        // 12 triangle surround: base outward, apex inward.
         drawTriangle(c,p);
         return out;
     }
@@ -91,6 +86,17 @@ final class BakedDialOutline {
             if(k==0)path.moveTo(x,y);else path.lineTo(x,y);
         }
         path.close();c.drawPath(path,p);
+
+        // Canonical radial axis. This is geometry from the fixed master, not evidence
+        // from the candidate photo. A rotated baton should visibly cross this line.
+        float oldWidth=p.getStrokeWidth();
+        p.setStrokeWidth(AXIS_STROKE);
+        float x1=(float)(CX+R*(cr-rh)*ca);
+        float y1=(float)(CY+R*(cr-rh)*sa);
+        float x2=(float)(CX+R*(cr+rh)*ca);
+        float y2=(float)(CY+R*(cr+rh)*sa);
+        c.drawLine(x1,y1,x2,y2,p);
+        p.setStrokeWidth(oldWidth);
     }
 
     private static void drawTriangle(Canvas c,Paint p){
