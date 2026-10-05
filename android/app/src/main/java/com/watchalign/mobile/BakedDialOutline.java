@@ -7,26 +7,21 @@ import android.graphics.Paint;
 import android.graphics.Path;
 
 /**
- * Clean 126710BLNR dial outline for the perspective proof.
+ * Fixed genuine 126710BLNR dial master for the perspective proof.
  *
- * This deliberately does NOT trace a photograph. The geometry is taken from
- * Gmt126710BlnrMaster, which was measured from the official front-on current
- * 126710BLNR image and cross-checked against an independent real photo.
+ * This never traces or adapts to the candidate photograph. Geometry comes only
+ * from Gmt126710BlnrMaster, measured from a genuine current-generation 126710BLNR
+ * reference and cross-checked against an independent real watch photo.
  *
- * Only stable dial geometry is drawn: dial edge, 60 minute ticks, eight round
- * surrounds, 6/9 batons and the 12 triangle. No hands, text, centre stack,
- * date/cyclops, reflections or photographic texture can contaminate the overlay.
- *
- * Alpha86 deliberately uses a thin stroke so small marker rotation defects are
- * not hidden by the overlay itself. The 6/9 batons also carry a thin canonical
- * centre axis, making a rotated applied baton visibly cross the ideal radial axis.
+ * The complete rendered geometry is fixed: dial edge, 60 minute ticks, eight round
+ * surrounds, 6/9 baton surrounds and the 12 triangle. The candidate can only supply
+ * a camera pose; it cannot alter any of these shapes or their relative positions.
  */
 final class BakedDialOutline {
     static final int W=1024,H=1024;
     static final double CX=512.0,CY=512.0,R=480.0;
-    private static final int BRIGHT=Color.rgb(255,0,180);
-    private static final float OUTLINE_STROKE=1.45f;
-    private static final float AXIS_STROKE=1.10f;
+    private static final int BRIGHT=Color.rgb(255,255,0);
+    private static final float OUTLINE_STROKE=1.30f;
 
     private BakedDialOutline(){}
 
@@ -86,17 +81,6 @@ final class BakedDialOutline {
             if(k==0)path.moveTo(x,y);else path.lineTo(x,y);
         }
         path.close();c.drawPath(path,p);
-
-        // Canonical radial axis. This is geometry from the fixed master, not evidence
-        // from the candidate photo. A rotated baton should visibly cross this line.
-        float oldWidth=p.getStrokeWidth();
-        p.setStrokeWidth(AXIS_STROKE);
-        float x1=(float)(CX+R*(cr-rh)*ca);
-        float y1=(float)(CY+R*(cr-rh)*sa);
-        float x2=(float)(CX+R*(cr+rh)*ca);
-        float y2=(float)(CY+R*(cr+rh)*sa);
-        c.drawLine(x1,y1,x2,y2,p);
-        p.setStrokeWidth(oldWidth);
     }
 
     private static void drawTriangle(Canvas c,Paint p){
