@@ -12,12 +12,9 @@ import csv
 import html
 import json
 import mimetypes
-import os
 import pathlib
-import shutil
 import sys
 import time
-import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -25,6 +22,7 @@ ROOT = pathlib.Path(__file__).resolve().parent
 CASES = ROOT / "alpha90_validation_cases.tsv"
 OUT = ROOT / "app" / "src" / "androidTest" / "assets" / "alpha90_validation"
 UA = "WatchAlign-Alpha90-Validation/1.0 (+github.com/Biggregw/watch-align)"
+KEEP = {"VISION_REVIEW_PROMPT.md"}
 
 
 def request(url: str, accept: str = "*/*"):
@@ -70,7 +68,6 @@ def image_urls(post: dict) -> list[str]:
             if u not in found:
                 found.append(u)
 
-    # Galleries: preserve gallery order where Reddit supplies it.
     media = post.get("media_metadata") or {}
     gallery = post.get("gallery_data") or {}
     for item in gallery.get("items") or []:
@@ -78,7 +75,6 @@ def image_urls(post: dict) -> list[str]:
         src = m.get("s") or {}
         add(src.get("u") or src.get("gif"))
 
-    # Single-image posts.
     add(post.get("url_overridden_by_dest"))
     preview = post.get("preview") or {}
     for im in preview.get("images") or []:
@@ -98,10 +94,17 @@ def extension(url: str, content_type: str) -> str:
     return mimetypes.guess_extension(ct) or ".img"
 
 
-def main() -> int:
-    if OUT.exists():
-        shutil.rmtree(OUT)
+def clean_generated_files():
     OUT.mkdir(parents=True, exist_ok=True)
+    for p in OUT.iterdir():
+        if p.name in KEEP:
+            continue
+        if p.is_file():
+            p.unlink()
+
+
+def main() -> int:
+    clean_generated_files()
 
     with CASES.open(newline="", encoding="utf-8") as f:
         cases = list(csv.DictReader(f, delimiter="\t"))
@@ -112,7 +115,7 @@ def main() -> int:
         cid = c["case_id"]
         tid = c["thread_id"]
         try:
-            doc, json_url = fetch_json(tid)
+            doc, _json_url = fetch_json(tid)
             post = post_data(doc)
             urls = image_urls(post)
             if not urls:
@@ -150,7 +153,6 @@ def main() -> int:
 
     n = sum(1 for r in runtime if r["asset"])
     print(f"Prepared {n} Alpha90 validation images in {OUT}")
-    # Do not fail the whole run because one public host/post is temporarily unavailable.
     return 0 if n else 2
 
 
