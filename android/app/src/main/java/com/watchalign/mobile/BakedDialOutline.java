@@ -28,9 +28,9 @@ final class BakedDialOutline {
     static final int W=1024,H=1024;
     static final double CX=512.0,CY=512.0,R=480.0;
     private static final int BRIGHT=Color.rgb(255,255,0);
-    private static final float OUTLINE_STROKE=1.30f;
-    private static final float CONSTRUCTION_STROKE=0.72f;
-    private static final int CONSTRUCTION_ALPHA=190;
+    private static final float OUTLINE_STROKE=4.00f;
+    private static final float CONSTRUCTION_STROKE=3.00f;
+    private static final int CONSTRUCTION_ALPHA=255;
 
     private BakedDialOutline(){}
 
@@ -66,8 +66,10 @@ final class BakedDialOutline {
         // projective transform as the baton sides, circles, triangle and minute ticks.
         float oldWidth=p.getStrokeWidth();
         int oldAlpha=p.getAlpha();
+        int oldColor=p.getColor();
         p.setStrokeWidth(CONSTRUCTION_STROKE);
         p.setAlpha(CONSTRUCTION_ALPHA);
+        p.setColor(Color.WHITE);
         for(int hour=0;hour<12;hour++){
             int h=(hour==0)?12:hour;
             double a=Gmt126710BlnrMaster.angleForHour(h);
@@ -78,6 +80,7 @@ final class BakedDialOutline {
         }
         p.setStrokeWidth(oldWidth);
         p.setAlpha(oldAlpha);
+        p.setColor(oldColor);
 
         for(int hour:new int[]{1,2,4,5,7,8,10,11}){
             double a=Gmt126710BlnrMaster.angleForHour(hour);
