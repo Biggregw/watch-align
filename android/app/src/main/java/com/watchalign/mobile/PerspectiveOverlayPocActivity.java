@@ -43,16 +43,16 @@ public class PerspectiveOverlayPocActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(BG);
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
-        root.addView(text("Opposing-minute Perspective Overlay",28,Color.WHITE));
-        root.addView(text("Candidate photo only · explicit minute-pair fit · no nudge",14,ACCENT));
-        root.addView(text("The dial edge provides only an initial search pose. The app then detects the inner ends of the 48 minor minute ticks individually, admits them only as complete opposing pairs, and robustly fits the projective transform from those measured correspondences. Hour markers and the 12 triangle do not participate in the fit.",13,MUTED),lp(-1,-2,10));
+        root.addView(text("Strict Perspective Overlay",28,Color.WHITE));
+        root.addView(text("Dial edge + opposing minor-minute ticks only · no nudge",14,ACCENT));
+        root.addView(text("This build deliberately does NOT use the 12 triangle, any hour marker, date, hands or text to position the overlay. The physical black-dial edge seeds centre/scale and the 48 minor minute ticks may refine perspective only as complete opposing pairs. Canonical 12 is locked to image-up so a rotated source photo may fail visibly rather than letting a defect steer the overlay.",13,MUTED),lp(-1,-2,10));
 
         Button pick=button("Choose candidate GMT photo");pick.setOnClickListener(v->pickPhoto());root.addView(pick,lp(-1,dp(52),8));
-        buildButton=button("Build opposing-minute outline");buildButton.setBackgroundColor(ACCENT);buildButton.setTextColor(Color.rgb(4,32,42));buildButton.setEnabled(false);buildButton.setOnClickListener(v->buildOverlay());root.addView(buildButton,lp(-1,dp(54),6));
+        buildButton=button("Build strict independent outline");buildButton.setBackgroundColor(ACCENT);buildButton.setTextColor(Color.rgb(4,32,42));buildButton.setEnabled(false);buildButton.setOnClickListener(v->buildOverlay());root.addView(buildButton,lp(-1,dp(54),6));
         inspectButton=button("Inspect last outline");inspectButton.setEnabled(false);inspectButton.setOnClickListener(v->openInspector());root.addView(inspectButton,lp(-1,dp(48),6));
-        status=text("Choose a sharp GMT photo with the complete black dial visible.",14,MUTED);root.addView(status,lp(-1,-2,12));
+        status=text("Choose a sharp, upright GMT photo with the complete black dial visible.",14,MUTED);root.addView(status,lp(-1,-2,12));
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(BG);root.addView(preview,lp(-1,-2,8));
-        root.addView(text("The inspector has opacity and hold-to-blink only. There is no manual movement of the overlay. If the independent hour-marker/triangle outlines do not align, the minute-pair perspective fit has failed.",12,MUTED),lp(-1,-2,10));
+        root.addView(text("The inspector has opacity and hold-to-blink only. There is no manual movement. Known defective watches should leave their defective triangle/hour markers visibly outside the fixed magenta master.",12,MUTED),lp(-1,-2,10));
         return scroll;
     }
 
@@ -60,17 +60,16 @@ public class PerspectiveOverlayPocActivity extends Activity {
 
     private void buildOverlay(){
         if(candidateBitmap==null)return;final Bitmap photo=candidateBitmap;
-        buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Detecting minor minute ticks and fitting opposing pairs…");
+        buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Fitting physical dial edge and independent opposing minute pairs…");
         worker.submit(()->{
             AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(photo);
             runOnUiThread(()->{
                 buildButton.setEnabled(true);
                 if(!q.valid){lastOverlay=null;inspectButton.setEnabled(false);status.setText("Automatic fit failed: "+q.reason);return;}
                 lastOverlay=q.overlay;inspectButton.setEnabled(true);
-                String projective=q.projectiveAccepted?"opposing-minute homography accepted":"ellipse seed used; opposing-minute fit rejected";
-                String phase=q.twelvePhaseUsed?"automatic local-12 phase":"upright-photo phase fallback";
+                String projective=q.projectiveAccepted?"guarded minute perspective accepted":"physical ellipse seed used; minute perspective rejected";
                 String residual=(Double.isFinite(q.fitBefore)&&Double.isFinite(q.fitAfter))?String.format(Locale.US," · RMS %.2f→%.2f px",q.fitBefore,q.fitAfter):"";
-                status.setText(String.format(Locale.US,"Outline ready · %d minor ticks · %d complete opposite pairs · %d robust inliers%s · %s · %s.",q.detectedTicks,q.completePairs,q.inliers,residual,projective,phase));
+                status.setText(String.format(Locale.US,"Outline ready · %d minor ticks · %d complete opposite pairs · %d robust inliers%s · %s · phase locked to image-up.",q.detectedTicks,q.completePairs,q.inliers,residual,projective));
                 openInspector();
             });
         });
@@ -78,14 +77,14 @@ public class PerspectiveOverlayPocActivity extends Activity {
 
     private void openInspector(){
         if(candidateBitmap==null||lastOverlay==null)return;
-        InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Opposing-minute perspective outline");
+        InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Strict independent perspective outline");
         startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
     }
 
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);if(request!=PICK_CANDIDATE||result!=RESULT_OK||data==null||data.getData()==null)return;
         try{
-            candidateBitmap=readBitmap(data.getData());lastOverlay=null;preview.setImageBitmap(candidateBitmap);buildButton.setEnabled(true);inspectButton.setEnabled(false);status.setText("Photo ready. Tap Build opposing-minute outline.");
+            candidateBitmap=readBitmap(data.getData());lastOverlay=null;preview.setImageBitmap(candidateBitmap);buildButton.setEnabled(true);inspectButton.setEnabled(false);status.setText("Photo ready. Tap Build strict independent outline.");
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
     }
 
