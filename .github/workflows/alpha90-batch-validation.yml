@@ -67,7 +67,7 @@ jobs:
 
           D=app/src/androidTest/assets/alpha90_validation
           POOL_COUNT=$(tail -n +2 alpha90_test_pool.tsv | grep -c .)
-          CURATED_COUNT=$(awk -F '\t' 'NR>1 && $8=="curated_pool" {n++} END {print n+0}' "$D/runtime_manifest.tsv")
+          CURATED_COUNT=$(find "$D" -maxdepth 1 -type f -name 'POOL_*.jpg' | wc -l)
           FINAL_COUNT=$(find "$D" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | wc -l)
 
           echo "===== runtime fixture manifest ====="
