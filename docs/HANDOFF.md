@@ -41,11 +41,23 @@ There is now a bounded visual proof on branch `feature/android-gmt-perspective-o
 
 **fixed genuine master -> minute-track-only camera pose -> one perspective warp -> visual mismatch remains visible**
 
-The governing checkpoint for this proof is:
+The governing architecture checkpoint is:
 
 `docs/research/GMT_FIXED_MASTER_PERSPECTIVE_OVERLAY_2026-10-05.md`
 
-That document records the Alpha81-Alpha89 lessons, the 60-position/30-opposing-pair minute geometry, fail-closed rules, known tilted-6 regression image, forbidden pose inputs, pre-warp proof-ray architecture, and planned bezel-ray visual extension.
+The active validation record is:
+
+`docs/research/GMT_ALPHA90_VALIDATION_2026-10-05.md`
+
+Alpha90 (`1.3.0-alpha90-bezel-ray-proof-arm64`) is frozen for the current validation round at source commit `f66acee665a5afb4450fa08f61396c344be43627`. Immutable validation branch: `freeze/alpha90-validation`.
+
+Do not change the master geometry, minute-pair pose solver, thresholds, rendering or bezel rays while this validation round is underway. Record failures first, then review the complete validation set before changing code.
+
+Initial real-QC results are provisional but encouraging:
+
+- clear RL Bruce Wayne control: known 6/12 mismatch remains visible -> `PASS-RL`;
+- borderline/acceptable VSF Pepsi: poor photo correctly refused, clearer photo shows only small residuals -> `UNASSESSABLE` then `PASS-GL`;
+- clean Clean Pepsi V3 control: close agreement across hour markers and minute track -> `PASS-GL`.
 
 Non-negotiable rule: the applied 12 triangle, round markers, 6/9 batons, date, text, hands and bezel may not steer the pose or post-fit alignment. They are inspection targets only. If the minute evidence is insufficient, reject the photo rather than fit the overlay to judged features.
 
@@ -160,6 +172,8 @@ Historical documents under `docs/research/` are evidence, not instructions unles
 
 ## Next action
 
-For the fixed-master visual proof, extend the existing 12 pre-warp white hour rays into the bezel and add 12 bezel-only intermediate rays at exact 15 degree GMT intervals. This is visual-only and must not change the minute-pair pose solve. Validate first against the known tilted-6 image, then against a clear bezel-alignment image.
+Keep Alpha90 frozen. Before changing code, run at least **5 additional clear RL GMT examples and 5 additional GL/borderline GMT examples** through the exact frozen Alpha90 build. Prefer independently documented r/RepTimeQC ground truth and accessible direct Reddit-hosted images. Record each result as `PASS-RL`, `PASS-GL`, `UNASSESSABLE`, `FAIL-FOLLOW` or `FAIL-FALSE` in `docs/research/GMT_ALPHA90_VALIDATION_2026-10-05.md`.
+
+Only after that validation round should the project decide whether the next issue is pose contamination, master geometry, photo-quality gating, visualisation sensitivity, bezel parallax/reference modelling, or whether the fixed-master principle is strong enough to progress to quantitative residual measurements.
 
 For the separate calibration protocol, retain the pending direct same-definition 12<->6 radial-gap experiment described above. Do not let the visual proof silently promote a measurement tolerance without its own validation.
