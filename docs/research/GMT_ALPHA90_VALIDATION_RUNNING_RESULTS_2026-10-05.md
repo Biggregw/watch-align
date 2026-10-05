@@ -61,3 +61,44 @@ The detailed post-validation implementation plan is `docs/research/GMT_POST_ALPH
 ## Current status
 
 The fixed-master concept has shown strong passes, weak/visualisation-limited passes, correct fail-closed behaviour, and one static-image conflict that now has a counter-observation from blink inspection. Continue the locked validation queue unchanged. The purpose of the frozen round is to discover exactly these limitations before any new fitting, visualisation or measurement logic is introduced.
+
+## Automated frozen batch harness checkpoint
+
+A test-only Android instrumentation harness has now completed successfully on branch `test/alpha90-batch-validation`.
+
+Successful run:
+
+- workflow: `Alpha90 Frozen Batch Validation`
+- run: `37293485555`
+- test branch commit: `f1f3e1706edeaa18d5fd11da30d0196249fed7f2`
+- result: `success`
+- production-source guard: `android/app/src/main` verified unchanged from frozen Alpha90 commit `f66acee665a5afb4450fa08f61396c344be43627`
+- artifact: `Alpha90-frozen-batch-validation`, id `11337905430`
+- artifact SHA-256: `c88b00470246e3104d4bff8a0dd8fb1f3a9016a0f8debd6eaea6abc56cc36ffc`
+
+The harness calls the exact frozen `AutomaticDialOverlay.build(Bitmap)` path. For each accepted image it saves the candidate, projected overlay, composite, all twelve candidate/overlay hour crops, an HTML blink-review page, a CSV of pose diagnostics, and the preserved blind visual-review prompt. The test harness is inspection-only and does not alter pose, thresholds, master geometry or production rendering.
+
+### Public-source acquisition limitation found
+
+GitHub-hosted runners currently receive HTTP 403 responses from the Reddit JSON endpoints for every item in the locked ten-case queue. The queue itself remains unchanged and the fetch failures are preserved in the artifact. No locked case was silently substituted or marked complete.
+
+To finish and prove the automation path without changing Alpha90, the workflow fell back only when zero locked Reddit images were obtainable. It then used six already-proven Imgur-backed `126710BLNR` sources from the repository research manifest as smoke fixtures. The corpus fetch succeeded for all six selected sources and normalised 52 source images before six explicit smoke images were passed through Alpha90.
+
+### Smoke-run deterministic results
+
+| Case | Source type | Alpha90 | Ticks | Complete pairs | Inliers | Fit before | Fit after | Edge RMS |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `SMOKE_GEN1` | source-labelled genuine candidate | `UNASSESSABLE` | 0 | 0 | 0 | - | - | - |
+| `SMOKE_GEN2` | source-labelled genuine candidate | `ACCEPTED` | 59 | 17 | 34 | 4.32011 | 0.26504 | 1.55607 |
+| `SMOKE_RL1` | replica, community-noted 6/12 alignment deviation | `ACCEPTED` | 60 | 20 | 40 | 3.16217 | 0.19440 | 1.17623 |
+| `SMOKE_BORDER1` | replica, slight 12 concern | `ACCEPTED` | 60 | 19 | 38 | 3.92129 | 0.19266 | 0.84185 |
+| `SMOKE_TEXT1` | replica, dial-font/text concern | `ACCEPTED` | 60 | 19 | 38 | 4.97814 | 0.21402 | 1.18635 |
+| `SMOKE_BEZEL1` | replica, bezel/colour-transition concern | `ACCEPTED` | 60 | 17 | 34 | 3.24024 | 0.24932 | 0.67465 |
+
+`SMOKE_GEN1` failed closed for the same named guardrail seen in manual validation: `minute fit rejected: projected dial no longer matched physical edge`. This is not a watch verdict.
+
+These smoke fixtures prove that the frozen Alpha90 path can now be executed unattended in Android CI and can produce a complete human-review pack. They do not replace the locked RL/GL validation queue and they do not provide an authenticity or pass/fail conclusion for the watches.
+
+### Preservation status
+
+Nothing from the manual validation round has been discarded or overwritten. The locked ten-case queue, original manual labels, RL-4 static/blink conflict, Reddit fetch failures, smoke-run diagnostics, generated review images and the frozen source guard are all preserved separately. Alpha90 production code remains unchanged.
