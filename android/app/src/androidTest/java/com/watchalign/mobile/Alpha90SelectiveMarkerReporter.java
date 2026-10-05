@@ -72,22 +72,25 @@ final class Alpha90SelectiveMarkerReporter {
     private Alpha90SelectiveMarkerReporter(){}
 
     static Report analyse(Bitmap watch, AutomaticDialOverlay.Result alpha) {
-        List<Feature> out=new ArrayList<>();
-        if(watch==null||alpha==null||!alpha.valid||alpha.overlay==null||!(alpha.dialRadius>20)) {
-            for(int h=1;h<=12;h++)out.add(unassessable(h,"Alpha90 overlay unavailable"));
-            return new Report(out);
-        }
+        if(alpha==null||!alpha.valid)return unavailable("Alpha90 overlay unavailable");
+        return analyse(watch,alpha.overlay,alpha.dialCx,alpha.dialCy,alpha.dialRadius);
+    }
 
-        Map<Integer,List<double[]>> refs=referencePixelsByHour(alpha.overlay,alpha);
+    /** Allows a second-stage test to consume Alpha90's already-saved overlay and pose numbers. */
+    static Report analyse(Bitmap watch, Bitmap overlay, double dialCx, double dialCy, double dialRadius) {
+        List<Feature> out=new ArrayList<>();
+        if(watch==null||overlay==null||!(dialRadius>20))return unavailable("Alpha90 overlay unavailable");
+
+        Map<Integer,List<double[]>> refs=referencePixelsByHour(overlay,dialCx,dialCy,dialRadius);
         Mat rgba=new Mat(),bgr=new Mat();
         try {
             Utils.bitmapToMat(watch,rgba);
             Imgproc.cvtColor(rgba,bgr,Imgproc.COLOR_RGBA2BGR);
 
-            DialEdgeEllipseFit.Fit edge=DialEdgeFitter.fitBgr(bgr,alpha.dialCx,alpha.dialCy,alpha.dialRadius);
-            double cx=edge!=null?edge.cx:alpha.dialCx;
-            double cy=edge!=null?edge.cy:alpha.dialCy;
-            double r=edge!=null?edge.meanRadius():alpha.dialRadius;
+            DialEdgeEllipseFit.Fit edge=DialEdgeFitter.fitBgr(bgr,dialCx,dialCy,dialRadius);
+            double cx=edge!=null?edge.cx:dialCx;
+            double cy=edge!=null?edge.cy:dialCy;
+            double r=edge!=null?edge.meanRadius():dialRadius;
 
             GmtTwelveLandmarkAnalyzer.Result twelve=GmtTwelveLandmarkAnalyzer.analyse(bgr,cx,cy,r);
             double twelveClock=Double.NaN;
@@ -157,35 +160,40 @@ final class Alpha90SelectiveMarkerReporter {
                 // The projected genuine outline is a stroked anti-aliased line rather than an
                 // infinitesimal curve. Remove that display stroke before treating separation as
                 // physical marker excursion.
-                double effective=Math.max(0.0,raw-REF_STROKE_ALLOWANCE_R*alpha.dialRadius);
-                double norm=effective/alpha.dialRadius;
+                double effective=Math.max(0.0,raw-REF_STROKE_ALLOWANCE_R*dialRadius);
+                double norm=effective/dialRadius;
                 Level level=norm>=CLEAR_EXCURSION_R?Level.CLEAR_DIFFERENCE
                         :norm>=BORDERLINE_EXCURSION_R?Level.BORDERLINE:Level.NORMAL;
                 out.add(new Feature(hour,level,effective,norm,""));
             }
         } catch(Throwable t) {
-            out.clear();
-            for(int h=1;h<=12;h++)out.add(unassessable(h,"selective reporter failed: "+t.getClass().getSimpleName()));
+            return unavailable("selective reporter failed: "+t.getClass().getSimpleName());
         } finally {
             bgr.release();rgba.release();
         }
         return new Report(out);
     }
 
+    private static Report unavailable(String why){
+        List<Feature> out=new ArrayList<>();
+        for(int h=1;h<=12;h++)out.add(unassessable(h,why));
+        return new Report(out);
+    }
+
     /** Isolate every yellow applied-marker outline once. Minute ticks start outside 0.925R. */
-    private static Map<Integer,List<double[]>> referencePixelsByHour(Bitmap overlay, AutomaticDialOverlay.Result r) {
+    private static Map<Integer,List<double[]>> referencePixelsByHour(Bitmap overlay,double dialCx,double dialCy,double dialRadius) {
         Map<Integer,List<double[]>> out=new HashMap<>();
         for(int h=1;h<=12;h++)out.put(h,new ArrayList<double[]>());
-        int xmin=clamp((int)Math.floor(r.dialCx-r.dialRadius),0,overlay.getWidth()-1);
-        int xmax=clamp((int)Math.ceil(r.dialCx+r.dialRadius),0,overlay.getWidth()-1);
-        int ymin=clamp((int)Math.floor(r.dialCy-r.dialRadius),0,overlay.getHeight()-1);
-        int ymax=clamp((int)Math.ceil(r.dialCy+r.dialRadius),0,overlay.getHeight()-1);
+        int xmin=clamp((int)Math.floor(dialCx-dialRadius),0,overlay.getWidth()-1);
+        int xmax=clamp((int)Math.ceil(dialCx+dialRadius),0,overlay.getWidth()-1);
+        int ymin=clamp((int)Math.floor(dialCy-dialRadius),0,overlay.getHeight()-1);
+        int ymax=clamp((int)Math.ceil(dialCy+dialRadius),0,overlay.getHeight()-1);
         double maxDa=Math.toRadians(REFERENCE_HALF_SECTOR_DEG);
         for(int y=ymin;y<=ymax;y++)for(int x=xmin;x<=xmax;x++) {
             int c=overlay.getPixel(x,y);
             if(Color.alpha(c)<80||Color.red(c)<180||Color.green(c)<180||Color.blue(c)>140)continue;
-            double dx=x-r.dialCx,dy=y-r.dialCy;
-            double rr=Math.hypot(dx,dy)/r.dialRadius;
+            double dx=x-dialCx,dy=y-dialCy;
+            double rr=Math.hypot(dx,dy)/dialRadius;
             if(rr<REFERENCE_MIN_R||rr>REFERENCE_MAX_R)continue;
             double a=Math.atan2(dy,dx);
             int hour=nearestHour(a);
