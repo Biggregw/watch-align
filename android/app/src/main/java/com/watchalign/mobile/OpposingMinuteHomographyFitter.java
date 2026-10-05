@@ -10,20 +10,17 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Perspective proof based on explicit minor-minute correspondences.
+ * Camera-pose solver based only on the genuine dial's 60 fixed minute positions.
  *
- * Alpha84 precision path:
- *  - detect the actual INNER end of every non-hour minute tick;
- *  - refine each detection below the coarse search-grid spacing with local
- *    parabolic interpolation in radius and angle;
- *  - admit only complete opposing pairs i <-> i+30;
- *  - reject weak pairs relative to the image's own confidence distribution;
- *  - obtain a robust RANSAC seed;
- *  - reject a whole opposing pair if either side has a large reprojection residual;
- *  - refit the final homography by least squares on the surviving complete pairs.
+ * The canonical master has exact 6 degree spacing and therefore exactly 30
+ * opposing pairs: 0<->30, 1<->31, ... 29<->59. Normal minor ticks are located
+ * from their inner ends. At the 12 hour positions (minute % 5 == 0) the detector
+ * stays in the outer minute-track annulus and samples the printed hour-position
+ * tick/stub there, deliberately away from the applied hour marker.
  *
- * Applied hour markers, 12 triangle, date/cyclops, text and hands are never used,
- * so they remain independent visual checks of the resulting perspective overlay.
+ * Missing or weak ticks are never invented. Only complete observed opposing pairs
+ * enter the perspective solve. If there are too few clean, well-distributed pairs,
+ * the photo is rejected as unsuitable rather than falling back to a weaker fit.
  */
 final class OpposingMinuteHomographyFitter {
     static final class Result {
@@ -49,18 +46,33 @@ final class OpposingMinuteHomographyFitter {
         }
     }
 
-    private static final double TRUE_INNER_R = Gmt126710BlnrMaster.MINUTE_TRACK_R;
-    private static final double SEARCH_R_MIN = TRUE_INNER_R - 0.065;
-    private static final double SEARCH_R_MAX = TRUE_INNER_R + 0.035;
+    private static final double NORMAL_CANON_R = Gmt126710BlnrMaster.MINUTE_TRACK_R;
+    private static final double HOUR_CANON_R = Gmt126710BlnrMaster.HOUR_TICK_SAMPLE_R;
+
+    private static final double SEARCH_R_MIN = NORMAL_CANON_R - 0.065;
+    private static final double SEARCH_R_MAX = NORMAL_CANON_R + 0.035;
     private static final double SEARCH_R_STEP = 0.0015;
     private static final double SEARCH_A_DEG = 1.65;
     private static final double SEARCH_A_STEP_DEG = 0.12;
     private static final double EDGE_DELTA_R = 0.0065;
     private static final double BODY_DELTA_R = 0.017;
     private static final double MIN_EDGE_SCORE = 20.0;
-    private static final int MIN_COMPLETE_PAIRS = 7;
-    private static final int MIN_FINAL_PAIRS = 6;
-    private static final int MIN_INLIERS = 12;
+
+    // Hour-position ticks are sampled only in the outer annulus. Tangential contrast
+    // is used to find the printed tick while avoiding the much more inward hour marker.
+    private static final double HOUR_SEARCH_A_DEG = 1.45;
+    private static final double HOUR_SEARCH_A_STEP_DEG = 0.10;
+    private static final double HOUR_SIDE_DEG = 1.05;
+    private static final double HOUR_RADIAL_DELTA = 0.008;
+    private static final double MIN_HOUR_SCORE = 15.0;
+
+    // 30 opposing pairs exist. Eight clean, spread pairs means 16 real observations,
+    // twice the mathematical minimum for a homography while still tolerating hands,
+    // glare and the cyclops obscuring a substantial section of the minute track.
+    private static final int MIN_COMPLETE_PAIRS = 8;
+    private static final int MIN_FINAL_PAIRS = 8;
+    private static final int MIN_INLIERS = 16;
+    private static final int MIN_ORIENTATION_BINS = 4;
     private static final double RANSAC_PX = 1.85;
 
     private static final class Tick {
@@ -68,15 +80,25 @@ final class OpposingMinuteHomographyFitter {
         final Point canonical;
         final Point image;
         final double score;
-        Tick(int minute, Point canonical, Point image, double score) {
-            this.minute = minute; this.canonical = canonical; this.image = image; this.score = score;
+        final boolean hourPosition;
+        Tick(int minute, Point canonical, Point image, double score, boolean hourPosition) {
+            this.minute = minute;
+            this.canonical = canonical;
+            this.image = image;
+            this.score = score;
+            this.hourPosition = hourPosition;
         }
     }
 
     private static final class Pair {
         final Tick a,b;
         Pair(Tick a,Tick b){this.a=a;this.b=b;}
-        double confidence(){return Math.min(a.score,b.score);}
+        double confidence(){
+            double q=Math.min(a.score,b.score);
+            // Hour-position outer stubs are valid evidence but are deliberately given
+            // a slightly more conservative vote than the full-length minor ticks.
+            return (a.hourPosition||b.hourPosition)?q*0.82:q;
+        }
     }
 
     private OpposingMinuteHomographyFitter() {}
@@ -89,36 +111,40 @@ final class OpposingMinuteHomographyFitter {
         Tick[] ticks = new Tick[60];
         int detected = 0;
         for (int minute = 0; minute < 60; minute++) {
-            if (minute % 5 == 0) continue;
-            Tick t = detectTickInnerEnd(gray, h0, minute);
+            Tick t=(minute%5==0)
+                    ?detectHourPositionTick(gray,h0,minute)
+                    :detectNormalTickInnerEnd(gray,h0,minute);
             if (t != null) { ticks[minute] = t; detected++; }
         }
 
         List<Pair> candidatePairs = new ArrayList<>();
         for (int minute = 0; minute < 30; minute++) {
-            if (minute % 5 == 0) continue;
             Tick a = ticks[minute], b = ticks[minute + 30];
             if (a != null && b != null) candidatePairs.add(new Pair(a,b));
         }
-        if (candidatePairs.size() < MIN_COMPLETE_PAIRS) {
+        if (candidatePairs.size() < MIN_COMPLETE_PAIRS || orientationBins(candidatePairs) < MIN_ORIENTATION_BINS) {
             return new Result(h0.clone(), false, detected, candidatePairs.size(), 0,
-                    Double.NaN, Double.NaN, "not enough opposing minor-minute pairs");
+                    Double.NaN, Double.NaN,
+                    "candidate photo has too few well-spread opposing minute pairs");
         }
 
-        // Relative confidence gate. A weak reflection/hand edge should not survive just
-        // because it barely passed the fixed threshold on an otherwise very sharp image.
+        // Relative confidence gate. Weak or ambiguous pairs are dropped, never guessed.
         double[] conf = new double[candidatePairs.size()];
         for(int i=0;i<conf.length;i++) conf[i]=candidatePairs.get(i).confidence();
         Arrays.sort(conf);
         double medianConf = conf[conf.length/2];
-        double confidenceFloor = Math.max(MIN_EDGE_SCORE, medianConf * 0.58);
+        double confidenceFloor = Math.max(13.0, medianConf * 0.55);
         List<Pair> pairs = new ArrayList<>();
         for(Pair p:candidatePairs) if(p.confidence()>=confidenceFloor) pairs.add(p);
-        if(pairs.size()<MIN_COMPLETE_PAIRS) pairs=candidatePairs; // fail soft, RANSAC still protects us
+        if(pairs.size()<MIN_COMPLETE_PAIRS || orientationBins(pairs)<MIN_ORIENTATION_BINS) {
+            return new Result(h0.clone(),false,detected,pairs.size(),0,
+                    Double.NaN,Double.NaN,
+                    "candidate photo quality insufficient after weak-pair rejection");
+        }
 
         List<Point> src = new ArrayList<>(), dst = new ArrayList<>();
         flattenPairs(pairs,src,dst);
-        double seedRms=rms(h0,src,dst,null);
+        double seedRms=rms(h0,src,dst);
 
         MatOfPoint2f srcPts=new MatOfPoint2f(),dstPts=new MatOfPoint2f();
         Mat mask=new Mat(); Mat robust=null; Mat finalFit=null;
@@ -128,11 +154,10 @@ final class OpposingMinuteHomographyFitter {
             if(robust==null||robust.empty()){
                 if(robust!=null)robust.release();
                 return new Result(h0.clone(),false,detected,pairs.size(),0,seedRms,Double.NaN,
-                        "robust minute homography failed");
+                        "robust opposing-minute perspective solve failed");
             }
 
-            // Compute per-point residuals from the robust model and derive an image-specific
-            // cutoff using median/MAD. Reject WHOLE opposite pairs, never one side alone.
+            // Derive an image-specific residual limit, then reject WHOLE opposing pairs.
             double[] residual=new double[src.size()];
             for(int i=0;i<src.size();i++) residual[i]=residual(robust,src.get(i),dst.get(i));
             double med=median(residual),mad=medianAbsDeviation(residual,med);
@@ -142,43 +167,64 @@ final class OpposingMinuteHomographyFitter {
             List<Pair> cleanPairs=new ArrayList<>();
             for(int i=0;i<pairs.size();i++){
                 double r0=residual[2*i],r1=residual[2*i+1];
-                if(Double.isFinite(r0)&&Double.isFinite(r1)&&Math.max(r0,r1)<=cutoff) cleanPairs.add(pairs.get(i));
+                if(Double.isFinite(r0)&&Double.isFinite(r1)&&Math.max(r0,r1)<=cutoff)
+                    cleanPairs.add(pairs.get(i));
             }
-            if(cleanPairs.size()<MIN_FINAL_PAIRS){
+            if(cleanPairs.size()<MIN_FINAL_PAIRS || orientationBins(cleanPairs)<MIN_ORIENTATION_BINS){
                 robust.release();
                 return new Result(h0.clone(),false,detected,pairs.size(),cleanPairs.size()*2,
-                        seedRms,Double.NaN,"too few clean opposing pairs after precision rejection");
+                        seedRms,Double.NaN,
+                        "candidate photo has too few clean, well-spread opposing pairs");
             }
 
-            List<Point> cleanSrc=new ArrayList<>(),cleanDst=new ArrayList<>();
-            flattenPairs(cleanPairs,cleanSrc,cleanDst);
-            MatOfPoint2f cs=new MatOfPoint2f(),cd=new MatOfPoint2f();
+            // Fit on one subset and validate on held-out opposing pairs. This prevents the
+            // final master from being accepted merely because a flexible transform reduced
+            // error on every point it was allowed to see.
+            List<Pair> fitPairs=new ArrayList<>(),holdoutPairs=new ArrayList<>();
+            for(int i=0;i<cleanPairs.size();i++){
+                if((i%3)==2)holdoutPairs.add(cleanPairs.get(i));else fitPairs.add(cleanPairs.get(i));
+            }
+            if(fitPairs.size()<6||holdoutPairs.size()<2){
+                return new Result(h0.clone(),false,detected,pairs.size(),cleanPairs.size()*2,
+                        seedRms,Double.NaN,"not enough opposing pairs for fit/holdout validation");
+            }
+
+            List<Point> fitSrc=new ArrayList<>(),fitDst=new ArrayList<>();
+            flattenPairs(fitPairs,fitSrc,fitDst);
+            MatOfPoint2f fs=new MatOfPoint2f(),fd=new MatOfPoint2f();
             try{
-                cs.fromList(cleanSrc);cd.fromList(cleanDst);
-                // Least-squares polish after robust pair-level rejection. No judged feature enters.
-                finalFit=Calib3d.findHomography(cs,cd,0);
-            }finally{cs.release();cd.release();}
+                fs.fromList(fitSrc);fd.fromList(fitDst);
+                finalFit=Calib3d.findHomography(fs,fd,0);
+            }finally{fs.release();fd.release();}
             if(finalFit==null||finalFit.empty()){
                 if(finalFit!=null)finalFit.release();
-                robust.release();
-                return new Result(h0.clone(),false,detected,pairs.size(),cleanSrc.size(),
-                        seedRms,Double.NaN,"precision minute refit failed");
+                return new Result(h0.clone(),false,detected,pairs.size(),fitSrc.size(),
+                        seedRms,Double.NaN,"opposing-minute perspective refit failed");
             }
 
-            double fitRms=rms(finalFit,cleanSrc,cleanDst,null);
-            int inliers=cleanSrc.size();
+            List<Point> holdSrc=new ArrayList<>(),holdDst=new ArrayList<>();
+            flattenPairs(holdoutPairs,holdSrc,holdDst);
+            double fitRms=rms(finalFit,fitSrc,fitDst);
+            double holdRms=rms(finalFit,holdSrc,holdDst);
+            double seedHoldRms=rms(h0,holdSrc,holdDst);
+            int inliers=fitSrc.size()+holdSrc.size();
+
             boolean enough=inliers>=MIN_INLIERS;
-            boolean improves=Double.isFinite(seedRms)&&Double.isFinite(fitRms)
-                    && fitRms<seedRms*0.78&&fitRms+0.45<seedRms;
-            if(!enough||!improves){
-                finalFit.release();robust.release();
+            boolean fitImproves=Double.isFinite(seedRms)&&Double.isFinite(fitRms)
+                    && fitRms<seedRms*0.82&&fitRms+0.35<seedRms;
+            boolean holdoutGood=Double.isFinite(seedHoldRms)&&Double.isFinite(holdRms)
+                    && holdRms<Math.max(2.25,seedHoldRms*0.90);
+            if(!enough||!fitImproves||!holdoutGood){
+                finalFit.release();
                 return new Result(h0.clone(),false,detected,pairs.size(),inliers,seedRms,fitRms,
-                        !enough?"too few precision minute inliers":"precision minute fit did not materially improve seed pose");
+                        !enough?"too few clean opposing-minute observations":
+                                (!fitImproves?"minute-pair pose did not materially improve the seed":
+                                        "held-out opposing pairs did not confirm the perspective"));
             }
 
             Mat out=finalFit.clone();
-            finalFit.release();robust.release();
-            return new Result(out,true,detected,pairs.size(),inliers,seedRms,fitRms,"");
+            finalFit.release();
+            return new Result(out,true,detected,cleanPairs.size(),inliers,seedRms,fitRms,"");
         }finally{
             if(finalFit!=null&&!finalFit.empty())finalFit.release();
             if(robust!=null&&!robust.empty())robust.release();
@@ -186,43 +232,83 @@ final class OpposingMinuteHomographyFitter {
         }
     }
 
-    private static void flattenPairs(List<Pair> pairs,List<Point> src,List<Point> dst){
-        for(Pair p:pairs){src.add(p.a.canonical);dst.add(p.a.image);src.add(p.b.canonical);dst.add(p.b.image);}
+    /** Six 30-degree orientation sectors across the first half of the dial. */
+    private static int orientationBins(List<Pair> pairs){
+        boolean[] hit=new boolean[6];
+        for(Pair p:pairs){
+            int m=p.a.minute;
+            int bin=Math.max(0,Math.min(5,m/5));
+            hit[bin]=true;
+        }
+        int n=0;for(boolean b:hit)if(b)n++;return n;
     }
 
-    private static Tick detectTickInnerEnd(Mat gray,Mat h0,int minute){
-        double baseA=Math.toRadians(minute*6.0-90.0);
+    private static void flattenPairs(List<Pair> pairs,List<Point> src,List<Point> dst){
+        for(Pair p:pairs){
+            src.add(p.a.canonical);dst.add(p.a.image);
+            src.add(p.b.canonical);dst.add(p.b.image);
+        }
+    }
+
+    private static Tick detectNormalTickInnerEnd(Mat gray,Mat h0,int minute){
+        double baseA=Gmt126710BlnrMaster.angleForMinute(minute);
         double best=-Double.MAX_VALUE,bestR=Double.NaN,bestA=Double.NaN;
         for(double daDeg=-SEARCH_A_DEG;daDeg<=SEARCH_A_DEG+1e-9;daDeg+=SEARCH_A_STEP_DEG){
             double a=baseA+Math.toRadians(daDeg);
             for(double r=SEARCH_R_MIN;r<=SEARCH_R_MAX+1e-9;r+=SEARCH_R_STEP){
-                double s=edgeScore(gray,h0,r,a);
-                if(s>best){best=s;bestR=r;bestA=a;}
+                double s=normalEdgeScore(gray,h0,r,a);
+                if(Double.isFinite(s)&&s>best){best=s;bestR=r;bestA=a;}
             }
         }
         if(!(best>=MIN_EDGE_SCORE)||!Double.isFinite(bestR))return null;
 
-        // Sub-grid refinement. A quadratic peak estimate removes most of the visible
-        // one-to-two-pixel quantisation produced by the Alpha83 radial/angular grid.
-        double rm=edgeScore(gray,h0,bestR-SEARCH_R_STEP,bestA);
-        double r0=edgeScore(gray,h0,bestR,bestA);
-        double rp=edgeScore(gray,h0,bestR+SEARCH_R_STEP,bestA);
+        double rm=normalEdgeScore(gray,h0,bestR-SEARCH_R_STEP,bestA);
+        double r0=normalEdgeScore(gray,h0,bestR,bestA);
+        double rp=normalEdgeScore(gray,h0,bestR+SEARCH_R_STEP,bestA);
         bestR+=parabolicOffset(rm,r0,rp,SEARCH_R_STEP);
 
         double da=Math.toRadians(SEARCH_A_STEP_DEG);
-        double am=edgeScore(gray,h0,bestR,bestA-da);
-        double a0=edgeScore(gray,h0,bestR,bestA);
-        double ap=edgeScore(gray,h0,bestR,bestA+da);
+        double am=normalEdgeScore(gray,h0,bestR,bestA-da);
+        double a0=normalEdgeScore(gray,h0,bestR,bestA);
+        double ap=normalEdgeScore(gray,h0,bestR,bestA+da);
         bestA+=parabolicOffset(am,a0,ap,da);
-        best=edgeScore(gray,h0,bestR,bestA);
+        best=normalEdgeScore(gray,h0,bestR,bestA);
         if(!(best>=MIN_EDGE_SCORE))return null;
 
         Point actual=project(h0,bestR*Math.cos(bestA),bestR*Math.sin(bestA));
-        Point canonical=new Point(TRUE_INNER_R*Math.cos(baseA),TRUE_INNER_R*Math.sin(baseA));
-        return actual==null?null:new Tick(minute,canonical,actual,best);
+        Point canonical=new Point(NORMAL_CANON_R*Math.cos(baseA),NORMAL_CANON_R*Math.sin(baseA));
+        return actual==null?null:new Tick(minute,canonical,actual,best,false);
     }
 
-    private static double edgeScore(Mat gray,Mat h,double r,double a){
+    /**
+     * Detect an hour-position minute mark using only the outer minute-track annulus.
+     * We sample a fixed genuine radius that lies outside every applied hour marker,
+     * then search only for the narrow angular bright ridge of the printed tick/stub.
+     */
+    private static Tick detectHourPositionTick(Mat gray,Mat h0,int minute){
+        double baseA=Gmt126710BlnrMaster.angleForMinute(minute);
+        double best=-Double.MAX_VALUE,bestA=Double.NaN;
+        for(double daDeg=-HOUR_SEARCH_A_DEG;daDeg<=HOUR_SEARCH_A_DEG+1e-9;daDeg+=HOUR_SEARCH_A_STEP_DEG){
+            double a=baseA+Math.toRadians(daDeg);
+            double s=hourStubScore(gray,h0,a);
+            if(Double.isFinite(s)&&s>best){best=s;bestA=a;}
+        }
+        if(!(best>=MIN_HOUR_SCORE)||!Double.isFinite(bestA))return null;
+
+        double da=Math.toRadians(HOUR_SEARCH_A_STEP_DEG);
+        double am=hourStubScore(gray,h0,bestA-da);
+        double a0=hourStubScore(gray,h0,bestA);
+        double ap=hourStubScore(gray,h0,bestA+da);
+        bestA+=parabolicOffset(am,a0,ap,da);
+        best=hourStubScore(gray,h0,bestA);
+        if(!(best>=MIN_HOUR_SCORE))return null;
+
+        Point actual=project(h0,HOUR_CANON_R*Math.cos(bestA),HOUR_CANON_R*Math.sin(bestA));
+        Point canonical=new Point(HOUR_CANON_R*Math.cos(baseA),HOUR_CANON_R*Math.sin(baseA));
+        return actual==null?null:new Tick(minute,canonical,actual,best,true);
+    }
+
+    private static double normalEdgeScore(Mat gray,Mat h,double r,double a){
         if(r<SEARCH_R_MIN-0.01||r>SEARCH_R_MAX+0.01)return Double.NaN;
         double ca=Math.cos(a),sa=Math.sin(a);
         double inner=intensity(gray,h,(r-EDGE_DELTA_R)*ca,(r-EDGE_DELTA_R)*sa);
@@ -232,10 +318,25 @@ final class OpposingMinuteHomographyFitter {
         return 0.65*(outer-inner)+0.35*(body-inner);
     }
 
+    private static double hourStubScore(Mat gray,Mat h,double a){
+        double side=Math.toRadians(HOUR_SIDE_DEG);
+        double r=HOUR_CANON_R;
+        double c0=intensity(gray,h,r*Math.cos(a),r*Math.sin(a));
+        double cm=intensity(gray,h,r*Math.cos(a-side),r*Math.sin(a-side));
+        double cp=intensity(gray,h,r*Math.cos(a+side),r*Math.sin(a+side));
+        double ri=intensity(gray,h,(r-HOUR_RADIAL_DELTA)*Math.cos(a),(r-HOUR_RADIAL_DELTA)*Math.sin(a));
+        double ro=intensity(gray,h,(r+HOUR_RADIAL_DELTA)*Math.cos(a),(r+HOUR_RADIAL_DELTA)*Math.sin(a));
+        if(!Double.isFinite(c0)||!Double.isFinite(cm)||!Double.isFinite(cp)||!Double.isFinite(ri)||!Double.isFinite(ro))
+            return Double.NaN;
+        double angularRidge=c0-0.5*(cm+cp);
+        double radialSupport=Math.min(c0,0.5*(ri+ro));
+        return angularRidge+0.12*radialSupport;
+    }
+
     private static double parabolicOffset(double ym,double y0,double yp,double step){
         if(!Double.isFinite(ym)||!Double.isFinite(y0)||!Double.isFinite(yp))return 0.0;
         double den=ym-2.0*y0+yp;
-        if(!(den<-1e-6))return 0.0; // only refine a genuine local maximum
+        if(!(den<-1e-6))return 0.0;
         double off=0.5*(ym-yp)/den*step;
         return Math.max(-0.75*step,Math.min(0.75*step,off));
     }
@@ -261,10 +362,9 @@ final class OpposingMinuteHomographyFitter {
         return Math.hypot(p.x-dst.x,p.y-dst.y);
     }
 
-    private static double rms(Mat h,List<Point> src,List<Point> dst,boolean[] keep){
+    private static double rms(Mat h,List<Point> src,List<Point> dst){
         double ss=0;int n=0;
         for(int i=0;i<src.size();i++){
-            if(keep!=null&&!keep[i])continue;
             double r=residual(h,src.get(i),dst.get(i));if(!Double.isFinite(r))continue;
             ss+=r*r;n++;
         }
