@@ -10,12 +10,12 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.Gravity;
-import android.view.Magnifier;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.Magnifier;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,7 +45,10 @@ public class CardinalAnchorActivity extends Activity {
         if(watchBitmap==null){Toast.makeText(this,"No watch image available",Toast.LENGTH_SHORT).show();finish();return;}
 
         FrameLayout root=new FrameLayout(this);root.setBackgroundColor(BG);
-        imageView=new TouchOverlayView(this);root.addView(imageView,new FrameLayout.LayoutParams(-1,-1));
+        imageView=new TouchOverlayView(this);
+        FrameLayout.LayoutParams imageLp=new FrameLayout.LayoutParams(-1,-1);
+        imageLp.topMargin=dp(62);imageLp.bottomMargin=dp(145);
+        root.addView(imageView,imageLp);
 
         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(10),dp(8),dp(10),dp(8));top.setBackgroundColor(0xDD08111F);
         Button back=button("Back");back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(70),dp(46)));
@@ -91,10 +94,7 @@ public class CardinalAnchorActivity extends Activity {
         for(PointF p:rawPoints){PointF q=snapNormalToDialEdge(p,c);if(q==null){snappedPoints.clear();return;}snappedPoints.add(q);}
     }
 
-    /**
-     * Search only along the approximate outward normal. This is intentionally local: the user has
-     * already told us WHICH dial-edge location this is, so reflections elsewhere cannot steal it.
-     */
+    /** Search only along the approximate outward normal; cardinal identity stays user controlled. */
     private PointF snapNormalToDialEdge(PointF tap,PointF centre){
         double nx=tap.x-centre.x,ny=tap.y-centre.y,norm=Math.hypot(nx,ny);if(norm<20)return null;nx/=norm;ny/=norm;
         double tx=-ny,ty=nx;
@@ -109,14 +109,12 @@ public class CardinalAnchorActivity extends Activity {
                 double d=outside-inside;contrast+=d;absContrast+=Math.abs(d);count++;
             }
             if(count<3)continue;
-            // Black dial -> lighter rehaut should be positive. Keep an absolute fallback for unusual glare,
-            // and mildly prefer the boundary nearest the user's indicated edge.
             double mean=contrast/count,meanAbs=absContrast/count;
             double edgeStrength=Math.max(mean,0.55*meanAbs);
             double score=edgeStrength-0.22*Math.abs(off);
             if(score>bestScore){bestScore=score;bestOffset=off;}
         }
-        if(bestScore<4.0)return new PointF(tap.x,tap.y); // safe fallback: preserve the user's precise placement
+        if(bestScore<4.0)return new PointF(tap.x,tap.y);
         return new PointF((float)(tap.x+nx*bestOffset),(float)(tap.y+ny*bestOffset));
     }
 
