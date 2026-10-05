@@ -13,15 +13,24 @@ import android.graphics.Path;
  * from Gmt126710BlnrMaster, measured from a genuine current-generation 126710BLNR
  * reference and cross-checked against an independent real watch photo.
  *
- * The complete rendered geometry is fixed: dial edge, 60 minute ticks, eight round
- * surrounds, 6/9 baton surrounds and the 12 triangle. The candidate can only supply
- * a camera pose; it cannot alter any of these shapes or their relative positions.
+ * IMPORTANT PROOF PROPERTY:
+ * Every visible element below, including the radial construction rays and baton
+ * rectangles, is drawn into this one canonical flat bitmap BEFORE any camera
+ * perspective is applied. AutomaticDialOverlay then warps this bitmap once as a
+ * whole. Nothing in this class is drawn onto the candidate after that warp.
+ *
+ * The complete rendered geometry is fixed: dial edge, 60 minute ticks, twelve
+ * genuine radial construction rays, eight round surrounds, 6/9 baton surrounds
+ * and the 12 triangle. The candidate can only supply a camera pose; it cannot
+ * alter any of these shapes or their relative positions.
  */
 final class BakedDialOutline {
     static final int W=1024,H=1024;
     static final double CX=512.0,CY=512.0,R=480.0;
     private static final int BRIGHT=Color.rgb(255,255,0);
     private static final float OUTLINE_STROKE=1.30f;
+    private static final float CONSTRUCTION_STROKE=0.72f;
+    private static final int CONSTRUCTION_ALPHA=190;
 
     private BakedDialOutline(){}
 
@@ -41,9 +50,9 @@ final class BakedDialOutline {
         c.drawCircle((float)CX,(float)CY,(float)(R*Gmt126710BlnrMaster.DIAL_EDGE_R),p);
 
         final double tickInner=Gmt126710BlnrMaster.MINUTE_TRACK_R;
-        final double tickOuter=0.972;
+        final double tickOuter=Gmt126710BlnrMaster.MINUTE_TRACK_OUTER_R;
         for(int i=0;i<60;i++){
-            double a=Math.toRadians(i*6.0-90.0);
+            double a=Gmt126710BlnrMaster.angleForMinute(i);
             double ca=Math.cos(a),sa=Math.sin(a);
             float x1=(float)(CX+R*tickInner*ca);
             float y1=(float)(CY+R*tickInner*sa);
@@ -51,6 +60,24 @@ final class BakedDialOutline {
             float y2=(float)(CY+R*tickOuter*sa);
             c.drawLine(x1,y1,x2,y2,p);
         }
+
+        // Proof/construction rays. These are part of the flat genuine master itself,
+        // not diagnostics drawn later. Therefore they undergo exactly the same single
+        // projective transform as the baton sides, circles, triangle and minute ticks.
+        float oldWidth=p.getStrokeWidth();
+        int oldAlpha=p.getAlpha();
+        p.setStrokeWidth(CONSTRUCTION_STROKE);
+        p.setAlpha(CONSTRUCTION_ALPHA);
+        for(int hour=0;hour<12;hour++){
+            int h=(hour==0)?12:hour;
+            double a=Gmt126710BlnrMaster.angleForHour(h);
+            double ca=Math.cos(a),sa=Math.sin(a);
+            float x2=(float)(CX+R*0.915*ca);
+            float y2=(float)(CY+R*0.915*sa);
+            c.drawLine((float)CX,(float)CY,x2,y2,p);
+        }
+        p.setStrokeWidth(oldWidth);
+        p.setAlpha(oldAlpha);
 
         for(int hour:new int[]{1,2,4,5,7,8,10,11}){
             double a=Gmt126710BlnrMaster.angleForHour(hour);
