@@ -38,7 +38,6 @@ public class Alpha90SelectiveReportingTest {
     }
 
     @Test public void runFrozenBatchThenBuildBlindSelectiveReview() throws Exception {
-        // Keep the existing frozen batch harness as the single source of Alpha90 output.
         new Alpha90BatchValidationTest().runFrozenAlpha90AcrossFixtureSet();
         buildBlindSelectiveReview();
     }
@@ -56,7 +55,7 @@ public class Alpha90SelectiveReportingTest {
             assertTrue("Alpha90 results missing column "+need,col.containsKey(need));
 
         StringBuilder csv=new StringBuilder();
-        csv.append("blind_id,case_id,asset,hour,level,excursion_px,excursion_over_dial_r,reason\n");
+        csv.append("blind_id,case_id,asset,hour,level,excursion_px,excursion_over_dial_r,centre_shift_px,rotation_edge_px,rotation_deg,reason\n");
         StringBuilder key=new StringBuilder("blind_id,case_id,asset\n");
         StringBuilder html=new StringBuilder();
         html.append("<!doctype html><html><head><meta charset='utf-8'><title>Alpha90 blind selective review</title>")
@@ -65,7 +64,7 @@ public class Alpha90SelectiveReportingTest {
             .append("<h1>Alpha90 blind selective marker review</h1>")
             .append("<p>Frozen Alpha90 pose and projected genuine master. Candidate markers are inspected only after pose is complete. Reddit labels and defect descriptions are hidden from this page.</p>")
             .append("<p>All applied hour markers in the frozen master are checked. The date position at 3 is not an applied marker. Minute ticks are deliberately not scored here because Alpha90 already uses them as pose evidence.</p>")
-            .append("<p class='small'>Provisional review triggers: borderline at ")
+            .append("<p class='small'>Selective alignment score = the larger of candidate centre displacement and visible edge travel caused by marker rotation. Marker size is withheld unless the same physical outer edge can be proven. Provisional review triggers: borderline at ")
             .append(String.format(Locale.US,"%.3fR",Alpha90SelectiveMarkerReporter.BORDERLINE_EXCURSION_R))
             .append(", clear difference at ")
             .append(String.format(Locale.US,"%.3fR",Alpha90SelectiveMarkerReporter.CLEAR_EXCURSION_R))
@@ -93,7 +92,8 @@ public class Alpha90SelectiveReportingTest {
             for(Alpha90SelectiveMarkerReporter.Feature f:report.features) {
                 csv.append(csv(blindId)).append(',').append(csv(caseId)).append(',').append(csv(asset)).append(',')
                    .append(f.hour).append(',').append(f.level).append(',').append(num(f.excursionPx)).append(',')
-                   .append(num6(f.excursionOverDialR)).append(',').append(csv(f.reason)).append('\n');
+                   .append(num6(f.excursionOverDialR)).append(',').append(num(f.centreShiftPx)).append(',')
+                   .append(num(f.rotationEdgePx)).append(',').append(num(f.rotationDeg)).append(',').append(csv(f.reason)).append('\n');
             }
 
             html.append("<section class='case'><h2>").append(blindId).append("</h2>")
@@ -113,7 +113,7 @@ public class Alpha90SelectiveReportingTest {
                 }
                 html.append("</div>");
             }
-            if(report.unassessable()>0)html.append("<p class='small'>").append(report.unassessable()).append(" marker positions had no sufficiently reliable candidate boundary and were not surfaced.</p>");
+            if(report.unassessable()>0)html.append("<p class='small'>").append(report.unassessable()).append(" marker positions had no candidate geometry and were not surfaced.</p>");
             html.append("</section>");
         }
 
