@@ -1,6 +1,6 @@
-# Watch Align handoff — reset baseline
+# Watch Align handoff - reset baseline
 
-Updated: 2026-10-04
+Updated: 2026-10-05
 
 This is the active handoff. Older handoff/roadmap language in historical research notes is superseded.
 
@@ -35,13 +35,27 @@ The research order is now:
 
 Do not source new images unless the existing project evidence cannot answer a specific question.
 
+### Active GMT perspective-overlay proof
+
+There is now a bounded visual proof on branch `feature/android-gmt-perspective-overlay-poc` testing a stricter architecture:
+
+**fixed genuine master -> minute-track-only camera pose -> one perspective warp -> visual mismatch remains visible**
+
+The governing checkpoint for this proof is:
+
+`docs/research/GMT_FIXED_MASTER_PERSPECTIVE_OVERLAY_2026-10-05.md`
+
+That document records the Alpha81-Alpha89 lessons, the 60-position/30-opposing-pair minute geometry, fail-closed rules, known tilted-6 regression image, forbidden pose inputs, pre-warp proof-ray architecture, and planned bezel-ray visual extension.
+
+Non-negotiable rule: the applied 12 triangle, round markers, 6/9 batons, date, text, hands and bezel may not steer the pose or post-fit alignment. They are inspection targets only. If the minute evidence is insufficient, reject the photo rather than fit the overlay to judged features.
+
 ## Perspective rule
 
 Do not automatically widen genuine tolerances because an oblique genuine photo produces an outlying value.
 
 Perspective must be supported by a coherent pattern across opposing **and neighbouring** markers. One marker looking wrong while its neighbours remain normal is not enough to call perspective and must not be corrected away.
 
-On a date GMT, useful clean pairs include 12↔6, 2↔8 and 4↔10, with 1↔7 and 5↔11 as additional corroboration when unobstructed. Where marker shapes differ, use a common physical/radial definition or compare residuals from each position's nominal value rather than equating incompatible raw metrics.
+On a date GMT, useful clean pairs include 12<->6, 2<->8 and 4<->10, with 1<->7 and 5<->11 as additional corroboration when unobstructed. Where marker shapes differ, use a common physical/radial definition or compare residuals from each position's nominal value rather than equating incompatible raw metrics.
 
 Where validated, use the relationship to correct, pair or exclude the affected measurement. If the relation is not validated, mark the image/metric unassessable rather than guessing.
 
@@ -60,7 +74,7 @@ It is improved by using known results as controls:
 
 Every run ends with `LESSONS LEARNED`, but a run must **not** automatically rewrite the governing protocol. This avoids prompt drift and overfitting.
 
-## GMT v0.3 control result — completed 2026-10-04
+## GMT v0.3 control result - completed 2026-10-04
 
 The first restart control has now been run using **existing stored measurements only**. No new image harvesting, CI, APK build or production-code change was used.
 
@@ -69,7 +83,7 @@ Full result: `docs/calibration/GMT_V03_CONTROL_2026-10-04.md`.
 Key findings:
 
 - eight independent genuine watches in the stored 2026-09-30 export had stable 12-gap measurements useful for this control;
-- their 12-gap median was **0.1037**, range **0.0916–0.1356**;
+- their 12-gap median was **0.1037**, range **0.0916-0.1356**;
 - centre-based round-marker `inset` is substantially better suited to opposing-pair pose evidence than outer-edge marker `gap`, because it is not dependent on which lume/surround edge was traced;
 - greater opposing-pair asymmetry showed a directional tendency toward a smaller apparent 12 gap, supporting the basic perspective hypothesis;
 - however, that relationship was **not stable enough across the historical partitions to justify a correction formula**;
@@ -78,12 +92,12 @@ Key findings:
 
 Two candidate master photos also exposed an important limitation: `wos_cpo_40616911` had the lowest partial clean-pair symmetry score (~0.0071) and `bobs_175818` the strongest fully observed four-pair score (~0.0128), yet their production 12 gaps differed materially (0.1011 vs 0.1356). Therefore a globally frontal/symmetric photo alone cannot define the nominal value of a local outer-edge metric.
 
-## Proposed v0.4 lesson — not promoted yet
+## Proposed v0.4 lesson - not promoted yet
 
 The v0.3 run proposes, but does not yet promote, these changes:
 
 - use centre-to-track inset (or another centre-based radial measure) as the default opposing-marker pose signal where available;
-- for any feature being perspective-corrected, require its **direct opposite measured with the same definition** — for 12 radial gap, measure 12↔6 in common units;
+- for any feature being perspective-corrected, require its **direct opposite measured with the same definition** - for 12 radial gap, measure 12<->6 in common units;
 - require at least two clean opposing relationships plus neighbouring regional coherence before applying a perspective correction;
 - allow obstructed/low-confidence pairs only as corroboration;
 - keep isolated local deviations uncorrected until detector error is ruled out.
@@ -142,10 +156,10 @@ The following are not active programmes:
 - universal genuine-vs-replica separation;
 - large corpus growth without a named evidence gap.
 
-Historical documents under `docs/research/` are evidence, not instructions.
+Historical documents under `docs/research/` are evidence, not instructions unless the active handoff explicitly promotes them.
 
 ## Next action
 
-Run the **direct same-definition 12↔6 radial-gap experiment** using existing GMT evidence before sourcing anything new. Expose/recover the 6-baton gap in the research output and express both 12 and 6 clearances in one common normalization (preferably dial-radius units). Then test whether their residuals are complementary and whether neighbouring markers show the same regional trend.
+For the fixed-master visual proof, extend the existing 12 pre-warp white hour rays into the bezel and add 12 bezel-only intermediate rays at exact 15 degree GMT intervals. This is visual-only and must not change the minute-pair pose solve. Validate first against the known tilted-6 image, then against a clear bezel-alignment image.
 
-Only if that improves genuine repeatability on separate evidence should the proposed v0.4 rules be promoted or production GMT calibration be changed.
+For the separate calibration protocol, retain the pending direct same-definition 12<->6 radial-gap experiment described above. Do not let the visual proof silently promote a measurement tolerance without its own validation.
