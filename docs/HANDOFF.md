@@ -49,17 +49,45 @@ The active validation record is:
 
 `docs/research/GMT_ALPHA90_VALIDATION_2026-10-05.md`
 
+The running observed-results log is:
+
+`docs/research/GMT_ALPHA90_VALIDATION_RUNNING_RESULTS_2026-10-05.md`
+
+The consolidated post-validation product and implementation plan is:
+
+`docs/research/GMT_POST_ALPHA90_IMPLEMENTATION_PLAN_2026-10-05.md`
+
 Alpha90 (`1.3.0-alpha90-bezel-ray-proof-arm64`) is frozen for the current validation round at source commit `f66acee665a5afb4450fa08f61396c344be43627`. Immutable validation branch: `freeze/alpha90-validation`.
 
 Do not change the master geometry, minute-pair pose solver, thresholds, rendering or bezel rays while this validation round is underway. Record failures first, then review the complete validation set before changing code.
 
-Initial real-QC results are provisional but encouraging:
+Initial real-QC results are provisional but informative:
 
 - clear RL Bruce Wayne control: known 6/12 mismatch remains visible -> `PASS-RL`;
 - borderline/acceptable VSF Pepsi: poor photo correctly refused, clearer photo shows only small residuals -> `UNASSESSABLE` then `PASS-GL`;
-- clean Clean Pepsi V3 control: close agreement across hour markers and minute track -> `PASS-GL`.
+- clean Clean Pepsi V3 control: close agreement across hour markers and minute track -> `PASS-GL`;
+- additional canted-6 RL controls include one strong and one weak/visualisation-limited `PASS-RL`;
+- one repeated photo/edge-gate case remains `UNASSESSABLE` because the minute-derived fit failed the independent physical-edge plausibility check;
+- RL-4 looked nearly coincident in a static screenshot and was provisionally logged `FAIL-FOLLOW`, but the user could clearly see apparent movement when manually toggling the overlay on/off, so this case must be re-reviewed after the frozen round rather than treated as a confirmed architecture failure.
 
 Non-negotiable rule: the applied 12 triangle, round markers, 6/9 batons, date, text, hands and bezel may not steer the pose or post-fit alignment. They are inspection targets only. If the minute evidence is insufficient, reject the photo rather than fit the overlay to judged features.
+
+### Post-Alpha90 product direction already agreed in principle
+
+Do not implement this until the frozen validation round has been reviewed, but preserve the direction:
+
+- keep the main full-watch overlay as the overall perspective/coherence view;
+- add a `Closer inspection` section below it for borderline/suspicious features using enlarged crops of the exact same fixed projection, never a local re-fit;
+- use blink/toggle inspection because small residuals can appear as a clear edge jump/movement even when a still image looks nearly coincident;
+- likely default UX is a short 3-4-cycle blink on a suspicious close-up, then stop with overlay on, with `Blink overlay` / `Stop blinking` available; the full-watch image remains static by default;
+- later quantify the same movement using signed edge-normal residuals after pose is frozen, so translation and rotation can be measured without moving the master;
+- keep early residual output measured/descriptive rather than automatic RL/GL verdicts until genuine variation and detector uncertainty are calibrated;
+- extend the fixed genuine master later with independent dial-text/coronet layers for placement QC such as floating `m`, tilted coronet, baseline/position and group spacing;
+- text/coronet remain QC targets only and may never help establish pose;
+- treat whole-dial-to-case/rehaut alignment, bezel alignment and date/cyclops as distinct defect classes requiring their own validated references rather than forcing the minute-track method to solve every problem;
+- Submariner remains paused until the GMT architecture and measurement sequence are proven.
+
+The implementation order, decision gates and guardrails for these ideas are defined in `docs/research/GMT_POST_ALPHA90_IMPLEMENTATION_PLAN_2026-10-05.md`.
 
 ## Perspective rule
 
@@ -172,8 +200,10 @@ Historical documents under `docs/research/` are evidence, not instructions unles
 
 ## Next action
 
-Keep Alpha90 frozen. Before changing code, run at least **5 additional clear RL GMT examples and 5 additional GL/borderline GMT examples** through the exact frozen Alpha90 build. Prefer independently documented r/RepTimeQC ground truth and accessible direct Reddit-hosted images. Record each result as `PASS-RL`, `PASS-GL`, `UNASSESSABLE`, `FAIL-FOLLOW` or `FAIL-FALSE` in `docs/research/GMT_ALPHA90_VALIDATION_2026-10-05.md`.
+Keep Alpha90 frozen. Continue the locked RL and GL/borderline GMT examples through the exact frozen Alpha90 build. Prefer independently documented r/RepTimeQC ground truth and accessible direct Reddit-hosted images. Record each result as `PASS-RL`, `PASS-GL`, `UNASSESSABLE`, `FAIL-FOLLOW` or `FAIL-FALSE`.
 
-Only after that validation round should the project decide whether the next issue is pose contamination, master geometry, photo-quality gating, visualisation sensitivity, bezel parallax/reference modelling, or whether the fixed-master principle is strong enough to progress to quantitative residual measurements.
+For each accepted remaining case, preserve the static screenshot **and** record whether manual overlay toggling makes a local residual easier to see. Also record the likely defect class: local marker, whole dial versus case/rehaut, bezel, text/printing, date/cyclops or photo/edge-gate issue. Do not change rendering or automate blinking yet.
+
+Only after the frozen validation round should the project decide whether the next issue is pose contamination, master geometry, photo-quality gating, visualisation sensitivity, independent dial-to-case reference modelling, bezel parallax/reference modelling, or whether the fixed-master principle is strong enough to progress to close-up/blink UX and quantitative edge-normal residual measurements.
 
 For the separate calibration protocol, retain the pending direct same-definition 12<->6 radial-gap experiment described above. Do not let the visual proof silently promote a measurement tolerance without its own validation.
