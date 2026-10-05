@@ -19,19 +19,15 @@ import android.widget.Toast;
 import org.opencv.android.OpenCVLoader;
 
 import java.io.InputStream;
-import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-/** One-photo fixed-genuine-master perspective proof. */
+/** Alpha91 research launcher: four assisted outer-dial anchors -> one planar homography. */
 public class PerspectiveOverlayPocActivity extends Activity {
-    private static final int PICK_CANDIDATE=2301;
+    private static final int PICK_CANDIDATE=2301, PICK_CARDINALS=2302;
     private static final int BG=Color.rgb(8,17,31),ACCENT=Color.rgb(50,213,242),MUTED=Color.rgb(158,176,201);
-    private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private Bitmap candidateBitmap,lastOverlay;
     private ImageView preview;
     private TextView status;
-    private Button buildButton,inspectButton;
+    private Button anchorButton,inspectButton;
 
     @Override public void onCreate(Bundle state){
         super.onCreate(state);
@@ -43,48 +39,48 @@ public class PerspectiveOverlayPocActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(BG);
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
-        root.addView(text("Fixed Genuine GMT Overlay",28,Color.WHITE));
-        root.addView(text("Perfect master + minute-marker pose only · no nudge",14,ACCENT));
-        root.addView(text("The yellow overlay is a fixed genuine 126710BLNR master. The candidate photo cannot alter its marker shapes or relative positions. The physical dial edge only finds the dial; opposing minor-minute ticks estimate camera perspective. Triangle, round markers, 6/9 batons, date, hands and text never participate in alignment. Canonical 12 is locked to image-up, so use an upright photo.",13,MUTED),lp(-1,-2,10));
+        root.addView(text("Alpha91 Assisted GMT Overlay",28,Color.WHITE));
+        root.addView(text("4 outer-dial anchors · full 2D homography",14,ACCENT));
+        root.addView(text("Choose a GMT photo, then identify the OUTER BLACK DIAL EDGE at 12, 3, 6 and 9. The app snaps only inward/outward to the local dial boundary and projects the fixed genuine master through the resulting perspective. Applied markers, hands, date, text, bezel and rehaut never participate in the fit.",13,MUTED),lp(-1,-2,10));
 
         Button pick=button("Choose candidate GMT photo");pick.setOnClickListener(v->pickPhoto());root.addView(pick,lp(-1,dp(52),8));
-        buildButton=button("Project fixed genuine master");buildButton.setBackgroundColor(ACCENT);buildButton.setTextColor(Color.rgb(4,32,42));buildButton.setEnabled(false);buildButton.setOnClickListener(v->buildOverlay());root.addView(buildButton,lp(-1,dp(54),6));
-        inspectButton=button("Inspect last overlay");inspectButton.setEnabled(false);inspectButton.setOnClickListener(v->openInspector());root.addView(inspectButton,lp(-1,dp(48),6));
-        status=text("Choose a sharp, upright GMT photo with the complete black dial visible.",14,MUTED);root.addView(status,lp(-1,-2,12));
+        anchorButton=button("Set 12 / 3 / 6 / 9 dial-edge anchors");anchorButton.setBackgroundColor(ACCENT);anchorButton.setTextColor(Color.rgb(4,32,42));anchorButton.setEnabled(false);anchorButton.setOnClickListener(v->startCardinals());root.addView(anchorButton,lp(-1,dp(56),6));
+        inspectButton=button("Inspect last Alpha91 overlay");inspectButton.setEnabled(false);inspectButton.setOnClickListener(v->openInspector());root.addView(inspectButton,lp(-1,dp(48),6));
+
+        status=text("Choose a sharp GMT photo with the complete black dial visible. The watch does not need to be upright.",14,MUTED);root.addView(status,lp(-1,-2,12));
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(BG);root.addView(preview,lp(-1,-2,8));
-        root.addView(text("There is no manual movement or post-fit correction. A perfect candidate should naturally coincide with the yellow master after perspective is applied. A defective marker should remain visibly outside its yellow genuine position.",12,MUTED),lp(-1,-2,10));
+        root.addView(text("Prototype goal: judge the overlay only. After the fourth anchor, inspect or blink the fixed yellow genuine master against the photographed dial. No QC verdicts are added in this build.",12,MUTED),lp(-1,-2,10));
         return scroll;
     }
 
     private void pickPhoto(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("image/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,PICK_CANDIDATE);}
 
-    private void buildOverlay(){
-        if(candidateBitmap==null)return;final Bitmap photo=candidateBitmap;
-        buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Finding physical dial edge and solving pose from opposing minor-minute ticks…");
-        worker.submit(()->{
-            AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(photo);
-            runOnUiThread(()->{
-                buildButton.setEnabled(true);
-                if(!q.valid){lastOverlay=null;inspectButton.setEnabled(false);status.setText("Automatic fit failed: "+q.reason);return;}
-                lastOverlay=q.overlay;inspectButton.setEnabled(true);
-                String projective=q.projectiveAccepted?"minute-marker perspective accepted":"ellipse seed used; minute perspective rejected";
-                String residual=(Double.isFinite(q.fitBefore)&&Double.isFinite(q.fitAfter))?String.format(Locale.US," · minute RMS %.2f→%.2f px",q.fitBefore,q.fitAfter):"";
-                status.setText(String.format(Locale.US,"Fixed master ready · %d minor ticks · %d complete opposite pairs · %d robust inliers%s · %s · phase image-up.",q.detectedTicks,q.completePairs,q.inliers,residual,projective));
-                openInspector();
-            });
-        });
+    private void startCardinals(){
+        if(candidateBitmap==null)return;
+        InspectionImageStore.clear();
+        InspectionImageStore.baseBitmap=candidateBitmap;
+        startActivityForResult(new Intent(this,CardinalAnchorActivity.class),PICK_CARDINALS);
     }
 
     private void openInspector(){
         if(candidateBitmap==null||lastOverlay==null)return;
-        InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Fixed genuine GMT perspective master");
+        InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Alpha91 · 4-point outer-dial homography");
         startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
     }
 
     @Override protected void onActivityResult(int request,int result,Intent data){
-        super.onActivityResult(request,result,data);if(request!=PICK_CANDIDATE||result!=RESULT_OK||data==null||data.getData()==null)return;
+        super.onActivityResult(request,result,data);
+        if(request==PICK_CARDINALS){
+            if(result==RESULT_OK&&data!=null&&data.getBooleanExtra("alpha91_cardinal",false)&&InspectionImageStore.overlayMode&&InspectionImageStore.bitmap!=null){
+                lastOverlay=InspectionImageStore.bitmap;inspectButton.setEnabled(true);status.setText("Alpha91 4-point overlay ready. Inspecting now…");
+                startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
+            }
+            return;
+        }
+        if(request!=PICK_CANDIDATE||result!=RESULT_OK||data==null||data.getData()==null)return;
         try{
-            candidateBitmap=readBitmap(data.getData());lastOverlay=null;preview.setImageBitmap(candidateBitmap);buildButton.setEnabled(true);inspectButton.setEnabled(false);status.setText("Photo ready. Tap Project fixed genuine master.");
+            candidateBitmap=readBitmap(data.getData());lastOverlay=null;preview.setImageBitmap(candidateBitmap);anchorButton.setEnabled(true);inspectButton.setEnabled(false);
+            status.setText("Photo ready. Set the four outer-dial anchors.");
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
     }
 
@@ -97,5 +93,4 @@ public class PerspectiveOverlayPocActivity extends Activity {
     private Button button(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);return b;}
     private LinearLayout.LayoutParams lp(int w,int h,int top){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(w,h);p.topMargin=dp(top);return p;}
     private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
-    @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
 }

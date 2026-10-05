@@ -4,6 +4,7 @@
         <activity android:name=".FullscreenInspectActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".PhotographicOverlayInspectActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".ManualSeedActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".CardinalAnchorActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".PerspectiveOverlayPocActivity" android:screenOrientation="portrait" android:exported="true">
             <intent-filter>
