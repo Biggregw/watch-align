@@ -16,7 +16,7 @@ import org.opencv.imgproc.Imgproc;
  *
  * Candidate evidence is restricted to:
  *   1) the physical black-dial boundary, used only as a coarse geometric seed/guard; and
- *   2) the 48 printed minor-minute ticks, admitted only as complete opposite pairs,
+ *   2) the 60 canonical minute positions, consumed as complete opposite pairs,
  *      used to estimate the camera pose/perspective.
  *
  * Applied hour markers, the 12 triangle, date/cyclops, hands and text are never used
@@ -60,8 +60,6 @@ final class AutomaticDialOverlay {
             Utils.bitmapToMat(input,rgba);
             Imgproc.cvtColor(rgba,bgr,Imgproc.COLOR_RGBA2BGR);
 
-            // Strict coarse location: physical dark-dial boundary only. No hour-marker
-            // brightness or other judged dial feature is allowed into the seed.
             StrictDialBoundarySeedAnalyzer.Result seed=StrictDialBoundarySeedAnalyzer.analyse(bgr);
             if(seed==null||!seed.valid)return new Result(seed==null?"automatic dial seed failed":seed.reason);
 
@@ -70,8 +68,6 @@ final class AutomaticDialOverlay {
             if(edge.points<70||edge.rmsPx>Math.max(5.0,edge.meanRadius()*0.030))
                 return new Result("dial boundary fit was not stable enough");
 
-            // No triangle/hour marker is consulted. Canonical 12 is image-up. The minor
-            // ticks may estimate camera pose, but judged dial features cannot steer it.
             h0=ellipsePose(edge,0.0,-1.0);
             if(h0==null)return new Result("ellipse pose could not be constructed");
 
@@ -80,28 +76,22 @@ final class AutomaticDialOverlay {
             clahe.apply(gray,enh);
             Imgproc.GaussianBlur(enh,enh,new Size(3,3),0.65);
 
-            // The final pose is estimated from explicit opposing MINOR minute ticks only.
-            // The fixed genuine master is not compared with any hour marker/triangle.
+            // Final pose must come from the observed 30-pair minute system. If the
+            // evidence is not strong enough, stop. Do not fall back to a looser overlay.
             pairFit=OpposingMinuteHomographyFitter.fit(enh,h0);
-
-            // Keep the minute-derived pose only if it remains physically consistent with
-            // the independently fitted physical dial edge. This guard does not look at
-            // any judged dial feature and prevents an implausibly flexible homography.
-            if(pairFit!=null&&pairFit.accepted&&pairFit.homography!=null){
-                String guard=physicalGuardReason(pairFit.homography,edge);
-                if(guard!=null){
-                    OpposingMinuteHomographyFitter.Result old=pairFit;
-                    pairFit=new OpposingMinuteHomographyFitter.Result(
-                            h0.clone(),false,old.detectedTicks,old.completePairs,old.inliers,
-                            old.seedRmsPx,old.fittedRmsPx,guard);
-                    if(old.homography!=null)old.homography.release();
-                }
+            if(pairFit==null||!pairFit.accepted||pairFit.homography==null||pairFit.homography.empty()){
+                String why=pairFit==null?"minute-pair perspective solve unavailable":pairFit.reason;
+                return new Result("candidate photo not sufficient for fixed-master overlay: "+why);
             }
 
-            h=(pairFit!=null&&pairFit.homography!=null)?pairFit.homography.clone():h0.clone();
-            if(h==null||h.empty())return new Result("opposing-minute perspective fit failed");
+            String guard=physicalGuardReason(pairFit.homography,edge);
+            if(guard!=null)return new Result("candidate photo not sufficient for fixed-master overlay: "+guard);
 
-            // Render only the untouched fixed genuine master through the estimated pose.
+            h=pairFit.homography.clone();
+            if(h.empty())return new Result("opposing-minute perspective fit failed");
+
+            // No QC feature is inspected here. We simply project the untouched genuine
+            // template through the camera transform obtained above.
             Bitmap overlay=warpOutline(input.getWidth(),input.getHeight(),h);
             if(overlay==null)return new Result("dial outline rendering failed");
             return new Result(overlay,edge,pairFit);
