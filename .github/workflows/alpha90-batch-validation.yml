@@ -8,6 +8,7 @@ on:
     paths:
       - 'android/alpha90_validation_cases.tsv'
       - 'android/alpha90_test_pool.tsv'
+      - 'android/alpha90_external_sources.tsv'
       - 'android/fetch_alpha90_validation_fixtures.py'
       - 'android/prepare_alpha90_test_pool.py'
       - 'android/app/src/androidTest/**'
@@ -57,9 +58,8 @@ jobs:
           set -e
           echo "Locked Reddit fetch exit: $REDDIT_EXIT"
 
-          # The reusable automated pool is provenance controlled in git but image bytes
-          # stay external. Pull the selected Imgur-backed sources with the existing
-          # dataset fetcher and copy only the explicitly selected images into androidTest.
+          # Runtime test images are fetched from provenance-controlled public album URLs.
+          # Third-party image bytes are not committed to the repository.
           cd ..
           python3 -m pip install -q -r datasets/126710BLNR/requirements.txt
           cd android
@@ -67,7 +67,9 @@ jobs:
 
           D=app/src/androidTest/assets/alpha90_validation
           POOL_COUNT=$(tail -n +2 alpha90_test_pool.tsv | grep -c .)
+          EXT_SOURCE_COUNT=$(tail -n +2 alpha90_external_sources.tsv | grep -c .)
           CURATED_COUNT=$(find "$D" -maxdepth 1 -type f -name 'POOL_*.jpg' | wc -l)
+          EXT_COUNT=$(find "$D" -maxdepth 1 -type f -name 'EXT_*.jpg' | wc -l)
           FINAL_COUNT=$(find "$D" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | wc -l)
 
           echo "===== runtime fixture manifest ====="
@@ -76,11 +78,13 @@ jobs:
           cat "$D/fetch_errors.txt" || true
           echo "===== curated-pool errors ====="
           cat "$D/curated_pool_errors.txt" || true
-          echo "Curated pool: $CURATED_COUNT/$POOL_COUNT images"
+          echo "Existing curated pool: $CURATED_COUNT/$POOL_COUNT images"
+          echo "Cross-model external pool: $EXT_COUNT images from $EXT_SOURCE_COUNT requested sources"
           echo "Total runtime images: $FINAL_COUNT"
 
           test "$CURATED_COUNT" -eq "$POOL_COUNT"
-          test "$FINAL_COUNT" -ge "$POOL_COUNT"
+          test "$EXT_COUNT" -ge "$EXT_SOURCE_COUNT"
+          test "$FINAL_COUNT" -ge $((POOL_COUNT + EXT_SOURCE_COUNT))
 
       - name: Permit x86_64 only for CI instrumentation APK
         shell: bash
