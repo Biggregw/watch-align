@@ -129,25 +129,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            set +e
-            cd android
-            bash ./gradlew :app:connectedDebugAndroidTest \
-              -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.Alpha90BatchValidationTest \
-              -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true \
-              --stacktrace
-            TEST_EXIT=$?
-            mkdir -p alpha90-batch-out
-            PKG=$(adb shell pm list packages | sed -n 's/package://p' | grep 'watchalign' | head -1 | tr -d '\r')
-            echo "Installed package: $PKG"
-            if [ -n "$PKG" ]; then
-              adb exec-out run-as "$PKG" tar cf - files/alpha90-batch > alpha90-batch-out/alpha90-batch.tar
-              tar xf alpha90-batch-out/alpha90-batch.tar -C alpha90-batch-out || true
-              if [ -f alpha90-batch-out/files/alpha90-batch/results.csv ]; then
-                echo "===== Alpha90 results ====="
-                cat alpha90-batch-out/files/alpha90-batch/results.csv
-              fi
-            fi
-            exit $TEST_EXIT
+            bash -lc 'cd android; set +e; bash ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.watchalign.mobile.Alpha90BatchValidationTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace; TEST_EXIT=$?; mkdir -p alpha90-batch-out; PKG=com.watchalign.mobile.poc; echo "Installed package check: $PKG"; if adb shell pm path "$PKG" >/dev/null 2>&1; then adb exec-out run-as "$PKG" tar cf - files/alpha90-batch > alpha90-batch-out/alpha90-batch.tar; tar xf alpha90-batch-out/alpha90-batch.tar -C alpha90-batch-out || true; if [ -f alpha90-batch-out/files/alpha90-batch/results.csv ]; then echo "===== Alpha90 results ====="; cat alpha90-batch-out/files/alpha90-batch/results.csv; fi; fi; exit $TEST_EXIT'
 
       - name: Upload Alpha90 review pack
         if: always()
