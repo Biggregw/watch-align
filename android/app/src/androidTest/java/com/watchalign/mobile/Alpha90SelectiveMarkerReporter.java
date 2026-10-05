@@ -8,7 +8,6 @@ import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -17,13 +16,19 @@ import java.util.Map;
 /**
  * Test-only selective review layer for frozen Alpha90.
  *
- * The fixed Alpha90 master remains authoritative. Candidate feature detectors are used only
- * after Alpha90 has finished, to trace the physical applied-marker boundary for reporting.
- * Nothing measured here can change Alpha90 centre, scale, phase, perspective or master geometry.
+ * Alpha90 remains authoritative for pose and the projected genuine master. Candidate feature
+ * detectors run only after Alpha90 has finished and can never feed anything back into pose.
  *
- * The generic comparison is a bidirectional boundary excursion between a detected candidate
- * feature and the already-projected yellow genuine reference. That same boundary interface can
- * later support other features such as a coronet or text without changing Alpha90 pose.
+ * Important edge-identity rule: the older local detectors can sometimes trace the lume edge and
+ * sometimes the outer metal surround. A raw boundary-to-boundary distance therefore creates false
+ * alerts even when a marker is correctly placed. This reporter intentionally separates ALIGNMENT
+ * from SIZE/SHAPE. For selective alignment close-ups it compares the candidate marker's centre and,
+ * for elongated markers, its axis against the already-projected genuine marker. Size is withheld
+ * until the same physical outer edge can be proven on both candidate and master.
+ *
+ * The reported excursion is the image-space displacement a reviewer would see at the marker edge:
+ * max(centre displacement, edge travel implied by rotation). It is normalised by dial radius so
+ * image resolution does not alter the review trigger.
  */
 final class Alpha90SelectiveMarkerReporter {
     enum Level { NORMAL, BORDERLINE, CLEAR_DIFFERENCE, UNASSESSABLE }
@@ -34,14 +39,21 @@ final class Alpha90SelectiveMarkerReporter {
         final Level level;
         final double excursionPx;
         final double excursionOverDialR;
+        final double centreShiftPx;
+        final double rotationEdgePx;
+        final double rotationDeg;
         final String reason;
 
-        Feature(int hour, Level level, double px, double norm, String reason) {
+        Feature(int hour, Level level, double px, double norm, double centreShift,
+                double rotationEdge, double rotationDeg, String reason) {
             this.hour=hour;
             this.label=hour+" o'clock";
             this.level=level;
             this.excursionPx=px;
             this.excursionOverDialR=norm;
+            this.centreShiftPx=centreShift;
+            this.rotationEdgePx=rotationEdge;
+            this.rotationDeg=rotationDeg;
             this.reason=reason==null?"":reason;
         }
         boolean showCloseUp(){return level==Level.BORDERLINE||level==Level.CLEAR_DIFFERENCE;}
@@ -55,18 +67,16 @@ final class Alpha90SelectiveMarkerReporter {
         int unassessable(){int n=0;for(Feature f:features)if(f.level==Level.UNASSESSABLE)n++;return n;}
     }
 
-    /*
-     * Provisional review triggers only. They are deliberately not called QC tolerances and must
-     * not be tuned to replica labels. Genuine variation will eventually replace these with a
-     * feature-specific genuine envelope. Values are dial-normalised so image resolution does not
-     * change the decision.
+    /**
+     * Provisional REVIEW triggers only, never QC tolerances. They are intentionally fixed before
+     * inspecting RL/GL labels. Genuine variation will eventually replace them with a calibrated
+     * per-feature envelope. 0.004R is roughly sub-pixel to low-single-pixel on normal QC crops.
      */
-    static final double BORDERLINE_EXCURSION_R = 0.0060;
-    static final double CLEAR_EXCURSION_R = 0.0120;
-    private static final double REF_STROKE_ALLOWANCE_R = 0.0040;
+    static final double BORDERLINE_EXCURSION_R = 0.0040;
+    static final double CLEAR_EXCURSION_R = 0.0100;
     private static final int MIN_REFERENCE_PIXELS = 24;
     private static final double REFERENCE_MIN_R = 0.55;
-    private static final double REFERENCE_MAX_R = 0.915; // safely inside minute track (starts 0.925R)
+    private static final double REFERENCE_MAX_R = 0.915; // minute track starts at 0.925R
     private static final double REFERENCE_HALF_SECTOR_DEG = 13.0;
 
     private Alpha90SelectiveMarkerReporter(){}
@@ -76,17 +86,17 @@ final class Alpha90SelectiveMarkerReporter {
         return analyse(watch,alpha.overlay,alpha.dialCx,alpha.dialCy,alpha.dialRadius);
     }
 
-    /** Allows a second-stage test to consume Alpha90's already-saved overlay and pose numbers. */
+    /** Allows the second-stage test to consume Alpha90's already-saved overlay and pose numbers. */
     static Report analyse(Bitmap watch, Bitmap overlay, double dialCx, double dialCy, double dialRadius) {
-        List<Feature> out=new ArrayList<>();
         if(watch==null||overlay==null||!(dialRadius>20))return unavailable("Alpha90 overlay unavailable");
-
+        List<Feature> out=new ArrayList<>();
         Map<Integer,List<double[]>> refs=referencePixelsByHour(overlay,dialCx,dialCy,dialRadius);
         Mat rgba=new Mat(),bgr=new Mat();
         try {
             Utils.bitmapToMat(watch,rgba);
             Imgproc.cvtColor(rgba,bgr,Imgproc.COLOR_RGBA2BGR);
 
+            // Candidate local detectors need only a physical dial frame. This fit is reporting-only.
             DialEdgeEllipseFit.Fit edge=DialEdgeFitter.fitBgr(bgr,dialCx,dialCy,dialRadius);
             double cx=edge!=null?edge.cx:dialCx;
             double cy=edge!=null?edge.cy:dialCy;
@@ -94,9 +104,8 @@ final class Alpha90SelectiveMarkerReporter {
 
             GmtTwelveLandmarkAnalyzer.Result twelve=GmtTwelveLandmarkAnalyzer.analyse(bgr,cx,cy,r);
             double twelveClock=Double.NaN;
-            if(twelve.valid&&twelve.geometry!=null) {
+            if(twelve.valid&&twelve.geometry!=null)
                 twelveClock=Math.toDegrees(Math.atan2(twelve.geometry.tick60[0]-cx,cy-twelve.geometry.tick60[1]));
-            }
 
             GmtRoundMarkerAnalyzer.DialFrame dialFrame=edge!=null
                     ?new GmtRoundMarkerAnalyzer.DialFrame(edge.cx,edge.cy,edge.axisA,edge.axisB,edge.angleDeg)
@@ -113,58 +122,76 @@ final class Alpha90SelectiveMarkerReporter {
 
             for(int hour=1;hour<=12;hour++) {
                 if(hour==3) {
-                    // Frozen BLNR master has the date window here, not an applied marker.
                     out.add(unassessable(hour,"no applied marker exists at 3 in the frozen master"));
                     continue;
                 }
-                List<double[]> ref=refs.get(hour);
-                if(ref==null||ref.size()<MIN_REFERENCE_PIXELS) {
+                List<double[]> refPts=refs.get(hour);
+                if(refPts==null||refPts.size()<MIN_REFERENCE_PIXELS) {
                     out.add(unassessable(hour,"projected genuine marker outline was not isolated"));
                     continue;
                 }
-
-                List<double[]> candidate;
-                String why="";
-                if(hour==12) {
-                    if(!twelve.valid||twelve.geometry==null||!twelve.geometry.outerEdge) {
-                        why=twelve.reason.isEmpty()?"12 outer surround was not traced reliably":twelve.reason;
-                        out.add(unassessable(hour,why));
-                        continue;
-                    }
-                    candidate=polygonBoundary(new double[][]{
-                            twelve.geometry.triLeft,twelve.geometry.triRight,twelve.geometry.triTip
-                    });
-                } else if(hour==6||hour==9) {
-                    GmtSixLandmarkAnalyzer.Result baton=hour==6?six:nine;
-                    if(!baton.valid||!baton.stable||baton.geometry==null||!baton.geometry.outerEdge) {
-                        why=baton.reason.isEmpty()?(baton.lowReason.isEmpty()?hour+" baton outer surround was not traced reliably":baton.lowReason):baton.reason;
-                        out.add(unassessable(hour,why));
-                        continue;
-                    }
-                    candidate=polygonBoundary(baton.geometry.polygon());
-                } else {
-                    GmtRoundMarkerAnalyzer.Marker m=roundByHour.get(hour);
-                    if(m==null||!m.found||!m.stable||!(m.radiusPx>1)) {
-                        why=m==null?"round marker detector unavailable":(!m.reason.isEmpty()?m.reason:(!m.lowReason.isEmpty()?m.lowReason:"round marker outer surround was not traced reliably"));
-                        out.add(unassessable(hour,why));
-                        continue;
-                    }
-                    candidate=circleBoundary(m.x,m.y,m.radiusPx,180);
-                }
-
-                double raw=symmetricP90(ref,candidate);
-                if(!Double.isFinite(raw)) {
-                    out.add(unassessable(hour,"marker boundary comparison failed"));
+                ShapeStats ref=ShapeStats.of(refPts);
+                if(ref==null) {
+                    out.add(unassessable(hour,"projected genuine marker geometry was degenerate"));
                     continue;
                 }
-                // The projected genuine outline is a stroked anti-aliased line rather than an
-                // infinitesimal curve. Remove that display stroke before treating separation as
-                // physical marker excursion.
-                double effective=Math.max(0.0,raw-REF_STROKE_ALLOWANCE_R*dialRadius);
-                double norm=effective/dialRadius;
+
+                List<double[]> candidatePts;
+                boolean elongated;
+                String confidenceNote="";
+                if(hour==12) {
+                    if(!twelve.valid||twelve.geometry==null) {
+                        out.add(unassessable(hour,twelve.reason.isEmpty()?"12 marker geometry unavailable":twelve.reason));
+                        continue;
+                    }
+                    candidatePts=polygonBoundary(new double[][]{
+                            twelve.geometry.triLeft,twelve.geometry.triRight,twelve.geometry.triTip
+                    });
+                    elongated=true;
+                    if(!twelve.geometry.outerEdge)confidenceNote="12 outer surround edge was not proven; alignment only";
+                } else if(hour==6||hour==9) {
+                    GmtSixLandmarkAnalyzer.Result baton=hour==6?six:nine;
+                    if(!baton.valid||baton.geometry==null) {
+                        out.add(unassessable(hour,baton.reason.isEmpty()?hour+" baton geometry unavailable":baton.reason));
+                        continue;
+                    }
+                    candidatePts=polygonBoundary(baton.geometry.polygon());
+                    elongated=true;
+                    if(!baton.geometry.outerEdge||!baton.stable)
+                        confidenceNote=(baton.lowReason==null||baton.lowReason.isEmpty())
+                                ?"outer surround edge was not proven; alignment only":baton.lowReason+"; alignment only";
+                } else {
+                    GmtRoundMarkerAnalyzer.Marker m=roundByHour.get(hour);
+                    if(m==null||!m.found||!Double.isFinite(m.x)||!Double.isFinite(m.y)) {
+                        String why=m==null?"round marker detector unavailable":(!m.reason.isEmpty()?m.reason:"round marker centre unavailable");
+                        out.add(unassessable(hour,why));
+                        continue;
+                    }
+                    // Radius is deliberately arbitrary for alignment: only the centre of a round
+                    // marker is used unless an independently proven outer-surround size test is added.
+                    double proxyRadius=Math.max(4.0,ref.minorHalfExtent);
+                    candidatePts=circleBoundary(m.x,m.y,proxyRadius,180);
+                    elongated=false;
+                    if(!m.stable)confidenceNote=(m.lowReason==null||m.lowReason.isEmpty())?"round outline low confidence; centre alignment only":m.lowReason+"; centre alignment only";
+                }
+
+                ShapeStats cand=ShapeStats.of(candidatePts);
+                if(cand==null) {
+                    out.add(unassessable(hour,"candidate marker geometry was degenerate"));
+                    continue;
+                }
+
+                double centre=Math.hypot(cand.cx-ref.cx,cand.cy-ref.cy);
+                double rotDeg=Double.NaN,rotEdge=0.0;
+                if(elongated) {
+                    rotDeg=axisDifferenceDeg(cand.majorAngleRad,ref.majorAngleRad);
+                    rotEdge=Math.abs(Math.sin(Math.toRadians(rotDeg)))*ref.majorHalfExtent;
+                }
+                double excursion=Math.max(centre,rotEdge);
+                double norm=excursion/dialRadius;
                 Level level=norm>=CLEAR_EXCURSION_R?Level.CLEAR_DIFFERENCE
                         :norm>=BORDERLINE_EXCURSION_R?Level.BORDERLINE:Level.NORMAL;
-                out.add(new Feature(hour,level,effective,norm,""));
+                out.add(new Feature(hour,level,excursion,norm,centre,rotEdge,rotDeg,confidenceNote));
             }
         } catch(Throwable t) {
             return unavailable("selective reporter failed: "+t.getClass().getSimpleName());
@@ -172,6 +199,28 @@ final class Alpha90SelectiveMarkerReporter {
             bgr.release();rgba.release();
         }
         return new Report(out);
+    }
+
+    /** Weighted outline statistics. PCA provides the visible long axis after Alpha90 perspective. */
+    private static final class ShapeStats {
+        final double cx,cy,majorAngleRad,majorHalfExtent,minorHalfExtent;
+        ShapeStats(double cx,double cy,double a,double maj,double min){this.cx=cx;this.cy=cy;majorAngleRad=a;majorHalfExtent=maj;minorHalfExtent=min;}
+        static ShapeStats of(List<double[]> p){
+            if(p==null||p.size()<3)return null;
+            double cx=0,cy=0;int n=0;
+            for(double[] q:p)if(q!=null&&q.length>=2&&Double.isFinite(q[0])&&Double.isFinite(q[1])){cx+=q[0];cy+=q[1];n++;}
+            if(n<3)return null;cx/=n;cy/=n;
+            double xx=0,xy=0,yy=0;
+            for(double[] q:p){if(q==null||q.length<2)continue;double dx=q[0]-cx,dy=q[1]-cy;xx+=dx*dx;xy+=dx*dy;yy+=dy*dy;}
+            xx/=n;xy/=n;yy/=n;
+            double a=0.5*Math.atan2(2.0*xy,xx-yy);
+            double ca=Math.cos(a),sa=Math.sin(a);
+            double maj=0,min=0;
+            for(double[] q:p){if(q==null||q.length<2)continue;double dx=q[0]-cx,dy=q[1]-cy;maj=Math.max(maj,Math.abs(dx*ca+dy*sa));min=Math.max(min,Math.abs(-dx*sa+dy*ca));}
+            if(!(maj>0)&&!(min>0))return null;
+            if(min>maj){double t=maj;maj=min;min=t;a+=Math.PI/2.0;}
+            return new ShapeStats(cx,cy,a,maj,min);
+        }
     }
 
     private static Report unavailable(String why){
@@ -236,35 +285,19 @@ final class Alpha90SelectiveMarkerReporter {
         return out;
     }
 
-    /** Robust symmetric boundary distance. p90 keeps a local glare/hand edge from dominating. */
-    private static double symmetricP90(List<double[]> a,List<double[]> b) {
-        if(a==null||b==null||a.isEmpty()||b.isEmpty())return Double.NaN;
-        List<Double> d=new ArrayList<>(a.size()+b.size());
-        appendNearestDistances(d,a,b);
-        appendNearestDistances(d,b,a);
-        if(d.isEmpty())return Double.NaN;
-        Collections.sort(d);
-        int i=(int)Math.ceil(0.90*d.size())-1;
-        return d.get(clamp(i,0,d.size()-1));
+    private static double axisDifferenceDeg(double a,double b){
+        double d=Math.toDegrees(a-b);
+        while(d>90)d-=180;while(d<=-90)d+=180;
+        return d;
     }
 
-    private static void appendNearestDistances(List<Double> out,List<double[]> from,List<double[]> to) {
-        for(double[] p:from) {
-            double best=Double.POSITIVE_INFINITY;
-            for(double[] q:to) {
-                double dx=p[0]-q[0],dy=p[1]-q[1],dd=dx*dx+dy*dy;
-                if(dd<best)best=dd;
-            }
-            if(Double.isFinite(best))out.add(Math.sqrt(best));
-        }
-    }
-
-    static String csvHeader(){return "hour,level,excursion_px,excursion_over_dial_r,reason";}
+    static String csvHeader(){return "hour,level,excursion_px,excursion_over_dial_r,centre_shift_px,rotation_edge_px,rotation_deg,reason";}
     static String csvRow(Feature f){
-        return String.format(Locale.US,"%d,%s,%.3f,%.6f,%s",f.hour,f.level,f.excursionPx,f.excursionOverDialR,csv(f.reason));
+        return String.format(Locale.US,"%d,%s,%.3f,%.6f,%.3f,%.3f,%s,%s",f.hour,f.level,f.excursionPx,f.excursionOverDialR,
+                f.centreShiftPx,f.rotationEdgePx,Double.isFinite(f.rotationDeg)?String.format(Locale.US,"%.3f",f.rotationDeg):"",csv(f.reason));
     }
 
-    private static Feature unassessable(int h,String why){return new Feature(h,Level.UNASSESSABLE,Double.NaN,Double.NaN,why);}
+    private static Feature unassessable(int h,String why){return new Feature(h,Level.UNASSESSABLE,Double.NaN,Double.NaN,Double.NaN,Double.NaN,Double.NaN,why);}
     private static int clamp(int v,int lo,int hi){return Math.max(lo,Math.min(hi,v));}
     private static double wrapPi(double x){while(x>Math.PI)x-=2*Math.PI;while(x<=-Math.PI)x+=2*Math.PI;return x;}
     private static String csv(String s){if(s==null)return "";return "\""+s.replace("\"","\"\"")+"\"";}
