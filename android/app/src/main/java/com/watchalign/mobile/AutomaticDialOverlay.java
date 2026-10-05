@@ -12,16 +12,17 @@ import org.opencv.imgproc.CLAHE;
 import org.opencv.imgproc.Imgproc;
 
 /**
- * Strict one-photo proof path.
+ * Fixed-genuine-master perspective proof.
  *
- * Pose evidence is restricted to:
- *   1) the physical black-dial boundary, and
- *   2) the 48 printed minor-minute ticks, admitted only as complete opposite pairs.
+ * Candidate evidence is restricted to:
+ *   1) the physical black-dial boundary, used only as a coarse geometric seed/guard; and
+ *   2) the 48 printed minor-minute ticks, admitted only as complete opposite pairs,
+ *      used to estimate the camera pose/perspective.
  *
  * Applied hour markers, the 12 triangle, date/cyclops, hands and text are never used
- * for centre, scale, clock phase, rotation or perspective. Canonical 12 is locked to
- * image-up in this strict proof build. This intentionally prefers an obvious failure
- * on a rotated source photo to fitting a judged dial feature and hiding its defect.
+ * for centre, scale, clock phase, rotation or perspective. The rendered dial geometry
+ * always comes from the fixed genuine 126710BLNR master and is never reshaped from
+ * candidate QC features. Canonical 12 is locked to image-up in this proof build.
  */
 final class AutomaticDialOverlay {
     static final class Result {
@@ -59,7 +60,9 @@ final class AutomaticDialOverlay {
             Utils.bitmapToMat(input,rgba);
             Imgproc.cvtColor(rgba,bgr,Imgproc.COLOR_RGBA2BGR);
 
-            GmtDialSeedAnalyzer.Result seed=GmtDialSeedAnalyzer.analyse(bgr);
+            // Strict coarse location: physical dark-dial boundary only. No hour-marker
+            // brightness or other judged dial feature is allowed into the seed.
+            StrictDialBoundarySeedAnalyzer.Result seed=StrictDialBoundarySeedAnalyzer.analyse(bgr);
             if(seed==null||!seed.valid)return new Result(seed==null?"automatic dial seed failed":seed.reason);
 
             DialEdgeEllipseFit.Fit edge=DialEdgeFitter.fitBgr(bgr,seed.x,seed.y,seed.r);
@@ -67,9 +70,8 @@ final class AutomaticDialOverlay {
             if(edge.points<70||edge.rmsPx>Math.max(5.0,edge.meanRadius()*0.030))
                 return new Result("dial boundary fit was not stable enough");
 
-            // CRITICAL: no triangle/hour marker is consulted here. The strict proof locks
-            // canonical 12 to image-up. Minor ticks may refine the pose, but judged dial
-            // features can never rotate or translate the master onto themselves.
+            // No triangle/hour marker is consulted. Canonical 12 is image-up. The minor
+            // ticks may estimate camera pose, but judged dial features cannot steer it.
             h0=ellipsePose(edge,0.0,-1.0);
             if(h0==null)return new Result("ellipse pose could not be constructed");
 
@@ -78,11 +80,13 @@ final class AutomaticDialOverlay {
             clahe.apply(gray,enh);
             Imgproc.GaussianBlur(enh,enh,new Size(3,3),0.65);
 
+            // The final pose is estimated from explicit opposing MINOR minute ticks only.
+            // The fixed genuine master is not compared with any hour marker/triangle.
             pairFit=OpposingMinuteHomographyFitter.fit(enh,h0);
 
-            // A generic homography can otherwise absorb too much geometry. Keep a minute
-            // fit only if it also remains physically consistent with the independently
-            // measured black-dial ellipse and stays within modest projective bounds.
+            // Keep the minute-derived pose only if it remains physically consistent with
+            // the independently fitted physical dial edge. This guard does not look at
+            // any judged dial feature and prevents an implausibly flexible homography.
             if(pairFit!=null&&pairFit.accepted&&pairFit.homography!=null){
                 String guard=physicalGuardReason(pairFit.homography,edge);
                 if(guard!=null){
@@ -97,6 +101,7 @@ final class AutomaticDialOverlay {
             h=(pairFit!=null&&pairFit.homography!=null)?pairFit.homography.clone():h0.clone();
             if(h==null||h.empty())return new Result("opposing-minute perspective fit failed");
 
+            // Render only the untouched fixed genuine master through the estimated pose.
             Bitmap overlay=warpOutline(input.getWidth(),input.getHeight(),h);
             if(overlay==null)return new Result("dial outline rendering failed");
             return new Result(overlay,edge,pairFit);
@@ -109,11 +114,6 @@ final class AutomaticDialOverlay {
         }
     }
 
-    /**
-     * Reject minute solutions that stop looking like the independently fitted physical
-     * dial. This does not use any applied marker. It prevents a low-RMS minute fit from
-     * purchasing that RMS with an implausible global warp.
-     */
     private static String physicalGuardReason(Mat fitted,DialEdgeEllipseFit.Fit e){
         double[] m=new double[9];
         fitted.get(0,0,m);
@@ -121,8 +121,6 @@ final class AutomaticDialOverlay {
             return "minute fit rejected by physical-pose guard";
         double s=m[8];for(int i=0;i<9;i++)m[i]/=s;
 
-        // Canonical radius is one, so h31/h32 directly express denominator change
-        // across the dial. Deliberately conservative for this proof build.
         double projective=Math.hypot(m[6],m[7]);
         if(!Double.isFinite(projective)||projective>0.18)
             return "minute fit rejected: projective warp exceeded proof limit";
@@ -138,7 +136,6 @@ final class AutomaticDialOverlay {
         return null;
     }
 
-    /** Distance of the fitted homography's projected unit circle from the measured ellipse. */
     private static double ellipseConformanceRms(Mat h,DialEdgeEllipseFit.Fit e){
         double a=Math.toRadians(e.angleDeg),ca=Math.cos(a),sa=Math.sin(a);
         double ss=0;int n=0;
@@ -156,7 +153,6 @@ final class AutomaticDialOverlay {
         return n<80?Double.NaN:Math.sqrt(ss/n);
     }
 
-    /** Map the canonical unit dial onto the fitted ellipse with a supplied external phase direction. */
     private static Mat ellipsePose(DialEdgeEllipseFit.Fit e,double targetDx,double targetDy){
         double a=Math.toRadians(e.angleDeg),ca=Math.cos(a),sa=Math.sin(a);
         double a00=ca*e.axisA,a01=-sa*e.axisB;
