@@ -1,0 +1,87 @@
+name: Alpha96 genuine calibration (research)
+
+# RESEARCH ONLY. Restores the provenance-strong genuine photos already catalogued by the dataset
+# harvester (tools/research/alpha96_calibration/catalogue_provenance_strong.csv), keeping a file only
+# when its sha256 equals the catalogued value, then runs the exact production Alpha96 measurement
+# (desktop harness: Alpha96Calib) and aggregate.py. Only CSVs and the report are uploaded; images are
+# never committed, cached or uploaded. No thresholds or verdicts are derived or changed.
+#
+# Triggers: a push that changes this workflow or the fetch script on the feature branch, or a
+# manual dispatch once the file exists on the default branch.
+on:
+  push:
+    branches:
+      - feature/android-alpha91-minute-lattice
+    paths:
+      - '.github/workflows/alpha96-genuine-calibration.yml'
+      - 'tools/research/alpha96_calibration/fetch_verified.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alpha96-genuine-calibration
+  cancel-in-progress: false
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CAL: tools/research/alpha96_calibration
+      IMG: a96_images
+      OUT: a96_results
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: python -m pip install -q requests
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Fetch catalogued photos (sha256-verified)
+        run: |
+          mkdir -p "$IMG" "$OUT"
+          python3 "$CAL/fetch_verified.py" "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/fetch_log.csv"
+
+      - name: Run exact Alpha96 measurement
+        run: |
+          tools/desktop-harness/run.sh Alpha96Calib "$CAL/catalogue_provenance_strong.csv" "$IMG" \
+            "$OUT/runner_catalogue_provenance_strong.csv"
+
+      - name: Aggregate
+        # Local candidates/replica controls are not present on the runner; their committed runner
+        # output is joined so the regression table and the strict group separation stay in the report.
+        run: |
+          python3 "$CAL/aggregate.py" \
+            --pair "$CAL/catalogue_provenance_strong.csv" "$OUT/runner_catalogue_provenance_strong.csv" \
+            --pair "$CAL/manifest_local.csv" "$CAL/results/runner_local.csv" \
+            --fetch-log "$OUT/fetch_log.csv" --out "$OUT"
+
+      - name: Upload CSVs and report (no images)
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha96-genuine-calibration-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            a96_results/*.csv
+            a96_results/report.md
+
+      - name: Print results to log
+        run: |
+          cat "$OUT/report.md"
+          echo '=== watch_level.csv ==='
+          cat "$OUT/watch_level.csv"

@@ -66,10 +66,12 @@ The gap is the photo files behind the 213 rows of `catalogue_provenance_strong.c
 
 This environment cannot reach the image hosts (bobswatches.com, dist.phillips.com, cdn.swisswatchexpo.com, thewosgroup.com). GitHub-hosted runners can.
 
-The smallest closing step is a manual (`workflow_dispatch`) research job that:
-1. re-fetches exactly the catalogued `image_url`s;
-2. keeps a file only if its sha256 equals the catalogued value, so it is the same evidence and not a new source;
-3. runs `Alpha96Calib` and `aggregate.py`;
-4. uploads only the CSVs and report as an artifact, never committing images.
+The closing step is `.github/workflows/alpha96-genuine-calibration.yml`, a research job approved by the owner on 2026-10-06. It:
+1. re-fetches exactly the catalogued `image_url`s with `fetch_verified.py`, using the harvester's own HTTP client (same User-Agent, robots.txt respected, rate-limited per host);
+2. keeps a file only if its sha256 equals the catalogued value, so it is the same evidence and not a new source. A file at the target path that does not match is deleted, so it can never be measured;
+3. runs `Alpha96Calib` on the restored photos, then `aggregate.py --fetch-log`, which adds a restore table by host and status to the report;
+4. uploads only the CSVs and report (artifact, 30 days) and prints the report to the job log. Images are never committed, cached or uploaded.
 
-This needs the owner's approval because it downloads third-party photographs. Listings that have since changed will fail the hash check and are reported, not replaced.
+Listings that have changed since harvesting fail the hash check and are reported, not replaced.
+
+It runs on a push that changes the workflow or `fetch_verified.py` on this branch. Manual dispatch works once the file is on the default branch.

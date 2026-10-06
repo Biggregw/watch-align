@@ -167,6 +167,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--pair', nargs=2, action='append', metavar=('MANIFEST', 'RUNNER_CSV'), required=True)
     ap.add_argument('--out', required=True)
+    ap.add_argument('--fetch-log', help='fetch_verified.py log: adds a sha256 restore summary to the report')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     rows = []
@@ -196,6 +197,16 @@ def main():
         present = sum(1 for r in rows if r['group'] == g and r.get('status') not in ('missing', None))
         acc, _ = count(g, 'accepted')
         rep.append(f'| {g} | {n} | {wn} | {present} | {acc} |')
+    if a.fetch_log and os.path.exists(a.fetch_log):
+        fl = list(csv.DictReader(open(a.fetch_log)))
+        st = defaultdict(lambda: [0, set()])
+        for x in fl:
+            st[(x['host'], x['status'])][0] += 1
+            st[(x['host'], x['status'])][1].add(x['physical_watch_id'])
+        rep += ['', '## sha256-verified restore of catalogued photos', '',
+                'Only files whose sha256 equals the catalogued value are measured; changed or unreachable listings are not replaced.', '',
+                '| host | status | photos | watches |', '|---|---|---:|---:|']
+        rep += [f'| {h} | {s_} | {v[0]} | {len(v[1])} |' for (h, s_), v in sorted(st.items())]
     rep += ['', '## Genuine population (provenance-strong: established dealer, auction house, Rolex CPO)', '',
             dist_table(rows, 'genuine_population'), '',
             '## Marketplace genuine candidates (seller-asserted; descriptive only, NOT population evidence)', '',
