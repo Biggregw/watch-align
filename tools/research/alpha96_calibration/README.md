@@ -395,3 +395,35 @@ Reading the table:
 - Report the 12 as centreline rotation plus side angles, which are robust, together with lateral position re-centred on the genuine nominal, which keeps translation sensitivity.
 - Show the radial component only with a lighting caveat, or withhold it.
 - Optionally add the per-side consistency gate as a fail-closed quality check, once genuine phone-photo references can set its scale.
+
+## SWE excluded from the genuine reference; angles + lateral 12 prototype (2026-10-06)
+
+**Owner decision: ignore the SWE photos.** Their studio lighting moves the 12, and most of their catalogued images no longer verify. `calibrate_m12_nominal.py` now leaves SWE out by default (`--exclude-source none` restores the old behaviour). `m12_nominal.properties` and the new `m12_genuine_reference.csv` are rebuilt from 41 watches: Bob's 32, Phillips 7, other 2.
+
+**New nominal, relative to the master:**
+- radial −0.0037 R, tangential −0.0008 R;
+- left side −0.14°, right side +0.15°, base −0.14°, centreline +0.04°.
+
+The genuine 12 offset from it is median 0.0009 / P90 0.0020 / max 0.0032 R, both in-sample and leave-one-watch-out (with SWE it was 0.0012 / 0.0029 / 0.0046 R). Leaving out a source moves the nominal by at most 0.0004 R.
+
+**Prototype pieces (harness only; app unchanged):**
+- `tools/desktop-harness/drivers/Alpha97TwelveAngles.java` takes the unchanged production `Report`. It reports centreline rotation, left/right side angles and lateral (left/right) position, all from the genuine nominal. Context is the number of genuine watches at least as far on each component, from `m12_genuine_reference.csv` (each watch computed without itself).
+- The radial position is shown only as a bracketed lighting-sensitive note.
+- No thresholds or verdicts; fail-closed as production.
+- `Alpha97TwelveProto.java` is the driver: `run.sh Alpha97TwelveProto <manifest> <root> <properties> <reference> <out.csv>`.
+- `check_m12_angles_parity.py` checks Java against Python: 8 local photos and 166 scaled variants, 0 mismatches.
+
+**Local photos** (results in `results/m12_angles_lateral/`). Values are genuine watches at least as far, out of 41:
+
+| Photo | Centreline | Sides | Lateral | Full 2-D offset |
+|---|---:|---:|---:|---:|
+| GEN_CAND_HO_01 | 10 | 14 | 7 | 16 |
+| GEN_CAND_HO_02 | 8 | 9 | 13 | 10 |
+| THEONE | 2 | 0 | 0 | 0 |
+| RL_LOCAL_BLNR | 4 | 1 | 0 | 0 |
+| ARF crooked-6 | 23 | 14 | 0 | 0 |
+| Batgirl, WEX 01/02 | withheld (occluded) | | | |
+
+- Lateral position puts every replica beyond all genuine watches; the angles catch THEONE and LOCAL but not ARF.
+- With SWE excluded, the full 2-D offset (including radial) also separates all three replicas while keeping both candidates inside.
+- Whether radial needs demoting therefore depends on how much lighting varies in phone photos. Genuine phone-photo references are still the deciding evidence.

@@ -1,4 +1,4 @@
-nominal (59 genuine watches): radial -0.0038 R, tangential -0.0009 R, L/R -0.17/+0.11 deg, base -0.18, centreline -0.10
+nominal (41 genuine watches): radial -0.0037 R, tangential -0.0008 R, L/R -0.14/+0.15 deg, base -0.14, centreline +0.04
 GEN_CAND_WEX_BLRO_01
   production:  12 (research): OCCLUDED / INSUFFICIENT CLEAN EDGE
   prototype:   12 (genuine ref, research): OCCLUDED / INSUFFICIENT CLEAN EDGE
@@ -7,19 +7,19 @@ GEN_CAND_WEX_BLRO_02
   prototype:   12 (genuine ref, research): OCCLUDED / INSUFFICIENT CLEAN EDGE
 GEN_CAND_HO_01
   production:  12 (research): 0.04 px left · 0.04 px up · centreline -0.43° CCW · L/R sides -0.14°/-0.30°
-  prototype:   12 (genuine ref, research): 0.21 px left · 0.05 px down · local 0.21 px (0.0010 R) · centreline -0.33° CCW · L/R sides +0.04°/-0.41°
+  prototype:   12 (genuine ref, research): 0.23 px left · 0.07 px down · local 0.24 px (0.0012 R) · centreline -0.47° CCW · L/R sides -0.00°/-0.46°
 GEN_CAND_HO_02
   production:  12 (research): 0.09 px right · 0.41 px down · centreline +0.60° CW · L/R sides +0.48°/+0.64°
-  prototype:   12 (genuine ref, research): 0.09 px left · 0.18 px down · local 0.20 px (0.0014 R) · centreline +0.70° CW · L/R sides +0.65°/+0.54°
+  prototype:   12 (genuine ref, research): 0.10 px left · 0.20 px down · local 0.22 px (0.0016 R) · centreline +0.56° CW · L/R sides +0.61°/+0.49°
 RL_THEONE_BLNR
   production:  12 (research): 0.91 px left · 1.20 px down · centreline +0.96° CW · L/R sides +0.99°/+0.89°
-  prototype:   12 (genuine ref, research): 0.37 px left · 0.74 px down · local 0.83 px (0.0050 R) · centreline +1.06° CW · L/R sides +1.16°/+0.78°
+  prototype:   12 (genuine ref, research): 0.39 px left · 0.76 px down · local 0.85 px (0.0052 R) · centreline +0.93° CW · L/R sides +1.13°/+0.73°
 RL_USER_BATGIRL
   production:  12 (research): OCCLUDED / INSUFFICIENT CLEAN EDGE
   prototype:   12 (genuine ref, research): OCCLUDED / INSUFFICIENT CLEAN EDGE
 RL_LOCAL_BLNR
   production:  12 (research): 1.86 px left · 0.91 px up · centreline +0.79° CW · L/R sides +0.75°/+1.11°
-  prototype:   12 (genuine ref, research): 2.88 px left · 0.66 px up · local 2.95 px (0.0134 R) · centreline +0.89° CW · L/R sides +0.93°/+1.00°
+  prototype:   12 (genuine ref, research): 2.90 px left · 0.63 px up · local 2.97 px (0.0135 R) · centreline +0.75° CW · L/R sides +0.89°/+0.96°
 RL_ARF_BLRO_CROOKED6
   production:  12 (research): 2.36 px left · 1.63 px up · centreline +0.28° CW · L/R sides +0.03°/+0.62°
-  prototype:   12 (genuine ref, research): 1.96 px left · 1.87 px up · local 2.71 px (0.0115 R) · centreline +0.38° CW · L/R sides +0.20°/+0.51°
+  prototype:   12 (genuine ref, research): 1.98 px left · 1.85 px up · local 2.71 px (0.0116 R) · centreline +0.24° CW · L/R sides +0.17°/+0.46°

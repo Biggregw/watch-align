@@ -76,10 +76,16 @@ def main():
     ap.add_argument('--per-photo', default=os.path.join(HERE, 'results/ci_run_37500197377/per_photo.csv'))
     ap.add_argument('--dedup', default=os.path.join(HERE, 'results/dedup/photos.csv'))
     ap.add_argument('--level', default='dial')
+    ap.add_argument('--exclude-source', action='append', default=['SWE'],
+                    help="sources left out of the genuine reference (default: SWE, whose studio lighting moves the 12 and "
+                         "whose catalogued images no longer verify); pass --exclude-source none to keep all")
     ap.add_argument('--catalogue', default=os.path.join(HERE, 'catalogue_provenance_strong.csv'))
     ap.add_argument('--properties', default=os.path.join(HERE, 'm12_nominal.properties'))
     ap.add_argument('--out', default=os.path.join(HERE, 'results/m12_nominal/calibration.md'))
+    ap.add_argument('--reference', default=os.path.join(HERE, 'm12_genuine_reference.csv'),
+                    help='per-watch leave-one-watch-out component values for the angles + lateral prototype')
     a = ap.parse_args()
+    excluded = set() if 'none' in a.exclude_source else set(a.exclude_source)
     shared = {r['photo_id'] for r in csv.DictReader(open(a.dedup)) if r[f'shared_{a.level}'] == '1'}
     cat = {r['photo_id']: r for r in csv.DictReader(open(a.catalogue))}
     per_watch = defaultdict(list); others = []
@@ -90,7 +96,8 @@ def main():
         if r['group'] == 'genuine_population':
             if r['photo_id'] not in shared:
                 v['src'] = src_of(cat[r['photo_id']]['image_url'], v['R'])
-                per_watch[r['physical_watch_id']].append(v)
+                if v['src'] not in excluded:
+                    per_watch[r['physical_watch_id']].append(v)
         else:
             v['photo'] = r['photo_id']; v['group'] = r['group']
             others.append(v)
@@ -113,10 +120,21 @@ def main():
     rnd = random.Random(12)
     boots = [nominal([rnd.choice(W) for _ in W]) for _ in range(2000)]
 
+    # Per-watch genuine context for the angles + lateral prototype: each watch's components re-centred on a nominal
+    # computed without that watch (no self-grading). Used only to report how many genuine watches read at least as far.
+    with open(a.reference, 'w', newline='') as fh:
+        wr = csv.writer(fh)
+        wr.writerow(['physical_watch_id', 'source', 'lateral_R', 'radial_R', 'centreline_deg', 'sides_deg'])
+        for w in W:
+            n = nominal([x for x in W if x is not w])
+            wr.writerow([w['watch'], w['src'], f"{abs(w['tangential_R'] - n['tangential_R']):.6f}",
+                         f"{abs(w['radial_R'] - n['radial_R']):.6f}", f"{abs(w['rotation_deg'] - n['rotation_deg']):.6f}",
+                         f"{max(abs(w['left_side_deg'] - n['left_side_deg']), abs(w['right_side_deg'] - n['right_side_deg'])):.6f}"])
     with open(a.properties, 'w') as fh:
         fh.write('# RESEARCH ONLY. Genuine-calibrated 12-triangle nominal, relative to the Alpha92 master.\n'
                  f'# Written by calibrate_m12_nominal.py from {os.path.relpath(a.per_photo, HERE)}; dedup level {a.level}; '
-                 f'{len(W)} physical watches, one value each (median of photos).\n'
+                 f'{len(W)} physical watches, one value each (median of photos); sources excluded: '
+                 f"{', '.join(sorted(excluded)) or 'none'}.\n"
                  '# radial_R / tangential_R: 12 local offset components in units of dial radius (radial + = outward).\n'
                  '# *_deg: triangle side errors, base tilt and centreline rotation (+ = clockwise).\n')
         fh.write(f'n_watches={len(W)}\n')
@@ -125,7 +143,8 @@ def main():
 
     sl = lambda xs: f'{median(xs):.4f} / {q(xs, .9):.4f} / {max(xs):.4f}'
     L = ['# 12-triangle nominal calibrated on genuine watches (research only)', '',
-         f'{len(W)} physical watches (shared / stock photos excluded at level {a.level}), one value per watch. '
+         f'{len(W)} physical watches (shared / stock photos excluded at level {a.level}; sources excluded: '
+         f"{', '.join(sorted(excluded)) or 'none'}), one value per watch. "
          f'Sources: ' + ', '.join(f"{s} {sum(1 for w in W if w['src'] == s)}" for s in sorted({w['src'] for w in W})) + '.', '',
          '## Nominal (correction relative to the Alpha92 master) with bootstrap 95% interval over watches', '',
          '| Quantity | nominal | 95% interval |', '|---|---:|---:|']
