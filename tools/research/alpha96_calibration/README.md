@@ -427,3 +427,8 @@ The genuine 12 offset from it is median 0.0009 / P90 0.0020 / max 0.0032 R, both
 - Lateral position puts every replica beyond all genuine watches; the angles catch THEONE and LOCAL but not ARF.
 - With SWE excluded, the full 2-D offset (including radial) also separates all three replicas while keeping both candidates inside.
 - Whether radial needs demoting therefore depends on how much lighting varies in phone photos. Genuine phone-photo references are still the deciding evidence.
+
+**Decision (owner, 2026-10-06): robust readout.**
+- Assess the 12 by centreline rotation, side angles and lateral position from the genuine nominal.
+- Show radial only as a lighting-sensitive note.
+- The recalibrated full 2-D offset is not used.

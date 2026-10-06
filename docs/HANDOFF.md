@@ -146,6 +146,17 @@ cd android
 
 Do not run CI or build an APK to answer an offline research question. Build only when an approved production change needs validation.
 
+## Alpha96 12-triangle decision - 2026-10-06
+
+Owner decision: the 12 triangle is assessed with the **robust** readout.
+- **Primary components:** centreline rotation, left/right side angles and lateral (left/right) position, all measured from a genuine-calibrated nominal.
+- **Radial (toward/away from centre) position:** shown only as a lighting-sensitive note, never assessed.
+- **Calibration source:** SWE photos are excluded from the genuine reference.
+- **Evidence:** `tools/research/alpha96_calibration/README.md`, from "SWE photography effect" through "angles + lateral 12 prototype".
+- **Code:** the prototype is `tools/desktop-harness/drivers/Alpha97TwelveAngles.java` (harness only). The nominal and genuine context are in `m12_nominal.properties` and `m12_genuine_reference.csv`.
+- **Status:** the app is unchanged. No limits are set.
+- **Before porting to the app:** genuine phone-photo references are still the named evidence gap (every replica control is a phone photo; the nominal comes from dealer/auction photos).
+
 ## Do not restart without evidence
 
 The following are not active programmes:
