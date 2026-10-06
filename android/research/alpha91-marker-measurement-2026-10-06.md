@@ -82,8 +82,8 @@ Two size quantities have consistent offsets: the round radius (+0.3 px) and the 
 ### RL_LOCAL_BLNR (known local-marker case: "6 left; 12 slightly tilted")
 
 - **Pose:** minute lattice locked, tick median 0.105 px.
-- **Occluded:** 8 (GMT hand), 9 (hand) and 10 (low edge coverage; visually clean, so a conservative miss).
-- **Ring:** rotated **+0.50°** clockwise relative to the minute track (genuine ≤ 0.04°), scale **+0.71 %** (genuine ≤ 0.26 %), translation (−0.63, +0.18) px. Because the minute lattice fits to 0.1 px, this is the marker ring disagreeing with the printed track. It is not pose error.
+- **Occluded:** 8 (GMT hand), 9 (hand), and 10 and 11 (edge coverage 0.57–0.60; visually clean, so conservative misses).
+- **Ring:** rotated **+0.46°** clockwise relative to the minute track (genuine ≤ 0.04°), scale **+0.73 %** (genuine ≤ 0.26 %), translation (−0.74, +0.24) px, from 7 markers. Because the minute lattice fits to 0.1 px, this is the marker ring disagreeing with the printed track. It is not pose error.
 - **6:** raw (−2.78, +1.67) px, i.e. **2.84 px tangential = left** (genuine baton tangential max 0.36 px). Rotation −0.01°, so displaced, not rotated. Local residual 0.76 px left after the ring terms. The "6 left" is real; most of it is the ring rotation, plus about 0.8 px of local displacement.
 - **12:** raw tangential −1.86 px (left), local tangential **−2.74 px** (genuine local max 0.30). Centreline rotation +0.79°, base tilt **+1.82°** (genuine 0.30 / 1.12°), right side +1.11°. The 12 is locally displaced left of where the rest of the ring puts it. The tilt is at the edge of a 2-sample genuine range, so it is suggestive, not conclusive.
 - **Other rounds** sit 1.7–2.3 px off raw, but only 0.2–0.5 px off locally. They are consistent with the ring rotation and scale, not with local defects.
@@ -106,7 +106,7 @@ Two size quantities have consistent offsets: the round radius (+0.3 px) and the 
 2. **Does RL BLNR show the expected 12/6 deviation numerically?** Yes.
    - 6 is displaced 2.84 px left, about 8× the genuine baton tangential maximum. It is not rotated.
    - 12 is locally displaced 2.7 px left, with a +1.8° base tilt.
-   - The measurement also shows that much of this comes from the whole marker ring being rotated 0.5° and scaled +0.7 % against the minute track.
+   - The measurement also shows that much of this comes from the whole marker ring being rotated about 0.5° and scaled about +0.7 % against the minute track.
 3. **Does ARF show a measurable 6-marker issue?** Not a crooked (rotated) 6: rotation 0.01°. The measurable deviations are:
    - a marker ring about 1 % too large for the minute track;
    - the 12 about 1.9 px left;
@@ -123,3 +123,18 @@ Two size quantities have consistent offsets: the round radius (+0.3 px) and the 
    - circularity;
    - the parallax adjustment;
    - any thresholds or verdict wording. Ranges come from 4 genuine photos only.
+
+## Amendment: deterministic edge fitting (2026-10-06, later)
+
+Porting this layer to Android exposed a fragility in the line and circle fits. With 21 edge samples per side and a 0.5 px tolerance, several candidate lines can tie on inlier count, so a baton side could flip by about 1–2° depending on sampling order.
+
+The fits are now deterministic:
+- **Lines:** exhaustive pair search, with ties broken by residual.
+- **Circles:** ties broken by residual.
+- **Both:** a short local-optimisation loop (refit, re-select inliers, refit).
+
+Effect on these results:
+- The genuine ranges are unchanged to three decimals.
+- On RL BLNR, hour 11 drops just below the coverage rule (0.57), and the ring now reads +0.46° / +0.73 % from 7 markers.
+
+The Android port (`Alpha94MarkerMeasurement`, branch `feature/android-alpha91-minute-lattice`) uses the identical algorithm and interpolant. The JVM parity harness reproduces these marker centres to within 0.033 px.

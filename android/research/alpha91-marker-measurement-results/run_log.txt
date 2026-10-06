@@ -5,7 +5,7 @@ POOL_GEN_HO_02 [genuine] R=143.4px pose ACCEPTED  tick median 0.107 rms(ex gross
 RL_ARF_BLRO_CROOKED6 [defect_cases] R=234.3px pose ACCEPTED  tick median 0.108 rms(ex gross) 0.138px, ticks 43 in 11 sectors, gross [25]
 RL_LOCAL_BLNR [defect_cases] R=219.7px pose ACCEPTED  tick median 0.105 rms(ex gross) 0.137px, ticks 42 in 10 sectors, gross []
 
-EXT_EXT_GEN_BLRO_WEX_01 (genuine)  status OK  parallax h=0.0195R
+EXT_EXT_GEN_BLRO_WEX_01 (genuine)  status OK  parallax h=0.0194R
   RING (all clean markers vs minute track, n=9): translation (+0.39,-0.06)px  scale +0.26% (+0.29px at 0.813R)  rotation +0.00deg
   h12 triangle OCCLUDED / INSUFFICIENT CLEAN EDGE  (hand/occluder crosses outline (clean side fraction [0.97, 0.93, 0.5]))
   h 1 round    d=(+0.49,-0.33) |0.59|px (4.2e-3R) rad +0.54 tan +0.25px ang +0.13deg | par-adj |0.42| | local (-0.06,-0.02) rad -0.01 tan -0.06px | radius +0.33px circ 0.994
@@ -19,11 +19,11 @@ EXT_EXT_GEN_BLRO_WEX_01 (genuine)  status OK  parallax h=0.0195R
   h10 round    d=(+0.15,-0.18) |0.24|px (1.7e-3R) rad -0.04 tan +0.23px ang +0.12deg | par-adj |0.16| | local (+0.01,+0.04) rad -0.03 tan -0.03px | radius +0.24px circ 0.992
   h11 round    d=(+0.31,-0.20) |0.37|px (2.6e-3R) rad +0.03 tan +0.36px ang +0.18deg | par-adj |0.20| | local (+0.05,+0.12) rad -0.13 tan -0.01px | radius +0.29px circ 0.990
 
-EXT_EXT_GEN_BLRO_WEX_02 (genuine)  status OK  parallax h=0.0203R
+EXT_EXT_GEN_BLRO_WEX_02 (genuine)  status OK  parallax h=0.0202R
   RING (all clean markers vs minute track, n=9): translation (+0.25,-0.12)px  scale +0.18% (+0.23px at 0.813R)  rotation +0.02deg
   h12 triangle OCCLUDED / INSUFFICIENT CLEAN EDGE  (hand/occluder crosses outline (clean side fraction [1.0, 1.0, 0.5]))
   h 1 round    d=(+0.37,-0.34) |0.50|px (3.2e-3R) rad +0.47 tan +0.15px ang +0.07deg | par-adj |0.34| | local (-0.04,-0.04) rad +0.01 tan -0.06px | radius +0.31px circ 0.993
-  h 2 round    d=(+0.55,-0.33) |0.64|px (4.1e-3R) rad +0.64 tan -0.01px ang -0.01deg | par-adj |0.46| | local (+0.08,-0.14) rad +0.14 tan -0.08px | radius +0.27px circ 0.992
+  h 2 round    d=(+0.55,-0.33) |0.64|px (4.1e-3R) rad +0.64 tan -0.01px ang -0.01deg | par-adj |0.47| | local (+0.08,-0.14) rad +0.14 tan -0.08px | radius +0.27px circ 0.992
   h 4 round    OCCLUDED / INSUFFICIENT CLEAN EDGE  (hand/occluder crosses outline (clean perimeter 0.61))
   h 5 round    d=(+0.40,+0.07) |0.41|px (2.6e-3R) rad +0.26 tan -0.31px ang -0.14deg | par-adj |0.24| | local (+0.08,-0.03) rad +0.02 tan -0.09px | radius +0.24px circ 0.993
   h 6 baton    d=(-0.05,+0.45) |0.45|px (2.9e-3R) rad +0.45 tan +0.05px ang +0.02deg | par-adj |0.31| | local (-0.25,+0.36) rad +0.36 tan +0.25px | rot -0.11deg  len +1.54 wid +0.66px
@@ -34,62 +34,62 @@ EXT_EXT_GEN_BLRO_WEX_02 (genuine)  status OK  parallax h=0.0203R
   h11 round    d=(+0.28,-0.16) |0.32|px (2.0e-3R) rad -0.00 tan +0.32px ang +0.14deg | par-adj |0.06| | local (+0.09,+0.20) rad -0.21 tan -0.02px | radius +0.24px circ 0.993
 
 POOL_GEN_HO_01 (genuine)  status OK  parallax h=0.0195R
-  RING (all clean markers vs minute track, n=9): translation (+0.36,-0.49)px  scale +0.12% (+0.20px at 0.813R)  rotation -0.04deg
-  h12 triangle d=(-0.04,-0.04) |0.06|px (0.3e-3R) rad +0.04 tan -0.04px ang -0.01deg | par-adj |0.93| | local (-0.29,+0.62) rad -0.65 tan -0.30px | centreline rot -0.43deg  L/R side -0.14/-0.30deg  base tilt +1.12deg
-  h 1 round    d=(+0.61,-0.39) |0.73|px (3.7e-3R) rad +0.67 tan +0.34px ang +0.12deg | par-adj |0.56| | local (+0.26,+0.30) rad -0.14 tan +0.37px | radius +0.12px circ 0.974
+  RING (all clean markers vs minute track, n=9): translation (+0.36,-0.49)px  scale +0.12% (+0.19px at 0.813R)  rotation -0.04deg
+  h12 triangle d=(-0.04,-0.04) |0.06|px (0.3e-3R) rad +0.04 tan -0.04px ang -0.01deg | par-adj |0.93| | local (-0.30,+0.62) rad -0.64 tan -0.30px | centreline rot -0.43deg  L/R side -0.14/-0.30deg  base tilt +1.12deg
+  h 1 round    d=(+0.62,-0.37) |0.72|px (3.7e-3R) rad +0.65 tan +0.36px ang +0.12deg | par-adj |0.58| | local (+0.26,+0.32) rad -0.15 tan +0.39px | radius +0.10px circ 0.974
   h 2 round    OCCLUDED / INSUFFICIENT CLEAN EDGE  (hand/occluder crosses outline (clean perimeter 0.76))
-  h 4 round    d=(+0.75,-0.86) |1.14|px (5.7e-3R) rad +0.23 tan -1.13px ang -0.39deg | par-adj |0.33| | local (+0.17,-0.37) rad -0.04 tan -0.41px | radius +0.19px circ 0.993
-  h 5 round    d=(+0.50,-0.75) |0.90|px (4.4e-3R) rad -0.39 tan -0.81px ang -0.28deg | par-adj |0.25| | local (-0.06,-0.37) rad -0.34 tan -0.14px | radius +0.21px circ 0.976
-  h 6 baton    d=(+0.37,+0.01) |0.37|px (1.8e-3R) rad +0.01 tan -0.36px ang -0.13deg | par-adj |0.45| | local (-0.10,+0.33) rad +0.32 tan +0.11px | rot +0.47deg  len +0.76 wid +0.35px
-  h 7 round    d=(+0.56,-0.25) |0.61|px (2.9e-3R) rad -0.49 tan -0.35px ang -0.12deg | par-adj |0.50| | local (+0.19,+0.02) rad -0.07 tan -0.17px | radius +0.37px circ 0.985
-  h 8 round    OCCLUDED / INSUFFICIENT CLEAN EDGE  (hand/occluder crosses outline (clean perimeter 0.69))
+  h 4 round    d=(+0.75,-0.86) |1.14|px (5.7e-3R) rad +0.23 tan -1.13px ang -0.39deg | par-adj |0.33| | local (+0.17,-0.38) rad -0.04 tan -0.41px | radius +0.19px circ 0.993
+  h 5 round    d=(+0.50,-0.75) |0.90|px (4.4e-3R) rad -0.39 tan -0.81px ang -0.28deg | par-adj |0.25| | local (-0.05,-0.37) rad -0.34 tan -0.14px | radius +0.21px circ 0.976
+  h 6 baton    d=(+0.37,+0.01) |0.37|px (1.8e-3R) rad +0.01 tan -0.36px ang -0.13deg | par-adj |0.45| | local (-0.10,+0.33) rad +0.32 tan +0.10px | rot +0.47deg  len +0.76 wid +0.35px
+  h 7 round    d=(+0.55,-0.25) |0.61|px (2.9e-3R) rad -0.49 tan -0.35px ang -0.12deg | par-adj |0.50| | local (+0.19,+0.02) rad -0.07 tan -0.17px | radius +0.37px circ 0.985
+  h 8 round    OCCLUDED / INSUFFICIENT CLEAN EDGE  (hand/occluder crosses outline (clean perimeter 0.65))
   h 9 baton    d=(-0.30,-0.12) |0.32|px (1.6e-3R) rad +0.30 tan +0.12px ang +0.05deg | par-adj |0.71| | local (-0.49,+0.27) rad +0.48 tan -0.27px | rot +0.20deg  len +1.23 wid +0.92px
-  h10 round    d=(+0.12,-0.73) |0.74|px (3.7e-3R) rad +0.27 tan +0.71px ang +0.24deg | par-adj |0.14| | local (-0.02,-0.24) rad +0.14 tan +0.20px | radius +0.53px circ 0.990
+  h10 round    d=(+0.12,-0.73) |0.74|px (3.7e-3R) rad +0.27 tan +0.71px ang +0.24deg | par-adj |0.13| | local (-0.03,-0.24) rad +0.15 tan +0.20px | radius +0.53px circ 0.990
   h11 round    d=(+0.51,-1.16) |1.27|px (6.4e-3R) rad +0.78 tan +1.05px ang +0.36deg | par-adj |0.43| | local (+0.34,-0.57) rad +0.34 tan +0.59px | radius +0.44px circ 0.991
 
-POOL_GEN_HO_02 (genuine)  status OK  parallax h=0.0211R
-  RING (all clean markers vs minute track, n=11): translation (+0.25,-0.21)px  scale -0.07% (-0.08px at 0.813R)  rotation +0.02deg
-  h12 triangle d=(-0.01,+0.49) |0.49|px (3.5e-3R) rad -0.49 tan +0.09px ang +0.05deg | par-adj |0.97| | local (-0.28,+0.62) rad -0.67 tan -0.16px | centreline rot +0.76deg  L/R side +0.76/+0.64deg  base tilt +0.30deg
-  h 1 round    d=(+0.28,-0.03) |0.28|px (1.9e-3R) rad +0.20 tan +0.19px ang +0.09deg | par-adj |0.49| | local (+0.04,+0.10) rad -0.05 tan +0.10px | radius +0.39px circ 0.993
-  h 2 round    d=(+0.05,-0.20) |0.21|px (1.5e-3R) rad +0.11 tan -0.18px ang -0.09deg | par-adj |0.27| | local (-0.14,-0.06) rad -0.12 tan -0.10px | radius +0.30px circ 0.978
-  h 4 round    d=(+0.19,-0.28) |0.34|px (2.4e-3R) rad -0.04 tan -0.34px ang -0.17deg | par-adj |0.18| | local (+0.03,-0.05) rad -0.01 tan -0.06px | radius +0.37px circ 0.977
-  h 5 round    d=(+0.47,-0.28) |0.55|px (3.9e-3R) rad -0.12 tan -0.54px ang -0.27deg | par-adj |0.41| | local (+0.29,-0.01) rad +0.08 tan -0.28px | radius +0.39px circ 0.969
-  h 6 baton    d=(+0.28,+0.05) |0.28|px (2.0e-3R) rad -0.01 tan -0.28px ang -0.15deg | par-adj |0.50| | local (+0.06,+0.34) rad +0.32 tan -0.13px | rot -0.45deg  len +1.46 wid +1.02px
-  h 7 round    d=(+0.31,-0.43) |0.53|px (3.7e-3R) rad -0.53 tan +0.05px ang +0.02deg | par-adj |0.26| | local (+0.05,-0.12) rad -0.12 tan +0.05px | radius +0.40px circ 0.961
-  h 8 round    d=(+0.41,-0.46) |0.62|px (4.3e-3R) rad -0.54 tan +0.31px ang +0.15deg | par-adj |0.38| | local (+0.10,-0.17) rad -0.15 tan +0.13px | radius +0.38px circ 0.959
-  h 9 baton    d=(+0.05,-0.29) |0.29|px (2.1e-3R) rad +0.01 tan +0.30px ang +0.16deg | par-adj |0.15| | local (-0.28,-0.05) rad +0.28 tan -0.01px | rot +0.15deg  len +0.49 wid +0.67px
-  h10 round    d=(+0.33,-0.46) |0.57|px (4.0e-3R) rad +0.06 tan +0.57px ang +0.28deg | par-adj |0.30| | local (-0.01,-0.26) rad +0.18 tan +0.19px | radius +0.30px circ 0.968
-  h11 round    d=(+0.46,-0.50) |0.67|px (4.7e-3R) rad +0.33 tan +0.59px ang +0.29deg | par-adj |0.41| | local (+0.14,-0.34) rad +0.28 tan +0.24px | radius +0.22px circ 0.952
+POOL_GEN_HO_02 (genuine)  status OK  parallax h=0.0210R
+  RING (all clean markers vs minute track, n=11): translation (+0.26,-0.22)px  scale -0.07% (-0.08px at 0.813R)  rotation +0.02deg
+  h12 triangle d=(+0.01,+0.42) |0.42|px (3.0e-3R) rad -0.41 tan +0.09px ang +0.05deg | par-adj |0.90| | local (-0.29,+0.55) rad -0.60 tan -0.17px | centreline rot +0.60deg  L/R side +0.48/+0.64deg  base tilt +0.30deg
+  h 1 round    d=(+0.28,-0.03) |0.28|px (1.9e-3R) rad +0.20 tan +0.19px ang +0.09deg | par-adj |0.49| | local (+0.03,+0.10) rad -0.05 tan +0.09px | radius +0.39px circ 0.993
+  h 2 round    d=(+0.05,-0.20) |0.21|px (1.5e-3R) rad +0.11 tan -0.18px ang -0.09deg | par-adj |0.26| | local (-0.15,-0.06) rad -0.13 tan -0.10px | radius +0.30px circ 0.978
+  h 4 round    d=(+0.17,-0.27) |0.32|px (2.3e-3R) rad -0.05 tan -0.32px ang -0.16deg | par-adj |0.18| | local (+0.00,-0.03) rad -0.02 tan -0.03px | radius +0.39px circ 0.975
+  h 5 round    d=(+0.51,-0.31) |0.59|px (4.2e-3R) rad -0.13 tan -0.58px ang -0.29deg | par-adj |0.44| | local (+0.32,-0.02) rad +0.08 tan -0.31px | radius +0.42px circ 0.971
+  h 6 baton    d=(+0.28,+0.05) |0.28|px (2.0e-3R) rad -0.01 tan -0.28px ang -0.15deg | par-adj |0.50| | local (+0.04,+0.35) rad +0.34 tan -0.11px | rot -0.45deg  len +1.46 wid +1.02px
+  h 7 round    d=(+0.33,-0.42) |0.54|px (3.8e-3R) rad -0.54 tan +0.04px ang +0.02deg | par-adj |0.28| | local (+0.04,-0.11) rad -0.11 tan +0.04px | radius +0.41px circ 0.961
+  h 8 round    d=(+0.45,-0.47) |0.65|px (4.5e-3R) rad -0.58 tan +0.30px ang +0.15deg | par-adj |0.42| | local (+0.12,-0.18) rad -0.17 tan +0.13px | radius +0.40px circ 0.961
+  h 9 baton    d=(+0.05,-0.29) |0.29|px (2.1e-3R) rad +0.01 tan +0.30px ang +0.16deg | par-adj |0.15| | local (-0.30,-0.04) rad +0.30 tan -0.02px | rot +0.15deg  len +0.49 wid +0.67px
+  h10 round    d=(+0.35,-0.45) |0.57|px (4.0e-3R) rad +0.04 tan +0.58px ang +0.28deg | par-adj |0.32| | local (-0.01,-0.25) rad +0.17 tan +0.19px | radius +0.31px circ 0.970
+  h11 round    d=(+0.53,-0.46) |0.70|px (4.9e-3R) rad +0.27 tan +0.65px ang +0.32deg | par-adj |0.48| | local (+0.19,-0.30) rad +0.23 tan +0.28px | radius +0.28px circ 0.959
 
-RL_ARF_BLRO_CROOKED6 (defect_cases)  status OK  parallax h=0.0202R
+RL_ARF_BLRO_CROOKED6 (defect_cases)  status OK  parallax h=0.0201R
   RING (all clean markers vs minute track, n=10): translation (-0.16,+1.00)px  scale +1.01% (+1.91px at 0.813R)  rotation -0.10deg
   h12 triangle d=(-2.39,-1.62) |2.88|px (12.2e-3R) rad +1.63 tan -2.36px ang -0.72deg | par-adj |2.62| | local (-1.90,-0.74) rad +0.75 tan -1.88px | centreline rot +0.28deg  L/R side +0.03/+0.62deg  base tilt +0.61deg
   h 1 round    d=(+0.34,-0.27) |0.43|px (1.8e-3R) rad +0.40 tan +0.16px ang +0.05deg | par-adj |0.43| | local (-0.17,+0.56) rad -0.57 tan +0.12px | radius +0.57px circ 0.989
   h 2 round    OCCLUDED / INSUFFICIENT CLEAN EDGE  (hand/occluder crosses outline (clean perimeter 0.65))
-  h 4 round    d=(+1.98,+2.00) |2.81|px (12.1e-3R) rad +2.72 tan +0.77px ang +0.23deg | par-adj |2.36| | local (+0.32,+0.34) rad +0.45 tan +0.14px | radius +0.64px circ 0.988
+  h 4 round    d=(+1.98,+2.00) |2.81|px (12.1e-3R) rad +2.72 tan +0.77px ang +0.23deg | par-adj |2.37| | local (+0.32,+0.34) rad +0.45 tan +0.14px | radius +0.64px circ 0.988
   h 5 round    d=(+1.04,+2.97) |3.15|px (13.6e-3R) rad +3.13 tan +0.62px ang +0.18deg | par-adj |2.59| | local (-0.04,+0.51) rad +0.43 tan +0.30px | radius +0.73px circ 0.988
   h 6 baton    d=(+0.30,+1.94) |1.96|px (8.5e-3R) rad +1.97 tan -0.28px ang -0.09deg | par-adj |1.40| | local (+0.14,-0.80) rad -0.81 tan -0.15px | rot +0.01deg  len +1.25 wid +0.80px
   h 7 round    d=(-1.50,+2.34) |2.77|px (12.0e-3R) rad +2.81 tan +0.15px ang +0.04deg | par-adj |2.18| | local (-0.69,-0.45) rad -0.05 tan +0.83px | radius +0.74px circ 0.988
-  h 8 round    d=(-1.68,+3.24) |3.65|px (15.8e-3R) rad +3.13 tan -1.95px ang -0.58deg | par-adj |3.04| | local (-0.06,+1.01) rad +0.58 tan -0.85px | radius +0.73px circ 0.985
+  h 8 round    d=(-1.68,+3.24) |3.65|px (15.8e-3R) rad +3.13 tan -1.95px ang -0.58deg | par-adj |3.05| | local (-0.06,+1.01) rad +0.58 tan -0.85px | radius +0.73px circ 0.985
   h 9 baton    d=(-1.36,+1.15) |1.78|px (7.7e-3R) rad +1.38 tan -1.15px ang -0.37deg | par-adj |1.25| | local (+0.56,-0.15) rad -0.56 tan +0.15px | rot -0.04deg  len +1.55 wid +0.29px
-  h10 round    d=(-1.24,+1.02) |1.60|px (6.9e-3R) rad +0.58 tan -1.50px ang -0.45deg | par-adj |1.09| | local (+0.74,+0.68) rad -0.97 tan -0.23px | radius +0.68px circ 0.987
+  h10 round    d=(-1.24,+1.02) |1.60|px (6.9e-3R) rad +0.58 tan -1.50px ang -0.45deg | par-adj |1.10| | local (+0.74,+0.68) rad -0.97 tan -0.23px | radius +0.68px circ 0.987
   h11 round    d=(-1.20,-1.42) |1.86|px (7.9e-3R) rad +1.82 tan -0.31px ang -0.09deg | par-adj |1.80| | local (+0.21,-0.93) rad +0.69 tan +0.65px | radius +0.55px circ 0.980
 
-RL_LOCAL_BLNR (defect_cases)  status OK  parallax h=0.0202R
-  RING (all clean markers vs minute track, n=8): translation (-0.63,+0.18)px  scale +0.71% (+1.27px at 0.813R)  rotation +0.50deg
-  h12 triangle d=(-1.85,-0.89) |2.05|px (9.4e-3R) rad +0.91 tan -1.86px ang -0.60deg | par-adj |1.44| | local (-2.71,+0.18) rad -0.15 tan -2.74px | centreline rot +0.79deg  L/R side +0.75/+1.11deg  base tilt +1.82deg
-  h 1 round    d=(+1.69,+0.15) |1.70|px (7.7e-3R) rad +0.70 tan +1.54px ang +0.49deg | par-adj |2.17| | local (+0.36,+0.31) rad -0.09 tan +0.47px | radius +0.82px circ 0.980
-  h 2 round    d=(+1.48,+0.86) |1.71|px (7.8e-3R) rad +0.84 tan +1.49px ang +0.47deg | par-adj |2.18| | local (+0.24,-0.02) rad +0.22 tan +0.10px | radius +0.79px circ 0.995
-  h 4 round    d=(-0.00,+2.05) |2.05|px (9.4e-3R) rad +1.03 tan +1.79px ang +0.57deg | par-adj |1.44| | local (+0.31,-0.09) rad +0.23 tan -0.23px | radius +0.79px circ 0.990
-  h 5 round    d=(-1.14,+1.72) |2.06|px (9.5e-3R) rad +0.94 tan +1.87px ang +0.60deg | par-adj |1.37| | local (+0.19,-0.30) rad -0.17 tan -0.32px | radius +0.89px circ 0.993
-  h 6 baton    d=(-2.78,+1.67) |3.25|px (15.1e-3R) rad +1.72 tan +2.84px ang +0.97deg | par-adj |2.58| | local (-0.75,+0.35) rad +0.36 tan +0.76px | rot -0.01deg  len +1.62 wid +1.43px
-  h 7 round    d=(-2.25,+0.25) |2.27|px (10.6e-3R) rad +1.40 tan +1.87px ang +0.59deg | par-adj |1.66| | local (+0.29,-0.22) rad -0.35 tan -0.14px | radius +0.83px circ 0.998
+RL_LOCAL_BLNR (defect_cases)  status OK  parallax h=0.0201R
+  RING (all clean markers vs minute track, n=7): translation (-0.74,+0.24)px  scale +0.73% (+1.30px at 0.813R)  rotation +0.46deg
+  h12 triangle d=(-1.85,-0.89) |2.05|px (9.4e-3R) rad +0.91 tan -1.86px ang -0.60deg | par-adj |1.44| | local (-2.48,+0.15) rad -0.12 tan -2.50px | centreline rot +0.79deg  L/R side +0.75/+1.11deg  base tilt +1.82deg
+  h 1 round    d=(+1.69,+0.15) |1.70|px (7.7e-3R) rad +0.70 tan +1.54px ang +0.49deg | par-adj |2.17| | local (+0.56,+0.33) rad -0.01 tan +0.65px | radius +0.82px circ 0.980
+  h 2 round    d=(+1.48,+0.86) |1.71|px (7.8e-3R) rad +0.84 tan +1.49px ang +0.47deg | par-adj |2.18| | local (+0.39,+0.04) rad +0.31 tan +0.23px | radius +0.79px circ 0.995
+  h 4 round    d=(-0.00,+2.05) |2.05|px (9.4e-3R) rad +1.03 tan +1.79px ang +0.57deg | par-adj |1.45| | local (+0.33,-0.06) rad +0.26 tan -0.22px | radius +0.79px circ 0.990
+  h 5 round    d=(-1.14,+1.72) |2.06|px (9.5e-3R) rad +0.94 tan +1.87px ang +0.60deg | par-adj |1.37| | local (+0.18,-0.33) rad -0.20 tan -0.32px | radius +0.89px circ 0.993
+  h 6 baton    d=(-2.78,+1.67) |3.25|px (15.1e-3R) rad +1.72 tan +2.84px ang +0.97deg | par-adj |2.58| | local (-0.76,+0.26) rad +0.27 tan +0.77px | rot -0.01deg  len +1.62 wid +1.43px
+  h 7 round    d=(-2.25,+0.25) |2.27|px (10.6e-3R) rad +1.40 tan +1.87px ang +0.59deg | par-adj |1.66| | local (+0.30,-0.37) rad -0.49 tan -0.08px | radius +0.83px circ 0.998
   h 8 round    OCCLUDED / INSUFFICIENT CLEAN EDGE  (hand/occluder crosses outline (clean perimeter 0.58))
   h 9 baton    OCCLUDED / INSUFFICIENT CLEAN EDGE  (hand/occluder crosses outline (clean side fraction [0.37, 0.6, 1.0, 0.83]))
-  h10 round    OCCLUDED / INSUFFICIENT CLEAN EDGE  (outline coverage 0.60, 7/8 octants clean)
-  h11 round    d=(+0.40,-1.85) |1.90|px (8.7e-3R) rad +1.41 tan +1.30px ang +0.41deg | par-adj |2.03| | local (+0.35,-0.18) rad -0.03 tan +0.40px | radius +0.62px circ 0.972
+  h10 round    OCCLUDED / INSUFFICIENT CLEAN EDGE  (outline coverage 0.58, 8/8 octants clean)
+  h11 round    OCCLUDED / INSUFFICIENT CLEAN EDGE  (outline coverage 0.57, 7/8 octants clean)
 
 GENUINE RANGES (4 controls, clean markers only; descriptive, not tolerances)
-  round n=28: offset_px mean +0.54 sd 0.27 max|.| 1.27; adj_offset_px mean +0.33 sd 0.14 max|.| 0.58; local_offset_px mean +0.21 sd 0.14 max|.| 0.66; local_radial_px mean -0.04 sd 0.17 max|.| 0.34; local_tangential_px mean +0.02 sd 0.19 max|.| 0.59; radial_px mean +0.09 sd 0.39 max|.| 0.80; tangential_px mean +0.05 sd 0.46 max|.| 1.13; angular_position_err_deg mean +0.02 sd 0.19 max|.| 0.39; radius_err_px mean +0.29 sd 0.09 max|.| 0.53; circularity mean +0.98 sd 0.01 max|.| 1.00
-  baton n=8: offset_px mean +0.36 sd 0.13 max|.| 0.62; adj_offset_px mean +0.39 sd 0.17 max|.| 0.71; local_offset_px mean +0.37 sd 0.09 max|.| 0.55; local_radial_px mean +0.34 sd 0.07 max|.| 0.48; local_tangential_px mean -0.03 sd 0.16 max|.| 0.27; radial_px mean +0.22 sd 0.21 max|.| 0.51; tangential_px mean -0.06 sd 0.25 max|.| 0.36; angular_position_err_deg mean -0.03 sd 0.12 max|.| 0.19; rotation_deg mean -0.07 sd 0.34 max|.| 0.47; long_side_parallelism_deg mean +0.01 sd 0.29 max|.| 0.48; length_err_px mean +1.17 sd 0.36 max|.| 1.54; width_err_px mean +0.66 sd 0.22 max|.| 1.02
-  triangle n=2: offset_px mean +0.27 sd 0.31 max|.| 0.49; adj_offset_px mean +0.95 sd 0.03 max|.| 0.97; local_offset_px mean +0.69 sd 0.00 max|.| 0.69; local_radial_px mean -0.66 sd 0.02 max|.| 0.67; local_tangential_px mean -0.23 sd 0.10 max|.| 0.30; radial_px mean -0.22 sd 0.37 max|.| 0.49; tangential_px mean +0.03 sd 0.09 max|.| 0.09; angular_position_err_deg mean +0.02 sd 0.04 max|.| 0.05; rotation_deg mean +0.17 sd 0.85 max|.| 0.76; left_right_mismatch_deg mean +0.14 sd 0.03 max|.| 0.16; base_tilt_deg mean +0.71 sd 0.58 max|.| 1.12; base_width_err_px mean +2.70 sd 0.18 max|.| 2.83; height_err_px mean +3.57 sd 0.16 max|.| 3.68
+  round n=28: offset_px mean +0.54 sd 0.27 max|.| 1.27; adj_offset_px mean +0.34 sd 0.14 max|.| 0.58; local_offset_px mean +0.22 sd 0.14 max|.| 0.67; local_radial_px mean -0.05 sd 0.17 max|.| 0.34; local_tangential_px mean +0.02 sd 0.20 max|.| 0.59; radial_px mean +0.08 sd 0.39 max|.| 0.80; tangential_px mean +0.05 sd 0.47 max|.| 1.13; angular_position_err_deg mean +0.02 sd 0.19 max|.| 0.39; radius_err_px mean +0.30 sd 0.09 max|.| 0.53; circularity mean +0.98 sd 0.01 max|.| 1.00
+  baton n=8: offset_px mean +0.36 sd 0.13 max|.| 0.62; adj_offset_px mean +0.39 sd 0.17 max|.| 0.71; local_offset_px mean +0.38 sd 0.08 max|.| 0.56; local_radial_px mean +0.35 sd 0.06 max|.| 0.48; local_tangential_px mean -0.03 sd 0.16 max|.| 0.27; radial_px mean +0.22 sd 0.21 max|.| 0.51; tangential_px mean -0.06 sd 0.25 max|.| 0.36; angular_position_err_deg mean -0.03 sd 0.12 max|.| 0.19; rotation_deg mean -0.07 sd 0.34 max|.| 0.47; long_side_parallelism_deg mean +0.01 sd 0.29 max|.| 0.48; length_err_px mean +1.17 sd 0.36 max|.| 1.54; width_err_px mean +0.66 sd 0.22 max|.| 1.02
+  triangle n=2: offset_px mean +0.24 sd 0.26 max|.| 0.42; adj_offset_px mean +0.91 sd 0.02 max|.| 0.93; local_offset_px mean +0.65 sd 0.05 max|.| 0.69; local_radial_px mean -0.62 sd 0.03 max|.| 0.64; local_tangential_px mean -0.24 sd 0.09 max|.| 0.30; radial_px mean -0.19 sd 0.32 max|.| 0.41; tangential_px mean +0.02 sd 0.09 max|.| 0.09; angular_position_err_deg mean +0.02 sd 0.04 max|.| 0.05; rotation_deg mean +0.09 sd 0.73 max|.| 0.60; left_right_mismatch_deg mean -0.00 sd 0.23 max|.| 0.17; base_tilt_deg mean +0.71 sd 0.58 max|.| 1.12; base_width_err_px mean +2.75 sd 0.25 max|.| 2.92; height_err_px mean +3.46 sd 0.00 max|.| 3.46

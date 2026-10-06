@@ -98,7 +98,9 @@ def _strong(points, strengths):
 
 # --------------------------------------------------------------------------- round markers
 def _ransac_circle(P, r0, tol, iters=400, seed=0):
-    rng = np.random.default_rng(seed); best = None
+    """RANSAC circle (best inlier count, ties broken by residual) + local optimisation (refit on inliers,
+    re-select, repeat). The Android port (Alpha94MarkerMeasurement) mirrors this exactly."""
+    rng = np.random.default_rng(seed); best = None; best_key = None
     for _ in range(iters):
         s = P[rng.choice(len(P), 3, replace=False)]
         try:
@@ -108,13 +110,20 @@ def _ransac_circle(P, r0, tol, iters=400, seed=0):
         c = x[:2]; r = np.sqrt(max(x[2] + c @ c, 0))
         if not (0.7 * r0 < r < 1.3 * r0):
             continue
-        inl = np.abs(np.hypot(*(P - c).T) - r) < tol
-        if best is None or inl.sum() > best.sum():
-            best = inl
-    if best is None or best.sum() < 6:
+        e = np.abs(np.hypot(*(P - c).T) - r); inl = e < tol
+        key = (int(inl.sum()), -float(e[inl].sum()))
+        if best_key is None or key > best_key:
+            best_key, best = key, (c, r)
+    if best is None or best_key[0] < 6:
         return None
-    X, Y, r = REG.circle_lsq(P[best])
-    return np.array([X, Y]), r, best
+    c, r = best
+    for _ in range(3):
+        inl = np.abs(np.hypot(*(P - c).T) - r) < tol
+        if inl.sum() < 6:
+            return None
+        X, Y, r = REG.circle_lsq(P[inl]); c = np.array([X, Y])
+    inl = np.abs(np.hypot(*(P - c).T) - r) < tol
+    return c, r, inl
 
 
 def measure_round(smp, H, M, h, tol):
@@ -159,22 +168,33 @@ def measure_round(smp, H, M, h, tol):
 
 
 # --------------------------------------------------------------------------- polygon markers
-def _ransac_line(P, tol, iters=300, seed=0):
-    rng = np.random.default_rng(seed); best = None
+def _ransac_line(P, tol):
+    """Exhaustive two-point line search (best inlier count, ties broken by residual) + TLS with local
+    optimisation. Deterministic; the Android port mirrors this exactly."""
     if len(P) < 4:
         return None
-    for _ in range(iters):
-        i, j = rng.choice(len(P), 2, replace=False)
-        d = P[j] - P[i]; L = np.linalg.norm(d)
-        if L < 1e-6:
-            continue
-        n = np.array([-d[1], d[0]]) / L
-        inl = np.abs((P - P[i]) @ n) < tol
-        if best is None or inl.sum() > best.sum():
-            best = inl
-    Q = P[best]; c = Q.mean(0)
-    _, _, Vt = np.linalg.svd(Q - c); d = Vt[0]
-    return c, d, best
+    best = None; best_key = None
+    for i in range(len(P)):
+        for j in range(i + 1, len(P)):
+            d = P[j] - P[i]; L = np.linalg.norm(d)
+            if L < 1e-9:
+                continue
+            n = np.array([-d[1], d[0]]) / L
+            e = np.abs((P - P[i]) @ n); inl = e < tol
+            key = (int(inl.sum()), -float(e[inl].sum()))
+            if best_key is None or key > best_key:
+                best_key, best = key, (P[i], n)
+    c0, n = best
+    for _ in range(4):
+        inl = np.abs((P - c0) @ n) < tol
+        if inl.sum() < 2:
+            return None
+        Q = P[inl]; c0 = Q.mean(0)
+        sxx, sxy, syy = ((Q[:, 0] - c0[0]) ** 2).sum(), ((Q[:, 0] - c0[0]) * (Q[:, 1] - c0[1])).sum(), ((Q[:, 1] - c0[1]) ** 2).sum()
+        th = 0.5 * np.arctan2(2 * sxy, sxx - syy)
+        n = np.array([-np.sin(th), np.cos(th)])
+    inl = np.abs((P - c0) @ n) < tol
+    return c0, np.array([np.cos(th), np.sin(th)]), inl
 
 
 def _intersect(p1, d1, p2, d2):
