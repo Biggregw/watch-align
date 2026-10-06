@@ -229,11 +229,35 @@ Ring scale follows the same source order. Round-marker, 6 and 9 local offsets do
 - It also moves ring scale about +0.4–0.5% per px. This is a likely reason ring scale flags marketplace candidates.
 - At these radii, though, about half the variants lose the pose or the 12 outline. The 12 responses that survive are not consistent in sign.
 
-**Not established yet:** which mechanism applies. Candidates are edge definition, marker-height parallax under close or oblique studio cameras, or a master triangle position that matches Bob's-style photos.
+**Per-photo follow-up.** The run artifact's `per_photo.csv` is now in `results/ci_run_37500197377/`. It was uploaded by the owner and agrees with all 250 checked primary values. The analysis is `m12_mechanism.py`, with results in `results/m12_dial_size/mechanism.md`.
 
-**Evidence that would decide it:** per-photo `m*_radius_err_px` (edge definition), `ellipse_ratio` (obliqueness), and the 12 values for every genuine photo, compared across sources and within SWE's same-photo pairs. They are in `per_photo.csv` in the run 37500197377 artifact (expires 2026-11-05), which this environment cannot download.
+6. **Most of the genuine 12 offset is one shared bias, not scatter.**
+   - 58 of 59 genuine watches read the 12 toward the dial centre, with a median signed radial offset of −0.0038 R and tangential −0.0009 R.
+   - Every model and every source shows it.
+   - The triangle is also measured about 0.13° wider per side than the master, in every source.
+   - The Alpha92 master's 12 position and shape therefore differ from what Alpha96 measures on genuine watches. The master is a nominal that has not yet been calibrated against the genuine population.
+7. **Edge position, obliqueness and resolution do not explain the source difference.**
+   - Linear model: edge position plus ellipse ratio explains R² = 0.00 of the 12 radial offset.
+   - Across 43 same-photograph pairs at two resolutions, the median change is −0.0001 R.
+   - Source explains R² = 0.22. SWE adds −0.0025 R over Bob's within the same models (BLNR −0.0064 vs −0.0037 R; CHNR −0.0051 vs −0.0025 R), in both its full-size and its separate 900 px shots.
+   - It correlates with ring scale (Spearman +0.29 overall, +0.41 within SWE): photos whose marker ring reads smaller also pull the 12 further in.
+   - That points to a photographic factor that acts radially, such as lens distortion or marker-height parallax with a close camera, rather than to the watches. It is not resolved.
+8. **Re-centred on the genuine nominal** (research only; Alpha92 is unchanged), the genuine per-watch 12 offset drops from median 0.0039 / P90 0.0060 / max 0.0083 R to 0.0012 / 0.0028 / 0.0046 R.
 
-**Consequence for now:**
-- Treat the genuine 12 offset spread as photography-dependent, and do not pool it across sources for any limit.
-- The replica 12 offsets (0.009–0.014 R) still exceed the SWE maximum (0.0084 R).
-- They come from phone photos, yet another photographic condition. Phone-photo genuine references are a named evidence gap.
+   | Photo | Offset from the genuine nominal | Genuine watches at least as far |
+   |---|---:|---:|
+   | RL_LOCAL_BLNR | 0.0134 R | 0/59 |
+   | ARF crooked-6 | 0.0116 R | 0/59 |
+   | THEONE | 0.0050 R | 0/59 (marginal: genuine max is 0.0046 R) |
+   | Marketplace candidates | 0.0010 R and 0.0014 R | 32/59 and 23/59 |
+
+   - The two labelled replicas are about 3× the genuine maximum.
+   - The marketplace candidates sit well inside the genuine spread.
+   - SWE watches remain about twice as far from the nominal as Bob's (0.0022 vs 0.0010 R).
+
+**Consequences:**
+- For the 12, compare against a genuine-calibrated nominal, not the Alpha92 master position.
+- Keep the SWE photographic effect in mind before any limit.
+- Phone-photo genuine references remain a named evidence gap; every replica control is a phone photo.
+
+No limits are derived and no production code is changed.
