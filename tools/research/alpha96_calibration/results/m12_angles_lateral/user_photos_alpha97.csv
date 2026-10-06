@@ -1,0 +1,10 @@
+photo_id,status,dial_radius_px,usable,reason,centreline_deg,left_side_deg,right_side_deg,sides_deg,lateral_px,lateral_R,radial_px_note,n_genuine,at_least_centreline,at_least_sides,at_least_lateral
+U1_16700_CPO,accepted,170.06634,false,ring not fitted; no local reference,,,,,,,,0,0,0,0
+U2_116710LN_CPO_a,accepted,170.30834,true,,-0.20989,-0.06788,-0.29844,0.29844,0.08471,0.00050,0.27591,41,26,23,18
+U3_126710GRNR_dealer,accepted,252.18651,true,,-0.64773,-0.58658,-0.64292,0.64292,0.09817,0.00039,-2.09002,41,6,7,22
+U4_116710LN_listing_screenshot,accepted,185.74413,true,,0.23466,0.06248,0.43890,0.43890,0.29719,0.00160,0.49818,41,23,15,4
+U5_116710LN_CPO_b,accepted,170.61953,true,,-0.50447,-0.43055,-0.53520,0.53520,0.29815,0.00175,-0.25811,41,8,10,2
+U6_126710BLNR_oyster,accepted,170.96615,true,,-0.13139,-0.17248,-0.29872,0.29872,0.13593,0.00080,-0.21602,41,32,23,11
+U7_126710BLNR_jubilee_CPO,accepted,170.77517,true,,-0.16282,-0.06623,-0.12982,0.12982,0.03619,0.00021,-0.51497,41,27,32,28
+U8_126715CHNR_CPO,accepted,170.76797,true,,-0.98901,-0.94408,-0.94901,0.94901,0.06938,0.00041,-0.45666,41,1,1,20
+U9_126710BLRO_dealer_screenshot,accepted,270.67017,false,OCCLUDED / INSUFFICIENT CLEAN EDGE,,,,,,,,0,0,0,0

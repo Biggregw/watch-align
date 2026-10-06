@@ -449,3 +449,18 @@ The genuine 12 offset from it is median 0.0009 / P90 0.0020 / max 0.0032 R, both
 - **`Alpha97TwelveReadoutTest`** (JUnit, 8 tests) pins the constants to the research files. It checks parity with the desktop prototype on the recorded production inputs (8 local photos and the scaled variants), the known local-photo findings, fail-closed behaviour and wording, and that every non-12 summary line is identical to Alpha96.
 - **`tools/desktop-harness/drivers/Alpha97AppParity.java`** compares the app class with the desktop prototype on the full production pipeline: 8 local and 166 scaled photos, 0 mismatches.
 - **Alpha96 regression:** `Alpha96Calib` rerun on the local photos is identical to `results/runner_local.csv` (ring, 6, 9, rounds, 12 fields, pose: 1,592 values, 0 differences).
+
+**User-supplied photos through the Alpha97 readout** (descriptive only; not added to the reference; images not committed). Results are in `results/m12_angles_lateral/user_photos_alpha97.csv`. Counts are reference watches at least as far, out of 41.
+
+| Photo | Result |
+|---|---|
+| 16700 (older reference, Rolex CPO image) | withheld: ring not fitted |
+| 126710BLRO dealer screenshot | withheld: 12 occluded by the GMT hand |
+| 116710LN ×3 (two Rolex CPO images, one listing screenshot) | centreline 8–26, sides 10–23, lateral 2–18 |
+| 126710GRNR dealer | centreline 6, sides 7, lateral 22 |
+| 126710BLNR Oyster | centreline 32, sides 23, lateral 11 |
+| 126710BLNR Jubilee Rolex CPO | centreline 27, sides 32, lateral 28 |
+| 126715CHNR Rolex CPO | centreline −0.99°, sides −0.94°/−0.95°: **1/41**; lateral 20 |
+
+- A genuine CPO watch reads 12 angles as far out as THEONE (+0.93°, 2/41). The angle findings are therefore not distinctive on their own.
+- Lateral position held: genuine photos read 0.0002–0.0017 R, against THEONE 0.0024 R, ARF 0.0084 R and LOCAL 0.0132 R.
