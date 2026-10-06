@@ -22,7 +22,10 @@ Pipeline (one fixed method, no per-photo parameters; FROZEN 2026-10-06):
      Hands crossing ticks are gated out per tick.
   4. Fail closed: reject if the 12 cue is not distinctive, if refinement changes lattice phase
      by > 2 deg, if the result lands on a +/-6 deg branch, if < 8 tick sectors were used, or if the
-     tick-lattice residual is not clean (median > 0.30 px or rms > 0.60 px: wrong local fit).
+     tick-lattice residual is not clean (median > 0.30 px, rms > 0.60 px after setting aside gross
+     single-tick outliers such as a hand tip crossing one tick, or > 10% gross outliers).
+     (2026-10-06: rms made robust to a single hand-crossed tick after a reproducible false reject on
+     RL_ARF_BLRO_CROOKED6; gate statistics only, H unchanged.)
 
   Holdouts (never used in fitting): applied-marker outlines by sub-pixel edge profiles; markers
   whose outline is mostly hidden (hands, adjacent print) are excluded as invalid holdouts.
@@ -294,8 +297,13 @@ def fine_inner(smp, H, M, iters=6, excluded=FIT_EXCLUDED_TICKS):
              (T[:, 4] < 2 * np.median(T[:, 4])) & (np.abs(T[:, 1]) < 0.02)
         H = _solve(H, P0, obs, _sector_weights(mm, ok), 0.15)
     e = np.hypot(*(proj(H, P0) - obs).T)
+    # gate statistics only (H above is unchanged): a hand tip can cross a tick without tripping the
+    # mass/width gating; such gross outliers are counted separately instead of inflating the RMS.
+    med = float(np.median(e[ok])); gross = ok & (e > max(1.0, 6 * med))
     return H, dict(ticks_used=int(ok.sum()), sectors_used=int(len(np.unique(mm[ok] // 5))),
-                   tick_rms_px=float(np.sqrt(np.mean(e[ok] ** 2))), tick_median_px=float(np.median(e[ok])),
+                   tick_rms_px=float(np.sqrt(np.mean(e[ok] ** 2))), tick_median_px=med,
+                   tick_rms_ex_gross_px=float(np.sqrt(np.mean(e[ok & ~gross] ** 2))),
+                   gross_outlier_ticks=[int(m) for m in mm[gross]],
                    rejected_ticks=[int(m) for m in mm[~ok]]), (mm, ok, P0, obs)
 
 
@@ -378,7 +386,8 @@ def lattice_fit_gate(stats):
     r = []
     if stats['sectors_used'] < 8: r.append('fewer than 8 tick sectors')
     if stats['tick_median_px'] > 0.30: r.append('tick-lattice median residual > 0.30 px')
-    if stats['tick_rms_px'] > 0.60: r.append('tick-lattice rms residual > 0.60 px')
+    if stats['tick_rms_ex_gross_px'] > 0.60: r.append('tick-lattice rms residual > 0.60 px')
+    if len(stats['gross_outlier_ticks']) > 0.10 * stats['ticks_used']: r.append('more than 10% gross tick outliers')
     return r
 
 

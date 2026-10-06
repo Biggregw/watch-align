@@ -131,3 +131,17 @@ This touches a new Alpha91 path only; Alpha90 stays as is.
 3. **Draw** the mathematical outline (60 ticks plus marker footprints) through the accepted H, reusing the existing outline renderer. Do not apply the marker-height parallax to H. If it is wanted at all, it is a separate optional drawing offset.
 4. **Parity test before any APK.** A JVM unit test runs the Java path on the four control images and must reproduce the Python H to within 0.1 px at 0.95R, with all four accepted. The same test should confirm the ellipse-only seed is rejected on WEX1 and WEX2.
 5. Then build the APK.
+
+## Gate amendment — later on 2026-10-06 (H unchanged)
+
+`RL_ARF_BLRO_CROOKED6` exposed a reproducible false reject. A single tick crossed by the GMT-hand tip (4.4 px) inflated the RMS gate to 0.684 px, although the median was 0.108 px and the lattice was visibly locked.
+
+The RMS gate now:
+- sets aside gross single-tick outliers (more than max(1 px, 6 × median));
+- rejects if more than 10 % of ticks are gross outliers.
+
+Re-verification:
+- the four genuine H matrices are unchanged (largest element difference 6e-7), all accepted, with identical holdouts;
+- the ellipse-only seeds on WEX1 and WEX2 are still rejected (median 0.90 / 0.99 px).
+
+See `alpha91-marker-measurement-2026-10-06.md`.
