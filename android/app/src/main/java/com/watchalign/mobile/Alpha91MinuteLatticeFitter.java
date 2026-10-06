@@ -275,7 +275,7 @@ final class Alpha91MinuteLatticeFitter {
     private static double objective(double[] p,List<Obs> q,boolean[] ok,double[] sw,double f){
         double s=0;
         for(int i=0;i<q.size();i++)if(ok[i]&&sw[i]>0){
-            Obs o=q.get(i),z=o.canonical;double w=p[6]*z.x+p[7]*z.y+1;if(Math.abs(w)<1e-9)return Double.POSITIVE_INFINITY;
+            Obs o=q.get(i);Point z=o.canonical;double w=p[6]*z.x+p[7]*z.y+1;if(Math.abs(w)<1e-9)return Double.POSITIVE_INFINITY;
             double x=(p[0]*z.x+p[1]*z.y+p[2])/w,y=(p[3]*z.x+p[4]*z.y+p[5])/w;
             s+=huber((x-o.image.x)*sw[i],f)+huber((y-o.image.y)*sw[i],f);
         }
