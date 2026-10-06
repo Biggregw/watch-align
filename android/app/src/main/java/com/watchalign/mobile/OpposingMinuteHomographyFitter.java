@@ -101,6 +101,74 @@ final class OpposingMinuteHomographyFitter {
         }
     }
 
+    /**
+     * Alpha91 basin-only seed. This deliberately relaxes Alpha90's final acceptance
+     * rules: its only job is to move the ellipse seed close enough for the full
+     * 60-position lattice refiner. It still uses only printed minute-track evidence.
+     * Applied hour markers, hands, text and date geometry never enter this estimate.
+     */
+    static Mat coarseSeed(Mat gray, Mat h0) {
+        if (gray == null || gray.empty() || h0 == null || h0.empty()) return h0 == null ? null : h0.clone();
+
+        Tick[] ticks = new Tick[60];
+        for (int minute = 0; minute < 60; minute++) {
+            Tick t = (minute % 5 == 0)
+                    ? detectHourPositionTick(gray, h0, minute)
+                    : detectNormalTickInnerEnd(gray, h0, minute);
+            ticks[minute] = t;
+        }
+
+        List<Pair> pairs = new ArrayList<>();
+        for (int minute = 0; minute < 30; minute++) {
+            Tick a = ticks[minute], b = ticks[minute + 30];
+            if (a != null && b != null) pairs.add(new Pair(a, b));
+        }
+        if (pairs.size() < 4 || orientationBins(pairs) < 3) return h0.clone();
+
+        List<Point> src = new ArrayList<>(), dst = new ArrayList<>();
+        flattenPairs(pairs, src, dst);
+        MatOfPoint2f s = new MatOfPoint2f(), d = new MatOfPoint2f();
+        Mat mask = new Mat();
+        Mat rough = null;
+        try {
+            s.fromList(src);
+            d.fromList(dst);
+            rough = Calib3d.findHomography(s, d, Calib3d.RANSAC, RANSAC_PX, mask);
+            if (rough == null || rough.empty()) {
+                if (rough != null) rough.release();
+                return h0.clone();
+            }
+            int inliers = 0;
+            for (int i = 0; i < mask.rows(); i++) {
+                double[] v = mask.get(i, 0);
+                if (v != null && v.length > 0 && v[0] != 0) inliers++;
+            }
+            if (inliers < 8 || !finiteHomography(rough)) {
+                rough.release();
+                return h0.clone();
+            }
+            Mat out = rough.clone();
+            rough.release();
+            return out;
+        } catch (Throwable ignored) {
+            if (rough != null) rough.release();
+            return h0.clone();
+        } finally {
+            mask.release();
+            s.release();
+            d.release();
+        }
+    }
+
+    private static boolean finiteHomography(Mat h) {
+        if (h == null || h.empty() || h.rows() != 3 || h.cols() != 3) return false;
+        double[] m = new double[9];
+        h.get(0, 0, m);
+        if (m.length < 9 || !Double.isFinite(m[8]) || Math.abs(m[8]) < 1e-9) return false;
+        for (double v : m) if (!Double.isFinite(v)) return false;
+        return true;
+    }
+
     private OpposingMinuteHomographyFitter() {}
 
     static Result fit(Mat gray, Mat h0) {
