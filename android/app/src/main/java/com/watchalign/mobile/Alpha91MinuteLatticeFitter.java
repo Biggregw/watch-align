@@ -107,15 +107,27 @@ final class Alpha91MinuteLatticeFitter {
                 Obs o=last.get(i);Point p=project(h,o.canonical.x,o.canonical.y);
                 err[k++]=p==null?Double.NaN:Math.hypot(p.x-o.image.x,p.y-o.image.y);
             }
-            double rms=rms(err),med=median(err);
+            double med=median(err);
+            // Confidence-only robust RMS. H is already frozen above. A hand tip can cross one
+            // minute stroke and create a several-pixel residual even when the remaining lattice
+            // is locked. Set aside only gross isolated outliers (> max(1 px, 6x median)); fail
+            // closed if more than 10% would need excluding.
+            double grossThreshold=Math.max(1.0,6.0*med);
+            int gross=0,finite=0;
+            for(double v:err)if(Double.isFinite(v)){finite++;if(v>grossThreshold)gross++;}
+            double grossFraction=finite==0?1.0:gross/(double)finite;
+            double[] kept=new double[Math.max(0,finite-gross)];int kk=0;
+            for(double v:err)if(Double.isFinite(v)&&v<=grossThreshold)kept[kk++]=v;
+            double rms=rms(kept);
             int sectors=sectorCount(last,lastOk);
             double roll=wrap180(clock12(h)-clock12(start));
-            boolean accepted=sectors>=8&&Double.isFinite(rms)&&rms<=1.25&&Math.abs(roll)<2.0;
+            boolean accepted=sectors>=8&&grossFraction<=0.10&&Double.isFinite(rms)&&rms<=1.25&&Math.abs(roll)<2.0;
             if(!accepted)return new Result(
                     sectors<8?"too few minute sectors":
+                            grossFraction>0.10?"too many contaminated minute ticks":
                             (!Double.isFinite(rms)||rms>1.25?"minute-lattice residual too high":"minute lattice slipped phase"),
                     h.clone());
-            return new Result(h.clone(),count(lastOk),sectors,rms,med,roll);
+            return new Result(h.clone(),count(lastOk)-gross,sectors,rms,med,roll);
         }catch(Throwable t){
             return new Result("minute-lattice refinement failed: "+t.getClass().getSimpleName(),h.clone());
         }finally{
