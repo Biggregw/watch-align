@@ -353,3 +353,45 @@ Inputs:
 - a per-side consistency check that withholds the 12 when the side outsets disagree.
 
 No limits are derived; no app code changes.
+
+## Lighting-robust 12 alternatives, tested offline (2026-10-06)
+
+Inputs:
+- `m12_alternatives.py` on the CI per-photo data (59 watches, including 18 SWE watches from before SWE's images changed);
+- the local and scaled photos;
+- the M12Diag CSV.
+
+Results are in `results/m12_alternatives/report.md`. The inner-edge prototype is `tools/desktop-harness/drivers/M12Inner.java`, evaluated by `m12_inner_eval.py` (`results/m12_alternatives/inner_eval.txt`).
+
+Scores, all re-centred on the genuine nominal, with genuine watches scored leave-one-watch-out:
+
+| Measure | SWE shift vs Bob's, genuine MADs | Same-photo resolution SD / genuine MAD | Within-watch / between-watch MAD | Replicas beyond every genuine watch |
+|---|---:|---:|---:|---|
+| current 12 offset (2-D) | magnitude +1.94 | 0.84 | 0.33 | 3/3 |
+| radial only | −2.32 (signed) | 0.82 | 0.47 | 1/3 (ARF) |
+| lateral (left/right) only | −1.25 signed, −0.98 magnitude | 2.14 | 0.66 | 3/3 (THEONE, LOCAL, ARF all 0/59) |
+| centreline rotation | −0.87 signed, −0.23 magnitude | 0.38 | 0.17 | 0/3 (THEONE 2/59, LOCAL 4/59, ARF 22/59) |
+| side angles | magnitude +0.34 | 0.26 | 0.14 | 0/3 (THEONE 2/59, LOCAL 3/59, ARF 20/59) |
+| apex half-angle | −0.56 signed | 1.15 | 0.59 | 0/3 |
+
+Reading the table:
+- **Radial** is the lighting-sensitive component: SWE moves it by 2.3 genuine MADs.
+- **Angles** (centreline, sides) are the most lighting-robust and repeatable. They cannot see a translated 12, so ARF's shifted triangle sits mid-genuine on angles.
+- **Lateral position** keeps translation sensitivity with about half the SWE shift of radial. Its genuine spread is very small (P90 0.0014 R), so pixel noise is large relative to it at phone resolution. The two marketplace candidates sit mid-genuine on it (14/59 and 18/59).
+
+**Per-side consistency gate** (M12Diag, curve only, no gate chosen):
+- Withholding photos whose long-sides-minus-base edge difference is more than 3 genuine MADs from the median keeps 81 of 95 genuine photos.
+- That changes the SWE 12 radial from −0.0057 to −0.0045 R (Bob's −0.0037 R), removing about half the SWE excess.
+- It rests on only 6 SWE photos.
+
+**Inner lume edge: rejected at phone resolution.**
+- The surround reads only about 0.016 R wide (0.011–0.021 R), 2–3 px on phone photos.
+- The inner edge was separable on 17 of 24 sides but on all three sides of only 1 of 8 photos. Separability falls with scale: 68% of sides at 1.0, 25% at 0.45.
+- When it is not separable, the side jumps by a whole surround width.
+- Same-photo SD across scales is 0.0026 R radial with the inner edge, against 0.0007 R with the outermost edge. That is as large as the SWE effect it was meant to remove.
+- Untested on high-resolution dealer photos; they are not the target use.
+
+**Recommendation for a future 12 (research only; no limits; app unchanged):**
+- Report the 12 as centreline rotation plus side angles, which are robust, together with lateral position re-centred on the genuine nominal, which keeps translation sensitivity.
+- Show the radial component only with a lighting caveat, or withhold it.
+- Optionally add the per-side consistency gate as a fail-closed quality check, once genuine phone-photo references can set its scale.
