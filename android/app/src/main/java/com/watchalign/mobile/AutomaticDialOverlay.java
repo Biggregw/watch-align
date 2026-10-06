@@ -133,28 +133,35 @@ final class AutomaticDialOverlay {
         if(c==null||Math.hypot(c.x-e.cx,c.y-e.cy)>0.090*e.meanRadius())
             return "minute fit rejected: projected centre moved too far";
 
-        double edgeRms=ellipseConformanceRms(fitted,e);
-        double limit=Math.max(3.0,e.rmsPx*1.60+1.0);
-        if(!Double.isFinite(edgeRms)||edgeRms>limit)
-            return "minute fit rejected: projected dial no longer matched physical edge";
+        // Alpha92's original guard compared the final projective dial boundary
+        // pixel-for-pixel with the *initial* ellipse fit. On oblique photos the raised
+        // flange can hide parts of the physical dial edge and bias that seed ellipse,
+        // even while the printed minute lattice is fit correctly. Keep the edge fit as
+        // a coarse physical scale/centre sanity check, not a precision veto.
+        double area=projectedUnitCircleArea(fitted);
+        double seedArea=Math.PI*e.axisA*e.axisB;
+        if(!Double.isFinite(area)||!Double.isFinite(seedArea)||seedArea<=1.0)
+            return "minute fit rejected: projected dial area unavailable";
+        double ratio=area/seedArea;
+        if(ratio<0.72||ratio>1.38)
+            return "minute fit rejected: projected dial scale disagreed with physical edge";
         return null;
     }
 
-    private static double ellipseConformanceRms(Mat h,DialEdgeEllipseFit.Fit e){
-        double a=Math.toRadians(e.angleDeg),ca=Math.cos(a),sa=Math.sin(a);
-        double ss=0;int n=0;
-        for(int i=0;i<120;i++){
-            double t=2.0*Math.PI*i/120.0;
-            Point p=project(h,Math.cos(t),Math.sin(t));
-            if(p==null)continue;
-            double dx=p.x-e.cx,dy=p.y-e.cy;
-            double u= ca*dx+sa*dy;
-            double v=-sa*dx+ca*dy;
-            double rho=Math.sqrt((u*u)/(e.axisA*e.axisA)+(v*v)/(e.axisB*e.axisB));
-            double d=(rho-1.0)*e.meanRadius();
-            if(Double.isFinite(d)){ss+=d*d;n++;}
+    private static double projectedUnitCircleArea(Mat h){
+        final int n=120;
+        Point[] p=new Point[n];
+        for(int i=0;i<n;i++){
+            double t=2.0*Math.PI*i/n;
+            p[i]=project(h,Math.cos(t),Math.sin(t));
+            if(p[i]==null)return Double.NaN;
         }
-        return n<80?Double.NaN:Math.sqrt(ss/n);
+        double a=0.0;
+        for(int i=0;i<n;i++){
+            Point q=p[(i+1)%n];
+            a+=p[i].x*q.y-q.x*p[i].y;
+        }
+        return Math.abs(a)*0.5;
     }
 
     private static Mat ellipsePose(DialEdgeEllipseFit.Fit e,double targetDx,double targetDy){
