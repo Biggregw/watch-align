@@ -151,10 +151,10 @@ Do not run CI or build an APK to answer an offline research question. Build only
 Owner decision: the 12 triangle is assessed with the **robust** readout.
 - **Primary components:** centreline rotation, left/right side angles and lateral (left/right) position, all measured from a genuine-calibrated nominal.
 - **Radial (toward/away from centre) position:** shown only as a lighting-sensitive note, never assessed.
-- **Calibration source:** SWE photos are excluded from the genuine reference.
+- **Calibration source:** SWE photos are excluded from the genuine reference. Owner-supplied official / Rolex CPO photos take priority: they are always included in the reference (`priority_genuine.csv`; 4 in-scope watches from Alpha97b, giving 45 watches).
 - **Evidence:** `tools/research/alpha96_calibration/README.md`, from "SWE photography effect" through "angles + lateral 12 prototype".
 - **Code:** the prototype is `tools/desktop-harness/drivers/Alpha97TwelveAngles.java` (harness only). The nominal and genuine context are in `m12_nominal.properties` and `m12_genuine_reference.csv`.
-- **Status:** the app is unchanged. No limits are set.
+- **Status:** shipped as a research display in Alpha97 / Alpha97b (`Alpha97TwelveReadout`). Pose and measurement maths are unchanged from Alpha96. No limits are set.
 - **Before porting to the app:** genuine phone-photo references are still the named evidence gap (every replica control is a phone photo; the nominal comes from dealer/auction photos).
 
 ## Do not restart without evidence

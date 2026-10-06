@@ -82,6 +82,11 @@ def main():
     ap.add_argument('--catalogue', default=os.path.join(HERE, 'catalogue_provenance_strong.csv'))
     ap.add_argument('--properties', default=os.path.join(HERE, 'm12_nominal.properties'))
     ap.add_argument('--out', default=os.path.join(HERE, 'results/m12_nominal/calibration.md'))
+    ap.add_argument('--priority', default=os.path.join(HERE, 'priority_genuine.csv'),
+                    help="owner-priority genuine photos (official / Rolex CPO images supplied by the owner); rows with include=yes "
+                         "are always part of the reference, labelled 'Owner priority', and never removed by --exclude-source")
+    ap.add_argument('--priority-runner', default=os.path.join(HERE, 'results/priority_genuine_runner.csv'))
+    ap.add_argument('--no-priority', action='store_true')
     ap.add_argument('--reference', default=os.path.join(HERE, 'm12_genuine_reference.csv'),
                     help='per-watch leave-one-watch-out component values for the angles + lateral prototype')
     a = ap.parse_args()
@@ -101,6 +106,19 @@ def main():
         else:
             v['photo'] = r['photo_id']; v['group'] = r['group']
             others.append(v)
+    n_priority = 0
+    if not a.no_priority and os.path.exists(a.priority) and os.path.exists(a.priority_runner):
+        pri = {r['photo_id']: r for r in csv.DictReader(open(a.priority)) if r['include'] == 'yes'}
+        for r in csv.DictReader(open(a.priority_runner)):
+            if r['photo_id'] not in pri:
+                continue
+            v = photo_values(r)
+            if v is None:
+                continue
+            v['src'] = 'Owner priority'
+            wid = pri[r['photo_id']]['physical_watch_id']
+            assert wid not in per_watch, f'priority watch id collides with catalogue: {wid}'
+            per_watch[wid].append(v); n_priority += 1
     W = []
     for wid, vs in sorted(per_watch.items()):
         w = {k: median(x[k] for x in vs) for k, _, _ in KEYS}

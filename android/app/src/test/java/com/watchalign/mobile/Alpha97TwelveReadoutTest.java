@@ -41,7 +41,7 @@ public class Alpha97TwelveReadoutTest {
     @Test public void nominalMatchesCalibrationFile()throws Exception{
         Properties p=new Properties();p.load(Files.newBufferedReader(cal("m12_nominal.properties").toPath()));
         assertEquals(Integer.parseInt(p.getProperty("n_watches").trim()),Alpha97TwelveReadout.N_WATCHES);
-        assertEquals(41,Alpha97TwelveReadout.N_WATCHES);
+        assertEquals(45,Alpha97TwelveReadout.N_WATCHES);   // 41 catalogue watches + 4 owner-priority official / CPO watches
         assertEquals(d(p.getProperty("radial_R").trim()),Alpha97TwelveReadout.NOMINAL_RADIAL_R,0);
         assertEquals(d(p.getProperty("tangential_R").trim()),Alpha97TwelveReadout.NOMINAL_TANGENTIAL_R,0);
         assertEquals(d(p.getProperty("left_side_deg").trim()),Alpha97TwelveReadout.NOMINAL_LEFT_SIDE_DEG,0);
@@ -49,9 +49,11 @@ public class Alpha97TwelveReadoutTest {
         assertEquals(d(p.getProperty("rotation_deg").trim()),Alpha97TwelveReadout.NOMINAL_ROTATION_DEG,0);
     }
 
-    @Test public void genuineContextMatchesReferenceFileAndExcludesSwe()throws Exception{
+    @Test public void genuineContextMatchesReferenceFileIncludesPriorityAndExcludesSwe()throws Exception{
         List<Map<String,String>> ref=csv("m12_genuine_reference.csv");
         assertEquals(Alpha97TwelveReadout.N_WATCHES,ref.size());
+        int priority=0;for(Map<String,String> r:ref)if("Owner priority".equals(r.get("source")))priority++;
+        assertEquals("owner-priority official / CPO watches must be in the reference",4,priority);
         for(int i=0;i<ref.size();i++){
             assertFalse("SWE must be excluded",ref.get(i).get("source").contains("SWE"));
             assertEquals(d(ref.get(i).get("lateral_R")),Alpha97TwelveReadout.GENUINE_LATERAL_R[i],0);
@@ -135,13 +137,14 @@ public class Alpha97TwelveReadoutTest {
 
     @Test public void lineIsResearchLabelledWithoutVerdictsOrRadialValue(){
         Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(12,"triangle");
-        m.usable=true;m.localRadialPx=-1.37;m.localTangentialPx=-0.51;m.rotationDeg=0.96;m.leftSideErrDeg=0.99;m.rightSideErrDeg=0.89;
+        m.usable=true;m.localRadialPx=-7.77;m.localTangentialPx=-0.51;m.rotationDeg=0.96;m.leftSideErrDeg=0.99;m.rightSideErrDeg=0.89;
         String s=Alpha97TwelveReadout.line(Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),165,m)));
         assertTrue(s.startsWith("12 (research"));
         assertTrue(s.contains("lighting-sensitive · not assessed"));
         assertTrue(s.contains("centreline")&&s.contains("left side")&&s.contains("right side"));
         for(String w:new String[]{"PASS","FAIL","BORDERLINE","pass","fail","borderline","genuine?","fake","replica"})assertFalse(w,s.contains(w));
-        assertFalse("radial value must not be displayed",s.contains("1.37")||s.contains("0.76"));
+        double radial=Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),165,m)).radialPx;
+        assertFalse("radial value must not be displayed",s.contains("7.77")||s.contains(String.format(java.util.Locale.US,"%.2f",Math.abs(radial))));
     }
 
     @Test public void summaryChangesOnlyTheTwelveLine(){

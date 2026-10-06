@@ -464,3 +464,50 @@ The genuine 12 offset from it is median 0.0009 / P90 0.0020 / max 0.0032 R, both
 
 - A genuine CPO watch reads 12 angles as far out as THEONE (+0.93°, 2/41). The angle findings are therefore not distinctive on their own.
 - Lateral position held: genuine photos read 0.0002–0.0017 R, against THEONE 0.0024 R, ARF 0.0084 R and LOCAL 0.0132 R.
+
+## Owner-priority official / Rolex CPO photos in the reference (2026-10-06, Alpha97b)
+
+**Owner decision:** the owner-supplied official / Rolex CPO photos take priority.
+- They are listed in `priority_genuine.csv` with provenance, an include/exclude reason and a sha256; the images are not committed.
+- Their production measurements are in `results/priority_genuine_runner.csv`.
+- `calibrate_m12_nominal.py` always includes rows with `include=yes`, labelled "Owner priority". They are never removed by `--exclude-source`, so SWE stays excluded.
+- They get no extra weight in the medians: 4 photos would otherwise dominate a reference built from one value per watch.
+
+**In-scope photos:**
+
+| Photo | Included |
+|---|---|
+| 126710GRNR, 126710BLNR (Oyster), 126710BLNR (Jubilee, CPO), 126715CHNR (CPO) | yes |
+| 126710BLRO screenshot | included, but its 12 is occluded |
+
+**Out of scope:** 16700 and three 116710LN images. These are predecessor references, listed as `unsupported_predecessors` in `families.py`.
+
+**Contamination check before widening the envelope** (CLAUDE.md), for the 126715CHNR CPO, whose 12 reads about −0.9° on angles:
+- square-on (ellipse ratio 0.999) with tick RMS 0.12 px;
+- ring rotation +0.10° and 9 rotation +0.05°;
+- so there is no shared rotation, and the 12 angle is the triangle's own.
+
+Its 6 baton reads +2.30°, with the seconds hand at 6; it is likely contaminated and not used.
+
+**New reference (45 watches: Bob's 32, Phillips 7, other 2, Owner priority 4):**
+- nominal radial −0.0037 R, tangential −0.0007 R;
+- left −0.17°, right +0.13°, base −0.16°, centreline −0.09°.
+
+The 2-D offset maximum rose to 0.0083 R entirely through the 126710GRNR photo's radial part (2.1 px toward the centre on a white background; its lateral is only 0.0004 R). Even official imagery moves the radial reading, which the robust readout does not assess.
+
+**Readout against 45 watches** (counts are reference watches at least as far: centreline / sides / lateral):
+
+| Photo | Counts |
+|---|---|
+| THEONE | 0 / 0 / 0 (centreline +1.05°; the nearest genuine is the CHNR CPO at −0.86°, a thin margin) |
+| RL_LOCAL_BLNR | 3 / 1 / 0 |
+| ARF crooked-6 | 18 / 16 / 0 (lateral finding, ordinary angles) |
+| GEN_CAND_HO_01 | 18 / 17 / 6 |
+| GEN_CAND_HO_02 | 7 / 8 / 12 |
+| Batgirl, WEX 01/02 | withheld |
+
+**Alpha97b checks:**
+- `gen_alpha97_constants.py` regenerates the app constants.
+- `Alpha97TwelveReadoutTest` is updated: 45 watches, 4 owner-priority watches present, SWE excluded; 8/8 pass locally.
+- App-versus-prototype parity: 8 local, 166 scaled and 9 owner photos, 0 mismatches.
+- Alpha96 regression: 0 differences.

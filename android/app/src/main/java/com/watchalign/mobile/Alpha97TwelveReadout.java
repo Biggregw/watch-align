@@ -15,42 +15,44 @@ import java.util.Locale;
  * watches reading at least as far, nothing more. Fail-closed exactly as Alpha96: an occluded / unclean 12 or an unfitted
  * ring gives no value.
  *
- * Frozen reference: 41 provenance-strong genuine watches (Bob's 32, Phillips 7, other 2; SWE excluded;
+ * Frozen reference: 45 genuine watches (Bob's 32, Owner priority 4, Phillips 7, other 2; SWE excluded;
  * shared / stock photos excluded), one value per watch, generated from
  * tools/research/alpha96_calibration/m12_nominal.properties and m12_genuine_reference.csv (Alpha97TwelveReadoutTest pins
  * these constants to those files). Context arrays are per-watch leave-one-watch-out values.
  */
 final class Alpha97TwelveReadout {
     static final String LABEL="12 (research · genuine reference)";
-    static final int N_WATCHES=41;
+    // BEGIN GENERATED (gen_alpha97_constants.py)
+    static final int N_WATCHES=45;
     /** Genuine nominal relative to the Alpha92 master: 12 local offset components (units of R, radial + = outward). */
-    static final double NOMINAL_RADIAL_R=-0.003708,NOMINAL_TANGENTIAL_R=-0.000764;
+    static final double NOMINAL_RADIAL_R=-0.003722,NOMINAL_TANGENTIAL_R=-0.000670;
     /** Genuine nominal triangle angles relative to the Alpha92 master, degrees. */
-    static final double NOMINAL_LEFT_SIDE_DEG=-0.136770,NOMINAL_RIGHT_SIDE_DEG=0.154120,
-            NOMINAL_ROTATION_DEG=0.039850;
+    static final double NOMINAL_LEFT_SIDE_DEG=-0.174330,NOMINAL_RIGHT_SIDE_DEG=0.132800,
+            NOMINAL_ROTATION_DEG=-0.088640;
 
     /** Per-watch genuine context (leave-one-watch-out, absolute values): lateral (R), centreline (deg), max side (deg). */
     static final double[] GENUINE_LATERAL_R={
-            0.000485,0.000262,0.000954,0.000113,0.000393,0.000347,0.000202,0.000160,
-            0.000759,0.001723,0.000708,0.000230,0.001606,0.000624,0.000155,0.000104,
-            0.000131,0.000404,0.001499,0.000724,0.000649,0.000965,0.000143,0.001080,
-            0.001172,0.000598,0.001134,0.000446,0.000844,0.002213,0.000621,0.000148,
-            0.000063,0.000124,0.000075,0.000099,0.001895,0.000343,0.000250,0.000036,
-            0.000232};
+            0.000544,0.000160,0.000852,0.000172,0.000452,0.000406,0.000262,0.000058,
+            0.000819,0.001622,0.000767,0.000129,0.001665,0.000523,0.000053,0.000008,
+            0.000190,0.000303,0.001559,0.000784,0.000548,0.000863,0.000041,0.000979,
+            0.001232,0.000658,0.001032,0.000345,0.000904,0.002273,0.000681,0.000207,
+            0.000123,0.000023,0.000135,0.000015,0.001794,0.000403,0.000149,0.000105,
+            0.000120,0.000314,0.000703,0.000297,0.000131};
     static final double[] GENUINE_CENTRELINE_DEG={
-            0.158670,0.041340,0.399445,0.710920,0.343555,1.069845,0.231235,0.093400,
-            0.151225,0.204040,0.771425,0.044220,0.018310,0.139940,0.470990,0.262440,
-            0.073250,0.228155,0.953925,0.272825,0.572830,0.078400,0.355275,0.025435,
-            0.007805,0.436975,0.361010,0.017630,0.305625,0.400495,0.654545,0.131765,
-            0.364005,0.499530,0.295795,0.233695,0.446590,0.477995,0.594800,0.830980,
-            0.141615};
+            0.277530,0.160200,0.518305,0.632320,0.264955,0.991245,0.152635,0.212260,
+            0.072625,0.322900,0.692825,0.163080,0.137170,0.258800,0.589850,0.381300,
+            0.192110,0.149555,0.875325,0.194225,0.691690,0.197260,0.276675,0.107780,
+            0.129940,0.555835,0.479870,0.136490,0.227025,0.321895,0.575945,0.051715,
+            0.285405,0.618390,0.217195,0.155095,0.565450,0.399395,0.713660,0.949840,
+            0.087495,0.913685,0.056065,0.572405,0.063015};
     static final double[] GENUINE_SIDES_DEG={
-            0.230735,0.118575,0.505620,0.849300,0.359955,1.073180,0.234620,0.100005,
-            0.291200,0.188965,0.785540,0.055355,0.096195,0.272645,0.544755,0.311085,
-            0.124625,0.234510,0.889790,0.351140,0.708475,0.102145,0.435920,0.014210,
-            0.022410,0.439675,0.389325,0.056840,0.306200,0.483970,0.673920,0.206750,
-            0.352920,0.492015,0.325690,0.269640,0.474945,0.622700,0.618325,0.884585,
-            0.162105};
+            0.278155,0.144185,0.553040,0.822375,0.333030,1.044665,0.207695,0.125615,
+            0.262685,0.214575,0.758615,0.102775,0.143615,0.298255,0.592175,0.358505,
+            0.150235,0.205995,0.862865,0.324215,0.734085,0.127755,0.408995,0.042945,
+            0.062415,0.487095,0.414935,0.091215,0.279275,0.457045,0.646995,0.178235,
+            0.325235,0.517625,0.297175,0.242715,0.522365,0.594185,0.665745,0.910195,
+            0.113015,0.932205,0.281915,0.626115,0.187715};
+    // END GENERATED
 
     static final class Result {
         boolean usable;String reason="";

@@ -1,4 +1,4 @@
-genuine nominal from 41 watches; context from 41 per-watch values
+genuine nominal from 45 watches; context from 45 per-watch values
 GEN_CAND_WEX_BLRO_01
   production:  12 (research): OCCLUDED / INSUFFICIENT CLEAN EDGE
   prototype:   12 (angles + lateral, research): OCCLUDED / INSUFFICIENT CLEAN EDGE
@@ -7,19 +7,19 @@ GEN_CAND_WEX_BLRO_02
   prototype:   12 (angles + lateral, research): OCCLUDED / INSUFFICIENT CLEAN EDGE
 GEN_CAND_HO_01
   production:  12 (research): 0.04 px left · 0.04 px up · centreline -0.43° CCW · L/R sides -0.14°/-0.30°
-  prototype:   12 (angles + lateral, research): centreline -0.47° CCW · L/R sides -0.00°/-0.46° · lateral 0.23 px left (0.0011 R) · genuine watches at least as far: centreline 10/41, sides 14/41, lateral 7/41 · [radial 0.07 px toward centre: lighting-sensitive, not assessed]
+  prototype:   12 (angles + lateral, research): centreline -0.34° CCW · L/R sides +0.04°/-0.44° · lateral 0.25 px left (0.0012 R) · genuine watches at least as far: centreline 18/45, sides 17/45, lateral 6/45 · [radial 0.06 px toward centre: lighting-sensitive, not assessed]
 GEN_CAND_HO_02
   production:  12 (research): 0.09 px right · 0.41 px down · centreline +0.60° CW · L/R sides +0.48°/+0.64°
-  prototype:   12 (angles + lateral, research): centreline +0.56° CW · L/R sides +0.61°/+0.49° · lateral 0.10 px left (0.0007 R) · genuine watches at least as far: centreline 8/41, sides 9/41, lateral 13/41 · [radial 0.20 px toward centre: lighting-sensitive, not assessed]
+  prototype:   12 (angles + lateral, research): centreline +0.69° CW · L/R sides +0.65°/+0.51° · lateral 0.12 px left (0.0008 R) · genuine watches at least as far: centreline 7/45, sides 8/45, lateral 12/45 · [radial 0.20 px toward centre: lighting-sensitive, not assessed]
 RL_THEONE_BLNR
   production:  12 (research): 0.91 px left · 1.20 px down · centreline +0.96° CW · L/R sides +0.99°/+0.89°
-  prototype:   12 (angles + lateral, research): centreline +0.93° CW · L/R sides +1.13°/+0.73° · lateral 0.39 px left (0.0024 R) · genuine watches at least as far: centreline 2/41, sides 0/41, lateral 0/41 · [radial 0.76 px toward centre: lighting-sensitive, not assessed]
+  prototype:   12 (angles + lateral, research): centreline +1.05° CW · L/R sides +1.16°/+0.75° · lateral 0.41 px left (0.0025 R) · genuine watches at least as far: centreline 0/45, sides 0/45, lateral 0/45 · [radial 0.75 px toward centre: lighting-sensitive, not assessed]
 RL_USER_BATGIRL
   production:  12 (research): OCCLUDED / INSUFFICIENT CLEAN EDGE
   prototype:   12 (angles + lateral, research): OCCLUDED / INSUFFICIENT CLEAN EDGE
 RL_LOCAL_BLNR
   production:  12 (research): 1.86 px left · 0.91 px up · centreline +0.79° CW · L/R sides +0.75°/+1.11°
-  prototype:   12 (angles + lateral, research): centreline +0.75° CW · L/R sides +0.89°/+0.96° · lateral 2.90 px left (0.0132 R) · genuine watches at least as far: centreline 4/41, sides 1/41, lateral 0/41 · [radial 0.63 px outward: lighting-sensitive, not assessed]
+  prototype:   12 (angles + lateral, research): centreline +0.88° CW · L/R sides +0.93°/+0.98° · lateral 2.92 px left (0.0133 R) · genuine watches at least as far: centreline 3/45, sides 1/45, lateral 0/45 · [radial 0.64 px outward: lighting-sensitive, not assessed]
 RL_ARF_BLRO_CROOKED6
   production:  12 (research): 2.36 px left · 1.63 px up · centreline +0.28° CW · L/R sides +0.03°/+0.62°
-  prototype:   12 (angles + lateral, research): centreline +0.24° CW · L/R sides +0.17°/+0.46° · lateral 1.98 px left (0.0084 R) · genuine watches at least as far: centreline 23/41, sides 14/41, lateral 0/41 · [radial 1.85 px outward: lighting-sensitive, not assessed]
+  prototype:   12 (angles + lateral, research): centreline +0.37° CW · L/R sides +0.20°/+0.49° · lateral 2.00 px left (0.0085 R) · genuine watches at least as far: centreline 18/45, sides 16/45, lateral 0/45 · [radial 1.85 px outward: lighting-sensitive, not assessed]
