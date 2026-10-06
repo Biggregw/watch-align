@@ -75,3 +75,25 @@ The closing step is `.github/workflows/alpha96-genuine-calibration.yml`, a resea
 Listings that have changed since harvesting fail the hash check and are reported, not replaced.
 
 It runs on a push that changes the workflow or `fetch_verified.py` on this branch. Manual dispatch works once the file is on the default branch.
+
+## CI run 37500197377 (2026-10-06): first Alpha96 genuine distribution
+
+Results are in `results/ci_run_37500197377/`: `report.md`, `watch_level.csv`, `fetch_status.csv` and `layout_split.txt`. The per-photo CSV and the fetch log are in the run artifact (30 days), which cannot be downloaded from this environment.
+
+| Stage | Photos | Watches |
+|---|---:|---:|
+| Catalogued (provenance-strong) | 213 | 123 |
+| Restored with matching sha256 | 156 | 76 |
+| Hash mismatch (listing image changed; not replaced) | 57 (Bob's 48, SWE 9) | – |
+| Accepted by Alpha96 pose | 144 | 70 |
+
+- **Regression:** both phone references are still reproduced.
+- **Statistics:** every distribution uses per-watch medians, so one physical watch counts once.
+- **Limits:** no production limits have been set.
+
+**Caveats before any limit is considered:**
+1. **Resolution confound.** Genuine dial radius is about 290 px (ring shift median 0.70 px = 0.0024 R). The replica controls are 165–234 px. Detector noise is roughly constant in px, so R-normalised values inflate on low-resolution photos. A replica above a genuine R value is not yet evidence of a defect. Compare in px or stratify by R first.
+2. **Duplicate images.** Three sha256 values appear under two different Bob's `physical_watch_id`s, probably stock images. Those watches are not independent and should be de-duplicated.
+3. **Outliers.** `m12_raw` reaches 12.9 px (0.036 R) on one photo, probably detector or pose error. Inspect it before using the tails.
+4. **Pooled layouts.** Primary steel and gold-surround layouts are pooled in `report.md`. `layout_split.txt` shows they are similar, but gold-surround 9 and 12 rotations have wider tails.
+5. **Within-watch repeatability.** It comes mainly from the Phillips multi-photo lots: 6–8 photos per watch, with a 6/9/12 rotation MAD of about 0.05–0.15°. That is smaller than the between-watch spread.
