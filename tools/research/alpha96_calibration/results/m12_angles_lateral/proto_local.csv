@@ -1,0 +1,9 @@
+photo_id,status,dial_radius_px,usable,reason,centreline_deg,left_side_deg,right_side_deg,sides_deg,lateral_px,lateral_R,radial_px_note,n_genuine,at_least_centreline,at_least_sides,at_least_lateral
+GEN_CAND_WEX_BLRO_01,accepted,140.03923,false,OCCLUDED / INSUFFICIENT CLEAN EDGE,,,,,,,,0,0,0,0
+GEN_CAND_WEX_BLRO_02,accepted,155.37171,false,OCCLUDED / INSUFFICIENT CLEAN EDGE,,,,,,,,0,0,0,0
+GEN_CAND_HO_01,accepted,203.21716,true,,-0.34371,0.03548,-0.43536,0.43536,-0.24733,-0.00122,-0.06435,45,18,17,6
+GEN_CAND_HO_02,accepted,143.39314,true,,0.69120,0.65207,0.51032,0.65207,-0.11537,-0.00080,-0.19622,45,7,8,12
+RL_THEONE_BLNR,accepted,165.12053,true,,1.05357,1.16434,0.75274,1.16434,-0.40507,-0.00245,-0.75492,45,0,0,0
+RL_USER_BATGIRL,accepted,205.02430,false,OCCLUDED / INSUFFICIENT CLEAN EDGE,,,,,,,,0,0,0,0
+RL_LOCAL_BLNR,accepted,219.72089,true,,0.87608,0.92671,0.97832,0.97832,-2.91885,-0.01328,0.63743,45,3,1,0
+RL_ARF_BLRO_CROOKED6,accepted,234.27309,true,,0.36527,0.20439,0.48574,0.48574,-2.00127,-0.00854,1.84938,45,18,16,0

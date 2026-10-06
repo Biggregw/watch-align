@@ -1,0 +1,5 @@
+Local photos: inner edge separable on 17/24 sides; all three sides separable on 1/8 photos.
+Seen surround width (inner-outer gap): median 0.0159 R, range 0.0110..0.0210 R
+Inner edge separable, share of sides by scale: 1.00: 0.68, 0.85: 0.61, 0.70: 0.63, 0.55: 0.38, 0.45: 0.25
+outer edge: same-photo SD across scales 1.0-0.7 and resampling: radial 0.0007 R, tangential 0.0005 R (8 photos)
+inner edge: same-photo SD across scales 1.0-0.7 and resampling: radial 0.0026 R, tangential 0.0009 R (8 photos)

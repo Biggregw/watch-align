@@ -1,0 +1,10 @@
+photo_id,physical_watch_id,model,provenance,priority,include,note,sha256
+U1_16700_CPO,owner_cpo_16700,16700,Rolex CPO (owner-supplied official image),owner_priority,no,predecessor reference (16700) outside the 126710-family layout; ring not fitted,b08634f6310792a8bb11638d3423af649011ace43748811c714d253457da9f8b
+U2_116710LN_CPO_a,owner_cpo_116710ln_a,116710LN,Rolex CPO (owner-supplied official image),owner_priority,no,"predecessor reference (116710), unsupported_predecessors in families.py",bcf353d03c200e9a4091645df63759554e1ac2c361d21d7776f8f9264aaa3bd2
+U3_126710GRNR_dealer,owner_official_126710grnr,126710GRNR,owner-supplied official image,owner_priority,yes,,5cb989bb020b2cfb305b9e1d64dabcd18e2d2d3c312bc86a162fb84ea04d6a9a
+U4_116710LN_listing_screenshot,owner_listing_116710ln,116710LN,listing screenshot (owner-supplied),owner_priority,no,predecessor reference (116710),493d446ee8f7734328934e9c0f8f7983da209989f26b8592569d125c5f2f5db2
+U5_116710LN_CPO_b,owner_cpo_116710ln_b,116710LN,Rolex CPO (owner-supplied official image),owner_priority,no,predecessor reference (116710),fe4b9ad2ad2e5c6239e3baceba70708587999e434e6728529e2b5b0ab0d8ffeb
+U6_126710BLNR_oyster,owner_official_126710blnr_oyster,126710BLNR,owner-supplied official image,owner_priority,yes,,363c9fd90cf5689a54b3f45f5d9e49494f55d4f638a33bbcc435022be8fa6519
+U7_126710BLNR_jubilee_CPO,owner_cpo_126710blnr_jubilee,126710BLNR,Rolex CPO (owner-supplied official image),owner_priority,yes,,98a71e53d74796ff2682c83590d1758d29e6ea4e55568593292fdf2d7e3c18d4
+U8_126715CHNR_CPO,owner_cpo_126715chnr,126715CHNR,Rolex CPO (owner-supplied official image),owner_priority,yes,6 baton reading (+2.30 deg) likely seconds-hand contaminated; 12 only is used,27d417b51401fa62e80bf40690d468c2783371b781a8172259e8ecd35df17774
+U9_126710BLRO_dealer_screenshot,owner_dealer_126710blro,126710BLRO,dealer listing screenshot (owner-supplied),owner_priority,yes,12 occluded by GMT hand: contributes nothing,962294221ad7ee607d76ea402d924af4b244bfb874136dbf6ee108e10388be4f

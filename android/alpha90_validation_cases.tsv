@@ -1,0 +1,11 @@
+case_id	class	thread_id	target	notes
+RL1	RL	1ktlzo1	6 baton rotation	Known obvious CCW/canted 6 baton
+RL2	RL	1jawk9m	6 baton rotation	Known rotated-left 6 baton
+RL3R	RL	1ur0ic4	12/9/6 alignment	Replacement case; prior phone runs hit physical-edge rejection
+RL4	RL	1vxcmp9	12 and 6 centring	Known reported 12/6 positional defect; static Alpha90 screenshot looked very close but blink movement was visible to user
+RL5	RL	1us2fqk	6 CCW/left and 12 left	Strong local 6 defect plus smaller 12 deviation
+GL1	GL	1rb69zb	clean control	Very clean VSF Pepsi easy GL
+GL2	GL	1rle36t	borderline 6	Clean VSF Pepsi; slight 6 concern judged acceptable
+GL3	GL	1vqizfq	borderline 3	VSF Sprite; tiny accepted 3 tilt; left-crown model, treat route carefully
+GL4	GL	1wldksl	borderline 12	VSF Batman; claimed off-centre triangle but consensus GL
+GL5	GL	1t5717n	borderline 6	VF Bruce Wayne; 6 concern judged acceptable

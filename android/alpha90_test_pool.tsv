@@ -1,0 +1,23 @@
+case_id	role	source_id	source_image	target	notes
+GEN_HO_01	GEN	gen_wex_1TDYtpN	image_01.jpg	genuine held-out control	Held-out genuine validation source; image_01 already accepted in first automated smoke run
+GEN_HO_02	GEN	gen_wex_vmbUDwy	image_00.jpg	genuine held-out control	Marketplace source-labelled genuine candidate; validation split
+GEN_EXTRA_01	GEN	gen_wex_3KSuGhC	image_00.jpg	genuine photo-gating control	Known accessible genuine calibration source; image_00 previously failed closed on physical-edge guard, so retain as a deliberate genuine photo-quality control
+GEN_HO_04	GEN	gen_wex_8Rg3vqJ	image_00.jpg	genuine held-out control	2021 exact-reference genuine candidate on Oyster; validation split
+GEN_HO_05	GEN	gen_wex_bRffRhD	image_00.jpg	genuine held-out control	2021 complete-set genuine candidate; validation split
+GL_VSF_01	GL	rep_vsf_GKJDidL	image_00.jpg	near-clean replica control	Community consensus broadly GL; useful clean VSF control
+GL_VSF_02	GL	rep_vsf_HCz9EAj	image_00.jpg	near-clean replica control	Community QC with largely clean indices
+GL_VSF_03	GL	rep_vsf_KfRKFwA	image_00.jpg	near-clean replica control	Broadly clean indices; separate date-window concern
+GL_CF_01	GL	rep_cf_sx6zSKZ	image_00.jpg	near-clean replica control	Community GL Clean Factory reference
+GL_ARF_01	GL	rep_arf_m304y61	image_00.jpg	near-clean factory-diversity control	ARF exact-reference example; community broadly GL
+GL_CF_03	GL	rep_cf_QsJT2wk	image_00.jpg	near-clean replica control	Community described overall alignment as good
+RL_LOCAL_01	RL	rep_vsf_7s6PyXJ	image_02.jpg	6 left; 12 slightly tilted	Clear local-marker case; same image used in first successful automation run
+ALIGN_VSF_01	BORDERLINE	rep_vsf_gpZWOfy	image_00.jpg	12 9 and 6 alignment deviations	Community notes small deviations at several applied markers
+ALIGN_VSF_02	BORDERLINE	rep_vsf_oVwWMrC	image_00.jpg	possible 6-marker issue	Community QC notes possible 6-marker and date concerns
+ALIGN_VSF_03	BORDERLINE	rep_vsf_p3hHVMB	image_00.jpg	12 slightly counter-clockwise	Borderline local 12-marker case
+TEXT_CF_01	SPECIAL	rep_cf_bpdi5xV	image_00.jpg	dial-font/text concern	Community thread ultimately recommends RL for unusual dial-font rendering; future text-layer control
+BEZEL_CF_01	SPECIAL	rep_cf_6I00d8w	image_01.jpg	bezel triangle / colour-transition concern	Useful negative-control for separating bezel-plane issues from dial pose
+DATE_CF_01	SPECIAL	rep_cf_UpTW8nx	image_00.jpg	date-wheel centring concern	Useful negative-control for separating date/cyclops issues from flat-dial marker QC
+CYCLOPS_CF_01	SPECIAL	rep_cf_f71234_Sw2D1Bt	image_00.jpg	cyclops perspective concern	Thread specifically discusses cyclops perspective while cosmetics otherwise GL-level
+REHAUT_CF_01	SPECIAL	rep_cf_6zSSQ1d	image_00.jpg	rehaut / non-marker concern	Second-QC example with rehaut/timegrapher discussion; useful defect-class separation control
+FACTORY_ARF_01	DIVERSITY	rep_arf_8xahrjm	image_00.jpg	factory-diversity control	ARF exact-reference Batgirl QC
+FACTORY_CPLUS_01	DIVERSITY	rep_cplus_wEYZOyK	image_00.jpg	factory-diversity control	C+ Factory exact-reference QC set

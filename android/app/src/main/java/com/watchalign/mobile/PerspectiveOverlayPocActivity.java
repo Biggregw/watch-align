@@ -1,0 +1,106 @@
+package com.watchalign.mobile;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.net.Uri;
+import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import org.opencv.android.OpenCVLoader;
+
+import java.io.InputStream;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+/** One-photo fixed-genuine-master perspective proof. */
+public class PerspectiveOverlayPocActivity extends Activity {
+    private static final int PICK_CANDIDATE=2301;
+    private static final int BG=Color.rgb(8,17,31),ACCENT=Color.rgb(50,213,242),MUTED=Color.rgb(158,176,201);
+    private final ExecutorService worker=Executors.newSingleThreadExecutor();
+    private Bitmap candidateBitmap,lastOverlay;
+    private Alpha94MarkerMeasurement.Report lastMeasurement;
+    private ImageView preview;
+    private TextView status;
+    private Button buildButton,inspectButton;
+
+    @Override public void onCreate(Bundle state){
+        super.onCreate(state);
+        if(!OpenCVLoader.initLocal())Toast.makeText(this,"OpenCV could not start",Toast.LENGTH_LONG).show();
+        setContentView(buildUi());
+    }
+
+    private View buildUi(){
+        int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(BG);
+        scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
+        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
+        root.addView(text("Fixed Genuine GMT Overlay",28,Color.WHITE));
+        root.addView(text("Alpha97 frozen pose + read-only marker measurements · 12 research readout · no verdicts",14,ACCENT));
+        root.addView(text("The yellow overlay is a fixed genuine 126710BLNR master measured from the bare genuine dial. The printed minute lattice fixes perspective first. Only after H is frozen, the app measures round markers, the 6/9 batons and (research-only) the 12 triangle. Directions are in the upright dial frame; rotation + = clockwise. Those measurements never feed back into pose and no pass/fail thresholds are applied.",13,MUTED),lp(-1,-2,10));
+
+        Button pick=button("Choose candidate GMT photo");pick.setOnClickListener(v->pickPhoto());root.addView(pick,lp(-1,dp(52),8));
+        buildButton=button("Project fixed genuine master");buildButton.setBackgroundColor(ACCENT);buildButton.setTextColor(Color.rgb(4,32,42));buildButton.setEnabled(false);buildButton.setOnClickListener(v->buildOverlay());root.addView(buildButton,lp(-1,dp(54),6));
+        inspectButton=button("Inspect last overlay");inspectButton.setEnabled(false);inspectButton.setOnClickListener(v->openInspector());root.addView(inspectButton,lp(-1,dp(48),6));
+        status=text("Choose a sharp, upright GMT photo with the complete black dial visible.",14,MUTED);root.addView(status,lp(-1,-2,12));
+        preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(BG);root.addView(preview,lp(-1,-2,8));
+        root.addView(text("There is no manual movement or post-fit correction. A perfect candidate should naturally coincide with the yellow master after perspective is applied. A defective marker should remain visibly outside its yellow genuine position.",12,MUTED),lp(-1,-2,10));
+        return scroll;
+    }
+
+    private void pickPhoto(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("image/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,PICK_CANDIDATE);}
+
+    private void buildOverlay(){
+        if(candidateBitmap==null)return;final Bitmap photo=candidateBitmap;
+        buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Finding dial edge, locking the 12 branch and refining the full minute lattice…");
+        worker.submit(()->{
+            AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(photo);
+            Alpha94MarkerMeasurement.Report measurement=(q!=null&&q.valid&&q.homography!=null)
+                    ?Alpha94MarkerMeasurement.analyse(photo,q.homography):null;
+            runOnUiThread(()->{
+                buildButton.setEnabled(true);
+                if(!q.valid){lastOverlay=null;lastMeasurement=null;inspectButton.setEnabled(false);status.setText("Automatic fit failed: "+q.reason);return;}
+                lastOverlay=q.overlay;lastMeasurement=measurement;inspectButton.setEnabled(true);
+                String projective=q.projectiveAccepted?"minute-lattice perspective accepted":"minute-lattice perspective unavailable";
+                String residual=Double.isFinite(q.fitAfter)?String.format(Locale.US," · tick RMS %.2f px",q.fitAfter):"";
+                String markerText=measurement==null?"":("\n"+Alpha97TwelveReadout.summary(measurement));
+                status.setText(String.format(Locale.US,"Fixed master ready · %d ticks · %d sectors%s · %s · 12 phase %s.%s",q.detectedTicks,q.completePairs,residual,projective,q.twelvePhaseUsed?"locked":"guarded by coarse pose",markerText));
+                openInspector();
+            });
+        });
+    }
+
+    private void openInspector(){
+        if(candidateBitmap==null||lastOverlay==null)return;
+        InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Alpha97 GMT measurement overlay",
+                lastMeasurement==null?null:Alpha97TwelveReadout.summary(lastMeasurement));
+        startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
+    }
+
+    @Override protected void onActivityResult(int request,int result,Intent data){
+        super.onActivityResult(request,result,data);if(request!=PICK_CANDIDATE||result!=RESULT_OK||data==null||data.getData()==null)return;
+        try{
+            candidateBitmap=readBitmap(data.getData());lastOverlay=null;lastMeasurement=null;preview.setImageBitmap(candidateBitmap);buildButton.setEnabled(true);inspectButton.setEnabled(false);status.setText("Photo ready. Tap Project fixed genuine master.");
+        }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
+    }
+
+    private Bitmap readBitmap(Uri uri)throws Exception{
+        BitmapFactory.Options opts=new BitmapFactory.Options();opts.inJustDecodeBounds=true;try(InputStream in=getContentResolver().openInputStream(uri)){BitmapFactory.decodeStream(in,null,opts);}if(opts.outWidth<=0||opts.outHeight<=0)throw new IllegalArgumentException("Not a readable image");
+        int maxDim=Math.max(opts.outWidth,opts.outHeight),sample=1;while(maxDim/(sample*2)>=3200)sample*=2;opts.inJustDecodeBounds=false;opts.inSampleSize=sample;opts.inPreferredConfig=Bitmap.Config.ARGB_8888;Bitmap b;try(InputStream in=getContentResolver().openInputStream(uri)){b=BitmapFactory.decodeStream(in,null,opts);}if(b==null)throw new IllegalArgumentException("Not a readable image");int currentMax=Math.max(b.getWidth(),b.getHeight());if(currentMax<=3200)return b.copy(Bitmap.Config.ARGB_8888,false);float s=3200f/currentMax;return Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true).copy(Bitmap.Config.ARGB_8888,false);
+    }
+
+    private TextView text(String s,int sp,int color){TextView v=new TextView(this);v.setText(s);v.setTextSize(sp);v.setTextColor(color);return v;}
+    private Button button(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);return b;}
+    private LinearLayout.LayoutParams lp(int w,int h,int top){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(w,h);p.topMargin=dp(top);return p;}
+    private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
+    @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
+}

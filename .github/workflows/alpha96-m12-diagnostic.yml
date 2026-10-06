@@ -1,0 +1,84 @@
+name: Alpha96 12-triangle edge diagnostic (research)
+
+# RESEARCH ONLY. Re-fetches the catalogued provenance-strong genuine photos (sha256-verified, same as
+# alpha96-genuine-calibration.yml), runs the harness diagnostic M12Diag (production pose, production Report and the
+# production private edge finder via reflection; no maths copied) and summarises where each side of the 12 triangle
+# is detected, by source. Uploads only CSVs and the summary; prints the summary, the per-photo CSV and one small
+# grey montage of rectified 12-region crops to the log (as phase_b_preview_candidates does). Images are never
+# committed, cached or uploaded. Nothing here changes the app, thresholds or verdicts.
+on:
+  push:
+    branches:
+      - feature/android-alpha91-minute-lattice
+    paths:
+      - '.github/workflows/alpha96-m12-diagnostic.yml'
+      - 'tools/desktop-harness/drivers/M12Diag.java'
+      - 'tools/research/alpha96_calibration/m12_sides.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alpha96-m12-diagnostic
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CAL: tools/research/alpha96_calibration
+      IMG: a96_images
+      OUT: a96_m12diag
+      CROPS: a96_crops
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: python -m pip install -q requests Pillow
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Fetch catalogued photos (sha256-verified)
+        run: |
+          mkdir -p "$IMG" "$OUT" "$CROPS"
+          python3 "$CAL/fetch_verified.py" "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/fetch_log.csv" | tail -3
+
+      - name: Run M12Diag
+        run: |
+          tools/desktop-harness/run.sh M12Diag "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/m12diag.csv" "$CROPS" 2>/dev/null
+
+      - name: Summarise
+        run: |
+          python3 "$CAL/m12_sides.py" "$OUT/m12diag.csv" "$CAL/catalogue_provenance_strong.csv" \
+            --dedup "$CAL/results/dedup/photos.csv" --out "$OUT/summary.md" > /dev/null
+
+      - name: Upload CSVs and summary (no images)
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha96-m12-diagnostic-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            a96_m12diag/*.csv
+            a96_m12diag/summary.md
+
+      - name: Print results to log
+        run: |
+          cat "$OUT/summary.md"
+          echo '=== m12diag.csv ==='
+          cat "$OUT/m12diag.csv"
+          python3 "$CAL/m12_sides.py" "$OUT/m12diag.csv" "$CAL/catalogue_provenance_strong.csv" \
+            --dedup "$CAL/results/dedup/photos.csv" --crops "$CROPS" --montage "$RUNNER_TEMP/montage.jpg" | sed -n '/^MONTAGE/,$p'
