@@ -164,3 +164,7 @@ Do not return only a plan. Produce an evidence-backed conclusion:
 8. keep Alpha90 untouched.
 
 Do not spend hours tuning one photograph. If a proposed change fails to generalise after a bounded test, stop and report that clearly.
+
+## Reproducibility clarification — 2026-10-06
+
+The exploratory dense-registration implementation that produced the reported 2.57 / 1.94 / 2.48 / 1.68 px figures was run interactively and was **not persisted as a standalone repository script**. Do not waste time searching the branch for it and do not treat those figures as independently reproducible evidence. Reimplement the described registration from the source images and validate it independently. The four genuine control images and bare genuine-dial reference are being supplied separately to the independent review environment.
