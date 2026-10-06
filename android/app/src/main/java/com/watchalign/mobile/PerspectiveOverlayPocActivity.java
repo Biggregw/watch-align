@@ -45,7 +45,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("Fixed Genuine GMT Overlay",28,Color.WHITE));
-        root.addView(text("Alpha96 frozen pose + read-only marker measurements · no verdicts",14,ACCENT));
+        root.addView(text("Alpha97 frozen pose + read-only marker measurements · 12 research readout · no verdicts",14,ACCENT));
         root.addView(text("The yellow overlay is a fixed genuine 126710BLNR master measured from the bare genuine dial. The printed minute lattice fixes perspective first. Only after H is frozen, the app measures round markers, the 6/9 batons and (research-only) the 12 triangle. Directions are in the upright dial frame; rotation + = clockwise. Those measurements never feed back into pose and no pass/fail thresholds are applied.",13,MUTED),lp(-1,-2,10));
 
         Button pick=button("Choose candidate GMT photo");pick.setOnClickListener(v->pickPhoto());root.addView(pick,lp(-1,dp(52),8));
@@ -72,7 +72,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 lastOverlay=q.overlay;lastMeasurement=measurement;inspectButton.setEnabled(true);
                 String projective=q.projectiveAccepted?"minute-lattice perspective accepted":"minute-lattice perspective unavailable";
                 String residual=Double.isFinite(q.fitAfter)?String.format(Locale.US," · tick RMS %.2f px",q.fitAfter):"";
-                String markerText=measurement==null?"":("\n"+measurement.compactSummary());
+                String markerText=measurement==null?"":("\n"+Alpha97TwelveReadout.summary(measurement));
                 status.setText(String.format(Locale.US,"Fixed master ready · %d ticks · %d sectors%s · %s · 12 phase %s.%s",q.detectedTicks,q.completePairs,residual,projective,q.twelvePhaseUsed?"locked":"guarded by coarse pose",markerText));
                 openInspector();
             });
@@ -81,8 +81,8 @@ public class PerspectiveOverlayPocActivity extends Activity {
 
     private void openInspector(){
         if(candidateBitmap==null||lastOverlay==null)return;
-        InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Alpha96 GMT measurement overlay",
-                lastMeasurement==null?null:lastMeasurement.compactSummary());
+        InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Alpha97 GMT measurement overlay",
+                lastMeasurement==null?null:Alpha97TwelveReadout.summary(lastMeasurement));
         startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
     }
 

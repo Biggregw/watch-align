@@ -432,3 +432,20 @@ The genuine 12 offset from it is median 0.0009 / P90 0.0020 / max 0.0032 R, both
 - Assess the 12 by centreline rotation, side angles and lateral position from the genuine nominal.
 - Show radial only as a lighting-sensitive note.
 - The recalibrated full 2-D offset is not used.
+
+## Alpha97 research-display APK (2026-10-06)
+
+`android/app/src/main/java/com/watchalign/mobile/Alpha97TwelveReadout.java` implements the robust 12 readout in the app. Its frozen constants are generated from `m12_nominal.properties` and `m12_genuine_reference.csv`: 41 watches, SWE excluded.
+
+**What changed:**
+- The phone summary and inspector now show `Alpha97TwelveReadout.summary(report)`. This is the Alpha96 `compactSummary()` with only its 12 line replaced.
+- The 12 line reports centreline, left side, right side and left/right position from the genuine reference, plus reference-watch context counts.
+- Toward-centre is shown only as "lighting-sensitive · not assessed".
+- No thresholds, verdicts or colour.
+- The 12 is withheld exactly as in Alpha96 when it is occluded, has insufficient clean edge, or the ring is not fitted.
+- Pose, Alpha94 measurement, Alpha92 master and recovery code are byte-identical to Alpha96 (5adde5c).
+
+**Checks:**
+- **`Alpha97TwelveReadoutTest`** (JUnit, 8 tests) pins the constants to the research files. It checks parity with the desktop prototype on the recorded production inputs (8 local photos and the scaled variants), the known local-photo findings, fail-closed behaviour and wording, and that every non-12 summary line is identical to Alpha96.
+- **`tools/desktop-harness/drivers/Alpha97AppParity.java`** compares the app class with the desktop prototype on the full production pipeline: 8 local and 166 scaled photos, 0 mismatches.
+- **Alpha96 regression:** `Alpha96Calib` rerun on the local photos is identical to `results/runner_local.csv` (ring, 6, 9, rounds, 12 fields, pose: 1,592 values, 0 differences).

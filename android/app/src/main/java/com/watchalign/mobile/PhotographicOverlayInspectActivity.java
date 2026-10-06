@@ -40,9 +40,10 @@ public class PhotographicOverlayInspectActivity extends Activity {
         String diagnostics=InspectionImageStore.diagnosticsText;
         if(diagnostics!=null&&!diagnostics.isEmpty()){
             TextView metrics=new TextView(this);metrics.setText(diagnostics);metrics.setTextColor(Color.WHITE);metrics.setTextSize(10);metrics.setPadding(dp(4),0,dp(4),0);
-            bottom.addView(metrics,new LinearLayout.LayoutParams(-1,dp(104)));
+            metrics.setMovementMethod(new android.text.method.ScrollingMovementMethod());metrics.setVerticalScrollBarEnabled(true);
+            bottom.addView(metrics,new LinearLayout.LayoutParams(-1,dp(140)));
         }
-        int bottomH=(diagnostics!=null&&!diagnostics.isEmpty())?dp(190):dp(86);
+        int bottomH=(diagnostics!=null&&!diagnostics.isEmpty())?dp(226):dp(86);
         root.addView(bottom,new FrameLayout.LayoutParams(-1,bottomH,Gravity.BOTTOM));setContentView(root);refresh();
     }
 
