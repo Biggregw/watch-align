@@ -22,7 +22,11 @@ final class InspectionImageStore {
     }
 
     static void setOverlay(Bitmap base, Bitmap overlay, String t){
-        baseBitmap=base;bitmap=overlay;title=t;diagnosticsText=null;overlayMode=base!=null&&overlay!=null;
+        setOverlay(base,overlay,t,null);
+    }
+
+    static void setOverlay(Bitmap base, Bitmap overlay, String t, String diagnostics){
+        baseBitmap=base;bitmap=overlay;title=t;diagnosticsText=diagnostics;overlayMode=base!=null&&overlay!=null;
     }
 
     static void clearManualSeed(){
