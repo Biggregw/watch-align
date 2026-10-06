@@ -44,8 +44,8 @@ final class Alpha91MinuteLatticeFitter {
         }
     }
 
-    private static final double RIN=Gmt126710BlnrMaster.MINUTE_TRACK_R;
-    private static final double ROUT=Gmt126710BlnrMaster.MINUTE_TRACK_OUTER_R;
+    private static final double RIN=Alpha92GmtMaster.MINUTE_TRACK_R;
+    private static final double ROUT=Alpha92GmtMaster.MINUTE_TRACK_OUTER_R;
     private static final int[] EXCLUDED = {11,12,13,14,15,16,17,18,19,29,30,31};
 
     private static final class SampleImage {
