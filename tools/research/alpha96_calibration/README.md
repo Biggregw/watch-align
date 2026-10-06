@@ -93,7 +93,7 @@ Results are in `results/ci_run_37500197377/`: `report.md`, `watch_level.csv`, `f
 
 **Caveats before any limit is considered:**
 1. **Resolution confound.** This was tested offline; see the next section. The worry holds for rotations, ring shift and the worst round marker. It does not hold for the 6, 9 and 12 local offsets.
-2. **Duplicate images.** Three sha256 values appear under two different Bob's `physical_watch_id`s, probably stock images. Those watches are not independent and should be de-duplicated.
+2. **Duplicate images.** Resolved by removing shared photos; see the de-duplication section below.
 3. **Outliers.** `m12_raw` reaches 12.9 px (0.036 R) on one photo, probably detector or pose error. Inspect it before using the tails.
 4. **Pooled layouts.** Primary steel and gold-surround layouts are pooled in `report.md`. `layout_split.txt` shows they are similar, but gold-surround 9 and 12 rotations have wider tails.
 5. **Within-watch repeatability.** It comes mainly from the Phillips multi-photo lots: 6–8 photos per watch, with a 6/9/12 rotation MAD of about 0.05–0.15°. That is smaller than the between-watch spread.
@@ -151,3 +151,35 @@ The 8 local photos were re-measured at scales 1.0, 0.85, 0.7, 0.55 and 0.45, wit
 - Beyond all n genuine watches means a genuine watch would do so with probability about 1/(n+1): about 1.5% for n=64, but about 14% for n=6.
 
 No limits are derived.
+
+## De-duplication of shared / stock photos (offline, 2026-10-06)
+
+`dedup_units.py` writes `results/dedup/photos.csv`. It uses the harvester's own image state (`origin/data/harvest:state/images.jsonl`) to find photographs that appear under more than one catalogue watch:
+- identical bytes;
+- harvester-confirmed near copies;
+- dial-crop copies;
+- as a worst case, also the unconfirmed "possible" hash matches.
+
+Such a photo cannot be tied to one physical watch, so it is excluded from every watch that lists it. Sharing a page alone links nothing; site-wide images would otherwise join 89 Bob's pages into one.
+
+| Level | Shared photos | Watches losing all photos | Genuine reference watches (primary photo) |
+|---|---:|---:|---:|
+| none | 0 | 0 | 68 |
+| exact | 6 | 6 | – |
+| near / dial (harvester's confirmed definition; primary analysis) | 16 | 15 | 62 |
+| possible (unconfirmed hash matches; worst case) | 86 | 71 | 31 |
+
+No measured watch that still had an unshared photo was lost at the dial level (1 at the possible level), so working from primary photos costs nothing here.
+
+**What the shared photos had been doing:**
+- **Conflicting labels.** The genuine 9 rotation maximum (+1.17°) came from one Bob's photo. It is listed as a 126713GRNR on a "gmt_master_ii-black" page, and the same file is also listed as a 126710BLNR.
+- **Double counting.** Two Bob's Root Beer pages shared one photo with large rotations (6 +0.68°, 9 +0.66°, 12 −0.82°), so it counted twice.
+- **Spread.** After de-duplication at the dial level the genuine 9 rotation range is −0.58° to +0.68° (P90 0.44°); see `results/dedup/genuine_spread.md`. The other features barely change.
+- **Small dials.** Most of the apparent "rotations noisier on small dials" effect came from these stock photos. Spearman rho for 6 and 9 rotation magnitude against R goes from −0.13 / −0.21 to −0.02 / −0.09, but only 4–5 genuine watches remain at R ≤ 240.
+
+**Comparison rerun** (`results/dedup/comparison_dial.md`, `comparison_possible.md`):
+- **Theonewatches 9 rotation −0.85°** is now beyond all 60 genuine watches (it was 2% before, and 20% among radius-matched watches). The genuine watches that matched it were stock photos. The radius-matched group is now only 2 watches, so this rests on the full-population comparison.
+- **Unchanged at both levels:** every replica marker-offset finding (6, 9 and 12 local offsets beyond every genuine watch in R units), Batgirl's 9 rotation −1.52°, and the Local BLNR ring rotation 0.55°.
+- **Marker offsets and rotations:** none of the marketplace candidates is beyond every genuine watch on these.
+- **Ring scale:** still flags candidates, so it remains unusable.
+- **12 local offset:** in R units it now rises with dial radius (rho +0.46; small-dial median 0.0019 R). The small-dial replica values of 0.009–0.014 R are therefore further from genuine, not closer.

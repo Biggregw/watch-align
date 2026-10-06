@@ -20,6 +20,7 @@ No thresholds are derived. Replica rows never enter a genuine statistic.
 import argparse
 import csv
 import math
+import os
 from collections import defaultdict
 from statistics import median, pstdev
 
@@ -74,9 +75,11 @@ def spearman(x, y):
     return num / den if den else None
 
 
-def genuine_watches(path):
-    """One row per genuine watch: primary-photo values, keyed by primary photo, with exact R per photo."""
-    rows = [r for r in csv.DictReader(open(path)) if r['group'] == 'genuine_population']
+def genuine_watches(path, exclude=frozenset()):
+    """One row per genuine watch: primary-photo values, keyed by primary photo, with exact R per photo.
+    Photos in `exclude` (shared / stock photographs) are dropped; a watch whose primary photo is excluded
+    is dropped too, because its next photo's values are not in watch_level.csv (conservative)."""
+    rows = [r for r in csv.DictReader(open(path)) if r['group'] == 'genuine_population' and r['primary_photo'] not in exclude]
     w = defaultdict(lambda: {'photos': {}, 'model': ''})
     for r in rows:
         g = w[r['physical_watch_id']]
@@ -166,14 +169,22 @@ def main():
     ap.add_argument('--scaled', required=True)
     ap.add_argument('--match', type=float, default=0.30, help='R-matched genuine: |R/Rc - 1| <= match')
     ap.add_argument('--out')
+    ap.add_argument('--dedup', help='dedup_units.py photos.csv: exclude photos shared between catalogue watches')
+    ap.add_argument('--dedup-level', default='dial', choices=['exact', 'near', 'dial', 'possible'])
     a = ap.parse_args()
-    gen = genuine_watches(a.watch_level)
+    exclude = frozenset()
+    if a.dedup:
+        exclude = frozenset(r['photo_id'] for r in csv.DictReader(open(a.dedup)) if r[f'shared_{a.dedup_level}'] == '1')
+    gen = genuine_watches(a.watch_level, exclude)
     loc = local_rows(a.local)
     sc = scaled_rows(a.scaled_manifest, a.scaled)
     L = ['# Alpha96: pixel and dial-radius comparison (research only, offline)', '',
          'Genuine: one primary photo per provenance-strong watch (CI run 37500197377), with the exact dial radius R of that photo.',
          'Scaled experiment: the 8 local photos re-measured at several scales, with resampling variants at each scale.',
          'No thresholds are derived; replica rows never enter a genuine statistic.', '']
+    if a.dedup:
+        L += [f'De-duplicated at level **{a.dedup_level}**: {len(exclude)} shared / stock photos excluded '
+              f'(`{os.path.basename(a.dedup)}`).', '']
     Rs = sorted(g['R'] for g in gen)
     L += [f'Genuine watches: {len(gen)}; dial radius R px: min {Rs[0]:.0f}, median {median(Rs):.0f}, max {Rs[-1]:.0f}; '
           f'{sum(r <= 240 for r in Rs)} watches with R <= 240 px.', '']
