@@ -29,18 +29,21 @@ final class AutomaticDialOverlay {
         final double dialCx,dialCy,dialRadius,ellipseRatio,edgeRms;
         final double fitBefore,fitAfter,holdoutBefore,holdoutAfter;
         final int detectedTicks,completePairs,inliers;
+        /** Frozen canonical-dial -> image homography, copied after all pose checks pass. */
+        final double[] homography;
 
         Result(String reason){
             valid=false;overlay=null;this.reason=reason;twelvePhaseUsed=false;projectiveAccepted=false;
             dialCx=dialCy=dialRadius=ellipseRatio=edgeRms=fitBefore=fitAfter=holdoutBefore=holdoutAfter=Double.NaN;
-            detectedTicks=completePairs=inliers=0;
+            detectedTicks=completePairs=inliers=0;homography=null;
         }
-        Result(Bitmap overlay,DialEdgeEllipseFit.Fit e,Alpha91MinuteLatticeFitter.Result d,boolean phaseUsed){
+        Result(Bitmap overlay,DialEdgeEllipseFit.Fit e,Alpha91MinuteLatticeFitter.Result d,boolean phaseUsed,Mat h){
             valid=true;this.overlay=overlay;reason="";twelvePhaseUsed=phaseUsed;projectiveAccepted=d!=null&&d.accepted;
             dialCx=e.cx;dialCy=e.cy;dialRadius=e.meanRadius();ellipseRatio=Math.min(e.axisA,e.axisB)/Math.max(e.axisA,e.axisB);edgeRms=e.rmsPx;
             fitBefore=Double.NaN;fitAfter=d==null?Double.NaN:d.tickRmsPx;
             holdoutBefore=holdoutAfter=Double.NaN;
             detectedTicks=d==null?0:d.ticksUsed;completePairs=d==null?0:d.sectorsUsed;inliers=d==null?0:d.ticksUsed;
+            homography=copyNormalisedHomography(h);
         }
     }
 
@@ -108,7 +111,7 @@ final class AutomaticDialOverlay {
 
             Bitmap overlay=warpOutline(input.getWidth(),input.getHeight(),h);
             if(overlay==null)return new Result("dial outline rendering failed");
-            return new Result(overlay,edge,lattice,phaseUsed);
+            return new Result(overlay,edge,lattice,phaseUsed,h);
         }catch(Throwable t){
             return new Result("automatic overlay failed: "+t.getClass().getSimpleName());
         }finally{
@@ -189,6 +192,14 @@ final class AutomaticDialOverlay {
         double w=m[6]*x+m[7]*y+m[8];
         if(Math.abs(w)<1e-9)return null;
         return new Point((m[0]*x+m[1]*y+m[2])/w,(m[3]*x+m[4]*y+m[5])/w);
+    }
+
+    private static double[] copyNormalisedHomography(Mat h){
+        if(h==null||h.empty())return null;
+        double[] m=new double[9];h.get(0,0,m);
+        if(m.length<9||!Double.isFinite(m[8])||Math.abs(m[8])<1e-12)return null;
+        double s=m[8];for(int i=0;i<9;i++)m[i]/=s;
+        return m;
     }
 
     private static double wrap180(double d){while(d>180)d-=360;while(d<=-180)d+=360;return d;}
