@@ -28,7 +28,8 @@ public class PerspectiveOverlayPocActivity extends Activity {
     private static final int PICK_CANDIDATE=2301;
     private static final int BG=Color.rgb(8,17,31),ACCENT=Color.rgb(50,213,242),MUTED=Color.rgb(158,176,201);
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
-    private Bitmap candidateBitmap,lastOverlay;\n    private Alpha94MarkerMeasurement.Report lastMeasurement;
+    private Bitmap candidateBitmap,lastOverlay;
+    private Alpha94MarkerMeasurement.Report lastMeasurement;
     private ImageView preview;
     private TextView status;
     private Button buildButton,inspectButton;
