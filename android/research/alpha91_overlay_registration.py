@@ -4,35 +4,33 @@ Alpha91 GMT overlay registration — reproducible offline research script.
 
 RESEARCH ONLY. Alpha90 production (f66acee) is not touched.
 
-Pipeline (one fixed method, no per-photo parameters):
+Pipeline (one fixed method, no per-photo parameters; FROZEN 2026-10-06):
 
-  0. Master from the bare genuine dial:
-       - fit a homography bare-image <- canonical using ONLY the exact 6-degree minute
-         lattice (tick inner/outer ends) and the circular dial edge;
-       - measure minute-track radii and applied-marker geometry in that rectified frame.
-  1. Coarse: SIFT + MAGSAC between the rectified bare dial and the photo (basin only).
-  2. Fine A: per-tick 2D intensity centroids on the exact 6-degree lattice predicted by
-     the current H, sector-balanced robust 8-parameter update, iterated.
-  3. Fine B (final, full resolution): per-tick observables that are immune to the
-     rehaut/flange hiding the outer part of ticks on the far side of an oblique photo:
-       - tangential centreline from the inner (always visible) part of each tick;
-       - radial position of the tick INNER END (max dark->bright gradient).
-     Sector-balanced Huber least squares over the 8 free homography parameters.
-  Masked from the fit: date/cyclops sector (ticks 11..19), SWISS MADE ticks (29..31),
-  everything inside r=0.918R (applied markers, hands, centre, text). Hands crossing
-  individual ticks are rejected by per-tick mass/width gating + Huber loss.
+  0. Master from the bare genuine dial: homography fitted only to the exact 6-degree minute
+     lattice + circular dial edge; minute-track and applied-marker geometry measured rectified.
+  1. Coarse pose/localisation: SIFT+MAGSAC (degenerate solutions rejected) then masked ECC on
+     gradient magnitude in the canonical frame (basin only).
+  2. 12 direction / minute-lattice branch: circular correlation of the marker-annulus polar band
+     with the bare dial (unique over 360 deg). The start is rotated onto that branch. This cue
+     never enters the homography fit.
+  3. Refine H from the tick lattice, single global rule for all photos:
+       a. per-tick 2D intensity centroid stage (exact 6-degree lattice predicted by current H);
+       b. final full-resolution stage: tangential centreline from the always-visible inner part
+          of each tick + radial tick INNER-END edge (immune to the rehaut hiding outer tick ends).
+     Sector-balanced (12 x 30 deg) Huber least squares over the 8 free parameters.
+     Masked: ticks 11-19 (date/cyclops), 29-31 (SWISS MADE), everything inside 0.918R.
+     Hands crossing ticks are gated out per tick.
+  4. Fail closed: reject if the 12 cue is not distinctive, if refinement changes lattice phase
+     by > 2 deg, if the result lands on a +/-6 deg branch, if < 8 tick sectors were used, or if the
+     tick-lattice residual is not clean (median > 0.30 px or rms > 0.60 px: wrong local fit).
 
-  Holdout (never used in fitting): applied marker outlines measured by sub-pixel edge
-  profiles in the H-rectified frame (round: robust circle; baton/triangle: robust
-  per-side lines -> polygon area centroid). Markers whose outline is mostly hidden by
-  a hand are flagged OCC and reported but excluded from the summary statistics.
-
-  Diagnostics: canonical radial/tangential residuals, raised-marker parallax test
-  (one shared marker-top height, estimated leave-one-photo-out), one-coefficient
-  radial lens distortion test, convergence-basin test, overlay renders.
+  Holdouts (never used in fitting): applied-marker outlines by sub-pixel edge profiles; markers
+  whose outline is mostly hidden (hands, adjacent print) are excluded as invalid holdouts.
+  Raised-marker parallax is reported SEPARATELY and never applied to H.
+  Tested and rejected earlier: one-coefficient radial lens distortion (unstable, <0.02 px gain).
 
 Usage:
-  python3 alpha91_overlay_registration.py --inputs <alpha91_claude_overlay_inputs> --out <dir>
+  python3 alpha91_overlay_registration.py --inputs <alpha91_claude_overlay_inputs> --out <dir> [--robustness]
 """
 import argparse
 import json
@@ -329,18 +327,110 @@ def coarse_ecc(ref_canon, SC, photo_gray, H, S2=160.0):
     return H
 
 
-def register(photo_gray, M, ref_canon, SC):
+def rot3(phi_deg):
+    """Canonical clock rotation: a point at clock angle a moves to a + phi."""
+    c, s_ = np.cos(np.radians(phi_deg)), np.sin(np.radians(phi_deg))
+    return np.array([[c, -s_, 0], [s_, c, 0], [0, 0, 1.0]])
+
+
+def relative_roll_deg(Ha, Hb):
+    """Mean clock-angle change of canonical points when re-expressed from Ha's frame in Hb's frame."""
+    a = np.radians(np.arange(0, 360, 30)); P = 0.95 * np.c_[np.sin(a), -np.cos(a)]
+    Q = proj(np.linalg.inv(Hb) @ Ha, P)
+    d = np.degrees(np.arctan2(Q[:, 0], -Q[:, 1])) - np.degrees(a)
+    return float(np.mean((d + 180) % 360 - 180))
+
+
+def twelve_template(ref_canon, SC, rs, step=0.25):
+    """Bare-dial polar band (all 360 degrees) of the applied-marker annulus."""
+    S, C = SC
+    th = np.radians(np.arange(0, 360, step))
+    RR, TT = np.meshgrid(rs, th, indexing='ij')
+    return map_coordinates(ref_canon.astype(np.float32), [C - S * RR * np.cos(TT), C + S * RR * np.sin(TT)], order=1)
+
+
+def twelve_cue(smp, H, M, tmpl, rs, step=0.25):
+    """12-direction cue: circular normalised correlation of the photo's marker-annulus polar band with
+    the bare genuine dial's band. The layout (12 triangle, 6/9 batons, 3 date window) is unique over
+    360 degrees and survives one hand crossing a marker. Returns the clock angle of 12 in the current
+    frame. Used ONLY to choose the 6-degree minute-lattice branch and to fail closed; never as a
+    homography correspondence, so no single marker can move the transform."""
+    th = np.radians(np.arange(0, 360, step))
+    RR, TT = np.meshgrid(rs, th, indexing='ij')
+    P = smp.at(H, np.stack([RR * np.sin(TT), -RR * np.cos(TT)], -1))
+    z = lambda X: (X - X.mean(1, keepdims=True)) / (X.std(1, keepdims=True) + 1e-6)
+    a, b = z(P), z(tmpl)
+    sc = np.real(np.fft.ifft(np.fft.fft(a, axis=1) * np.conj(np.fft.fft(b, axis=1)), axis=1)).sum(0) / a.size
+    i = int(np.argmax(sc)); n = len(sc)
+    y0, y1, y2 = sc[i - 1], sc[i], sc[(i + 1) % n]
+    o = 0.5 * (y0 - y2) / (y0 - 2 * y1 + y2) if (y0 - 2 * y1 + y2) != 0 else 0.0
+    ang = ((i + o) * step + 180) % 360 - 180
+    far = np.abs(((np.arange(n) - i + n / 2) % n) - n / 2) * step > 15
+    return float(ang), float(y1 / max(sc[far].max(), 1e-6)), float(y1)
+
+
+CUE_RS = np.arange(0.56, 0.93, 0.005)
+
+
+def lattice_fit_gate(stats):
+    """Residual gate: a homography that has slid onto a wrong local fit of the 6-degree lattice
+    leaves ~1 px median / ~2 px rms tick residuals; correct fits are ~0.1-0.16 px median, <0.4 px rms."""
+    r = []
+    if stats['sectors_used'] < 8: r.append('fewer than 8 tick sectors')
+    if stats['tick_median_px'] > 0.30: r.append('tick-lattice median residual > 0.30 px')
+    if stats['tick_rms_px'] > 0.60: r.append('tick-lattice rms residual > 0.60 px')
+    return r
+
+
+def register(photo_gray, M, ref_canon, SC, start_roll_deg=0.0):
+    """coarse -> 12-direction lattice branch lock -> tick-lattice refinement -> branch/phase check.
+    start_roll_deg injects a deliberate start error (robustness test only)."""
     smp = Sampler(photo_gray)
+    tmpl = twelve_template(ref_canon, SC, CUE_RS)
     H0, n_inl = coarse(ref_canon, SC, photo_gray)
     H0 = coarse_ecc(ref_canon, SC, photo_gray, H0)
-    H1 = fine_centroid(smp, H0, M)
+    H0 = H0 @ rot3(start_roll_deg)
+    cue0, dist0, sc0 = twelve_cue(smp, H0, M, tmpl, CUE_RS)
+    Hlock = H0 @ rot3(cue0)                       # put the 12 triangle on the canonical 12 axis
+    H1 = fine_centroid(smp, Hlock, M)
     H2, stats, _ = fine_inner(smp, H1, M)
-    # fail-closed guard against a 6-degree lattice slip: final must stay close to coarse
-    roll = np.degrees(np.arctan2(*(proj(H2, np.array([[0, -1.0]])) - proj(H2, np.zeros((1, 2))))[0][::-1])) - \
-           np.degrees(np.arctan2(*(proj(H0, np.array([[0, -1.0]])) - proj(H0, np.zeros((1, 2))))[0][::-1]))
-    stats.update(coarse_inliers=n_inl, coarse_to_final_roll_deg=float((roll + 180) % 360 - 180))
-    stats['accepted'] = bool(abs(stats['coarse_to_final_roll_deg']) < 2.0 and stats['sectors_used'] >= 8)
-    return H2, H0, smp, stats
+    cue_f, dist_f, sc_f = twelve_cue(smp, H2, M, tmpl, CUE_RS)
+    phase_change = relative_roll_deg(Hlock, H2)
+    branch = int(np.round(cue_f / 6.0))
+    stats.update(coarse_inliers=n_inl, start_roll_injected_deg=start_roll_deg,
+                 twelve_cue_start_deg=cue0, twelve_cue_distinctiveness=dist0, twelve_cue_score=sc0,
+                 refinement_phase_change_deg=phase_change, twelve_cue_after_refinement_deg=cue_f,
+                 lattice_branch=branch)
+    reasons = []
+    if dist0 < 1.02: reasons.append('12 cue not distinctive from 30-degree alternatives')
+    if abs(phase_change) > 2.0: reasons.append('refinement changed lattice phase > 2 deg')
+    if branch != 0 or abs(cue_f) > 3.0: reasons.append('landed on a +/-6 deg lattice branch')
+    reasons += lattice_fit_gate(stats)
+    stats['accepted'] = not reasons; stats['reject_reasons'] = reasons
+    return H2, Hlock, smp, stats
+
+
+def tick_sector_crossval(smp, H, M):
+    """Leave-one-sector-out: refit H without one 30-degree sector of ticks, then measure how far that
+    sector's ticks are from the refitted prediction. Independent dial-plane residual per sector."""
+    out = {}
+    for sec in range(12):
+        ticks = set(range(5 * sec, 5 * sec + 5)) - FIT_EXCLUDED_TICKS
+        if len(ticks) < 3:
+            continue
+        Hs, _, _ = fine_inner(smp, H, M, iters=3, excluded=FIT_EXCLUDED_TICKS | ticks)
+        T = tick_inner_observations(smp, Hs, M)
+        T = T[[int(m) in ticks for m in T[:, 0]]]
+        ok = np.abs(T[:, 1]) < 0.02
+        if not ok.any():
+            continue
+        e = []
+        for m, dr, dt in T[ok, :3]:
+            er, et = unit_dirs(6 * m); p0 = er * M['tick_inner_R']
+            e.append(np.hypot(*(proj(Hs, (p0 + dr * er + dt * et)[None]) - proj(Hs, p0[None]))[0]))
+        e = np.array(e)
+        out[sec] = dict(n=int(ok.sum()), mean_px=float(e.mean()), max_px=float(e.max()))
+    return out
 
 
 # --------------------------------------------------------------------------- holdout
@@ -477,44 +567,55 @@ def parallax_loo(results, M):
     return dict(pooled_height_R=float((J * D).sum() / (J * J).sum()), per_photo=out)
 
 
-# --------------------------------------------------------------------------- k1 test
-def k1_test(smp, H, M, size):
-    _, _, (mm, ok, P0, obs) = fine_inner(smp, H, M, iters=1)
-    w, h = size; c = np.array([w / 2, h / 2]); s = np.hypot(w, h) / 2
-
-    def res(p, usek):
-        q = proj(np.append(p[:8], 1).reshape(3, 3), P0[ok]); d = q - c
-        k = p[8] if usek else 0.0
-        return (c + d * (1 + k * (d ** 2).sum(1, keepdims=True) / s ** 2) - obs[ok]).ravel()
-    p0 = np.r_[(H / H[2, 2]).ravel()[:8], 0]
-    a = least_squares(lambda p: res(p, False), p0, x_scale='jac'); b = least_squares(lambda p: res(p, True), p0, x_scale='jac')
-    return dict(tick_rms_planar=float(np.sqrt(2 * np.mean(a.fun ** 2))), tick_rms_k1=float(np.sqrt(2 * np.mean(b.fun ** 2))),
-                k1=float(b.x[8]))
-
-
 # --------------------------------------------------------------------------- render
-def render(photo_bgr, H, M, path, Z=4, height_R=0.0):
-    c = proj(H, np.zeros((1, 2)))[0]; Rpx = px_per_R(H)
-    x0 = int(c[0] - 1.1 * Rpx); y0 = int(c[1] - 1.1 * Rpx); w = int(2.2 * Rpx)
-    crop = cv2.resize(photo_bgr[y0:y0 + w, x0:x0 + w], None, fx=Z, fy=Z, interpolation=cv2.INTER_CUBIC)
-
-    def pl(pts, col, closed=True, raised=False):
-        q = proj(H, pts)
-        if raised and height_R:
-            q = q + height_R * np.array([raise_dir(H, p) for p in pts])
-        q = (q - [x0, y0] + 0.5) * Z - 0.5
-        cv2.polylines(crop, [np.round(q * 16).astype(np.int32)], closed, col, 1, cv2.LINE_AA, shift=4)
+def _draw_overlay(img, H, M, x0, y0, Z, fit_info, holdout_rows):
+    used, rejected = fit_info
+    def pl(pts, col, closed=True, th=1):
+        q = (proj(H, pts) - [x0, y0] + 0.5) * Z - 0.5
+        cv2.polylines(img, [np.round(q * 16).astype(np.int32)], closed, col, th, cv2.LINE_AA, shift=4)
     for m in range(60):
         er, _ = unit_dirs(6 * m)
-        pl(np.array([er * M['tick_inner_R'], er * M['tick_outer_R']]), (0, 255, 255), False)
+        col = (255, 0, 255) if m in FIT_EXCLUDED_TICKS else ((0, 140, 255) if m in rejected else (0, 255, 255))
+        pl(np.array([er * M['tick_inner_R'], er * M['tick_outer_R']]), col, False)
     t = np.radians(np.arange(0, 361, 3))
-    for h in ROUND_HOURS:
-        pl(marker_master_point(M, h) + M['round_outer_radius_R'] * np.c_[np.cos(t), np.sin(t)], (0, 255, 0), raised=True)
-    for h in (6, 9, 12):
-        P = marker_polygon(M, h)
-        dense = np.vstack([P[k] + np.linspace(0, 1, 20)[:, None] * (P[(k + 1) % len(P)] - P[k]) for k in range(len(P))])
-        pl(dense, (0, 255, 0), raised=True)
+    status = {r['hour']: r['usable'] for r in holdout_rows}
+    for h in (12, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11):
+        col = (0, 255, 0) if status.get(h, True) else (0, 0, 255)
+        if h in ROUND_HOURS:
+            pl(marker_master_point(M, h) + M['round_outer_radius_R'] * np.c_[np.cos(t), np.sin(t)], col)
+        else:
+            P = marker_polygon(M, h)
+            pl(np.vstack([P[k] + np.linspace(0, 1, 20)[:, None] * (P[(k + 1) % len(P)] - P[k]) for k in range(len(P))]), col)
+
+
+def render_full(bgr, H, M, path, fit_info, rows, Z=4):
+    c = proj(H, np.zeros((1, 2)))[0]; Rpx = px_per_R(H)
+    x0 = int(c[0] - 1.1 * Rpx); y0 = int(c[1] - 1.1 * Rpx); w = int(2.2 * Rpx)
+    crop = cv2.resize(bgr[y0:y0 + w, x0:x0 + w], None, fx=Z, fy=Z, interpolation=cv2.INTER_CUBIC)
+    _draw_overlay(crop, H, M, x0, y0, Z, fit_info, rows)
     cv2.imwrite(path, crop, [cv2.IMWRITE_JPEG_QUALITY, 90])
+
+
+def render_sectors(bgr, H, M, path, fit_info, rows, title, Z=10, tile=380):
+    Rpx = px_per_R(H); tiles = []
+    err = {r['hour']: r for r in rows}
+    for clock in (12, 1.5, 3, 4.5, 6, 7.5, 9, 10.5):
+        cpt = proj(H, (unit_dirs(clock * 30)[0] * 0.86)[None])[0]; half = 0.21 * Rpx
+        x0 = int(cpt[0] - half); y0 = int(cpt[1] - half); w = int(2 * half)
+        crop = cv2.resize(bgr[y0:y0 + w, x0:x0 + w], None, fx=Z, fy=Z, interpolation=cv2.INTER_CUBIC)
+        _draw_overlay(crop, H, M, x0, y0, Z, fit_info, rows)
+        crop = cv2.resize(crop, (tile, tile), interpolation=cv2.INTER_AREA)
+        lab = f"{clock:g} o'clock"
+        hrs = [h for h in err if abs(((h % 12) * 30 - clock * 30 + 180) % 360 - 180) <= 16]
+        for h in hrs:
+            r = err[h]; lab += f"  h{h}: {r['err_px']:.2f}px" if r['usable'] else f"  h{h}: excluded"
+        cv2.rectangle(crop, (0, 0), (tile, 22), (0, 0, 0), -1)
+        cv2.putText(crop, lab, (4, 16), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
+        tiles.append(crop)
+    sheet = np.vstack([np.hstack(tiles[:4]), np.hstack(tiles[4:])])
+    bar = np.zeros((30, sheet.shape[1], 3), np.uint8)
+    cv2.putText(bar, title, (6, 21), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.imwrite(path, np.vstack([bar, sheet]), [cv2.IMWRITE_JPEG_QUALITY, 92])
 
 
 # --------------------------------------------------------------------------- main
@@ -522,7 +623,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--inputs', required=True)
     ap.add_argument('--out', required=True)
-    ap.add_argument('--no-render', action='store_true')
+    ap.add_argument('--robustness', action='store_true', help='also rerun each photo from injected start rolls')
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     import sys
@@ -531,37 +632,57 @@ def main():
 
     M, ref_canon, SC = build_master(os.path.join(args.inputs, 'reference', 'bare_genuine_dial_reference_crop.png'))
     print('MASTER', json.dumps({k: (round(v, 4) if isinstance(v, float) else v) for k, v in M.items()
-                                if k not in ('round_center_R_by_hour',)}, default=str))
+                                if k not in ('round_center_R_by_hour', 'tick_lattice_rms_inner_px')}, default=str))
     results = {}
     for n in NAMES:
         bgr = cv2.imread(os.path.join(args.inputs, 'genuine_controls', n + '.png'))
         g = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
-        H, H0, smp, stats = register(g, M, ref_canon, SC)
+        H, Hlock, smp, stats = register(g, M, ref_canon, SC)
         rows = holdouts(smp, H, M, span=0.013, manual=legacy.MARKERS[n])
-        rows_wide = holdouts(smp, H, M, span=0.020)
-        results[n] = dict(H=H.tolist(), R_px=px_per_R(H), fit=stats, holdouts=rows, summary=summarise(rows),
-                          summary_wide_window=summarise(rows_wide),
-                          k1=k1_test(smp, H, M, (g.shape[1], g.shape[0])))
-        print(f"\n{n}  R={px_per_R(H):.1f}px  fit: {stats}")
+        cv = tick_sector_crossval(smp, H, M)
+        _, _, (mm, ok, _, _) = fine_inner(smp, H, M, iters=1)
+        fit_info = (set(int(m) for m in mm[ok]), set(int(m) for m in mm[~ok]))
+        results[n] = dict(H=H.tolist(), R_px=px_per_R(H), fit=stats, tick_sector_crossval=cv,
+                          holdouts=rows, summary_clean=summarise(rows))
+        cvm = np.array([v['mean_px'] for v in cv.values()])
+        print(f"\n{n}  R={px_per_R(H):.1f}px  ACCEPTED={stats['accepted']} {stats['reject_reasons']}")
+        print(f"  ticks used {stats['ticks_used']} in {stats['sectors_used']} sectors; masked ticks {sorted(FIT_EXCLUDED_TICKS)}; "
+              f"gated out {stats['rejected_ticks']}")
+        print(f"  dial-plane fit residual: rms {stats['tick_rms_px']:.3f}px median {stats['tick_median_px']:.3f}px")
+        print(f"  leave-one-sector-out tick residual: mean over sectors {cvm.mean():.3f}px, worst sector "
+              f"{max(cv, key=lambda k: cv[k]['mean_px'])} {cvm.max():.3f}px  " +
+              ' '.join(f"s{k}:{v['mean_px']:.2f}" for k, v in cv.items()))
+        print(f"  12 cue: start {stats['twelve_cue_start_deg']:+.2f}deg (margin {stats['twelve_cue_distinctiveness']:.3f}), "
+              f"after refinement {stats['twelve_cue_after_refinement_deg']:+.2f}deg, phase change "
+              f"{stats['refinement_phase_change_deg']:+.3f}deg, branch {stats['lattice_branch']}")
         for r in rows:
-            print(f"  h{r['hour']:2d} {'   ' if r['usable'] else 'OCC'} resid=({r['resid_px'][0]:+.2f},{r['resid_px'][1]:+.2f}) "
-                  f"|{r['err_px']:.2f}|  radial {r['radial_px']:+.2f}px  tangential {r['tangential_px']:+.2f}px "
-                  f"({r['angle_err_deg']:+.2f}deg)  r={r['radius_R']:.4f}R  cov={r['edge_coverage']:.2f}")
-        print('  summary', results[n]['summary'], '\n  wide-window', results[n]['summary_wide_window'], '\n  k1', results[n]['k1'])
-    par = parallax_loo(results, M)
-    print('\nPARALLAX (one shared marker-top height, leave-one-photo-out):')
+            tag = 'clean' if r['usable'] else 'EXCLUDED (outline occluded/unmeasurable)'
+            print(f"  h{r['hour']:2d} resid=({r['resid_px'][0]:+.2f},{r['resid_px'][1]:+.2f}) |{r['err_px']:.2f}|px "
+                  f"radial {r['radial_px']:+.2f} tangential {r['tangential_px']:+.2f}px ({r['angle_err_deg']:+.2f}deg) "
+                  f"r={r['radius_R']:.4f}R cov={r['edge_coverage']:.2f}  {tag}")
+        sm = results[n]['summary_clean']
+        print(f"  CLEAN HOLDOUTS n={sm['n']}: mean {sm['mean']:.2f}  median {sm['median']:.2f}  max {sm['max']:.2f}px  "
+              f"mean vector ({sm['mean_vector'][0]:+.2f},{sm['mean_vector'][1]:+.2f})")
+        render_full(bgr, H, M, os.path.join(args.out, f'overlay_{n}.jpg'), fit_info, rows)
+        render_sectors(bgr, H, M, os.path.join(args.out, f'sectors_{n}.jpg'), fit_info, rows,
+                       f"{n}  clean holdouts mean {sm['mean']:.2f}px  |  yellow=fitted tick  magenta=masked  "
+                       f"orange=gated  green=master marker (clean)  red=excluded holdout")
+        if args.robustness:
+            rob = []
+            for r0 in (-20.0, -9.0, -6.0, 6.0, 9.0, 20.0):
+                Hr, _, _, st = register(g, M, ref_canon, SC, start_roll_deg=r0)
+                a = np.radians(np.arange(0, 360, 15)); G = 0.95 * np.c_[np.sin(a), -np.cos(a)]
+                d = float(np.hypot(*(proj(Hr, G) - proj(H, G)).T).max())
+                rob.append(dict(start_roll_deg=r0, max_diff_px=d, accepted=st['accepted']))
+            results[n]['robustness'] = rob
+            print('  robustness (injected start roll -> max dial difference vs baseline):',
+                  ' '.join(f"{x['start_roll_deg']:+.0f}deg->{x['max_diff_px']:.3f}px{'' if x['accepted'] else '(REJ)'}" for x in rob))
+    par = parallax_loo({n: dict(H=r['H'], holdouts=r['holdouts']) for n, r in results.items()}, M)
+    print('\nSEPARATE (not applied to H): raised applied-marker parallax, one shared height, leave-one-photo-out')
     for n, v in par['per_photo'].items():
-        print(f"  {n}: LOO h={v['loo_height_R']:.4f}R (own {v['own_best_height_R']:.4f})  mean {v['mean']:.2f} median {v['median']:.2f} max {v['max']:.2f}")
-    print('  pooled', par['pooled_height_R'])
-    if not args.no_render:
-        for n in NAMES:
-            bgr = cv2.imread(os.path.join(args.inputs, 'genuine_controls', n + '.png'))
-            H = np.array(results[n]['H'])
-            render(bgr, H, M, os.path.join(args.out, f'overlay_{n}_plane.jpg'))
-            render(bgr, H, M, os.path.join(args.out, f'overlay_{n}_marker_height.jpg'),
-                   height_R=par['per_photo'][n]['loo_height_R'])
+        print(f"  {n}: h={v['loo_height_R']:.4f}R -> clean marker mean {v['mean']:.2f} median {v['median']:.2f} max {v['max']:.2f}px")
     with open(os.path.join(args.out, 'results.json'), 'w') as f:
-        json.dump(dict(master=M, photos=results, parallax=par), f, indent=1, default=str)
+        json.dump(dict(master=M, photos=results, marker_parallax_separate=par), f, indent=1, default=str)
 
 
 if __name__ == '__main__':

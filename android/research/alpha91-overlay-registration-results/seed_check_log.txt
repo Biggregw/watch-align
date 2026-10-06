@@ -1,0 +1,8 @@
+EXT_EXT_GEN_BLRO_WEX_01: ellipse+12cue seed 12.2px off -> after refinement 13.375px (phase change +1.47deg, tick median 0.90 rms 1.90px) -> REJECT: tick-lattice median residual > 0.30 px; tick-lattice rms residual > 0.60 px
+EXT_EXT_GEN_BLRO_WEX_01: ellipse+12cue+ECC seed 1.6px off -> after refinement 0.000px (phase change +0.01deg, tick median 0.13 rms 0.16px) -> ACCEPT
+EXT_EXT_GEN_BLRO_WEX_02: ellipse+12cue seed 12.4px off -> after refinement 14.802px (phase change +1.31deg, tick median 0.99 rms 2.01px) -> REJECT: tick-lattice median residual > 0.30 px; tick-lattice rms residual > 0.60 px
+EXT_EXT_GEN_BLRO_WEX_02: ellipse+12cue+ECC seed 1.5px off -> after refinement 0.000px (phase change -0.01deg, tick median 0.14 rms 0.21px) -> ACCEPT
+POOL_GEN_HO_01: ellipse+12cue seed 19.5px off -> after refinement 0.000px (phase change +0.82deg, tick median 0.16 rms 0.21px) -> ACCEPT
+POOL_GEN_HO_01: ellipse+12cue+ECC seed 2.3px off -> after refinement 0.000px (phase change -0.02deg, tick median 0.16 rms 0.21px) -> ACCEPT
+POOL_GEN_HO_02: ellipse+12cue seed 9.0px off -> after refinement 0.000px (phase change +0.06deg, tick median 0.11 rms 0.36px) -> ACCEPT
+POOL_GEN_HO_02: ellipse+12cue+ECC seed 0.9px off -> after refinement 0.000px (phase change +0.07deg, tick median 0.11 rms 0.36px) -> ACCEPT
