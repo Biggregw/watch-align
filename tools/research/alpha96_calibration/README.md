@@ -261,3 +261,51 @@ Ring scale follows the same source order. Round-marker, 6 and 9 local offsets do
 - Phone-photo genuine references remain a named evidence gap; every replica control is a phone photo.
 
 No limits are derived and no production code is changed.
+
+## Prototype: genuine-calibrated 12 reference (desktop harness only, 2026-10-06)
+
+The prototype is research-only. Nothing under `android/` changes; the Alpha92 master and the production 12 measurement are untouched.
+
+**Pieces:**
+- `calibrate_m12_nominal.py` writes `m12_nominal.properties` and `results/m12_nominal/calibration.md`. It uses one value per physical watch (median of its photos) from the CI per-photo data, with shared photos excluded (level dial; 59 watches). The nominal is the median over watches.
+- `tools/desktop-harness/drivers/Alpha97TriangleNominal.java` takes the unchanged production `Report`. It re-centres the 12 triangle's ring-local offset and its angles on that nominal, and fails closed exactly as production does (unusable triangle or unfitted ring gives no value).
+- `tools/desktop-harness/drivers/Alpha97TriProto.java` runs `run.sh Alpha97TriProto <manifest> <root> <properties> <out.csv>`. It prints the production 12 line next to the prototype line.
+- `check_m12_proto_parity.py` checks Java against Python on every output field. Result: 8 local photos and 166 scaled variants, 0 mismatches.
+
+**Nominal, relative to the Alpha92 master** (bootstrap 95% interval over watches):
+- radial −0.0038 R (−0.0043 to −0.0036), i.e. toward the centre;
+- tangential −0.0009 R (−0.0011 to −0.0007);
+- left side −0.17°, right side +0.11°, base −0.18°, centreline −0.10°.
+
+**Held-out checks:**
+
+| Genuine 12 offset, per watch (R) | Median | P90 | Max |
+|---|---:|---:|---:|
+| Alpha92 master | 0.0039 | 0.0061 | 0.0083 |
+| Genuine nominal, leave-one-watch-out | 0.0012 | 0.0029 | 0.0046 |
+
+- Leave-one-watch-out equals in-sample.
+- Leaving out a whole source moves the nominal by at most 0.0007 R.
+- The held-out SWE watches stay about twice as far from it as Bob's (median 0.0023 vs 0.0015 R). The SWE photographic effect is not modelled.
+- The angle spreads shrink less (median |side error| 0.33° → 0.24°), so the shape correction is small.
+
+**Local photos, prototype output:**
+
+| Photo | Prototype 12 offset | Genuine watches at least as far |
+|---|---|---:|
+| GEN_CAND_HO_01 | 0.21 px (0.0010 R) | 32/59 |
+| GEN_CAND_HO_02 | 0.20 px (0.0014 R) | 24/59 |
+| THEONE | 0.37 px left · 0.74 px down = 0.83 px (0.0050 R); centreline +1.06° CW | 0/59, marginal (genuine max 0.0046 R) |
+| RL_LOCAL_BLNR | 2.88 px left · 0.66 px up = 2.95 px (0.0134 R) | 0/59 |
+| ARF crooked-6 | 1.96 px left · 1.87 px up = 2.71 px (0.0115 R) | 0/59 |
+| Batgirl, WEX 01/02 | withheld (occluded), as in production | – |
+
+**Display difference to note:** the production 12 line shows the raw offset from the master, before the ring model. The prototype shows the offset after the ring model and from the genuine nominal, because that is the quantity the nominal was calibrated on.
+
+**Before this could become an app change:**
+- an owner decision, because it changes the 12 numbers the phone shows;
+- genuine phone-photo references, since every replica control is a phone photo and the nominal comes from dealer/auction photos;
+- an account of the SWE effect;
+- a refresh of the nominal whenever the genuine set changes.
+
+No limits are derived.
