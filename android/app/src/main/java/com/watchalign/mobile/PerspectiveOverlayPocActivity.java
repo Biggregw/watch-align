@@ -28,7 +28,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
     private static final int PICK_CANDIDATE=2301;
     private static final int BG=Color.rgb(8,17,31),ACCENT=Color.rgb(50,213,242),MUTED=Color.rgb(158,176,201);
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
-    private Bitmap candidateBitmap,lastOverlay;
+    private Bitmap candidateBitmap,lastOverlay;\n    private Alpha94MarkerMeasurement.Report lastMeasurement;
     private ImageView preview;
     private TextView status;
     private Button buildButton,inspectButton;
@@ -44,8 +44,8 @@ public class PerspectiveOverlayPocActivity extends Activity {
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("Fixed Genuine GMT Overlay",28,Color.WHITE));
-        root.addView(text("Alpha91 minute-lattice pose · no marker fitting · no nudge",14,ACCENT));
-        root.addView(text("The yellow overlay is a fixed genuine 126710BLNR master measured from the bare genuine dial. The physical dial edge and printed minute lattice recover perspective. Applied hour markers, hands, centre, text and date/cyclops never pull the final fit. If the lattice checks fail, the overlay is withheld.",13,MUTED),lp(-1,-2,10));
+        root.addView(text("Alpha94 frozen pose + read-only marker measurements · no verdicts",14,ACCENT));
+        root.addView(text("The yellow overlay is a fixed genuine 126710BLNR master measured from the bare genuine dial. The printed minute lattice fixes perspective first. Only after H is frozen, Alpha94 measures round markers and the 6/9 batons. Those measurements never feed back into pose and no pass/fail thresholds are applied.",13,MUTED),lp(-1,-2,10));
 
         Button pick=button("Choose candidate GMT photo");pick.setOnClickListener(v->pickPhoto());root.addView(pick,lp(-1,dp(52),8));
         buildButton=button("Project fixed genuine master");buildButton.setBackgroundColor(ACCENT);buildButton.setTextColor(Color.rgb(4,32,42));buildButton.setEnabled(false);buildButton.setOnClickListener(v->buildOverlay());root.addView(buildButton,lp(-1,dp(54),6));
@@ -63,13 +63,16 @@ public class PerspectiveOverlayPocActivity extends Activity {
         buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Finding dial edge, locking the 12 branch and refining the full minute lattice…");
         worker.submit(()->{
             AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(photo);
+            Alpha94MarkerMeasurement.Report measurement=(q!=null&&q.valid&&q.homography!=null)
+                    ?Alpha94MarkerMeasurement.analyse(photo,q.homography):null;
             runOnUiThread(()->{
                 buildButton.setEnabled(true);
-                if(!q.valid){lastOverlay=null;inspectButton.setEnabled(false);status.setText("Automatic fit failed: "+q.reason);return;}
-                lastOverlay=q.overlay;inspectButton.setEnabled(true);
+                if(!q.valid){lastOverlay=null;lastMeasurement=null;inspectButton.setEnabled(false);status.setText("Automatic fit failed: "+q.reason);return;}
+                lastOverlay=q.overlay;lastMeasurement=measurement;inspectButton.setEnabled(true);
                 String projective=q.projectiveAccepted?"minute-lattice perspective accepted":"minute-lattice perspective unavailable";
                 String residual=Double.isFinite(q.fitAfter)?String.format(Locale.US," · tick RMS %.2f px",q.fitAfter):"";
-                status.setText(String.format(Locale.US,"Fixed master ready · %d ticks · %d sectors%s · %s · 12 phase %s.",q.detectedTicks,q.completePairs,residual,projective,q.twelvePhaseUsed?"locked":"guarded by coarse pose"));
+                String markerText=measurement==null?"":("\n"+measurement.compactSummary());
+                status.setText(String.format(Locale.US,"Fixed master ready · %d ticks · %d sectors%s · %s · 12 phase %s.%s",q.detectedTicks,q.completePairs,residual,projective,q.twelvePhaseUsed?"locked":"guarded by coarse pose",markerText));
                 openInspector();
             });
         });
@@ -77,14 +80,15 @@ public class PerspectiveOverlayPocActivity extends Activity {
 
     private void openInspector(){
         if(candidateBitmap==null||lastOverlay==null)return;
-        InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Fixed genuine GMT perspective master");
+        InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Alpha94 GMT measurement overlay",
+                lastMeasurement==null?null:lastMeasurement.compactSummary());
         startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
     }
 
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);if(request!=PICK_CANDIDATE||result!=RESULT_OK||data==null||data.getData()==null)return;
         try{
-            candidateBitmap=readBitmap(data.getData());lastOverlay=null;preview.setImageBitmap(candidateBitmap);buildButton.setEnabled(true);inspectButton.setEnabled(false);status.setText("Photo ready. Tap Project fixed genuine master.");
+            candidateBitmap=readBitmap(data.getData());lastOverlay=null;lastMeasurement=null;preview.setImageBitmap(candidateBitmap);buildButton.setEnabled(true);inspectButton.setEnabled(false);status.setText("Photo ready. Tap Project fixed genuine master.");
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
     }
 
