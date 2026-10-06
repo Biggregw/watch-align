@@ -39,8 +39,11 @@ final class Alpha91MinuteLatticeFitter {
             this.reason=reason;
         }
         Result(Mat h,int ticks,int sectors,double rms,double median,double roll) {
-            accepted=true; homography=h; ticksUsed=ticks; sectorsUsed=sectors;
-            tickRmsPx=rms; tickMedianPx=median; coarseToFinalRollDeg=roll; reason="";
+            this(true,"",h,ticks,sectors,rms,median,roll);
+        }
+        Result(boolean ok,String reason,Mat h,int ticks,int sectors,double rms,double median,double roll) {
+            accepted=ok; homography=h; ticksUsed=ticks; sectorsUsed=sectors;
+            tickRmsPx=rms; tickMedianPx=median; coarseToFinalRollDeg=roll; this.reason=reason;
         }
     }
 
@@ -119,17 +122,22 @@ final class Alpha91MinuteLatticeFitter {
             double rms=rms(kept);
             int sectors=sectorCount(last,lastOk);
             double roll=wrap180(clock12(h)-clock12(start));
-            // Same limits as the validated research gate (alpha91_overlay_registration.lattice_fit_gate):
-            // a wrong local fit of the 6-degree lattice leaves ~1 px median / ~2 px rms tick residuals,
-            // correct fits are ~0.1-0.25 px median.
-            boolean medOk=Double.isFinite(med)&&med<=0.30, rmsOk=Double.isFinite(rms)&&rms<=0.60;
+            // Residual gate in dial-radius units so it holds at any photo resolution (the app loads up
+            // to 3200 px; tick residuals in pixels grow with image scale). At R=150 px these equal the
+            // validated research limits (median 0.30 px, rms 0.60 px). Measured on the genuine/RL
+            // fixtures at native and 2.5x scale: correct fits median 0.46-0.96e-3 R, rms 0.59-1.40e-3 R;
+            // wrong local fits of the 6-degree lattice median 6.1-7.2e-3 R, rms 12-13e-3 R.
+            Point c0=project(h,0,0),c1=project(h,1,0);
+            double rpx=(c0==null||c1==null)?Double.NaN:Math.hypot(c1.x-c0.x,c1.y-c0.y);
+            boolean medOk=Double.isFinite(med)&&Double.isFinite(rpx)&&med<=0.0020*rpx;
+            boolean rmsOk=Double.isFinite(rms)&&Double.isFinite(rpx)&&rms<=0.0040*rpx;
             boolean accepted=sectors>=8&&grossFraction<=0.10&&medOk&&rmsOk&&Math.abs(roll)<2.0;
-            if(!accepted)return new Result(
+            if(!accepted)return new Result(false,
                     sectors<8?"too few minute sectors":
                             grossFraction>0.10?"too many contaminated minute ticks":
                             !medOk?"minute-lattice median residual too high (wrong local fit)":
                             !rmsOk?"minute-lattice residual too high":"minute lattice slipped phase",
-                    h.clone());
+                    h.clone(),count(lastOk)-gross,sectors,rms,med,roll);
             return new Result(h.clone(),count(lastOk)-gross,sectors,rms,med,roll);
         }catch(Throwable t){
             return new Result("minute-lattice refinement failed: "+t.getClass().getSimpleName(),h.clone());
