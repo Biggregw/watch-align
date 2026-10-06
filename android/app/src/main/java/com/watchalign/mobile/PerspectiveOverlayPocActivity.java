@@ -44,8 +44,8 @@ public class PerspectiveOverlayPocActivity extends Activity {
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("Fixed Genuine GMT Overlay",28,Color.WHITE));
-        root.addView(text("Perfect master + minute-marker pose only · no nudge",14,ACCENT));
-        root.addView(text("The yellow overlay is a fixed genuine 126710BLNR master. The candidate photo cannot alter its marker shapes or relative positions. The physical dial edge only finds the dial; opposing minor-minute ticks estimate camera perspective. Triangle, round markers, 6/9 batons, date, hands and text never participate in alignment. Canonical 12 is locked to image-up, so use an upright photo.",13,MUTED),lp(-1,-2,10));
+        root.addView(text("Alpha91 minute-lattice pose · no marker fitting · no nudge",14,ACCENT));
+        root.addView(text("The yellow overlay is a fixed genuine 126710BLNR master measured from the bare genuine dial. The physical dial edge and printed minute lattice recover perspective. Applied hour markers, hands, centre, text and date/cyclops never pull the final fit. If the lattice checks fail, the overlay is withheld.",13,MUTED),lp(-1,-2,10));
 
         Button pick=button("Choose candidate GMT photo");pick.setOnClickListener(v->pickPhoto());root.addView(pick,lp(-1,dp(52),8));
         buildButton=button("Project fixed genuine master");buildButton.setBackgroundColor(ACCENT);buildButton.setTextColor(Color.rgb(4,32,42));buildButton.setEnabled(false);buildButton.setOnClickListener(v->buildOverlay());root.addView(buildButton,lp(-1,dp(54),6));
@@ -60,16 +60,16 @@ public class PerspectiveOverlayPocActivity extends Activity {
 
     private void buildOverlay(){
         if(candidateBitmap==null)return;final Bitmap photo=candidateBitmap;
-        buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Finding physical dial edge and solving pose from opposing minor-minute ticks…");
+        buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Finding dial edge, locking the 12 branch and refining the full minute lattice…");
         worker.submit(()->{
             AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(photo);
             runOnUiThread(()->{
                 buildButton.setEnabled(true);
                 if(!q.valid){lastOverlay=null;inspectButton.setEnabled(false);status.setText("Automatic fit failed: "+q.reason);return;}
                 lastOverlay=q.overlay;inspectButton.setEnabled(true);
-                String projective=q.projectiveAccepted?"minute-marker perspective accepted":"ellipse seed used; minute perspective rejected";
-                String residual=(Double.isFinite(q.fitBefore)&&Double.isFinite(q.fitAfter))?String.format(Locale.US," · minute RMS %.2f→%.2f px",q.fitBefore,q.fitAfter):"";
-                status.setText(String.format(Locale.US,"Fixed master ready · %d minor ticks · %d complete opposite pairs · %d robust inliers%s · %s · phase image-up.",q.detectedTicks,q.completePairs,q.inliers,residual,projective));
+                String projective=q.projectiveAccepted?"minute-lattice perspective accepted":"minute-lattice perspective unavailable";
+                String residual=Double.isFinite(q.fitAfter)?String.format(Locale.US," · tick RMS %.2f px",q.fitAfter):"";
+                status.setText(String.format(Locale.US,"Fixed master ready · %d ticks · %d sectors%s · %s · 12 phase %s.",q.detectedTicks,q.completePairs,residual,projective,q.twelvePhaseUsed?"locked":"guarded by coarse pose"));
                 openInspector();
             });
         });
@@ -90,7 +90,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
 
     private Bitmap readBitmap(Uri uri)throws Exception{
         BitmapFactory.Options opts=new BitmapFactory.Options();opts.inJustDecodeBounds=true;try(InputStream in=getContentResolver().openInputStream(uri)){BitmapFactory.decodeStream(in,null,opts);}if(opts.outWidth<=0||opts.outHeight<=0)throw new IllegalArgumentException("Not a readable image");
-        int maxDim=Math.max(opts.outWidth,opts.outHeight),sample=1;while(maxDim/(sample*2)>=1600)sample*=2;opts.inJustDecodeBounds=false;opts.inSampleSize=sample;opts.inPreferredConfig=Bitmap.Config.ARGB_8888;Bitmap b;try(InputStream in=getContentResolver().openInputStream(uri)){b=BitmapFactory.decodeStream(in,null,opts);}if(b==null)throw new IllegalArgumentException("Not a readable image");int currentMax=Math.max(b.getWidth(),b.getHeight());if(currentMax<=1600)return b.copy(Bitmap.Config.ARGB_8888,false);float s=1600f/currentMax;return Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true).copy(Bitmap.Config.ARGB_8888,false);
+        int maxDim=Math.max(opts.outWidth,opts.outHeight),sample=1;while(maxDim/(sample*2)>=3200)sample*=2;opts.inJustDecodeBounds=false;opts.inSampleSize=sample;opts.inPreferredConfig=Bitmap.Config.ARGB_8888;Bitmap b;try(InputStream in=getContentResolver().openInputStream(uri)){b=BitmapFactory.decodeStream(in,null,opts);}if(b==null)throw new IllegalArgumentException("Not a readable image");int currentMax=Math.max(b.getWidth(),b.getHeight());if(currentMax<=3200)return b.copy(Bitmap.Config.ARGB_8888,false);float s=3200f/currentMax;return Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true).copy(Bitmap.Config.ARGB_8888,false);
     }
 
     private TextView text(String s,int sp,int color){TextView v=new TextView(this);v.setText(s);v.setTextSize(sp);v.setTextColor(color);return v;}
