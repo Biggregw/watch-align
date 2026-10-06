@@ -309,3 +309,47 @@ The prototype is research-only. Nothing under `android/` changes; the Alpha92 ma
 - a refresh of the nominal whenever the genuine set changes.
 
 No limits are derived.
+
+## SWE photography effect (2026-10-06)
+
+Inputs:
+- `swe_effect.py` on the CI per-photo data, with results in `results/swe_effect/analysis.md`;
+- the harness diagnostic `M12Diag`, run on the genuine photos by `.github/workflows/alpha96-m12-diagnostic.yml` (run 37508028297), with results in `results/swe_effect/ci_run_37508028297/`.
+
+1. **No dial-wide photographic signature.** If lens distortion, marker-height parallax or crystal refraction were at work, they would also move other markers depending on their radius or direction. Nothing besides the 12 differs by source:
+   - baton radial offsets: Bob's +0.0014 R, SWE +0.0016 to +0.0018 R;
+   - round markers by hour: same pattern in every source;
+   - round anisotropy and top-minus-bottom gradient: about 0;
+   - dial-edge / lattice radius: 0.995 in both.
+
+   The earlier ring-scale correlation came from mixing sources: within SWE it is 0.00. The effect is confined to the 12 triangle.
+2. **Per-side diagnostic.** `M12Diag` calls the production edge finder and sampler by reflection, so no maths is copied. It reports where each triangle side's edge sits relative to the ring-moved master side. The side offsets reproduce the production 12 shift to a median of 0.0003 R over 95 genuine photos (and 0.0003 R on the local photos).
+3. **The universal 12 bias is a master-shape mismatch.**
+
+   | Source | Long sides outside master | Base outside master |
+   |---|---:|---:|
+   | Bob's | +0.0068 L / +0.0055 R | +0.0024 R |
+   | Phillips | +0.0062 L / +0.0056 R | +0.0010 R |
+   | SWE (6 photos) | +0.0085 L / +0.0056 R | +0.0007 R |
+
+   - Geometrically, +0.001 R on both long sides moves the centroid −0.0009 R (toward the centre); +0.001 R on the base moves it +0.00067 R.
+   - The long-sides-minus-base difference predicts the 12 radial almost exactly: Spearman −0.89 overall, −0.97 within Bob's.
+   - The master triangle is narrower than the outermost (polished surround) edge that Alpha96 finds on genuine watches, mostly along the long sides. That explains the −0.0038 R nominal and the wider apex angle (+0.13°/side).
+4. **SWE's extra shift is a per-side edge-selection effect, not overall brightness.**
+   - Surround brightness terciles give 12 radial −0.0037, −0.0040 and −0.0041 R. Within Bob's the correlation has the opposite sign.
+   - In SWE photos the base edge sits closer to the master (+0.0007 R vs +0.0024 R) and the left side further out (+0.0085 R vs +0.0068 R).
+   - The CI montage (not committed: derived from third-party images) is consistent with this. Under SWE lighting the lume and polished surround read as one bright shape; in Bob's photos a dark gap and a bright outer rim are visible.
+   - The likely mechanism: studio lighting changes which facet of the polished surround presents the outermost bright-to-dark edge on each side, and only the triangle turns unequal side outsets into a centroid shift.
+   - Round markers absorb a uniform outset as radius error, and batons are symmetric.
+5. **The evidence is decaying.** By this run, 50 of SWE's 56 catalogued images no longer match their sha256 (in run 37500197377, 47 did). The CDN now serves different bytes, so the sha256 check rejects them and they are not replaced. Point 4 therefore rests on only 6 SWE photos, and this SWE evidence cannot be re-measured byte-identically.
+
+**Implications:**
+- The 12 centroid is inherently sensitive to lighting on the surround facets.
+- A genuine-calibrated nominal removes the shared bias but not lighting-dependent per-side differences.
+
+**Lighting-robust alternatives worth testing offline:**
+- side angles and centreline only, which are unaffected by side offsets;
+- the inner lume edge instead of the outermost surround edge;
+- a per-side consistency check that withholds the 12 when the side outsets disagree.
+
+No limits are derived; no app code changes.

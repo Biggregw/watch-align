@@ -1,0 +1,8 @@
+95 photos
+all      n= 95 surround~(sides-base) +0.27 | surround~12rad -0.29 | (sides-base)~12rad -0.89 | base~12rad +0.46 | sides~12rad -0.42
+Bobs     n= 40 surround~(sides-base) -0.40 | surround~12rad +0.39 | (sides-base)~12rad -0.97 | base~12rad +0.69 | sides~12rad -0.58
+Phillips n= 47 surround~(sides-base) -0.03 | surround~12rad -0.03 | (sides-base)~12rad -0.78 | base~12rad +0.26 | sides~12rad -0.40
+dark surround    n=31 surround   +47 sides +0.0060 base +0.0024 12rad -0.0037 {'Bobs': 31, 'Phillips': 0, 'SWE': 0, 'other': 0}
+mid              n=32 surround   +84 sides +0.0055 base +0.0006 12rad -0.0040 {'Bobs': 9, 'Phillips': 22, 'SWE': 0, 'other': 1}
+bright surround  n=32 surround  +157 sides +0.0067 base +0.0019 12rad -0.0041 {'Bobs': 0, 'Phillips': 25, 'SWE': 6, 'other': 1}
+geometry per +0.001 R: base only +0.00067  both long sides -0.00090
