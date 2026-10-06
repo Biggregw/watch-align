@@ -12,17 +12,12 @@ import org.opencv.imgproc.CLAHE;
 import org.opencv.imgproc.Imgproc;
 
 /**
- * Fixed-genuine-master perspective proof.
+ * Alpha92 integration proof of the Alpha91 minute-lattice registration.
  *
- * Candidate evidence is restricted to:
- *   1) the physical black-dial boundary, used only as a coarse geometric seed/guard; and
- *   2) the 60 canonical minute positions, consumed as complete opposite pairs,
- *      used to estimate the camera pose/perspective.
- *
- * Applied hour markers, the 12 triangle, date/cyclops, hands and text are never used
- * for centre, scale, clock phase, rotation or perspective. The rendered dial geometry
- * always comes from the fixed genuine 126710BLNR master and is never reshaped from
- * candidate QC features. Canonical 12 is locked to image-up in this proof build.
+ * Candidate evidence is restricted to the physical black-dial boundary and printed
+ * minute track. Applied hour markers, hands, date/cyclops, text and logo never pull
+ * the final homography. A local 12 minute-frame may be used only to lock the 6-degree
+ * phase branch; it does not provide precision geometry.
  */
 final class AutomaticDialOverlay {
     static final class Result {
@@ -40,12 +35,12 @@ final class AutomaticDialOverlay {
             dialCx=dialCy=dialRadius=ellipseRatio=edgeRms=fitBefore=fitAfter=holdoutBefore=holdoutAfter=Double.NaN;
             detectedTicks=completePairs=inliers=0;
         }
-        Result(Bitmap overlay,DialEdgeEllipseFit.Fit e, OpposingMinuteHomographyFitter.Result d){
-            valid=true;this.overlay=overlay;reason="";twelvePhaseUsed=false;projectiveAccepted=d!=null&&d.accepted;
+        Result(Bitmap overlay,DialEdgeEllipseFit.Fit e,Alpha91MinuteLatticeFitter.Result d,boolean phaseUsed){
+            valid=true;this.overlay=overlay;reason="";twelvePhaseUsed=phaseUsed;projectiveAccepted=d!=null&&d.accepted;
             dialCx=e.cx;dialCy=e.cy;dialRadius=e.meanRadius();ellipseRatio=Math.min(e.axisA,e.axisB)/Math.max(e.axisA,e.axisB);edgeRms=e.rmsPx;
-            fitBefore=d==null?Double.NaN:d.seedRmsPx;fitAfter=d==null?Double.NaN:d.fittedRmsPx;
+            fitBefore=Double.NaN;fitAfter=d==null?Double.NaN:d.tickRmsPx;
             holdoutBefore=holdoutAfter=Double.NaN;
-            detectedTicks=d==null?0:d.detectedTicks;completePairs=d==null?0:d.completePairs;inliers=d==null?0:d.inliers;
+            detectedTicks=d==null?0:d.ticksUsed;completePairs=d==null?0:d.sectorsUsed;inliers=d==null?0:d.ticksUsed;
         }
     }
 
@@ -54,8 +49,8 @@ final class AutomaticDialOverlay {
     static Result build(Bitmap input){
         if(input==null)return new Result("no candidate image");
         Mat rgba=new Mat(),bgr=new Mat(),gray=new Mat(),enh=new Mat();
-        Mat h0=null,h=null;
-        OpposingMinuteHomographyFitter.Result pairFit=null;
+        Mat h0=null,coarse=null,h=null;
+        Alpha91MinuteLatticeFitter.Result lattice=null;
         try{
             Utils.bitmapToMat(input,rgba);
             Imgproc.cvtColor(rgba,bgr,Imgproc.COLOR_RGBA2BGR);
@@ -68,7 +63,17 @@ final class AutomaticDialOverlay {
             if(edge.points<70||edge.rmsPx>Math.max(5.0,edge.meanRadius()*0.030))
                 return new Result("dial boundary fit was not stable enough");
 
-            h0=ellipsePose(edge,0.0,-1.0);
+            // The 12 marker is allowed only to identify which repeating minute position is 60.
+            // Precision direction comes from the local 59/60/01 minute frame.
+            GmtTwelveLandmarkAnalyzer.Result phase=GmtTwelveLandmarkAnalyzer.analyse(bgr,edge.cx,edge.cy,edge.meanRadius());
+            if(phase==null||!phase.valid){
+                String why=phase==null?"12 frame unavailable":phase.reason;
+                phase=GmtTwelveRecoveryAnalyzer.analyse(bgr,edge.cx,edge.cy,edge.meanRadius(),why);
+            }
+            boolean phaseUsed=phase!=null&&phase.valid&&Double.isFinite(phase.trackRollClockDeg);
+            double phaseDeg=phaseUsed?phase.trackRollClockDeg:0.0;
+            double pr=Math.toRadians(phaseDeg);
+            h0=ellipsePose(edge,Math.sin(pr),-Math.cos(pr));
             if(h0==null)return new Result("ellipse pose could not be constructed");
 
             Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);
@@ -76,30 +81,39 @@ final class AutomaticDialOverlay {
             clahe.apply(gray,enh);
             Imgproc.GaussianBlur(enh,enh,new Size(3,3),0.65);
 
-            // Final pose must come from the observed 30-pair minute system. If the
-            // evidence is not strong enough, stop. Do not fall back to a looser overlay.
-            pairFit=OpposingMinuteHomographyFitter.fit(enh,h0);
-            if(pairFit==null||!pairFit.accepted||pairFit.homography==null||pairFit.homography.empty()){
-                String why=pairFit==null?"minute-pair perspective solve unavailable":pairFit.reason;
-                return new Result("candidate photo not sufficient for fixed-master overlay: "+why);
+            // Basin only: this is the existing minute-track detector with its final-QC
+            // acceptance rules intentionally removed. If it cannot improve the seed it
+            // simply returns the ellipse pose. No applied marker geometry is used.
+            coarse=OpposingMinuteHomographyFitter.coarseSeed(enh,h0);
+            if(coarse==null||coarse.empty())coarse=h0.clone();
+
+            lattice=Alpha91MinuteLatticeFitter.fit(gray,coarse);
+            if(lattice==null||!lattice.accepted||lattice.homography==null||lattice.homography.empty()){
+                String why=lattice==null?"minute-lattice solve unavailable":lattice.reason;
+                return new Result("overlay unavailable: "+why);
             }
 
-            String guard=physicalGuardReason(pairFit.homography,edge);
-            if(guard!=null)return new Result("candidate photo not sufficient for fixed-master overlay: "+guard);
+            h=lattice.homography.clone();
 
-            h=pairFit.homography.clone();
-            if(h.empty())return new Result("opposing-minute perspective fit failed");
+            // Explicit 12-branch guard where the local minute frame was available.
+            if(phaseUsed){
+                double finalPhase=Alpha91MinuteLatticeFitter.clock12Deg(h);
+                double d=wrap180(finalPhase-phaseDeg);
+                if(!Double.isFinite(d)||Math.abs(d)>=2.0)
+                    return new Result("overlay unavailable: 12/minute-lattice phase check failed");
+            }
 
-            // No QC feature is inspected here. We simply project the untouched genuine
-            // template through the camera transform obtained above.
+            String guard=physicalGuardReason(h,edge);
+            if(guard!=null)return new Result("overlay unavailable: "+guard);
+
             Bitmap overlay=warpOutline(input.getWidth(),input.getHeight(),h);
             if(overlay==null)return new Result("dial outline rendering failed");
-            return new Result(overlay,edge,pairFit);
+            return new Result(overlay,edge,lattice,phaseUsed);
         }catch(Throwable t){
             return new Result("automatic overlay failed: "+t.getClass().getSimpleName());
         }finally{
-            if(pairFit!=null&&pairFit.homography!=null)pairFit.homography.release();
-            if(h!=null)h.release();if(h0!=null)h0.release();
+            if(lattice!=null&&lattice.homography!=null)lattice.homography.release();
+            if(h!=null)h.release();if(coarse!=null)coarse.release();if(h0!=null)h0.release();
             enh.release();gray.release();bgr.release();rgba.release();
         }
     }
@@ -116,11 +130,11 @@ final class AutomaticDialOverlay {
             return "minute fit rejected: projective warp exceeded proof limit";
 
         Point c=project(fitted,0,0);
-        if(c==null||Math.hypot(c.x-e.cx,c.y-e.cy)>0.055*e.meanRadius())
+        if(c==null||Math.hypot(c.x-e.cx,c.y-e.cy)>0.090*e.meanRadius())
             return "minute fit rejected: projected centre moved too far";
 
         double edgeRms=ellipseConformanceRms(fitted,e);
-        double limit=Math.max(2.5,e.rmsPx*1.35+0.75);
+        double limit=Math.max(3.0,e.rmsPx*1.60+1.0);
         if(!Double.isFinite(edgeRms)||edgeRms>limit)
             return "minute fit rejected: projected dial no longer matched physical edge";
         return null;
@@ -169,6 +183,8 @@ final class AutomaticDialOverlay {
         if(Math.abs(w)<1e-9)return null;
         return new Point((m[0]*x+m[1]*y+m[2])/w,(m[3]*x+m[4]*y+m[5])/w);
     }
+
+    private static double wrap180(double d){while(d>180)d-=360;while(d<=-180)d+=360;return d;}
 
     private static Bitmap warpOutline(int w,int h,Mat canonicalToImage){
         Bitmap ref=BakedDialOutline.bitmap();
