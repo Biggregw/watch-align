@@ -16,8 +16,8 @@ import java.util.Random;
 /**
  * Alpha94 measurement-only layer.
  *
- * Port of android/research/alpha91_marker_measurement.py (round markers, 6/9 batons and the
- * marker-ring decomposition; the 12 triangle stays research-only). The minute-lattice pose is
+ * Port of android/research/alpha91_marker_measurement.py: round markers, 6/9 batons, the
+ * marker-ring decomposition, and the 12 triangle (displayed as research-only; not in the ring fit). The minute-lattice pose is
  * already frozen before this class runs and is only read here: nothing measured can alter H.
  * There are no QC tolerances or verdicts.
  *
@@ -45,6 +45,10 @@ final class Alpha94MarkerMeasurement {
         double fitScorePx=Double.NaN,fitSupport=Double.NaN;
         double radiusErrPx=Double.NaN;
         double canonDx=Double.NaN,canonDy=Double.NaN;
+        /** 12 triangle only (research-only display): side angle errors and base tilt, + = clockwise. */
+        double leftSideErrDeg=Double.NaN,rightSideErrDeg=Double.NaN,baseTiltDeg=Double.NaN;
+        /** Offset in the upright dial frame, px: + = right / + = down (dial 12 at the top). */
+        double dialRightPx=Double.NaN,dialDownPx=Double.NaN;
         Marker(int hour,String kind){this.hour=hour;this.kind=kind;}
     }
 
@@ -53,25 +57,30 @@ final class Alpha94MarkerMeasurement {
         int n;
         double shiftXPx=Double.NaN,shiftYPx=Double.NaN,shiftPx=Double.NaN;
         double scalePct=Double.NaN,rotationDeg=Double.NaN;
+        /** canonical ring model: translation (tx,ty), scale-1, rotation (rad) */
+        double[] model;
     }
 
     static final class Report {
         final List<Marker> markers;
         final Ring ring;
         final double dialRadiusPx;
-        Report(List<Marker> m,Ring r,double dialRadiusPx){markers=m;ring=r;this.dialRadiusPx=dialRadiusPx;}
+        /** 12 triangle: research-only measurement, never part of the ring fit. May be null. */
+        final Marker triangle;
+        Report(List<Marker> m,Ring r,double dialRadiusPx){this(m,r,dialRadiusPx,null);}
+        Report(List<Marker> m,Ring r,double dialRadiusPx,Marker triangle){markers=m;ring=r;this.dialRadiusPx=dialRadiusPx;this.triangle=triangle;}
 
         Marker atHour(int h){for(Marker m:markers)if(m.hour==h)return m;return null;}
 
         String compactSummary(){
             StringBuilder s=new StringBuilder();
             if(ring!=null&&ring.usable){
-                s.append(String.format(Locale.US,"Ring: shift %.2f px · scale %+.2f%% · rot %+.2f°",
-                        ring.shiftPx,ring.scalePct,ring.rotationDeg));
+                s.append(String.format(Locale.US,"Ring: shift %.2f px · scale %+.2f%% · rot %s",
+                        ring.shiftPx,ring.scalePct,rot(ring.rotationDeg)));
             }else s.append("Ring: insufficient clean markers");
-            Marker m6=atHour(6),m9=atHour(9);
-            s.append("\n").append(markerLine(m6));
-            s.append("\n").append(markerLine(m9));
+            s.append("\n").append(triangleLine(triangle));
+            s.append("\n").append(markerLine(atHour(6)));
+            s.append("\n").append(markerLine(atHour(9)));
             int usableRounds=0;double maxLocal=Double.NaN;
             for(Marker m:markers)if("round".equals(m.kind)&&m.usable){
                 usableRounds++;
@@ -84,26 +93,44 @@ final class Alpha94MarkerMeasurement {
 
         String detailedSummary(){
             StringBuilder s=new StringBuilder(compactSummary());
-            s.append("\n\nMeasurement only — no pass/fail thresholds.");
+            s.append("\n\nMeasurement only — no pass/fail thresholds. Directions are in the upright dial frame (12 at top).");
             for(Marker m:markers){
                 s.append("\n").append(m.hour).append(": ");
                 if(!m.usable){s.append("OCCLUDED / INSUFFICIENT CLEAN EDGE");continue;}
-                s.append(String.format(Locale.US,"raw %.2f px · radial %+.2f · tang %+.2f",
-                        m.rawOffsetPx,m.radialPx,m.tangentialPx));
+                s.append(offsetWords(m)).append(String.format(Locale.US," · radial %+.2f · tang %+.2f",m.radialPx,m.tangentialPx));
                 if(Double.isFinite(m.localOffsetPx))
                     s.append(String.format(Locale.US," · local %.2f",m.localOffsetPx));
                 if("baton".equals(m.kind)&&Double.isFinite(m.rotationDeg))
-                    s.append(String.format(Locale.US," · rot %+.2f°",m.rotationDeg));
+                    s.append(" · rot ").append(rot(m.rotationDeg));
             }
             return s.toString();
+        }
+
+        /** "1.24 px left · 0.83 px down" in the upright dial frame. */
+        static String offsetWords(Marker m){
+            return String.format(Locale.US,"%.2f px %s · %.2f px %s",
+                    Math.abs(m.dialRightPx),m.dialRightPx<0?"left":"right",
+                    Math.abs(m.dialDownPx),m.dialDownPx<0?"up":"down");
+        }
+
+        /** "+0.33° CW" / "-0.85° CCW" (sign kept, + = clockwise on the dial). */
+        static String rot(double deg){
+            if(!Double.isFinite(deg))return "n/a";
+            return String.format(Locale.US,"%+.2f° %s",deg,deg>=0?"CW":"CCW");
         }
 
         private static String markerLine(Marker m){
             if(m==null)return "marker unavailable";
             if(!m.usable)return m.hour+": OCCLUDED / INSUFFICIENT CLEAN EDGE";
             String local=Double.isFinite(m.localOffsetPx)?String.format(Locale.US,"%.2f",m.localOffsetPx):"n/a";
-            return String.format(Locale.US,"%d: raw %.2f px · local %s · rot %+.2f°",
-                    m.hour,m.rawOffsetPx,local,m.rotationDeg);
+            return m.hour+": "+offsetWords(m)+" · rot "+rot(m.rotationDeg)+" · local "+local;
+        }
+
+        private static String triangleLine(Marker m){
+            if(m==null)return "12 (research): unavailable";
+            if(!m.usable)return "12 (research): OCCLUDED / INSUFFICIENT CLEAN EDGE";
+            return "12 (research): "+offsetWords(m)+" · centreline "+rot(m.rotationDeg)
+                    +String.format(Locale.US," · L/R sides %+.2f°/%+.2f°",m.leftSideErrDeg,m.rightSideErrDeg);
         }
     }
 
@@ -142,22 +169,29 @@ final class Alpha94MarkerMeasurement {
             }catch(Throwable t){
                 m.usable=false;m.reason="measurement failed";
             }
-            if(m.usable&&centre!=null){
-                double[] cm=masterPoint(hour);
-                double[] er=radial(hour),et=tangential(hour);
-                Point po=smp.project(centre[0],centre[1]),pm=smp.project(cm[0],cm[1]);
-                if(po==null||pm==null){m.usable=false;m.reason="projection unavailable";}
-                else{
-                    m.rawDxPx=po.x-pm.x;m.rawDyPx=po.y-pm.y;m.rawOffsetPx=Math.hypot(m.rawDxPx,m.rawDyPx);
-                    m.canonDx=centre[0]-cm[0];m.canonDy=centre[1]-cm[1];
-                    m.radialPx=(m.canonDx*er[0]+m.canonDy*er[1])*rpx;
-                    m.tangentialPx=(m.canonDx*et[0]+m.canonDy*et[1])*rpx;
-                }
-            }
+            if(m.usable&&centre!=null)setOffsets(smp,m,centre,rpx);
             out.add(m);centres.add(centre);
         }
         Ring ring=fitRing(out,centres,smp,rpx);
-        return new Report(out,ring,rpx);
+        // 12 triangle: research-only, measured on the same frozen H, kept out of the ring fit.
+        Marker tri=new Marker(12,"triangle");
+        try{
+            double[] c=measurePolygon(smp,tri,tol,rpx,trianglePolygon(),0.02);
+            if(tri.usable&&c!=null){setOffsets(smp,tri,c,rpx);setLocal(smp,tri,ring,rpx);}
+        }catch(Throwable t){tri.usable=false;tri.reason="measurement failed";}
+        return new Report(out,ring,rpx,tri);
+    }
+
+    private static void setOffsets(Sampler smp,Marker m,double[] centre,double rpx){
+        double[] cm=masterPoint(m.hour);
+        double[] er=radial(m.hour),et=tangential(m.hour);
+        Point po=smp.project(centre[0],centre[1]),pm=smp.project(cm[0],cm[1]);
+        if(po==null||pm==null){m.usable=false;m.reason="projection unavailable";return;}
+        m.rawDxPx=po.x-pm.x;m.rawDyPx=po.y-pm.y;m.rawOffsetPx=Math.hypot(m.rawDxPx,m.rawDyPx);
+        m.canonDx=centre[0]-cm[0];m.canonDy=centre[1]-cm[1];
+        m.radialPx=(m.canonDx*er[0]+m.canonDy*er[1])*rpx;
+        m.tangentialPx=(m.canonDx*et[0]+m.canonDy*et[1])*rpx;
+        m.dialRightPx=m.canonDx*rpx;m.dialDownPx=m.canonDy*rpx;
     }
 
     // ------------------------------------------------------------------ sampling (pose is read-only)
@@ -292,7 +326,12 @@ final class Alpha94MarkerMeasurement {
 
     // ------------------------------------------------------------------ 6/9 batons
     private static double[] measureBaton(Sampler s,Marker m,double tol,double rpx){
-        double[][] poly=batonPolygon(m.hour);int k=4;
+        return measurePolygon(s,m,tol,rpx,batonPolygon(m.hour),0.03);
+    }
+
+    /** Free per-side line fits around a master polygon (research measure_polygon): batons and 12 triangle. */
+    private static double[] measurePolygon(Sampler s,Marker m,double tol,double rpx,double[][] poly,double depth){
+        int k=poly.length;
         double pcx=0,pcy=0;for(double[] p:poly){pcx+=p[0]/k;pcy+=p[1]/k;}
         double[][] a=new double[k][],dm=new double[k][],nm=new double[k][];double[] L=new double[k];
         for(int i=0;i<k;i++){
@@ -325,7 +364,7 @@ final class Alpha94MarkerMeasurement {
             lp=np;ld=nd;
         }
         double[][] V=new double[k][];
-        for(int i=0;i<k;i++){V[i]=intersect(lp[(i+k-1)%k],ld[(i+k-1)%k],lp[i],ld[i]);if(V[i]==null){m.reason="degenerate baton fit";return null;}}
+        for(int i=0;i<k;i++){V[i]=intersect(lp[(i+k-1)%k],ld[(i+k-1)%k],lp[i],ld[i]);if(V[i]==null){m.reason="degenerate marker fit";return null;}}
         double[] centre=polygonCentroid(V);
         double[] angErr=new double[k];double maxAng=0,maxOff=0,minCov=1;
         for(int i=0;i<k;i++){
@@ -340,15 +379,30 @@ final class Alpha94MarkerMeasurement {
             if(n[0]*((p[0]+q[0])/2-centre[0])+n[1]*((p[1]+q[1])/2-centre[1])<0){n[0]=-n[0];n[1]=-n[1];}
             double[][] seg=new double[30][],nn=new double[30][];
             for(int j=0;j<30;j++){double u=0.15+j*(0.70/29.0);seg[j]=new double[]{p[0]+u*dx,p[1]+u*dy};nn[j]=n;}
-            minInteg=Math.min(minInteg,outlineIntegrity(s,seg,nn,rpx,0.03));
+            minInteg=Math.min(minInteg,outlineIntegrity(s,seg,nn,rpx,depth));
         }
         m.fitSupport=minCov;m.fitScorePx=1.0-minInteg;
         if(minInteg<MIN_INTEGRITY){m.reason=String.format(Locale.US,"hand/occluder crosses outline (clean %.2f)",minInteg);return null;}
         if(minCov<0.50){m.reason=String.format(Locale.US,"side edge coverage %.2f",minCov);return null;}
         if(maxAng>12||maxOff>0.04){m.reason="implausible side fit";return null;}
-        double[] er=radial(m.hour);double rot=0;int nl=0;
-        for(int i=0;i<k;i++)if(Math.abs(dm[i][0]*er[0]+dm[i][1]*er[1])>0.7){rot+=angErr[i];nl++;}
-        m.usable=true;m.rotationDeg=nl==0?Double.NaN:rot/nl;
+        double[] er=radial(m.hour);
+        m.usable=true;
+        if(k==3){
+            // research: apex = vertex nearest the dial centre; centreline = apex -> base midpoint.
+            int apex=0;for(int i=1;i<3;i++)if(Math.hypot(V[i][0],V[i][1])<Math.hypot(V[apex][0],V[apex][1]))apex=i;
+            double bx=0,by=0;for(int i=0;i<3;i++)if(i!=apex){bx+=V[i][0]/2;by+=V[i][1]/2;}
+            m.rotationDeg=wrap90(Math.toDegrees(Math.atan2(by-V[apex][1],bx-V[apex][0])-Math.atan2(er[1],er[0])));
+            // side i joins vertex i and i+1; the base side has no apex vertex. Left = smaller master x.
+            int base=-1;for(int i=0;i<3;i++)if(apex!=i&&apex!=(i+1)%3)base=i;
+            int sa=-1,sb=-1;for(int i=0;i<3;i++)if(i!=base){if(sa<0)sa=i;else sb=i;}
+            double xa=poly[sa][0]+poly[(sa+1)%3][0],xb=poly[sb][0]+poly[(sb+1)%3][0];
+            int left=xa<xb?sa:sb,right=xa<xb?sb:sa;
+            m.leftSideErrDeg=angErr[left];m.rightSideErrDeg=angErr[right];m.baseTiltDeg=angErr[base];
+        }else{
+            double rot=0;int nl=0;
+            for(int i=0;i<k;i++)if(Math.abs(dm[i][0]*er[0]+dm[i][1]*er[1])>0.7){rot+=angErr[i];nl++;}
+            m.rotationDeg=nl==0?Double.NaN:rot/nl;
+        }
         return centre;
     }
 
@@ -412,19 +466,23 @@ final class Alpha94MarkerMeasurement {
             }
         }
         Point t1=s.project(x[0],x[1]),t0=s.project(0,0);
-        ring.usable=true;ring.n=n;ring.scalePct=100*x[2];ring.rotationDeg=Math.toDegrees(x[3]);
+        ring.usable=true;ring.n=n;ring.scalePct=100*x[2];ring.rotationDeg=Math.toDegrees(x[3]);ring.model=x.clone();
         if(t1!=null&&t0!=null){ring.shiftXPx=t1.x-t0.x;ring.shiftYPx=t1.y-t0.y;ring.shiftPx=Math.hypot(ring.shiftXPx,ring.shiftYPx);}
-        for(int k=0;k<n;k++){
-            Marker m=markers.get(idx.get(k));double[] p=P[k];
-            double mdx=x[0]+x[2]*p[0]-x[3]*p[1],mdy=x[1]+x[2]*p[1]+x[3]*p[0];
-            double lx=m.canonDx-mdx,ly=m.canonDy-mdy;
-            Point q=s.project(p[0]+lx,p[1]+ly),q0=s.project(p[0],p[1]);
-            double[] er=radial(m.hour),et=tangential(m.hour);
-            m.localOffsetPx=(q!=null&&q0!=null)?Math.hypot(q.x-q0.x,q.y-q0.y):Math.hypot(lx,ly)*rpx;
-            m.localRadialPx=(lx*er[0]+ly*er[1])*rpx;
-            m.localTangentialPx=(lx*et[0]+ly*et[1])*rpx;
-        }
+        for(int k=0;k<n;k++)setLocal(s,markers.get(idx.get(k)),ring,rpx);
         return ring;
+    }
+
+    /** Local residual = offset minus the ring model evaluated at this marker's master point. */
+    private static void setLocal(Sampler s,Marker m,Ring ring,double rpx){
+        if(ring==null||!ring.usable||ring.model==null||!Double.isFinite(m.canonDx))return;
+        double[] x=ring.model,p=masterPoint(m.hour);
+        double mdx=x[0]+x[2]*p[0]-x[3]*p[1],mdy=x[1]+x[2]*p[1]+x[3]*p[0];
+        double lx=m.canonDx-mdx,ly=m.canonDy-mdy;
+        Point q=s.project(p[0]+lx,p[1]+ly),q0=s.project(p[0],p[1]);
+        double[] er=radial(m.hour),et=tangential(m.hour);
+        m.localOffsetPx=(q!=null&&q0!=null)?Math.hypot(q.x-q0.x,q.y-q0.y):Math.hypot(lx,ly)*rpx;
+        m.localRadialPx=(lx*er[0]+ly*er[1])*rpx;
+        m.localTangentialPx=(lx*et[0]+ly*et[1])*rpx;
     }
 
     // ------------------------------------------------------------------ geometry helpers
@@ -432,8 +490,14 @@ final class Alpha94MarkerMeasurement {
     private static double[] radial(int hour){double a=Math.toRadians(hour*30.0);return new double[]{Math.sin(a),-Math.cos(a)};}
     private static double[] tangential(int hour){double a=Math.toRadians(hour*30.0);return new double[]{Math.cos(a),Math.sin(a)};}
     private static double[] masterPoint(int hour){
+        if(hour==12)return new double[]{0,-Alpha92GmtMaster.TRI_AREA_CENTROID_R};
         double r=isRound(hour)?Alpha92GmtMaster.ROUND_CENTER_R:Alpha92GmtMaster.BATON_CENTER_R;
         double[] er=radial(hour);return new double[]{er[0]*r,er[1]*r};
+    }
+    /** Research marker_polygon(12): apex (toward centre), base right, base left. */
+    private static double[][] trianglePolygon(){
+        return new double[][]{{0,-Alpha92GmtMaster.TRI_APEX_R},{Alpha92GmtMaster.TRI_HALF_BASE,-Alpha92GmtMaster.TRI_BASE_R},
+                {-Alpha92GmtMaster.TRI_HALF_BASE,-Alpha92GmtMaster.TRI_BASE_R}};
     }
     /** Research marker_polygon ordering: (s,u) = (-1,-1),(1,-1),(1,1),(-1,1) along (radial, tangential). */
     private static double[][] batonPolygon(int hour){

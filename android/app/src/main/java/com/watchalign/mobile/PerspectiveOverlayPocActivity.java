@@ -45,8 +45,8 @@ public class PerspectiveOverlayPocActivity extends Activity {
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         root.addView(text("Fixed Genuine GMT Overlay",28,Color.WHITE));
-        root.addView(text("Alpha94 frozen pose + read-only marker measurements · no verdicts",14,ACCENT));
-        root.addView(text("The yellow overlay is a fixed genuine 126710BLNR master measured from the bare genuine dial. The printed minute lattice fixes perspective first. Only after H is frozen, Alpha94 measures round markers and the 6/9 batons. Those measurements never feed back into pose and no pass/fail thresholds are applied.",13,MUTED),lp(-1,-2,10));
+        root.addView(text("Alpha96 frozen pose + read-only marker measurements · no verdicts",14,ACCENT));
+        root.addView(text("The yellow overlay is a fixed genuine 126710BLNR master measured from the bare genuine dial. The printed minute lattice fixes perspective first. Only after H is frozen, the app measures round markers, the 6/9 batons and (research-only) the 12 triangle. Directions are in the upright dial frame; rotation + = clockwise. Those measurements never feed back into pose and no pass/fail thresholds are applied.",13,MUTED),lp(-1,-2,10));
 
         Button pick=button("Choose candidate GMT photo");pick.setOnClickListener(v->pickPhoto());root.addView(pick,lp(-1,dp(52),8));
         buildButton=button("Project fixed genuine master");buildButton.setBackgroundColor(ACCENT);buildButton.setTextColor(Color.rgb(4,32,42));buildButton.setEnabled(false);buildButton.setOnClickListener(v->buildOverlay());root.addView(buildButton,lp(-1,dp(54),6));
@@ -81,7 +81,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
 
     private void openInspector(){
         if(candidateBitmap==null||lastOverlay==null)return;
-        InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Alpha94 GMT measurement overlay",
+        InspectionImageStore.setOverlay(candidateBitmap,lastOverlay,"Alpha96 GMT measurement overlay",
                 lastMeasurement==null?null:lastMeasurement.compactSummary());
         startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
     }

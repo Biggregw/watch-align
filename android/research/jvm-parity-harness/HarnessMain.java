@@ -30,6 +30,10 @@ public class HarnessMain {
       for(Alpha94MarkerMeasurement.Marker m:rep.markers)
         o.append(String.format(Locale.US,"M %s %d %s usable=%b dx=%.3f dy=%.3f rad=%.3f tan=%.3f rot=%.3f local=%.3f score=%.3f support=%.3f reason=%s%n",
           name,m.hour,m.kind,m.usable,m.rawDxPx,m.rawDyPx,m.radialPx,m.tangentialPx,m.rotationDeg,m.localOffsetPx,m.fitScorePx,m.fitSupport,m.reason.replace(' ','_')));
+      Alpha94MarkerMeasurement.Marker t=rep.triangle;
+      if(t!=null)o.append(String.format(Locale.US,"T %s 12 triangle usable=%b dx=%.3f dy=%.3f rad=%.3f tan=%.3f rot=%.3f left=%.3f right=%.3f base=%.3f local=%.3f reason=%s%n",
+          name,t.usable,t.rawDxPx,t.rawDyPx,t.radialPx,t.tangentialPx,t.rotationDeg,t.leftSideErrDeg,t.rightSideErrDeg,t.baseTiltDeg,t.localOffsetPx,t.reason.replace(' ','_')));
+      o.append("SUMMARY\n").append(rep.compactSummary()).append("\nEND\n");
       Alpha94MarkerMeasurement.Ring g=rep.ring;
       o.append(String.format(Locale.US,"RING %s usable=%b n=%d shift=(%.3f,%.3f) scale=%.3f rot=%.3f%n",name,g.usable,g.n,g.shiftXPx,g.shiftYPx,g.scalePct,g.rotationDeg));
     }
