@@ -1,0 +1,72 @@
+MASTER {"bare_R_px": 293.6676, "tick_inner_R": 0.9325, "tick_outer_R": 0.9803, "tick_lattice_rms_inner_px": null, "tick_angle_residual_deg_maxabs": 0.1841, "round_center_R": 0.8128, "round_outer_radius_R": 0.0915, "baton_center_R": 0.7551, "baton_center_R_6": 0.7509, "baton_center_R_9": 0.7592, "baton_radial_half": 0.1525, "baton_tangential_half": 0.0594, "triangle_apex_R": 0.5925, "triangle_base_R": 0.9025, "triangle_half_base": 0.1237, "triangle_area_centroid_R": 0.7992, "frozen_master_for_comparison": {"MINUTE_TRACK_R": 0.925, "MINUTE_TRACK_OUTER_R": 0.972, "ROUND_CENTER_R": 0.816, "ROUND_OUTER_R": 0.088, "MARKER_CENTER_R": 0.758, "TRI_CENTER_R": 0.75}}
+
+EXT_EXT_GEN_BLRO_WEX_01  R=140.0px  fit: {'ticks_used': 44, 'sectors_used': 11, 'tick_rms_px': 0.1641566650657431, 'tick_median_px': 0.12890448962521397, 'rejected_ticks': [20, 28, 32, 58], 'coarse_inliers': 59, 'coarse_to_final_roll_deg': 0.04790978062601425, 'accepted': True}
+  h12 OCC resid=(+0.48,+0.22) |0.53|  radial -0.22px  tangential +0.48px (+0.25deg)  r=0.7976R  cov=0.47
+  h 1     resid=(+0.52,-0.34) |0.62|  radial +0.55px  tangential +0.27px (+0.14deg)  r=0.8167R  cov=0.82
+  h 2     resid=(+0.78,-0.22) |0.81|  radial +0.78px  tangential +0.19px (+0.10deg)  r=0.8183R  cov=0.69
+  h 4 OCC resid=(+0.81,+0.10) |0.82|  radial +0.75px  tangential -0.33px (-0.16deg)  r=0.8181R  cov=0.51
+  h 5     resid=(+0.57,+0.08) |0.58|  radial +0.35px  tangential -0.46px (-0.23deg)  r=0.8153R  cov=0.88
+  h 6     resid=(+0.33,+0.45) |0.56|  radial +0.44px  tangential -0.34px (-0.18deg)  r=0.7582R  cov=1.00
+  h 7     resid=(+0.25,-0.09) |0.27|  radial -0.20px  tangential -0.17px (-0.08deg)  r=0.8113R  cov=0.94
+  h 8     resid=(+0.26,-0.16) |0.31|  radial -0.31px  tangential +0.01px (+0.00deg)  r=0.8106R  cov=0.93
+  h 9     resid=(+1.09,+0.11) |1.09|  radial -1.08px  tangential -0.10px (-0.06deg)  r=0.7473R  cov=0.60
+  h10     resid=(+0.15,-0.18) |0.24|  radial -0.04px  tangential +0.23px (+0.12deg)  r=0.8125R  cov=0.94
+  h11     resid=(+0.31,-0.20) |0.37|  radial +0.02px  tangential +0.37px (+0.18deg)  r=0.8129R  cov=0.93
+  summary {'n': 9, 'mean': 0.5365490472719237, 'median': 0.557705253681132, 'max': 1.0948772162373133, 'mean_vector': [0.47296162169896483, -0.060532538510288864]} 
+  wide-window {'n': 8, 'mean': 0.5012797335661914, 'median': 0.4742556821638625, 'max': 1.0948772162373015, 'mean_vector': [0.43257492080756776, -0.0408797542036865]} 
+  k1 {'tick_rms_planar': 0.16080479682163226, 'tick_rms_k1': 0.15680711634658956, 'k1': 48.37872018838095}
+
+EXT_EXT_GEN_BLRO_WEX_02  R=155.4px  fit: {'ticks_used': 45, 'sectors_used': 11, 'tick_rms_px': 0.21086537157246102, 'tick_median_px': 0.1404826070327337, 'rejected_ticks': [28, 32, 58], 'coarse_inliers': 65, 'coarse_to_final_roll_deg': 0.017027411752053467, 'accepted': True}
+  h12 OCC resid=(-0.99,-0.65) |1.19|  radial +0.65px  tangential -0.99px (-0.45deg)  r=0.8034R  cov=0.47
+  h 1     resid=(+0.39,-0.33) |0.51|  radial +0.48px  tangential +0.17px (+0.08deg)  r=0.8158R  cov=0.79
+  h 2     resid=(+0.55,-0.31) |0.63|  radial +0.63px  tangential +0.01px (+0.00deg)  r=0.8168R  cov=0.76
+  h 4 OCC resid=(+0.24,+0.23) |0.33|  radial +0.32px  tangential +0.08px (+0.04deg)  r=0.8148R  cov=0.46
+  h 5     resid=(+0.40,+0.05) |0.40|  radial +0.24px  tangential -0.32px (-0.14deg)  r=0.8143R  cov=0.72
+  h 6 OCC resid=(-1.17,+0.45) |1.26|  radial +0.45px  tangential +1.17px (+0.57deg)  r=0.7580R  cov=0.53
+  h 7     resid=(+0.21,-0.22) |0.30|  radial -0.29px  tangential -0.07px (-0.03deg)  r=0.8109R  cov=0.72
+  h 8     resid=(+0.27,-0.21) |0.34|  radial -0.34px  tangential +0.05px (+0.02deg)  r=0.8106R  cov=0.72
+  h 9     resid=(-0.33,-0.14) |0.36|  radial +0.33px  tangential +0.13px (+0.07deg)  r=0.7572R  cov=0.60
+  h10     resid=(+0.14,-0.23) |0.27|  radial -0.01px  tangential +0.27px (+0.12deg)  r=0.8127R  cov=0.71
+  h11     resid=(+0.30,-0.16) |0.34|  radial -0.01px  tangential +0.33px (+0.15deg)  r=0.8127R  cov=0.79
+  summary {'n': 8, 'mean': 0.39551812413327436, 'median': 0.3529474653500973, 'max': 0.6324637240697956, 'mean_vector': [0.24037881585527998, -0.19429001190553663]} 
+  wide-window {'n': 7, 'mean': 0.901825752847803, 'median': 0.5234146308589056, 'max': 1.9122845128611807, 'mean_vector': [-0.16290128639026794, 0.16710786423601576]} 
+  k1 {'tick_rms_planar': 0.20759926935958065, 'tick_rms_k1': 0.20635174872112483, 'k1': -3.919748536898641}
+
+POOL_GEN_HO_01  R=203.2px  fit: {'ticks_used': 44, 'sectors_used': 11, 'tick_rms_px': 0.20806532644835377, 'tick_median_px': 0.16086481087337018, 'rejected_ticks': [21, 28, 32, 40], 'coarse_inliers': 141, 'coarse_to_final_roll_deg': 0.056652229637506935, 'accepted': True}
+  h12     resid=(+1.55,-1.29) |2.02|  radial +1.34px  tangential +1.57px (+0.55deg)  r=0.8058R  cov=0.60
+  h 1     resid=(+0.58,-0.40) |0.71|  radial +0.66px  tangential +0.31px (+0.11deg)  r=0.8160R  cov=0.68
+  h 2     resid=(+0.47,-0.88) |1.00|  radial +0.88px  tangential -0.54px (-0.18deg)  r=0.8171R  cov=0.61
+  h 4     resid=(+0.75,-0.87) |1.15|  radial +0.23px  tangential -1.14px (-0.39deg)  r=0.8139R  cov=0.89
+  h 5     resid=(+0.51,-0.77) |0.92|  radial -0.40px  tangential -0.82px (-0.29deg)  r=0.8108R  cov=0.92
+  h 6 OCC resid=(+0.28,-0.07) |0.29|  radial -0.07px  tangential -0.28px (-0.10deg)  r=0.7547R  cov=0.00
+  h 7     resid=(+0.52,-0.25) |0.58|  radial -0.47px  tangential -0.32px (-0.11deg)  r=0.8105R  cov=0.62
+  h 8 OCC resid=(+0.46,+0.00) |0.46|  radial -0.39px  tangential -0.23px (-0.08deg)  r=0.8108R  cov=0.39
+  h 9     resid=(-0.36,-0.12) |0.37|  radial +0.35px  tangential +0.12px (+0.04deg)  r=0.7568R  cov=0.80
+  h10     resid=(+0.11,-0.72) |0.73|  radial +0.27px  tangential +0.69px (+0.24deg)  r=0.8141R  cov=0.85
+  h11     resid=(+0.48,-1.14) |1.24|  radial +0.77px  tangential +1.01px (+0.35deg)  r=0.8166R  cov=0.81
+  summary {'n': 9, 'mean': 0.9674788778004138, 'median': 0.9184403946105065, 'max': 2.0154780230202265, 'mean_vector': [0.5135564149313596, -0.7148315094258982]} 
+  wide-window {'n': 8, 'mean': 1.312523027901888, 'median': 1.2202522427589733, 'max': 2.260705861759244, 'mean_vector': [0.8869191896938275, -0.6647507675425715]} 
+  k1 {'tick_rms_planar': 0.20617666226842293, 'tick_rms_k1': 0.19265357359287172, 'k1': 1.2036172592533139}
+
+POOL_GEN_HO_02  R=143.4px  fit: {'ticks_used': 44, 'sectors_used': 11, 'tick_rms_px': 0.363722949404893, 'tick_median_px': 0.10718502809116495, 'rejected_ticks': [0, 32, 43], 'coarse_inliers': 68, 'coarse_to_final_roll_deg': 0.03084251451093678, 'accepted': True}
+  h12     resid=(-0.03,+0.42) |0.42|  radial -0.43px  tangential +0.05px (+0.03deg)  r=0.7962R  cov=0.80
+  h 1     resid=(+0.27,-0.03) |0.28|  radial +0.21px  tangential +0.19px (+0.09deg)  r=0.8142R  cov=0.96
+  h 2     resid=(+0.04,-0.20) |0.21|  radial +0.11px  tangential -0.18px (-0.09deg)  r=0.8135R  cov=0.92
+  h 4     resid=(+0.20,-0.27) |0.34|  radial -0.03px  tangential -0.34px (-0.17deg)  r=0.8125R  cov=0.96
+  h 5     resid=(+0.44,-0.32) |0.54|  radial -0.17px  tangential -0.52px (-0.25deg)  r=0.8116R  cov=0.89
+  h 6 OCC resid=(+0.47,-0.99) |1.10|  radial -1.07px  tangential -0.26px (-0.14deg)  r=0.7476R  cov=0.53
+  h 7     resid=(+0.23,-0.44) |0.50|  radial -0.48px  tangential +0.12px (+0.06deg)  r=0.8094R  cov=0.90
+  h 8     resid=(+0.36,-0.52) |0.63|  radial -0.51px  tangential +0.39px (+0.19deg)  r=0.8092R  cov=0.85
+  h 9     resid=(-0.00,-0.32) |0.32|  radial +0.07px  tangential +0.32px (+0.17deg)  r=0.7555R  cov=0.73
+  h10     resid=(+0.37,-0.46) |0.59|  radial +0.03px  tangential +0.60px (+0.30deg)  r=0.8130R  cov=0.79
+  h11     resid=(+0.49,-0.52) |0.71|  radial +0.34px  tangential +0.64px (+0.31deg)  r=0.8152R  cov=0.79
+  summary {'n': 10, 'mean': 0.4545466579335059, 'median': 0.45898181236020463, 'max': 0.7148080326301516, 'mean_vector': [0.2368046514256889, -0.2673212187409604]} 
+  wide-window {'n': 10, 'mean': 0.44389830211483733, 'median': 0.4584187967856259, 'max': 0.7152941990408063, 'mean_vector': [0.21247057542858555, -0.2675145521424838]} 
+  k1 {'tick_rms_planar': 0.34592371247392995, 'tick_rms_k1': 0.3458851902490491, 'k1': 0.02245377497967506}
+
+PARALLAX (one shared marker-top height, leave-one-photo-out):
+  EXT_EXT_GEN_BLRO_WEX_01: LOO h=0.0191R (own 0.0334)  mean 0.41 median 0.34 max 1.02
+  EXT_EXT_GEN_BLRO_WEX_02: LOO h=0.0201R (own 0.0173)  mean 0.32 median 0.36 max 0.51
+  POOL_GEN_HO_01: LOO h=0.0178R (own 0.0208)  mean 0.49 median 0.45 max 1.38
+  POOL_GEN_HO_02: LOO h=0.0215R (own 0.0134)  mean 0.37 median 0.34 max 0.91
+  pooled 0.019913865293675923

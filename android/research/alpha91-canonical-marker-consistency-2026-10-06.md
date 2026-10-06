@@ -60,3 +60,12 @@ It is a diagnostic only, not a solver: it is fitted from the markers themselves.
 - The remaining question of registration accuracy cannot be answered without the
   pixels: the four control photos at original resolution, the bare genuine dial
   reference, and the dense-registration script.
+
+## Correction — later the same day
+
+The bare genuine dial was later supplied; see `alpha91-overlay-registration-2026-10-06.md`. Rectified, it gives:
+
+- baton centre about 0.755R and round-marker centre about 0.813R, the same ratio as the frozen master;
+- triangle area centroid 0.799R.
+
+The "batons outward at about 0.763R" finding above was produced by the biased manual labels and **should not be used**. The triangle-centroid finding stands.
