@@ -183,3 +183,57 @@ No measured watch that still had an unshared photo was lost at the dial level (1
 - **Marker offsets and rotations:** none of the marketplace candidates is beyond every genuine watch on these.
 - **Ring scale:** still flags candidates, so it remains unusable.
 - **12 local offset:** in R units it now rises with dial radius (rho +0.46; small-dial median 0.0019 R). The small-dial replica values of 0.009–0.014 R are therefore further from genuine, not closer.
+
+## Why the genuine 12 offset appears to rise with dial size (offline, 2026-10-06)
+
+Inputs:
+- de-duplicated primary photos (level dial, 56 watches with a usable 12);
+- `results/ci_run_37500197377/watch_level.csv`;
+- an edge-definition test, `make_edge_set.py`, with results in `results/m12_dial_size/`.
+
+**1. It is a source effect, not resolution.** Every genuine dial above R = 580 px is a SwissWatchExpo (SWE) full-size studio photo. Median 12 local offset by source:
+
+| Source | Median 12 local offset | Dial radius |
+|---|---:|---:|
+| SWE full-size | 0.0064 R | ~776 px |
+| Phillips | 0.0041 R | ~380 px |
+| Bob's | 0.0035 R | 434 px, fixed image size |
+
+The correlation with R comes from which source supplies the large dials.
+
+**2. Same photograph, two resolutions.** Every SWE watch has its full-size photo plus SWE's own 900 px copy of the same shot and a second 900 px shot.
+- Full-size minus the mean of the 900 px photos: +0.0006 R (range −0.0011 to +0.0017, 10 watches).
+- That is about a fifth of the SWE-vs-Bob's gap.
+- The scaled experiment on local photos drifts the other way (slightly up as the dial shrinks).
+- Resolution alone therefore does not explain it.
+
+**3. It is mostly the "down" (toward centre) component.**
+
+| Source | Raw 12 down | Ring scale |
+|---|---:|---:|
+| SWE full-size | +0.0042 R | −0.13% |
+| Phillips | +0.0043 R | −0.09% |
+| Bob's | +0.0018 R | −0.01% |
+
+Ring scale follows the same source order. Round-marker, 6 and 9 local offsets do not differ by source (0.0014–0.0018 R).
+
+**4. Why the 12 is uniquely sensitive.**
+- The 12 position is the centroid of the three fitted sides.
+- The master triangle is tall: height 0.31 R, half-base 0.124 R. Its incentre therefore lies 0.019 R outside its centroid.
+- A uniform outward shift d of the detected outline (lighting on the polished surround, bloom) moves the centroid toward the centre by 0.23 d, and the apex by 2.7 d.
+- Round markers absorb the same shift as radius error, and batons stay centred.
+- So photography that changes which edge is "outermost" moves the 12, and only the 12.
+
+**5. The offline edge test is inconclusive for the 12.**
+- Shifting outlines by ±1–2 px with greyscale dilation or erosion of the local photos (R 140–234) moves the round-marker radius error about 0.9 px per px. That confirms radius error as a direct gauge of edge definition.
+- It also moves ring scale about +0.4–0.5% per px. This is a likely reason ring scale flags marketplace candidates.
+- At these radii, though, about half the variants lose the pose or the 12 outline. The 12 responses that survive are not consistent in sign.
+
+**Not established yet:** which mechanism applies. Candidates are edge definition, marker-height parallax under close or oblique studio cameras, or a master triangle position that matches Bob's-style photos.
+
+**Evidence that would decide it:** per-photo `m*_radius_err_px` (edge definition), `ellipse_ratio` (obliqueness), and the 12 values for every genuine photo, compared across sources and within SWE's same-photo pairs. They are in `per_photo.csv` in the run 37500197377 artifact (expires 2026-11-05), which this environment cannot download.
+
+**Consequence for now:**
+- Treat the genuine 12 offset spread as photography-dependent, and do not pool it across sources for any limit.
+- The replica 12 offsets (0.009–0.014 R) still exceed the SWE maximum (0.0084 R).
+- They come from phone photos, yet another photographic condition. Phone-photo genuine references are a named evidence gap.
