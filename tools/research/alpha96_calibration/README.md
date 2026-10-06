@@ -92,8 +92,62 @@ Results are in `results/ci_run_37500197377/`: `report.md`, `watch_level.csv`, `f
 - **Limits:** no production limits have been set.
 
 **Caveats before any limit is considered:**
-1. **Resolution confound.** Genuine dial radius is about 290 px (ring shift median 0.70 px = 0.0024 R). The replica controls are 165–234 px. Detector noise is roughly constant in px, so R-normalised values inflate on low-resolution photos. A replica above a genuine R value is not yet evidence of a defect. Compare in px or stratify by R first.
+1. **Resolution confound.** This was tested offline; see the next section. The worry holds for rotations, ring shift and the worst round marker. It does not hold for the 6, 9 and 12 local offsets.
 2. **Duplicate images.** Three sha256 values appear under two different Bob's `physical_watch_id`s, probably stock images. Those watches are not independent and should be de-duplicated.
 3. **Outliers.** `m12_raw` reaches 12.9 px (0.036 R) on one photo, probably detector or pose error. Inspect it before using the tails.
 4. **Pooled layouts.** Primary steel and gold-surround layouts are pooled in `report.md`. `layout_split.txt` shows they are similar, but gold-surround 9 and 12 rotations have wider tails.
 5. **Within-watch repeatability.** It comes mainly from the Phillips multi-photo lots: 6–8 photos per watch, with a 6/9/12 rotation MAD of about 0.05–0.15°. That is smaller than the between-watch spread.
+
+## Pixel and dial-radius comparison (offline, 2026-10-06)
+
+Inputs:
+- `resolution_analysis.py` with `make_scaled_set.py`;
+- results in `results/resolution/comparison.md`;
+- the scaled runner CSVs, with no images.
+
+The genuine reference is one primary photo per watch from the CI run, 68 watches. The px and R values come from the same image, so that photo's dial radius is exact: median 434 px, range 129–835, 8 watches at 240 px or less.
+
+The 8 local photos were re-measured at scales 1.0, 0.85, 0.7, 0.55 and 0.45, with 5 resampling variants per scale (a small rotation and a crop offset). That gives 200 runs of the unchanged Alpha96 code.
+
+**Findings:**
+
+1. **Genuine local offsets are geometric, so R units are the correct comparison.**
+   - In px, the genuine 6, 9 and 12 local offsets and the worst round marker grow with dial radius (Spearman rho 0.58–0.78).
+   - In R units they are flat: rho −0.12 to +0.06 for the 6 and 9 offsets. The R ≤ 240 bin matches the R > 360 bin (6: 0.0015 vs 0.0015 R; 12: 0.0040 vs 0.0039 R).
+   - A small dial therefore does not inflate these values.
+   - The exceptions are ring shift and the worst round marker. Their R ≤ 240 medians are about 2× and 1.6× those of large dials, so compare them with radius-matched genuine watches.
+2. **Rotations are noisier on small dials.**
+   - The genuine 6 and 9 rotation magnitudes at R ≤ 360 are about twice those at R > 360.
+   - Rotations must be compared with radius-matched genuine watches. Those groups are small: 3–11 watches.
+3. **Resampling noise is small at the controls' resolution.**
+   - At about 200 px dial radius, the spread across variants is about 0.0002 R for local offsets and 0.05–0.11° for 6, 9 and 12 rotation.
+   - That is well below the genuine between-watch spread.
+   - The noise grows steeply below about 100 px (scale 0.45), where pose acceptance also falls to 50%.
+   - Values in R units are stable from scale 1.0 down to 0.7. The 12 local offset has a mild upward bias of about 5–15% as the dial shrinks.
+4. **Replica controls, after the resolution checks:**
+   - **THEONE BLNR:**
+     - 6 local offset 0.0047 R is beyond every genuine watch in R units (n=59) and stable across scales.
+     - 12 local offset 0.0088 R and the worst round marker 0.0040 R are also beyond every genuine watch.
+     - 9 rotation −0.85° and 12 rotation 0.96° are inside the radius-matched genuine range (20% and 17% exceedance). They are not distinctive once resolution is matched.
+   - **Batgirl:**
+     - 9 rotation −1.52° is beyond all 66 genuine watches, including the 9 radius-matched ones, and stays at −1.44° to −1.52° across scales. This is the strongest single signal.
+     - 9 local offset 0.0045 R and the worst round marker are also beyond every genuine watch.
+   - **RL_LOCAL BLNR** (labelled "6 left, 12 slightly tilted"):
+     - Ring rotation 0.55° and ring scale 0.70% are beyond every genuine watch.
+     - So are the 6 local offset and the 12 local offset (0.0139 R).
+     - 12 rotation 0.79° is not distinctive (50% radius-matched exceedance), so the tilt shows up as offset, not rotation.
+   - **ARF BLRO "crooked 6":**
+     - 6 rotation is 0.008°, so the crooked 6 does not show as rotation.
+     - It shows as 6 local offset 0.0037 R, beyond every genuine watch, together with ring scale 0.95%, 12 local offset 0.0102 R and the worst round marker 0.0046 R.
+5. **Marketplace candidates:**
+   - None is beyond every genuine watch on any marker offset or rotation.
+   - Ring scale on 2 of 4 candidates (0.17% and 0.25%, stable across scales) exceeds every genuine primary photo.
+   - Ring scale therefore responds to something other than resolution, perhaps lens or crop. It is not ready to be used.
+
+**Limits of this evidence:**
+- Only 4 replica controls and 4 candidates.
+- Downscaling a photo imitates a smaller dial but not phone optics, blur or JPEG.
+- The genuine reference uses one photo per watch (the largest dial).
+- Beyond all n genuine watches means a genuine watch would do so with probability about 1/(n+1): about 1.5% for n=64, but about 14% for n=6.
+
+No limits are derived.
