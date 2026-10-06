@@ -187,13 +187,13 @@ final class AutomaticDialOverlay {
     private static double wrap180(double d){while(d>180)d-=360;while(d<=-180)d+=360;return d;}
 
     private static Bitmap warpOutline(int w,int h,Mat canonicalToImage){
-        Bitmap ref=BakedDialOutline.bitmap();
+        Bitmap ref=Alpha92BakedDialOutline.bitmap();
         Mat src=new Mat(),dst=new Mat(),n=Mat.eye(3,3,CvType.CV_64F),m=null;
         try{
             Utils.bitmapToMat(ref,src);
-            double invR=1.0/BakedDialOutline.R;
-            n.put(0,0,invR,0,-BakedDialOutline.CX*invR,
-                    0,invR,-BakedDialOutline.CY*invR,
+            double invR=1.0/Alpha92BakedDialOutline.R;
+            n.put(0,0,invR,0,-Alpha92BakedDialOutline.CX*invR,
+                    0,invR,-Alpha92BakedDialOutline.CY*invR,
                     0,0,1);
             m=multiply(canonicalToImage,n);
             Imgproc.warpPerspective(src,dst,m,new Size(w,h),Imgproc.INTER_LINEAR,org.opencv.core.Core.BORDER_CONSTANT,new Scalar(0,0,0,0));
