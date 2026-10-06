@@ -48,22 +48,20 @@ final class Alpha91MinuteLatticeFitter {
     private static final double ROUT=Alpha92GmtMaster.MINUTE_TRACK_OUTER_R;
     private static final int[] EXCLUDED = {11,12,13,14,15,16,17,18,19,29,30,31};
 
+    /** Cubic B-spline sampler (research interpolant) over a crop around the coarse dial pose. */
     private static final class SampleImage {
-        final byte[] d; final int w,h;
-        SampleImage(Mat gray) {
+        final Alpha91SplineImage img;
+        SampleImage(Mat gray,Mat coarse) {
             if(gray==null||gray.empty()||gray.type()!=CvType.CV_8UC1)throw new IllegalArgumentException("8-bit gray expected");
-            Mat c=gray.isContinuous()?gray:gray.clone();
-            d=new byte[(int)c.total()]; c.get(0,0,d); w=gray.cols(); h=gray.rows();
-            if(c!=gray)c.release();
+            double minX=Double.POSITIVE_INFINITY,minY=minX,maxX=Double.NEGATIVE_INFINITY,maxY=maxX;
+            for(int k=0;k<72;k++){double t=2*Math.PI*k/72;Point p=project(coarse,1.25*Math.cos(t),1.25*Math.sin(t));
+                if(p==null)continue;minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);}
+            if(!Double.isFinite(minX)){minX=0;minY=0;maxX=gray.cols();maxY=gray.rows();}
+            img=new Alpha91SplineImage(gray,(int)Math.floor(minX)-8,(int)Math.floor(minY)-8,(int)Math.ceil(maxX)+9,(int)Math.ceil(maxY)+9);
         }
         double at(Mat H,double x,double y) {
             Point p=project(H,x,y);
-            if(p==null)return Double.NaN;
-            int x0=(int)Math.floor(p.x),y0=(int)Math.floor(p.y);
-            if(x0<0||y0<0||x0+1>=w||y0+1>=h)return Double.NaN;
-            double fx=p.x-x0,fy=p.y-y0; int i=y0*w+x0;
-            double a=d[i]&0xff,b=d[i+1]&0xff,c=d[i+w]&0xff,e=d[i+w+1]&0xff;
-            return (a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+e*fx)*fy;
+            return p==null?Double.NaN:img.at(p.x,p.y);
         }
     }
 
@@ -83,7 +81,7 @@ final class Alpha91MinuteLatticeFitter {
             return new Result("missing image or coarse pose",coarse==null?null:coarse.clone());
         Mat start=coarse.clone(),h=start.clone();
         try{
-            SampleImage smp=new SampleImage(gray);
+            SampleImage smp=new SampleImage(gray,start);
             for(int i=0;i<8;i++){
                 List<Obs> q=centroidObservations(smp,h);
                 boolean[] ok=gateCentroid(q);
@@ -121,11 +119,16 @@ final class Alpha91MinuteLatticeFitter {
             double rms=rms(kept);
             int sectors=sectorCount(last,lastOk);
             double roll=wrap180(clock12(h)-clock12(start));
-            boolean accepted=sectors>=8&&grossFraction<=0.10&&Double.isFinite(rms)&&rms<=1.25&&Math.abs(roll)<2.0;
+            // Same limits as the validated research gate (alpha91_overlay_registration.lattice_fit_gate):
+            // a wrong local fit of the 6-degree lattice leaves ~1 px median / ~2 px rms tick residuals,
+            // correct fits are ~0.1-0.25 px median.
+            boolean medOk=Double.isFinite(med)&&med<=0.30, rmsOk=Double.isFinite(rms)&&rms<=0.60;
+            boolean accepted=sectors>=8&&grossFraction<=0.10&&medOk&&rmsOk&&Math.abs(roll)<2.0;
             if(!accepted)return new Result(
                     sectors<8?"too few minute sectors":
                             grossFraction>0.10?"too many contaminated minute ticks":
-                            (!Double.isFinite(rms)||rms>1.25?"minute-lattice residual too high":"minute lattice slipped phase"),
+                            !medOk?"minute-lattice median residual too high (wrong local fit)":
+                            !rmsOk?"minute-lattice residual too high":"minute lattice slipped phase",
                     h.clone());
             return new Result(h.clone(),count(lastOk)-gross,sectors,rms,med,roll);
         }catch(Throwable t){
@@ -157,10 +160,10 @@ final class Alpha91MinuteLatticeFitter {
             double sw=0,sr=0,st=0,st2=0;
             for(int ir=0;ir<nr;ir++){
                 double rr=0.918+ir*0.002;
+                for(int z=0;z<nt;z++)row[z]=I[ir][z];
+                double bg=medianFinite(row);
                 for(int it=0;it<nt;it++){
                     double v=I[ir][it];if(!Double.isFinite(v))continue;
-                    for(int z=0;z<nt;z++)row[z]=I[ir][z];
-                    double bg=medianFinite(row);
                     double w=Math.max(0,v-bg-2*noise);if(w<=0)continue;
                     double tt=Math.toRadians(-2.5+it*0.1)*rmid;
                     sw+=w;sr+=w*rr;st+=w*tt;st2+=w*tt*tt;

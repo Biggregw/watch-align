@@ -3,25 +3,30 @@ package com.watchalign.mobile;
 import android.graphics.Bitmap;
 
 import org.opencv.android.Utils;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
-import org.opencv.core.Rect;
-import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 
 /**
  * Alpha94 measurement-only layer.
  *
- * The minute-lattice pose is already frozen before this class runs. Nothing measured
- * here can alter H. This first Android port intentionally measures only the reliable
- * research subset: round-marker centres, 6/9 baton centres + rotation, and a common
- * marker-ring translation/scale/rotation. There are no QC tolerances or verdicts.
+ * Port of android/research/alpha91_marker_measurement.py (round markers, 6/9 batons and the
+ * marker-ring decomposition; the 12 triangle stays research-only). The minute-lattice pose is
+ * already frozen before this class runs and is only read here: nothing measured can alter H.
+ * There are no QC tolerances or verdicts.
+ *
+ * Edges are the outer metal outline (marker footprint): the OUTERMOST significant bright-to-dark
+ * transition along each outline normal, found in two passes (wide search around the master, then a
+ * narrow re-search around the fitted outline) so the measurement follows the real marker. Rounds
+ * use a RANSAC + least-squares circle; batons four freely fitted sides (RANSAC line + TLS). A marker
+ * whose outline is crossed by a hand (inside band not bright / outside band not dial-dark), whose
+ * edge coverage is low, or whose fit is physically implausible is reported as OCCLUDED.
  */
 final class Alpha94MarkerMeasurement {
     static final int[] HOURS={1,2,4,5,6,7,8,9,10,11};
@@ -36,7 +41,9 @@ final class Alpha94MarkerMeasurement {
         double radialPx=Double.NaN,tangentialPx=Double.NaN;
         double rotationDeg=Double.NaN;
         double localOffsetPx=Double.NaN,localRadialPx=Double.NaN,localTangentialPx=Double.NaN;
+        /** fitScorePx = 1 - outline integrity (0 = perfectly clean outline); fitSupport = edge coverage. */
         double fitScorePx=Double.NaN,fitSupport=Double.NaN;
+        double radiusErrPx=Double.NaN;
         double canonDx=Double.NaN,canonDy=Double.NaN;
         Marker(int hour,String kind){this.hour=hour;this.kind=kind;}
     }
@@ -68,7 +75,7 @@ final class Alpha94MarkerMeasurement {
             int usableRounds=0;double maxLocal=Double.NaN;
             for(Marker m:markers)if("round".equals(m.kind)&&m.usable){
                 usableRounds++;
-                if(!Double.isFinite(maxLocal)||m.localOffsetPx>maxLocal)maxLocal=m.localOffsetPx;
+                if(Double.isFinite(m.localOffsetPx)&&(!Double.isFinite(maxLocal)||m.localOffsetPx>maxLocal))maxLocal=m.localOffsetPx;
             }
             s.append("\nRounds: ").append(usableRounds).append("/8 measured");
             if(Double.isFinite(maxLocal))s.append(String.format(Locale.US," · max local %.2f px",maxLocal));
@@ -94,314 +101,369 @@ final class Alpha94MarkerMeasurement {
         private static String markerLine(Marker m){
             if(m==null)return "marker unavailable";
             if(!m.usable)return m.hour+": OCCLUDED / INSUFFICIENT CLEAN EDGE";
-            return String.format(Locale.US,"%d: raw %.2f px · local %.2f · rot %+.2f°",
-                    m.hour,m.rawOffsetPx,m.localOffsetPx,m.rotationDeg);
+            String local=Double.isFinite(m.localOffsetPx)?String.format(Locale.US,"%.2f",m.localOffsetPx):"n/a";
+            return String.format(Locale.US,"%d: raw %.2f px · local %s · rot %+.2f°",
+                    m.hour,m.rawOffsetPx,local,m.rotationDeg);
         }
     }
 
-    private static final double SEARCH_R=0.040;
-    private static final double MIN_SEARCH_PX=4.0,MAX_SEARCH_PX=12.0;
-    private static final double SEARCH_ROT_DEG=5.0;
-    private static final double SUPPORT_DISTANCE_PX=1.5,DISTANCE_CLIP_PX=4.0;
-    private static final double MIN_SUPPORT=0.70,MAX_SCORE_PX=2.25;
-    private static final int MIN_COMPONENT_AREA=18;
+    // Same constants as the research layer.
+    private static final double WIDE=0.035,NARROW=0.012,STEP=0.0005;
+    private static final double MIN_INTEGRITY=0.80;
 
     private Alpha94MarkerMeasurement(){}
 
     static Report analyse(Bitmap watch,double[] H){
         List<Marker> out=new ArrayList<>();
-        double rpx=equivalentDialRadiusPx(H);
+        double rpx=pxPerR(H);
         if(watch==null||H==null||H.length<9||!(rpx>20)){
             for(int h:HOURS){Marker m=new Marker(h,isRound(h)?"round":"baton");m.reason="pose unavailable";out.add(m);}
             return new Report(out,new Ring(),rpx);
         }
-
         Mat rgba=new Mat(),gray=new Mat();
+        Sampler smp;
         try{
             Utils.bitmapToMat(watch,rgba);
             Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
-
-            for(int hour:HOURS){
-                String kind=isRound(hour)?"round":"baton";
-                Marker m=new Marker(hour,kind);
-                Point cp=masterPoint(hour);
-                List<Point> refImage=projectedOutline(hour,H);
-                if(refImage.size()<20){m.reason="projected master unavailable";out.add(m);continue;}
-                RefShape ref=RefShape.build(refImage,localScalePxPerR(H,cp),watch.getWidth(),watch.getHeight());
-                if(ref==null){m.reason="projected master degenerate";out.add(m);continue;}
-                CandidateBoundary cand=CandidateBoundary.build(gray,ref);
-                if(cand==null){m.reason="marker boundary not isolated";out.add(m);continue;}
-
-                LocalFit fit=fit(ref,cand,localScalePxPerR(H,cp),!isRound(hour));
-                if(fit==null||fit.hitLimit||fit.support<MIN_SUPPORT||fit.meanDistancePx>MAX_SCORE_PX||cand.componentBoxRatio>2.8){
-                    m.reason=fit==null?"local fit failed":"weak/occluded marker edge";
-                    if(fit!=null){m.fitScorePx=fit.meanDistancePx;m.fitSupport=fit.support;}
-                    out.add(m);continue;
-                }
-
-                double[] dc=imageShiftToCanonical(H,cp,fit.dx,fit.dy);
-                if(dc==null){m.reason="local pose Jacobian unavailable";out.add(m);continue;}
-                m.usable=true;m.fitScorePx=fit.meanDistancePx;m.fitSupport=fit.support;
-                m.rawDxPx=fit.dx;m.rawDyPx=fit.dy;m.rawOffsetPx=Math.hypot(fit.dx,fit.dy);
-                m.canonDx=dc[0];m.canonDy=dc[1];
-
-                double a=Math.toRadians(hour*30.0);
-                double erx=Math.sin(a),ery=-Math.cos(a),etx=Math.cos(a),ety=Math.sin(a);
-                m.radialPx=(dc[0]*erx+dc[1]*ery)*rpx;
-                m.tangentialPx=(dc[0]*etx+dc[1]*ety)*rpx;
-                m.rotationDeg=isRound(hour)?0.0:canonicalRotationFromImage(H,cp,erx,ery,fit.rotationDeg);
-                out.add(m);
-            }
-        }catch(Throwable ignored){
-            for(Marker m:out)if(!m.usable&&m.reason.isEmpty())m.reason="measurement failed";
+            smp=new Sampler(gray,H);
+        }catch(Throwable t){
+            for(int h:HOURS){Marker m=new Marker(h,isRound(h)?"round":"baton");m.reason="image unavailable";out.add(m);}
+            return new Report(out,new Ring(),rpx);
         }finally{
             gray.release();rgba.release();
         }
-
-        Ring ring=fitRing(out,H,rpx);
+        double tol=0.5/rpx;
+        List<double[]> centres=new ArrayList<>();
+        for(int hour:HOURS){
+            Marker m=new Marker(hour,isRound(hour)?"round":"baton");
+            double[] centre=null;
+            try{
+                centre=isRound(hour)?measureRound(smp,m,tol,rpx):measureBaton(smp,m,tol,rpx);
+            }catch(Throwable t){
+                m.usable=false;m.reason="measurement failed";
+            }
+            if(m.usable&&centre!=null){
+                double[] cm=masterPoint(hour);
+                double[] er=radial(hour),et=tangential(hour);
+                Point po=smp.project(centre[0],centre[1]),pm=smp.project(cm[0],cm[1]);
+                if(po==null||pm==null){m.usable=false;m.reason="projection unavailable";}
+                else{
+                    m.rawDxPx=po.x-pm.x;m.rawDyPx=po.y-pm.y;m.rawOffsetPx=Math.hypot(m.rawDxPx,m.rawDyPx);
+                    m.canonDx=centre[0]-cm[0];m.canonDy=centre[1]-cm[1];
+                    m.radialPx=(m.canonDx*er[0]+m.canonDy*er[1])*rpx;
+                    m.tangentialPx=(m.canonDx*et[0]+m.canonDy*et[1])*rpx;
+                }
+            }
+            out.add(m);centres.add(centre);
+        }
+        Ring ring=fitRing(out,centres,smp,rpx);
         return new Report(out,ring,rpx);
     }
 
-    private static Ring fitRing(List<Marker> markers,double[] H,double rpx){
-        Ring ring=new Ring();
-        List<Marker> ms=new ArrayList<>();
-        for(Marker m:markers)if(m.usable)ms.add(m);
-        if(ms.size()<5)return ring;
+    // ------------------------------------------------------------------ sampling (pose is read-only)
+    /** Canonical-coordinate sampler over the frozen pose (read-only) and a cubic B-spline image. */
+    private static final class Sampler {
+        final Alpha91SplineImage img;final double[] H;
+        Sampler(Mat gray,double[] H){
+            this.H=H.clone();
+            double minX=Double.POSITIVE_INFINITY,minY=minX,maxX=Double.NEGATIVE_INFINITY,maxY=maxX;
+            for(int k=0;k<72;k++){double t=2*Math.PI*k/72;Point p=project(1.1*Math.cos(t),1.1*Math.sin(t));
+                if(p==null)continue;minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);}
+            if(!Double.isFinite(minX)){minX=0;minY=0;maxX=gray.cols();maxY=gray.rows();}
+            img=new Alpha91SplineImage(gray,(int)Math.floor(minX)-4,(int)Math.floor(minY)-4,(int)Math.ceil(maxX)+5,(int)Math.ceil(maxY)+5);
+        }
+        Point project(double x,double y){
+            double q=H[6]*x+H[7]*y+H[8];if(!Double.isFinite(q)||Math.abs(q)<1e-12)return null;
+            return new Point((H[0]*x+H[1]*y+H[2])/q,(H[3]*x+H[4]*y+H[5])/q);
+        }
+        double at(double x,double y){Point p=project(x,y);return p==null?Double.NaN:img.at(p.x,p.y);}
+    }
 
-        double[] x={0,0,0,0};
-        double[] w=new double[ms.size()*2];
-        for(int i=0;i<w.length;i++)w[i]=1.0;
-        for(int iter=0;iter<10;iter++){
-            double[][] N=new double[4][4];double[] b=new double[4];
-            for(int i=0;i<ms.size();i++){
-                Marker m=ms.get(i);Point p=masterPoint(m.hour);
-                double[][] rows={{1,0,p.x,-p.y},{0,1,p.y,p.x}};
-                double[] obs={m.canonDx,m.canonDy};
-                for(int rr=0;rr<2;rr++){
-                    double ww=w[2*i+rr];
-                    for(int a=0;a<4;a++){
-                        b[a]+=rows[rr][a]*obs[rr]*ww;
-                        for(int c=0;c<4;c++)N[a][c]+=rows[rr][a]*rows[rr][c]*ww;
-                    }
+    /** Outermost significant bright-to-dark transition along +n within +/-span of p0.
+     *  Returns {x,y,strength} in canonical units, or null. */
+    private static double[] edgeOnNormal(Sampler s,double px,double py,double nx,double ny,double span){
+        int n=(int)Math.floor(2*span/STEP+1e-9)+1;
+        double[] v=new double[n];
+        for(int i=0;i<n;i++){double t=-span+i*STEP;v[i]=s.at(px+t*nx,py+t*ny);if(!Double.isFinite(v[i]))return null;}
+        double[] g=new double[n];
+        g[0]=-(v[1]-v[0]);g[n-1]=-(v[n-1]-v[n-2]);
+        for(int i=1;i<n-1;i++)g[i]=-(v[i+1]-v[i-1])*0.5;
+        double gmax=Double.NEGATIVE_INFINITY;for(double z:g)gmax=Math.max(gmax,z);
+        if(!(gmax>0))return null;
+        int best=-1;
+        for(int i=1;i<n-1;i++)if(g[i]>=g[i-1]&&g[i]>=g[i+1]&&g[i]>=0.4*gmax)best=i;
+        if(best<0)return null;
+        double den=g[best-1]-2*g[best]+g[best+1];
+        double o=den!=0?0.5*(g[best-1]-g[best+1])/den:0.0;
+        double t=-span+(best+o)*STEP;
+        return new double[]{px+t*nx,py+t*ny,g[best]};
+    }
+
+    private static List<double[]> strong(List<double[]> pts){
+        List<double[]> out=new ArrayList<>();if(pts.isEmpty())return out;
+        double[] s=new double[pts.size()];for(int i=0;i<s.length;i++)s[i]=pts.get(i)[2];
+        double med=median(s);for(double[] p:pts)if(p[2]>0.35*med)out.add(p);
+        return out;
+    }
+
+    /** Fraction of outline samples whose inside (lume) band is bright and outside band dial-dark. */
+    private static double outlineIntegrity(Sampler s,double[][] pts,double[][] normals,double rpx,double depth){
+        int n=pts.length;double[] in=new double[n],outside=new double[n];
+        for(int i=0;i<n;i++){
+            in[i]=s.at(pts[i][0]-depth*normals[i][0],pts[i][1]-depth*normals[i][1]);
+            outside[i]=s.at(pts[i][0]+2.5/rpx*normals[i][0],pts[i][1]+2.5/rpx*normals[i][1]);
+            if(!Double.isFinite(in[i])||!Double.isFinite(outside[i]))return 0.0;
+        }
+        double mi=median(in),mo=median(outside),c=mi-mo;if(!(c>0))return 0.0;
+        int ok=0;
+        for(int i=0;i<n;i++)if(in[i]-outside[i]>0.5*c&&outside[i]<mo+0.35*c&&in[i]>mi-0.5*c)ok++;
+        return ok/(double)n;
+    }
+
+    // ------------------------------------------------------------------ round markers
+    private static double[] measureRound(Sampler s,Marker m,double tol,double rpx){
+        double r0=Alpha92GmtMaster.ROUND_OUTER_R;
+        double[] c=masterPoint(m.hour);double cx=c[0],cy=c[1],radius=r0;
+        int rays=72;boolean[] inl=null;List<double[]> P=null;
+        for(double span:new double[]{WIDE,NARROW}){
+            List<double[]> raw=new ArrayList<>();
+            for(int k=0;k<rays;k++){
+                double t=Math.toRadians(5.0*k),nx=Math.cos(t),ny=Math.sin(t);
+                double[] e=edgeOnNormal(s,cx+radius*nx,cy+radius*ny,nx,ny,span);if(e!=null)raw.add(e);
+            }
+            P=strong(raw);
+            if(P.size()<12){m.reason="insufficient clean edge";m.fitSupport=P.size()/(double)rays;return null;}
+            double[] fit=ransacCircle(P,r0,tol);
+            if(fit==null){m.reason="no consistent circular outline";return null;}
+            cx=fit[0];cy=fit[1];radius=fit[2];
+            inl=new boolean[P.size()];int ni=0;
+            for(int i=0;i<P.size();i++){inl[i]=Math.abs(Math.hypot(P.get(i)[0]-cx,P.get(i)[1]-cy)-radius)<tol;if(inl[i])ni++;}
+            if(ni<6){m.reason="no consistent circular outline";return null;}
+        }
+        int ni=0;boolean[] oct=new boolean[8];
+        for(int i=0;i<P.size();i++)if(inl[i]){
+            ni++;double a=Math.toDegrees(Math.atan2(P.get(i)[1]-cy,P.get(i)[0]-cx));a=((a%360)+360)%360;
+            oct[Math.min(7,(int)(a/45.0))]=true;
+        }
+        int octants=0;for(boolean b:oct)if(b)octants++;
+        double cov=ni/(double)rays;
+        int np=180;double[][] op=new double[np][2],nr=new double[np][2];
+        for(int k=0;k<np;k++){double t=Math.toRadians(2.0*k);nr[k][0]=Math.cos(t);nr[k][1]=Math.sin(t);op[k][0]=cx+radius*nr[k][0];op[k][1]=cy+radius*nr[k][1];}
+        double integ=outlineIntegrity(s,op,nr,rpx,0.035);
+        m.fitSupport=cov;m.fitScorePx=1.0-integ;
+        if(integ<MIN_INTEGRITY){m.reason=String.format(Locale.US,"hand/occluder crosses outline (clean %.2f)",integ);return null;}
+        if(cov<0.60||octants<7){m.reason=String.format(Locale.US,"outline coverage %.2f, %d/8 octants",cov,octants);return null;}
+        if(Math.abs(radius-r0)>0.15*r0){m.reason="implausible radius";return null;}
+        m.usable=true;m.rotationDeg=0.0;m.radiusErrPx=(radius-r0)*rpx;
+        return new double[]{cx,cy};
+    }
+
+    /** RANSAC circle (best inlier count, ties broken by residual) + local optimisation:
+     *  refit on inliers, re-select inliers, repeat. Mirrors the research implementation. */
+    private static double[] ransacCircle(List<double[]> P,double r0,double tol){
+        Random rng=new Random(0);int n=P.size();int bestCount=-1;double bestRes=Double.POSITIVE_INFINITY;double[] best=null;
+        for(int it=0;it<400;it++){
+            int a=rng.nextInt(n),b=rng.nextInt(n),c=rng.nextInt(n);if(a==b||b==c||a==c)continue;
+            double[] f=circleLsq(new double[][]{P.get(a),P.get(b),P.get(c)});
+            if(f==null||!(f[2]>0.7*r0&&f[2]<1.3*r0))continue;
+            int cnt=0;double res=0;
+            for(double[] p:P){double e=Math.abs(Math.hypot(p[0]-f[0],p[1]-f[1])-f[2]);if(e<tol){cnt++;res+=e;}}
+            if(cnt>bestCount||(cnt==bestCount&&res<bestRes)){bestCount=cnt;bestRes=res;best=f;}
+        }
+        if(best==null||bestCount<6)return null;
+        for(int lo=0;lo<3;lo++){
+            List<double[]> in=new ArrayList<>();
+            for(double[] p:P)if(Math.abs(Math.hypot(p[0]-best[0],p[1]-best[1])-best[2])<tol)in.add(p);
+            if(in.size()<6)return null;
+            double[] f=circleLsq(in.toArray(new double[0][]));if(f==null)return null;best=f;
+        }
+        return best;
+    }
+
+    /** Algebraic circle: [2x 2y 1][cx cy c]^T = x^2+y^2. */
+    private static double[] circleLsq(double[][] P){
+        double[][] A=new double[3][3];double[] b=new double[3];
+        for(double[] p:P){double[] r={2*p[0],2*p[1],1};double y=p[0]*p[0]+p[1]*p[1];
+            for(int i=0;i<3;i++){b[i]+=r[i]*y;for(int j=0;j<3;j++)A[i][j]+=r[i]*r[j];}}
+        double[] x=solve(A,b);if(x==null)return null;
+        double rr=x[2]+x[0]*x[0]+x[1]*x[1];if(!(rr>0))return null;
+        return new double[]{x[0],x[1],Math.sqrt(rr)};
+    }
+
+    // ------------------------------------------------------------------ 6/9 batons
+    private static double[] measureBaton(Sampler s,Marker m,double tol,double rpx){
+        double[][] poly=batonPolygon(m.hour);int k=4;
+        double pcx=0,pcy=0;for(double[] p:poly){pcx+=p[0]/k;pcy+=p[1]/k;}
+        double[][] a=new double[k][],dm=new double[k][],nm=new double[k][];double[] L=new double[k];
+        for(int i=0;i<k;i++){
+            double[] p=poly[i],q=poly[(i+1)%k];L[i]=Math.hypot(q[0]-p[0],q[1]-p[1]);
+            a[i]=p;dm[i]=new double[]{(q[0]-p[0])/L[i],(q[1]-p[1])/L[i]};
+            double[] n={dm[i][1],-dm[i][0]};
+            if(n[0]*((p[0]+q[0])/2-pcx)+n[1]*((p[1]+q[1])/2-pcy)<0){n[0]=-n[0];n[1]=-n[1];}
+            nm[i]=n;
+        }
+        double[][] lp=new double[k][],ld=new double[k][];double[] cov=new double[k];
+        for(int i=0;i<k;i++){lp[i]=a[i].clone();ld[i]=dm[i].clone();}
+        for(double span:new double[]{WIDE,NARROW}){
+            double[][] np=new double[k][],nd=new double[k][];
+            for(int i=0;i<k;i++){
+                double[] n={ld[i][1],-ld[i][0]};if(n[0]*nm[i][0]+n[1]*nm[i][1]<0){n[0]=-n[0];n[1]=-n[1];}
+                List<double[]> raw=new ArrayList<>();
+                for(int j=0;j<21;j++){
+                    double u=0.12+j*(0.76/20.0);
+                    double qx=a[i][0]+u*L[i]*dm[i][0],qy=a[i][1]+u*L[i]*dm[i][1];
+                    double t=(qx-lp[i][0])*ld[i][0]+(qy-lp[i][1])*ld[i][1];
+                    double[] e=edgeOnNormal(s,lp[i][0]+t*ld[i][0],lp[i][1]+t*ld[i][1],n[0],n[1],span);
+                    if(e!=null)raw.add(e);
                 }
+                List<double[]> P=strong(raw);
+                double[][] fit=P.size()>=4?ransacLine(P,tol):null;
+                if(fit==null||fit[2][0]<5){np[i]=lp[i];nd[i]=ld[i];cov[i]=0.0;continue;}
+                double[] d=fit[1];if(d[0]*dm[i][0]+d[1]*dm[i][1]<0){d[0]=-d[0];d[1]=-d[1];}
+                np[i]=fit[0];nd[i]=d;cov[i]=fit[2][0]/21.0;
             }
-            double[] sol=solve4(N,b);if(sol==null)return ring;x=sol;
-            for(int i=0;i<ms.size();i++){
-                Marker m=ms.get(i);Point p=masterPoint(m.hour);
-                double mdx=x[0]+x[2]*p.x-x[3]*p.y;
-                double mdy=x[1]+x[2]*p.y+x[3]*p.x;
-                double rx=(m.canonDx-mdx)*rpx,ry=(m.canonDy-mdy)*rpx;
-                double mag=Math.hypot(rx,ry),hw=mag<=1.0?1.0:1.0/Math.max(mag,1e-9);
-                w[2*i]=w[2*i+1]=hw;
+            lp=np;ld=nd;
+        }
+        double[][] V=new double[k][];
+        for(int i=0;i<k;i++){V[i]=intersect(lp[(i+k-1)%k],ld[(i+k-1)%k],lp[i],ld[i]);if(V[i]==null){m.reason="degenerate baton fit";return null;}}
+        double[] centre=polygonCentroid(V);
+        double[] angErr=new double[k];double maxAng=0,maxOff=0,minCov=1;
+        for(int i=0;i<k;i++){
+            angErr[i]=wrap90(Math.toDegrees(Math.atan2(ld[i][1],ld[i][0])-Math.atan2(dm[i][1],dm[i][0])));
+            double off=(lp[i][0]-a[i][0])*nm[i][0]+(lp[i][1]-a[i][1])*nm[i][1];
+            maxAng=Math.max(maxAng,Math.abs(angErr[i]));maxOff=Math.max(maxOff,Math.abs(off));minCov=Math.min(minCov,cov[i]);
+        }
+        double minInteg=1.0;
+        for(int i=0;i<k;i++){
+            double[] p=V[i],q=V[(i+1)%k];double dx=q[0]-p[0],dy=q[1]-p[1],len=Math.hypot(dx,dy);
+            double[] n={dy/len,-dx/len};
+            if(n[0]*((p[0]+q[0])/2-centre[0])+n[1]*((p[1]+q[1])/2-centre[1])<0){n[0]=-n[0];n[1]=-n[1];}
+            double[][] seg=new double[30][],nn=new double[30][];
+            for(int j=0;j<30;j++){double u=0.15+j*(0.70/29.0);seg[j]=new double[]{p[0]+u*dx,p[1]+u*dy};nn[j]=n;}
+            minInteg=Math.min(minInteg,outlineIntegrity(s,seg,nn,rpx,0.03));
+        }
+        m.fitSupport=minCov;m.fitScorePx=1.0-minInteg;
+        if(minInteg<MIN_INTEGRITY){m.reason=String.format(Locale.US,"hand/occluder crosses outline (clean %.2f)",minInteg);return null;}
+        if(minCov<0.50){m.reason=String.format(Locale.US,"side edge coverage %.2f",minCov);return null;}
+        if(maxAng>12||maxOff>0.04){m.reason="implausible side fit";return null;}
+        double[] er=radial(m.hour);double rot=0;int nl=0;
+        for(int i=0;i<k;i++)if(Math.abs(dm[i][0]*er[0]+dm[i][1]*er[1])>0.7){rot+=angErr[i];nl++;}
+        m.usable=true;m.rotationDeg=nl==0?Double.NaN:rot/nl;
+        return centre;
+    }
+
+    /** Exhaustive two-point line search (best inlier count, ties broken by residual) + TLS with
+     *  local optimisation. Returns {centroid, unit direction, {inlierCount}} or null. Mirrors research. */
+    private static double[][] ransacLine(List<double[]> P,double tol){
+        int n=P.size();int bestCount=-1;double bestRes=Double.POSITIVE_INFINITY;double[] bp=null,bn=null;
+        for(int i=0;i<n;i++)for(int j=i+1;j<n;j++){
+            double dx=P.get(j)[0]-P.get(i)[0],dy=P.get(j)[1]-P.get(i)[1],L=Math.hypot(dx,dy);if(L<1e-9)continue;
+            double nx=-dy/L,ny=dx/L;int c=0;double res=0;
+            for(double[] q:P){double e=Math.abs((q[0]-P.get(i)[0])*nx+(q[1]-P.get(i)[1])*ny);if(e<tol){c++;res+=e;}}
+            if(c>bestCount||(c==bestCount&&res<bestRes)){bestCount=c;bestRes=res;bp=P.get(i);bn=new double[]{nx,ny};}
+        }
+        if(bp==null)return null;
+        double[] c0=bp,nn=bn;double mx=0,my=0,th=0;int cnt=0;
+        for(int lo=0;lo<4;lo++){
+            mx=0;my=0;cnt=0;
+            for(double[] q:P)if(Math.abs((q[0]-c0[0])*nn[0]+(q[1]-c0[1])*nn[1])<tol){mx+=q[0];my+=q[1];cnt++;}
+            if(cnt<2)return null;mx/=cnt;my/=cnt;double sxx=0,sxy=0,syy=0;
+            for(double[] q:P)if(Math.abs((q[0]-c0[0])*nn[0]+(q[1]-c0[1])*nn[1])<tol){double dx=q[0]-mx,dy=q[1]-my;sxx+=dx*dx;sxy+=dx*dy;syy+=dy*dy;}
+            th=0.5*Math.atan2(2*sxy,sxx-syy);
+            c0=new double[]{mx,my};nn=new double[]{-Math.sin(th),Math.cos(th)};
+        }
+        int fin=0;for(double[] q:P)if(Math.abs((q[0]-mx)*nn[0]+(q[1]-my)*nn[1])<tol)fin++;
+        return new double[][]{{mx,my},{Math.cos(th),Math.sin(th)},{fin}};
+    }
+
+    private static double[] intersect(double[] p1,double[] d1,double[] p2,double[] d2){
+        double det=d1[0]*(-d2[1])-(-d2[0])*d1[1];if(Math.abs(det)<1e-12)return null;
+        double rx=p2[0]-p1[0],ry=p2[1]-p1[1];
+        double t=(rx*(-d2[1])-(-d2[0])*ry)/det;
+        return new double[]{p1[0]+t*d1[0],p1[1]+t*d1[1]};
+    }
+
+    private static double[] polygonCentroid(double[][] V){
+        double A=0,cx=0,cy=0;int n=V.length;
+        for(int i=0;i<n;i++){double[] p=V[i],q=V[(i+1)%n];double cr=p[0]*q[1]-q[0]*p[1];A+=cr;cx+=(p[0]+q[0])*cr;cy+=(p[1]+q[1])*cr;}
+        A*=0.5;return new double[]{cx/(6*A),cy/(6*A)};
+    }
+
+    // ------------------------------------------------------------------ ring decomposition
+    private static Ring fitRing(List<Marker> markers,List<double[]> centres,Sampler s,double rpx){
+        Ring ring=new Ring();
+        List<Integer> idx=new ArrayList<>();
+        for(int i=0;i<markers.size();i++)if(markers.get(i).usable&&centres.get(i)!=null)idx.add(i);
+        if(idx.size()<5)return ring;
+        int n=idx.size();double[][] A=new double[2*n][4];double[] b=new double[2*n];double[][] P=new double[n][];
+        for(int k=0;k<n;k++){
+            Marker m=markers.get(idx.get(k));double[] p=masterPoint(m.hour);P[k]=p;
+            A[2*k]=new double[]{1,0,p[0],-p[1]};A[2*k+1]=new double[]{0,1,p[1],p[0]};
+            b[2*k]=m.canonDx;b[2*k+1]=m.canonDy;
+        }
+        double[] w=new double[2*n];Arrays.fill(w,1.0);double[] x=null;
+        for(int it=0;it<10;it++){
+            double[][] N=new double[4][4];double[] r=new double[4];
+            for(int i=0;i<2*n;i++)for(int a=0;a<4;a++){r[a]+=A[i][a]*b[i]*w[i];for(int c=0;c<4;c++)N[a][c]+=A[i][a]*A[i][c]*w[i];}
+            x=solve(N,r);if(x==null)return ring;
+            for(int i=0;i<2*n;i++){
+                double res=(b[i]-(A[i][0]*x[0]+A[i][1]*x[1]+A[i][2]*x[2]+A[i][3]*x[3]))*rpx;
+                w[i]=Math.abs(res)<=1.0?1.0:1.0/Math.max(Math.abs(res),1e-9);   // Huber, 1 px
             }
         }
-
-        ring.usable=true;ring.n=ms.size();ring.scalePct=100*x[2];ring.rotationDeg=Math.toDegrees(x[3]);
-        double[][] J=jacobian(H,new Point(0,0));
-        if(J!=null){
-            ring.shiftXPx=J[0][0]*x[0]+J[0][1]*x[1];
-            ring.shiftYPx=J[1][0]*x[0]+J[1][1]*x[1];
-            ring.shiftPx=Math.hypot(ring.shiftXPx,ring.shiftYPx);
-        }
-
-        for(Marker m:ms){
-            Point p=masterPoint(m.hour);
-            double mdx=x[0]+x[2]*p.x-x[3]*p.y;
-            double mdy=x[1]+x[2]*p.y+x[3]*p.x;
+        Point t1=s.project(x[0],x[1]),t0=s.project(0,0);
+        ring.usable=true;ring.n=n;ring.scalePct=100*x[2];ring.rotationDeg=Math.toDegrees(x[3]);
+        if(t1!=null&&t0!=null){ring.shiftXPx=t1.x-t0.x;ring.shiftYPx=t1.y-t0.y;ring.shiftPx=Math.hypot(ring.shiftXPx,ring.shiftYPx);}
+        for(int k=0;k<n;k++){
+            Marker m=markers.get(idx.get(k));double[] p=P[k];
+            double mdx=x[0]+x[2]*p[0]-x[3]*p[1],mdy=x[1]+x[2]*p[1]+x[3]*p[0];
             double lx=m.canonDx-mdx,ly=m.canonDy-mdy;
-            double a=Math.toRadians(m.hour*30.0);
-            double erx=Math.sin(a),ery=-Math.cos(a),etx=Math.cos(a),ety=Math.sin(a);
-            m.localOffsetPx=Math.hypot(lx,ly)*rpx;
-            m.localRadialPx=(lx*erx+ly*ery)*rpx;
-            m.localTangentialPx=(lx*etx+ly*ety)*rpx;
+            Point q=s.project(p[0]+lx,p[1]+ly),q0=s.project(p[0],p[1]);
+            double[] er=radial(m.hour),et=tangential(m.hour);
+            m.localOffsetPx=(q!=null&&q0!=null)?Math.hypot(q.x-q0.x,q.y-q0.y):Math.hypot(lx,ly)*rpx;
+            m.localRadialPx=(lx*er[0]+ly*er[1])*rpx;
+            m.localTangentialPx=(lx*et[0]+ly*et[1])*rpx;
         }
         return ring;
     }
 
-    private static final class RefShape {
-        final int x0,y0,w,h;final double cx,cy,major;final double[][] pts;
-        RefShape(int x0,int y0,int w,int h,double cx,double cy,double major,double[][] pts){
-            this.x0=x0;this.y0=y0;this.w=w;this.h=h;this.cx=cx;this.cy=cy;this.major=major;this.pts=pts;
-        }
-        static RefShape build(List<Point> src,double scale,int imageW,int imageH){
-            if(src==null||src.size()<12)return null;
-            double minX=Double.POSITIVE_INFINITY,maxX=Double.NEGATIVE_INFINITY,minY=Double.POSITIVE_INFINITY,maxY=Double.NEGATIVE_INFINITY,cx=0,cy=0;
-            for(Point p:src){minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);cx+=p.x;cy+=p.y;}
-            cx/=src.size();cy/=src.size();
-            int pad=Math.max(6,(int)Math.round(0.05*scale));
-            int x0=clamp((int)Math.floor(minX)-pad,0,imageW-1),y0=clamp((int)Math.floor(minY)-pad,0,imageH-1);
-            int x1=clamp((int)Math.ceil(maxX)+pad+1,x0+1,imageW),y1=clamp((int)Math.ceil(maxY)+pad+1,y0+1,imageH);
-            double major=0;for(Point p:src)major=Math.max(major,Math.hypot(p.x-cx,p.y-cy));
-            double[][] pts=new double[src.size()][2];
-            for(int i=0;i<src.size();i++){pts[i][0]=src.get(i).x-x0;pts[i][1]=src.get(i).y-y0;}
-            return new RefShape(x0,y0,x1-x0,y1-y0,cx-x0,cy-y0,major,pts);
-        }
+    // ------------------------------------------------------------------ geometry helpers
+    private static boolean isRound(int h){for(int q:ROUND_HOURS)if(q==h)return true;return false;}
+    private static double[] radial(int hour){double a=Math.toRadians(hour*30.0);return new double[]{Math.sin(a),-Math.cos(a)};}
+    private static double[] tangential(int hour){double a=Math.toRadians(hour*30.0);return new double[]{Math.cos(a),Math.sin(a)};}
+    private static double[] masterPoint(int hour){
+        double r=isRound(hour)?Alpha92GmtMaster.ROUND_CENTER_R:Alpha92GmtMaster.BATON_CENTER_R;
+        double[] er=radial(hour);return new double[]{er[0]*r,er[1]*r};
     }
-
-    private static final class CandidateBoundary {
-        final int w,h;final float[] distance;final double componentBoxRatio;
-        CandidateBoundary(int w,int h,float[] d,double boxRatio){this.w=w;this.h=h;distance=d;componentBoxRatio=boxRatio;}
-        static CandidateBoundary build(Mat gray,RefShape ref){
-            Mat crop=new Mat(),blur=new Mat(),binary=new Mat(),opened=new Mat(),labels=new Mat(),stats=new Mat(),centroids=new Mat();
-            Mat component=new Mat(),boundary=new Mat(),inverse=new Mat(),dist=new Mat(),kernel=null;
-            try{
-                crop=new Mat(gray,new Rect(ref.x0,ref.y0,ref.w,ref.h));
-                Imgproc.GaussianBlur(crop,blur,new Size(3,3),0.8);
-                Imgproc.threshold(blur,binary,0,255,Imgproc.THRESH_BINARY|Imgproc.THRESH_OTSU);
-                kernel=Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE,new Size(3,3));
-                Imgproc.morphologyEx(binary,opened,Imgproc.MORPH_OPEN,kernel);
-                int count=Imgproc.connectedComponentsWithStats(opened,labels,stats,centroids,8,CvType.CV_32S);
-                int best=-1;double bestD=Double.POSITIVE_INFINITY;
-                for(int i=1;i<count;i++){
-                    double area=stats.get(i,Imgproc.CC_STAT_AREA)[0];if(area<MIN_COMPONENT_AREA)continue;
-                    double x=centroids.get(i,0)[0],y=centroids.get(i,1)[0];
-                    double d=Math.hypot(x-ref.cx,y-ref.cy);if(d<bestD){bestD=d;best=i;}
-                }
-                if(best<0||bestD>0.14*Math.max(ref.w,ref.h))return null;
-                double bw=stats.get(best,Imgproc.CC_STAT_WIDTH)[0],bh=stats.get(best,Imgproc.CC_STAT_HEIGHT)[0];
-                double refArea=Math.max(1.0,(2*ref.major)*(2*ref.major));
-                double boxRatio=(bw*bh)/refArea;
-                Core.compare(labels,new org.opencv.core.Scalar(best),component,Core.CMP_EQ);
-                Imgproc.morphologyEx(component,boundary,Imgproc.MORPH_GRADIENT,kernel);
-                Core.bitwise_not(boundary,inverse);Imgproc.distanceTransform(inverse,dist,Imgproc.DIST_L2,3);
-                float[] values=new float[ref.w*ref.h];dist.get(0,0,values);
-                return new CandidateBoundary(ref.w,ref.h,values,boxRatio);
-            }finally{
-                if(kernel!=null)kernel.release();dist.release();inverse.release();boundary.release();component.release();
-                centroids.release();stats.release();labels.release();opened.release();binary.release();blur.release();crop.release();
-            }
-        }
-    }
-
-    private static final class LocalFit {
-        final double dx,dy,rotationDeg,meanDistancePx,support;final boolean hitLimit;
-        LocalFit(double dx,double dy,double rot,double score,double support,boolean hit){this.dx=dx;this.dy=dy;rotationDeg=rot;meanDistancePx=score;this.support=support;hitLimit=hit;}
-    }
-    private static final class Score {final double mean,support,obj;Score(double m,double s){mean=m;support=s;obj=m-.35*s;}}
-
-    private static LocalFit fit(RefShape ref,CandidateBoundary c,double scale,boolean rotation){
-        double maxShift=clampD(SEARCH_R*scale,MIN_SEARCH_PX,MAX_SEARCH_PX);
-        double bestObj=Double.POSITIVE_INFINITY,bx=0,by=0,br=0,bm=Double.POSITIVE_INFINITY,bs=0;
-        for(double dx=-maxShift;dx<=maxShift+1e-9;dx+=1.0)for(double dy=-maxShift;dy<=maxShift+1e-9;dy+=1.0){
-            if(rotation){
-                for(double r=-SEARCH_ROT_DEG;r<=SEARCH_ROT_DEG+1e-9;r+=1.0){Score s=score(ref,c,dx,dy,r);if(s.obj<bestObj){bestObj=s.obj;bx=dx;by=dy;br=r;bm=s.mean;bs=s.support;}}
-            }else{Score s=score(ref,c,dx,dy,0);if(s.obj<bestObj){bestObj=s.obj;bx=dx;by=dy;br=0;bm=s.mean;bs=s.support;}}
-        }
-        double cx=bx,cy=by,cr=br;bestObj=Double.POSITIVE_INFINITY;
-        for(double dx=cx-1;dx<=cx+1+1e-9;dx+=.5)for(double dy=cy-1;dy<=cy+1+1e-9;dy+=.5){
-            if(rotation){
-                for(double r=cr-1;r<=cr+1+1e-9;r+=.25){Score s=score(ref,c,dx,dy,r);if(s.obj<bestObj){bestObj=s.obj;bx=dx;by=dy;br=r;bm=s.mean;bs=s.support;}}
-            }else{Score s=score(ref,c,dx,dy,0);if(s.obj<bestObj){bestObj=s.obj;bx=dx;by=dy;br=0;bm=s.mean;bs=s.support;}}
-        }
-        boolean hit=Math.abs(bx)>=maxShift-.25||Math.abs(by)>=maxShift-.25||(rotation&&Math.abs(br)>=SEARCH_ROT_DEG+.75);
-        return new LocalFit(bx,by,br,bm,bs,hit);
-    }
-
-    private static Score score(RefShape ref,CandidateBoundary c,double dx,double dy,double rot){
-        double a=Math.toRadians(rot),ca=Math.cos(a),sa=Math.sin(a),sum=0;int supported=0,n=0;
-        for(double[] p:ref.pts){
-            double qx=p[0]-ref.cx,qy=p[1]-ref.cy;
-            double x=ref.cx+ca*qx-sa*qy+dx,y=ref.cy+sa*qx+ca*qy+dy;
-            double d=sample(c,x,y);if(!Double.isFinite(d))d=DISTANCE_CLIP_PX;d=Math.min(DISTANCE_CLIP_PX,d);
-            sum+=d;if(d<=SUPPORT_DISTANCE_PX)supported++;n++;
-        }
-        return n==0?new Score(DISTANCE_CLIP_PX,0):new Score(sum/n,supported/(double)n);
-    }
-
-    private static double sample(CandidateBoundary c,double x,double y){
-        if(x<0||y<0||x>=c.w-1||y>=c.h-1)return DISTANCE_CLIP_PX;
-        int x0=(int)Math.floor(x),y0=(int)Math.floor(y);double fx=x-x0,fy=y-y0;int i=y0*c.w+x0;
-        return c.distance[i]*(1-fx)*(1-fy)+c.distance[i+1]*fx*(1-fy)+c.distance[i+c.w]*(1-fx)*fy+c.distance[i+c.w+1]*fx*fy;
-    }
-
-    private static List<Point> projectedOutline(int hour,double[] H){
-        List<Point> out=new ArrayList<>();
-        if(isRound(hour)){
-            Point c=masterPoint(hour);
-            for(int i=0;i<96;i++){
-                double t=2*Math.PI*i/96.0;
-                Point p=project(H,c.x+Alpha92GmtMaster.ROUND_OUTER_R*Math.cos(t),c.y+Alpha92GmtMaster.ROUND_OUTER_R*Math.sin(t));
-                if(p!=null)out.add(p);
-            }
-        }else{
-            Point[] v=batonVertices(hour);
-            for(int k=0;k<4;k++)for(int i=0;i<32;i++){
-                double q=i/31.0;
-                Point p=project(H,v[k].x+q*(v[(k+1)%4].x-v[k].x),v[k].y+q*(v[(k+1)%4].y-v[k].y));
-                if(p!=null)out.add(p);
-            }
-        }
-        return out;
-    }
-
-    private static Point[] batonVertices(int hour){
-        double a=Alpha92GmtMaster.angleForHour(hour),ca=Math.cos(a),sa=Math.sin(a),tx=-sa,ty=ca;
-        double cr=Alpha92GmtMaster.BATON_CENTER_R,rh=Alpha92GmtMaster.BATON_RADIAL_HALF,th=Alpha92GmtMaster.BATON_TANGENTIAL_HALF;
-        Point[] v=new Point[4];
-        for(int k=0;k<4;k++){
-            double rr=cr+((k==0||k==1)?rh:-rh),tt=((k==0||k==3)?-th:th);
-            v[k]=new Point(rr*ca+tt*tx,rr*sa+tt*ty);
-        }
+    /** Research marker_polygon ordering: (s,u) = (-1,-1),(1,-1),(1,1),(-1,1) along (radial, tangential). */
+    private static double[][] batonPolygon(int hour){
+        double[] er=radial(hour),et=tangential(hour);double c=Alpha92GmtMaster.BATON_CENTER_R;
+        double rh=Alpha92GmtMaster.BATON_RADIAL_HALF,th=Alpha92GmtMaster.BATON_TANGENTIAL_HALF;
+        int[][] su={{-1,-1},{1,-1},{1,1},{-1,1}};double[][] v=new double[4][];
+        for(int i=0;i<4;i++)v[i]=new double[]{c*er[0]+su[i][0]*rh*er[0]+su[i][1]*th*et[0],c*er[1]+su[i][0]*rh*er[1]+su[i][1]*th*et[1]};
         return v;
     }
-
-    private static Point masterPoint(int hour){
-        double a=Math.toRadians(hour*30.0),r=isRound(hour)?Alpha92GmtMaster.ROUND_CENTER_R:Alpha92GmtMaster.BATON_CENTER_R;
-        return new Point(Math.sin(a)*r,-Math.cos(a)*r);
+    private static double pxPerR(double[] H){
+        if(H==null||H.length<9)return Double.NaN;
+        double z0=H[8],z1=H[6]+H[8];if(Math.abs(z0)<1e-12||Math.abs(z1)<1e-12)return Double.NaN;
+        double x0=H[2]/z0,y0=H[5]/z0,x1=(H[0]+H[2])/z1,y1=(H[3]+H[5])/z1;
+        return Math.hypot(x1-x0,y1-y0);
     }
-    private static boolean isRound(int h){for(int q:ROUND_HOURS)if(q==h)return true;return false;}
-
-    private static double[] imageShiftToCanonical(double[] H,Point p,double dx,double dy){
-        double[][] J=jacobian(H,p);if(J==null)return null;double det=J[0][0]*J[1][1]-J[0][1]*J[1][0];if(Math.abs(det)<1e-9)return null;
-        return new double[]{( J[1][1]*dx-J[0][1]*dy)/det,(-J[1][0]*dx+J[0][0]*dy)/det};
+    private static double wrap90(double d){while(d>90)d-=180;while(d<=-90)d+=180;return d;}
+    private static double median(double[] a){
+        double[] b=Arrays.stream(a).filter(Double::isFinite).toArray();if(b.length==0)return Double.NaN;Arrays.sort(b);
+        return b.length%2==1?b[b.length/2]:0.5*(b[b.length/2-1]+b[b.length/2]);
     }
-
-    private static double canonicalRotationFromImage(double[] H,Point p,double erx,double ery,double imageDeg){
-        double[][] J=jacobian(H,p);if(J==null)return imageDeg;
-        double base=Math.atan2(J[1][0]*erx+J[1][1]*ery,J[0][0]*erx+J[0][1]*ery);
-        double q=Math.toRadians(1.0),rx=Math.cos(q)*erx-Math.sin(q)*ery,ry=Math.sin(q)*erx+Math.cos(q)*ery;
-        double one=Math.atan2(J[1][0]*rx+J[1][1]*ry,J[0][0]*rx+J[0][1]*ry);
-        double response=wrapAxis(Math.toDegrees(one-base));if(Math.abs(response)<0.1)return imageDeg;
-        return imageDeg/response;
-    }
-
-    private static double[][] jacobian(double[] H,Point p){
-        double d=1e-4;Point c=project(H,p.x,p.y),x=project(H,p.x+d,p.y),y=project(H,p.x,p.y+d);
-        if(c==null||x==null||y==null)return null;
-        return new double[][]{{(x.x-c.x)/d,(y.x-c.x)/d},{(x.y-c.y)/d,(y.y-c.y)/d}};
-    }
-
-    private static double localScalePxPerR(double[] H,Point p){
-        double[][] J=jacobian(H,p);if(J==null)return Double.NaN;
-        double sx=Math.hypot(J[0][0],J[1][0]),sy=Math.hypot(J[0][1],J[1][1]);
-        return Math.sqrt(Math.max(1e-9,sx*sy));
-    }
-
-    private static double equivalentDialRadiusPx(double[] H){
-        if(H==null||H.length<9)return Double.NaN;int n=120;Point[] p=new Point[n];
-        double area=0;for(int i=0;i<n;i++){double t=2*Math.PI*i/n;p[i]=project(H,Math.cos(t),Math.sin(t));if(p[i]==null)return Double.NaN;}
-        for(int i=0;i<n;i++){Point q=p[(i+1)%n];area+=p[i].x*q.y-q.x*p[i].y;}
-        area=Math.abs(area)*.5;return Math.sqrt(area/Math.PI);
-    }
-
-    private static Point project(double[] h,double x,double y){
-        double w=h[6]*x+h[7]*y+h[8];if(!Double.isFinite(w)||Math.abs(w)<1e-9)return null;
-        double px=(h[0]*x+h[1]*y+h[2])/w,py=(h[3]*x+h[4]*y+h[5])/w;
-        return Double.isFinite(px)&&Double.isFinite(py)?new Point(px,py):null;
-    }
-
-    private static double[] solve4(double[][] A,double[] b){
-        double[][] m=new double[4][5];for(int i=0;i<4;i++){System.arraycopy(A[i],0,m[i],0,4);m[i][4]=b[i];}
-        for(int col=0;col<4;col++){
-            int piv=col;for(int r=col+1;r<4;r++)if(Math.abs(m[r][col])>Math.abs(m[piv][col]))piv=r;
-            if(Math.abs(m[piv][col])<1e-12)return null;double[] tmp=m[col];m[col]=m[piv];m[piv]=tmp;
-            double d=m[col][col];for(int c=col;c<5;c++)m[col][c]/=d;
-            for(int r=0;r<4;r++)if(r!=col){double f=m[r][col];for(int c=col;c<5;c++)m[r][c]-=f*m[col][c];}
+    private static double[] solve(double[][] A,double[] b){
+        int n=b.length;double[][] m=new double[n][n+1];
+        for(int i=0;i<n;i++){System.arraycopy(A[i],0,m[i],0,n);m[i][n]=b[i];}
+        for(int col=0;col<n;col++){
+            int piv=col;for(int r=col+1;r<n;r++)if(Math.abs(m[r][col])>Math.abs(m[piv][col]))piv=r;
+            if(Math.abs(m[piv][col])<1e-15)return null;double[] tmp=m[col];m[col]=m[piv];m[piv]=tmp;
+            double d=m[col][col];for(int c=col;c<=n;c++)m[col][c]/=d;
+            for(int r=0;r<n;r++)if(r!=col){double f=m[r][col];if(f!=0)for(int c=col;c<=n;c++)m[r][c]-=f*m[col][c];}
         }
-        return new double[]{m[0][4],m[1][4],m[2][4],m[3][4]};
+        double[] x=new double[n];for(int i=0;i<n;i++){x[i]=m[i][n];if(!Double.isFinite(x[i]))return null;}
+        return x;
     }
-
-    private static double wrapAxis(double d){while(d>90)d-=180;while(d<=-90)d+=180;return d;}
-    private static int clamp(int v,int lo,int hi){return Math.max(lo,Math.min(hi,v));}
-    private static double clampD(double v,double lo,double hi){return Math.max(lo,Math.min(hi,v));}
 }

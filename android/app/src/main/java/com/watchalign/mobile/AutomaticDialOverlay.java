@@ -74,7 +74,12 @@ final class AutomaticDialOverlay {
                 phase=GmtTwelveRecoveryAnalyzer.analyse(bgr,edge.cx,edge.cy,edge.meanRadius(),why);
             }
             boolean phaseUsed=phase!=null&&phase.valid&&Double.isFinite(phase.trackRollClockDeg);
-            double phaseDeg=phaseUsed?phase.trackRollClockDeg:0.0;
+            // The minute lattice repeats every 6 degrees, so without an independent 12 direction the
+            // refined pose can lock onto a neighbouring branch and still fit the ticks perfectly
+            // (reproduced on genuine POOL_GEN_HO_02: image-up seed -> accepted overlay 12 deg / ~28 px off).
+            // Fail closed rather than assume canonical 12 is image-up.
+            if(!phaseUsed)return new Result("overlay unavailable: 12 direction could not be established (minute-lattice branch unknown)");
+            double phaseDeg=phase.trackRollClockDeg;
             double pr=Math.toRadians(phaseDeg);
             h0=ellipsePose(edge,Math.sin(pr),-Math.cos(pr));
             if(h0==null)return new Result("ellipse pose could not be constructed");
@@ -98,13 +103,11 @@ final class AutomaticDialOverlay {
 
             h=lattice.homography.clone();
 
-            // Explicit 12-branch guard where the local minute frame was available.
-            if(phaseUsed){
-                double finalPhase=Alpha91MinuteLatticeFitter.clock12Deg(h);
-                double d=wrap180(finalPhase-phaseDeg);
-                if(!Double.isFinite(d)||Math.abs(d)>=2.0)
-                    return new Result("overlay unavailable: 12/minute-lattice phase check failed");
-            }
+            // Explicit 12-branch guard: the refined lattice must stay on the branch the 12 cue selected.
+            double finalPhase=Alpha91MinuteLatticeFitter.clock12Deg(h);
+            double d=wrap180(finalPhase-phaseDeg);
+            if(!Double.isFinite(d)||Math.abs(d)>=2.0)
+                return new Result("overlay unavailable: 12/minute-lattice phase check failed");
 
             String guard=physicalGuardReason(h,edge);
             if(guard!=null)return new Result("overlay unavailable: "+guard);
