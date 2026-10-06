@@ -6,34 +6,35 @@ package com.watchalign.mobile;
  * This is a Watch Align calibrated inspection master, not Rolex factory CAD.
  */
 final class Gmt126710BlnrMaster {
-    static final String ID = "126710BLNR-measured-master-2026-09-26";
+    static final String ID = "126710BLNR-bare-dial-master-2026-10-06";
 
-    // Geometry measured from the official front-on m126710blnr-0002 image and
-    // cross-checked against an independent genuine-watch photo.
+    // Alpha91 geometry measured from the supplied bare genuine GMT dial after first
+    // rectifying that reference onto the exact 6-degree minute lattice and circular
+    // dial edge. The research proof is recorded in alpha91-overlay-registration-2026-10-06.md.
     static final double DIAL_EDGE_R = 1.000;
 
     // Normal minor-minute marks. MINUTE_TRACK_R is their measured inner end.
     // The common outer annulus is also useful for detecting the hour-position
     // minute marks without looking inward at the applied hour marker itself.
-    static final double MINUTE_TRACK_R = 0.925;
-    static final double MINUTE_TRACK_OUTER_R = 0.972;
+    static final double MINUTE_TRACK_R = 0.9325;
+    static final double MINUTE_TRACK_OUTER_R = 0.9803;
     static final double HOUR_TICK_SAMPLE_R = 0.960;
 
-    static final double MARKER_CENTER_R = 0.758;
-    static final double ROUND_CENTER_R = 0.816;
+    static final double MARKER_CENTER_R = 0.7551;
+    static final double ROUND_CENTER_R = 0.8128;
 
-    static final double ROUND_OUTER_R = 0.088;
+    static final double ROUND_OUTER_R = 0.0915;
     static final double ROUND_LUME_R = 0.066;
 
-    static final double BATON_RADIAL_HALF = 0.150;
-    static final double BATON_TANGENTIAL_HALF = 0.060;
+    static final double BATON_RADIAL_HALF = 0.1525;
+    static final double BATON_TANGENTIAL_HALF = 0.0594;
     static final double BATON_LUME_RADIAL_HALF = 0.128;
     static final double BATON_LUME_TANGENTIAL_HALF = 0.038;
 
-    static final double TRI_CENTER_R = 0.750;
-    static final double TRI_BASE_OUTWARD = 0.152;
-    static final double TRI_APEX_INWARD = 0.150;
-    static final double TRI_HALF_BASE = 0.123;
+    static final double TRI_CENTER_R = 0.7475;
+    static final double TRI_BASE_OUTWARD = 0.1550;
+    static final double TRI_APEX_INWARD = 0.1550;
+    static final double TRI_HALF_BASE = 0.12375;
     static final double TRI_LUME_CENTER_R = 0.750;
     static final double TRI_LUME_BASE_OUTWARD = 0.130;
     static final double TRI_LUME_APEX_INWARD = 0.092;
