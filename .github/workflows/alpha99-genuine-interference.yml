@@ -31,7 +31,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - run: python -m pip install -q requests
+      - run: python -m pip install -q requests opencv-python-headless
 
       - uses: actions/setup-java@v4
         with:
@@ -74,3 +74,27 @@ jobs:
         run: |
           cat "$OUT/interference_log.txt" || true
           cat "$OUT/preview_log.txt" || true
+
+      - name: Print results screens of genuine photos with a CLEAR finding as base64 JPEG (log-only, LAST STEP)
+        # Visual review of any clear finding on a genuine photo (is it a missed hand / reflection?). Log-only, as the
+        # earlier fetch jobs did; nothing is uploaded or committed.
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import csv, os
+          ids = sorted({r['photo_id'] for r in csv.DictReader(open('a99_results/findings.csv')) if r['alpha99_status'] == 'CLEAR'})
+          cat = list(csv.DictReader(open(os.environ['CAL'] + '/catalogue_provenance_strong.csv')))
+          with open('a99_clear_manifest.csv', 'w', newline='') as fh:
+              w = csv.writer(fh); w.writerow(['photo_id', 'local_path'])
+              for r in cat:
+                  if r['photo_id'] in ids: w.writerow([r['photo_id'], r['local_path']])
+          print('clear on genuine:', ids)
+          PY
+          tools/desktop-harness/run.sh Alpha99Preview a99_clear_manifest.csv "$IMG" a99_clear > /dev/null
+          python3 - <<'PY'
+          import base64, glob, cv2
+          for f in sorted(glob.glob('a99_clear/*_results.png')):
+              im = cv2.imread(f); h = 1400; im = cv2.resize(im, (int(im.shape[1] * h / im.shape[0]), h))
+              ok, buf = cv2.imencode('.jpg', im, [cv2.IMWRITE_JPEG_QUALITY, 70])
+              print('=== ' + f + ' BASE64 JPEG BEGIN'); print(base64.b64encode(buf.tobytes()).decode()); print('=== END')
+          PY
