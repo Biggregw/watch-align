@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """RESEARCH ONLY. Genuine date-window reference (offline) from the CI date-window run and hand date labels.
 
-Rules (same as the 12 reference): one value per physical watch (median of its usable photos), shared / stock photos
-excluded (dedup level dial), SWE excluded (owner decision), owner-priority official / CPO photos always included.
+Rules: one value per physical watch (median of its usable photos), shared / stock photos excluded (dedup level dial),
+SWE INCLUDED (owner decision 2026-10-07 for the date window; --exclude-swe gives the sensitivity without it),
+owner-priority official / CPO photos always included.
   window_tilt                 date-independent -> one reference over all dates
   digit_dx, digit_dy, row tilt numeral-dependent -> reference per date (digit_tilt only for two-digit dates)
 Repeatability: within-watch spread (watches with >= 2 usable photos of the same date) vs between-watch spread.
@@ -49,7 +50,7 @@ def q(s, p):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('--out', default=os.path.join(R, 'reference.md'))
-    ap.add_argument('--include-swe', action='store_true', help='sensitivity: keep SWE photos (owner decision excludes them)')
+    ap.add_argument('--exclude-swe', action='store_true', help='sensitivity: drop SWE photos (owner decision includes them)')
     a = ap.parse_args()
     cat = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(HERE, 'catalogue_provenance_strong.csv')))}
     shared = {r['photo_id'] for r in csv.DictReader(open(os.path.join(R, '..', 'dedup', 'photos.csv'))) if r['shared_dial'] == '1'}
@@ -70,8 +71,8 @@ def main():
         if m.get('usable') != 'True':
             excl['withheld by the measurement'] += 1; continue
         c = cat[pid]; host = c['image_url'].split('/')[2]
-        if 'swisswatchexpo' in host and not a.include_swe:
-            excl['SWE (owner decision)'] += 1; continue
+        if 'swisswatchexpo' in host and a.exclude_swe:
+            excl['SWE (sensitivity run)'] += 1; continue
         if pid in shared:
             excl['shared / stock photo'] += 1; continue
         d = labels.get(pid, {}).get('date', '')
@@ -92,7 +93,7 @@ def main():
          for (w, s, d), vs in by.items()]
     L = ['# Genuine date-window reference (research only; no limits, no verdicts)', '',
          f"CI runs 37664650850 (row tilt fixed, glyph-height check) and 37662260742 (window tilt / centring only, for photos that verified only "
-         f"then) + owner-priority photos; SWE {'INCLUDED (sensitivity)' if a.include_swe else 'excluded (owner decision)'}. Photos used: {len(photos)}; physical watches: "
+         f"then) + owner-priority photos; SWE {'excluded (sensitivity)' if a.exclude_swe else 'included (owner decision)'}. Photos used: {len(photos)}; physical watches: "
          f'{len(W)}. Excluded: ' + ', '.join(f'{k} {v}' for k, v in sorted(excl.items())) + '.', '',
          'Sources (watches): ' + ', '.join(f"{s} {sum(1 for w in W if w['src'] == s)}" for s in sorted({w['src'] for w in W})), '']
     wt = [w['window_tilt_deg'] for w in W if w['window_tilt_deg'] is not None]

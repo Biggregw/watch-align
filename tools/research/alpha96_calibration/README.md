@@ -608,3 +608,13 @@ Withheld:
 - Centring and row tilt need references for each date. Only 4–5 dates have ≥ 3 genuine watches, and most dates have none. That is a named evidence gap: genuine photos across all 31 dates.
 
 No limits are derived and the app is unchanged.
+
+**Owner decision (2026-10-07): include SWE in the date-window reference.**
+- `date_reference.py` now includes SWE by default: `results/date_window/reference.md`, 52 watches, the primary reference.
+- `--exclude-swe` writes the sensitivity analysis: `reference_without_swe.md`, 36 watches.
+- The 12-triangle reference is unchanged and still excludes SWE (that decision was about SWE's studio lighting moving the 12).
+- With SWE included:
+  - window tilt reference: −1.09 to +0.52° (median −0.04°, P10 −0.38°, P90 +0.35°);
+  - Batgirl photos −0.86° and −0.72°: 1 and 3 genuine watches as far, so edge-of-genuine;
+  - RL_LOCAL_BLNR +1.00°: 1 genuine watch as far;
+  - date 9 gets a 16-watch centring reference, against which Batgirl photo 1 is ordinary.

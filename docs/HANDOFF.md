@@ -157,6 +157,15 @@ Owner decision: the 12 triangle is assessed with the **robust** readout.
 - **Status:** shipped as a research display in Alpha97 / Alpha97b (`Alpha97TwelveReadout`). Pose and measurement maths are unchanged from Alpha96. No limits are set.
 - **Before porting to the app:** genuine phone-photo references are still the named evidence gap (every replica control is a phone photo; the nominal comes from dealer/auction photos).
 
+## Date-window research - 2026-10-07
+
+- **Status:** harness-only prototype (`DateCrop.java`, `tools/research/alpha96_calibration/date_window.py`); the app is unchanged and no limits are set.
+- **Reference:** the genuine date-window reference **includes SWE** (owner decision 2026-10-07: 52 watches; `results/date_window/reference.md`). The 12-triangle reference still excludes SWE.
+- **Measurements:**
+  - window tilt is date-independent and repeatable (0.11° within a watch against 0.18° between watches);
+  - digit centring and row tilt need references for each date.
+- **Evidence gap:** genuine photos across all 31 dates.
+
 ## Do not restart without evidence
 
 The following are not active programmes:
