@@ -1,0 +1,120 @@
+name: M12 symmetry-axis position experiment (research)
+
+# RESEARCH ONLY. Tests a base-independent 12 lateral position made from the two long
+# triangle sides. No Android/app source is modified, no master changes, no thresholds.
+on:
+  push:
+    branches:
+      - research/m12-symmetry-axis-position
+    paths:
+      - '.github/workflows/m12-axis-position-research.yml'
+      - 'tools/desktop-harness/drivers/M12AxisPosition.java'
+      - 'tools/research/alpha96_calibration/m12_axis_position.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: m12-axis-position-research
+  cancel-in-progress: true
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CAL: tools/research/alpha96_calibration
+      IMG: axis_genuine_images
+      OUT: axis_results
+      CTRL: axis_controls
+      SCALED: axis_scaled
+      A90_ARTIFACT: '11358009699'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Python dependencies
+        run: python -m pip install -q requests Pillow opencv-python-headless
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Fetch catalogued genuine photos (exact SHA only)
+        run: |
+          mkdir -p "$IMG" "$OUT" "$CTRL" "$SCALED"
+          python3 "$CAL/fetch_verified.py" "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/fetch_log.csv" | tail -3
+
+      - name: Run genuine symmetry-axis harness
+        run: |
+          tools/desktop-harness/run.sh M12AxisPosition "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/genuine_axis.csv"
+
+      - name: Recover exact frozen local controls from Alpha90 artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${A90_ARTIFACT}/zip" > "$RUNNER_TEMP/a90.zip"
+          unzip -q "$RUNNER_TEMP/a90.zip" -d "$RUNNER_TEMP/a90"
+          BASE="$RUNNER_TEMP/a90/alpha90-batch-out/files/alpha90-batch"
+          cp "$BASE/POOL_GEN_HO_01/candidate.png" "$CTRL/GEN_CAND_HO_01.png"
+          cp "$BASE/POOL_GEN_HO_02/candidate.png" "$CTRL/GEN_CAND_HO_02.png"
+          cp "$BASE/EXT_EXT_RL_BLNR_VSF_00/candidate.png" "$CTRL/RL_THEONE_BLNR.png"
+          cp "$BASE/POOL_RL_LOCAL_01/candidate.png" "$CTRL/RL_LOCAL_BLNR.png"
+          cp "$BASE/EXT_EXT_RL_BLRO_ARF_02/candidate.png" "$CTRL/RL_ARF_BLRO_CROOKED6.png"
+          cat > "$CTRL/manifest.csv" <<'CSV'
+          photo_id,local_path,class_label,group,physical_watch_id,model
+          GEN_CAND_HO_01,GEN_CAND_HO_01.png,gen,gen_candidate,gen_wex_1TDYtpN,126710BLNR
+          GEN_CAND_HO_02,GEN_CAND_HO_02.png,gen,gen_candidate,gen_wex_vmbUDwy,126710BLNR
+          RL_THEONE_BLNR,RL_THEONE_BLNR.png,rep,rl_control,rep_theonewatches_blnr_user,126710BLNR
+          RL_LOCAL_BLNR,RL_LOCAL_BLNR.png,rep,rl_control,rep_vsf_7s6PyXJ,126710BLNR
+          RL_ARF_BLRO_CROOKED6,RL_ARF_BLRO_CROOKED6.png,rep,rl_control,rep_arf_blro_crooked6,126710BLRO
+          CSV
+          sha256sum "$CTRL"/*.png
+
+      - name: Run native local controls
+        run: |
+          tools/desktop-harness/run.sh M12AxisPosition "$CTRL/manifest.csv" "$CTRL" "$OUT/controls_axis.csv"
+
+      - name: Build deterministic resolution variants
+        run: |
+          python3 "$CAL/make_scaled_set.py" "$CTRL/manifest.csv" "$CTRL" "$SCALED" "$SCALED/manifest.csv" "1.0,0.85,0.70,0.55,0.45" 5
+
+      - name: Run scaled controls
+        run: |
+          tools/desktop-harness/run.sh M12AxisPosition "$SCALED/manifest.csv" "$SCALED" "$OUT/scaled_axis.csv"
+
+      - name: Compare current centroid with symmetry axis
+        run: |
+          python3 "$CAL/m12_axis_position.py" \
+            --genuine-axis "$OUT/genuine_axis.csv" \
+            --catalogue "$CAL/catalogue_provenance_strong.csv" \
+            --dedup "$CAL/results/dedup/photos.csv" \
+            --controls-axis "$OUT/controls_axis.csv" \
+            --controls-manifest "$CTRL/manifest.csv" \
+            --scaled-axis "$OUT/scaled_axis.csv" \
+            --scaled-manifest "$SCALED/manifest.csv" \
+            --out "$OUT/report.md"
+
+      - name: Upload research results
+        uses: actions/upload-artifact@v4
+        with:
+          name: m12-axis-position-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            axis_results/*.csv
+            axis_results/report.md
+
+      - name: Print report
+        run: cat "$OUT/report.md"
