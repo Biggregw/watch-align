@@ -1,0 +1,75 @@
+name: Alpha97 date-window research run
+
+# RESEARCH ONLY. Re-fetches the catalogued provenance-strong genuine photos (sha256-verified, same as
+# alpha96-genuine-calibration.yml), exports dial-plane-rectified date crops with the harness (DateCrop: frozen
+# production pose and sampler) and measures digit centring, digit-row tilt and window tilt (date_window.py).
+# Uploads only CSVs; prints the CSVs and small labelled window-only montages to the log so the dates can be
+# labelled by hand (no digit recognition yet). Images are never committed, cached or uploaded. Nothing here
+# changes the app, thresholds or verdicts.
+on:
+  push:
+    branches:
+      - feature/android-alpha91-minute-lattice
+    paths:
+      - '.github/workflows/alpha97-date-window.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alpha97-date-window
+  cancel-in-progress: false
+
+jobs:
+  date-window:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CAL: tools/research/alpha96_calibration
+      IMG: a97_images
+      OUT: a97_date
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: python -m pip install -q requests opencv-python-headless numpy
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Fetch catalogued photos (sha256-verified)
+        run: |
+          mkdir -p "$IMG" "$OUT/crops"
+          python3 "$CAL/fetch_verified.py" "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/fetch_log.csv" | tail -3
+
+      - name: Export date crops (harness)
+        run: tools/desktop-harness/run.sh DateCrop "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/crops" "$OUT/crops.csv" 2>/dev/null
+
+      - name: Measure date window
+        run: python3 "$CAL/date_window.py" "$OUT/crops.csv" "$OUT/crops" "$OUT/date_window.csv" > "$OUT/date_window.log"
+
+      - name: Upload CSVs (no images)
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha97-date-window-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            a97_date/*.csv
+
+      - name: Print results and labelling montages to log
+        run: |
+          echo '=== date_window.csv ==='
+          cat "$OUT/date_window.csv"
+          python3 "$CAL/date_window_montage.py" "$OUT/crops.csv" "$OUT/crops" "$OUT/date_window.csv" "$RUNNER_TEMP"
