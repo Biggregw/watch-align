@@ -174,6 +174,15 @@ Owner decision: the 12 triangle is assessed with the **robust** readout.
 - **Measurement:** pose and marker maths unchanged from Alpha96.
 - **Evidence:** `tools/research/alpha96_calibration/README.md`, section "Alpha98".
 
+## Alpha99 hybrid results - 2026-10-07
+
+- **Evidence strength:** beyond every genuine watch (the Alpha98 rule, range unchanged) is WORTH A LOOK. It becomes a CLEAR FINDING only when the excess exceeds 3 sigma, where sigma is the photo-to-photo spread of the same genuine watch (genuine multi-photo watches only, `alpha99_uncertainty.properties`).
+- **Interference gate:** every individual marker must pass `Alpha99MarkerInterference` (hand / glare strip, marker face, seconds-hand line) or it is NOT ASSESSED. Round markers are judged and named one by one.
+- **Screen:** headline by evidence strength, whole-dial overview with badges, a 2-column close-up grid (clear, then worth a look, then not-assessed with a visible reason), a one-line within list; full overlay and technical details are secondary.
+- **Measurement:** unchanged from Alpha98 (0 differences).
+- **Evidence:** `tools/research/alpha96_calibration/README.md`, section "Alpha99".
+- **Open:** add the owner's Geektime / RepTimeQC photo (hand across the flagged round) to the local checks when supplied.
+
 ## Do not restart without evidence
 
 The following are not active programmes:

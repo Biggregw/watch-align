@@ -43,6 +43,17 @@ final class Alpha98Closeups {
      *             markers predicts it; the ring finding itself is drawn on the unmoved master.
      */
     static Bitmap forFinding(Mat rgba,double[] H,Alpha98Findings.Finding f,Alpha98DateWindow.Result date,double[] ring){
+        return forRegion(rgba,H,f,date,ring);
+    }
+
+    /** Alpha99 findings: same close-up and outline as Alpha98 for the same region and shape. */
+    static Bitmap forFinding(Mat rgba,double[] H,Alpha99Findings.Finding g,Alpha98DateWindow.Result date,double[] ring){
+        Alpha98Findings.Finding f=new Alpha98Findings.Finding(g.key,g.title);
+        f.cx=g.cx;f.cy=g.cy;f.half=g.half;f.hour=g.hour;f.shape=Alpha98Findings.Shape.valueOf(g.shape.name());
+        return forRegion(rgba,H,f,date,ring);
+    }
+
+    private static Bitmap forRegion(Mat rgba,double[] H,Alpha98Findings.Finding f,Alpha98DateWindow.Result date,double[] ring){
         Mat m=render(rgba,H,f.cx,f.cy,f.half);
         int th=Math.max(2,SIZE/160);
         switch(f.shape){

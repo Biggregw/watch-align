@@ -1,0 +1,324 @@
+package com.watchalign.mobile;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+/**
+ * Alpha99 evidence for the results screen: Alpha98's genuine-reference comparisons (unchanged reference, unchanged
+ * measurements), with
+ *  1. a per-marker interference gate: every individual marker (12, 6, 9 and each round) must pass
+ *     Alpha99MarkerInterference before it can become a finding; a hand crossing or touching it -> not assessed;
+ *  2. three evidence states for anything outside the measured genuine range:
+ *       WORTH A LOOK   beyond every genuine reference watch, but by no more than K x sigma, where sigma is the
+ *                      single-photo measurement uncertainty of that feature (Alpha99Uncertainty: photo-to-photo spread
+ *                      of the same genuine watch). Measurement error could account for it.
+ *       CLEAR          beyond the genuine maximum by more than K x sigma.
+ *     The genuine range itself is not widened: range (Alpha98Reference) and uncertainty are separate. A feature without
+ *     an uncertainty estimate can be outside the range but never CLEAR.
+ *  3. round markers judged one by one and named by hour.
+ * Wording compares measurements with genuine watches; it never says genuine / fake.
+ */
+final class Alpha99Findings {
+    enum Status{CLEAR,WORTH,NOT_ASSESSED,WITHIN}
+    enum Shape{BATON,TRIANGLE,ROUND,RING,DATE}
+
+    static final String DISCLAIMER="These results compare this photo's measurements with genuine watches. They are not an authenticity verdict.";
+    static final String INTERFERENCE_NOTE="Close-ups are shown so you can check for hands, reflections, dust or other interference.";
+
+    /** One measured quantity compared with the genuine reference. */
+    static final class Measure {
+        final String name;final double value,genuineMax,sigma;final int n;final String unit;
+        /** short phrase for the tile, e.g. "1.7° CCW" / detail sentence start, e.g. "It is rotated 1.7° anticlockwise". */
+        final String shortValue,sentence;
+        Measure(String name,double value,double genuineMax,double sigma,int n,String unit,String shortValue,String sentence){
+            this.name=name;this.value=value;this.genuineMax=genuineMax;this.sigma=sigma;this.n=n;this.unit=unit;this.shortValue=shortValue;this.sentence=sentence;
+        }
+        boolean outside(){return Double.isFinite(value)&&Double.isFinite(genuineMax)&&Alpha98Findings.beyond(value,genuineMax);}
+        double excess(){return value-genuineMax;}
+        boolean hasAllowance(){return Double.isFinite(sigma)&&sigma>0;}
+        double allowance(){return Alpha99Uncertainty.K_SIGMA*sigma;}
+        Status status(){
+            if(!outside())return Status.WITHIN;
+            return hasAllowance()&&excess()>allowance()?Status.CLEAR:Status.WORTH;
+        }
+        /** excess in units of sigma (for ranking); infinite-less when there is no allowance. */
+        double strength(){return hasAllowance()?excess()/sigma:0;}
+    }
+
+    static final class Finding {
+        final String key,title;Status status=Status.WITHIN;
+        final List<Measure> measures=new ArrayList<>();
+        String reason="",shortReason="";
+        /** a not-assessed marker whose close-up shows why (hand / glare): it gets a tile. */
+        boolean visual;
+        /** set when a whole group was not assessed for one shared reason (e.g. "round markers"): counted once. */
+        String group;
+        /** Close-up region in canonical dial units (dial radius 1, 12 at the top) and what outline to draw. */
+        double cx,cy,half;Shape shape;int hour;
+        /** short name used in the "within" line, e.g. "4" or "date window". */
+        final String shortName;
+        Finding(String key,String title,String shortName){this.key=key;this.title=title;this.shortName=shortName;}
+
+        Measure strongest(){
+            Measure b=null;
+            for(Measure m:measures)if(m.outside()&&(b==null||rank(m)>rank(b)))b=m;
+            return b;
+        }
+        private static double rank(Measure m){return (m.status()==Status.CLEAR?1e6:0)+m.strength()+(m.excess()/Math.max(1e-12,Math.abs(m.genuineMax)));}
+
+        String statusLabel(){
+            switch(status){case CLEAR:return "CLEAR FINDING";case WORTH:return "WORTH A LOOK";case NOT_ASSESSED:return "NOT ASSESSED";default:return "WITHIN RANGE";}
+        }
+        /** One short line for the tile. */
+        String shortLine(){
+            if(status==Status.NOT_ASSESSED)return shortReason;
+            if(status==Status.WITHIN)return "within measured genuine range";
+            Measure m=strongest();
+            return m.shortValue+"; genuine max "+fmt(m.genuineMax,m.unit);
+        }
+        /** Detail sentences for the larger evidence view. */
+        List<String> detail(){
+            List<String> out=new ArrayList<>();
+            if(status==Status.NOT_ASSESSED){out.add("Not assessed: "+reason+".");return out;}
+            for(Measure m:measures){
+                if(!m.outside())continue;
+                String s=m.sentence+". The furthest of "+m.n+" genuine reference watches reads "+fmt(m.genuineMax,m.unit)+".";
+                if(!m.hasAllowance())s+=" No measurement-uncertainty estimate exists for this feature, so it is not rated as a clear finding.";
+                else if(m.status()==Status.CLEAR)s+=String.format(Locale.US," The excess (%s) is more than %.0f times the photo-to-photo spread measured on genuine watches (%s), so measurement error alone is unlikely to explain it.",
+                        fmt(m.excess(),m.unit),Alpha99Uncertainty.K_SIGMA,fmt(m.sigma,m.unit));
+                else s+=String.format(Locale.US," The excess (%s) is within %.0f times the photo-to-photo spread measured on genuine watches (%s), so photo or measurement error could account for it.",
+                        fmt(m.excess(),m.unit),Alpha99Uncertainty.K_SIGMA,fmt(m.sigma,m.unit));
+                out.add(s);
+            }
+            for(Measure m:measures)if(!m.outside()&&Double.isFinite(m.value))
+                out.add(m.sentence+" - within the measured genuine range (furthest genuine "+fmt(m.genuineMax,m.unit)+").");
+            return out;
+        }
+        String text(){
+            if(status==Status.NOT_ASSESSED)return title+": not assessed - "+reason+".";
+            if(status==Status.WITHIN)return title+": within the measured genuine range.";
+            return title+": "+statusLabel()+" - "+shortLine();
+        }
+    }
+
+    static final class Summary {
+        final List<Finding> all=new ArrayList<>();
+        List<Finding> with(Status st){List<Finding> o=new ArrayList<>();for(Finding f:all)if(f.status==st)o.add(f);return o;}
+        List<Finding> clear(){return with(Status.CLEAR);}
+        List<Finding> worth(){return with(Status.WORTH);}
+        List<Finding> within(){return with(Status.WITHIN);}
+        List<Finding> notAssessed(){return with(Status.NOT_ASSESSED);}
+        /** Tiles: clear findings, then worth a look, then not-assessed markers whose close-up shows the reason. */
+        List<Finding> tiles(){
+            List<Finding> o=new ArrayList<>(clear());o.addAll(worth());
+            for(Finding f:notAssessed())if(f.visual)o.add(f);
+            return o;
+        }
+        List<String> headlineLines(){
+            List<String> h=new ArrayList<>();int c=clear().size(),w=worth().size(),na=notAssessedCount();
+            if(c>0)h.add(c+" clear alignment finding"+(c==1?"":"s"));
+            if(w>0)h.add(w+(c>0?" other":"")+(w==1?" measurement is":" measurements are")+" worth a look");
+            if(c==0&&w==0)h.add("No measured feature is outside the measured genuine range");
+            if(na>0)h.add(na+(na==1?" feature":" features")+" could not be assessed");
+            return h;
+        }
+        String headline(){return String.join("\n",headlineLines());}
+        /** Not-assessed features, a group withheld for one shared reason counting once. */
+        int notAssessedCount(){
+            java.util.Set<String> groups=new java.util.HashSet<>();int n=0;
+            for(Finding f:notAssessed()){if(f.group==null)n++;else if(groups.add(f.group))n++;}
+            return n;
+        }
+        String withinLine(){
+            StringBuilder b=new StringBuilder();
+            for(Finding f:within()){if(b.length()>0)b.append(", ");b.append(f.shortName);}
+            return b.length()==0?"":"Within measured genuine range: "+b;
+        }
+        /** Not-assessed features without a tile, grouped by reason. */
+        String notAssessedLine(){
+            Map<String,List<String>> g=new java.util.LinkedHashMap<>();
+            for(Finding f:notAssessed())if(!f.visual){List<String> l=g.computeIfAbsent(f.shortReason,k->new ArrayList<>());
+                String name=f.group!=null?f.group:f.shortName;if(!l.contains(name))l.add(name);}
+            StringBuilder b=new StringBuilder();
+            for(Map.Entry<String,List<String>> e:g.entrySet()){if(b.length()>0)b.append(" · ");b.append(String.join(", ",e.getValue())).append(" (").append(e.getKey()).append(")");}
+            return b.length()==0?"":"Not assessed: "+b;
+        }
+    }
+
+    private Alpha99Findings(){}
+
+    /**
+     * @param checks Alpha99MarkerInterference per hour (12 and every Alpha94 hour). Null or missing -> those markers are
+     *               not assessed (fail closed).
+     */
+    static Summary build(Alpha94MarkerMeasurement.Report r,Alpha98DateWindow.Result date,Map<Integer,Alpha99MarkerInterference.Check> checks){
+        Summary s=new Summary();
+        double R=r==null?Double.NaN:r.dialRadiusPx;
+        s.all.add(twelve(r,check(checks,12),R));
+        s.all.add(baton(r,6,R,check(checks,6)));
+        s.all.add(baton(r,9,R,check(checks,9)));
+        s.all.addAll(rounds(r,R,checks));
+        s.all.add(ring(r,R));
+        s.all.add(date(date));
+        return s;
+    }
+
+    private static Alpha99MarkerInterference.Check check(Map<Integer,Alpha99MarkerInterference.Check> c,int hour){return c==null?null:c.get(hour);}
+
+    /** Interference gate: null -> withheld (could not be checked); not clean -> withheld with its reason. */
+    private static boolean gate(Finding f,Alpha99MarkerInterference.Check c){
+        if(c!=null&&c.clean)return true;
+        f.status=Status.NOT_ASSESSED;f.visual=true;
+        if(c==null){f.reason="its surroundings could not be checked for hands";f.shortReason="not checked";f.visual=false;}
+        else if(Alpha99MarkerInterference.GLARE.equals(c.reason)){f.reason="reflection or glare around this marker";f.shortReason="glare around marker";}
+        else if(Alpha99MarkerInterference.HAND.equals(c.reason)){f.reason="a hand crosses or touches this marker";f.shortReason="hand crosses marker";}
+        else{f.reason=c.reason;f.shortReason="not checked";f.visual=false;}
+        return false;
+    }
+
+    private static void withheldByMeasurement(Finding f,String raw){
+        f.status=Status.NOT_ASSESSED;f.reason=Alpha98Findings.reasonFor(raw);
+        String s=raw==null?"":raw.toLowerCase(Locale.US);
+        if(s.contains("hand")||s.contains("occlu")){f.reason="a hand crosses or touches this marker";f.shortReason="hand crosses marker";f.visual=true;}
+        else{f.shortReason="edge not clear";f.visual=false;}
+    }
+
+    static double sigmaR(double sR,double sPx,double R){return Double.isFinite(R)&&R>0?Math.max(sR,sPx/R):sR;}
+
+    // ------------------------------------------------------------------ features
+    static Finding twelve(Alpha94MarkerMeasurement.Report r,Alpha99MarkerInterference.Check c,double R){
+        Finding f=new Finding("twelve","12 o'clock","12");
+        f.cx=0;f.cy=-0.75;f.half=0.22;f.shape=Shape.TRIANGLE;f.hour=12;
+        if(!gate(f,c))return f;
+        Alpha97TwelveReadout.Result t=Alpha97TwelveReadout.from(r);
+        if(!t.usable){withheldByMeasurement(f,t.reason);return f;}
+        int n=Alpha97TwelveReadout.N_WATCHES;
+        f.measures.add(new Measure("centreline",Math.abs(t.centrelineDeg),Alpha98Findings.max(Alpha97TwelveReadout.GENUINE_CENTRELINE_DEG),
+                Alpha99Uncertainty.TWELVE_CENTRELINE_DEG,n,"deg",
+                String.format(Locale.US,"points %.1f° %s",Math.abs(t.centrelineDeg),cwShort(t.centrelineDeg)),
+                String.format(Locale.US,"It points %.1f° %s of the genuine direction",Math.abs(t.centrelineDeg),Alpha98Findings.cw(t.centrelineDeg))));
+        boolean left=Math.abs(t.leftSideDeg)>=Math.abs(t.rightSideDeg);double sd=left?t.leftSideDeg:t.rightSideDeg;
+        f.measures.add(new Measure("sides",t.sidesDeg,Alpha98Findings.max(Alpha97TwelveReadout.GENUINE_SIDES_DEG),
+                Alpha99Uncertainty.TWELVE_SIDES_DEG,n,"deg",
+                String.format(Locale.US,"%s side %.1f° %s",left?"left":"right",Math.abs(sd),cwShort(sd)),
+                String.format(Locale.US,"Its %s side is angled %.1f° %s",left?"left":"right",Math.abs(sd),Alpha98Findings.cw(sd))));
+        f.measures.add(new Measure("lateral",Math.abs(t.lateralR),Alpha98Findings.max(Alpha97TwelveReadout.GENUINE_LATERAL_R),
+                sigmaR(Alpha99Uncertainty.TWELVE_LATERAL_R,Alpha99Uncertainty.TWELVE_LATERAL_PX,R),n,"R",
+                String.format(Locale.US,"%.2f%% to the %s",100*Math.abs(t.lateralR),t.lateralPx<0?"left":"right"),
+                String.format(Locale.US,"It sits %.1f px to the %s (%.2f%% of the dial radius)",Math.abs(t.lateralPx),t.lateralPx<0?"left":"right",100*Math.abs(t.lateralR))));
+        // Alpha98 rule for the 12: outside when no genuine watch reads at least as far (Alpha97TwelveReadout counts)
+        if(t.atLeastCentreline>0)neutralise(f,"centreline");
+        if(t.atLeastSides>0)neutralise(f,"sides");
+        if(t.atLeastLateral>0)neutralise(f,"lateral");
+        settle(f);return f;
+    }
+
+    /** Replace a measure with one that is never outside (keeps the 12 on its Alpha98 'at least as far' counts). */
+    private static void neutralise(Finding f,String name){
+        for(int i=0;i<f.measures.size();i++){Measure m=f.measures.get(i);
+            if(m.name.equals(name)&&m.outside())f.measures.set(i,new Measure(m.name,Math.min(m.value,m.genuineMax),m.genuineMax,m.sigma,m.n,m.unit,m.shortValue,m.sentence));}
+    }
+
+    static Finding baton(Alpha94MarkerMeasurement.Report r,int hour,double R,Alpha99MarkerInterference.Check c){
+        Finding f=new Finding(hour==6?"six":"nine",hour+" o'clock",""+hour);
+        double a=Math.toRadians(hour*30.0);f.cx=Math.sin(a)*Alpha92GmtMaster.BATON_CENTER_R;f.cy=-Math.cos(a)*Alpha92GmtMaster.BATON_CENTER_R;
+        f.half=0.22;f.shape=Shape.BATON;f.hour=hour;
+        if(!gate(f,c))return f;
+        Alpha94MarkerMeasurement.Marker m=r==null?null:r.atHour(hour);
+        if(m==null||!m.usable){withheldByMeasurement(f,m==null?"unavailable":m.reason);return f;}
+        double[] rotRef=hour==6?Alpha98Reference.SIX_ROT_FAR:Alpha98Reference.NINE_ROT_FAR;
+        double[] offRef=hour==6?Alpha98Reference.SIX_OFF_FAR:Alpha98Reference.NINE_OFF_FAR;
+        double nom=hour==6?Alpha98Reference.NOMINAL_SIX_ROT:Alpha98Reference.NOMINAL_NINE_ROT;
+        double sRot=hour==6?Alpha99Uncertainty.SIX_ROT_DEG:Alpha99Uncertainty.NINE_ROT_DEG;
+        double sOff=hour==6?sigmaR(Alpha99Uncertainty.SIX_OFF_R,Alpha99Uncertainty.SIX_OFF_PX,R):sigmaR(Alpha99Uncertainty.NINE_OFF_R,Alpha99Uncertainty.NINE_OFF_PX,R);
+        double rot=m.rotationDeg-nom;
+        f.measures.add(new Measure("rotation",Math.abs(rot),Alpha98Findings.max(rotRef),sRot,rotRef.length,"deg",
+                String.format(Locale.US,"%.1f° %s",Math.abs(rot),cwShort(rot)),
+                String.format(Locale.US,"It is rotated %.1f° %s",Math.abs(rot),Alpha98Findings.cw(rot))));
+        double off=m.localOffsetPx/R;
+        f.measures.add(new Measure("position",off,Alpha98Findings.max(offRef),sOff,offRef.length,"R",
+                String.format(Locale.US,"%.2f%% out of place",100*off),
+                String.format(Locale.US,"It sits %.1f px out of place relative to the other markers (%.2f%% of the dial radius, mostly %s)",
+                        m.localOffsetPx,100*off,Alpha98Findings.direction(m))));
+        settle(f);return f;
+    }
+
+    static List<Finding> rounds(Alpha94MarkerMeasurement.Report r,double R,Map<Integer,Alpha99MarkerInterference.Check> checks){
+        List<Finding> out=new ArrayList<>();
+        int usable=0;
+        if(r!=null)for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind)&&m.usable&&Double.isFinite(m.localOffsetPx))usable++;
+        int n=Alpha98Findings.matchedCount(Alpha98Reference.ROUNDS_OFF_R,R);
+        double lim=Alpha98Findings.matchedMax(Alpha98Reference.ROUNDS_OFF_FAR,Alpha98Reference.ROUNDS_OFF_R,R);
+        double sOff=sigmaR(Alpha99Uncertainty.ROUNDS_OFF_R,Alpha99Uncertainty.ROUNDS_OFF_PX,R);
+        for(int h:Alpha94MarkerMeasurement.ROUND_HOURS){
+            Finding f=new Finding("round"+h,h+" o'clock",""+h);
+            double a=Math.toRadians(h*30.0);f.cx=Math.sin(a)*Alpha92GmtMaster.ROUND_CENTER_R;f.cy=-Math.cos(a)*Alpha92GmtMaster.ROUND_CENTER_R;
+            f.half=0.17;f.shape=Shape.ROUND;f.hour=h;out.add(f);
+            if(r==null||usable<5){f.status=Status.NOT_ASSESSED;f.reason="too few round markers could be measured cleanly";f.shortReason="too few clean markers";f.group="round markers";continue;}
+            if(n<Alpha98Findings.MIN_MATCHED){f.status=Status.NOT_ASSESSED;f.reason="the photo's resolution is too low to compare round markers with genuine photos";f.shortReason="resolution too low";f.group="round markers";continue;}
+            if(!gate(f,check(checks,h)))continue;
+            Alpha94MarkerMeasurement.Marker m=r.atHour(h);
+            if(m==null||!m.usable||!Double.isFinite(m.localOffsetPx)){withheldByMeasurement(f,m==null?"unavailable":m.reason);continue;}
+            double off=m.localOffsetPx/R;
+            f.measures.add(new Measure("position",off,lim,sOff,n,"R",
+                    String.format(Locale.US,"%.2f%% out of place",100*off),
+                    String.format(Locale.US,"The %d o'clock marker sits %.1f px out of place relative to the other markers (%.2f%% of the dial radius, mostly %s); compared with genuine photos of similar or lower resolution",
+                            h,m.localOffsetPx,100*off,Alpha98Findings.direction(m))));
+            settle(f);
+        }
+        return out;
+    }
+
+    static Finding ring(Alpha94MarkerMeasurement.Report r,double R){
+        Finding f=new Finding("ring","Dial marker ring","marker ring");f.shape=Shape.RING;f.cx=0;f.cy=0;f.half=1.05;
+        Alpha94MarkerMeasurement.Ring g=r==null?null:r.ring;
+        if(g==null||!g.usable){f.status=Status.NOT_ASSESSED;f.reason="too few markers could be measured cleanly";f.shortReason="too few clean markers";return f;}
+        double rot=g.rotationDeg-Alpha98Reference.NOMINAL_RING_ROT;
+        f.measures.add(new Measure("rotation",Math.abs(rot),Alpha98Findings.max(Alpha98Reference.RING_ROT_FAR),Alpha99Uncertainty.RING_ROT_DEG,
+                Alpha98Reference.RING_ROT_FAR.length,"deg",String.format(Locale.US,"set turned %.2f° %s",Math.abs(rot),cwShort(rot)),
+                String.format(Locale.US,"Taken together, the hour markers are turned %.2f° %s relative to the printed minute track (a whole-dial measurement: it does not mean each marker is rotated)",
+                        Math.abs(rot),Alpha98Findings.cw(rot))));
+        int n=Alpha98Findings.matchedCount(Alpha98Reference.RING_SHIFT_R,R);
+        if(n>=Alpha98Findings.MIN_MATCHED){double lim=Alpha98Findings.matchedMax(Alpha98Reference.RING_SHIFT_FAR,Alpha98Reference.RING_SHIFT_R,R);double sh=g.shiftPx/R;
+            f.measures.add(new Measure("shift",sh,lim,sigmaR(Alpha99Uncertainty.RING_SHIFT_R,Alpha99Uncertainty.RING_SHIFT_PX,R),n,"R",
+                    String.format(Locale.US,"set off-centre %.2f%%",100*sh),
+                    String.format(Locale.US,"Taken together, the hour markers are off-centre by %.1f px (%.2f%% of the dial radius); compared with genuine photos of similar or lower resolution",g.shiftPx,100*sh)));}
+        settle(f);return f;
+    }
+
+    static Finding date(Alpha98DateWindow.Result d){
+        Finding f=new Finding("date","Date window","date window");f.shape=Shape.DATE;f.half=0.30;
+        if(d==null||!d.usable){f.status=Status.NOT_ASSESSED;f.reason=Alpha98Findings.dateReason(d==null?"":d.reason);f.shortReason=shortDate(f.reason);
+            f.cx=d!=null&&Double.isFinite(d.cx)?d.cx:Alpha98DateWindow.EXP_X;f.cy=d!=null&&Double.isFinite(d.cy)?d.cy:0;
+            f.visual=f.reason.startsWith("glare")||f.reason.startsWith("a hand");return f;}
+        f.cx=d.cx;f.cy=d.cy;
+        double t=d.windowTiltDeg-Alpha98Reference.NOMINAL_DATE_TILT;
+        f.measures.add(new Measure("tilt",Math.abs(t),Alpha98Findings.max(Alpha98Reference.DATE_TILT_FAR),Alpha99Uncertainty.DATE_TILT_DEG,
+                Alpha98Reference.DATE_TILT_FAR.length,"deg",String.format(Locale.US,"tilted %.1f° %s",Math.abs(t),cwShort(t)),
+                String.format(Locale.US,"It is tilted %.1f° %s relative to the dial",Math.abs(t),Alpha98Findings.cw(t))));
+        settle(f);return f;
+    }
+
+    private static String shortDate(String reason){
+        if(reason.startsWith("glare"))return "glare on magnifier";
+        if(reason.startsWith("a hand"))return "hand or date change";
+        if(reason.startsWith("the dial"))return "dial not located";
+        return "window not found";
+    }
+
+    /** Finding status = strongest measure: any CLEAR -> CLEAR, else any outside -> WORTH, else WITHIN. */
+    static void settle(Finding f){
+        Status s=Status.WITHIN;
+        for(Measure m:f.measures){Status x=m.status();if(x==Status.CLEAR)s=Status.CLEAR;else if(x==Status.WORTH&&s!=Status.CLEAR)s=Status.WORTH;}
+        f.status=s;
+    }
+
+    static String cwShort(double deg){return deg>=0?"CW":"CCW";}
+    static String fmt(double v,String unit){
+        if("deg".equals(unit))return String.format(Locale.US,Math.abs(v)<0.095?"%.2f°":"%.1f°",v);
+        if("R".equals(unit))return String.format(Locale.US,"%.2f%%",100*v);
+        return String.format(Locale.US,"%.3g",v);
+    }
+}

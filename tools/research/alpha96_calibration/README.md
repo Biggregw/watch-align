@@ -656,3 +656,90 @@ No limits are derived and the app is unchanged.
 | ARF crooked-6 | 12 lateral; 6 offset; 8 o'clock round marker |
 | Genuine owner photos | nothing, except the 126715CHNR CPO's 6, where the seconds hand sits on the marker (visible in the close-up; the caption tells the user to check for a hand) |
 | Marketplace candidates | nothing |
+
+## Alpha99: evidence strength and per-marker interference (2026-10-07)
+
+Alpha99 changes only the evidence layer and the results screen. Pose, the Alpha94 measurement, the Alpha92 master, the date-window maths and the genuine reference are byte-identical to Alpha98.
+
+### Measurement-uncertainty allowances (genuine photos only)
+
+`measurement_uncertainty.py` writes `alpha99_uncertainty.properties` and `results/alpha99/uncertainty.md`; `gen_alpha99_constants.py` turns them into `Alpha99Uncertainty.java`.
+
+- **Source:** every genuine physical watch photographed two or more times, with non-shared photos (`ci_run_37500197377/per_photo.csv` and `results/dedup/photos.csv`). Same basis as the Alpha98 reference: SWE excluded for the markers and the 12; SWE included for the date window (`date_window/run3`, with `run1` as fallback).
+- **No replica, marketplace-candidate or owner test photo is read.**
+- **sigma** is the pooled within-watch standard deviation of a single photo's reading: the spread between different photos of the same genuine watch, around that watch's own mean. It covers pose, perspective, lighting and detector error together.
+- Positional families pool their radial and tangential components. They are pooled both in R and in px; the app uses max(sigma_R, sigma_px / photo R), so a small photo never gets a smaller allowance than its pixel noise implies.
+
+| Family | sigma | 3 sigma | Watches (photos) |
+|---|---|---|---|
+| 6 rotation | 0.195° | 0.585° | 9 (51) |
+| 9 rotation | 0.205° | 0.616° | 8 (49) |
+| 6 position | 0.125% R / 0.25 px | 0.37% R | 9 (51) |
+| 9 position | 0.090% R / 0.20 px | 0.27% R | 8 (49) |
+| Round-marker position | 0.057% R / 0.11 px | 0.17% R | 9 (43) |
+| 12 lateral | 0.202% R / 0.41 px | 0.61% R | 9 (51) |
+| 12 centreline | 0.184° | 0.552° | 9 (51) |
+| 12 sides | 0.487° | 1.460° | 9 (51) |
+| Ring rotation | 0.024° | 0.072° | 9 (51) |
+| Ring shift | 0.059% R / 0.32 px | 0.18% R | 9 (51) |
+| Date-window tilt | 0.149° | 0.447° | 20 (71) |
+
+The marker families come mostly from Phillips auction lots, which have 6–8 photos each from different angles. Bob's adds pairs. 12 lateral is driven by two Phillips lots (146213 and 210072): their photo-to-photo SD is 0.45% R and 0.25% R, against at most 0.07% R for the rest. That makes the 12 lateral allowance conservative, so fewer findings become CLEAR.
+
+**Rule.** It was fixed before any photo was classified, and K is a single value for every family.
+- **WITHIN RANGE:** not beyond every genuine reference watch. This is the Alpha98 rule, unchanged; the genuine range is never widened.
+- **WORTH A LOOK:** beyond the genuine maximum, by no more than 3 sigma. Photo or measurement error could account for the excess.
+- **CLEAR FINDING:** beyond the genuine maximum by more than 3 sigma.
+- A family without a sigma could be outside the range but never CLEAR. Every assessed family currently has one.
+
+### Per-marker interference check (`Alpha99MarkerInterference`)
+
+Every individual marker (12, 6, 9 and each round) must pass this check before it can become a finding. Otherwise it is NOT ASSESSED, with the reason "hand crosses or touches this marker" or "reflection or glare around this marker". The check reads the image on the frozen pose and never changes a measurement.
+
+Alpha94's outline-integrity test (≥ 0.80) misses thin hands: a seconds hand or a GMT shaft covers only a few percent of the outline. The check has three parts. All its geometry is fixed in canonical dial units from the Alpha92 master.
+
+1. **Strip beside and inside the marker.**
+   - Sampled along the marker's radial axis: the marker ± 0.04 R, plus a 0.12 R corridor towards the centre (for the 12, from r 0.50).
+   - A sample is foreign if it differs from its row's median dial by more than max(20 grey levels, 5 × robust noise).
+   - A hand is a connected foreign structure that spans at least 0.05 R radially and comes within **0.012 R + 1 px** of the marker's outline. To measure how close it comes, the structure is followed into the outline's halo, judged against the halo's own glow profile.
+   - Why 0.012 R: Alpha94's final edge search reads ± 0.012 R around the outline. Anything closer can enter the measured edge; anything further cannot. This rule comes from the measurement code, not from any photo.
+2. **Marker face.** A thin structure (≤ 0.05 R wide) spanning ≥ 0.05 R across the lume, such as a hand lying over the marker.
+3. **Seconds hand.**
+   - On a black dial, the dark shaft is visible only where it crosses a marker's bright edge. The 126715CHNR CPO's 6 is the example: it passed both Alpha94 and parts 1–2.
+   - Its lume dot fixes the line the shaft runs along. The dot is a bright disc on a thin shaft, centred between r 0.50 and 0.60, outside the date-window region.
+   - Contrast: at least 0.45 × the photo's marker-lume contrast.
+   - Every marker that the line from the centre through the dot passes within 0.012 R + 1 px + 0.006 R (the shaft's half-width) is withheld.
+   - The 0.45 was set on the 18 local photos. Real dots read 0.51–1.0 of the lume contrast; text and hand lume bars read at most 0.39.
+
+**Fail closed:** no image, no pose, or an unreadable strip means the marker is withheld.
+
+**Local photos** (`results/alpha99/interference_local.csv`, `summary_local.txt`): 38 of 198 marker checks withheld, 23 of which Alpha94 had also withheld. Every withheld marker was inspected in a close-up:
+
+- GMT arrows over the 5, 8, 9 and 12;
+- minute and seconds hands across rounds;
+- seconds hands along the 6 on four CPO photos, including the CHNR.
+
+The rule passed three hands that run 3–5 px clear of a marker. Batgirl photo 1's minute hand passes 5.1 px from the 9, so the 9 stays assessed.
+
+### Before / after (desktop preview, `results/alpha99/findings_local.csv`, `preview_text.txt`)
+
+| Photo | Alpha98 (beyond every genuine watch) | Alpha99 |
+|---|---|---|
+| Batgirl, photo 1 (R 205) | 6 rotation; 9 rotation and offset; 2 o'clock round; 12 withheld | **CLEAR:** 9 (1.6° CCW, max 0.6°); 2 o'clock (0.44%, max 0.26%). **WORTH A LOOK:** 6 (0.8° CW, max 0.7°); 8 o'clock (0.39%). **NOT ASSESSED:** 12 (GMT hand) |
+| Batgirl, photo 2 (R 278) | 6 rotation; 9 rotation and offset; 2 o'clock round | **CLEAR:** 9 (1.4° CCW); 2 o'clock (0.43%). **WORTH A LOOK:** 6 (1.0° CW); 8 o'clock (0.39%). **NOT ASSESSED:** 4 and 10 (hands) |
+| Theonewatches (R 165) | 12 centreline, side, lateral; 6 offset; 9 rotation | **WORTH A LOOK:** 6 (0.47%, max 0.30%); 9 (0.9° CCW). **NOT ASSESSED:** 12 (seconds hand alongside); round markers (resolution) |
+| Local BLNR (R 220) | 12 lateral; 6 offset; ring rotation | **CLEAR:** 12 (1.33% to the left, max 0.23%); dial marker ring (0.52° CW, max 0.20°). **NOT ASSESSED:** 6 (hand across its face); 9, 5, 8 (hands) |
+| ARF crooked-6 (R 234) | 12 lateral; 6 offset; 8 o'clock round | **CLEAR:** 12 (0.85% to the left); 8 o'clock (0.46%); 11 o'clock (0.45%). **WORTH A LOOK:** 6 (0.37%); 7 o'clock; 10 o'clock. **NOT ASSESSED:** 1, 2, 5 (hands) |
+| 126715CHNR CPO | 6 rotation 2.3° and offset (seconds hand) | **NOT ASSESSED:** 6 (seconds hand). Nothing outside |
+| Other owner official / CPO photos, marketplace candidates | nothing | nothing (markers under hands withheld) |
+
+- No feature is outside in Alpha99 unless Alpha98 had it outside (`alpha99_genuine_summary.py`).
+- The extra round hours (Batgirl 8 o'clock; ARF 7, 10 and 11 o'clock) were already outside in Alpha98's single round-marker feature, which named only the worst. Alpha99 judges and names each clean round.
+- The recent QC photo with a hand across the flagged round marker (Geektime / RepTimeQC) is not in this session's files. The synthetic regression tests cover that case (`Alpha99FindingsTest`); the real photo should be added to the local checks when supplied.
+
+### Regression
+
+- **Alpha96 runner:** 0 differences over 1,592 values on the 8 local photos, and 0 over 1,791 on the 9 owner photos (timing column excluded).
+- **Frozen files:** `Alpha94MarkerMeasurement`, `Alpha92GmtMaster`, `AutomaticDialOverlay`, `Alpha91*`, `Alpha98DateWindow`, `Alpha98Reference` and `Alpha97TwelveReadout` have no diff from Alpha98 (2cb22c2).
+- **Unit tests:** `Alpha99FindingsTest` (13), `Alpha98FindingsTest` (7) and `Alpha97TwelveReadoutTest` (8) pass.
+- **Genuine catalogue:** `.github/workflows/alpha99-genuine-interference.yml` runs the interference check and the Alpha99 classification. It prints withhold rates and status changes, and fails on any new finding.
