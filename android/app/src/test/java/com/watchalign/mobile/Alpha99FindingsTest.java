@@ -113,6 +113,20 @@ public class Alpha99FindingsTest {
         assertTrue(s.withinLine().contains("1, 2, 4, 5, 7, 10"));
     }
 
+    @Test public void resolutionLimitedRoundsGetNoOverviewBadge(){
+        Alpha94MarkerMeasurement.Report r=report(6,0,9,0);
+        Alpha94MarkerMeasurement.Report small=new Alpha94MarkerMeasurement.Report(r.markers,r.ring,100,r.triangle);   // too few comparable genuine watches
+        Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(6).clean=false;c.get(6).reason=Alpha99MarkerInterference.HAND;
+        Alpha99Findings.Summary s=Alpha99Findings.build(small,null,c);
+        Alpha99Findings.Finding round=find(s,"round2");
+        assertEquals(Alpha99Findings.Status.NOT_ASSESSED,round.status);assertEquals("resolution too low",round.shortReason);
+        assertFalse(Alpha99Overview.hasBadge(round));
+        assertTrue(Alpha99Overview.hasBadge(find(s,"six")));                               // hand: marker-specific, keeps its dash
+        assertTrue(Alpha99Overview.hasBadge(find(s,"nine")));
+        assertTrue(s.notAssessedLine().contains("round markers (resolution too low)"));
+        assertEquals(4,s.notAssessedCount());                                               // 6, the round-marker group (once), 12 and date (not in this test)
+    }
+
     // ---------------------------------------------------------------- no new findings vs Alpha98 on the recorded rows
     @Test public void neverOutsideWhereAlpha98WasWithin()throws Exception{
         List<Map<String,String>> rows=new ArrayList<>(csv("results/runner_local.csv"));rows.addAll(csv("results/priority_genuine_runner.csv"));

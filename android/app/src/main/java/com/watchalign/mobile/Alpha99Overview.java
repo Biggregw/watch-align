@@ -10,7 +10,8 @@ import org.opencv.imgproc.Imgproc;
 
 /**
  * Alpha99 results hero: the whole dial, upright and perspective-corrected on the frozen pose, with one small badge per
- * assessed feature (green tick = within, amber ! = worth a look, red !! = clear finding, grey dash = not assessed).
+ * assessed feature (green tick = within, amber ! = worth a look, red !! = clear finding, grey dash = not assessed for a
+ * reason at that marker; markers withheld only because of the photo's resolution get no badge).
  * No numbers on the picture. Display only.
  */
 final class Alpha99Overview {
@@ -26,10 +27,18 @@ final class Alpha99Overview {
         Mat big=new Mat();Imgproc.resize(m,big,new org.opencv.core.Size(SIZE,SIZE),0,0,Imgproc.INTER_CUBIC);
         double scale=SIZE/(2*HALF);
         for(Alpha99Findings.Finding f:s.all){
+            if(!hasBadge(f))continue;
             double[] p=badgeAt(f);if(p==null)continue;
             badge(big,new Point((p[0]+HALF)*scale,(p[1]+HALF)*scale),f.status,f.shape==Alpha99Findings.Shape.RING?"ring":null);
         }
         Bitmap b=Bitmap.createBitmap(SIZE,SIZE,Bitmap.Config.ARGB_8888);Utils.matToBitmap(big,b);return b;
+    }
+
+    /** A badge for every assessed feature and every marker withheld for its own reason (hand, glare, edge). Markers
+     *  withheld as a group for a photo-wide reason (e.g. round markers at too low a resolution) get none: the reason is
+     *  the photo, not the marker, and the not-assessed line under the grid says so. */
+    static boolean hasBadge(Alpha99Findings.Finding f){
+        return !(f.status==Alpha99Findings.Status.NOT_ASSESSED&&f.group!=null);
     }
 
     /** Badge position in canonical units: just inside each marker (towards the centre), beside the date window, the

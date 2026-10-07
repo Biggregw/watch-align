@@ -741,5 +741,6 @@ The rule passed three hands that run 3–5 px clear of a marker. Batgirl photo 1
 
 - **Alpha96 runner:** 0 differences over 1,592 values on the 8 local photos, and 0 over 1,791 on the 9 owner photos (timing column excluded).
 - **Frozen files:** `Alpha94MarkerMeasurement`, `Alpha92GmtMaster`, `AutomaticDialOverlay`, `Alpha91*`, `Alpha98DateWindow`, `Alpha98Reference` and `Alpha97TwelveReadout` have no diff from Alpha98 (2cb22c2).
-- **Unit tests:** `Alpha99FindingsTest` (13), `Alpha98FindingsTest` (7) and `Alpha97TwelveReadoutTest` (8) pass.
+- **Unit tests:** `Alpha99FindingsTest` (14), `Alpha98FindingsTest` (7) and `Alpha97TwelveReadoutTest` (8) pass.
+- **Overview badges (owner decision):** a marker withheld for a photo-wide reason gets no badge. Example: round markers on a photo too small for a comparable genuine set. The reason is the photo, not the marker; the not-assessed line under the grid explains it. Grey dashes remain for marker-specific reasons (hand, glare, edge).
 - **Genuine catalogue:** `.github/workflows/alpha99-genuine-interference.yml` runs the interference check and the Alpha99 classification. It prints withhold rates and status changes, and fails on any new finding.
