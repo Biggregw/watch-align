@@ -63,7 +63,7 @@ photo_id,feature,alpha98_status,alpha99_status,short_line
 548a49c1-image,round10,NOT_ASSESSED,NOT_ASSESSED,"too few clean markers"
 548a49c1-image,round11,NOT_ASSESSED,NOT_ASSESSED,"too few clean markers"
 548a49c1-image,ring,NOT_ASSESSED,NOT_ASSESSED,"too few clean markers"
-548a49c1-image,date,WITHIN,WITHIN,""
+548a49c1-image,date,WITHIN,NOT_ASSESSED,"orientation not confirmed"
 669b4aea-image,twelve,WITHIN,WITHIN,""
 669b4aea-image,six,WITHIN,WITHIN,""
 669b4aea-image,nine,NOT_ASSESSED,NOT_ASSESSED,"hand crosses marker"

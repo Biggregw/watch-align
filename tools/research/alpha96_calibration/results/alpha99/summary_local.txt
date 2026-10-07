@@ -20,12 +20,12 @@ Alpha98 -> Alpha99 status (all features, all photos):
   OUTSIDE       -> NOT_ASSESSED  8
   OUTSIDE       -> WITHIN        11
   OUTSIDE       -> WORTH         9
-  WITHIN        -> NOT_ASSESSED  13
-  WITHIN        -> WITHIN        87
+  WITHIN        -> NOT_ASSESSED  14
+  WITHIN        -> WITHIN        86
 
 new findings (Alpha99 outside where Alpha98 was not): 0
 
-genuine photos with any Alpha99 finding: 5 (features: 18)
+photos with any Alpha99 finding: 5 (features: 18)
    25369d47-image  six WORTH 1.0° CW; genuine max 0.7°
    25369d47-image  nine CLEAR 1.4° CCW; genuine max 0.6°
    25369d47-image  round2 CLEAR 0.43% out of place; genuine max 0.26%

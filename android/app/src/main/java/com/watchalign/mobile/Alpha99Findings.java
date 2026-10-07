@@ -161,7 +161,7 @@ final class Alpha99Findings {
         s.all.add(baton(r,9,R,check(checks,9)));
         s.all.addAll(rounds(r,R,checks));
         s.all.add(ring(r,R));
-        s.all.add(date(date,R));
+        s.all.add(date(date,R,r!=null&&r.ring!=null&&r.ring.usable));
         return s;
     }
 
@@ -291,8 +291,15 @@ final class Alpha99Findings {
         settle(f);return f;
     }
 
-    static Finding date(Alpha98DateWindow.Result d,double R){
+    /**
+     * @param ringConfirmed the marker ring was measured: the dial's orientation on the pose is cross-checked by the
+     *                      markers. The date tilt is read relative to the pose, so without that check a mis-registered
+     *                      pose would read as a tilted window; fail closed.
+     */
+    static Finding date(Alpha98DateWindow.Result d,double R,boolean ringConfirmed){
         Finding f=new Finding("date","Date window","date window");f.shape=Shape.DATE;f.half=0.30;
+        if(d!=null&&d.usable&&!ringConfirmed){f.status=Status.NOT_ASSESSED;f.reason="the dial's orientation could not be confirmed from the hour markers";
+            f.shortReason="orientation not confirmed";f.cx=d.cx;f.cy=d.cy;return f;}
         if(d==null||!d.usable){f.status=Status.NOT_ASSESSED;f.reason=Alpha98Findings.dateReason(d==null?"":d.reason);f.shortReason=shortDate(f.reason);
             f.cx=d!=null&&Double.isFinite(d.cx)?d.cx:Alpha98DateWindow.EXP_X;f.cy=d!=null&&Double.isFinite(d.cy)?d.cy:0;
             f.visual=f.reason.startsWith("glare")||f.reason.startsWith("a hand");return f;}

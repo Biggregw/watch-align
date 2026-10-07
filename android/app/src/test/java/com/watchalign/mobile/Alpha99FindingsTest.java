@@ -87,6 +87,17 @@ public class Alpha99FindingsTest {
         assertEquals(Alpha99Findings.Status.WORTH,m(3.25,max,small).status());
     }
 
+    @Test public void dateWindowNeedsTheMarkerRingToConfirmOrientation(){
+        // genuine catalogue case: a mis-registered pose (markers withheld, ring not measurable) read a level date window
+        // as tilted 6 deg; without the ring the orientation is unconfirmed, so the date is not assessed
+        Alpha98DateWindow.Result d=new Alpha98DateWindow.Result();d.usable=true;d.cx=0.64;d.cy=0;d.wR=0.4;d.hR=0.25;
+        d.windowTiltDeg=Alpha98Reference.NOMINAL_DATE_TILT+6;
+        assertEquals(Alpha99Findings.Status.NOT_ASSESSED,Alpha99Findings.date(d,250,false).status);
+        assertEquals(Alpha99Findings.Status.CLEAR,Alpha99Findings.date(d,250,true).status);
+        d.windowTiltDeg=Alpha98Reference.NOMINAL_DATE_TILT;
+        assertEquals(Alpha99Findings.Status.WITHIN,Alpha99Findings.date(d,250,true).status);
+    }
+
     @Test public void batonExamplesFromTheBrief(){
         // 6 rotation ~0.8 deg vs genuine max ~0.7 -> worth a look; 9 rotation ~1.6 deg vs max ~0.65 -> clear
         Alpha94MarkerMeasurement.Report r=report(6,0.8+Alpha98Reference.NOMINAL_SIX_ROT,9,-1.6+Alpha98Reference.NOMINAL_NINE_ROT);

@@ -39,7 +39,7 @@
   Within measured genuine range: 6, 9, 1, 2, 5, 7, 8, 11, marker ring
 == 548a49c1-image (R=170)
   No measured feature is outside the measured genuine range
-  3 features could not be assessed
+  4 features could not be assessed
     12 o'clock       NOT_ASSESSED  -> NOT ASSESSED  edge not clear
     1 o'clock        NOT_ASSESSED  -> NOT ASSESSED  too few clean markers
     2 o'clock        NOT_ASSESSED  -> NOT ASSESSED  too few clean markers
@@ -50,7 +50,8 @@
     10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  too few clean markers
     11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  too few clean markers
     Dial marker ring NOT_ASSESSED  -> NOT ASSESSED  too few clean markers
-  Within measured genuine range: 6, 9, date window
+    Date window      WITHIN        -> NOT ASSESSED  orientation not confirmed
+  Within measured genuine range: 6, 9
 == 669b4aea-image (R=252)
   No measured feature is outside the measured genuine range
   2 features could not be assessed
