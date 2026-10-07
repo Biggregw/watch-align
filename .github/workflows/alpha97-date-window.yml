@@ -6,6 +6,7 @@ name: Alpha97 date-window research run
 # Uploads only CSVs; prints the CSVs and small labelled window-only montages to the log so the dates can be
 # labelled by hand (no digit recognition yet). Images are never committed, cached or uploaded. Nothing here
 # changes the app, thresholds or verdicts.
+# Run 2: digit-row tilt uses each glyph's extreme ink rows (fixes 17 / 24 / 14 failures in run 37662260742).
 on:
   push:
     branches:

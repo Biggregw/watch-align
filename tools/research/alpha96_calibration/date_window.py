@@ -9,7 +9,7 @@ The window is seen through the cyclops, so everything here is a ratio or an angl
   digit        dark ink inside the window (excluding a border band); union bounding box in the window frame
   digit_dx/dy  (ink-box centre - window centre) / window width / height, in the window frame (+ = right / down)
   digit_tilt   deg, digit-row tilt vs the window edges (+ = clockwise): line through the two numerals' vertical
-               mid-heights (sub-pixel top/bottom of each glyph, shared cap height and baseline); two-digit dates only (single-digit dates report centring, tilt withheld)
+               mid-heights (sub-pixel extreme ink rows of each glyph: shared cap height and baseline); two-digit dates only (single-digit dates report centring, tilt withheld)
 Fail-closed (withheld, with reason): no plausible window; window not rectangular (glare / reflection / occlusion);
 ink touching the window's top or bottom band (date mid-change, hand, frame shadow); ink too small or too large.
 No thresholds on the measurements themselves, no verdicts.
@@ -126,7 +126,9 @@ def row_tilt(img, ink):
         x0 = min(a for a, _, _ in g); x1 = max(b for _, b, _ in g)
         m = np.isin(lab, [i for _, _, i in g])
         prof = (dark * m).sum(axis=1)                       # darkness per row of this numeral
-        half = 0.5 * prof.max()
+        # the glyph's extreme ink rows (cap height / baseline). A low fraction of the peak, because numerals with a heavy
+        # horizontal bar (7, 4, 2) put most of their ink in one row: a 50% level would stop just under the bar.
+        half = 0.15 * prof.max()
         rows = np.nonzero(prof >= half)[0]
         top, bot = rows[0], rows[-1]
         # sub-pixel 50% crossings at the numeral's top and bottom edges
