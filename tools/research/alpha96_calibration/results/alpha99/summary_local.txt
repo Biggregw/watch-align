@@ -1,0 +1,46 @@
+photos with a pose: 18
+
+Interference check - markers withheld (hand / glare) per hour:
+   1:   3/ 18 withheld (16.7%), of which Alpha94 also withheld 2
+   2:   2/ 18 withheld (11.1%), of which Alpha94 also withheld 2
+   4:   4/ 18 withheld (22.2%), of which Alpha94 also withheld 3
+   5:  10/ 18 withheld (55.6%), of which Alpha94 also withheld 6
+   6:   6/ 18 withheld (33.3%), of which Alpha94 also withheld 2
+   7:   0/ 18 withheld ( 0.0%), of which Alpha94 also withheld 0
+   8:   1/ 18 withheld ( 5.6%), of which Alpha94 also withheld 1
+   9:   4/ 18 withheld (22.2%), of which Alpha94 also withheld 2
+  10:   2/ 18 withheld (11.1%), of which Alpha94 also withheld 1
+  11:   0/ 18 withheld ( 0.0%), of which Alpha94 also withheld 0
+  12:   6/ 18 withheld (33.3%), of which Alpha94 also withheld 4
+  all: 38/198 (19.2%), Alpha94 also withheld 23
+
+Alpha98 -> Alpha99 status (all features, all photos):
+  NOT_ASSESSED  -> NOT_ASSESSED  97
+  OUTSIDE       -> CLEAR         9
+  OUTSIDE       -> NOT_ASSESSED  8
+  OUTSIDE       -> WITHIN        11
+  OUTSIDE       -> WORTH         9
+  WITHIN        -> NOT_ASSESSED  14
+  WITHIN        -> WITHIN        86
+
+new findings (Alpha99 outside where Alpha98 was not): 0
+
+photos with any Alpha99 finding: 5 (features: 18)
+   25369d47-image  six WORTH 1.0° CW; genuine max 0.7°
+   25369d47-image  nine CLEAR 1.4° CCW; genuine max 0.6°
+   25369d47-image  round2 CLEAR 0.43% out of place; genuine max 0.26%
+   25369d47-image  round8 WORTH 0.39% out of place; genuine max 0.26%
+   RL_ARF_BLRO_CROOKED6  twelve CLEAR 0.85% to the left; genuine max 0.23%
+   RL_ARF_BLRO_CROOKED6  six WORTH 0.37% out of place; genuine max 0.30%
+   RL_ARF_BLRO_CROOKED6  round7 WORTH 0.35% out of place; genuine max 0.26%
+   RL_ARF_BLRO_CROOKED6  round8 CLEAR 0.46% out of place; genuine max 0.26%
+   RL_ARF_BLRO_CROOKED6  round10 WORTH 0.34% out of place; genuine max 0.26%
+   RL_ARF_BLRO_CROOKED6  round11 CLEAR 0.45% out of place; genuine max 0.26%
+   RL_LOCAL_BLNR  twelve CLEAR 1.33% to the left; genuine max 0.23%
+   RL_LOCAL_BLNR  ring CLEAR set turned 0.52° CW; genuine max 0.2°
+   RL_THEONE_BLNR  six WORTH 0.47% out of place; genuine max 0.30%
+   RL_THEONE_BLNR  nine WORTH 0.9° CCW; genuine max 0.6°
+   USER_BATGIRL_GMT  six WORTH 0.8° CW; genuine max 0.7°
+   USER_BATGIRL_GMT  nine CLEAR 1.6° CCW; genuine max 0.6°
+   USER_BATGIRL_GMT  round2 CLEAR 0.44% out of place; genuine max 0.26%
+   USER_BATGIRL_GMT  round8 WORTH 0.39% out of place; genuine max 0.26%

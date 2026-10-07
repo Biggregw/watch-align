@@ -1,0 +1,199 @@
+photo_id,dial_radius_px,hour,alpha94_usable,clean,reason,touch_span_R,foreign_frac
+12f1d177-image,185.7,12,true,true,"",0.0000,0.1877
+12f1d177-image,185.7,1,true,true,"",0.0000,0.0000
+12f1d177-image,185.7,2,true,true,"",0.0000,0.2329
+12f1d177-image,185.7,4,true,true,"",0.0000,0.0555
+12f1d177-image,185.7,5,true,true,"",0.0000,0.0030
+12f1d177-image,185.7,6,true,true,"",0.0000,0.0000
+12f1d177-image,185.7,7,true,true,"",0.0000,0.0000
+12f1d177-image,185.7,8,true,true,"",0.0000,0.0182
+12f1d177-image,185.7,9,true,true,"",0.0000,0.0413
+12f1d177-image,185.7,10,true,true,"",0.0000,0.0000
+12f1d177-image,185.7,11,true,true,"",0.0000,0.0000
+25369d47-image,277.8,12,true,true,"",0.0000,0.0323
+25369d47-image,277.8,1,true,true,"",0.0000,0.0000
+25369d47-image,277.8,2,true,true,"",0.0000,0.0254
+25369d47-image,277.8,4,false,false,"hand crosses or touches this marker",0.1350,0.1729
+25369d47-image,277.8,5,true,true,"",0.0000,0.0000
+25369d47-image,277.8,6,true,true,"",0.0000,0.1276
+25369d47-image,277.8,7,true,true,"",0.0000,0.0000
+25369d47-image,277.8,8,true,true,"",0.0000,0.0000
+25369d47-image,277.8,9,true,true,"",0.0000,0.0000
+25369d47-image,277.8,10,true,false,"hand crosses or touches this marker",0.2646,0.1991
+25369d47-image,277.8,11,true,true,"",0.0000,0.0000
+4967ffd5-image,170.8,12,true,true,"",0.0000,0.0332
+4967ffd5-image,170.8,1,true,true,"",0.0000,0.0000
+4967ffd5-image,170.8,2,true,true,"",0.0000,0.1585
+4967ffd5-image,170.8,4,true,true,"",0.0000,0.0146
+4967ffd5-image,170.8,5,false,false,"hand crosses or touches this marker",0.1010,0.0988
+4967ffd5-image,170.8,6,true,false,"hand crosses or touches this marker",0.0000,0.2050
+4967ffd5-image,170.8,7,true,true,"",0.0000,0.0000
+4967ffd5-image,170.8,8,true,true,"",0.0000,0.0000
+4967ffd5-image,170.8,9,true,true,"",0.0000,0.0000
+4967ffd5-image,170.8,10,true,true,"",0.0000,0.0000
+4967ffd5-image,170.8,11,true,true,"",0.0000,0.0000
+4f87a0d3-image,270.7,12,false,false,"hand crosses or touches this marker",0.1275,0.0810
+4f87a0d3-image,270.7,1,true,true,"",0.0000,0.0000
+4f87a0d3-image,270.7,2,true,true,"",0.0000,0.0681
+4f87a0d3-image,270.7,4,true,false,"hand crosses or touches this marker",0.1108,0.0752
+4f87a0d3-image,270.7,5,true,true,"",0.0000,0.0000
+4f87a0d3-image,270.7,6,true,true,"",0.0000,0.0002
+4f87a0d3-image,270.7,7,true,true,"",0.0000,0.0000
+4f87a0d3-image,270.7,8,true,true,"",0.0000,0.0000
+4f87a0d3-image,270.7,9,true,true,"",0.0000,0.0000
+4f87a0d3-image,270.7,10,false,false,"hand crosses or touches this marker",0.1247,0.2291
+4f87a0d3-image,270.7,11,true,true,"",0.0000,0.0000
+548a49c1-image,170.1,12,true,true,"",0.0000,0.0305
+548a49c1-image,170.1,1,false,false,"hand crosses or touches this marker",0.2822,0.1659
+548a49c1-image,170.1,2,false,true,"",0.0000,0.0818
+548a49c1-image,170.1,4,false,true,"",0.0000,0.0393
+548a49c1-image,170.1,5,false,false,"hand crosses or touches this marker",0.1014,0.1107
+548a49c1-image,170.1,6,true,true,"",0.0000,0.1977
+548a49c1-image,170.1,7,false,true,"",0.0000,0.0000
+548a49c1-image,170.1,8,false,true,"",0.0000,0.0000
+548a49c1-image,170.1,9,true,true,"",0.0000,0.0000
+548a49c1-image,170.1,10,false,true,"",0.0000,0.0000
+548a49c1-image,170.1,11,false,true,"",0.0000,0.0000
+669b4aea-image,252.2,12,true,true,"",0.0000,0.0207
+669b4aea-image,252.2,1,true,true,"",0.0000,0.0000
+669b4aea-image,252.2,2,true,true,"",0.0000,0.1730
+669b4aea-image,252.2,4,true,true,"",0.0000,0.0208
+669b4aea-image,252.2,5,true,true,"",0.0000,0.0000
+669b4aea-image,252.2,6,true,true,"",0.0000,0.0000
+669b4aea-image,252.2,7,true,true,"",0.0000,0.0000
+669b4aea-image,252.2,8,true,true,"",0.0000,0.0000
+669b4aea-image,252.2,9,false,false,"hand crosses or touches this marker",0.0981,0.1128
+669b4aea-image,252.2,10,true,true,"",0.0000,0.0000
+669b4aea-image,252.2,11,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_01,140.0,12,false,false,"hand crosses or touches this marker",0.4070,0.3264
+EXT_EXT_GEN_BLRO_WEX_01,140.0,1,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_01,140.0,2,true,true,"",0.0000,0.0721
+EXT_EXT_GEN_BLRO_WEX_01,140.0,4,false,false,"hand crosses or touches this marker",0.1232,0.1924
+EXT_EXT_GEN_BLRO_WEX_01,140.0,5,true,false,"hand crosses or touches this marker",0.0964,0.0434
+EXT_EXT_GEN_BLRO_WEX_01,140.0,6,true,true,"",0.0000,0.0019
+EXT_EXT_GEN_BLRO_WEX_01,140.0,7,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_01,140.0,8,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_01,140.0,9,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_01,140.0,10,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_01,140.0,11,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_02,155.4,12,false,false,"hand crosses or touches this marker",0.4103,0.3314
+EXT_EXT_GEN_BLRO_WEX_02,155.4,1,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_02,155.4,2,true,true,"",0.0000,0.0699
+EXT_EXT_GEN_BLRO_WEX_02,155.4,4,false,false,"hand crosses or touches this marker",0.1593,0.2273
+EXT_EXT_GEN_BLRO_WEX_02,155.4,5,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_02,155.4,6,true,true,"",0.0000,0.0031
+EXT_EXT_GEN_BLRO_WEX_02,155.4,7,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_02,155.4,8,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_02,155.4,9,true,false,"hand crosses or touches this marker",0.0000,0.2110
+EXT_EXT_GEN_BLRO_WEX_02,155.4,10,true,true,"",0.0000,0.0000
+EXT_EXT_GEN_BLRO_WEX_02,155.4,11,true,true,"",0.0000,0.0000
+POOL_GEN_HO_01,203.2,12,true,true,"",0.0000,0.0285
+POOL_GEN_HO_01,203.2,1,true,true,"",0.0000,0.0000
+POOL_GEN_HO_01,203.2,2,false,false,"hand crosses or touches this marker",0.1439,0.1963
+POOL_GEN_HO_01,203.2,4,true,true,"",0.0000,0.0000
+POOL_GEN_HO_01,203.2,5,true,true,"",0.0000,0.0000
+POOL_GEN_HO_01,203.2,6,true,true,"",0.0000,0.0000
+POOL_GEN_HO_01,203.2,7,true,true,"",0.0000,0.0010
+POOL_GEN_HO_01,203.2,8,false,false,"hand crosses or touches this marker",0.1070,0.1963
+POOL_GEN_HO_01,203.2,9,true,true,"",0.0000,0.0000
+POOL_GEN_HO_01,203.2,10,true,true,"",0.0000,0.0000
+POOL_GEN_HO_01,203.2,11,true,true,"",0.0000,0.0000
+POOL_GEN_HO_02,143.4,12,true,false,"hand crosses or touches this marker",0.0994,0.1325
+POOL_GEN_HO_02,143.4,1,true,true,"",0.0000,0.0013
+POOL_GEN_HO_02,143.4,2,true,true,"",0.0000,0.2642
+POOL_GEN_HO_02,143.4,4,true,true,"",0.0000,0.0402
+POOL_GEN_HO_02,143.4,5,true,true,"",0.0000,0.0000
+POOL_GEN_HO_02,143.4,6,true,true,"",0.0000,0.0000
+POOL_GEN_HO_02,143.4,7,true,true,"",0.0000,0.0000
+POOL_GEN_HO_02,143.4,8,true,true,"",0.0000,0.0168
+POOL_GEN_HO_02,143.4,9,true,false,"hand crosses or touches this marker",0.0889,0.1139
+POOL_GEN_HO_02,143.4,10,true,true,"",0.0000,0.0000
+POOL_GEN_HO_02,143.4,11,true,true,"",0.0000,0.0000
+RL_ARF_BLRO_CROOKED6,234.3,12,true,true,"",0.0000,0.0241
+RL_ARF_BLRO_CROOKED6,234.3,1,true,false,"hand crosses or touches this marker",0.0992,0.0468
+RL_ARF_BLRO_CROOKED6,234.3,2,false,false,"hand crosses or touches this marker",0.1088,0.1389
+RL_ARF_BLRO_CROOKED6,234.3,4,true,true,"",0.0000,0.0374
+RL_ARF_BLRO_CROOKED6,234.3,5,true,false,"hand crosses or touches this marker",0.0768,0.1057
+RL_ARF_BLRO_CROOKED6,234.3,6,true,true,"",0.0000,0.0000
+RL_ARF_BLRO_CROOKED6,234.3,7,true,true,"",0.0000,0.0000
+RL_ARF_BLRO_CROOKED6,234.3,8,true,true,"",0.0000,0.0000
+RL_ARF_BLRO_CROOKED6,234.3,9,true,true,"",0.0000,0.0000
+RL_ARF_BLRO_CROOKED6,234.3,10,true,true,"",0.0000,0.0000
+RL_ARF_BLRO_CROOKED6,234.3,11,true,true,"",0.0000,0.0000
+RL_LOCAL_BLNR,219.7,12,true,true,"",0.0000,0.0225
+RL_LOCAL_BLNR,219.7,1,true,true,"",0.0000,0.0000
+RL_LOCAL_BLNR,219.7,2,true,true,"",0.0000,0.0570
+RL_LOCAL_BLNR,219.7,4,true,true,"",0.0000,0.0537
+RL_LOCAL_BLNR,219.7,5,true,false,"hand crosses or touches this marker",0.0000,0.0027
+RL_LOCAL_BLNR,219.7,6,true,false,"hand crosses or touches this marker",0.0000,0.0000
+RL_LOCAL_BLNR,219.7,7,true,true,"",0.0000,0.0000
+RL_LOCAL_BLNR,219.7,8,false,true,"",0.0000,0.0856
+RL_LOCAL_BLNR,219.7,9,false,false,"hand crosses or touches this marker",0.2628,0.3848
+RL_LOCAL_BLNR,219.7,10,false,true,"",0.0000,0.0013
+RL_LOCAL_BLNR,219.7,11,false,true,"",0.0000,0.0000
+RL_THEONE_BLNR,165.1,12,true,false,"hand crosses or touches this marker",0.3497,0.2073
+RL_THEONE_BLNR,165.1,1,true,true,"",0.0000,0.0000
+RL_THEONE_BLNR,165.1,2,true,true,"",0.0000,0.0000
+RL_THEONE_BLNR,165.1,4,true,true,"",0.0000,0.0096
+RL_THEONE_BLNR,165.1,5,true,false,"hand crosses or touches this marker",0.0636,0.0623
+RL_THEONE_BLNR,165.1,6,true,true,"",0.0000,0.0000
+RL_THEONE_BLNR,165.1,7,true,true,"",0.0000,0.0000
+RL_THEONE_BLNR,165.1,8,true,true,"",0.0000,0.0000
+RL_THEONE_BLNR,165.1,9,true,true,"",0.0000,0.0000
+RL_THEONE_BLNR,165.1,10,true,true,"",0.0000,0.0000
+RL_THEONE_BLNR,165.1,11,true,true,"",0.0000,0.0000
+USER_BATGIRL_GMT,205.0,12,false,false,"hand crosses or touches this marker",0.1463,0.2493
+USER_BATGIRL_GMT,205.0,1,true,true,"",0.0000,0.0000
+USER_BATGIRL_GMT,205.0,2,true,true,"",0.0000,0.0459
+USER_BATGIRL_GMT,205.0,4,true,true,"",0.0000,0.0395
+USER_BATGIRL_GMT,205.0,5,true,true,"",0.0000,0.0000
+USER_BATGIRL_GMT,205.0,6,true,true,"",0.0000,0.0000
+USER_BATGIRL_GMT,205.0,7,true,true,"",0.0000,0.0003
+USER_BATGIRL_GMT,205.0,8,true,true,"",0.0000,0.0000
+USER_BATGIRL_GMT,205.0,9,true,true,"",0.0000,0.2308
+USER_BATGIRL_GMT,205.0,10,true,true,"",0.0000,0.0003
+USER_BATGIRL_GMT,205.0,11,true,true,"",0.0000,0.0019
+a805c035-image,170.3,12,true,true,"",0.0000,0.0298
+a805c035-image,170.3,1,true,true,"",0.0000,0.0958
+a805c035-image,170.3,2,true,true,"",0.0000,0.0336
+a805c035-image,170.3,4,true,true,"",0.0000,0.0612
+a805c035-image,170.3,5,false,false,"hand crosses or touches this marker",0.1013,0.0911
+a805c035-image,170.3,6,false,false,"hand crosses or touches this marker",0.0000,0.2322
+a805c035-image,170.3,7,true,true,"",0.0000,0.0009
+a805c035-image,170.3,8,true,true,"",0.0000,0.0000
+a805c035-image,170.3,9,true,true,"",0.0000,0.0000
+a805c035-image,170.3,10,true,true,"",0.0000,0.0000
+a805c035-image,170.3,11,true,true,"",0.0000,0.0000
+b0b0c79c-image,170.8,12,true,true,"",0.0000,0.0334
+b0b0c79c-image,170.8,1,true,true,"",0.0000,0.0574
+b0b0c79c-image,170.8,2,true,true,"",0.0000,0.0814
+b0b0c79c-image,170.8,4,true,true,"",0.0000,0.0616
+b0b0c79c-image,170.8,5,false,false,"hand crosses or touches this marker",0.0527,0.0776
+b0b0c79c-image,170.8,6,true,false,"hand crosses or touches this marker",0.0000,0.2134
+b0b0c79c-image,170.8,7,true,true,"",0.0000,0.0009
+b0b0c79c-image,170.8,8,true,true,"",0.0000,0.0000
+b0b0c79c-image,170.8,9,true,true,"",0.0000,0.0000
+b0b0c79c-image,170.8,10,true,true,"",0.0000,0.0024
+b0b0c79c-image,170.8,11,true,true,"",0.0000,0.0000
+b1e67888-image,171.0,12,true,true,"",0.0000,0.0300
+b1e67888-image,171.0,1,false,false,"hand crosses or touches this marker",0.1360,0.2168
+b1e67888-image,171.0,2,true,true,"",0.0000,0.0817
+b1e67888-image,171.0,4,true,true,"",0.0000,0.0316
+b1e67888-image,171.0,5,false,false,"hand crosses or touches this marker",0.0965,0.0952
+b1e67888-image,171.0,6,true,false,"hand crosses or touches this marker",0.0000,0.2273
+b1e67888-image,171.0,7,true,true,"",0.0000,0.0000
+b1e67888-image,171.0,8,true,true,"",0.0000,0.0000
+b1e67888-image,171.0,9,true,true,"",0.0000,0.0000
+b1e67888-image,171.0,10,true,true,"",0.0000,0.0000
+b1e67888-image,171.0,11,true,true,"",0.0000,0.0000
+c743d9fb-image,170.6,12,true,true,"",0.0000,0.0322
+c743d9fb-image,170.6,1,true,true,"",0.0000,0.1712
+c743d9fb-image,170.6,2,true,true,"",0.0000,0.0492
+c743d9fb-image,170.6,4,true,true,"",0.0000,0.0811
+c743d9fb-image,170.6,5,false,false,"hand crosses or touches this marker",0.1011,0.1121
+c743d9fb-image,170.6,6,false,false,"hand crosses or touches this marker",0.0000,0.2068
+c743d9fb-image,170.6,7,true,true,"",0.0000,0.0000
+c743d9fb-image,170.6,8,true,true,"",0.0000,0.0000
+c743d9fb-image,170.6,9,true,true,"",0.0000,0.0000
+c743d9fb-image,170.6,10,true,true,"",0.0000,0.0000
+c743d9fb-image,170.6,11,true,true,"",0.0000,0.0000

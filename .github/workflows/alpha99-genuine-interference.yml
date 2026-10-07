@@ -1,0 +1,102 @@
+name: Alpha99 genuine interference check (research)
+
+# RESEARCH ONLY. Restores the sha256-verified genuine catalogue photos (as the Alpha96 calibration job does) and runs
+# the Alpha99 evidence layer on them through the desktop harness: the per-marker hand / glare interference check
+# (Alpha99Interference) and the full Alpha99 classification next to Alpha98 (Alpha99Preview). Prints how often each
+# marker is withheld and every Alpha98 -> Alpha99 status change, and fails if Alpha99 reports anything outside the
+# genuine range that Alpha98 did not. Only CSVs are uploaded; images are never committed, cached or uploaded.
+on:
+  push:
+    branches:
+      - feature/android-alpha99-hybrid-results
+    paths:
+      - '.github/workflows/alpha99-genuine-interference.yml'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99*.java'
+      - 'tools/research/alpha96_calibration/alpha99_genuine_summary.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  genuine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CAL: tools/research/alpha96_calibration
+      IMG: a99_images
+      OUT: a99_results
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: python -m pip install -q requests opencv-python-headless
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Fetch catalogued photos (sha256-verified)
+        run: |
+          mkdir -p "$IMG" "$OUT"
+          python3 "$CAL/fetch_verified.py" "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/fetch_log.csv"
+
+      - name: Interference check
+        run: tools/desktop-harness/run.sh Alpha99Interference "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT" --no-images > "$OUT/interference_log.txt"
+
+      - name: Alpha99 classification next to Alpha98
+        run: tools/desktop-harness/run.sh Alpha99Preview "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT" --no-images > "$OUT/preview_log.txt"
+
+      - name: Upload CSVs (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha99-genuine-interference-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            a99_results/*.csv
+            a99_results/*.txt
+
+      - name: Summary (fails on any new finding)
+        run: |
+          python3 "$CAL/alpha99_genuine_summary.py" "$OUT/findings.csv" "$OUT/interference.csv" "$CAL/catalogue_provenance_strong.csv"
+
+      - name: Print per-photo results to log
+        if: always()
+        run: |
+          cat "$OUT/interference_log.txt" || true
+          cat "$OUT/preview_log.txt" || true
+
+      - name: Print results screens of genuine photos with a CLEAR finding as base64 JPEG (log-only, LAST STEP)
+        # Visual review of any clear finding on a genuine photo (is it a missed hand / reflection?). Log-only, as the
+        # earlier fetch jobs did; nothing is uploaded or committed.
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import csv, os
+          ids = sorted({r['photo_id'] for r in csv.DictReader(open('a99_results/findings.csv')) if r['alpha99_status'] == 'CLEAR'})
+          cat = list(csv.DictReader(open(os.environ['CAL'] + '/catalogue_provenance_strong.csv')))
+          with open('a99_clear_manifest.csv', 'w', newline='') as fh:
+              w = csv.writer(fh); w.writerow(['photo_id', 'local_path'])
+              for r in cat:
+                  if r['photo_id'] in ids: w.writerow([r['photo_id'], r['local_path']])
+          print('clear on genuine:', ids)
+          PY
+          tools/desktop-harness/run.sh Alpha99Preview a99_clear_manifest.csv "$IMG" a99_clear > /dev/null
+          python3 - <<'PY'
+          import base64, glob, cv2
+          for f in sorted(glob.glob('a99_clear/*_results.png')):
+              im = cv2.imread(f); h = 1400; im = cv2.resize(im, (int(im.shape[1] * h / im.shape[0]), h))
+              ok, buf = cv2.imencode('.jpg', im, [cv2.IMWRITE_JPEG_QUALITY, 70])
+              print('=== ' + f + ' BASE64 JPEG BEGIN'); print(base64.b64encode(buf.tobytes()).decode()); print('=== END')
+          PY

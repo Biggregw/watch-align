@@ -511,3 +511,256 @@ The 2-D offset maximum rose to 0.0083 R entirely through the 126710GRNR photo's 
 - `Alpha97TwelveReadoutTest` is updated: 45 watches, 4 owner-priority watches present, SWE excluded; 8/8 pass locally.
 - App-versus-prototype parity: 8 local, 166 scaled and 9 owner photos, 0 mismatches.
 - Alpha96 regression: 0 differences.
+
+## Date window: digit centring and tilt prototype (offline, 2026-10-07)
+
+**Pieces:**
+- `tools/desktop-harness/drivers/DateCrop.java` (harness only) exports an upright, dial-plane-rectified crop of the 3 o'clock region. It uses the frozen production pose and the production sampler, by reflection. The crop covers x 0.22–1.02 and y ±0.38 R at 0.0025 R/px.
+- `date_window.py` measures inside the magnified window. Only ratios and angles inside the magnified image are used, so the cyclops magnification cancels:
+  - **window:** the brightest class (two-level Otsu) nearest the expected position, fitted with a rotated rectangle;
+  - **window_tilt:** rectangle angle plus sub-pixel gradient tilt of the window's top and bottom edges, against the dial horizontal;
+  - **digit_dx / digit_dy:** numeral ink-box centre minus window centre, as a fraction of window width / height;
+  - **digit_tilt:** two-digit dates only; the line through the two numerals' sub-pixel mid-heights, against the window.
+- It withholds with a reason for: no plausible window, a window that isn't rectangular (glare, reflection or occlusion), an implausible aspect, a numeral cut by the window edge (mid-change or a hand), or implausible ink. No thresholds are applied to the measurements, and there are no verdicts.
+
+**Synthetic validation** (`date_window_synth_check.py`, `results/date_window/synthetic_checks.txt`):
+- Whole crop rotated ±2°: window tilt follows (+1.88 to +2.17°, −1.99 to −2.15°), and digit tilt stays put (within 0.2°; one case 0.46°).
+- Interior only rotated +2° / −1°: digit tilt follows (+1.96 to +2.20°, −0.82 to −1.18°), and window tilt stays put (within 0.08°).
+- Interior shifted 2–3 px: centring follows exactly, apart from the 1 px rounding of the ink box (about 0.004–0.007 of the window).
+
+**Font effects mean a reference is needed for each date:**
+- Glyph shapes shift both centring and row tilt.
+- Round digits overshoot flat ones: four genuine "28" photos read −0.38 to −0.59° row tilt.
+- A single "13" listing screenshot read +2.2°.
+- So genuine references are needed for each date, or each numeral pair, before anything is compared. The genuine catalogue covers many dates; the Rolex CPO images are all "28".
+
+**Local and owner photos** (`results/date_window/date_local_owner.csv`): 10 of 18 measured.
+
+| Photo | Reading |
+|---|---|
+| genuine 28s (4 CPO-style) | dx −0.004 to −0.011, dy −0.012 to −0.018, row tilt −0.38 to −0.59°, window tilt −0.29 to +0.27° |
+| RL_LOCAL_BLNR ("11", identical glyphs) | window tilt +2.44°, digit row −2.51° relative to it (numerals level with the dial, aperture rotated) |
+| Batgirl (two photos, dates 9 and 4) | window tilt −0.82° and −1.14° |
+
+Withheld:
+- glare or reflection: 3;
+- reflection merged into the window: 2;
+- a hand: 1;
+- numeral cut by the edge: 2 (THEONE and ARF, both darker photos). These are probably false withholds, because the window box hugs the digits there; refining the window edges from the gradient profile is the next fix.
+
+**Next:**
+- Refine the window edges.
+- Run DateCrop and `date_window.py` on the sha256-verified genuine catalogue in CI to build genuine references for each date (one value per watch).
+- Check repeatability on the multi-photo genuine watches.
+
+## Date window on the genuine catalogue (CI runs 37662260742, 37663577357, 37664650850; 2026-10-07)
+
+**Window edges** (step 1):
+- Edges are refined from the brightness profile: a sub-pixel half-way crossing, searched outward from the numerals.
+- Window tilt comes from Theil-Sen lines fitted to the top and bottom edges.
+- Synthetic whole-crop rotation of ±2° reads ±1.96 to 2.03°, and +1° reads +0.97 to +1.03°. Digit tilt stays within 0.2°.
+
+**Row-tilt fixes:**
+- Glyph extents now use the extreme ink rows (15% of the peak). Numerals with a heavy bar (7, 4, 2) broke the 50% level, giving −30 to +13° for 17, 24 and 14.
+- Row tilt is withheld when the two glyph heights disagree by more than 12%. The Phillips "24" lot read +11° on every photo.
+
+**Dates:** hand-labelled from the run-1 montage (`results/date_window/date_labels_catalogue.csv`). 157 photos are labelled; 2 are unreadable (mid-change, no window) and 4 have a hand over the window.
+
+**Merging runs:**
+- SWE's CDN flips between serving the catalogued bytes and different bytes: 171, then 112, then 112 photos verified across the three runs.
+- Run 3 is used where available.
+- Photos verified only in run 1 contribute window tilt and centring, which the fixes did not change, but not row tilt.
+
+**Reference** (step 2): `date_reference.py` gives one value per watch, with shared photos excluded and owner-priority CPO photos included. The primary analysis excludes SWE (`results/date_window/reference.md`); `results/date_window/reference_with_swe.md` is a sensitivity analysis that includes it.
+
+| | SWE excluded (36 watches) | SWE included (52 watches) |
+|---|---|---|
+| window tilt median / P10 / P90 | −0.08 / −0.34 / +0.12° | −0.04 / −0.38 / +0.35° |
+| window tilt range | −0.66 to +0.42° | −1.09 to +0.52° |
+| dates with ≥ 3 genuine watches | 22, 23, 28, 30 | adds 9 (16 watches, almost all SWE) |
+| two-digit row tilt, per date | within about ±0.5° (28: −0.15 to +0.19°; 30: −0.73 to −0.17°) | same |
+
+**Repeatability** (step 3), from watches with ≥ 2 photos of the same date:
+
+| | Watches with ≥ 2 photos | Window tilt within / between | dx within / between | dy within / between |
+|---|---:|---|---|---|
+| SWE excluded | 4 | 0.13° / 0.15° | – | – |
+| SWE included | 20 | 0.11° / 0.18° | 0.004 / 0.005 | 0.005 / 0.009 |
+
+(Within = median spread across one watch's photos; between = between-watch MAD, for centring on date 9.)
+
+- Window tilt is repeatable within a watch.
+- Centring is repeatable to about 0.005 of the window, which is comparable to the genuine spread between watches.
+
+**Photos against the reference** (genuine watches at least as far):
+
+| Photo | Window tilt | Centring / row tilt |
+|---|---|---|
+| Batgirl photo 1 (date 9) | −0.86°: 0/36 (1/52 with SWE) | ordinary against 16 genuine "9"s (16/16 and 8/16; SWE only) |
+| Batgirl photo 2 (date 4) | −0.72°: 0/36 (3/52) | – |
+| RL_LOCAL_BLNR (date 11) | +1.00°: 0/36 (1/52) | row tilt −1.14°; no "11" reference |
+| THEONE (date 25) | +0.11°: ordinary | row tilt −0.82°; no "25" reference with ≥ 3 watches |
+| Genuine CPO 116710LN | −0.65°: 1/36 | – |
+
+**Reading:**
+- Window tilt is the usable date-window feature now: it is date-independent, repeatable, and has 36–52 reference watches.
+- Batgirl and LOCAL sit at or beyond the genuine edge. But SWE includes one genuine watch at −1.09°, so the Batgirl reading is edge-of-genuine rather than clearly beyond.
+- Centring and row tilt need references for each date. Only 4–5 dates have ≥ 3 genuine watches, and most dates have none. That is a named evidence gap: genuine photos across all 31 dates.
+
+No limits are derived and the app is unchanged.
+
+**Owner decision (2026-10-07): include SWE in the date-window reference.**
+- `date_reference.py` now includes SWE by default: `results/date_window/reference.md`, 52 watches, the primary reference.
+- `--exclude-swe` writes the sensitivity analysis: `reference_without_swe.md`, 36 watches.
+- The 12-triangle reference is unchanged and still excludes SWE (that decision was about SWE's studio lighting moving the 12).
+- With SWE included:
+  - window tilt reference: −1.09 to +0.52° (median −0.04°, P10 −0.38°, P90 +0.35°);
+  - Batgirl photos −0.86° and −0.72°: 1 and 3 genuine watches as far, so edge-of-genuine;
+  - RL_LOCAL_BLNR +1.00°: 1 genuine watch as far;
+  - date 9 gets a 16-watch centring reference, against which Batgirl photo 1 is ordinary.
+
+## Alpha98: human-readable results with close-ups (2026-10-07)
+
+**Owner decisions:**
+- A feature is reported as "outside the measured genuine range" only when it reads further than every genuine reference watch.
+- Features covered: 6, 9, 12 (robust readout), round markers, ring, date-window tilt.
+- Technical numbers sit behind a collapsed "Technical details" section.
+
+**Reference:** `build_alpha98_reference.py` writes `alpha98_reference.csv` and `alpha98_nominal.properties`; `gen_alpha98_constants.py` turns them into `Alpha98Reference.java`.
+- 6, 9, round markers and ring: SWE excluded plus owner-priority watches (44–48 watches).
+- 12: Alpha97b, 45 watches.
+- Date-window tilt: SWE included (52 watches).
+- Each watch's own distance is computed from a nominal without it.
+- Round markers and ring shift: compared only with genuine watches whose dial radius is at most 1.3× the photo's; fewer than 8 such watches means not assessed. Small dials inflate these two.
+- A reference watch can never be flagged against itself: the comparison allows for the 6-decimal storage of the reference.
+
+**App changes** (`android/`; pose and Alpha94 measurement byte-identical to Alpha96):
+- `Alpha98DateWindow`: port of the date-window tilt. Parity: 18/18 crops pixel-identical to DateCrop, 18/18 usable/withheld decisions identical, tilts within 0.014° (`results/alpha98/date_parity.txt`). The residual comes from OpenCV 4.9 vs 5.0.
+- `Alpha98Findings`: plain-language findings with fail-closed reasons.
+- `Alpha98Closeups`: an upright, perspective-corrected close-up per finding. The genuine outline is drawn where the other markers predict the marker (ring fit); the ring close-up uses the unmoved master; the date window shows its measured edges plus a level line.
+- `Alpha98ResultsActivity`: headline, disclaimer, close-up cards (tap to zoom), the within-range list, not-assessed reasons, the full overlay, and collapsed technical details. The main screen wording is simplified.
+
+**Checks:**
+- `Alpha98FindingsTest` (7 tests) pins the constants to the research files. The flag decisions match the offline check on all local and owner photos. It also covers the resolution rule, the date rule, the self-reference tolerance, the wording (no verdict words, disclaimer present) and the numpy-equivalent helpers.
+- The Alpha97 tests (8) still pass.
+- Alpha96 regression: 0 differences over 1,592 values.
+
+**Desktop preview** (`Alpha98Preview`, results in `results/alpha98/preview_text.txt`):
+
+| Photo | Outside the genuine range |
+|---|---|
+| Batgirl, photo 1 | 6 rotation; 9 rotation and offset; 2 o'clock round marker (12 withheld: hand) |
+| Batgirl, photo 2 | 6 rotation; 9 rotation and offset; 2 o'clock round marker |
+| THEONE | 12 (centreline, side, lateral); 6 offset; 9 rotation |
+| RL_LOCAL_BLNR | 12 lateral; 6 offset; ring rotation |
+| ARF crooked-6 | 12 lateral; 6 offset; 8 o'clock round marker |
+| Genuine owner photos | nothing, except the 126715CHNR CPO's 6, where the seconds hand sits on the marker (visible in the close-up; the caption tells the user to check for a hand) |
+| Marketplace candidates | nothing |
+
+## Alpha99: evidence strength and per-marker interference (2026-10-07)
+
+Alpha99 changes only the evidence layer and the results screen. Pose, the Alpha94 measurement, the Alpha92 master, the date-window maths and the genuine reference are byte-identical to Alpha98.
+
+### Measurement-uncertainty allowances (genuine photos only)
+
+`measurement_uncertainty.py` writes `alpha99_uncertainty.properties` and `results/alpha99/uncertainty.md`; `gen_alpha99_constants.py` turns them into `Alpha99Uncertainty.java`.
+
+- **Source:** every genuine physical watch photographed two or more times, with non-shared photos (`ci_run_37500197377/per_photo.csv` and `results/dedup/photos.csv`). Same basis as the Alpha98 reference: SWE excluded for the markers and the 12; SWE included for the date window (`date_window/run3`, with `run1` as fallback).
+- **No replica, marketplace-candidate or owner test photo is read.**
+- **sigma** is the pooled within-watch standard deviation of a single photo's reading: the spread between different photos of the same genuine watch, around that watch's own mean. It covers pose, perspective, lighting and detector error together.
+- Positional families pool their radial and tangential components. They are pooled both in R and in px; the app uses max(sigma_R, sigma_px / photo R), so a small photo never gets a smaller allowance than its pixel noise implies.
+- Angle families are also pooled as degrees × R, because an angle's error is a pixel edge error divided by the feature's length, which scales with R. The app uses max(sigma_deg, sigma_degR / photo R).
+
+| Family | sigma | 3 sigma | Watches (photos) |
+|---|---|---|---|
+| 6 rotation | 0.195° | 0.585° | 9 (51) |
+| 9 rotation | 0.205° | 0.616° | 8 (49) |
+| 6 position | 0.125% R / 0.25 px | 0.37% R | 9 (51) |
+| 9 position | 0.090% R / 0.20 px | 0.27% R | 8 (49) |
+| Round-marker position | 0.057% R / 0.11 px | 0.17% R | 9 (43) |
+| 12 lateral | 0.202% R / 0.41 px | 0.61% R | 9 (51) |
+| 12 centreline | 0.184° | 0.552° | 9 (51) |
+| 12 sides | 0.487° | 1.460° | 9 (51) |
+| Ring rotation | 0.024° | 0.072° | 9 (51) |
+| Ring shift | 0.059% R / 0.32 px | 0.18% R | 9 (51) |
+| Date-window tilt | 0.149° | 0.447° | 20 (71) |
+
+Angle families, scaled by resolution (sigma_degR / R; this applies when it is larger than the fixed sigma above):
+
+| Family | sigma_degR | At R 100 | At R 200 | At R 300 |
+|---|---|---|---|---|
+| 6 rotation | 45.3 | 0.45° | 0.23° | 0.195° (fixed) |
+| 9 rotation | 43.4 | 0.43° | 0.22° | 0.205° (fixed) |
+| 12 centreline | 72.6 | 0.73° | 0.36° | 0.24° |
+| 12 sides | 82.8 | 0.83° | 0.49° (fixed) | 0.49° (fixed) |
+| Ring rotation | 7.9 | 0.079° | 0.040° | 0.026° |
+| Date-window tilt | 119.8 | 1.20° | 0.60° | 0.40° |
+
+The genuine-catalogue run (37675166666) is why angles now scale with resolution. Before the change, one genuine photo was a CLEAR finding: a 126711CHNR from Phillips at dial radius 103 px, whose 12 left side read 3.2° off. The same watch's 7 other photos all read about 0.9°. The fixed angle sigma came mostly from photos at R 230–330, so it did not cover a 103 px photo. With scaling, that photo is WORTH A LOOK. The local photos' classifications are unchanged.
+
+The marker families come mostly from Phillips auction lots, which have 6–8 photos each from different angles. Bob's adds pairs. 12 lateral is driven by two Phillips lots (146213 and 210072): their photo-to-photo SD is 0.45% R and 0.25% R, against at most 0.07% R for the rest. That makes the 12 lateral allowance conservative, so fewer findings become CLEAR.
+
+**Rule.** It was fixed before any photo was classified, and K is a single value for every family.
+- **WITHIN RANGE:** not beyond every genuine reference watch. This is the Alpha98 rule, unchanged; the genuine range is never widened.
+- **WORTH A LOOK:** beyond the genuine maximum, by no more than 3 sigma. Photo or measurement error could account for the excess.
+- **CLEAR FINDING:** beyond the genuine maximum by more than 3 sigma.
+- A family without a sigma could be outside the range but never CLEAR. Every assessed family currently has one.
+
+### Per-marker interference check (`Alpha99MarkerInterference`)
+
+Every individual marker (12, 6, 9 and each round) must pass this check before it can become a finding. Otherwise it is NOT ASSESSED, with the reason "hand crosses or touches this marker" or "reflection or glare around this marker". The check reads the image on the frozen pose and never changes a measurement.
+
+Alpha94's outline-integrity test (≥ 0.80) misses thin hands: a seconds hand or a GMT shaft covers only a few percent of the outline. The check has three parts. All its geometry is fixed in canonical dial units from the Alpha92 master.
+
+1. **Strip beside and inside the marker.**
+   - Sampled along the marker's radial axis: the marker ± 0.04 R, plus a 0.12 R corridor towards the centre (for the 12, from r 0.50).
+   - A sample is foreign if it differs from its row's median dial by more than max(20 grey levels, 5 × robust noise).
+   - A hand is a connected foreign structure that spans at least 0.05 R radially and comes within **0.012 R + 1 px** of the marker's outline. To measure how close it comes, the structure is followed into the outline's halo, judged against the halo's own glow profile.
+   - Why 0.012 R: Alpha94's final edge search reads ± 0.012 R around the outline. Anything closer can enter the measured edge; anything further cannot. This rule comes from the measurement code, not from any photo.
+2. **Marker face.** A thin structure (≤ 0.05 R wide) spanning ≥ 0.05 R across the lume, such as a hand lying over the marker.
+3. **Seconds hand.**
+   - On a black dial, the dark shaft is visible only where it crosses a marker's bright edge. The 126715CHNR CPO's 6 is the example: it passed both Alpha94 and parts 1–2.
+   - Its lume dot fixes the line the shaft runs along. The dot is a bright disc on a thin shaft, centred between r 0.50 and 0.60, outside the date-window region.
+   - Contrast: at least 0.45 × the photo's marker-lume contrast.
+   - Every marker that the line from the centre through the dot passes within 0.012 R + 1 px + 0.006 R (the shaft's half-width) is withheld.
+   - The 0.45 was set on the 18 local photos. Real dots read 0.51–1.0 of the lume contrast; text and hand lume bars read at most 0.39.
+
+**Fail closed:** no image, no pose, or an unreadable strip means the marker is withheld.
+
+**Local photos** (`results/alpha99/interference_local.csv`, `summary_local.txt`): 38 of 198 marker checks withheld, 23 of which Alpha94 had also withheld. Every withheld marker was inspected in a close-up:
+
+- GMT arrows over the 5, 8, 9 and 12;
+- minute and seconds hands across rounds;
+- seconds hands along the 6 on four CPO photos, including the CHNR.
+
+The rule passed three hands that run 3–5 px clear of a marker. Batgirl photo 1's minute hand passes 5.1 px from the 9, so the 9 stays assessed.
+
+### Before / after (desktop preview, `results/alpha99/findings_local.csv`, `preview_text.txt`)
+
+| Photo | Alpha98 (beyond every genuine watch) | Alpha99 |
+|---|---|---|
+| Batgirl, photo 1 (R 205) | 6 rotation; 9 rotation and offset; 2 o'clock round; 12 withheld | **CLEAR:** 9 (1.6° CCW, max 0.6°); 2 o'clock (0.44%, max 0.26%). **WORTH A LOOK:** 6 (0.8° CW, max 0.7°); 8 o'clock (0.39%). **NOT ASSESSED:** 12 (GMT hand) |
+| Batgirl, photo 2 (R 278) | 6 rotation; 9 rotation and offset; 2 o'clock round | **CLEAR:** 9 (1.4° CCW); 2 o'clock (0.43%). **WORTH A LOOK:** 6 (1.0° CW); 8 o'clock (0.39%). **NOT ASSESSED:** 4 and 10 (hands) |
+| Theonewatches (R 165) | 12 centreline, side, lateral; 6 offset; 9 rotation | **WORTH A LOOK:** 6 (0.47%, max 0.30%); 9 (0.9° CCW). **NOT ASSESSED:** 12 (seconds hand alongside); round markers (resolution) |
+| Local BLNR (R 220) | 12 lateral; 6 offset; ring rotation | **CLEAR:** 12 (1.33% to the left, max 0.23%); dial marker ring (0.52° CW, max 0.20°). **NOT ASSESSED:** 6 (hand across its face); 9, 5, 8 (hands) |
+| ARF crooked-6 (R 234) | 12 lateral; 6 offset; 8 o'clock round | **CLEAR:** 12 (0.85% to the left); 8 o'clock (0.46%); 11 o'clock (0.45%). **WORTH A LOOK:** 6 (0.37%); 7 o'clock; 10 o'clock. **NOT ASSESSED:** 1, 2, 5 (hands) |
+| 126715CHNR CPO | 6 rotation 2.3° and offset (seconds hand) | **NOT ASSESSED:** 6 (seconds hand). Nothing outside |
+| Other owner official / CPO photos, marketplace candidates | nothing | nothing (markers under hands withheld) |
+
+- No feature is outside in Alpha99 unless Alpha98 had it outside (`alpha99_genuine_summary.py`).
+- The extra round hours (Batgirl 8 o'clock; ARF 7, 10 and 11 o'clock) were already outside in Alpha98's single round-marker feature, which named only the worst. Alpha99 judges and names each clean round.
+- The recent QC photo with a hand across the flagged round marker (Geektime / RepTimeQC) is not in this session's files. The synthetic regression tests cover that case (`Alpha99FindingsTest`); the real photo should be added to the local checks when supplied.
+
+### Regression
+
+- **Alpha96 runner:** 0 differences over 1,592 values on the 8 local photos, and 0 over 1,791 on the 9 owner photos (timing column excluded).
+- **Frozen files:** `Alpha94MarkerMeasurement`, `Alpha92GmtMaster`, `AutomaticDialOverlay`, `Alpha91*`, `Alpha98DateWindow`, `Alpha98Reference` and `Alpha97TwelveReadout` have no diff from Alpha98 (2cb22c2).
+- **Unit tests:** `Alpha99FindingsTest` (16), `Alpha98FindingsTest` (7) and `Alpha97TwelveReadoutTest` (8) pass.
+- **Date window needs the marker ring:** the date tilt is read relative to the pose, so it is assessed only when the marker ring was measured, which confirms the dial's orientation. Otherwise it is not assessed ("orientation not confirmed"). This was found on the genuine catalogue (run 37678284382): a Bob's 126710BLRO photo with a mis-registered pose had its markers withheld and no ring fit, and read a level date window as a 6.0° CLEAR finding. Locally, only the 16700 CPO changes (its ring cannot be fitted on the predecessor layout).
+- **Genuine catalogue, final (run 37680031278):** 104 photos with a pose.
+  - 229 of 1,177 marker checks were withheld (19.5%); Alpha94 had already withheld 139 of them. The 2 o'clock is withheld most often, because catalogue photos usually show the hands at 10:10.
+  - 0 new findings relative to Alpha98.
+  - 35 genuine photos still show at least one WORTH A LOOK (51 features). Each is a single photo compared with per-watch medians, typically an angled Phillips auction shot; Alpha98 already reported every one as outside, and Alpha99 grades them as within measurement uncertainty rather than clear.
+  - One genuine photo remains a CLEAR finding: Bob's 126715CHNR `ee1933f4d3ba3a7d`, 6 o'clock 0.72% out of place (genuine max 0.30%). The close-up shows no hand. This watch was not in the reference, because its photo failed to fetch in run 37500197377. It shows that the 44-watch genuine range is not exhaustive. A CLEAR finding means "well beyond every genuine watch measured so far", not proof.
+- **Overview badges (owner decision):** a marker withheld for a photo-wide reason gets no badge. Example: round markers on a photo too small for a comparable genuine set. The reason is the photo, not the marker; the not-assessed line under the grid explains it. Grey dashes remain for marker-specific reasons (hand, glare, edge).
+- **Genuine catalogue:** `.github/workflows/alpha99-genuine-interference.yml` runs the interference check and the Alpha99 classification. It prints withhold rates and status changes, and fails on any new finding.
