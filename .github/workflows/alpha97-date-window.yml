@@ -7,6 +7,7 @@ name: Alpha97 date-window research run
 # labelled by hand (no digit recognition yet). Images are never committed, cached or uploaded. Nothing here
 # changes the app, thresholds or verdicts.
 # Run 2: digit-row tilt uses each glyph's extreme ink rows (fixes 17 / 24 / 14 failures in run 37662260742).
+# Run 3: row tilt withheld when the two glyph heights disagree (> 12%): Phillips '24' lot read +11 deg in run 2.
 on:
   push:
     branches:

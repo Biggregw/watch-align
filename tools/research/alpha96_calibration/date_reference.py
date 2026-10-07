@@ -48,11 +48,19 @@ def q(s, p):
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument('--out', default=os.path.join(R, 'reference.md')); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument('--out', default=os.path.join(R, 'reference.md'))
+    ap.add_argument('--include-swe', action='store_true', help='sensitivity: keep SWE photos (owner decision excludes them)')
+    a = ap.parse_args()
     cat = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(HERE, 'catalogue_provenance_strong.csv')))}
     shared = {r['photo_id'] for r in csv.DictReader(open(os.path.join(R, '..', 'dedup', 'photos.csv'))) if r['shared_dial'] == '1'}
     labels = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(R, 'date_labels_catalogue.csv')))}
-    meas = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(R, 'date_window_catalogue.csv')))}
+    # run 2 (fixed row tilt) first; photos that verified only in run 1 contribute window tilt and centring (unchanged by the
+    # fix) but not row tilt
+    meas = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(R, 'run2', 'date_window_catalogue.csv')))
+            if r.get('status') == 'accepted'}
+    for r in csv.DictReader(open(os.path.join(R, 'run1', 'date_window_catalogue.csv'))):
+        if r.get('status') == 'accepted' and r['photo_id'] not in meas:
+            r = dict(r); r['digit_tilt_deg'] = ''; r['run'] = '1'; meas[r['photo_id']] = r
     pri = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(HERE, 'priority_genuine.csv')))}
     photos = []   # (watch, source, date, values)
     excl = defaultdict(int)
@@ -62,14 +70,14 @@ def main():
         if m.get('usable') != 'True':
             excl['withheld by the measurement'] += 1; continue
         c = cat[pid]; host = c['image_url'].split('/')[2]
-        if 'swisswatchexpo' in host:
+        if 'swisswatchexpo' in host and not a.include_swe:
             excl['SWE (owner decision)'] += 1; continue
         if pid in shared:
             excl['shared / stock photo'] += 1; continue
         d = labels.get(pid, {}).get('date', '')
         if not d or labels[pid]['label_note']:
             excl['date unlabelled / uncertain'] += 1; continue
-        src = "Bob's" if 'bobswatches' in host else 'Phillips' if 'phillips' in host else 'other'
+        src = "Bob's" if 'bobswatches' in host else 'Phillips' if 'phillips' in host else 'SWE' if 'swisswatchexpo' in host else 'other'
         photos.append((c['physical_watch_id'], src, d, {k: fl(m.get(k)) for k in KEYS}))
     local = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(R, 'date_local_owner.csv')))}
     for stem, (ppid, d) in PRIORITY_LOCAL.items():
@@ -83,7 +91,8 @@ def main():
     W = [dict(watch=w, src=s, date=d, n=len(vs), **{k: (median([v[k] for v in vs if v[k] is not None]) if any(v[k] is not None for v in vs) else None) for k in KEYS})
          for (w, s, d), vs in by.items()]
     L = ['# Genuine date-window reference (research only; no limits, no verdicts)', '',
-         f'CI run 37662260742 (sha256-verified catalogue) + owner-priority photos. Photos used: {len(photos)}; physical watches: '
+         f"CI runs 37663577357 (row tilt fixed) and 37662260742 (window tilt / centring only, for photos that verified only "
+         f"then) + owner-priority photos; SWE {'INCLUDED (sensitivity)' if a.include_swe else 'excluded (owner decision)'}. Photos used: {len(photos)}; physical watches: "
          f'{len(W)}. Excluded: ' + ', '.join(f'{k} {v}' for k, v in sorted(excl.items())) + '.', '',
          'Sources (watches): ' + ', '.join(f"{s} {sum(1 for w in W if w['src'] == s)}" for s in sorted({w['src'] for w in W})), '']
     wt = [w['window_tilt_deg'] for w in W if w['window_tilt_deg'] is not None]

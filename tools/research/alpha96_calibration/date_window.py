@@ -9,7 +9,8 @@ The window is seen through the cyclops, so everything here is a ratio or an angl
   digit        dark ink inside the window (excluding a border band); union bounding box in the window frame
   digit_dx/dy  (ink-box centre - window centre) / window width / height, in the window frame (+ = right / down)
   digit_tilt   deg, digit-row tilt vs the window edges (+ = clockwise): line through the two numerals' vertical
-               mid-heights (sub-pixel extreme ink rows of each glyph: shared cap height and baseline); two-digit dates only (single-digit dates report centring, tilt withheld)
+               mid-heights (sub-pixel extreme ink rows of each glyph: shared cap height and baseline); two-digit dates only,
+               withheld when the two glyph heights disagree by > 12% (something merged into a glyph) (single-digit dates report centring, tilt withheld)
 Fail-closed (withheld, with reason): no plausible window; window not rectangular (glare / reflection / occlusion);
 ink touching the window's top or bottom band (date mid-change, hand, frame shadow); ink too small or too large.
 No thresholds on the measurements themselves, no verdicts.
@@ -134,8 +135,11 @@ def row_tilt(img, ink):
         # sub-pixel 50% crossings at the numeral's top and bottom edges
         t = top - (prof[top] - half) / max(prof[top] - prof[top - 1], 1e-6) if top > 0 else float(top)
         b = bot + (prof[bot] - half) / max(prof[bot] - prof[bot + 1], 1e-6) if bot + 1 < len(prof) else float(bot)
-        cs.append(((x0 + x1) / 2.0, (t + b) / 2.0))
-    (xl, yl), (xr, yr) = cs
+        cs.append(((x0 + x1) / 2.0, (t + b) / 2.0, b - t))
+    (xl, yl, hl), (xr, yr, hr) = cs
+    # both numerals share one font height; disagreement means a reflection, shadow or hand merged into one glyph
+    if abs(hl - hr) > 0.12 * max(hl, hr):
+        return float('nan'), -2
     return math.degrees(math.atan2(yr - yl, xr - xl)), 2
 
 
@@ -286,7 +290,7 @@ def measure(g, x0, y0, step):
         out['reason'] = 'too few clean window edges for tilt'
         return out, rect, win
     if not (dn == 2 and math.isfinite(dtilt)):
-        dtilt = float('nan')                       # single-digit date: centring reported, row tilt withheld
+        dtilt = float('nan')                       # single-digit date (or glyph heights disagree): centring only
     out.update(usable=True, digit_dx=((bx0 + bx1) / 2 - W / 2) / W, digit_dy=((by0 + by1) / 2 - H / 2) / H,
                digit_h_frac=hfrac, digit_w_frac=(bx1 - bx0) / W, digit_tilt_deg=dtilt - wres if math.isfinite(dtilt) else float('nan'), digit_groups=dn,
                window_tilt_deg=ang + wres, ink_px=int(keep.sum()))
