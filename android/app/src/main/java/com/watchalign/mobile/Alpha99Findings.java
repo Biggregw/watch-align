@@ -161,7 +161,7 @@ final class Alpha99Findings {
         s.all.add(baton(r,9,R,check(checks,9)));
         s.all.addAll(rounds(r,R,checks));
         s.all.add(ring(r,R));
-        s.all.add(date(date));
+        s.all.add(date(date,R));
         return s;
     }
 
@@ -186,6 +186,9 @@ final class Alpha99Findings {
     }
 
     static double sigmaR(double sR,double sPx,double R){return Double.isFinite(R)&&R>0?Math.max(sR,sPx/R):sR;}
+    /** Angles: an angle's error is a pixel edge error over the feature's length (proportional to R), so a small photo
+     *  gets at least sigma_degR / R. */
+    static double sigmaDeg(double sDeg,double sDegR,double R){return Double.isFinite(R)&&R>0?Math.max(sDeg,sDegR/R):sDeg;}
 
     // ------------------------------------------------------------------ features
     static Finding twelve(Alpha94MarkerMeasurement.Report r,Alpha99MarkerInterference.Check c,double R){
@@ -196,12 +199,12 @@ final class Alpha99Findings {
         if(!t.usable){withheldByMeasurement(f,t.reason);return f;}
         int n=Alpha97TwelveReadout.N_WATCHES;
         f.measures.add(new Measure("centreline",Math.abs(t.centrelineDeg),Alpha98Findings.max(Alpha97TwelveReadout.GENUINE_CENTRELINE_DEG),
-                Alpha99Uncertainty.TWELVE_CENTRELINE_DEG,n,"deg",
+                sigmaDeg(Alpha99Uncertainty.TWELVE_CENTRELINE_DEG,Alpha99Uncertainty.TWELVE_CENTRELINE_DEGR,R),n,"deg",
                 String.format(Locale.US,"points %.1f° %s",Math.abs(t.centrelineDeg),cwShort(t.centrelineDeg)),
                 String.format(Locale.US,"It points %.1f° %s of the genuine direction",Math.abs(t.centrelineDeg),Alpha98Findings.cw(t.centrelineDeg))));
         boolean left=Math.abs(t.leftSideDeg)>=Math.abs(t.rightSideDeg);double sd=left?t.leftSideDeg:t.rightSideDeg;
         f.measures.add(new Measure("sides",t.sidesDeg,Alpha98Findings.max(Alpha97TwelveReadout.GENUINE_SIDES_DEG),
-                Alpha99Uncertainty.TWELVE_SIDES_DEG,n,"deg",
+                sigmaDeg(Alpha99Uncertainty.TWELVE_SIDES_DEG,Alpha99Uncertainty.TWELVE_SIDES_DEGR,R),n,"deg",
                 String.format(Locale.US,"%s side %.1f° %s",left?"left":"right",Math.abs(sd),cwShort(sd)),
                 String.format(Locale.US,"Its %s side is angled %.1f° %s",left?"left":"right",Math.abs(sd),Alpha98Findings.cw(sd))));
         f.measures.add(new Measure("lateral",Math.abs(t.lateralR),Alpha98Findings.max(Alpha97TwelveReadout.GENUINE_LATERAL_R),
@@ -231,7 +234,7 @@ final class Alpha99Findings {
         double[] rotRef=hour==6?Alpha98Reference.SIX_ROT_FAR:Alpha98Reference.NINE_ROT_FAR;
         double[] offRef=hour==6?Alpha98Reference.SIX_OFF_FAR:Alpha98Reference.NINE_OFF_FAR;
         double nom=hour==6?Alpha98Reference.NOMINAL_SIX_ROT:Alpha98Reference.NOMINAL_NINE_ROT;
-        double sRot=hour==6?Alpha99Uncertainty.SIX_ROT_DEG:Alpha99Uncertainty.NINE_ROT_DEG;
+        double sRot=hour==6?sigmaDeg(Alpha99Uncertainty.SIX_ROT_DEG,Alpha99Uncertainty.SIX_ROT_DEGR,R):sigmaDeg(Alpha99Uncertainty.NINE_ROT_DEG,Alpha99Uncertainty.NINE_ROT_DEGR,R);
         double sOff=hour==6?sigmaR(Alpha99Uncertainty.SIX_OFF_R,Alpha99Uncertainty.SIX_OFF_PX,R):sigmaR(Alpha99Uncertainty.NINE_OFF_R,Alpha99Uncertainty.NINE_OFF_PX,R);
         double rot=m.rotationDeg-nom;
         f.measures.add(new Measure("rotation",Math.abs(rot),Alpha98Findings.max(rotRef),sRot,rotRef.length,"deg",
@@ -276,7 +279,7 @@ final class Alpha99Findings {
         Alpha94MarkerMeasurement.Ring g=r==null?null:r.ring;
         if(g==null||!g.usable){f.status=Status.NOT_ASSESSED;f.reason="too few markers could be measured cleanly";f.shortReason="too few clean markers";return f;}
         double rot=g.rotationDeg-Alpha98Reference.NOMINAL_RING_ROT;
-        f.measures.add(new Measure("rotation",Math.abs(rot),Alpha98Findings.max(Alpha98Reference.RING_ROT_FAR),Alpha99Uncertainty.RING_ROT_DEG,
+        f.measures.add(new Measure("rotation",Math.abs(rot),Alpha98Findings.max(Alpha98Reference.RING_ROT_FAR),sigmaDeg(Alpha99Uncertainty.RING_ROT_DEG,Alpha99Uncertainty.RING_ROT_DEGR,R),
                 Alpha98Reference.RING_ROT_FAR.length,"deg",String.format(Locale.US,"set turned %.2f° %s",Math.abs(rot),cwShort(rot)),
                 String.format(Locale.US,"Taken together, the hour markers are turned %.2f° %s relative to the printed minute track (a whole-dial measurement: it does not mean each marker is rotated)",
                         Math.abs(rot),Alpha98Findings.cw(rot))));
@@ -288,14 +291,14 @@ final class Alpha99Findings {
         settle(f);return f;
     }
 
-    static Finding date(Alpha98DateWindow.Result d){
+    static Finding date(Alpha98DateWindow.Result d,double R){
         Finding f=new Finding("date","Date window","date window");f.shape=Shape.DATE;f.half=0.30;
         if(d==null||!d.usable){f.status=Status.NOT_ASSESSED;f.reason=Alpha98Findings.dateReason(d==null?"":d.reason);f.shortReason=shortDate(f.reason);
             f.cx=d!=null&&Double.isFinite(d.cx)?d.cx:Alpha98DateWindow.EXP_X;f.cy=d!=null&&Double.isFinite(d.cy)?d.cy:0;
             f.visual=f.reason.startsWith("glare")||f.reason.startsWith("a hand");return f;}
         f.cx=d.cx;f.cy=d.cy;
         double t=d.windowTiltDeg-Alpha98Reference.NOMINAL_DATE_TILT;
-        f.measures.add(new Measure("tilt",Math.abs(t),Alpha98Findings.max(Alpha98Reference.DATE_TILT_FAR),Alpha99Uncertainty.DATE_TILT_DEG,
+        f.measures.add(new Measure("tilt",Math.abs(t),Alpha98Findings.max(Alpha98Reference.DATE_TILT_FAR),sigmaDeg(Alpha99Uncertainty.DATE_TILT_DEG,Alpha99Uncertainty.DATE_TILT_DEGR,R),
                 Alpha98Reference.DATE_TILT_FAR.length,"deg",String.format(Locale.US,"tilted %.1f° %s",Math.abs(t),cwShort(t)),
                 String.format(Locale.US,"It is tilted %.1f° %s relative to the dial",Math.abs(t),Alpha98Findings.cw(t))));
         settle(f);return f;

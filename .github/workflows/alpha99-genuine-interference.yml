@@ -11,6 +11,8 @@ on:
       - feature/android-alpha99-hybrid-results
     paths:
       - '.github/workflows/alpha99-genuine-interference.yml'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99*.java'
+      - 'tools/research/alpha96_calibration/alpha99_genuine_summary.py'
   workflow_dispatch:
 
 permissions:

@@ -22,7 +22,9 @@ Families and the quantity whose spread is pooled:
   twelve_sides            12 left and right side error deg
   date_tilt               window tilt deg
 Positional families are also pooled in pixels; the app uses max(sigma_R, sigma_px / R_photo) so a low-resolution
-photo is never granted a smaller allowance than its pixel noise implies.
+photo is never granted a smaller allowance than its pixel noise implies. Angle families are likewise also pooled as
+deg x R (an angle's error is a pixel edge error divided by the feature's length, which scales with R); the app uses
+max(sigma_deg, sigma_degR / R_photo).
 
 The Alpha99 rule (fixed before any photo was classified): a reading beyond the genuine maximum is a CLEAR FINDING only
 when the excess exceeds K = 3 sigma (three standard deviations of single-photo error); otherwise WORTH A LOOK.
@@ -79,7 +81,8 @@ def main():
             if per_r:
                 G[(fam, 'R')][w][comp].append(px / R); G[(fam, 'px')][w][comp].append(px)
             else:
-                G[(fam, 'deg')][w][comp].append(px)
+                # angles: also pooled as deg x R (pixel edge error / feature length scales as 1 / R)
+                G[(fam, 'deg')][w][comp].append(px); G[(fam, 'degR')][w][comp].append(px * R)
         for h, k in ((6, 'six'), (9, 'nine')):
             if r[f'm{h}_usable'] == 'true':
                 add(f'{k}_rot', 'rot', fl(r[f'm{h}_rotation_deg']), False)
@@ -101,10 +104,14 @@ def main():
     for r in csv.DictReader(open(os.path.join(D, 'run1', 'date_window_catalogue.csv'))):
         if r.get('status') == 'accepted' and r['photo_id'] not in meas:
             meas[r['photo_id']] = r
+    radius = {r['photo_id']: fl(r['dial_radius_px']) for r in csv.DictReader(open(os.path.join(C, 'results/ci_run_37500197377/per_photo.csv')))}
     for pid, m in meas.items():
         if m.get('usable') != 'True' or pid in shared or fl(m.get('window_tilt_deg')) is None:
             continue
-        G[('date_tilt', 'deg')][cat[pid]['physical_watch_id']]['tilt'].append(fl(m['window_tilt_deg']))
+        w = cat[pid]['physical_watch_id']; t = fl(m['window_tilt_deg'])
+        G[('date_tilt', 'deg')][w]['tilt'].append(t)
+        if radius.get(pid):
+            G[('date_tilt', 'degR')][w]['tilt'].append(t * radius[pid])
 
     out = {}
     lines = ['# Alpha99 measurement-uncertainty allowances (genuine photos only)', '',

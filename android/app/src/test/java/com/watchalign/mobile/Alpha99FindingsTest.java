@@ -55,7 +55,9 @@ public class Alpha99FindingsTest {
                 {"ring_rot.deg",Alpha99Uncertainty.RING_ROT_DEG},{"ring_shift.R",Alpha99Uncertainty.RING_SHIFT_R},{"ring_shift.px",Alpha99Uncertainty.RING_SHIFT_PX},
                 {"twelve_centreline.deg",Alpha99Uncertainty.TWELVE_CENTRELINE_DEG},{"twelve_sides.deg",Alpha99Uncertainty.TWELVE_SIDES_DEG},
                 {"twelve_lateral.R",Alpha99Uncertainty.TWELVE_LATERAL_R},{"twelve_lateral.px",Alpha99Uncertainty.TWELVE_LATERAL_PX},
-                {"date_tilt.deg",Alpha99Uncertainty.DATE_TILT_DEG}};
+                {"date_tilt.deg",Alpha99Uncertainty.DATE_TILT_DEG},{"six_rot.degR",Alpha99Uncertainty.SIX_ROT_DEGR},{"nine_rot.degR",Alpha99Uncertainty.NINE_ROT_DEGR},
+                {"twelve_centreline.degR",Alpha99Uncertainty.TWELVE_CENTRELINE_DEGR},{"twelve_sides.degR",Alpha99Uncertainty.TWELVE_SIDES_DEGR},
+                {"ring_rot.degR",Alpha99Uncertainty.RING_ROT_DEGR},{"date_tilt.degR",Alpha99Uncertainty.DATE_TILT_DEGR}};
         for(Object[] x:pairs){assertEquals((String)x[0],Double.parseDouble(p.getProperty((String)x[0])),(double)x[1],0);
             assertTrue((String)x[0]+" from genuine multi-photo watches",Integer.parseInt(p.getProperty(x[0]+".watches"))>=8);}
     }
@@ -73,6 +75,17 @@ public class Alpha99FindingsTest {
         assertEquals(Alpha99Findings.Status.WORTH,m(max*1.01,max,s).status());
     }
     private static Alpha99Findings.Measure m(double v,double max,double s){return new Alpha99Findings.Measure("x",v,max,s,40,"deg","","");}
+
+    @Test public void angleAllowanceGrowsOnSmallPhotos(){
+        // genuine catalogue case: a 126711CHNR photographed at dial radius 103 px read its 12 left side 3.2 deg off while
+        // the same watch's 7 other photos read ~0.9 deg; the angle allowance must scale with 1 / R like positions do
+        double big=Alpha99Findings.sigmaDeg(Alpha99Uncertainty.TWELVE_SIDES_DEG,Alpha99Uncertainty.TWELVE_SIDES_DEGR,400);
+        double small=Alpha99Findings.sigmaDeg(Alpha99Uncertainty.TWELVE_SIDES_DEG,Alpha99Uncertainty.TWELVE_SIDES_DEGR,103);
+        assertEquals(Alpha99Uncertainty.TWELVE_SIDES_DEG,big,0);
+        assertEquals(Alpha99Uncertainty.TWELVE_SIDES_DEGR/103,small,1e-12);
+        double max=Alpha98Findings.max(Alpha97TwelveReadout.GENUINE_SIDES_DEG);
+        assertEquals(Alpha99Findings.Status.WORTH,m(3.25,max,small).status());
+    }
 
     @Test public void batonExamplesFromTheBrief(){
         // 6 rotation ~0.8 deg vs genuine max ~0.7 -> worth a look; 9 rotation ~1.6 deg vs max ~0.65 -> clear

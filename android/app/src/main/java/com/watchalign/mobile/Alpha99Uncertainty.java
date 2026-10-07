@@ -13,14 +13,20 @@ final class Alpha99Uncertainty {
     static final double K_SIGMA=3.0;
     /** 20 genuine watches. */
     static final double DATE_TILT_DEG=0.148998;
+    /** 19 genuine watches. */
+    static final double DATE_TILT_DEGR=119.817161;
     /** 8 genuine watches. */
     static final double NINE_OFF_R=0.000897;
     /** 8 genuine watches. */
     static final double NINE_OFF_PX=0.197582;
     /** 8 genuine watches. */
     static final double NINE_ROT_DEG=0.205383;
+    /** 8 genuine watches. */
+    static final double NINE_ROT_DEGR=43.434971;
     /** 9 genuine watches. */
     static final double RING_ROT_DEG=0.023854;
+    /** 9 genuine watches. */
+    static final double RING_ROT_DEGR=7.908438;
     /** 9 genuine watches. */
     static final double RING_SHIFT_R=0.000592;
     /** 9 genuine watches. */
@@ -36,11 +42,17 @@ final class Alpha99Uncertainty {
     /** 9 genuine watches. */
     static final double SIX_ROT_DEG=0.194996;
     /** 9 genuine watches. */
+    static final double SIX_ROT_DEGR=45.340069;
+    /** 9 genuine watches. */
     static final double TWELVE_CENTRELINE_DEG=0.184105;
+    /** 9 genuine watches. */
+    static final double TWELVE_CENTRELINE_DEGR=72.582101;
     /** 9 genuine watches. */
     static final double TWELVE_LATERAL_R=0.002019;
     /** 9 genuine watches. */
     static final double TWELVE_LATERAL_PX=0.412108;
     /** 9 genuine watches. */
     static final double TWELVE_SIDES_DEG=0.486607;
+    /** 9 genuine watches. */
+    static final double TWELVE_SIDES_DEGR=82.765016;
 }

@@ -669,6 +669,7 @@ Alpha99 changes only the evidence layer and the results screen. Pose, the Alpha9
 - **No replica, marketplace-candidate or owner test photo is read.**
 - **sigma** is the pooled within-watch standard deviation of a single photo's reading: the spread between different photos of the same genuine watch, around that watch's own mean. It covers pose, perspective, lighting and detector error together.
 - Positional families pool their radial and tangential components. They are pooled both in R and in px; the app uses max(sigma_R, sigma_px / photo R), so a small photo never gets a smaller allowance than its pixel noise implies.
+- Angle families are also pooled as degrees × R, because an angle's error is a pixel edge error divided by the feature's length, which scales with R. The app uses max(sigma_deg, sigma_degR / photo R).
 
 | Family | sigma | 3 sigma | Watches (photos) |
 |---|---|---|---|
@@ -683,6 +684,19 @@ Alpha99 changes only the evidence layer and the results screen. Pose, the Alpha9
 | Ring rotation | 0.024° | 0.072° | 9 (51) |
 | Ring shift | 0.059% R / 0.32 px | 0.18% R | 9 (51) |
 | Date-window tilt | 0.149° | 0.447° | 20 (71) |
+
+Angle families, scaled by resolution (sigma_degR / R; this applies when it is larger than the fixed sigma above):
+
+| Family | sigma_degR | At R 100 | At R 200 | At R 300 |
+|---|---|---|---|---|
+| 6 rotation | 45.3 | 0.45° | 0.23° | 0.195° (fixed) |
+| 9 rotation | 43.4 | 0.43° | 0.22° | 0.205° (fixed) |
+| 12 centreline | 72.6 | 0.73° | 0.36° | 0.24° |
+| 12 sides | 82.8 | 0.83° | 0.49° (fixed) | 0.49° (fixed) |
+| Ring rotation | 7.9 | 0.079° | 0.040° | 0.026° |
+| Date-window tilt | 119.8 | 1.20° | 0.60° | 0.40° |
+
+The genuine-catalogue run (37675166666) is why angles now scale with resolution. Before the change, one genuine photo was a CLEAR finding: a 126711CHNR from Phillips at dial radius 103 px, whose 12 left side read 3.2° off. The same watch's 7 other photos all read about 0.9°. The fixed angle sigma came mostly from photos at R 230–330, so it did not cover a 103 px photo. With scaling, that photo is WORTH A LOOK. The local photos' classifications are unchanged.
 
 The marker families come mostly from Phillips auction lots, which have 6–8 photos each from different angles. Bob's adds pairs. 12 lateral is driven by two Phillips lots (146213 and 210072): their photo-to-photo SD is 0.45% R and 0.25% R, against at most 0.07% R for the rest. That makes the 12 lateral allowance conservative, so fewer findings become CLEAR.
 
@@ -741,6 +755,6 @@ The rule passed three hands that run 3–5 px clear of a marker. Batgirl photo 1
 
 - **Alpha96 runner:** 0 differences over 1,592 values on the 8 local photos, and 0 over 1,791 on the 9 owner photos (timing column excluded).
 - **Frozen files:** `Alpha94MarkerMeasurement`, `Alpha92GmtMaster`, `AutomaticDialOverlay`, `Alpha91*`, `Alpha98DateWindow`, `Alpha98Reference` and `Alpha97TwelveReadout` have no diff from Alpha98 (2cb22c2).
-- **Unit tests:** `Alpha99FindingsTest` (14), `Alpha98FindingsTest` (7) and `Alpha97TwelveReadoutTest` (8) pass.
+- **Unit tests:** `Alpha99FindingsTest` (15), `Alpha98FindingsTest` (7) and `Alpha97TwelveReadoutTest` (8) pass.
 - **Overview badges (owner decision):** a marker withheld for a photo-wide reason gets no badge. Example: round markers on a photo too small for a comparable genuine set. The reason is the photo, not the marker; the not-assessed line under the grid explains it. Grey dashes remain for marker-specific reasons (hand, glare, edge).
 - **Genuine catalogue:** `.github/workflows/alpha99-genuine-interference.yml` runs the interference check and the Alpha99 classification. It prints withhold rates and status changes, and fails on any new finding.
