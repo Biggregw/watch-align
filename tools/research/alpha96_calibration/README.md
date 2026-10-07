@@ -511,3 +511,44 @@ The 2-D offset maximum rose to 0.0083 R entirely through the 126710GRNR photo's 
 - `Alpha97TwelveReadoutTest` is updated: 45 watches, 4 owner-priority watches present, SWE excluded; 8/8 pass locally.
 - App-versus-prototype parity: 8 local, 166 scaled and 9 owner photos, 0 mismatches.
 - Alpha96 regression: 0 differences.
+
+## Date window: digit centring and tilt prototype (offline, 2026-10-07)
+
+**Pieces:**
+- `tools/desktop-harness/drivers/DateCrop.java` (harness only) exports an upright, dial-plane-rectified crop of the 3 o'clock region. It uses the frozen production pose and the production sampler, by reflection. The crop covers x 0.22–1.02 and y ±0.38 R at 0.0025 R/px.
+- `date_window.py` measures inside the magnified window. Only ratios and angles inside the magnified image are used, so the cyclops magnification cancels:
+  - **window:** the brightest class (two-level Otsu) nearest the expected position, fitted with a rotated rectangle;
+  - **window_tilt:** rectangle angle plus sub-pixel gradient tilt of the window's top and bottom edges, against the dial horizontal;
+  - **digit_dx / digit_dy:** numeral ink-box centre minus window centre, as a fraction of window width / height;
+  - **digit_tilt:** two-digit dates only; the line through the two numerals' sub-pixel mid-heights, against the window.
+- It withholds with a reason for: no plausible window, a window that isn't rectangular (glare, reflection or occlusion), an implausible aspect, a numeral cut by the window edge (mid-change or a hand), or implausible ink. No thresholds are applied to the measurements, and there are no verdicts.
+
+**Synthetic validation** (`date_window_synth_check.py`, `results/date_window/synthetic_checks.txt`):
+- Whole crop rotated ±2°: window tilt follows (+1.88 to +2.17°, −1.99 to −2.15°), and digit tilt stays put (within 0.2°; one case 0.46°).
+- Interior only rotated +2° / −1°: digit tilt follows (+1.96 to +2.20°, −0.82 to −1.18°), and window tilt stays put (within 0.08°).
+- Interior shifted 2–3 px: centring follows exactly, apart from the 1 px rounding of the ink box (about 0.004–0.007 of the window).
+
+**Font effects mean a reference is needed for each date:**
+- Glyph shapes shift both centring and row tilt.
+- Round digits overshoot flat ones: four genuine "28" photos read −0.38 to −0.59° row tilt.
+- A single "13" listing screenshot read +2.2°.
+- So genuine references are needed for each date, or each numeral pair, before anything is compared. The genuine catalogue covers many dates; the Rolex CPO images are all "28".
+
+**Local and owner photos** (`results/date_window/date_local_owner.csv`): 10 of 18 measured.
+
+| Photo | Reading |
+|---|---|
+| genuine 28s (4 CPO-style) | dx −0.004 to −0.011, dy −0.012 to −0.018, row tilt −0.38 to −0.59°, window tilt −0.29 to +0.27° |
+| RL_LOCAL_BLNR ("11", identical glyphs) | window tilt +2.44°, digit row −2.51° relative to it (numerals level with the dial, aperture rotated) |
+| Batgirl (two photos, dates 9 and 4) | window tilt −0.82° and −1.14° |
+
+Withheld:
+- glare or reflection: 3;
+- reflection merged into the window: 2;
+- a hand: 1;
+- numeral cut by the edge: 2 (THEONE and ARF, both darker photos). These are probably false withholds, because the window box hugs the digits there; refining the window edges from the gradient profile is the next fix.
+
+**Next:**
+- Refine the window edges.
+- Run DateCrop and `date_window.py` on the sha256-verified genuine catalogue in CI to build genuine references for each date (one value per watch).
+- Check repeatability on the multi-photo genuine watches.
