@@ -3,7 +3,8 @@
 
 Input: DateCrop CSV + crops (upright, dial-plane-rectified 3 o'clock region; canonical x right, y down, dial radius 1).
 The window is seen through the cyclops, so everything here is a ratio or an angle inside the magnified image:
-  window       the bright date-disc region nearest the expected position; rotated-rectangle fit
+  window       the bright date-disc region nearest the expected position (rotated-rectangle fit), then each edge refined
+               from the brightness profile (sub-pixel half-way crossing between disc white and frame dark)
   window_tilt  deg, window long axis vs the dial horizontal (+ = clockwise)
   digit        dark ink inside the window (excluding a border band); union bounding box in the window frame
   digit_dx/dy  (ink-box centre - window centre) / window width / height, in the window frame (+ = right / down)
@@ -136,12 +137,112 @@ def row_tilt(img, ink):
     return math.degrees(math.atan2(yr - yl, xr - xl)), 2
 
 
+def refine_window(g, rect):
+    """Refine the window edges from the brightness profile (sub-pixel), searching outward from the outermost ink.
+    The threshold region can hug the numerals when the disc darkens toward its edges; the real window edge is where
+    brightness crosses halfway between the disc white and the surrounding frame. Returns a new rotated rect or None."""
+    (cx, cy), (rw, rh), ang = rect
+    ex = ((cx, cy), (rw * 1.5, rh * 1.8), ang)
+    big = window_frame(g, ex).astype(np.float32)
+    Hb, Wb = big.shape
+    ox, oy = (Wb - rw) / 2.0, (Hb - rh) / 2.0                    # initial window inside the expanded frame
+    core = big[int(oy + 0.2 * rh):int(oy + 0.8 * rh), int(ox + 0.1 * rw):int(ox + 0.9 * rw)]
+    if core.size == 0:
+        return None
+    white = float(np.percentile(core, 90))
+    t = cv2.threshold(core.astype(np.uint8), 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[0]
+    inkm = (big < t)
+    inkm[:int(oy), :] = False; inkm[int(oy + rh):, :] = False; inkm[:, :int(ox)] = False; inkm[:, int(ox + rw):] = False
+    n, lab, st, _ = cv2.connectedComponentsWithStats(inkm.astype(np.uint8))
+    num = [i for i in range(1, n) if st[i][3] >= 0.25 * rh and st[i][4] >= 6]     # numeral-sized components only
+    if not num:
+        return None
+    iy0 = min(st[i][1] for i in num); iy1 = max(st[i][1] + st[i][3] - 1 for i in num)
+    ix0 = min(st[i][0] for i in num); ix1 = max(st[i][0] + st[i][2] - 1 for i in num)
+    colband = slice(int(ox + 0.1 * rw), int(ox + 0.9 * rw)); rowband = slice(int(iy0), int(iy1) + 1)
+    vprof = np.median(big[:, colband], axis=1)                   # median across columns: numerals do not dominate
+    hprof = np.median(big[rowband, :], axis=0)
+
+    def crossing(prof, start, step_dir):
+        dark = float(min(prof[:max(1, start)].min() if step_dir < 0 else prof[start:].min(), white))
+        mid = 0.5 * (white + dark)
+        i = start
+        for _ in range(6):                                        # begin on bright disc, not on edge shading
+            if prof[i] >= mid or not (0 < i - step_dir < len(prof) - 1):
+                break
+            i -= step_dir
+        while 0 < i < len(prof) - 1 and prof[i] >= mid:
+            i += step_dir
+        if not (0 < i < len(prof) - 1):
+            return None
+        j = i - step_dir                                          # last bright sample
+        a, b = prof[j], prof[i]
+        return j + step_dir * (a - mid) / max(a - b, 1e-6)
+
+    top = crossing(vprof, max(1, int(iy0) - 1), -1); bot = crossing(vprof, min(Hb - 2, int(iy1) + 1), +1)
+    lef = crossing(hprof, max(1, int(ix0) - 1), -1); rig = crossing(hprof, min(Wb - 2, int(ix1) + 1), +1)
+    if None in (top, bot, lef, rig):
+        return None
+    nw, nh = rig - lef, bot - top
+    if nw <= 0 or nh <= 0:
+        return None
+    # centre shift in the expanded (window-aligned) frame -> crop coordinates
+    dxw, dyw = (lef + rig) / 2.0 - Wb / 2.0, (top + bot) / 2.0 - Hb / 2.0
+    a = math.radians(ang)
+    ncx = cx + dxw * math.cos(a) - dyw * math.sin(a); ncy = cy + dxw * math.sin(a) + dyw * math.cos(a)
+    return ((ncx, ncy), (nw, nh), ang)
+
+
+def edge_lines_tilt(g, rect, ink_top, ink_bot):
+    """Window tilt residual (deg, + = clockwise) from the top and bottom window edges themselves: per column (15-85% of the
+    width) the sub-pixel half-way crossing above the numerals' top and below their bottom, robust line fit (Theil-Sen)
+    to each edge, mean of the two angles. Returns (deg, n_columns) or (nan, n)."""
+    (cx, cy), (rw, rh), ang = rect
+    big = window_frame(g, ((cx, cy), (rw, rh * 1.6), ang)).astype(np.float32)
+    Hb, Wb = big.shape
+    oy = (Hb - rh) / 2.0
+    t0, t1 = int(oy + ink_top), int(oy + ink_bot)
+    white = float(np.percentile(big[int(oy + 0.2 * rh):int(oy + 0.8 * rh), :], 90))
+
+    def edge(col, start, d):
+        prof = big[:, col]
+        lim = range(start, 0, -1) if d < 0 else range(start, Hb - 1)
+        dark = float(min(prof[:start + 1].min() if d < 0 else prof[start:].min(), white)); mid = 0.5 * (white + dark)
+        prev = None
+        for i in lim:
+            if prof[i] < mid and prev is not None:
+                a, b = prof[prev], prof[i]
+                return prev + d * (a - mid) / max(a - b, 1e-6)
+            if prof[i] >= mid:
+                prev = i
+        return None
+
+    angs = []; n = 0
+    for start, d in ((t0, -1), (t1, +1)):
+        pts = [(c, edge(c, start, d)) for c in range(int(0.15 * Wb), int(0.85 * Wb))]
+        pts = [(c, y) for c, y in pts if y is not None]
+        n += len(pts)
+        if len(pts) < 10:
+            return float('nan'), n
+        sl = [(pts[j][1] - pts[i][1]) / (pts[j][0] - pts[i][0]) for i in range(0, len(pts), 2) for j in range(i + 1, len(pts), 3)]
+        angs.append(math.degrees(math.atan(float(np.median(sl)))))
+    return float(np.mean(angs)), n
+
+
 def measure(g, x0, y0, step):
     out = dict(usable=False, reason='')
     rect, cnt, why, _ = find_window(g, x0, y0, step)
     if why:
         out['reason'] = why
         return out, rect, None
+    ref = refine_window(g, rect)
+    if ref is None:
+        out['reason'] = 'window edges not found'
+        return out, rect, None
+    if not (ASPECT[0] <= ref[1][0] / ref[1][1] <= ASPECT[1]):
+        out['reason'] = f'refined window aspect {ref[1][0] / ref[1][1]:.2f} implausible'
+        return out, ref, None
+    rect = ref
     (cx, cy), (rw, rh), ang = rect
     win = window_frame(g, rect)
     H, W = win.shape
@@ -178,9 +279,7 @@ def measure(g, x0, y0, step):
         return out, rect, win
     dtilt, dn = row_tilt(win, keep)
     # window edges: bands around the top and bottom boundary of the upright window
-    edge_band = np.zeros_like(win, np.uint8); e = max(2, int(round(0.08 * H)))
-    edge_band[:e, int(0.1 * W):int(0.9 * W)] = 1; edge_band[H - e:, int(0.1 * W):int(0.9 * W)] = 1
-    wres, wn = edge_tilt(win, edge_band)
+    wres, wn = edge_lines_tilt(g, rect, by0, by1 - 1)
     if not (wn >= 15 and math.isfinite(wres)):
         out['reason'] = 'too few clean window edges for tilt'
         return out, rect, win
