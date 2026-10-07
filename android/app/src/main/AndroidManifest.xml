@@ -3,6 +3,7 @@
     <application android:theme="@style/AppTheme" android:label="Watch Align Photo Overlay" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:usesCleartextTraffic="false">
         <activity android:name=".FullscreenInspectActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".PhotographicOverlayInspectActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".Alpha98ResultsActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".ManualSeedActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".PerspectiveOverlayPocActivity" android:screenOrientation="portrait" android:exported="true">

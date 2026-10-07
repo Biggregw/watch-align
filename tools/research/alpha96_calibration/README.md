@@ -618,3 +618,41 @@ No limits are derived and the app is unchanged.
   - Batgirl photos −0.86° and −0.72°: 1 and 3 genuine watches as far, so edge-of-genuine;
   - RL_LOCAL_BLNR +1.00°: 1 genuine watch as far;
   - date 9 gets a 16-watch centring reference, against which Batgirl photo 1 is ordinary.
+
+## Alpha98: human-readable results with close-ups (2026-10-07)
+
+**Owner decisions:**
+- A feature is reported as "outside the measured genuine range" only when it reads further than every genuine reference watch.
+- Features covered: 6, 9, 12 (robust readout), round markers, ring, date-window tilt.
+- Technical numbers sit behind a collapsed "Technical details" section.
+
+**Reference:** `build_alpha98_reference.py` writes `alpha98_reference.csv` and `alpha98_nominal.properties`; `gen_alpha98_constants.py` turns them into `Alpha98Reference.java`.
+- 6, 9, round markers and ring: SWE excluded plus owner-priority watches (44–48 watches).
+- 12: Alpha97b, 45 watches.
+- Date-window tilt: SWE included (52 watches).
+- Each watch's own distance is computed from a nominal without it.
+- Round markers and ring shift: compared only with genuine watches whose dial radius is at most 1.3× the photo's; fewer than 8 such watches means not assessed. Small dials inflate these two.
+- A reference watch can never be flagged against itself: the comparison allows for the 6-decimal storage of the reference.
+
+**App changes** (`android/`; pose and Alpha94 measurement byte-identical to Alpha96):
+- `Alpha98DateWindow`: port of the date-window tilt. Parity: 18/18 crops pixel-identical to DateCrop, 18/18 usable/withheld decisions identical, tilts within 0.014° (`results/alpha98/date_parity.txt`). The residual comes from OpenCV 4.9 vs 5.0.
+- `Alpha98Findings`: plain-language findings with fail-closed reasons.
+- `Alpha98Closeups`: an upright, perspective-corrected close-up per finding. The genuine outline is drawn where the other markers predict the marker (ring fit); the ring close-up uses the unmoved master; the date window shows its measured edges plus a level line.
+- `Alpha98ResultsActivity`: headline, disclaimer, close-up cards (tap to zoom), the within-range list, not-assessed reasons, the full overlay, and collapsed technical details. The main screen wording is simplified.
+
+**Checks:**
+- `Alpha98FindingsTest` (7 tests) pins the constants to the research files. The flag decisions match the offline check on all local and owner photos. It also covers the resolution rule, the date rule, the self-reference tolerance, the wording (no verdict words, disclaimer present) and the numpy-equivalent helpers.
+- The Alpha97 tests (8) still pass.
+- Alpha96 regression: 0 differences over 1,592 values.
+
+**Desktop preview** (`Alpha98Preview`, results in `results/alpha98/preview_text.txt`):
+
+| Photo | Outside the genuine range |
+|---|---|
+| Batgirl, photo 1 | 6 rotation; 9 rotation and offset; 2 o'clock round marker (12 withheld: hand) |
+| Batgirl, photo 2 | 6 rotation; 9 rotation and offset; 2 o'clock round marker |
+| THEONE | 12 (centreline, side, lateral); 6 offset; 9 rotation |
+| RL_LOCAL_BLNR | 12 lateral; 6 offset; ring rotation |
+| ARF crooked-6 | 12 lateral; 6 offset; 8 o'clock round marker |
+| Genuine owner photos | nothing, except the 126715CHNR CPO's 6, where the seconds hand sits on the marker (visible in the close-up; the caption tells the user to check for a hand) |
+| Marketplace candidates | nothing |

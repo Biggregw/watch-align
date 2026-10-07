@@ -57,6 +57,7 @@ def find_window(g, x0, y0, step):
         (cx, cy), (rw, rh), ang = cv2.minAreaRect(c)
         if rw < rh:
             rw, rh, ang = rh, rw, ang + 90
+        ang = (ang + 90.0) % 180.0 - 90.0 if (ang + 90.0) % 180.0 != 0 else 90.0   # (-90, 90]: OpenCV builds differ
         d = math.hypot(cx - ex, cy - ey) * step
         if d > 0.2:
             continue

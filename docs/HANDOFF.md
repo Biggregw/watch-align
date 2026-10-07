@@ -166,6 +166,14 @@ Owner decision: the 12 triangle is assessed with the **robust** readout.
   - digit centring and row tilt need references for each date.
 - **Evidence gap:** genuine photos across all 31 dates.
 
+## Alpha98 results screen - 2026-10-07
+
+- **What it shows:** plain-language findings with a close-up for each feature that reads further than every genuine reference watch (owner decision). Features: 6, 9, 12 robust, round markers, ring, date-window tilt.
+- **Technical numbers:** behind "Technical details".
+- **Wording:** "outside the measured genuine range", never genuine / fake.
+- **Measurement:** pose and marker maths unchanged from Alpha96.
+- **Evidence:** `tools/research/alpha96_calibration/README.md`, section "Alpha98".
+
 ## Do not restart without evidence
 
 The following are not active programmes:
