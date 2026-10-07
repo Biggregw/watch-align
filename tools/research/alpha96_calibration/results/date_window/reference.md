@@ -1,6 +1,6 @@
 # Genuine date-window reference (research only; no limits, no verdicts)
 
-CI runs 37663577357 (row tilt fixed) and 37662260742 (window tilt / centring only, for photos that verified only then) + owner-priority photos; SWE excluded (owner decision). Photos used: 56; physical watches: 36. Excluded: SWE (owner decision) 47, shared / stock photo 7, withheld by the measurement 49.
+CI runs 37664650850 (row tilt fixed, glyph-height check) and 37662260742 (window tilt / centring only, for photos that verified only then) + owner-priority photos; SWE excluded (owner decision). Photos used: 56; physical watches: 36. Excluded: SWE (owner decision) 47, shared / stock photo 7, withheld by the measurement 49.
 
 Sources (watches): Bob's 29, Owner priority 3, Phillips 3, other 1
 
@@ -26,7 +26,7 @@ Sources (watches): Bob's 29, Owner priority 3, Phillips 3, other 1
 | 21 | 1 | -0.014 [-0.014, -0.014] | +0.016 [+0.016, +0.016] | +0.13 [+0.13, +0.13] |
 | 22 | 3 | -0.004 [-0.010, -0.004] | +0.011 [+0.005, +0.011] | -0.12 [-0.23, -0.00] |
 | 23 | 3 | +0.000 [-0.010, +0.010] | +0.027 [-0.005, +0.032] | +0.27 [-0.21, +0.53] |
-| 24 | 2 | +0.015 [-0.004, +0.034] | +0.003 [-0.005, +0.011] | +5.24 [-0.43, +10.91] |
+| 24 | 2 | +0.015 [-0.004, +0.034] | +0.003 [-0.005, +0.011] | -0.43 [-0.43, -0.43] |
 | 25 | 1 | -0.010 [-0.010, -0.010] | +0.011 [+0.011, +0.011] | – |
 | 26 | 1 | -0.021 [-0.021, -0.021] | +0.033 [+0.033, +0.033] | -0.27 [-0.27, -0.27] |
 | 28 | 5 | -0.007 [-0.017, +0.003] | +0.000 [-0.017, +0.011] | -0.02 [-0.15, +0.19] |
@@ -41,7 +41,7 @@ Sources (watches): Bob's 29, Owner priority 3, Phillips 3, other 1
 | window_tilt_deg | 4 | 0.132 | 0.151 |
 | digit_dx | 4 | 0.011 | nan |
 | digit_dy | 4 | 0.005 | nan |
-| digit_tilt_deg | 2 | 2.377 | nan |
+| digit_tilt_deg | 1 | 0.173 | nan |
 
 ## Local, owner and replica photos against the genuine reference
 

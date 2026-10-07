@@ -56,7 +56,7 @@ def main():
     labels = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(R, 'date_labels_catalogue.csv')))}
     # run 2 (fixed row tilt) first; photos that verified only in run 1 contribute window tilt and centring (unchanged by the
     # fix) but not row tilt
-    meas = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(R, 'run2', 'date_window_catalogue.csv')))
+    meas = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(R, 'run3', 'date_window_catalogue.csv')))
             if r.get('status') == 'accepted'}
     for r in csv.DictReader(open(os.path.join(R, 'run1', 'date_window_catalogue.csv'))):
         if r.get('status') == 'accepted' and r['photo_id'] not in meas:
@@ -91,7 +91,7 @@ def main():
     W = [dict(watch=w, src=s, date=d, n=len(vs), **{k: (median([v[k] for v in vs if v[k] is not None]) if any(v[k] is not None for v in vs) else None) for k in KEYS})
          for (w, s, d), vs in by.items()]
     L = ['# Genuine date-window reference (research only; no limits, no verdicts)', '',
-         f"CI runs 37663577357 (row tilt fixed) and 37662260742 (window tilt / centring only, for photos that verified only "
+         f"CI runs 37664650850 (row tilt fixed, glyph-height check) and 37662260742 (window tilt / centring only, for photos that verified only "
          f"then) + owner-priority photos; SWE {'INCLUDED (sensitivity)' if a.include_swe else 'excluded (owner decision)'}. Photos used: {len(photos)}; physical watches: "
          f'{len(W)}. Excluded: ' + ', '.join(f'{k} {v}' for k, v in sorted(excl.items())) + '.', '',
          'Sources (watches): ' + ', '.join(f"{s} {sum(1 for w in W if w['src'] == s)}" for s in sorted({w['src'] for w in W})), '']

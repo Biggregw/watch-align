@@ -552,3 +552,59 @@ Withheld:
 - Refine the window edges.
 - Run DateCrop and `date_window.py` on the sha256-verified genuine catalogue in CI to build genuine references for each date (one value per watch).
 - Check repeatability on the multi-photo genuine watches.
+
+## Date window on the genuine catalogue (CI runs 37662260742, 37663577357, 37664650850; 2026-10-07)
+
+**Window edges** (step 1):
+- Edges are refined from the brightness profile: a sub-pixel half-way crossing, searched outward from the numerals.
+- Window tilt comes from Theil-Sen lines fitted to the top and bottom edges.
+- Synthetic whole-crop rotation of ±2° reads ±1.96 to 2.03°, and +1° reads +0.97 to +1.03°. Digit tilt stays within 0.2°.
+
+**Row-tilt fixes:**
+- Glyph extents now use the extreme ink rows (15% of the peak). Numerals with a heavy bar (7, 4, 2) broke the 50% level, giving −30 to +13° for 17, 24 and 14.
+- Row tilt is withheld when the two glyph heights disagree by more than 12%. The Phillips "24" lot read +11° on every photo.
+
+**Dates:** hand-labelled from the run-1 montage (`results/date_window/date_labels_catalogue.csv`). 157 photos are labelled; 2 are unreadable (mid-change, no window) and 4 have a hand over the window.
+
+**Merging runs:**
+- SWE's CDN flips between serving the catalogued bytes and different bytes: 171, then 112, then 112 photos verified across the three runs.
+- Run 3 is used where available.
+- Photos verified only in run 1 contribute window tilt and centring, which the fixes did not change, but not row tilt.
+
+**Reference** (step 2): `date_reference.py` gives one value per watch, with shared photos excluded and owner-priority CPO photos included. The primary analysis excludes SWE (`results/date_window/reference.md`); `results/date_window/reference_with_swe.md` is a sensitivity analysis that includes it.
+
+| | SWE excluded (36 watches) | SWE included (52 watches) |
+|---|---|---|
+| window tilt median / P10 / P90 | −0.08 / −0.34 / +0.12° | −0.04 / −0.38 / +0.35° |
+| window tilt range | −0.66 to +0.42° | −1.09 to +0.52° |
+| dates with ≥ 3 genuine watches | 22, 23, 28, 30 | adds 9 (16 watches, almost all SWE) |
+| two-digit row tilt, per date | within about ±0.5° (28: −0.15 to +0.19°; 30: −0.73 to −0.17°) | same |
+
+**Repeatability** (step 3), from watches with ≥ 2 photos of the same date:
+
+| | Watches with ≥ 2 photos | Window tilt within / between | dx within / between | dy within / between |
+|---|---:|---|---|---|
+| SWE excluded | 4 | 0.13° / 0.15° | – | – |
+| SWE included | 20 | 0.11° / 0.18° | 0.004 / 0.005 | 0.005 / 0.009 |
+
+(Within = median spread across one watch's photos; between = between-watch MAD, for centring on date 9.)
+
+- Window tilt is repeatable within a watch.
+- Centring is repeatable to about 0.005 of the window, which is comparable to the genuine spread between watches.
+
+**Photos against the reference** (genuine watches at least as far):
+
+| Photo | Window tilt | Centring / row tilt |
+|---|---|---|
+| Batgirl photo 1 (date 9) | −0.86°: 0/36 (1/52 with SWE) | ordinary against 16 genuine "9"s (16/16 and 8/16; SWE only) |
+| Batgirl photo 2 (date 4) | −0.72°: 0/36 (3/52) | – |
+| RL_LOCAL_BLNR (date 11) | +1.00°: 0/36 (1/52) | row tilt −1.14°; no "11" reference |
+| THEONE (date 25) | +0.11°: ordinary | row tilt −0.82°; no "25" reference with ≥ 3 watches |
+| Genuine CPO 116710LN | −0.65°: 1/36 | – |
+
+**Reading:**
+- Window tilt is the usable date-window feature now: it is date-independent, repeatable, and has 36–52 reference watches.
+- Batgirl and LOCAL sit at or beyond the genuine edge. But SWE includes one genuine watch at −1.09°, so the Batgirl reading is edge-of-genuine rather than clearly beyond.
+- Centring and row tilt need references for each date. Only 4–5 dates have ≥ 3 genuine watches, and most dates have none. That is a named evidence gap: genuine photos across all 31 dates.
+
+No limits are derived and the app is unchanged.
