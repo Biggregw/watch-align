@@ -9,16 +9,21 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import org.opencv.android.OpenCVLoader;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,9 +32,13 @@ public class PerspectiveOverlayPocActivity extends Activity {
     private static final int PICK_CANDIDATE=2301;
     private static final int BG=Color.rgb(8,17,31),ACCENT=Color.rgb(50,213,242),MUTED=Color.rgb(158,176,201);
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
-    /** The watch model this screen checks (assets/models/<id>/); only the GMT has a genuine reference so far. */
+    /** Default watch model (assets/models/<id>/). Every model folder in the app is listed in the picker; a model is added
+     *  to the app's assets only once its genuine reference has passed validation (docs/ADDING_A_MODEL.md). */
     static final String MODEL_ID="gmt_126710";
+    private String modelId=MODEL_ID;
+    private final List<String> modelIds=new ArrayList<>(),modelLabels=new ArrayList<>();
     private ModelSpec model;private ModelReference reference;
+    private TextView title,intro;
     private Bitmap candidateBitmap,lastOverlay;
     private Alpha94MarkerMeasurement.Report lastMeasurement;
     private ImageView preview;
@@ -46,16 +55,57 @@ public class PerspectiveOverlayPocActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(BG);
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
-        root.addView(text("GMT Dial Check",28,Color.WHITE));
+        discoverModels();
+        title=text("Dial Check",28,Color.WHITE);root.addView(title);
         root.addView(text("Alpha99 · compares the dial with genuine watches · research build, no verdicts",14,ACCENT));
-        root.addView(text("Choose a sharp photo of a GMT-Master II taken straight on, with the whole black dial visible. The app measures the hour markers and the date window and shows close-ups of anything that reads further from genuine than every genuine watch it has been compared with.",13,MUTED),lp(-1,-2,10));
+        if(modelIds.size()>1){
+            Spinner picker=new Spinner(this);
+            picker.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,modelLabels));
+            picker.setSelection(Math.max(0,modelIds.indexOf(modelId)));
+            picker.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+                @Override public void onItemSelected(AdapterView<?> parent,View v,int position,long id){
+                    String chosen=modelIds.get(position);
+                    if(chosen.equals(modelId))return;
+                    modelId=chosen;model=null;reference=null;Alpha99ResultsActivity.Store.summary=null;
+                    inspectButton.setEnabled(false);updateModelText();
+                }
+                @Override public void onNothingSelected(AdapterView<?> parent){}
+            });
+            root.addView(picker,lp(-1,dp(52),8));
+        }
+        intro=text("",13,MUTED);root.addView(intro,lp(-1,-2,10));
 
         Button pick=button("Choose a photo");pick.setOnClickListener(v->pickPhoto());root.addView(pick,lp(-1,dp(52),8));
         buildButton=button("Check this photo");buildButton.setBackgroundColor(ACCENT);buildButton.setTextColor(Color.rgb(4,32,42));buildButton.setEnabled(false);buildButton.setOnClickListener(v->buildOverlay());root.addView(buildButton,lp(-1,dp(54),6));
         inspectButton=button("Show last results");inspectButton.setEnabled(false);inspectButton.setOnClickListener(v->openInspector());root.addView(inspectButton,lp(-1,dp(48),6));
-        status=text("Choose a sharp, upright GMT photo with the complete black dial visible.",14,MUTED);root.addView(status,lp(-1,-2,12));
+        status=text("Choose a sharp, upright photo with the complete black dial visible.",14,MUTED);root.addView(status,lp(-1,-2,12));
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(BG);root.addView(preview,lp(-1,-2,8));
+        updateModelText();
         return scroll;
+    }
+
+    /** Model folders in the app's assets, default first; a folder whose spec cannot be read is not offered. */
+    private void discoverModels(){
+        modelIds.clear();modelLabels.clear();
+        try{
+            String[] ids=getAssets().list("models");
+            if(ids!=null){
+                java.util.Arrays.sort(ids);
+                for(String id:ids){
+                    try{ModelSpec m=ModelSpec.load(getAssets()::open,id);
+                        int at=id.equals(MODEL_ID)?0:modelIds.size();modelIds.add(at,id);modelLabels.add(at,m.label);}
+                    catch(Exception ignored){}
+                }
+            }
+        }catch(Exception ignored){}
+        if(modelIds.isEmpty()){modelIds.add(MODEL_ID);modelLabels.add("GMT-Master II (126710 family)");}
+    }
+
+    private void updateModelText(){
+        String label=modelLabels.get(Math.max(0,modelIds.indexOf(modelId)));
+        title.setText(modelIds.size()>1?"Dial Check":"GMT Dial Check");
+        intro.setText("Checking: "+label+". Choose a sharp photo taken straight on, with the whole black dial visible. The app measures the hour markers"
+                +" and shows close-ups of anything that reads further from genuine than every genuine watch it has been compared with.");
     }
 
     private void pickPhoto(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("image/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,PICK_CANDIDATE);}
@@ -66,7 +116,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
         worker.submit(()->{
             Alpha99Pipeline.Output o;
             try{
-                if(model==null){model=ModelSpec.load(getAssets()::open,MODEL_ID);reference=ModelReference.load(getAssets()::open,model);}
+                if(model==null){model=ModelSpec.load(getAssets()::open,modelId);reference=ModelReference.load(getAssets()::open,model);}
                 o=Alpha99Pipeline.run(photo,model,reference);
             }catch(Throwable t){o=new Alpha99Pipeline.Output();}
             final Alpha99Pipeline.Output fo=o;final AutomaticDialOverlay.Result q=o.pose;
