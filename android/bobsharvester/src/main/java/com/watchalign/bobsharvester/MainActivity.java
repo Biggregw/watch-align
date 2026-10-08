@@ -11,10 +11,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Base64;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -70,7 +72,7 @@ public class MainActivity extends Activity {
     final Set<String> done=new HashSet<>(), hashes=new HashSet<>(), rootSeen=new HashSet<>();
     volatile boolean running=false, stopping=false;
     Mode mode=Mode.IDLE; int root=0,page=1,empty=0,doneRun=0,keptRun=0; boolean returnToCatalog=false,catalogPageEnd=false; String activeFilter=""; Product current;
-    File work,images,doneFile,hashFile,manifest;
+    File work,images,doneFile,hashFile,manifest; volatile long captureToken=0; volatile Product captureProduct; volatile int captureKept=0;
 
     @Override public void onCreate(Bundle b){
         super.onCreate(b);
@@ -84,7 +86,7 @@ public class MainActivity extends Activity {
     void buildUi(){
         LinearLayout r=new LinearLayout(this); r.setOrientation(LinearLayout.VERTICAL); r.setPadding(dp(10),dp(10),dp(10),dp(10));
         TextView t=new TextView(this); t.setText("Bob's Rolex Harvester"); t.setTextSize(22); t.setGravity(Gravity.CENTER); r.addView(t);
-        TextView h=new TextView(this); h.setText("One-off run. Leave the app open. It keeps only face-on QC-style images and creates model/reference ZIPs below 30 MB."); h.setPadding(0,dp(4),0,dp(6)); r.addView(h);
+        TextView h=new TextView(this); h.setText("One-off run. Leave the app open. Images are captured through the loaded Bob's page, filtered for face-on QC use, then packed into model/reference ZIPs below 30 MB."); h.setPadding(0,dp(4),0,dp(6)); r.addView(h);
         filter=new EditText(this);filter.setSingleLine(true);filter.setHint("Keyword filter: e.g. Submariner, 124060, GMT-Master II");filter.setTextSize(16);filter.setPadding(dp(10),dp(4),dp(10),dp(6));r.addView(filter,new LinearLayout.LayoutParams(-1,-2));
         LinearLayout row=new LinearLayout(this);
         start=new Button(this);start.setText("Start / Resume"); stop=new Button(this);stop.setText("Stop");stop.setEnabled(false); zip=new Button(this);zip.setText("Build ZIPs");
@@ -107,7 +109,7 @@ public class MainActivity extends Activity {
 
     void setupWeb(){
         WebSettings s=web.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setUserAgentString(UA);s.setLoadWithOverviewMode(true);s.setUseWideViewPort(true);
-        CookieManager.getInstance().setAcceptCookie(true);if(Build.VERSION.SDK_INT>=21)CookieManager.getInstance().setAcceptThirdPartyCookies(web,true);
+        CookieManager.getInstance().setAcceptCookie(true);if(Build.VERSION.SDK_INT>=21)CookieManager.getInstance().setAcceptThirdPartyCookies(web,true);web.addJavascriptInterface(new CaptureBridge(),"WatchAlignCapture");
         web.setWebChromeClient(new WebChromeClient());
         web.setWebViewClient(new WebViewClient(){
             @Override public void onPageFinished(WebView v,String u){
@@ -232,8 +234,8 @@ public class MainActivity extends Activity {
                     if(!u.isEmpty()&&(w==0||hh==0||(w>=350&&hh>=350)))p.imgs.add(u);
                 }
                 List<String> urls=new ArrayList<>();
-                for(String u:p.imgs){String n=normalizeImageUrl(u,p.url);if(!n.isEmpty())urls.add(n);}
-                io.submit(()->process(p,urls));
+                for(String u:p.imgs){String n=normalizeImageUrl(u,p.url);if(!n.isEmpty()&&isBobsImageUrl(n))urls.add(n);}
+                captureInWebView(p,urls);
             }catch(Exception e){
                 msgUi("Product parse failed: "+e.getClass().getSimpleName()+": "+e.getMessage());
                 markDone(p.url);runOnUiThread(this::next);
@@ -252,6 +254,66 @@ public class MainActivity extends Activity {
             if(scheme==null||host==null||(!scheme.equalsIgnoreCase("http")&&!scheme.equalsIgnoreCase("https")))return "";
             return u.toString();
         }catch(Exception e){return "";}
+    }
+
+    boolean isBobsImageUrl(String u){
+        try{
+            URI x=URI.create(u);String h=x.getHost();if(h==null||!h.toLowerCase(Locale.US).endsWith("bobswatches.com"))return false;
+            String p=x.getPath()==null?"":x.getPath().toLowerCase(Locale.US);
+            return p.contains("/images/")||p.matches(".*\\.(jpg|jpeg|png|webp)$");
+        }catch(Exception e){return false;}
+    }
+
+    void captureInWebView(Product p,List<String> urls){
+        if(urls.isEmpty()){markDone(p.url);doneRun++;msg("Finished "+p.ref+(p.sku.isEmpty()?"":" SKU "+p.sku)+": no Bob's product image URLs found.");next();return;}
+        long token=++captureToken;captureProduct=p;captureKept=0;
+        JSONArray arr=new JSONArray();for(String u:new LinkedHashSet<>(urls))arr.put(u);
+        String js="(async function(){const token="+token+",urls="+arr.toString()+";"+
+                "for(const raw of urls){try{const u=new URL(raw,location.href);if(!u.hostname.toLowerCase().endsWith('bobswatches.com'))continue;"+
+                "const img=await new Promise((ok,fail)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=()=>fail(new Error('load'));x.src=u.href;});"+
+                "let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;if(!w||!h)continue;"+
+                "const max=1900,scale=Math.min(1,max/Math.max(w,h)),cw=Math.max(1,Math.round(w*scale)),ch=Math.max(1,Math.round(h*scale));"+
+                "const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;cv.getContext('2d').drawImage(img,0,0,cw,ch);"+
+                "const data=cv.toDataURL('image/jpeg',0.95);WatchAlignCapture.image(token,u.href,data);"+
+                "}catch(e){}}WatchAlignCapture.done(token);})();";
+        web.evaluateJavascript(js,null);
+    }
+
+    class CaptureBridge {
+        @JavascriptInterface public void image(long token,String url,String dataUrl){
+            if(token!=captureToken||captureProduct==null||dataUrl==null)return;
+            int comma=dataUrl.indexOf(',');if(comma<0)return;
+            byte[] bytes;
+            try{bytes=Base64.decode(dataUrl.substring(comma+1),Base64.DEFAULT);}catch(Exception e){return;}
+            Product p=captureProduct;
+            io.submit(()->saveCaptured(token,p,url,bytes));
+        }
+        @JavascriptInterface public void done(long token){
+            Product p=captureProduct;
+            io.submit(()->{
+                if(token!=captureToken||p==null)return;
+                int kept=captureKept;markDone(p.url);doneRun++;
+                msgUi("Finished "+p.ref+(p.sku.isEmpty()?"":" SKU "+p.sku)+": "+kept+" suitable image(s).");
+                runOnUiThread(()->{if(token==captureToken){captureProduct=null;next();}});
+            });
+        }
+    }
+
+    void saveCaptured(long token,Product p,String u,byte[] bytes){
+        if(token!=captureToken||stopping||bytes==null||bytes.length<12000)return;
+        try{
+            String sha=sha(bytes);synchronized(hashes){if(hashes.contains(sha))return;hashes.add(sha);line(hashFile,sha);}
+            Bitmap bm=BitmapFactory.decodeByteArray(bytes,0,bytes.length);if(bm==null)return;
+            Fit f=fit(bm);if(!f.ok){bm.recycle();return;}
+            String rr=safe(p.ref),sku=p.sku.isEmpty()?"listing"+Math.abs(p.url.hashCode()):p.sku;File d=new File(images,rr);d.mkdirs();
+            String name=rr+"_"+sku+"_"+sha.substring(0,10)+".jpg",finalName=name;File dest=new File(d,finalName);int k=2;
+            while(dest.exists()){finalName=name.replace(".jpg","_"+k+++".jpg");dest=new File(d,finalName);}
+            try(FileOutputStream os=new FileOutputStream(dest)){bm.compress(Bitmap.CompressFormat.JPEG,96,os);}
+            int w=bm.getWidth(),h=bm.getHeight();bm.recycle();captureKept++;keptRun++;
+            String row=csv(rr)+","+csv(p.sku)+","+csv(p.title)+","+csv(p.url)+","+csv(u)+","+csv(dest.getName())+","+csv(sha)+","+w+","+h+","+fmt(f.radius)+","+fmt(f.axis)+","+fmt(f.support)+","+fmt(f.sharp);
+            line(manifest,row);line(new File(d,"manifest.csv"),row);
+            msgUi("KEEP "+rr+" "+dest.getName()+"  R="+Math.round(f.radius)+"px face="+String.format(Locale.US,"%.3f",f.axis));
+        }catch(Exception e){msgUi("WebView image capture skipped: "+e.getClass().getSimpleName());}
     }
 
     void process(Product p,List<String> urls){
