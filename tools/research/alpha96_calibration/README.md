@@ -787,10 +787,15 @@ The app no longer has GMT geometry or GMT reference values in code.
 
 ### 12 side angle on its own: at most worth a look (owner decision, 2026-10-08)
 
-The genuine-catalogue run on the Alpha100 branch (37731661635) fetched a new Swiss Watch Expo 126710BLNR studio photo, `ce997f77df67b365`. Its 12 right side read 4.1° off (genuine max 1.0°), while the 12's centreline and position were within the genuine range: the studio-lighting effect on the 12 described above. Before this rule, that photo was a CLEAR finding.
+**Rule:** when only the side angle of the 12 is outside the genuine range, and the centreline and lateral position are not, the 12 is WORTH A LOOK at most. The detail view explains why. A side angle together with an outside centreline or position can still be CLEAR. Test: `Alpha99FindingsTest.twelveSideAngleOnItsOwnIsAtMostWorthALook`. Local photos: no classification changes; the local 12 CLEAR findings (Local BLNR, ARF) are lateral.
 
-**Rule:** when only the side angle of the 12 is outside the genuine range, and the centreline and lateral position are not, the 12 is WORTH A LOOK at most. The detail view explains why. A side angle together with an outside centreline or position can still be CLEAR.
+**Correction: the photo that prompted the rule is not side-only.** It was proposed after the Alpha100 genuine-catalogue run (37731661635), which flagged a Swiss Watch Expo 126710BLNR studio photo, `ce997f77df67b365`, as a CLEAR finding. That run's log showed only the strongest measure, the right side at 4.1°. Re-evaluated from its recorded measurements (`ci_run_37500197377/per_photo.csv`, dial radius 172 px):
 
-**Local photos:** no classification changes. The local 12 CLEAR findings (Local BLNR, ARF) are lateral.
+| Measure | Reading | Genuine max | Status |
+|---|---|---|---|
+| Right side | 4.1° CCW | 1.0° | outside |
+| Left side | 0.42° off | — | within |
+| Centreline | 2.5° CCW | 1.0° | outside; excess 1.5° vs a 3-sigma allowance of about 1.3° |
+| Lateral | 0.25% | 0.23% | just outside |
 
-**Test:** `Alpha99FindingsTest.twelveSideAngleOnItsOwnIsAtMostWorthALook`.
+So the rule does not apply, and the photo is still a CLEAR finding. Its two sides disagree (left about 0.42° off, right 4.1°), so the centreline, which is computed from the same edges, is moved by the one side edge. The run that checked the rule (37733632259) did not fetch this photo.
