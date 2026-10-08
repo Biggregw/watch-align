@@ -125,3 +125,25 @@ A global threshold would therefore lose real hands.
 **Results:**
 - On the owner's photo the 5 and 7 are no longer withheld. The 1 (minute hand) and the 6 (seconds hand) still are.
 - The GMT has no print spots: findings, hand check and preview text are identical.
+
+## 9. The 12's genuine limit (owner report: "the 12 is clearly rotated but not reported")
+
+The owner's photo (dial radius 234 px) read the 12 at -1.35 deg (centreline), with both sides agreeing (-1.36 / -1.37 deg), so the marker really is turned. It reported "within" because the 124060 centreline limit was 1.75 deg.
+
+**Where 1.75 came from:** genuine DavidSW watch `47ed7fb4d547`, the median of two photos.
+- The 256 px photo reads -0.66 deg, with the sides 0.33 deg apart.
+- The 154 px photo reads -2.83 deg, with the sides 3.46 deg apart. That is beyond the app's own edge-consistency limit: a reading the app treats as lighting or blur, at most worth a look.
+
+**Fix:** `edge_filter.py` removes the 12 reading of genuine photos that fail the edge-consistency test (§1: a documented measurement-quality reason; one photo). Every other marker and photo is untouched. Then `calibrate_m12_nominal.py` and `build_sub_reference.py` are rerun.
+
+| | Before | After |
+|---|---|---|
+| Centreline genuine max | 1.75 deg | 1.25 deg |
+| Centreline photo-to-photo sigma | 0.36 deg | 0.12 deg |
+| Edge-consistency limit | 1.73 deg | 0.83 deg (GMT 0.99) |
+
+The marker reference is unchanged. The owner's 12 now reads 1.35 vs 1.25 deg with a 0.46 deg allowance, so it is worth a look.
+
+**The remaining 1.25 deg:** it comes from genuine EWC watch `ceb5b8d52802` (-1.21 / -0.92 deg, sides agreeing), so it is valid and kept. But in both its photos every marker reads anticlockwise: 3 at -0.5/-0.6, 6 at -0.4/-0.3, 9 at -0.6/-0.3 deg. That is a shared offset of about -0.5 deg, so this 12 is only about -0.5 deg off relative to its own dial.
+
+**Proposed next feature (not implemented):** judge the 12's rotation relative to the dial's common marker rotation. It must be validated on genuine GMT and 124060 data first.

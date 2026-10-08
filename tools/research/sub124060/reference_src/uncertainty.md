@@ -28,14 +28,14 @@ beyond the genuine maximum exceeds K = 3 sigma.
 | three_off | px | 0.099706 | 0.299117 | 16 | 70 | 38 |
 | three_rot | deg | 0.098495 | 0.295485 | 16 | 35 | 19 |
 | three_rot | degR | 50.555710 | 151.667131 | 16 | 35 | 19 |
-| twelve_centreline | deg | 0.362326 | 1.086977 | 17 | 37 | 20 |
-| twelve_centreline | degR | 57.344135 | 172.032404 | 17 | 37 | 20 |
-| twelve_lateral | R | 0.000919 | 0.002756 | 17 | 37 | 20 |
-| twelve_lateral | px | 0.157063 | 0.471190 | 17 | 37 | 20 |
-| twelve_sides | deg | 0.436000 | 1.308001 | 17 | 74 | 40 |
-| twelve_sides | degR | 68.397694 | 205.193081 | 17 | 74 | 40 |
+| twelve_centreline | deg | 0.116892 | 0.350675 | 16 | 35 | 19 |
+| twelve_centreline | degR | 36.195226 | 108.585678 | 16 | 35 | 19 |
+| twelve_lateral | R | 0.000940 | 0.002819 | 16 | 35 | 19 |
+| twelve_lateral | px | 0.161133 | 0.483400 | 16 | 35 | 19 |
+| twelve_sides | deg | 0.116213 | 0.348639 | 16 | 70 | 38 |
+| twelve_sides | degR | 35.433887 | 106.301661 | 16 | 70 | 38 |
 
-12 side agreement: 23 watches with 2+ photos; max per-watch median |left - right| 1.567 deg; robust spread 0.055 deg; limit 1.731 deg.
+12 side agreement: 22 watches with 2+ photos; max per-watch median |left - right| 0.682 deg; robust spread 0.048 deg; limit 0.826 deg.
 
 ## Genuine reference
 

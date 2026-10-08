@@ -6,7 +6,7 @@
 
 | Quantity | nominal | 95% interval |
 |---|---:|---:|
-| radial_R | -0.0007 | -0.0016 .. -0.0003 |
+| radial_R | -0.0010 | -0.0017 .. -0.0003 |
 | tangential_R | -0.0001 | -0.0002 .. +0.0005 |
 | left_side_deg | -0.015 | -0.111 .. +0.050 |
 | right_side_deg | +0.329 | +0.167 .. +0.507 |
@@ -17,17 +17,17 @@
 
 | Reference | median / P90 / max |
 |---|---:|
-| Alpha92 master (as shipped) | 0.0015 / 0.0037 / 0.0044 |
+| Alpha92 master (as shipped) | 0.0016 / 0.0037 / 0.0044 |
 | genuine nominal, in-sample | 0.0011 / 0.0033 / 0.0040 |
-| genuine nominal, leave-one-watch-out | 0.0012 / 0.0034 / 0.0040 |
+| genuine nominal, leave-one-watch-out | 0.0013 / 0.0035 / 0.0041 |
 
 ## Leave-one-source-out (nominal from the other sources only)
 
 | Held-out source | watches | nominal radial / tangential from the rest | held-out offset median / P90 / max |
 |---|---:|---:|---:|
-| Bob's | 8 | -0.0004 / +0.0003 | 0.0010 / 0.0021 / 0.0028 |
-| Phillips | 1 | -0.0007 / -0.0000 | 0.0027 / 0.0027 / 0.0027 |
-| other | 15 | -0.0015 / -0.0002 | 0.0017 / 0.0036 / 0.0043 |
+| Bob's | 8 | -0.0006 / +0.0003 | 0.0008 / 0.0019 / 0.0026 |
+| Phillips | 1 | -0.0008 / -0.0000 | 0.0026 / 0.0026 / 0.0026 |
+| other | 15 | -0.0015 / -0.0002 | 0.0015 / 0.0036 / 0.0043 |
 
 ## Shape after re-centring (degrees, median |value| over watches: master -> genuine nominal)
 
