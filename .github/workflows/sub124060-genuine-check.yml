@@ -13,6 +13,7 @@ on:
       - '.github/workflows/sub124060-genuine-check.yml'
       - 'tools/research/sub124060/models/**'
       - 'tools/desktop-harness/drivers/SubPeek.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99MarkerInterference.java'
   workflow_dispatch:
 
 permissions:
@@ -74,11 +75,24 @@ jobs:
         if: always()
         run: |
           python3 -c "import csv,collections;print('fetch:',collections.Counter(r['status'] for r in csv.DictReader(open('sub_results/fetch_log.csv'))))"
-          for f in findings.csv interference.csv preview_log.txt; do echo "=== $f BEGIN"; cat "$OUT/$f"; echo "=== $f END"; done
+          for f in findings.csv interference.csv preview_log.txt interference_log.txt; do echo "=== $f BEGIN"; cat "$OUT/$f"; echo "=== $f END"; done
       - name: SwissWatchExpo lower-dial close-ups as base64 JPEG (log-only, LAST STEP)
         if: always()
         run: |
           tools/desktop-harness/run.sh SubPeek swe_manifest.csv "$IMG" swe_peek > /dev/null 2>&1 || true
+          # lower-dial close-ups of genuine photos where a seconds-hand line withheld the 5 or 7 (log-only)
+          JAVA_TOOL_OPTIONS= python3 - <<'PY'
+          import csv, re
+          ids = set()
+          for l in open('sub_results/interference_log.txt'):
+              m = re.match(r'== (\S+) R=', l)
+              if m and re.search(r'\b(5|7)\[SEC\]', l): ids.add(m.group(1))
+          rows = [r for r in csv.DictReader(open('gen_manifest.csv')) if r['photo_id'] in ids][:12]
+          with open('sec_manifest.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()) if rows else ['photo_id', 'local_path']); w.writeheader(); w.writerows(rows)
+          print('photos with a 5/7 seconds-line withhold:', len(ids))
+          PY
+          tools/desktop-harness/run.sh SubPeek sec_manifest.csv "$IMG" swe_peek > /dev/null 2>&1 || true
           JAVA_TOOL_OPTIONS= python3 - <<'PY'
           import base64, glob, cv2
           for f in sorted(glob.glob('swe_peek/*.jpg')):
