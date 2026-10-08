@@ -16,7 +16,7 @@ import java.util.Properties;
 import org.junit.Test;
 
 /**
- * Alpha97 12 research readout: frozen constants pinned to the research calibration files, parity with the validated
+ * Alpha97 12 research readout: the GMT model's triangle reference (app assets) pinned to the research calibration files, parity with the validated
  * desktop prototype (tools/desktop-harness/drivers/Alpha97TwelveAngles.java) on recorded production inputs, fail-closed
  * behaviour, wording (no verdicts) and the Alpha96 summary lines staying identical.
  */
@@ -40,25 +40,25 @@ public class Alpha97TwelveReadoutTest {
     // ---------------------------------------------------------------- frozen constants
     @Test public void nominalMatchesCalibrationFile()throws Exception{
         Properties p=new Properties();p.load(Files.newBufferedReader(cal("m12_nominal.properties").toPath()));
-        assertEquals(Integer.parseInt(p.getProperty("n_watches").trim()),Alpha97TwelveReadout.N_WATCHES);
-        assertEquals(45,Alpha97TwelveReadout.N_WATCHES);   // 41 catalogue watches + 4 owner-priority official / CPO watches
-        assertEquals(d(p.getProperty("radial_R").trim()),Alpha97TwelveReadout.NOMINAL_RADIAL_R,0);
-        assertEquals(d(p.getProperty("tangential_R").trim()),Alpha97TwelveReadout.NOMINAL_TANGENTIAL_R,0);
-        assertEquals(d(p.getProperty("left_side_deg").trim()),Alpha97TwelveReadout.NOMINAL_LEFT_SIDE_DEG,0);
-        assertEquals(d(p.getProperty("right_side_deg").trim()),Alpha97TwelveReadout.NOMINAL_RIGHT_SIDE_DEG,0);
-        assertEquals(d(p.getProperty("rotation_deg").trim()),Alpha97TwelveReadout.NOMINAL_ROTATION_DEG,0);
+        assertEquals(Integer.parseInt(p.getProperty("n_watches").trim()),TestModels.gmtRef().triangle.nWatches);
+        assertEquals(45,TestModels.gmtRef().triangle.nWatches);   // 41 catalogue watches + 4 owner-priority official / CPO watches
+        assertEquals(d(p.getProperty("radial_R").trim()),TestModels.gmtRef().triangle.nominalRadialR,0);
+        assertEquals(d(p.getProperty("tangential_R").trim()),TestModels.gmtRef().triangle.nominalTangentialR,0);
+        assertEquals(d(p.getProperty("left_side_deg").trim()),TestModels.gmtRef().triangle.nominalLeftSideDeg,0);
+        assertEquals(d(p.getProperty("right_side_deg").trim()),TestModels.gmtRef().triangle.nominalRightSideDeg,0);
+        assertEquals(d(p.getProperty("rotation_deg").trim()),TestModels.gmtRef().triangle.nominalRotationDeg,0);
     }
 
     @Test public void genuineContextMatchesReferenceFileIncludesPriorityAndExcludesSwe()throws Exception{
         List<Map<String,String>> ref=csv("m12_genuine_reference.csv");
-        assertEquals(Alpha97TwelveReadout.N_WATCHES,ref.size());
+        assertEquals(TestModels.gmtRef().triangle.nWatches,ref.size());
         int priority=0;for(Map<String,String> r:ref)if("Owner priority".equals(r.get("source")))priority++;
         assertEquals("owner-priority official / CPO watches must be in the reference",4,priority);
         for(int i=0;i<ref.size();i++){
             assertFalse("SWE must be excluded",ref.get(i).get("source").contains("SWE"));
-            assertEquals(d(ref.get(i).get("lateral_R")),Alpha97TwelveReadout.GENUINE_LATERAL_R[i],0);
-            assertEquals(d(ref.get(i).get("centreline_deg")),Alpha97TwelveReadout.GENUINE_CENTRELINE_DEG[i],0);
-            assertEquals(d(ref.get(i).get("sides_deg")),Alpha97TwelveReadout.GENUINE_SIDES_DEG[i],0);
+            assertEquals(d(ref.get(i).get("lateral_R")),TestModels.gmtRef().triangle.lateralR[i],0);
+            assertEquals(d(ref.get(i).get("centreline_deg")),TestModels.gmtRef().triangle.centrelineDeg[i],0);
+            assertEquals(d(ref.get(i).get("sides_deg")),TestModels.gmtRef().triangle.sidesDeg[i],0);
         }
     }
 
@@ -78,7 +78,7 @@ public class Alpha97TwelveReadoutTest {
         for(Map<String,String> p:csv(protoCsv)){
             if(!"accepted".equals(p.get("status")))continue;
             Map<String,String> r=run.get(p.get("photo_id"));if(r==null)continue;
-            Alpha97TwelveReadout.Result o=Alpha97TwelveReadout.from(reportFromRunner(r));
+            Alpha97TwelveReadout.Result o=Alpha97TwelveReadout.from(reportFromRunner(r),TestModels.gmtRef());
             String id=p.get("photo_id");
             assertEquals(id+" usable","true".equals(p.get("usable")),o.usable);
             n++;
@@ -106,7 +106,7 @@ public class Alpha97TwelveReadoutTest {
 
     @Test public void knownLocalPhotoFindings()throws Exception{
         Map<String,Alpha97TwelveReadout.Result> o=new HashMap<>();
-        for(Map<String,String> r:csv("results/runner_local.csv"))o.put(r.get("photo_id"),Alpha97TwelveReadout.from(reportFromRunner(r)));
+        for(Map<String,String> r:csv("results/runner_local.csv"))o.put(r.get("photo_id"),Alpha97TwelveReadout.from(reportFromRunner(r),TestModels.gmtRef()));
         // marketplace candidates: well inside the genuine reference on every component
         for(String id:new String[]{"GEN_CAND_HO_01","GEN_CAND_HO_02"}){
             Alpha97TwelveReadout.Result x=o.get(id);assertTrue(x.usable);
@@ -127,29 +127,29 @@ public class Alpha97TwelveReadoutTest {
     // ---------------------------------------------------------------- fail-closed and wording
     @Test public void withholdsOccludedOrUnfittedTwelve(){
         Alpha94MarkerMeasurement.Marker occluded=new Alpha94MarkerMeasurement.Marker(12,"triangle");occluded.usable=false;
-        Alpha97TwelveReadout.Result a=Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),200,occluded));
-        assertFalse(a.usable);assertTrue(Alpha97TwelveReadout.line(a).contains("withheld"));
+        Alpha97TwelveReadout.Result a=Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),200,occluded),TestModels.gmtRef());
+        assertFalse(a.usable);assertTrue(Alpha97TwelveReadout.line(a,TestModels.gmtRef()).contains("withheld"));
         Alpha94MarkerMeasurement.Marker noRing=new Alpha94MarkerMeasurement.Marker(12,"triangle");noRing.usable=true;noRing.rotationDeg=0.1;
-        assertFalse(Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),200,noRing)).usable);
-        assertFalse(Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),200,null)).usable);
-        assertFalse(Alpha97TwelveReadout.from(null).usable);
+        assertFalse(Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),200,noRing),TestModels.gmtRef()).usable);
+        assertFalse(Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),200,null),TestModels.gmtRef()).usable);
+        assertFalse(Alpha97TwelveReadout.from(null,TestModels.gmtRef()).usable);
     }
 
     @Test public void lineIsResearchLabelledWithoutVerdictsOrRadialValue(){
         Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(12,"triangle");
         m.usable=true;m.localRadialPx=-7.77;m.localTangentialPx=-0.51;m.rotationDeg=0.96;m.leftSideErrDeg=0.99;m.rightSideErrDeg=0.89;
-        String s=Alpha97TwelveReadout.line(Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),165,m)));
+        String s=Alpha97TwelveReadout.line(Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),165,m),TestModels.gmtRef()),TestModels.gmtRef());
         assertTrue(s.startsWith("12 (research"));
         assertTrue(s.contains("lighting-sensitive · not assessed"));
         assertTrue(s.contains("centreline")&&s.contains("left side")&&s.contains("right side"));
         for(String w:new String[]{"PASS","FAIL","BORDERLINE","pass","fail","borderline","genuine?","fake","replica"})assertFalse(w,s.contains(w));
-        double radial=Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),165,m)).radialPx;
+        double radial=Alpha97TwelveReadout.from(new Alpha94MarkerMeasurement.Report(new ArrayList<>(),new Alpha94MarkerMeasurement.Ring(),165,m),TestModels.gmtRef()).radialPx;
         assertFalse("radial value must not be displayed",s.contains("7.77")||s.contains(String.format(java.util.Locale.US,"%.2f",Math.abs(radial))));
     }
 
     @Test public void summaryChangesOnlyTheTwelveLine(){
         List<Alpha94MarkerMeasurement.Marker> ms=new ArrayList<>();
-        for(int h:Alpha94MarkerMeasurement.HOURS){
+        for(int h:TestModels.gmt().ringHours()){
             Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(h,(h==6||h==9)?"baton":"round");
             m.usable=true;m.dialRightPx=0.1*h;m.dialDownPx=-0.05*h;m.rotationDeg=0.01*h;m.localOffsetPx=0.02*h;ms.add(m);
         }
@@ -157,7 +157,7 @@ public class Alpha97TwelveReadoutTest {
         Alpha94MarkerMeasurement.Marker tri=new Alpha94MarkerMeasurement.Marker(12,"triangle");
         tri.usable=true;tri.localRadialPx=-0.8;tri.localTangentialPx=-0.2;tri.rotationDeg=0.3;tri.leftSideErrDeg=0.2;tri.rightSideErrDeg=0.4;
         Alpha94MarkerMeasurement.Report r=new Alpha94MarkerMeasurement.Report(ms,ring,200,tri);
-        String[] a96=r.compactSummary().split("\n",-1),a97=Alpha97TwelveReadout.summary(r).split("\n",-1);
+        String[] a96=r.compactSummary().split("\n",-1),a97=Alpha97TwelveReadout.summary(r,TestModels.gmtRef()).split("\n",-1);
         assertEquals(a96.length,a97.length);
         for(int i=0;i<a96.length;i++)if(i!=1)assertEquals("line "+i+" must be identical to Alpha96",a96[i],a97[i]);
         assertTrue(a96[1].startsWith("12 (research)"));assertTrue(a97[1].startsWith(Alpha97TwelveReadout.LABEL));

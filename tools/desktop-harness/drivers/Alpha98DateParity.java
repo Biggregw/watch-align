@@ -32,14 +32,14 @@ public class Alpha98DateParity {
         for(int li=1;li<lines.size();li++){
             String[] f=lines.get(li).split(",",-1);String id=iId>=0?f[iId]:f[iPath];
             Bitmap b=Alpha96Calib.loadAlpha96(Path.of(a[1]).resolve(f[iPath]).toString());
-            AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b);
+            AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b,HarnessModel.spec());
             if(q==null||!q.valid||q.homography==null)continue;
             Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(b,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
-            Mat crop=Alpha98DateWindow.crop(gray,q.homography);
+            Mat crop=Alpha98DateWindow.crop(gray,q.homography,HarnessModel.spec().date);
             Mat ref=Imgcodecs.imread(Path.of(a[2],id+".png").toString(),Imgcodecs.IMREAD_GRAYSCALE);
             Mat diff=new Mat();org.opencv.core.Core.absdiff(crop,ref,diff);double mx=org.opencv.core.Core.minMaxLoc(diff).maxVal;
             if(mx==0)cropSame++;else{System.out.println("CROP DIFF "+id+" max "+mx);bad++;}
-            Alpha98DateWindow.Result r=Alpha98DateWindow.measure(crop);
+            Alpha98DateWindow.Result r=Alpha98DateWindow.measure(crop,HarnessModel.spec().date);
             String[] p=py.get(id);n++;
             if(p==null){System.out.println("no python row "+id);bad++;continue;}
             boolean pu="True".equals(p[iu]);

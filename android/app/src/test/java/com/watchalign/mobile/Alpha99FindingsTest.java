@@ -18,7 +18,7 @@ import java.util.Properties;
 import org.junit.Test;
 
 /**
- * Alpha99 evidence layer: uncertainty constants pinned to the genuine-only research file, the three evidence states,
+ * Alpha99 evidence layer: the GMT model's uncertainty (app assets) pinned to the genuine-only research file, the three evidence states,
  * the per-marker interference gate (fail closed), per-hour round findings, no new findings relative to Alpha98 on the
  * recorded runner rows, plain wording, and the interference check itself on synthetic dials (hand across a round,
  * hand passing clear, seconds hand along the 6).
@@ -40,31 +40,28 @@ public class Alpha99FindingsTest {
     static Map<Integer,Alpha99MarkerInterference.Check> allClean(){
         Map<Integer,Alpha99MarkerInterference.Check> m=new LinkedHashMap<>();
         Alpha99MarkerInterference.Check t=new Alpha99MarkerInterference.Check(12);t.clean=true;m.put(12,t);
-        for(int h:Alpha94MarkerMeasurement.HOURS){Alpha99MarkerInterference.Check c=new Alpha99MarkerInterference.Check(h);c.clean=true;m.put(h,c);}
+        for(int h:TestModels.gmt().ringHours()){Alpha99MarkerInterference.Check c=new Alpha99MarkerInterference.Check(h);c.clean=true;m.put(h,c);}
         return m;
     }
 
     // ---------------------------------------------------------------- constants
     @Test public void uncertaintyMatchesResearchFile()throws Exception{
         Properties p=new Properties();p.load(Files.newBufferedReader(cal("alpha99_uncertainty.properties").toPath()));
-        assertEquals(Double.parseDouble(p.getProperty("k_sigma")),Alpha99Uncertainty.K_SIGMA,0);
-        Object[][] pairs={{"six_rot.deg",Alpha99Uncertainty.SIX_ROT_DEG},{"nine_rot.deg",Alpha99Uncertainty.NINE_ROT_DEG},
-                {"six_off.R",Alpha99Uncertainty.SIX_OFF_R},{"six_off.px",Alpha99Uncertainty.SIX_OFF_PX},
-                {"nine_off.R",Alpha99Uncertainty.NINE_OFF_R},{"nine_off.px",Alpha99Uncertainty.NINE_OFF_PX},
-                {"rounds_off.R",Alpha99Uncertainty.ROUNDS_OFF_R},{"rounds_off.px",Alpha99Uncertainty.ROUNDS_OFF_PX},
-                {"ring_rot.deg",Alpha99Uncertainty.RING_ROT_DEG},{"ring_shift.R",Alpha99Uncertainty.RING_SHIFT_R},{"ring_shift.px",Alpha99Uncertainty.RING_SHIFT_PX},
-                {"twelve_centreline.deg",Alpha99Uncertainty.TWELVE_CENTRELINE_DEG},{"twelve_sides.deg",Alpha99Uncertainty.TWELVE_SIDES_DEG},
-                {"twelve_lateral.R",Alpha99Uncertainty.TWELVE_LATERAL_R},{"twelve_lateral.px",Alpha99Uncertainty.TWELVE_LATERAL_PX},
-                {"date_tilt.deg",Alpha99Uncertainty.DATE_TILT_DEG},{"six_rot.degR",Alpha99Uncertainty.SIX_ROT_DEGR},{"nine_rot.degR",Alpha99Uncertainty.NINE_ROT_DEGR},
-                {"twelve_centreline.degR",Alpha99Uncertainty.TWELVE_CENTRELINE_DEGR},{"twelve_sides.degR",Alpha99Uncertainty.TWELVE_SIDES_DEGR},
-                {"ring_rot.degR",Alpha99Uncertainty.RING_ROT_DEGR},{"date_tilt.degR",Alpha99Uncertainty.DATE_TILT_DEGR}};
-        for(Object[] x:pairs){assertEquals((String)x[0],Double.parseDouble(p.getProperty((String)x[0])),(double)x[1],0);
-            assertTrue((String)x[0]+" from genuine multi-photo watches",Integer.parseInt(p.getProperty(x[0]+".watches"))>=8);}
+        ModelReference ref=TestModels.gmtRef();
+        assertEquals(Double.parseDouble(p.getProperty("k_sigma")),ref.kSigma,0);
+        int n=0;
+        for(String key:p.stringPropertyNames()){
+            if(key.equals("k_sigma")||key.endsWith(".watches"))continue;
+            int dot=key.lastIndexOf('.');String fam=key.substring(0,dot),unit=key.substring(dot+1);
+            assertEquals(key,Double.parseDouble(p.getProperty(key)),ref.sigma(fam,unit),0);
+            assertTrue(key+" from genuine multi-photo watches",ref.sigmaWatches(fam,unit)>=8);n++;
+        }
+        assertTrue("families with an allowance: "+n,n>=22);
     }
 
     // ---------------------------------------------------------------- evidence states
     @Test public void threeEvidenceStates(){
-        double max=0.7,s=0.2,k=Alpha99Uncertainty.K_SIGMA;
+        double max=0.7,s=0.2,k=TestModels.gmtRef().kSigma;
         assertEquals(Alpha99Findings.Status.WITHIN,m(max,max,s).status());                 // a reference watch is never beyond itself
         assertEquals(Alpha99Findings.Status.WITHIN,m(0.5,max,s).status());
         assertEquals(Alpha99Findings.Status.WORTH,m(max+0.1,max,s).status());
@@ -74,16 +71,17 @@ public class Alpha99FindingsTest {
         // the genuine range is not widened by the allowance: anything beyond the furthest genuine watch is at least WORTH
         assertEquals(Alpha99Findings.Status.WORTH,m(max*1.01,max,s).status());
     }
-    private static Alpha99Findings.Measure m(double v,double max,double s){return new Alpha99Findings.Measure("x",v,max,s,40,"deg","","");}
+    private static Alpha99Findings.Measure m(double v,double max,double s){return new Alpha99Findings.Measure("x",v,max,s,TestModels.gmtRef().kSigma,40,"deg","","");}
 
     @Test public void angleAllowanceGrowsOnSmallPhotos(){
         // genuine catalogue case: a 126711CHNR photographed at dial radius 103 px read its 12 left side 3.2 deg off while
         // the same watch's 7 other photos read ~0.9 deg; the angle allowance must scale with 1 / R like positions do
-        double big=Alpha99Findings.sigmaDeg(Alpha99Uncertainty.TWELVE_SIDES_DEG,Alpha99Uncertainty.TWELVE_SIDES_DEGR,400);
-        double small=Alpha99Findings.sigmaDeg(Alpha99Uncertainty.TWELVE_SIDES_DEG,Alpha99Uncertainty.TWELVE_SIDES_DEGR,103);
-        assertEquals(Alpha99Uncertainty.TWELVE_SIDES_DEG,big,0);
-        assertEquals(Alpha99Uncertainty.TWELVE_SIDES_DEGR/103,small,1e-12);
-        double max=Alpha98Findings.max(Alpha97TwelveReadout.GENUINE_SIDES_DEG);
+        ModelReference ref=TestModels.gmtRef();
+        double big=Alpha99Findings.sigmaAng(ref,"twelve_sides",400);
+        double small=Alpha99Findings.sigmaAng(ref,"twelve_sides",103);
+        assertEquals(ref.sigma("twelve_sides","deg"),big,0);
+        assertEquals(ref.sigma("twelve_sides","degR")/103,small,1e-12);
+        double max=Alpha98Findings.max(ref.triangle.sidesDeg);
         assertEquals(Alpha99Findings.Status.WORTH,m(3.25,max,small).status());
     }
 
@@ -91,17 +89,17 @@ public class Alpha99FindingsTest {
         // genuine catalogue case: a mis-registered pose (markers withheld, ring not measurable) read a level date window
         // as tilted 6 deg; without the ring the orientation is unconfirmed, so the date is not assessed
         Alpha98DateWindow.Result d=new Alpha98DateWindow.Result();d.usable=true;d.cx=0.64;d.cy=0;d.wR=0.4;d.hR=0.25;
-        d.windowTiltDeg=Alpha98Reference.NOMINAL_DATE_TILT+6;
-        assertEquals(Alpha99Findings.Status.NOT_ASSESSED,Alpha99Findings.date(d,250,false).status);
-        assertEquals(Alpha99Findings.Status.CLEAR,Alpha99Findings.date(d,250,true).status);
-        d.windowTiltDeg=Alpha98Reference.NOMINAL_DATE_TILT;
-        assertEquals(Alpha99Findings.Status.WITHIN,Alpha99Findings.date(d,250,true).status);
+        d.windowTiltDeg=TestModels.gmtRef().nominal("date_tilt")+6;
+        assertEquals(Alpha99Findings.Status.NOT_ASSESSED,Alpha99Findings.date(d,250,false,TestModels.gmtRef(),TestModels.gmt().date).status);
+        assertEquals(Alpha99Findings.Status.CLEAR,Alpha99Findings.date(d,250,true,TestModels.gmtRef(),TestModels.gmt().date).status);
+        d.windowTiltDeg=TestModels.gmtRef().nominal("date_tilt");
+        assertEquals(Alpha99Findings.Status.WITHIN,Alpha99Findings.date(d,250,true,TestModels.gmtRef(),TestModels.gmt().date).status);
     }
 
     @Test public void batonExamplesFromTheBrief(){
         // 6 rotation ~0.8 deg vs genuine max ~0.7 -> worth a look; 9 rotation ~1.6 deg vs max ~0.65 -> clear
-        Alpha94MarkerMeasurement.Report r=report(6,0.8+Alpha98Reference.NOMINAL_SIX_ROT,9,-1.6+Alpha98Reference.NOMINAL_NINE_ROT);
-        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean());
+        Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         assertEquals(Alpha99Findings.Status.WORTH,find(s,"six").status);
         assertEquals(Alpha99Findings.Status.CLEAR,find(s,"nine").status);
         assertEquals("9 o'clock",s.tiles().get(0).title);                                 // clear first
@@ -115,22 +113,22 @@ public class Alpha99FindingsTest {
         Map<Integer,Alpha99MarkerInterference.Check> c=allClean();
         c.get(6).clean=false;c.get(6).reason=Alpha99MarkerInterference.HAND;
         c.get(2).clean=false;c.get(2).reason=Alpha99MarkerInterference.HAND;
-        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,c);
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,c,TestModels.gmt(),TestModels.gmtRef());
         Alpha99Findings.Finding six=find(s,"six"),two=find(s,"round2");
         assertEquals(Alpha99Findings.Status.NOT_ASSESSED,six.status);assertEquals("hand crosses marker",six.shortReason);assertTrue(six.visual);
         assertEquals(Alpha99Findings.Status.NOT_ASSESSED,two.status);assertEquals("2 o'clock",two.title);
         assertEquals(Alpha99Findings.Status.CLEAR,find(s,"nine").status);                   // the clean marker still reports
         // no interference result at all -> every marker withheld (fail closed)
-        Alpha99Findings.Summary none=Alpha99Findings.build(r,null,null);
+        Alpha99Findings.Summary none=Alpha99Findings.build(r,null,null,TestModels.gmt(),TestModels.gmtRef());
         for(Alpha99Findings.Finding f:none.all)if(f.shape!=Alpha99Findings.Shape.RING&&f.shape!=Alpha99Findings.Shape.DATE)
             assertEquals(f.key,Alpha99Findings.Status.NOT_ASSESSED,f.status);
     }
 
     @Test public void roundsAreJudgedAndNamedOneByOne(){
         Alpha94MarkerMeasurement.Report r=report(6,0,9,0);
-        double lim=Alpha98Findings.matchedMax(Alpha98Reference.ROUNDS_OFF_FAR,Alpha98Reference.ROUNDS_OFF_R,r.dialRadiusPx);
+        double lim=Alpha98Findings.matchedMax(TestModels.gmtRef().far("rounds_off"),TestModels.gmtRef().radius("rounds_off"),r.dialRadiusPx);
         for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind))m.localOffsetPx=(m.hour==8||m.hour==11?lim*1.2:lim*0.5)*r.dialRadiusPx;
-        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean());
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         assertEquals(Alpha99Findings.Status.WORTH,find(s,"round8").status);
         assertEquals(Alpha99Findings.Status.WORTH,find(s,"round11").status);
         assertEquals(Alpha99Findings.Status.WITHIN,find(s,"round1").status);
@@ -141,7 +139,7 @@ public class Alpha99FindingsTest {
         Alpha94MarkerMeasurement.Report r=report(6,0,9,0);
         Alpha94MarkerMeasurement.Report small=new Alpha94MarkerMeasurement.Report(r.markers,r.ring,100,r.triangle);   // too few comparable genuine watches
         Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(6).clean=false;c.get(6).reason=Alpha99MarkerInterference.HAND;
-        Alpha99Findings.Summary s=Alpha99Findings.build(small,null,c);
+        Alpha99Findings.Summary s=Alpha99Findings.build(small,null,c,TestModels.gmt(),TestModels.gmtRef());
         Alpha99Findings.Finding round=find(s,"round2");
         assertEquals(Alpha99Findings.Status.NOT_ASSESSED,round.status);assertEquals("resolution too low",round.shortReason);
         assertFalse(Alpha99Overview.hasBadge(round));
@@ -158,8 +156,8 @@ public class Alpha99FindingsTest {
         for(Map<String,String> row:rows){
             if(!"accepted".equals(row.get("status")))continue;
             Alpha94MarkerMeasurement.Report r=Alpha98FindingsTest.report(row);
-            Alpha98Findings.Summary old=Alpha98Findings.build(r,null);
-            Alpha99Findings.Summary now=Alpha99Findings.build(r,null,allClean());
+            Alpha98Findings.Summary old=Alpha98Findings.build(r,null,TestModels.gmt(),TestModels.gmtRef());
+            Alpha99Findings.Summary now=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
             for(Alpha99Findings.Finding f:now.all){
                 if(f.status!=Alpha99Findings.Status.CLEAR&&f.status!=Alpha99Findings.Status.WORTH)continue;
                 String key=f.key.startsWith("round")?"rounds":f.key;
@@ -183,7 +181,7 @@ public class Alpha99FindingsTest {
         List<Map<String,String>> rows=new ArrayList<>(csv("results/runner_local.csv"));rows.addAll(csv("results/priority_genuine_runner.csv"));
         for(Map<String,String> row:rows){
             if(!"accepted".equals(row.get("status")))continue;
-            Alpha99Findings.Summary s=Alpha99Findings.build(Alpha98FindingsTest.report(row),null,allClean());
+            Alpha99Findings.Summary s=Alpha99Findings.build(Alpha98FindingsTest.report(row),null,allClean(),TestModels.gmt(),TestModels.gmtRef());
             List<String> texts=new ArrayList<>(s.headlineLines());texts.add(s.withinLine());texts.add(s.notAssessedLine());
             for(Alpha99Findings.Finding f:s.all){texts.add(f.text());texts.add(f.shortLine());texts.addAll(f.detail());}
             for(String t:texts)for(String w:new String[]{"PASS","FAIL","fake","Fake","replica","Replica","counterfeit","authentic watch"})
@@ -192,13 +190,13 @@ public class Alpha99FindingsTest {
             for(Alpha99Findings.Finding f:s.notAssessed())assertFalse(f.reason.isEmpty());
         }
         assertTrue(Alpha99Findings.DISCLAIMER.contains("not an authenticity verdict"));
-        assertEquals("Dial marker ring",Alpha99Findings.ring(null,200).title);
+        assertEquals("Dial marker ring",Alpha99Findings.ring(null,200,TestModels.gmtRef()).title);
     }
 
     @Test public void headlineCountsByEvidenceStrength(){
-        Alpha94MarkerMeasurement.Report r=report(6,0.8+Alpha98Reference.NOMINAL_SIX_ROT,9,-1.6+Alpha98Reference.NOMINAL_NINE_ROT);
+        Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
         Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(12).clean=false;c.get(12).reason=Alpha99MarkerInterference.HAND;
-        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,c);
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,c,TestModels.gmt(),TestModels.gmtRef());
         assertEquals("1 clear alignment finding",s.headlineLines().get(0));
         assertEquals("1 other measurement is worth a look",s.headlineLines().get(1));
         assertTrue(s.headlineLines().get(2).endsWith("could not be assessed"));
@@ -226,7 +224,7 @@ public class Alpha99FindingsTest {
                 double d=Math.hypot(x-Math.sin(a)*Alpha92GmtMaster.ROUND_CENTER_R,y+Math.cos(a)*Alpha92GmtMaster.ROUND_CENTER_R);
                 if(d<=Alpha92GmtMaster.ROUND_OUTER_R)return d>Alpha92GmtMaster.ROUND_OUTER_R-0.012?150:220;
             }
-            double sd=Alpha99MarkerInterference.dist(12,-y,x);
+            double sd=Alpha99MarkerInterference.dist(TestModels.gmt().atHour(12),-y,x);
             if(sd<=0)return sd>-0.012?150:220;
             return 20;
         };
@@ -237,40 +235,40 @@ public class Alpha99FindingsTest {
     }
 
     @Test public void cleanSyntheticDialPasses(){
-        Map<Integer,Alpha99MarkerInterference.Check> c=Alpha99MarkerInterference.analyse(dial(-1,0,0,-1),H);
+        Map<Integer,Alpha99MarkerInterference.Check> c=Alpha99MarkerInterference.analyse(dial(-1,0,0,-1),H,TestModels.gmt());
         for(Alpha99MarkerInterference.Check x:c.values())assertTrue(x.hour+": "+x.reason,x.clean);
     }
 
     @Test public void handAcrossARoundMarkerWithholdsIt(){
-        Map<Integer,Alpha99MarkerInterference.Check> c=Alpha99MarkerInterference.analyse(dial(62,0.03,190,-1),H);
+        Map<Integer,Alpha99MarkerInterference.Check> c=Alpha99MarkerInterference.analyse(dial(62,0.03,190,-1),H,TestModels.gmt());
         assertFalse(c.get(2).clean);assertEquals(Alpha99MarkerInterference.HAND,c.get(2).reason);
         assertTrue(c.get(1).clean);assertTrue(c.get(4).clean);assertTrue(c.get(12).clean);
     }
 
     @Test public void handPassingClearDoesNotWithhold(){
-        Map<Integer,Alpha99MarkerInterference.Check> c=Alpha99MarkerInterference.analyse(dial(75,0.03,190,-1),H);
+        Map<Integer,Alpha99MarkerInterference.Check> c=Alpha99MarkerInterference.analyse(dial(75,0.03,190,-1),H,TestModels.gmt());
         assertTrue(c.get(2).clean);assertTrue(c.get(4).clean);
     }
 
     @Test public void secondsHandAlongTheSixWithholdsIt(){
-        Map<Integer,Alpha99MarkerInterference.Check> c=Alpha99MarkerInterference.analyse(dial(-1,0,0,185.5),H);
+        Map<Integer,Alpha99MarkerInterference.Check> c=Alpha99MarkerInterference.analyse(dial(-1,0,0,185.5),H,TestModels.gmt());
         assertFalse(c.get(6).clean);assertTrue(c.get(6).secondsHand);
         assertTrue(c.get(12).clean);assertTrue(c.get(5).clean);assertTrue(c.get(7).clean);
     }
 
     @Test public void failsClosedWithoutAnImage(){
-        for(Alpha99MarkerInterference.Check x:Alpha99MarkerInterference.analyse((Alpha99MarkerInterference.Sampler)null,H).values())assertFalse(x.clean);
-        for(Alpha99MarkerInterference.Check x:Alpha99MarkerInterference.analyse(dial(-1,0,0,-1),null).values())assertFalse(x.clean);
+        for(Alpha99MarkerInterference.Check x:Alpha99MarkerInterference.analyse((Alpha99MarkerInterference.Sampler)null,H,TestModels.gmt()).values())assertFalse(x.clean);
+        for(Alpha99MarkerInterference.Check x:Alpha99MarkerInterference.analyse(dial(-1,0,0,-1),null,TestModels.gmt()).values())assertFalse(x.clean);
     }
 
     // ---------------------------------------------------------------- helpers
     static Alpha94MarkerMeasurement.Report report(int hA,double rotA,int hB,double rotB){
         List<Alpha94MarkerMeasurement.Marker> ms=new ArrayList<>();
-        for(int h:Alpha94MarkerMeasurement.HOURS){
-            Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(h,(h==6||h==9)?"baton":"round");
+        for(int h:TestModels.gmt().ringHours()){
+            Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(h,(h==6||h==9)?"baton":"round");m.spec=TestModels.gmt().atHour(h);
             m.usable=true;m.rotationDeg=h==hA?rotA:h==hB?rotB:0;m.localOffsetPx=0.1;m.localRadialPx=0.1;m.localTangentialPx=0;ms.add(m);
         }
-        Alpha94MarkerMeasurement.Ring g=new Alpha94MarkerMeasurement.Ring();g.usable=true;g.rotationDeg=Alpha98Reference.NOMINAL_RING_ROT;g.shiftPx=0.1;
+        Alpha94MarkerMeasurement.Ring g=new Alpha94MarkerMeasurement.Ring();g.usable=true;g.rotationDeg=TestModels.gmtRef().nominal("ring_rot");g.shiftPx=0.1;
         Alpha94MarkerMeasurement.Marker t=new Alpha94MarkerMeasurement.Marker(12,"triangle");t.usable=false;t.reason="not part of this test";
         return new Alpha94MarkerMeasurement.Report(ms,g,250,t);
     }

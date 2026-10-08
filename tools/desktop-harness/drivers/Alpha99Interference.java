@@ -42,11 +42,11 @@ public class Alpha99Interference {
                 String[] f=lines.get(li).split(",",-1);String id=iId>=0?f[iId]:f[iPath];
                 Path p=Path.of(a[1]).resolve(f[iPath]);if(!Files.exists(p)){System.out.println("== "+id+": missing");continue;}
                 Bitmap b=Alpha96Calib.loadAlpha96(p.toString());
-                AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b);
+                AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b,HarnessModel.spec());
                 if(q==null||!q.valid||q.homography==null){System.out.println("== "+id+": dial not found");continue;}
-                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography);
+                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography,HarnessModel.spec());
                 Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(b,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
-                Map<Integer,Alpha99MarkerInterference.Check> m=Alpha99MarkerInterference.analyse(gray,q.homography);
+                Map<Integer,Alpha99MarkerInterference.Check> m=Alpha99MarkerInterference.analyse(gray,q.homography,HarnessModel.spec());
                 StringBuilder s=new StringBuilder("== "+id+String.format(Locale.US," R=%.0f :",r.dialRadiusPx));
                 List<Mat> tiles=new ArrayList<>();
                 for(Alpha99MarkerInterference.Check c:m.values()){
@@ -63,7 +63,7 @@ public class Alpha99Interference {
                 {double rp=Alpha99MarkerInterference.pxPerR(q.homography);
                  double minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;for(int kk=0;kk<72;kk++){double t=2*Math.PI*kk/72;double[] H=q.homography;double x=Math.cos(t),y=Math.sin(t),w=H[6]*x+H[7]*y+H[8];double px=(H[0]*x+H[1]*y+H[2])/w,py=(H[3]*x+H[4]*y+H[5])/w;minX=Math.min(minX,px);maxX=Math.max(maxX,px);minY=Math.min(minY,py);maxY=Math.max(maxY,py);}
                  Alpha91SplineImage sp=new Alpha91SplineImage(gray,(int)minX-4,(int)minY-4,(int)maxX+5,(int)maxY+5);Alpha99MarkerInterference.Sampler im=sp::at;
-                 List<double[]> ds=Alpha99MarkerInterference.dots(im,q.homography,rp);StringBuilder z=new StringBuilder(String.format(Locale.US,"   L=%.0f dots:",Alpha99MarkerInterference.lumeContrast(im,q.homography)));
+                 List<double[]> ds=Alpha99MarkerInterference.dots(im,q.homography,rp,HarnessModel.spec());StringBuilder z=new StringBuilder(String.format(Locale.US,"   L=%.0f dots:",Alpha99MarkerInterference.lumeContrast(im,q.homography,HarnessModel.spec())));
                  for(int kk=0;kk<Math.min(5,ds.size());kk++)z.append(String.format(Locale.US," %.1f°@%.3f:%.0f",ds.get(kk)[0],ds.get(kk)[1],ds.get(kk)[2]));
                  System.out.println(z);
                  if(images)for(int kk=0;kk<Math.min(3,ds.size());kk++){double ang=Math.toRadians(ds.get(kk)[0]),rr=ds.get(kk)[1];

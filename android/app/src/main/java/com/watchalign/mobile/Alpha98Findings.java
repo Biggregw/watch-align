@@ -9,11 +9,12 @@ import java.util.Locale;
  *
  * Rule (owner decision 2026-10-07): a feature is reported as "outside the measured genuine range" only when it reads
  * further than every genuine reference watch for that feature. There are no tuned numbers: the limit is the furthest
- * genuine reference watch (Alpha98Reference, Alpha97TwelveReadout). Wording never says genuine / fake; it compares
+ * genuine reference watch (the model's ModelReference). Wording never says genuine / fake; it compares
  * measurements with genuine watches. Round-marker and ring-shift offsets inflate on small dials, so for those a photo is
  * compared only with genuine watches photographed at a similar or lower resolution (dial radius <= 1.3 x this photo's);
  * fewer than 8 such watches -> not assessed. Fail-closed: anything the measurement withheld is "not assessed" with a
- * reason, never guessed. Read-only over the unchanged Alpha96 measurement.
+ * reason, never guessed. A feature the model has no genuine reference for is not assessed. Read-only over the
+ * unchanged Alpha96 measurement. Features follow the model spec (triangle, each baton, the round markers, ring, date).
  */
 final class Alpha98Findings {
     enum Status{OUTSIDE,WITHIN,NOT_ASSESSED}
@@ -53,45 +54,52 @@ final class Alpha98Findings {
 
     private Alpha98Findings(){}
 
-    static Summary build(Alpha94MarkerMeasurement.Report r,Alpha98DateWindow.Result date){
+    static Summary build(Alpha94MarkerMeasurement.Report r,Alpha98DateWindow.Result date,ModelSpec model,ModelReference ref){
         Summary s=new Summary();
         double R=r==null?Double.NaN:r.dialRadiusPx;
-        s.all.add(twelve(r));
-        s.all.add(baton(r,6,R));
-        s.all.add(baton(r,9,R));
-        s.all.add(rounds(r,R));
-        s.all.add(ring(r,R));
-        s.all.add(date(date));
+        ModelSpec.Marker tri=model.triangle();
+        if(tri!=null)s.all.add(twelve(r,tri,ref));
+        for(ModelSpec.Marker b:model.withShape(ModelSpec.Shape.BATON))s.all.add(baton(r,b,R,ref));
+        if(!model.withShape(ModelSpec.Shape.ROUND).isEmpty())s.all.add(rounds(r,R,ref));
+        s.all.add(ring(r,R,ref));
+        if(model.date!=null)s.all.add(date(date,model.date,ref));
         return s;
     }
 
+    static final String NO_REFERENCE="there is no genuine reference for this feature on this model yet";
+    private static Finding noReference(Finding f){f.status=Status.NOT_ASSESSED;f.reason=NO_REFERENCE;return f;}
+
     // ------------------------------------------------------------------ features
-    static Finding twelve(Alpha94MarkerMeasurement.Report r){
-        Finding f=new Finding("twelve","12 o'clock triangle");
-        f.cx=0;f.cy=-0.75;f.half=0.22;f.shape=Shape.TRIANGLE;f.hour=12;
-        Alpha97TwelveReadout.Result t=Alpha97TwelveReadout.from(r);
+    static Finding twelve(Alpha94MarkerMeasurement.Report r,ModelSpec.Marker spec,ModelReference ref){
+        Finding f=new Finding(spec.key,spec.hour+" o'clock triangle");
+        double a=Math.toRadians(spec.hour*30.0),c=0.75;f.cx=spec.hour%12==0?0:Math.sin(a)*c;f.cy=spec.hour%12==0?-c:-Math.cos(a)*c;
+        f.half=0.22;f.shape=Shape.TRIANGLE;f.hour=spec.hour;
+        if(ref.triangle==null)return noReference(f);
+        Alpha97TwelveReadout.Result t=Alpha97TwelveReadout.from(r,ref);
         if(!t.usable){f.status=Status.NOT_ASSESSED;f.reason=reasonFor(t.reason);return f;}
-        int n=Alpha97TwelveReadout.N_WATCHES;
+        int n=ref.triangle.nWatches;
         if(t.atLeastCentreline==0)f.lines.add(String.format(Locale.US,"It points %.1f° %s of the genuine direction - further than all %d genuine reference watches (largest %.1f°).",
-                Math.abs(t.centrelineDeg),cw(t.centrelineDeg),n,max(Alpha97TwelveReadout.GENUINE_CENTRELINE_DEG)));
+                Math.abs(t.centrelineDeg),cw(t.centrelineDeg),n,max(ref.triangle.centrelineDeg)));
         if(t.atLeastSides==0){boolean left=Math.abs(t.leftSideDeg)>=Math.abs(t.rightSideDeg);double v=left?t.leftSideDeg:t.rightSideDeg;
             f.lines.add(String.format(Locale.US,"Its %s side is angled %.1f° %s - further than all %d genuine reference watches (largest %.1f°).",
-                    left?"left":"right",Math.abs(v),cw(v),n,max(Alpha97TwelveReadout.GENUINE_SIDES_DEG)));}
+                    left?"left":"right",Math.abs(v),cw(v),n,max(ref.triangle.sidesDeg)));}
         if(t.atLeastLateral==0)f.lines.add(String.format(Locale.US,"It sits %.1f px to the %s (%.2f%% of the dial radius) - further than all %d genuine reference watches (largest %.2f%%).",
-                Math.abs(t.lateralPx),t.lateralPx<0?"left":"right",100*Math.abs(t.lateralR),n,100*max(Alpha97TwelveReadout.GENUINE_LATERAL_R)));
+                Math.abs(t.lateralPx),t.lateralPx<0?"left":"right",100*Math.abs(t.lateralR),n,100*max(ref.triangle.lateralR)));
         if(!f.lines.isEmpty()){f.status=Status.OUTSIDE;f.lines.add(CHECK_HINT);}
         return f;
     }
 
-    static Finding baton(Alpha94MarkerMeasurement.Report r,int hour,double R){
-        Finding f=new Finding(hour==6?"six":"nine",hour+" o'clock marker");
-        double a=Math.toRadians(hour*30.0);f.cx=Math.sin(a)*Alpha92GmtMaster.BATON_CENTER_R;f.cy=-Math.cos(a)*Alpha92GmtMaster.BATON_CENTER_R;
+    static Finding baton(Alpha94MarkerMeasurement.Report r,ModelSpec.Marker spec,double R,ModelReference ref){
+        int hour=spec.hour;
+        Finding f=new Finding(spec.key,hour+" o'clock marker");
+        double a=Math.toRadians(hour*30.0);f.cx=Math.sin(a)*spec.centreR;f.cy=-Math.cos(a)*spec.centreR;
         f.half=0.22;f.shape=Shape.BATON;f.hour=hour;
+        if(!ref.has(spec.key+"_rot")||!ref.has(spec.key+"_off")||!Double.isFinite(ref.nominal(spec.key+"_rot")))return noReference(f);
         Alpha94MarkerMeasurement.Marker m=r==null?null:r.atHour(hour);
         if(m==null||!m.usable){f.status=Status.NOT_ASSESSED;f.reason=reasonFor(m==null?"unavailable":m.reason);return f;}
-        double[] rotRef=hour==6?Alpha98Reference.SIX_ROT_FAR:Alpha98Reference.NINE_ROT_FAR;
-        double[] offRef=hour==6?Alpha98Reference.SIX_OFF_FAR:Alpha98Reference.NINE_OFF_FAR;
-        double nom=hour==6?Alpha98Reference.NOMINAL_SIX_ROT:Alpha98Reference.NOMINAL_NINE_ROT;
+        double[] rotRef=ref.far(spec.key+"_rot");
+        double[] offRef=ref.far(spec.key+"_off");
+        double nom=ref.nominal(spec.key+"_rot");
         double rot=m.rotationDeg-nom;
         if(Double.isFinite(rot)&&beyond(Math.abs(rot),max(rotRef)))
             f.lines.add(String.format(Locale.US,"It is rotated %.1f° %s - further than all %d genuine reference watches (largest %.1f°).",
@@ -104,14 +112,15 @@ final class Alpha98Findings {
         return f;
     }
 
-    static Finding rounds(Alpha94MarkerMeasurement.Report r,double R){
+    static Finding rounds(Alpha94MarkerMeasurement.Report r,double R,ModelReference ref){
         Finding f=new Finding("rounds","Round hour markers");f.shape=Shape.ROUND;f.half=0.17;
+        if(!ref.has("rounds_off"))return noReference(f);
         if(r==null){f.status=Status.NOT_ASSESSED;f.reason="no measurement";return f;}
         int usable=0;Alpha94MarkerMeasurement.Marker worst=null;
         for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind)&&m.usable&&Double.isFinite(m.localOffsetPx)){usable++;if(worst==null||m.localOffsetPx>worst.localOffsetPx)worst=m;}
         if(usable<5||worst==null){f.status=Status.NOT_ASSESSED;f.reason="too few round markers could be measured cleanly";return f;}
-        double a=Math.toRadians(worst.hour*30.0);f.cx=Math.sin(a)*Alpha92GmtMaster.ROUND_CENTER_R;f.cy=-Math.cos(a)*Alpha92GmtMaster.ROUND_CENTER_R;f.hour=worst.hour;
-        double lim=matchedMax(Alpha98Reference.ROUNDS_OFF_FAR,Alpha98Reference.ROUNDS_OFF_R,R);int n=matchedCount(Alpha98Reference.ROUNDS_OFF_R,R);
+        double a=Math.toRadians(worst.hour*30.0),cr=worst.spec!=null?worst.spec.centreR:Double.NaN;f.cx=Math.sin(a)*cr;f.cy=-Math.cos(a)*cr;f.hour=worst.hour;
+        double lim=matchedMax(ref.far("rounds_off"),ref.radius("rounds_off"),R);int n=matchedCount(ref.radius("rounds_off"),R);
         if(n<MIN_MATCHED){f.status=Status.NOT_ASSESSED;f.reason="the photo's resolution is too low to compare round markers with genuine photos";return f;}
         double off=worst.localOffsetPx/R;
         if(beyond(off,lim)){f.status=Status.OUTSIDE;
@@ -121,31 +130,33 @@ final class Alpha98Findings {
         return f;
     }
 
-    static Finding ring(Alpha94MarkerMeasurement.Report r,double R){
+    static Finding ring(Alpha94MarkerMeasurement.Report r,double R,ModelReference ref){
         Finding f=new Finding("ring","Marker ring");f.shape=Shape.RING;f.cx=0;f.cy=0;f.half=1.05;
+        if(!ref.has("ring_rot")||!Double.isFinite(ref.nominal("ring_rot")))return noReference(f);
         Alpha94MarkerMeasurement.Ring g=r==null?null:r.ring;
         if(g==null||!g.usable){f.status=Status.NOT_ASSESSED;f.reason="too few markers could be measured cleanly";return f;}
-        double rot=g.rotationDeg-Alpha98Reference.NOMINAL_RING_ROT;
-        if(Double.isFinite(rot)&&beyond(Math.abs(rot),max(Alpha98Reference.RING_ROT_FAR)))
+        double rot=g.rotationDeg-ref.nominal("ring_rot");
+        if(Double.isFinite(rot)&&beyond(Math.abs(rot),max(ref.far("ring_rot"))))
             f.lines.add(String.format(Locale.US,"The hour markers as a set are turned %.2f° %s relative to the printed minute track - further than all %d genuine reference watches (largest %.2f°).",
-                    Math.abs(rot),cw(rot),Alpha98Reference.RING_ROT_FAR.length,max(Alpha98Reference.RING_ROT_FAR)));
-        int n=matchedCount(Alpha98Reference.RING_SHIFT_R,R);
-        if(n>=MIN_MATCHED){double lim=matchedMax(Alpha98Reference.RING_SHIFT_FAR,Alpha98Reference.RING_SHIFT_R,R);double sh=g.shiftPx/R;
+                    Math.abs(rot),cw(rot),ref.far("ring_rot").length,max(ref.far("ring_rot"))));
+        int n=matchedCount(ref.radius("ring_shift"),R);
+        if(n>=MIN_MATCHED){double lim=matchedMax(ref.far("ring_shift"),ref.radius("ring_shift"),R);double sh=g.shiftPx/R;
             if(Double.isFinite(sh)&&beyond(sh,lim))f.lines.add(String.format(Locale.US,"The hour markers as a set are off-centre by %.1f px (%.2f%% of the dial radius) - further than all %d comparable genuine reference watches (largest %.2f%%).",
                     g.shiftPx,100*sh,n,100*lim));}
         if(!f.lines.isEmpty()){f.status=Status.OUTSIDE;f.lines.add("Check the full overlay as well as the close-up.");}
         return f;
     }
 
-    static Finding date(Alpha98DateWindow.Result d){
+    static Finding date(Alpha98DateWindow.Result d,ModelSpec.DateWindow dw,ModelReference ref){
         Finding f=new Finding("date","Date window");f.shape=Shape.DATE;f.half=0.30;
+        if(!ref.has("date_tilt")||!Double.isFinite(ref.nominal("date_tilt"))){noReference(f);f.cx=d!=null&&Double.isFinite(d.cx)?d.cx:dw.expX;f.cy=d!=null&&Double.isFinite(d.cy)?d.cy:dw.expY;return f;}
         if(d==null||!d.usable){f.status=Status.NOT_ASSESSED;f.reason=dateReason(d==null?"":d.reason);
-            f.cx=d!=null&&Double.isFinite(d.cx)?d.cx:Alpha98DateWindow.EXP_X;f.cy=d!=null&&Double.isFinite(d.cy)?d.cy:0;return f;}
+            f.cx=d!=null&&Double.isFinite(d.cx)?d.cx:dw.expX;f.cy=d!=null&&Double.isFinite(d.cy)?d.cy:dw.expY;return f;}
         f.cx=d.cx;f.cy=d.cy;
-        double t=d.windowTiltDeg-Alpha98Reference.NOMINAL_DATE_TILT;
-        if(beyond(Math.abs(t),max(Alpha98Reference.DATE_TILT_FAR))){f.status=Status.OUTSIDE;
+        double t=d.windowTiltDeg-ref.nominal("date_tilt");
+        if(beyond(Math.abs(t),max(ref.far("date_tilt")))){f.status=Status.OUTSIDE;
             f.lines.add(String.format(Locale.US,"It is tilted %.1f° %s relative to the dial - further than all %d genuine reference watches (largest %.1f°).",
-                    Math.abs(t),cw(t),Alpha98Reference.DATE_TILT_FAR.length,max(Alpha98Reference.DATE_TILT_FAR)));
+                    Math.abs(t),cw(t),ref.far("date_tilt").length,max(ref.far("date_tilt"))));
             f.lines.add("Check the close-up: glare on the magnifier can also cause this.");}
         return f;
     }

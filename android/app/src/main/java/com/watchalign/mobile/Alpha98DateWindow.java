@@ -20,13 +20,13 @@ import java.util.List;
  * detection, edge refinement, edge-line tilt and its fail-closed rules); digit centring / row tilt stay research-only.
  *
  * The 3 o'clock region is rectified on the frozen production pose with the same cubic B-spline interpolant and region
- * as the harness DateCrop (canonical x 0.22..1.02, y -0.38..0.38 R at 0.0025 R/px, 12 at the top). Inside the
+ * as the harness DateCrop (the model spec's date_window crop; GMT: canonical x 0.22..1.02, y -0.38..0.38 R at
+ * 0.0025 R/px, 12 at the top). Inside the
  * magnified window only angles are used, so the cyclops magnification cancels. Window tilt is reported against the dial
  * horizontal (+ = clockwise). Read-only: nothing here feeds back into pose or marker measurement.
  */
 final class Alpha98DateWindow {
-    static final double X0=0.22,X1=1.02,Y0=-0.38,Y1=0.38,STEP=0.0025;
-    static final double EXP_X=0.64,EXP_Y=0.0,AREA_MIN=0.012,AREA_MAX=0.09,ASPECT_MIN=1.3,ASPECT_MAX=2.6,MIN_RECT_FILL=0.88;
+    static final double AREA_MIN=0.012,AREA_MAX=0.09,ASPECT_MIN=1.3,ASPECT_MAX=2.6,MIN_RECT_FILL=0.88;
 
     static final class Result {
         boolean usable;String reason="";
@@ -38,7 +38,8 @@ final class Alpha98DateWindow {
     private Alpha98DateWindow(){}
 
     /** Upright rectified 3 o'clock crop (8-bit grey), identical sampling to the harness DateCrop. */
-    static Mat crop(Mat gray,double[] H){
+    static Mat crop(Mat gray,double[] H,ModelSpec.DateWindow dw){
+        final double X0=dw.x0,X1=dw.x1,Y0=dw.y0,Y1=dw.y1,STEP=dw.step;
         double minX=Double.POSITIVE_INFINITY,minY=minX,maxX=Double.NEGATIVE_INFINITY,maxY=maxX;
         for(int k=0;k<72;k++){double t=2*Math.PI*k/72;double[] p=project(H,1.1*Math.cos(t),1.1*Math.sin(t));
             if(p==null)continue;minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1]);}
@@ -59,15 +60,17 @@ final class Alpha98DateWindow {
         return new double[]{(H[0]*x+H[1]*y+H[2])/q,(H[3]*x+H[4]*y+H[5])/q};
     }
 
-    static Result analyse(Mat gray,double[] H){
+    static Result analyse(Mat gray,double[] H,ModelSpec.DateWindow dw){
+        if(dw==null){Result r=new Result();r.reason="this model has no date window";return r;}
         if(gray==null||H==null||H.length<9){Result r=new Result();r.reason="pose unavailable";return r;}
-        return measure(crop(gray,H));
+        return measure(crop(gray,H,dw),dw);
     }
 
     // ------------------------------------------------------------------ measurement (port of date_window.py)
-    static Result measure(Mat g){
+    static Result measure(Mat g,ModelSpec.DateWindow dw){
+        final double X0=dw.x0,Y0=dw.y0,STEP=dw.step;
         Result out=new Result();
-        double[] rect=findWindow(g,out);
+        double[] rect=findWindow(g,out,dw);
         if(rect==null)return out;
         double[] ref=refineWindow(g,rect);
         if(ref==null){out.reason="window edges not found";return out;}
@@ -100,7 +103,8 @@ final class Alpha98DateWindow {
     }
 
     /** {cx, cy, w, h, angleDeg} in crop pixels, or null with out.reason set. */
-    static double[] findWindow(Mat g,Result out){
+    static double[] findWindow(Mat g,Result out,ModelSpec.DateWindow dw){
+        final double X0=dw.x0,Y0=dw.y0,STEP=dw.step,EXP_X=dw.expX,EXP_Y=dw.expY;
         double ex=(EXP_X-X0)/STEP-0.5,ey=(EXP_Y-Y0)/STEP-0.5;
         Mat blur=new Mat();Imgproc.GaussianBlur(g,blur,new Size(5,5),0);
         int r0=Math.max(0,(int)(ey-0.25/STEP)),r1=Math.min(blur.rows(),(int)(ey+0.25/STEP)),c0=Math.max(0,(int)(ex-0.3/STEP)),c1=Math.min(blur.cols(),(int)(ex+0.3/STEP));

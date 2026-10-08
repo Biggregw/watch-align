@@ -42,31 +42,34 @@ final class Alpha98Closeups {
      *             findings are measured relative to the other markers, so their outline is drawn where the ring of
      *             markers predicts it; the ring finding itself is drawn on the unmoved master.
      */
-    static Bitmap forFinding(Mat rgba,double[] H,Alpha98Findings.Finding f,Alpha98DateWindow.Result date,double[] ring){
-        return forRegion(rgba,H,f,date,ring);
+    static Bitmap forFinding(Mat rgba,double[] H,Alpha98Findings.Finding f,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref){
+        return forRegion(rgba,H,f,date,ring,model,ref);
     }
 
     /** Alpha99 findings: same close-up and outline as Alpha98 for the same region and shape. */
-    static Bitmap forFinding(Mat rgba,double[] H,Alpha99Findings.Finding g,Alpha98DateWindow.Result date,double[] ring){
+    static Bitmap forFinding(Mat rgba,double[] H,Alpha99Findings.Finding g,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref){
         Alpha98Findings.Finding f=new Alpha98Findings.Finding(g.key,g.title);
         f.cx=g.cx;f.cy=g.cy;f.half=g.half;f.hour=g.hour;f.shape=Alpha98Findings.Shape.valueOf(g.shape.name());
-        return forRegion(rgba,H,f,date,ring);
+        return forRegion(rgba,H,f,date,ring,model,ref);
     }
 
-    private static Bitmap forRegion(Mat rgba,double[] H,Alpha98Findings.Finding f,Alpha98DateWindow.Result date,double[] ring){
+    private static Bitmap forRegion(Mat rgba,double[] H,Alpha98Findings.Finding f,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref){
+        ModelSpec.Marker spec=model.atHour(f.hour);
         Mat m=render(rgba,H,f.cx,f.cy,f.half);
         int th=Math.max(2,SIZE/160);
         switch(f.shape){
-            case BATON:poly(m,f,moved(batonPolygon(f.hour),ring),th);break;
-            case TRIANGLE:poly(m,f,moved(nominalTriangle(),ring),th);break;
-            case ROUND:{double[][] c=moved(new double[][]{{f.cx,f.cy}},ring);double sc=ring==null?1:1+ring[2];
-                circle(m,f,c[0][0],c[0][1],Alpha92GmtMaster.ROUND_OUTER_R*sc,th);break;}
+            case BATON:if(spec!=null)poly(m,f,moved(spec.batonPolygon(),ring),th);break;
+            case TRIANGLE:if(spec!=null)poly(m,f,moved(nominalTriangle(spec,ref),ring),th);break;
+            case ROUND:{if(spec==null)break;double[][] c=moved(new double[][]{{f.cx,f.cy}},ring);double sc=ring==null?1:1+ring[2];
+                circle(m,f,c[0][0],c[0][1],spec.outerR*sc,th);break;}
             case RING:
-                for(int h=1;h<=11;h++){double a=Math.toRadians(h*30.0);
-                    if(h==3)continue;
-                    if(h==6||h==9)poly(m,f,batonPolygon(h),th);
-                    else circle(m,f,Math.sin(a)*Alpha92GmtMaster.ROUND_CENTER_R,-Math.cos(a)*Alpha92GmtMaster.ROUND_CENTER_R,Alpha92GmtMaster.ROUND_OUTER_R,th);}
-                poly(m,f,nominalTriangle(),th);break;
+                for(ModelSpec.Marker mk:model.markers){
+                    if(mk.shape==ModelSpec.Shape.BATON)poly(m,f,mk.batonPolygon(),th);
+                    else if(mk.shape==ModelSpec.Shape.ROUND){double a=Math.toRadians(mk.hour*30.0);
+                        circle(m,f,Math.sin(a)*mk.centreR,-Math.cos(a)*mk.centreR,mk.outerR,th);}
+                }
+                for(ModelSpec.Marker mk:model.markers)if(mk.shape==ModelSpec.Shape.TRIANGLE)poly(m,f,nominalTriangle(mk,ref),th);
+                break;
             case DATE:
                 if(date!=null&&Double.isFinite(date.wR)){
                     double a=Math.toRadians(date.windowTiltDeg),hw=date.wR/2,hh=date.hR/2;double[][] box=new double[4][];
@@ -90,19 +93,16 @@ final class Alpha98Closeups {
     }
 
     // ------------------------------------------------------------------ outlines (canonical dial units)
-    static double[][] batonPolygon(int hour){
-        double a=Math.toRadians(hour*30.0);double[] er={Math.sin(a),-Math.cos(a)},et={Math.cos(a),Math.sin(a)};
-        double c=Alpha92GmtMaster.BATON_CENTER_R,rh=Alpha92GmtMaster.BATON_RADIAL_HALF,th=Alpha92GmtMaster.BATON_TANGENTIAL_HALF;
-        int[][] su={{-1,-1},{1,-1},{1,1},{-1,1}};double[][] v=new double[4][];
-        for(int i=0;i<4;i++)v[i]=new double[]{c*er[0]+su[i][0]*rh*er[0]+su[i][1]*th*et[0],c*er[1]+su[i][0]*rh*er[1]+su[i][1]*th*et[1]};
-        return v;
-    }
-
-    /** Alpha92 master triangle moved to the genuine-calibrated nominal position (Alpha97TwelveReadout). */
-    static double[][] nominalTriangle(){
-        double dy=-Alpha97TwelveReadout.NOMINAL_RADIAL_R,dx=Alpha97TwelveReadout.NOMINAL_TANGENTIAL_R;   // 12: radial + = up (-y)
-        return new double[][]{{dx,-Alpha92GmtMaster.TRI_APEX_R+dy},{Alpha92GmtMaster.TRI_HALF_BASE+dx,-Alpha92GmtMaster.TRI_BASE_R+dy},
-                {-Alpha92GmtMaster.TRI_HALF_BASE+dx,-Alpha92GmtMaster.TRI_BASE_R+dy}};
+    /** Master triangle moved to the genuine-calibrated nominal position (the model's triangle reference); the master
+     *  itself when the model has no triangle reference. Nominal offsets are radial (+ = outward) / tangential. */
+    static double[][] nominalTriangle(ModelSpec.Marker spec,ModelReference ref){
+        double[][] v=spec.trianglePolygon();
+        if(ref==null||ref.triangle==null)return v;
+        double a=Math.toRadians(spec.hour*30.0),er0=spec.hour%12==0?0:Math.sin(a),er1=spec.hour%12==0?-1:-Math.cos(a),et0=spec.hour%12==0?1:Math.cos(a),et1=spec.hour%12==0?0:Math.sin(a);
+        double dr=ref.triangle.nominalRadialR,dt=ref.triangle.nominalTangentialR;
+        double dx=dr*er0+dt*et0,dy=dr*er1+dt*et1;
+        double[][] o=new double[v.length][];for(int i=0;i<v.length;i++)o[i]=new double[]{v[i][0]+dx,v[i][1]+dy};
+        return o;
     }
 
     private static Point px(Alpha98Findings.Finding f,double x,double y){

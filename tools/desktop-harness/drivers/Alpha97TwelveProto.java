@@ -31,9 +31,9 @@ public class Alpha97TwelveProto {
                 String[] f=lines.get(li).split(",",-1);String rel=f[iPath],id=iId>=0?f[iId]:rel;
                 Bitmap b=Alpha96Calib.loadAlpha96(Path.of(a[1]).resolve(rel).toString());
                 if(b==null){out.println(id+",unreadable");continue;}
-                AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(b);
+                AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(b,HarnessModel.spec());
                 if(!q.valid||q.homography==null){out.println(id+",pose_rejected");System.out.println(id+": pose rejected ("+q.reason+")");continue;}
-                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography);
+                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography,HarnessModel.spec());
                 Alpha97TwelveAngles.Result t=proto.apply(r);
                 out.println(String.join(",",id,"accepted",n(r.dialRadiusPx),Boolean.toString(t.usable),t.reason.replace(',',';'),
                         n(t.centrelineDeg),n(t.leftSideDeg),n(t.rightSideDeg),n(t.sidesDeg),n(t.lateralPx),n(t.lateralR),n(t.radialPx),

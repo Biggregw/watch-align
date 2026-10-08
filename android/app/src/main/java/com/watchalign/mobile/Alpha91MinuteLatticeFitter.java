@@ -47,9 +47,13 @@ final class Alpha91MinuteLatticeFitter {
         }
     }
 
-    private static final double RIN=Alpha92GmtMaster.MINUTE_TRACK_R;
-    private static final double ROUT=Alpha92GmtMaster.MINUTE_TRACK_OUTER_R;
-    private static final int[] EXCLUDED = {11,12,13,14,15,16,17,18,19,29,30,31};
+    /** Minute-track geometry of the model (ModelSpec pose block): inner / outer radius and minutes hidden by the date
+     *  window or printing, which never pull the fit. */
+    private static final class Track {
+        final double RIN,ROUT;final int[] EXCLUDED;
+        Track(ModelSpec m){RIN=m.minuteTrackInnerR;ROUT=m.minuteTrackOuterR;EXCLUDED=m.excludedMinutes.clone();}
+        boolean excluded(int m){for(int q:EXCLUDED)if(q==m)return true;return false;}
+    }
 
     /** Cubic B-spline sampler (research interpolant) over a crop around the coarse dial pose. */
     private static final class SampleImage {
@@ -79,14 +83,15 @@ final class Alpha91MinuteLatticeFitter {
 
     private Alpha91MinuteLatticeFitter(){}
 
-    static Result fit(Mat gray,Mat coarse) {
+    static Result fit(Mat gray,Mat coarse,ModelSpec model) {
+        Track tr=new Track(model);
         if(gray==null||gray.empty()||coarse==null||coarse.empty())
             return new Result("missing image or coarse pose",coarse==null?null:coarse.clone());
         Mat start=coarse.clone(),h=start.clone();
         try{
             SampleImage smp=new SampleImage(gray,start);
             for(int i=0;i<8;i++){
-                List<Obs> q=centroidObservations(smp,h);
+                List<Obs> q=centroidObservations(smp,h,tr);
                 boolean[] ok=gateCentroid(q);
                 if(count(ok)<16||sectorCount(q,ok)<8)return new Result("centroid lattice evidence insufficient",h.clone());
                 Mat n=refine(h,q,ok,0.3*Math.sqrt(1.0/5.0));
@@ -95,7 +100,7 @@ final class Alpha91MinuteLatticeFitter {
 
             List<Obs> last=null;boolean[] lastOk=null;
             for(int i=0;i<6;i++){
-                List<Obs> q=innerObservations(smp,h);
+                List<Obs> q=innerObservations(smp,h,tr);
                 boolean[] ok=gateInner(q);
                 if(count(ok)<16||sectorCount(q,ok)<8)return new Result("inner-end lattice evidence insufficient",h.clone());
                 Mat n=refine(h,q,ok,0.15);
@@ -146,11 +151,12 @@ final class Alpha91MinuteLatticeFitter {
         }
     }
 
-    private static List<Obs> centroidObservations(SampleImage smp,Mat H){
+    private static List<Obs> centroidObservations(SampleImage smp,Mat H,Track tr){
+        final double RIN=tr.RIN,ROUT=tr.ROUT;
         List<Obs> out=new ArrayList<>();
         double rmid=(RIN+ROUT)*0.5;
         for(int m=0;m<60;m++){
-            if(excluded(m))continue;
+            if(tr.excluded(m))continue;
             double a=Math.toRadians(m*6.0),erx=Math.sin(a),ery=-Math.cos(a),etx=Math.cos(a),ety=Math.sin(a);
             int nr=40,nt=51; double[][] I=new double[nr][nt]; double[] abs=new double[nr*nt]; int ai=0;
             double[] row=new double[nt];
@@ -187,10 +193,11 @@ final class Alpha91MinuteLatticeFitter {
         return out;
     }
 
-    private static List<Obs> innerObservations(SampleImage smp,Mat H){
+    private static List<Obs> innerObservations(SampleImage smp,Mat H,Track tr){
+        final double RIN=tr.RIN;
         List<Obs> out=new ArrayList<>();
         for(int m=0;m<60;m++){
-            if(excluded(m))continue;
+            if(tr.excluded(m))continue;
             double a=Math.toRadians(m*6.0),erx=Math.sin(a),ery=-Math.cos(a),etx=Math.cos(a),ety=Math.sin(a);
             int nr=12,nt=81; double[][] I=new double[nr][nt]; double[] dev=new double[nr*nt]; double[] row=new double[nt];int di=0;
             for(int ir=0;ir<nr;ir++){
@@ -330,7 +337,6 @@ final class Alpha91MinuteLatticeFitter {
 
     private static int count(boolean[] v){int n=0;for(boolean b:v)if(b)n++;return n;}
     private static int sectorCount(List<Obs> q,boolean[] ok){boolean[] s=new boolean[12];for(int i=0;i<q.size();i++)if(ok[i])s[q.get(i).minute/5]=true;int n=0;for(boolean b:s)if(b)n++;return n;}
-    private static boolean excluded(int m){for(int q:EXCLUDED)if(q==m)return true;return false;}
 
     private static double clock12(Mat h){
         Point c=project(h,0,0),p=project(h,0,-1);if(c==null||p==null)return Double.NaN;

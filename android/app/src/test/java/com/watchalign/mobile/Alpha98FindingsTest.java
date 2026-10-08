@@ -16,7 +16,7 @@ import java.util.Properties;
 import org.junit.Test;
 
 /**
- * Alpha98 results logic: reference constants pinned to the research files, flag decisions identical to the research
+ * Alpha98 results logic: the GMT model's reference (app assets) pinned to the research files, flag decisions identical to the research
  * offline check (build_alpha98_reference.py) on the recorded production inputs of the local / owner photos, the
  * resolution-matching and fail-closed rules, and plain wording without verdicts.
  */
@@ -39,29 +39,29 @@ public class Alpha98FindingsTest {
     @Test public void referenceMatchesResearchFiles()throws Exception{
         Map<String,List<double[]>> ref=new HashMap<>();
         for(Map<String,String> r:csv("alpha98_reference.csv"))ref.computeIfAbsent(r.get("feature"),k->new ArrayList<>()).add(new double[]{d(r.get("far")),d(r.get("dial_radius_px"))});
-        Object[][] pairs={{"six_rot",Alpha98Reference.SIX_ROT_FAR,Alpha98Reference.SIX_ROT_R},{"six_off",Alpha98Reference.SIX_OFF_FAR,Alpha98Reference.SIX_OFF_R},
-                {"nine_rot",Alpha98Reference.NINE_ROT_FAR,Alpha98Reference.NINE_ROT_R},{"nine_off",Alpha98Reference.NINE_OFF_FAR,Alpha98Reference.NINE_OFF_R},
-                {"rounds_off",Alpha98Reference.ROUNDS_OFF_FAR,Alpha98Reference.ROUNDS_OFF_R},{"ring_rot",Alpha98Reference.RING_ROT_FAR,Alpha98Reference.RING_ROT_R},
-                {"ring_shift",Alpha98Reference.RING_SHIFT_FAR,Alpha98Reference.RING_SHIFT_R},{"date_tilt",Alpha98Reference.DATE_TILT_FAR,Alpha98Reference.DATE_TILT_R}};
+        ModelReference mr=TestModels.gmtRef();
+        String[] feats={"six_rot","six_off","nine_rot","nine_off","rounds_off","ring_rot","ring_shift","date_tilt"};
+        Object[][] pairs=new Object[feats.length][];
+        for(int i=0;i<feats.length;i++)pairs[i]=new Object[]{feats[i],mr.far(feats[i]),mr.radius(feats[i])};
         for(Object[] p:pairs){
             List<double[]> r=ref.get((String)p[0]);double[] far=(double[])p[1],R=(double[])p[2];
             assertEquals((String)p[0],r.size(),far.length);
             for(int i=0;i<far.length;i++){assertEquals(r.get(i)[0],far[i],0);
                 if(Double.isNaN(r.get(i)[1]))assertTrue(Double.isNaN(R[i]));else assertEquals(r.get(i)[1],R[i],0);}
         }
-        assertEquals(52,Alpha98Reference.DATE_TILT_FAR.length);   // date window: SWE included (owner decision)
+        assertEquals(52,TestModels.gmtRef().far("date_tilt").length);   // date window: SWE included (owner decision)
         Properties p=new Properties();p.load(Files.newBufferedReader(cal("alpha98_nominal.properties").toPath()));
-        assertEquals(d(p.getProperty("six_rot")),Alpha98Reference.NOMINAL_SIX_ROT,0);
-        assertEquals(d(p.getProperty("nine_rot")),Alpha98Reference.NOMINAL_NINE_ROT,0);
-        assertEquals(d(p.getProperty("ring_rot")),Alpha98Reference.NOMINAL_RING_ROT,0);
-        assertEquals(d(p.getProperty("date_tilt")),Alpha98Reference.NOMINAL_DATE_TILT,0);
+        assertEquals(d(p.getProperty("six_rot")),TestModels.gmtRef().nominal("six_rot"),0);
+        assertEquals(d(p.getProperty("nine_rot")),TestModels.gmtRef().nominal("nine_rot"),0);
+        assertEquals(d(p.getProperty("ring_rot")),TestModels.gmtRef().nominal("ring_rot"),0);
+        assertEquals(d(p.getProperty("date_tilt")),TestModels.gmtRef().nominal("date_tilt"),0);
     }
 
     // ---------------------------------------------------------------- flags vs the research offline check
     static Alpha94MarkerMeasurement.Report report(Map<String,String> r){
         List<Alpha94MarkerMeasurement.Marker> ms=new ArrayList<>();
-        for(int h:Alpha94MarkerMeasurement.HOURS){
-            Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(h,(h==6||h==9)?"baton":"round");
+        for(int h:TestModels.gmt().ringHours()){
+            Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(h,(h==6||h==9)?"baton":"round");m.spec=TestModels.gmt().atHour(h);
             m.usable="true".equals(r.get("m"+h+"_usable"));m.reason=r.getOrDefault("m"+h+"_reason","");
             m.rotationDeg=d(r.get("m"+h+"_rotation_deg"));m.localOffsetPx=d(r.get("m"+h+"_local_px"));
             m.localRadialPx=d(r.get("m"+h+"_local_radial_px"));m.localTangentialPx=d(r.get("m"+h+"_local_tangential_px"));
@@ -82,10 +82,10 @@ public class Alpha98FindingsTest {
             Map<String,String> e=exp.get(r.get("photo_id"));if(e==null||!"accepted".equals(r.get("status")))continue;
             Alpha94MarkerMeasurement.Report rep=report(r);double R=rep.dialRadiusPx;
             String id=r.get("photo_id");
-            check(id,"six",Alpha98Findings.baton(rep,6,R),e,"six_rot","six_off");
-            check(id,"nine",Alpha98Findings.baton(rep,9,R),e,"nine_rot","nine_off");
-            check(id,"rounds",Alpha98Findings.rounds(rep,R),e,"rounds_off");
-            check(id,"ring",Alpha98Findings.ring(rep,R),e,"ring_rot","ring_shift");
+            check(id,"six",Alpha98Findings.baton(rep,TestModels.gmt().atHour(6),R,TestModels.gmtRef()),e,"six_rot","six_off");
+            check(id,"nine",Alpha98Findings.baton(rep,TestModels.gmt().atHour(9),R,TestModels.gmtRef()),e,"nine_rot","nine_off");
+            check(id,"rounds",Alpha98Findings.rounds(rep,R,TestModels.gmtRef()),e,"rounds_off");
+            check(id,"ring",Alpha98Findings.ring(rep,R,TestModels.gmtRef()),e,"ring_rot","ring_shift");
             n++;
         }
         assertTrue("photos checked: "+n,n>=16);
@@ -103,25 +103,25 @@ public class Alpha98FindingsTest {
     // ---------------------------------------------------------------- rules
     @Test public void roundsAreNotAssessedWhenNoComparableGenuineResolution(){
         List<Alpha94MarkerMeasurement.Marker> ms=new ArrayList<>();
-        for(int h:Alpha94MarkerMeasurement.ROUND_HOURS){Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(h,"round");m.usable=true;m.localOffsetPx=5;m.localRadialPx=5;m.localTangentialPx=0;ms.add(m);}
+        for(int h:TestModels.gmt().roundHours()){Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(h,"round");m.usable=true;m.localOffsetPx=5;m.localRadialPx=5;m.localTangentialPx=0;ms.add(m);}
         Alpha94MarkerMeasurement.Report r=new Alpha94MarkerMeasurement.Report(ms,new Alpha94MarkerMeasurement.Ring(),60,null);
-        assertEquals(Alpha98Findings.Status.NOT_ASSESSED,Alpha98Findings.rounds(r,60).status);
+        assertEquals(Alpha98Findings.Status.NOT_ASSESSED,Alpha98Findings.rounds(r,60,TestModels.gmtRef()).status);
     }
 
     @Test public void dateWindowRuleAndReasons(){
         Alpha98DateWindow.Result d=new Alpha98DateWindow.Result();d.usable=true;d.cx=0.64;d.cy=0;d.wR=0.4;d.hR=0.25;
-        d.windowTiltDeg=Alpha98Reference.NOMINAL_DATE_TILT+Alpha98Findings.max(Alpha98Reference.DATE_TILT_FAR)+0.2;
-        assertEquals(Alpha98Findings.Status.OUTSIDE,Alpha98Findings.date(d).status);
-        d.windowTiltDeg=Alpha98Reference.NOMINAL_DATE_TILT;
-        assertEquals(Alpha98Findings.Status.WITHIN,Alpha98Findings.date(d).status);
+        d.windowTiltDeg=TestModels.gmtRef().nominal("date_tilt")+Alpha98Findings.max(TestModels.gmtRef().far("date_tilt"))+0.2;
+        assertEquals(Alpha98Findings.Status.OUTSIDE,Alpha98Findings.date(d,TestModels.gmt().date,TestModels.gmtRef()).status);
+        d.windowTiltDeg=TestModels.gmtRef().nominal("date_tilt");
+        assertEquals(Alpha98Findings.Status.WITHIN,Alpha98Findings.date(d,TestModels.gmt().date,TestModels.gmtRef()).status);
         Alpha98DateWindow.Result g=new Alpha98DateWindow.Result();g.reason="window not rectangular (fill 0.84: glare / reflection / occlusion)";
-        Alpha98Findings.Finding f=Alpha98Findings.date(g);
+        Alpha98Findings.Finding f=Alpha98Findings.date(g,TestModels.gmt().date,TestModels.gmtRef());
         assertEquals(Alpha98Findings.Status.NOT_ASSESSED,f.status);assertTrue(f.reason.contains("glare"));
-        assertEquals(Alpha98Findings.Status.NOT_ASSESSED,Alpha98Findings.date(null).status);
+        assertEquals(Alpha98Findings.Status.NOT_ASSESSED,Alpha98Findings.date(null,TestModels.gmt().date,TestModels.gmtRef()).status);
     }
 
     @Test public void referenceWatchNeverBeyondItself(){
-        double lim=Alpha98Findings.max(Alpha98Reference.SIX_OFF_FAR);
+        double lim=Alpha98Findings.max(TestModels.gmtRef().far("six_off"));
         assertFalse(Alpha98Findings.beyond(lim,lim));assertFalse(Alpha98Findings.beyond(lim*(1+5e-5),lim));
         assertTrue(Alpha98Findings.beyond(lim*1.01,lim));
     }
@@ -130,7 +130,7 @@ public class Alpha98FindingsTest {
         List<Map<String,String>> rows=new ArrayList<>(csv("results/runner_local.csv"));rows.addAll(csv("results/priority_genuine_runner.csv"));
         for(Map<String,String> r:rows){
             if(!"accepted".equals(r.get("status")))continue;
-            Alpha98Findings.Summary s=Alpha98Findings.build(report(r),null);
+            Alpha98Findings.Summary s=Alpha98Findings.build(report(r),null,TestModels.gmt(),TestModels.gmtRef());
             List<String> texts=new ArrayList<>();texts.add(s.headline());for(Alpha98Findings.Finding f:s.all)texts.add(f.text());
             for(String t:texts)for(String w:new String[]{"PASS","FAIL","BORDERLINE","fake","Fake","replica","Replica","counterfeit","authentic watch"})
                 assertFalse(r.get("photo_id")+": "+t,t.contains(w));

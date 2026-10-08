@@ -764,3 +764,23 @@ The rule passed three hands that run 3–5 px clear of a marker. Batgirl photo 1
   - One genuine photo remains a CLEAR finding: Bob's 126715CHNR `ee1933f4d3ba3a7d`, 6 o'clock 0.72% out of place (genuine max 0.30%). The close-up shows no hand. This watch was not in the reference, because its photo failed to fetch in run 37500197377. It shows that the 44-watch genuine range is not exhaustive. A CLEAR finding means "well beyond every genuine watch measured so far", not proof.
 - **Overview badges (owner decision):** a marker withheld for a photo-wide reason gets no badge. Example: round markers on a photo too small for a comparable genuine set. The reason is the photo, not the marker; the not-assessed line under the grid explains it. Grey dashes remain for marker-specific reasons (hand, glare, edge).
 - **Genuine catalogue:** `.github/workflows/alpha99-genuine-interference.yml` runs the interference check and the Alpha99 classification. It prints withhold rates and status changes, and fails on any new finding.
+
+## Alpha100: model specs (2026-10-08)
+
+The app no longer has GMT geometry or GMT reference values in code.
+
+- **Dial layout:** `android/app/src/main/assets/models/gmt_126710/model.json` holds:
+  - the minute-track radii and the minutes the pose ignores;
+  - every applied marker's hour, shape and size;
+  - the date-window region;
+  - where the seconds hand carries its lume dot.
+- **Code that reads it:** the pose fitter, marker measurement, date window, interference check, findings, close-ups, overview and overlay outline all take a `ModelSpec`.
+- **Genuine reference:** `export_model_reference.py --model gmt_126710` copies the research outputs byte for byte into `assets/models/gmt_126710/reference/`, and the app loads them as a `ModelReference`. This replaces the generated `Alpha98Reference`, `Alpha99Uncertainty` and the generated block of `Alpha97TwelveReadout`. `gen_alpha97/98/99_constants.py` were removed; the sections above that mention them describe the earlier builds.
+- **How to add a model:** `docs/ADDING_A_MODEL.md`.
+
+**Nothing changed numerically.**
+- The Alpha96 runner gives 0 differences: 1,592 values on the 8 local photos and 1,791 on the 9 owner photos.
+- The Alpha99 classifications (`results/alpha99/findings_local.csv`), interference results and preview text are identical.
+- All 18 rendered results screens and the overlay outline bitmap are pixel-identical to Alpha99 (7f2268f).
+
+**Tests.** `ModelSpecTest` pins the GMT spec to the frozen `Alpha92GmtMaster` / pose / date-window constants and checks that the app's reference copies are byte-identical to the research files. It also runs a second, test-only layout (batons at 3, 6 and 9, no date) through the evidence layer with no code change: with no genuine reference, every feature reads "not assessed".

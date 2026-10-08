@@ -29,12 +29,12 @@ import java.util.Random;
  * edge coverage is low, or whose fit is physically implausible is reported as OCCLUDED.
  */
 final class Alpha94MarkerMeasurement {
-    static final int[] HOURS={1,2,4,5,6,7,8,9,10,11};
-    static final int[] ROUND_HOURS={1,2,4,5,7,8,10,11};
 
     static final class Marker {
         final int hour;
         final String kind;
+        /** This marker's master geometry in the model spec (null for markers built by hand in tests). */
+        ModelSpec.Marker spec;
         boolean usable;
         String reason="";
         double rawDxPx=Double.NaN,rawDyPx=Double.NaN,rawOffsetPx=Double.NaN;
@@ -79,14 +79,14 @@ final class Alpha94MarkerMeasurement {
                         ring.shiftPx,ring.scalePct,rot(ring.rotationDeg)));
             }else s.append("Ring: insufficient clean markers");
             s.append("\n").append(triangleLine(triangle));
-            s.append("\n").append(markerLine(atHour(6)));
-            s.append("\n").append(markerLine(atHour(9)));
-            int usableRounds=0;double maxLocal=Double.NaN;
+            for(Marker m:markers)if("baton".equals(m.kind))s.append("\n").append(markerLine(m));
+            int usableRounds=0,rounds=0;double maxLocal=Double.NaN;
+            for(Marker m:markers)if("round".equals(m.kind))rounds++;
             for(Marker m:markers)if("round".equals(m.kind)&&m.usable){
                 usableRounds++;
                 if(Double.isFinite(m.localOffsetPx)&&(!Double.isFinite(maxLocal)||m.localOffsetPx>maxLocal))maxLocal=m.localOffsetPx;
             }
-            s.append("\nRounds: ").append(usableRounds).append("/8 measured");
+            s.append("\nRounds: ").append(usableRounds).append("/").append(rounds).append(" measured");
             if(Double.isFinite(maxLocal))s.append(String.format(Locale.US," · max local %.2f px",maxLocal));
             return s.toString();
         }
@@ -140,11 +140,11 @@ final class Alpha94MarkerMeasurement {
 
     private Alpha94MarkerMeasurement(){}
 
-    static Report analyse(Bitmap watch,double[] H){
+    static Report analyse(Bitmap watch,double[] H,ModelSpec model){
         List<Marker> out=new ArrayList<>();
         double rpx=pxPerR(H);
         if(watch==null||H==null||H.length<9||!(rpx>20)){
-            for(int h:HOURS){Marker m=new Marker(h,isRound(h)?"round":"baton");m.reason="pose unavailable";out.add(m);}
+            for(ModelSpec.Marker sm:model.ringMarkers()){Marker m=new Marker(sm.hour,sm.kind());m.spec=sm;m.reason="pose unavailable";out.add(m);}
             return new Report(out,new Ring(),rpx);
         }
         Mat rgba=new Mat(),gray=new Mat();
@@ -154,18 +154,18 @@ final class Alpha94MarkerMeasurement {
             Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
             smp=new Sampler(gray,H);
         }catch(Throwable t){
-            for(int h:HOURS){Marker m=new Marker(h,isRound(h)?"round":"baton");m.reason="image unavailable";out.add(m);}
+            for(ModelSpec.Marker sm:model.ringMarkers()){Marker m=new Marker(sm.hour,sm.kind());m.spec=sm;m.reason="image unavailable";out.add(m);}
             return new Report(out,new Ring(),rpx);
         }finally{
             gray.release();rgba.release();
         }
         double tol=0.5/rpx;
         List<double[]> centres=new ArrayList<>();
-        for(int hour:HOURS){
-            Marker m=new Marker(hour,isRound(hour)?"round":"baton");
+        for(ModelSpec.Marker sm:model.ringMarkers()){
+            Marker m=new Marker(sm.hour,sm.kind());m.spec=sm;
             double[] centre=null;
             try{
-                centre=isRound(hour)?measureRound(smp,m,tol,rpx):measureBaton(smp,m,tol,rpx);
+                centre=sm.shape==ModelSpec.Shape.ROUND?measureRound(smp,m,tol,rpx):measureBaton(smp,m,tol,rpx);
             }catch(Throwable t){
                 m.usable=false;m.reason="measurement failed";
             }
@@ -174,16 +174,20 @@ final class Alpha94MarkerMeasurement {
         }
         Ring ring=fitRing(out,centres,smp,rpx);
         // 12 triangle: research-only, measured on the same frozen H, kept out of the ring fit.
-        Marker tri=new Marker(12,"triangle");
-        try{
-            double[] c=measurePolygon(smp,tri,tol,rpx,trianglePolygon(),0.02);
-            if(tri.usable&&c!=null){setOffsets(smp,tri,c,rpx);setLocal(smp,tri,ring,rpx);}
-        }catch(Throwable t){tri.usable=false;tri.reason="measurement failed";}
+        ModelSpec.Marker st=model.triangle();
+        Marker tri=null;
+        if(st!=null){
+            tri=new Marker(st.hour,"triangle");tri.spec=st;
+            try{
+                double[] c=measurePolygon(smp,tri,tol,rpx,st.trianglePolygon(),0.02);
+                if(tri.usable&&c!=null){setOffsets(smp,tri,c,rpx);setLocal(smp,tri,ring,rpx);}
+            }catch(Throwable t){tri.usable=false;tri.reason="measurement failed";}
+        }
         return new Report(out,ring,rpx,tri);
     }
 
     private static void setOffsets(Sampler smp,Marker m,double[] centre,double rpx){
-        double[] cm=masterPoint(m.hour);
+        double[] cm=masterPoint(m);
         double[] er=radial(m.hour),et=tangential(m.hour);
         Point po=smp.project(centre[0],centre[1]),pm=smp.project(cm[0],cm[1]);
         if(po==null||pm==null){m.usable=false;m.reason="projection unavailable";return;}
@@ -256,8 +260,8 @@ final class Alpha94MarkerMeasurement {
 
     // ------------------------------------------------------------------ round markers
     private static double[] measureRound(Sampler s,Marker m,double tol,double rpx){
-        double r0=Alpha92GmtMaster.ROUND_OUTER_R;
-        double[] c=masterPoint(m.hour);double cx=c[0],cy=c[1],radius=r0;
+        double r0=m.spec.outerR;
+        double[] c=masterPoint(m);double cx=c[0],cy=c[1],radius=r0;
         int rays=72;boolean[] inl=null;List<double[]> P=null;
         for(double span:new double[]{WIDE,NARROW}){
             List<double[]> raw=new ArrayList<>();
@@ -326,7 +330,7 @@ final class Alpha94MarkerMeasurement {
 
     // ------------------------------------------------------------------ 6/9 batons
     private static double[] measureBaton(Sampler s,Marker m,double tol,double rpx){
-        return measurePolygon(s,m,tol,rpx,batonPolygon(m.hour),0.03);
+        return measurePolygon(s,m,tol,rpx,m.spec.batonPolygon(),0.03);
     }
 
     /** Free per-side line fits around a master polygon (research measure_polygon): batons and 12 triangle. */
@@ -451,7 +455,7 @@ final class Alpha94MarkerMeasurement {
         if(idx.size()<5)return ring;
         int n=idx.size();double[][] A=new double[2*n][4];double[] b=new double[2*n];double[][] P=new double[n][];
         for(int k=0;k<n;k++){
-            Marker m=markers.get(idx.get(k));double[] p=masterPoint(m.hour);P[k]=p;
+            Marker m=markers.get(idx.get(k));double[] p=masterPoint(m);P[k]=p;
             A[2*k]=new double[]{1,0,p[0],-p[1]};A[2*k+1]=new double[]{0,1,p[1],p[0]};
             b[2*k]=m.canonDx;b[2*k+1]=m.canonDy;
         }
@@ -475,7 +479,7 @@ final class Alpha94MarkerMeasurement {
     /** Local residual = offset minus the ring model evaluated at this marker's master point. */
     private static void setLocal(Sampler s,Marker m,Ring ring,double rpx){
         if(ring==null||!ring.usable||ring.model==null||!Double.isFinite(m.canonDx))return;
-        double[] x=ring.model,p=masterPoint(m.hour);
+        double[] x=ring.model,p=masterPoint(m);
         double mdx=x[0]+x[2]*p[0]-x[3]*p[1],mdy=x[1]+x[2]*p[1]+x[3]*p[0];
         double lx=m.canonDx-mdx,ly=m.canonDy-mdy;
         Point q=s.project(p[0]+lx,p[1]+ly),q0=s.project(p[0],p[1]);
@@ -486,27 +490,10 @@ final class Alpha94MarkerMeasurement {
     }
 
     // ------------------------------------------------------------------ geometry helpers
-    private static boolean isRound(int h){for(int q:ROUND_HOURS)if(q==h)return true;return false;}
     private static double[] radial(int hour){double a=Math.toRadians(hour*30.0);return new double[]{Math.sin(a),-Math.cos(a)};}
     private static double[] tangential(int hour){double a=Math.toRadians(hour*30.0);return new double[]{Math.cos(a),Math.sin(a)};}
-    private static double[] masterPoint(int hour){
-        if(hour==12)return new double[]{0,-Alpha92GmtMaster.TRI_AREA_CENTROID_R};
-        double r=isRound(hour)?Alpha92GmtMaster.ROUND_CENTER_R:Alpha92GmtMaster.BATON_CENTER_R;
-        double[] er=radial(hour);return new double[]{er[0]*r,er[1]*r};
-    }
-    /** Research marker_polygon(12): apex (toward centre), base right, base left. */
-    private static double[][] trianglePolygon(){
-        return new double[][]{{0,-Alpha92GmtMaster.TRI_APEX_R},{Alpha92GmtMaster.TRI_HALF_BASE,-Alpha92GmtMaster.TRI_BASE_R},
-                {-Alpha92GmtMaster.TRI_HALF_BASE,-Alpha92GmtMaster.TRI_BASE_R}};
-    }
-    /** Research marker_polygon ordering: (s,u) = (-1,-1),(1,-1),(1,1),(-1,1) along (radial, tangential). */
-    private static double[][] batonPolygon(int hour){
-        double[] er=radial(hour),et=tangential(hour);double c=Alpha92GmtMaster.BATON_CENTER_R;
-        double rh=Alpha92GmtMaster.BATON_RADIAL_HALF,th=Alpha92GmtMaster.BATON_TANGENTIAL_HALF;
-        int[][] su={{-1,-1},{1,-1},{1,1},{-1,1}};double[][] v=new double[4][];
-        for(int i=0;i<4;i++)v[i]=new double[]{c*er[0]+su[i][0]*rh*er[0]+su[i][1]*th*et[0],c*er[1]+su[i][0]*rh*er[1]+su[i][1]*th*et[1]};
-        return v;
-    }
+    /** The marker's master centre from the model spec (exactly the Alpha92 master points for the GMT spec). */
+    private static double[] masterPoint(Marker m){return m.spec.masterPoint();}
     private static double pxPerR(double[] H){
         if(H==null||H.length<9)return Double.NaN;
         double z0=H[8],z1=H[6]+H[8];if(Math.abs(z0)<1e-12||Math.abs(z1)<1e-12)return Double.NaN;

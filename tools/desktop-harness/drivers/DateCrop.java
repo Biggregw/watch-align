@@ -49,7 +49,7 @@ public class DateCrop {
                 File img=Path.of(a[1]).resolve(f[iPath]).toFile();
                 if(!img.exists()){out.println(id+",missing");continue;}
                 Bitmap b=Alpha96Calib.loadAlpha96(img.getPath());
-                AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b);
+                AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b,HarnessModel.spec());
                 if(q==null||!q.valid||q.homography==null){out.println(id+",pose_rejected");continue;}
                 Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(b,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
                 Object smp=mk.newInstance(gray,q.homography);

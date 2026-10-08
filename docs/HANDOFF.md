@@ -183,6 +183,12 @@ Owner decision: the 12 triangle is assessed with the **robust** readout.
 - **Evidence:** `tools/research/alpha96_calibration/README.md`, section "Alpha99".
 - **Open:** add the owner's Geektime / RepTimeQC photo (hand across the flagged round) to the local checks when supplied.
 
+## Alpha100 model specs - 2026-10-08
+
+- **What changed:** model-specific geometry and genuine references moved to data (`android/app/src/main/assets/models/<id>/`). Adding a model is a spec file plus its genuine reference (`docs/ADDING_A_MODEL.md`).
+- **Measurements:** GMT-only refactor; measurements, classifications and screens are identical to Alpha99.
+- **Scope:** no second model was added. That remains a separate decision under "Do not restart without evidence".
+
 ## Do not restart without evidence
 
 The following are not active programmes:
