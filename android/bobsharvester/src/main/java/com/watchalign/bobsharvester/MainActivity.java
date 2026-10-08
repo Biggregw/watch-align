@@ -51,7 +51,7 @@ import java.util.zip.ZipOutputStream;
 public class MainActivity extends Activity {
     static final String UA="Mozilla/5.0 (Linux; Android 17) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0 Mobile Safari/537.36";
     static final long MAX_IMG=25L*1024*1024, ZIP_TARGET=27L*1024*1024;
-    static final int MAX_PAGES=150;
+    static final int MAX_PAGES=450;
     static final String[] ROOTS={
         "https://www.bobswatches.com/rolex/",
         "https://www.bobswatches.com/rolex/?waitlist=1"
@@ -66,9 +66,9 @@ public class MainActivity extends Activity {
     final ExecutorService io=Executors.newSingleThreadExecutor();
     final LinkedHashMap<String,Product> products=new LinkedHashMap<>();
     final ArrayDeque<Product> queue=new ArrayDeque<>();
-    final Set<String> done=new HashSet<>(), hashes=new HashSet<>();
+    final Set<String> done=new HashSet<>(), hashes=new HashSet<>(), rootSeen=new HashSet<>();
     volatile boolean running=false, stopping=false;
-    Mode mode=Mode.IDLE; int root=0,page=1,empty=0,doneRun=0,keptRun=0; Product current;
+    Mode mode=Mode.IDLE; int root=0,page=1,empty=0,doneRun=0,keptRun=0; boolean returnToCatalog=false,catalogPageEnd=false; Product current;
     File work,images,doneFile,hashFile,manifest;
 
     @Override public void onCreate(Bundle b){
@@ -116,7 +116,7 @@ public class MainActivity extends Activity {
 
     void begin(){
         if(running)return;
-        running=true;stopping=false;products.clear();queue.clear();root=0;page=1;empty=0;doneRun=0;keptRun=0;
+        running=true;stopping=false;products.clear();queue.clear();rootSeen.clear();root=0;page=1;empty=0;doneRun=0;keptRun=0;returnToCatalog=false;catalogPageEnd=false;
         start.setEnabled(false);stop.setEnabled(true);bar.setVisibility(View.VISIBLE);mode=Mode.CATALOG;msg("Starting catalogue crawl.");loadCatalog();
     }
     void halt(){
@@ -128,40 +128,70 @@ public class MainActivity extends Activity {
     void loadCatalog(){mode=Mode.CATALOG;status.setText("Finding Rolex listings… source "+(root+1)+"/"+ROOTS.length+", page "+page+"\\n"+products.size()+" unique product pages found.");web.loadUrl(catUrl());}
 
     void catalogJs(){
-        String js="(function(){const a=[],seen=new Set();let rolex=0;document.querySelectorAll('a[href]').forEach(x=>{const im=x.querySelector('img');const parts=[x.innerText,x.textContent,x.getAttribute('aria-label'),x.getAttribute('title'),im&&im.alt].filter(Boolean);const t=parts.join(' ').replace(/\\s+/g,' ').trim();const u=x.href||'';if(/Rolex/i.test(t))rolex++;if(!u||seen.has(u))return;const path=(()=>{try{return new URL(u).pathname.toLowerCase()}catch(e){return''}})();if(!/bobswatches\\.com$/i.test((()=>{try{return new URL(u).hostname}catch(e){return''}})()))return;if(!/\\.html$/i.test(path))return;if(/\\/(rolex-blog|sell-|rolex-app|about|faq|shipping|returns)/i.test(path))return;const hay=(t+' '+u).replace(/[-_]/g,' ');if(!/Rolex/i.test(hay))return;if(!/(?:^|[^0-9])(?:[0-9]{4,6}[A-Z]{0,5})(?:[^0-9]|$)/i.test(hay))return;seen.add(u);a.push({t:t,u:u,i:im?(im.currentSrc||im.src||im.getAttribute('data-src')||''):''});});return JSON.stringify({a:a,b:(document.body.innerText||'').slice(0,24000),hrefs:document.querySelectorAll('a[href]').length,rolex:rolex,title:document.title||''});})();";
+        String js="(function(){const a=[],seen=new Set();let rolex=0;document.querySelectorAll('a[href]').forEach(x=>{const im=x.querySelector('img');const parts=[x.innerText,x.textContent,x.getAttribute('aria-label'),x.getAttribute('title'),im&&im.alt].filter(Boolean);const t=parts.join(' ').replace(/\\s+/g,' ').trim();const u=x.href||'';if(/Rolex/i.test(t))rolex++;if(!u||seen.has(u))return;let q;try{q=new URL(u)}catch(e){return}const path=q.pathname.toLowerCase();if(!/bobswatches\\.com$/i.test(q.hostname))return;if(!/\\.html$/i.test(path))return;if(/\\/(rolex-blog|sell-|rolex-app|about|faq|shipping|returns)/i.test(path))return;const hay=(t+' '+u).replace(/[-_]/g,' ');if(!/Rolex/i.test(hay))return;if(!/(?:^|[^0-9])(?:[0-9]{4,6}[A-Z]{0,5})(?:[^0-9]|$)/i.test(hay))return;seen.add(u);a.push({t:t,u:u,i:im?(im.currentSrc||im.src||im.getAttribute('data-src')||''):''});});return JSON.stringify({a:a,b:(document.body.innerText||'').slice(0,24000),hrefs:document.querySelectorAll('a[href]').length,rolex:rolex,title:document.title||''});})();";
         web.evaluateJavascript(js,v->{
             if(!running||stopping)return;
             try{
-                JSONObject o=new JSONObject(jsValue(v));JSONArray a=o.getJSONArray("a");int before=products.size();
+                JSONObject o=new JSONObject(jsValue(v));JSONArray a=o.getJSONArray("a");int beforeRoot=rootSeen.size(),queued=0;
                 for(int i=0;i<a.length();i++){
-                    JSONObject z=a.getJSONObject(i);String title=clean(z.optString("t")),u=z.optString("u"),r=ref(title+" "+u);
+                    JSONObject z=a.getJSONObject(i);String title=clean(z.optString("t")),u=canonicalProductUrl(z.optString("u")),r=ref(title+" "+u);
                     if(r.isEmpty()||!productUrl(u))continue;
+                    rootSeen.add(u);
                     Product p=products.get(u);if(p==null){p=new Product();p.url=u;p.title=title;p.ref=r;products.put(u,p);}
                     String im=z.optString("i");if(!im.isEmpty())p.imgs.add(im);
+                    if(!done.contains(u)&&!queue.contains(p)&&p!=current){queue.add(p);queued++;}
                 }
-                int add=products.size()-before;msg("Catalogue page "+page+": +"+add+" ("+products.size()+" unique), "+o.optInt("hrefs")+" links scanned.");
+                int add=rootSeen.size()-beforeRoot;msg("Catalogue source "+(root+1)+", page "+page+": +"+add+" unique, "+queued+" queued; "+o.optInt("hrefs")+" links scanned.");
                 empty=add==0?empty+1:0;Integer total=resultTotal(o.optString("b"));
-                boolean end=empty>=2||page>=MAX_PAGES||(root==0&&total!=null&&products.size()>=total);
-                if(page==1&&products.isEmpty()){
+                boolean endPage=empty>=2||page>=MAX_PAGES||(total!=null&&rootSeen.size()>=total);
+                if(page==1&&rootSeen.isEmpty()){
                     msg("No products yet. Page title: "+o.optString("title")+"; Rolex-labelled links seen: "+o.optInt("rolex")+". Retrying after a longer wait.");
                     web.postDelayed(()->{if(running&&!stopping&&mode==Mode.CATALOG)catalogJs();},5000);
                     return;
                 }
-                if(end){root++;if(root<ROOTS.length){page=1;empty=0;loadCatalog();}else beginProducts();}
-                else{page++;web.postDelayed(this::loadCatalog,450);}
-            }catch(Exception e){msg("Catalogue parse error: "+e.getMessage());page++;if(page>MAX_PAGES)beginProducts();else loadCatalog();}
+                if(!queue.isEmpty()){
+                    returnToCatalog=true;catalogPageEnd=endPage;next();
+                }else{
+                    advanceCatalog(endPage);
+                }
+            }catch(Exception e){msg("Catalogue parse error: "+e.getMessage());advanceCatalog(page>=MAX_PAGES);}
         });
     }
 
-    void beginProducts(){
-        for(Product p:products.values())if(!done.contains(p.url))queue.add(p);
-        msg("Catalogue complete: "+products.size()+" unique listings, "+queue.size()+" still to process.");
-        next();
+    void advanceCatalog(boolean endPage){
+        if(!running||stopping)return;
+        if(endPage){
+            root++;
+            if(root<ROOTS.length){page=1;empty=0;rootSeen.clear();msg("Moving to catalogue source "+(root+1)+" of "+ROOTS.length+".");loadCatalog();}
+            else finishHarvest();
+        }else{
+            page++;
+            web.postDelayed(this::loadCatalog,450);
+        }
     }
+
+    void finishHarvest(){
+        running=false;mode=Mode.IDLE;stop.setEnabled(false);start.setEnabled(true);bar.setVisibility(View.GONE);
+        msg("Harvest pass complete: "+doneRun+" product pages processed, "+keptRun+" accepted images this run.");
+        status.setText("Harvest complete. "+imageCount()+" accepted images are stored locally. Tap BUILD ZIPS to export model/reference ZIPs.");
+    }
+
+    void beginProducts(){ if(!queue.isEmpty()) next(); else advanceCatalog(false); }
+
     void next(){
         if(!running||stopping)return;
-        current=queue.poll();if(current==null){running=false;stop.setEnabled(false);start.setEnabled(true);bar.setVisibility(View.GONE);msg("Harvest pass complete.");buildZips();return;}
-        mode=Mode.PRODUCT;status.setText("Checking product pages… "+doneRun+" done this run, "+(queue.size()+1)+" remaining.\\nAccepted this run: "+keptRun+"\\n"+current.ref+"  "+shorten(current.title,82));web.loadUrl(current.url);
+        current=queue.poll();
+        if(current==null){
+            if(returnToCatalog){
+                boolean end=catalogPageEnd;returnToCatalog=false;catalogPageEnd=false;advanceCatalog(end);return;
+            }
+            finishHarvest();return;
+        }
+        mode=Mode.PRODUCT;
+        status.setText("Harvesting product pages as they are discovered…\nCatalogue source "+(root+1)+"/"+ROOTS.length+", page "+page+
+                "\n"+doneRun+" products processed this run, "+queue.size()+" queued\n"+keptRun+" accepted images this run\n"+
+                current.ref+"  "+shorten(current.title,82));
+        web.loadUrl(current.url);
     }
 
     void productJs(){
@@ -233,6 +263,7 @@ public class MainActivity extends Activity {
     double sharp(int[] g,int w,int h,int cx,int cy,int r){long sum=0;int n=0,rr=r*r;for(int y=Math.max(2,cy-r);y<Math.min(h-2,cy+r);y+=3){int dy=y-cy;for(int x=Math.max(2,cx-r);x<Math.min(w-2,cx+r);x+=3){int dx=x-cx;if(dx*dx+dy*dy>rr)continue;int i=y*w+x,lap=Math.abs(4*g[i]-g[i-1]-g[i+1]-g[i-w]-g[i+w]);sum+=Math.min(255,lap);n++;}}return n==0?0:sum/(double)n;}
 
     void buildZips(){
+        if(imageCount()==0){Toast.makeText(this,"No accepted images yet. Let the harvester process product pages first.",Toast.LENGTH_LONG).show();status.setText("No accepted images yet. The app must process product pages before ZIPs can be built.");return;}
         zip.setEnabled(false);bar.setVisibility(View.VISIBLE);io.submit(()->{
             try{
                 int refs=0,pics=0,zips=0;File[] ds=images.listFiles(File::isDirectory);if(ds==null)ds=new File[0];Arrays.sort(ds,Comparator.comparing(File::getName));String stamp=new SimpleDateFormat("yyyyMMdd-HHmm",Locale.US).format(new Date());
@@ -249,6 +280,7 @@ public class MainActivity extends Activity {
     void put(ZipOutputStream z,String n,byte[] b)throws Exception{z.putNextEntry(new ZipEntry(n));z.write(b);z.closeEntry();}
     void downloads(File src,String name)throws Exception{ContentResolver cr=getContentResolver();ContentValues v=new ContentValues();v.put(MediaStore.Downloads.DISPLAY_NAME,name);v.put(MediaStore.Downloads.MIME_TYPE,"application/zip");if(Build.VERSION.SDK_INT>=29){v.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS+"/WatchAlign_Bobs_Harvest");v.put(MediaStore.Downloads.IS_PENDING,1);}Uri u=cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,v);if(u==null)throw new IOException("Cannot create download");try(InputStream in=new FileInputStream(src);OutputStream out=cr.openOutputStream(u)){if(out==null)throw new IOException("Cannot open download");byte[] b=new byte[65536];int k;while((k=in.read(b))>=0)out.write(b,0,k);}if(Build.VERSION.SDK_INT>=29){ContentValues q=new ContentValues();q.put(MediaStore.Downloads.IS_PENDING,0);cr.update(u,q,null,null);}}
 
+    String canonicalProductUrl(String s){try{URI u=URI.create(s);String scheme=u.getScheme()==null?"https":u.getScheme(),host=u.getHost();if(host==null)return s;return new URI(scheme,host.toLowerCase(Locale.US),u.getPath(),null,null).toString();}catch(Exception e){return s;}}
     boolean productUrl(String s){try{URI u=URI.create(s);String h=u.getHost();if(h==null||!h.toLowerCase(Locale.US).endsWith("bobswatches.com"))return false;String p=u.getPath().toLowerCase(Locale.US);if(p.contains("/rolex-blog/")||p.contains("/sell-")||p.contains("/rolex-app")||p.contains("/about")||p.contains("/faq"))return false;return p.endsWith(".html");}catch(Exception e){return false;}}
     String ref(String s){String u=clean(s).toUpperCase(Locale.US);Matcher x=REF_EX.matcher(u);if(x.find()&&!NONREF.contains(x.group(1)))return variant(x.group(1),u);Matcher m=REF_ANY.matcher(u);List<String>a=new ArrayList<>();while(m.find())if(!NONREF.contains(m.group(1)))a.add(m.group(1));for(String r:a){int n=r.replaceAll("[A-Z]","").length();if(n>=5&&n<=6)return variant(r,u);}return a.isEmpty()?"":variant(a.get(0),u);}
     String variant(String r,String t){r=r.toUpperCase(Locale.US);if(r.equals("126710")){if(t.matches(".*\\b(PEPSI|BLRO)\\b.*"))return"126710BLRO";if(t.matches(".*\\b(BATMAN|BATGIRL|BLNR)\\b.*"))return"126710BLNR";if(t.matches(".*(BRUCE WAYNE|\\bGRNR\\b|GREY.*BLACK|BLACK.*GREY).*"))return"126710GRNR";}if(r.equals("126720")&&t.matches(".*\\b(SPRITE|VTNR)\\b.*"))return"126720VTNR";if(r.equals("126610")){if(t.matches(".*(STARBUCKS|CERMIT|GREEN BEZEL|\\bLV\\b).*"))return"126610LV";if(t.matches(".*(BLACK BEZEL|\\bLN\\b).*"))return"126610LN";}if(r.equals("116610")){if(t.matches(".*(HULK|GREEN DIAL|GREEN BEZEL|\\bLV\\b).*"))return"116610LV";if(t.matches(".*(BLACK BEZEL|\\bLN\\b).*"))return"116610LN";}if(r.equals("16610")&&t.matches(".*(KERMIT|GREEN BEZEL|\\bLV\\b).*"))return"16610LV";return r;}
