@@ -1,0 +1,49 @@
+name: Submariner genuine manifest (research)
+
+# RESEARCH ONLY. Reuses an earlier watch-family-calibrator run's artifact (default: 124060 run 37194686346) and prints
+# its acquisition manifests (image URLs, sha256, physical watch ids, sources, labels) to the log, so a sha256-verified
+# Submariner genuine catalogue can be committed as numbers and URLs only. Images are never committed, cached or uploaded.
+on:
+  push:
+    branches:
+      - feature/android-alpha102-submariner
+    paths:
+      - '.github/workflows/sub-genuine-manifest.yml'
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'watch-family-calibrator run whose artifact to read'
+        required: false
+        default: '37194686346'
+      artifact:
+        description: 'artifact name'
+        required: false
+        default: 'watch-calibrator-124060-37194686346'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RUN_ID: ${{ github.event.inputs.run_id || '37194686346' }}
+      ARTIFACT: ${{ github.event.inputs.artifact || 'watch-calibrator-124060-37194686346' }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT }}
+          run-id: ${{ env.RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: art
+      - name: Layout (file list, no images)
+        run: |
+          find art -type f | sed 's|^art/||' | awk -F/ '{print}' | grep -v -E '\.(jpg|jpeg|png|webp)$' | sort | head -200
+          echo "image files: $(find art -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | wc -l)"
+      - name: Print manifests
+        run: |
+          for f in $(find art -name acquired_images.csv -o -name candidate_summary.csv -o -name locked_split.csv -o -name source_diversity.json -o -name run_status.json); do
+            echo "=== $f BEGIN"; cat "$f"; echo; echo "=== $f END"
+          done

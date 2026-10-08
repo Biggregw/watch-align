@@ -1,0 +1,374 @@
+photo_id,status,dial_radius_px,tick_rms_px,ticks_used,tick_sectors,tick_inner_r,tick_outer_r,tick_contrast
+d15ed6cf309dec1f,accepted,438.3,0.173,54,12,0.9330,0.9810,229.1
+d2d17532532ec40b,accepted,405.7,0.152,55,12,0.9330,0.9810,224.7
+762af6e930a7eed0,accepted,129.6,0.178,55,12,0.9330,0.9810,177.5
+4f2e03ae50108874,pose_rejected,,,,,,,"overlay unavailable: inner-end lattice evidence insufficient"
+b95403efbdc5c799,missing,,,,,,,
+5ce63457d8056191,pose_rejected,,,,,,,"physical black-dial boundary not found"
+b68d5dd74b3f5162,accepted,238.3,0.129,52,12,0.9330,0.9810,223.4
+cac72ac78f458690,pose_rejected,,,,,,,"overlay unavailable: inner-end lattice evidence insufficient"
+4252d055b9d715db,missing,,,,,,,
+a4f28a7240406e2d,missing,,,,,,,
+d04c99024b491471,accepted,405.7,0.103,53,12,0.9330,0.9790,228.2
+675ee96f6d6f853e,pose_rejected,,,,,,,"physical black-dial boundary not found"
+3f07b99e12fa5014,missing,,,,,,,
+0c05e10dcb93270c,pose_rejected,,,,,,,"physical black-dial boundary not found"
+63dc466faad01512,missing,,,,,,,
+4ce166aee7c06206,missing,,,,,,,
+6504df3f05260df3,pose_rejected,,,,,,,"physical black-dial boundary not found"
+e6368f4187793b43,missing,,,,,,,
+53e87049dd5b114b,pose_rejected,,,,,,,"physical black-dial boundary not found"
+39d163d48710cb5a,accepted,405.7,0.126,53,12,0.9330,0.9790,230.3
+afd1c29ada4942d5,missing,,,,,,,
+75d2f6b7bd5e2b02,missing,,,,,,,
+0f7eaf7c5e6cf012,missing,,,,,,,
+ab95d0c9ede48bd5,missing,,,,,,,
+1f373a521c3ea388,missing,,,,,,,
+c2c6f5cc69fa1c6c,missing,,,,,,,
+aeba8809053dac13,accepted,405.4,0.142,54,12,0.9330,0.9810,231.6
+14d6fc13f4d6e292,missing,,,,,,,
+c53fc1764226d8bb,missing,,,,,,,
+c9080afffd28f2c5,missing,,,,,,,
+df62d9a339c284a2,missing,,,,,,,
+0cd5716970b500d5,missing,,,,,,,
+28112018638d47a3,missing,,,,,,,
+a873cd649dee3d36,accepted,405.5,0.119,52,12,0.9330,0.9810,230.5
+556d9b35f5f20782,missing,,,,,,,
+568cbd27e40aab37,missing,,,,,,,
+c6f4d9e620bb82f5,missing,,,,,,,
+7a8b0fa6131024c9,missing,,,,,,,
+04d96a8b7352327b,missing,,,,,,,
+937808e420a1e00b,accepted,438.6,0.136,53,12,0.9330,0.9810,228.2
+122812e316bca62d,accepted,406.0,0.102,54,12,0.9330,0.9810,224.9
+24b1d31d9dca47c4,missing,,,,,,,
+3936ce4e294ee288,pose_rejected,,,,,,,"physical black-dial boundary not found"
+91797b97a7b652fa,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+d12dd0a74835a475,accepted,238.5,0.126,53,12,0.9330,0.9810,221.5
+d9402e7f776b43b8,missing,,,,,,,
+94581add784f156f,pose_rejected,,,,,,,"physical black-dial boundary not found"
+cb9df048dfd43767,missing,,,,,,,
+8518cd227de55495,accepted,405.8,0.123,53,12,0.9330,0.9810,228.5
+f8a5a7025ff88d53,missing,,,,,,,
+b9e9ff6a09e290be,missing,,,,,,,
+e9acca50a15ab5a1,missing,,,,,,,
+a71c3f6f611907a2,missing,,,,,,,
+d64c1a3dd3109b40,missing,,,,,,,
+9a65367bfe7f656e,missing,,,,,,,
+077c7533c2846cb2,missing,,,,,,,
+067c933e30ac2cc6,accepted,406.0,0.143,53,12,0.9330,0.9810,231.4
+baed667450a56f10,missing,,,,,,,
+245d21c8a6ade530,missing,,,,,,,
+2d76516ef24e1da6,missing,,,,,,,
+e4ea736606798ecd,accepted,438.0,0.122,54,12,0.9330,0.9810,232.8
+628cf0ec47f521ee,accepted,405.5,0.098,54,12,0.9330,0.9810,227.5
+fbcf7e6ec7feb989,pose_rejected,,,,,,,"overlay unavailable: inner-end lattice evidence insufficient"
+d1511d328086b128,missing,,,,,,,
+df558051f3401d7f,pose_rejected,,,,,,,"physical black-dial boundary not found"
+73da1a5a239908fa,missing,,,,,,,
+7404f41ba3254dc7,missing,,,,,,,
+c5ceeb763fdb6510,missing,,,,,,,
+c14f8b3abb49c038,accepted,435.9,0.155,52,12,0.9330,0.9810,232.4
+383bdfd3e61f568a,accepted,403.5,0.151,50,12,0.9330,0.9810,231.5
+35dd075cf1f8de87,missing,,,,,,,
+ce6a92fd6ea8c2b4,missing,,,,,,,
+80d18fb97d107c75,missing,,,,,,,
+b48391fd2abddfb9,accepted,237.1,0.131,52,12,0.9330,0.9810,229.2
+97c9235244d52f81,missing,,,,,,,
+a19c2ebcabb5a9a4,missing,,,,,,,
+5986c5a3258ae9ec,missing,,,,,,,
+cb5175ff2c02a6b1,missing,,,,,,,
+a3bed3b63f3e9fd5,missing,,,,,,,
+0595d2168378efce,missing,,,,,,,
+578b4eb58da9e7e0,missing,,,,,,,
+996a689efaefa0e0,missing,,,,,,,
+6d1efbd6fea5ccfe,missing,,,,,,,
+f6e48b2414bf9bea,missing,,,,,,,
+915c11f534a20eae,missing,,,,,,,
+87da4af1942b938d,accepted,732.7,0.230,55,12,0.9330,0.9790,251.0
+531bbfa97d5559b8,missing,,,,,,,
+3c699da2e30eb356,missing,,,,,,,
+abf0ce24a5339bfd,missing,,,,,,,
+21433f387b38ebe6,pose_rejected,,,,,,,"overlay unavailable: inner-end lattice evidence insufficient"
+cf9e8ff78463af50,missing,,,,,,,
+72483a476c62cf9e,missing,,,,,,,
+8a8177a3f3fd5b71,missing,,,,,,,
+37538979358e4224,missing,,,,,,,
+f27a64f84579f41b,missing,,,,,,,
+c321f6173f473250,missing,,,,,,,
+afdea66df8e58c0f,missing,,,,,,,
+3514a2d4c5549bd5,missing,,,,,,,
+d54ef17175a0a94f,missing,,,,,,,
+a53dab49951b7c07,missing,,,,,,,
+cbf0cb6844dde503,missing,,,,,,,
+15c91d474acee081,missing,,,,,,,
+eae7e5912883148b,missing,,,,,,,
+5e97eb15aa3ce07d,missing,,,,,,,
+5eaf2ff81c7622bc,missing,,,,,,,
+1d9060e2f0ed6313,missing,,,,,,,
+a671550fba4c5cec,missing,,,,,,,
+32c4b7f8f52b3ee4,missing,,,,,,,
+1b918e8c7efe2e2c,missing,,,,,,,
+27628aadf410d2ab,missing,,,,,,,
+c98d3c808851baca,missing,,,,,,,
+499858e39697fede,missing,,,,,,,
+9e6811c0987db1f0,missing,,,,,,,
+31fc7762c10c98fa,missing,,,,,,,
+c384dcf12a73f9a3,missing,,,,,,,
+439d3fdbed7e5d64,missing,,,,,,,
+bc978fd120e70b9f,missing,,,,,,,
+30af368a03d2bf93,missing,,,,,,,
+4c8a1e9cee3e03b7,missing,,,,,,,
+52147fd675582a32,missing,,,,,,,
+8c2a7aeada9fc9db,missing,,,,,,,
+f127a52bacf6b822,missing,,,,,,,
+ec2537fa08837262,missing,,,,,,,
+c58f78ef6c1cd5b7,missing,,,,,,,
+7d013cdd4a4aa3a5,missing,,,,,,,
+86cc62a3cdcbcf40,missing,,,,,,,
+b9c96ffca59bdcba,missing,,,,,,,
+6313ac0f2a504448,missing,,,,,,,
+0050fc277c987207,missing,,,,,,,
+386744246ca24cc5,missing,,,,,,,
+f830414d02ab4d92,accepted,194.0,0.118,53,12,0.9330,0.9790,184.3
+295ff012729b77e6,accepted,280.0,0.114,53,12,0.9330,0.9790,213.6
+07c4c6d4dd492ffb,pose_rejected,,,,,,,"physical black-dial boundary not found"
+8fc3da9013fd3a5c,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+2117ed41b48ccbbb,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+033ea6a314b07844,pose_rejected,,,,,,,"physical black-dial boundary not found"
+ef64a6b234b037bf,pose_rejected,,,,,,,"physical black-dial boundary not found"
+448814812e7079fd,accepted,188.2,0.138,55,12,0.9330,0.9810,198.0
+8b8c84ce9219f904,accepted,283.9,0.107,54,12,0.9330,0.9810,225.5
+81e5006162d2efe4,pose_rejected,,,,,,,"overlay unavailable: centroid lattice evidence insufficient"
+ee3930455c9c81e7,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+10d2bbdb61befe0a,pose_rejected,,,,,,,"overlay unavailable: 12 direction could not be established (minute-lattice branch unknown)"
+a411f6560d9a90cb,pose_rejected,,,,,,,"physical black-dial boundary not found"
+bee93d6730c6af33,pose_rejected,,,,,,,"physical black-dial boundary not found"
+6cac8c2178b1448e,accepted,192.8,0.192,54,12,0.9330,0.9810,213.1
+cb8e33b7dc48de42,accepted,275.7,0.155,54,12,0.9330,0.9810,226.0
+e17995e3fdd93e72,pose_rejected,,,,,,,"physical black-dial boundary not found"
+c43ff348244e86dd,pose_rejected,,,,,,,"physical black-dial boundary not found"
+3a8e2e590abad011,pose_rejected,,,,,,,"physical black-dial boundary not found"
+48a95a3ddf6494e6,pose_rejected,,,,,,,"physical black-dial boundary not found"
+c40c4a6cf0adf0e6,pose_rejected,,,,,,,"overlay unavailable: 12 direction could not be established (minute-lattice branch unknown)"
+14a800efc5982cf7,accepted,196.0,0.136,54,12,0.9330,0.9790,173.5
+39333b0946ed7fd0,accepted,279.5,0.161,55,12,0.9330,0.9810,216.8
+38ecb96fae29c5dd,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+c984ed38e5351bee,pose_rejected,,,,,,,"physical black-dial boundary not found"
+cf59f22c3f531346,pose_rejected,,,,,,,"overlay unavailable: 12 direction could not be established (minute-lattice branch unknown)"
+3f2e35ad97963fbc,pose_rejected,,,,,,,"physical black-dial boundary not found"
+54f4a8cc67c0410e,pose_rejected,,,,,,,"physical black-dial boundary not found"
+8cc107d61cf3afca,accepted,197.5,0.121,54,12,0.9330,0.9810,216.2
+e11198980d028b5f,accepted,273.5,0.113,54,12,0.9330,0.9810,233.8
+3b34611fab9713f4,pose_rejected,,,,,,,"overlay unavailable: 12 direction could not be established (minute-lattice branch unknown)"
+f29537f82cd6efc2,pose_rejected,,,,,,,"physical black-dial boundary not found"
+c99359eec84e3fa1,pose_rejected,,,,,,,"overlay unavailable: 12 direction could not be established (minute-lattice branch unknown)"
+25b386227abb7a77,pose_rejected,,,,,,,"physical black-dial boundary not found"
+073e565e8059d86e,pose_rejected,,,,,,,"physical black-dial boundary not found"
+f97405415bac87e3,accepted,230.9,0.140,52,12,0.9330,0.9830,234.8
+c2143f68590be66c,accepted,309.7,0.177,53,12,0.9330,0.9830,231.7
+118a19a2c398b312,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+5f06d2a6befa6364,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+4a51b55871e0ca8a,pose_rejected,,,,,,,"overlay unavailable: centroid lattice evidence insufficient"
+e7c211d50e13ee27,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+70b73e048ab97768,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+445e3c952d68ede4,accepted,204.9,0.127,54,12,0.9330,0.9810,194.9
+728e4c157ef1075d,accepted,270.5,0.117,54,12,0.9330,0.9810,208.5
+917eae5464347c2e,pose_rejected,,,,,,,"physical black-dial boundary not found"
+584ed035089cacac,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+adfa691245706b56,pose_rejected,,,,,,,"physical black-dial boundary not found"
+0b73ce5d95e2aa03,pose_rejected,,,,,,,"physical black-dial boundary not found"
+02f3c5864aa0b8d1,pose_rejected,,,,,,,"overlay unavailable: 12 direction could not be established (minute-lattice branch unknown)"
+855041528fc1ac79,accepted,199.3,0.110,54,12,0.9330,0.9830,203.9
+6ac54fe6dfcbd61a,accepted,277.1,0.096,55,12,0.9330,0.9810,203.7
+6f8ed5c0ff041a93,pose_rejected,,,,,,,"physical black-dial boundary not found"
+85a15f648e4de593,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+be503e67f1100725,pose_rejected,,,,,,,"physical black-dial boundary not found"
+2e33da857f09e627,pose_rejected,,,,,,,"physical black-dial boundary not found"
+37662bef338053b8,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+fe415ba6ad0b207e,accepted,161.4,0.182,54,12,0.9330,0.9790,146.6
+848b12d7004b393f,pose_rejected,,,,,,,"overlay unavailable: 12 direction could not be established (minute-lattice branch unknown)"
+3cce6d1b709364b0,accepted,263.7,0.121,54,12,0.9330,0.9790,220.1
+8751950c5ff2e42b,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+a1bfaf5a1c5e2de4,pose_rejected,,,,,,,"physical black-dial boundary not found"
+efe4f0c579f2054b,pose_rejected,,,,,,,"physical black-dial boundary not found"
+f85255084ee671f1,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+c0eefd9f03b9481d,pose_rejected,,,,,,,"physical black-dial boundary not found"
+f1e212d88da74dc7,missing,,,,,,,
+f5893aba6c6a05ea,missing,,,,,,,
+493539781bde43cf,accepted,154.2,0.178,54,12,0.9330,0.9790,131.1
+80a6ba9bf517ee0c,pose_rejected,,,,,,,"physical black-dial boundary not found"
+300443c8ae84ff63,accepted,257.6,0.110,54,12,0.9330,0.9790,223.8
+b4c9de29f3d0c228,pose_rejected,,,,,,,"physical black-dial boundary not found"
+b0bff20f0be6bcfb,pose_rejected,,,,,,,"physical black-dial boundary not found"
+4efe06d6a3a299c1,pose_rejected,,,,,,,"physical black-dial boundary not found"
+e6a965999c44bac2,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+3c1cf7e45e85ab3c,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+bd2ec5e22bc68bdd,missing,,,,,,,
+0bc163325f228c30,missing,,,,,,,
+5fa5736bf56385c3,missing,,,,,,,
+303f8c74471a80e5,missing,,,,,,,
+033133202cf757da,missing,,,,,,,
+d22b335fc6f4a414,missing,,,,,,,
+d8de6984291c74e3,missing,,,,,,,
+a3694e1cc74091b4,missing,,,,,,,
+2ac951dfd6e51437,missing,,,,,,,
+f3b5790dc785c02c,missing,,,,,,,
+fb7fb717b31e3311,missing,,,,,,,
+ae68042381fb2488,missing,,,,,,,
+6831c54c06b80361,missing,,,,,,,
+c81c1742c609160c,missing,,,,,,,
+5cec141d6bc20f7a,missing,,,,,,,
+154fba1b80a74545,missing,,,,,,,
+5d770f2122719e46,missing,,,,,,,
+b3b9c11c660b3568,missing,,,,,,,
+ad5a648baaa00e4f,missing,,,,,,,
+a6231bdc63e7565a,missing,,,,,,,
+a367ed5e6bffbd58,missing,,,,,,,
+df12caba4b0f49be,missing,,,,,,,
+cc22ce01fa0e766c,accepted,147.8,0.158,54,12,0.9330,0.9810,155.6
+a0c21679dd23c4be,missing,,,,,,,
+b7657df8e4867d6f,missing,,,,,,,
+99edda321721be1f,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+e03da702be066576,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+e40f1df193a8d0c4,missing,,,,,,,
+fef0cf5feb6e1fda,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+0f657b5ae76872d3,missing,,,,,,,
+99711943b400f4c3,missing,,,,,,,
+c5fa09132c742dd0,missing,,,,,,,
+373238b7b24c266b,missing,,,,,,,
+53a2318f08d66616,missing,,,,,,,
+2fdf38169ee1b57a,missing,,,,,,,
+2950d626ddbc3530,missing,,,,,,,
+6f77cb46e3d65ce6,missing,,,,,,,
+d53e46ec58fa04c7,missing,,,,,,,
+7ef67ccad5575960,missing,,,,,,,
+792def35c19a123b,missing,,,,,,,
+a7261c47b6dce057,missing,,,,,,,
+5d21f978ebfe736d,missing,,,,,,,
+ea6471c0ef6ada52,accepted,162.7,0.191,54,12,0.9330,0.9790,160.7
+cf00e6294aaeb7ef,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+690f6fba68b00139,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+a21badd71a70565b,pose_rejected,,,,,,,"physical black-dial boundary not found"
+244ae73bbc31b32a,pose_rejected,,,,,,,"physical black-dial boundary not found"
+0ddce4fdb448751f,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+13be7c94a09c47fa,pose_rejected,,,,,,,"physical black-dial boundary could not be fitted"
+e56978e02d9886fe,pose_rejected,,,,,,,"physical black-dial boundary not found"
+1bdf1e161ff95d74,missing,,,,,,,
+f8ca053b793aa52d,missing,,,,,,,
+38faa437653386b5,pose_rejected,,,,,,,"physical black-dial boundary not found"
+ade45a373412f737,pose_rejected,,,,,,,"physical black-dial boundary not found"
+d554604d93e97b4d,pose_rejected,,,,,,,"physical black-dial boundary not found"
+69c2ceba1f2930aa,pose_rejected,,,,,,,"physical black-dial boundary not found"
+0fb109068675e89b,pose_rejected,,,,,,,"physical black-dial boundary not found"
+99f238f2ccfaebda,pose_rejected,,,,,,,"physical black-dial boundary not found"
+868187808b09149a,pose_rejected,,,,,,,"physical black-dial boundary not found"
+3db99a110e2f1c23,pose_rejected,,,,,,,"physical black-dial boundary not found"
+00d2f06eb1283744,pose_rejected,,,,,,,"physical black-dial boundary not found"
+3b18bcfedeb0d485,pose_rejected,,,,,,,"physical black-dial boundary not found"
+2a1cab79859f77df,pose_rejected,,,,,,,"physical black-dial boundary not found"
+dfa01f1adaf1bc18,pose_rejected,,,,,,,"physical black-dial boundary not found"
+86d79ec4c9bf81cd,pose_rejected,,,,,,,"physical black-dial boundary not found"
+bca4151e4390cdf0,pose_rejected,,,,,,,"physical black-dial boundary not found"
+1f7ada052a6f79ad,pose_rejected,,,,,,,"physical black-dial boundary not found"
+6c5a94b72239f86e,pose_rejected,,,,,,,"physical black-dial boundary not found"
+96ebc8a23b128551,pose_rejected,,,,,,,"physical black-dial boundary not found"
+40f522108c90b62e,pose_rejected,,,,,,,"physical black-dial boundary not found"
+eafb926d8f4ef847,pose_rejected,,,,,,,"physical black-dial boundary not found"
+561cde235f33c63e,pose_rejected,,,,,,,"physical black-dial boundary not found"
+dc2f53100dbb094e,pose_rejected,,,,,,,"physical black-dial boundary not found"
+0c7a5900adb4c92d,pose_rejected,,,,,,,"physical black-dial boundary not found"
+50b757e84552f472,pose_rejected,,,,,,,"physical black-dial boundary not found"
+01d7d4baf36843fb,pose_rejected,,,,,,,"physical black-dial boundary not found"
+e3087e868b75f785,pose_rejected,,,,,,,"physical black-dial boundary not found"
+701082b628330938,pose_rejected,,,,,,,"physical black-dial boundary not found"
+ce3db8ab80c8ec44,pose_rejected,,,,,,,"physical black-dial boundary not found"
+fe60327274d9299d,pose_rejected,,,,,,,"physical black-dial boundary not found"
+d20e252f44117d8d,pose_rejected,,,,,,,"physical black-dial boundary not found"
+958ee6f9a9a5a78e,pose_rejected,,,,,,,"physical black-dial boundary not found"
+02524c4273a7cea3,pose_rejected,,,,,,,"physical black-dial boundary not found"
+70b369ba3f547e81,pose_rejected,,,,,,,"physical black-dial boundary not found"
+ed359d3134f7b9d6,pose_rejected,,,,,,,"physical black-dial boundary not found"
+93896dccf98e6bbf,pose_rejected,,,,,,,"physical black-dial boundary not found"
+1b92f7bc91b072b8,pose_rejected,,,,,,,"physical black-dial boundary not found"
+bd98c62beb622775,pose_rejected,,,,,,,"physical black-dial boundary not found"
+0951c0b5033eaed4,pose_rejected,,,,,,,"physical black-dial boundary not found"
+f59d9d5e6fa3f021,pose_rejected,,,,,,,"physical black-dial boundary not found"
+670b67b1b2ecd5c4,pose_rejected,,,,,,,"physical black-dial boundary not found"
+ba420c6165dd5d46,pose_rejected,,,,,,,"physical black-dial boundary not found"
+bf356ac99fa357e6,pose_rejected,,,,,,,"physical black-dial boundary not found"
+59fdbc3426d48cb7,pose_rejected,,,,,,,"physical black-dial boundary not found"
+e68314208853a9a0,pose_rejected,,,,,,,"physical black-dial boundary not found"
+f7076f79eb3ed4ba,pose_rejected,,,,,,,"physical black-dial boundary not found"
+5004fb96c230ae39,pose_rejected,,,,,,,"physical black-dial boundary not found"
+a283c30279bb1d64,pose_rejected,,,,,,,"physical black-dial boundary not found"
+ba7c42ce1ce35fe1,pose_rejected,,,,,,,"physical black-dial boundary not found"
+5e99455bb1f2dca5,pose_rejected,,,,,,,"physical black-dial boundary not found"
+d637e4972ff8f6a7,pose_rejected,,,,,,,"physical black-dial boundary not found"
+b262db66d7353275,pose_rejected,,,,,,,"physical black-dial boundary not found"
+32164f2192b5298c,pose_rejected,,,,,,,"physical black-dial boundary not found"
+9b3cbe47cf90e972,pose_rejected,,,,,,,"physical black-dial boundary not found"
+35da8afa01a425e0,pose_rejected,,,,,,,"physical black-dial boundary not found"
+5eb1c9db37479432,pose_rejected,,,,,,,"physical black-dial boundary not found"
+35e0a9fcb72de479,pose_rejected,,,,,,,"physical black-dial boundary not found"
+ecb45a8c33149e07,pose_rejected,,,,,,,"physical black-dial boundary not found"
+a815f2eed48c727c,pose_rejected,,,,,,,"physical black-dial boundary not found"
+8c9e1ebee13fc180,pose_rejected,,,,,,,"physical black-dial boundary not found"
+055bd38887edd16a,pose_rejected,,,,,,,"physical black-dial boundary not found"
+f83a5fe10c734c96,pose_rejected,,,,,,,"physical black-dial boundary not found"
+d6113f3297e054a5,accepted,335.4,0.203,52,12,0.9330,0.9810,232.8
+abbc909629c4da6d,pose_rejected,,,,,,,"overlay unavailable: minute-lattice median residual too high (wrong local fit)"
+a699939a5839d8b0,missing,,,,,,,
+531bf26df63f8e28,missing,,,,,,,
+7924b3438d027820,missing,,,,,,,
+6e94bea97f9a4131,missing,,,,,,,
+143fd10ba12988a1,missing,,,,,,,
+53316f31797c69a7,missing,,,,,,,
+fb0c96d7911acae0,missing,,,,,,,
+93c9bf296152e067,missing,,,,,,,
+e3ac0fd56cb3e773,missing,,,,,,,
+89ccd688a7054b40,missing,,,,,,,
+e42f2509dbe91be7,missing,,,,,,,
+c7f8f078b5f52976,missing,,,,,,,
+5e972c30e8228f60,missing,,,,,,,
+4c4411346933c6b4,missing,,,,,,,
+c46f94befa166a95,missing,,,,,,,
+a88dd1f1dd52766c,missing,,,,,,,
+7259cf7b3e4aa640,missing,,,,,,,
+1db3a6e0e730caba,missing,,,,,,,
+742cdc88c4dbab9c,missing,,,,,,,
+bf19bc998a0a5326,missing,,,,,,,
+0bc6f00d7ce8a109,missing,,,,,,,
+ecdf7ca4f611b956,missing,,,,,,,
+e11caf4a6c471d22,missing,,,,,,,
+f5807589cf269db3,missing,,,,,,,
+7355d70349785498,missing,,,,,,,
+348553927d971fce,missing,,,,,,,
+65c5bd0b13f98bad,missing,,,,,,,
+21a2847d3d17f454,missing,,,,,,,
+a69ad6a835506ff9,missing,,,,,,,
+86c421e3fc503832,missing,,,,,,,
+c63e219ccd3d8b16,missing,,,,,,,
+9c4d6cd0bf6c77d4,missing,,,,,,,
+d03a66b9004eecaf,missing,,,,,,,
+74dcf31068be44dd,missing,,,,,,,
+bd181fa1b0ccb4c3,missing,,,,,,,
+72d1133a1f25445f,missing,,,,,,,
+f15decbaae76e4c0,missing,,,,,,,
+473a7d4fff41094d,missing,,,,,,,
+3cdbc2c51414d118,missing,,,,,,,
+b6ff7dfd357c552b,missing,,,,,,,
+b1c1f3fde53931af,missing,,,,,,,
+3637b4154272f23d,missing,,,,,,,
+2eec46fcb133ee82,missing,,,,,,,
+f8e433d04cc45601,missing,,,,,,,
+213e3479a5c0379c,missing,,,,,,,
+72d75735b3df22da,missing,,,,,,,
+2cdac89f6ac7c40d,missing,,,,,,,
+881f5b3aa1abb05e,missing,,,,,,,
+7748e630c6703233,missing,,,,,,,
+1e090129a34bfbf1,missing,,,,,,,
+7c6665e9293bba99,missing,,,,,,,
+c1bd62901096e590,missing,,,,,,,
+09ae82970a387210,missing,,,,,,,
+88aa071c00fd9961,missing,,,,,,,
+2ab5d1f765c45b20,missing,,,,,,,

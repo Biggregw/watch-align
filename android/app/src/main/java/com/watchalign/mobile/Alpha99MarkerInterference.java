@@ -53,6 +53,8 @@ final class Alpha99MarkerInterference {
         double threshold=Double.NaN;
         /** the seconds hand's line (centre -> lume dot) crosses this marker. */
         boolean secondsHand;
+        /** angle (deg clockwise from 12) of that seconds-hand line, NaN if none. */
+        double secondsPsi=Double.NaN;
         /** closest approach (px) of a structure that withholds the marker to the marker's master outline. */
         double touchGapPx=Double.POSITIVE_INFINITY;
         /** debug grid: rows = r (inner -> outer), cols = t; 0 dial, 1 foreign, 2 hand evidence, 3 marker edge band (not judged), 4 marker face, 5 foreign on the face, -1 off. */
@@ -90,7 +92,11 @@ final class Alpha99MarkerInterference {
         java.util.List<Double> seconds=new java.util.ArrayList<>();
         try{
             double L=lumeContrast(img,H,model);
-            if(Double.isFinite(L)&&L>0)for(double[] d:dots(img,H,rpx,model))if(d[2]>=DOT_MIN_FRAC*L)seconds.add(d[0]);
+            if(Double.isFinite(L)&&L>0)for(double[] d:dots(img,H,rpx,model)){
+                if(d[2]<DOT_MIN_FRAC*L)continue;
+                if(model.onPrintSpot(d[0],d[1])&&d[2]<model.printSpotMinFrac*L)continue;     // printed detail, not the lume dot
+                seconds.add(d[0]);
+            }
         }catch(Throwable t){return null;}
         return seconds;
     }
@@ -138,7 +144,7 @@ final class Alpha99MarkerInterference {
             Check c;
             try{c=img==null?null:check(img,H,mk,rpx);}catch(Throwable t){c=null;}
             if(c==null){c=new Check(h);c.clean=false;c.reason=UNCHECKED;}
-            for(double psi:seconds)if(onLine(mk,psi,TOUCH_R+TOUCH_PX/rpx+SHAFT_HALF)){c.secondsHand=true;if(c.clean){c.clean=false;c.reason=HAND;}}
+            for(double psi:seconds)if(onLine(mk,psi,TOUCH_R+TOUCH_PX/rpx+SHAFT_HALF)){c.secondsHand=true;c.secondsPsi=psi;if(c.clean){c.clean=false;c.reason=HAND;}}
             out.put(h,c);
         }
         return out;
@@ -319,6 +325,35 @@ final class Alpha99MarkerInterference {
 
     private static boolean darkAt(Sampler img,double[] H,double x,double y,double bg,double sc){
         double[] p=project(H,x,y);double v=p==null?Double.NaN:img.at(p[0],p[1]);return Double.isFinite(v)&&v-bg<0.5*sc;
+    }
+
+    /**
+     * Direction (deg, canonical atan2(y, x), y down) from the marker's master centre towards the hand that withheld it: the
+     * hand-evidence cells nearest the marker outline, else the seconds-hand line's closest point. NaN when unknown.
+     */
+    static double handDirection(Check c,ModelSpec.Marker mk,double[] H){
+        double[] mc=mk.masterPoint();
+        double a=Math.toRadians(mk.hour*30.0);double[] er={Math.sin(a),-Math.cos(a)},et={Math.cos(a),Math.sin(a)};
+        double rpx=pxPerR(H);
+        if(c.grid!=null&&rpx>20){
+            double step=0.75/rpx,r0=mk.shape==ModelSpec.Shape.TRIANGLE?mk.corridorStartR:mk.innerR()-CORRIDOR;
+            double best=Double.POSITIVE_INFINITY,dir=Double.NaN;
+            for(int i=0;i<c.rows;i++)for(int j=0;j<c.cols;j++){
+                if(c.grid[i*c.cols+j]!=2)continue;
+                double r=r0+i*step,t=(j-(c.cols-1)/2)*step;
+                double d=Math.abs(dist(mk,r,t));
+                double x=r*er[0]+t*et[0]-mc[0],y=r*er[1]+t*et[1]-mc[1];
+                if(d<best){best=d;dir=Math.toDegrees(Math.atan2(y,x));}
+            }
+            if(Double.isFinite(dir))return dir<0?dir+360:dir;
+        }
+        if(Double.isFinite(c.secondsPsi)){
+            double p=Math.toRadians(c.secondsPsi);double ux=Math.sin(p),uy=-Math.cos(p);
+            double k=mc[0]*ux+mc[1]*uy;double x=k*ux-mc[0],y=k*uy-mc[1];
+            if(Math.hypot(x,y)<1e-9)return Double.NaN;
+            double dir=Math.toDegrees(Math.atan2(y,x));return dir<0?dir+360:dir;
+        }
+        return Double.NaN;
     }
 
     /** Signed distance (canonical units, > 0 outside) from (r, t) in the marker's frame to the master marker shape. */

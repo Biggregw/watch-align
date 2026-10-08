@@ -40,6 +40,10 @@ final class ModelReference {
     }
 
     private final Map<String,double[]> far=new HashMap<>(),radius=new HashMap<>();
+    private final Map<String,String[]> watch=new HashMap<>();
+    /** optional per-row upper limit on the photo's dial radius (genuine_reference.csv max_photo_r; rows from shrunk genuine
+     *  photos are only for photos below the full-resolution coverage); +inf when absent. */
+    private final Map<String,double[]> maxPhoto=new HashMap<>();
     private final Map<String,Double> nominal=new HashMap<>(),sigma=new HashMap<>();
     private final Map<String,Integer> sigmaWatches=new HashMap<>();
     /** null when the model has no triangle reference. */
@@ -68,12 +72,16 @@ final class ModelReference {
         ModelReference r=new ModelReference(t,k);
         List<Map<String,String>> g=csv(assets,dir+GENUINE);
         if(g!=null){
-            Map<String,List<double[]>> by=new LinkedHashMap<>();
-            for(Map<String,String> row:g)by.computeIfAbsent(row.get("feature"),x->new ArrayList<>()).add(new double[]{d(row.get("far")),d(row.get("dial_radius_px"))});
+            Map<String,List<double[]>> by=new LinkedHashMap<>();Map<String,List<String>> ids=new HashMap<>();
+            for(Map<String,String> row:g){
+                double mp=d(row.get("max_photo_r"));
+                by.computeIfAbsent(row.get("feature"),x->new ArrayList<>()).add(new double[]{d(row.get("far")),d(row.get("dial_radius_px")),Double.isNaN(mp)?Double.POSITIVE_INFINITY:mp});
+                ids.computeIfAbsent(row.get("feature"),x->new ArrayList<>()).add(row.get("physical_watch_id"));
+            }
             for(Map.Entry<String,List<double[]>> e:by.entrySet()){
-                double[] f=new double[e.getValue().size()],R=new double[f.length];
-                for(int i=0;i<f.length;i++){f[i]=e.getValue().get(i)[0];R[i]=e.getValue().get(i)[1];}
-                r.far.put(e.getKey(),f);r.radius.put(e.getKey(),R);
+                double[] f=new double[e.getValue().size()],R=new double[f.length],M=new double[f.length];
+                for(int i=0;i<f.length;i++){f[i]=e.getValue().get(i)[0];R[i]=e.getValue().get(i)[1];M[i]=e.getValue().get(i)[2];}
+                r.far.put(e.getKey(),f);r.radius.put(e.getKey(),R);r.maxPhoto.put(e.getKey(),M);r.watch.put(e.getKey(),ids.get(e.getKey()).toArray(new String[0]));
             }
         }
         Properties nom=props(assets,dir+NOMINAL);
@@ -90,6 +98,23 @@ final class ModelReference {
     double[] far(String feature){double[] v=far.get(feature);return v==null?new double[0]:v;}
     /** Dial radius (px) of each reference watch's photos, aligned with far(); NaN where not recorded. */
     double[] radius(String feature){double[] v=radius.get(feature);return v==null?new double[0]:v;}
+    /** Number of distinct genuine watches with a reference row for the feature photographed at R_ref <= 1.3 x R (a watch
+     *  can have rows at several resolutions, e.g. its photos re-measured shrunk; it still counts once). */
+    int matchedWatches(String feature,double R){
+        double[] rr=radius(feature);String[] id=watch.get(feature);java.util.Set<String> s=new java.util.HashSet<>();
+        for(int i=0;i<rr.length;i++)if(matches(feature,i,R))s.add(id==null||id[i]==null?"#"+i:id[i]);
+        return s.size();
+    }
+    /** Furthest genuine reading among the reference rows photographed at R_ref <= 1.3 x R (and usable at this R). */
+    double matchedMax(String feature,double R){
+        double[] f=far(feature);double m=Double.NEGATIVE_INFINITY;
+        for(int i=0;i<f.length;i++)if(matches(feature,i,R))m=Math.max(m,f[i]);
+        return m;
+    }
+    private boolean matches(String feature,int i,double R){
+        double rr=radius(feature)[i];double[] mp=maxPhoto.get(feature);
+        return Double.isFinite(rr)&&rr<=Alpha98Findings.RES_MATCH*R&&(mp==null||R<=mp[i]);
+    }
     boolean has(String feature){return far.containsKey(feature)&&far.get(feature).length>0;}
     /** Genuine nominal of a signed feature, NaN when missing. */
     double nominal(String feature){Double v=nominal.get(feature);return v==null?Double.NaN:v;}

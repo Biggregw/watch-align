@@ -18,11 +18,11 @@ photo_id,feature,alpha98_status,alpha99_status,short_line,alpha101_only
 25369d47-image,nine,OUTSIDE,CLEAR,"rotated 1.4° anticlockwise; genuine up to 0.6°",false
 25369d47-image,round1,OUTSIDE,WITHIN,"",false
 25369d47-image,round2,OUTSIDE,CLEAR,"shifted towards the centre and the 1 by 0.43% of the dial; genuine up to 0.26%",false
-25369d47-image,round4,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
+25369d47-image,round4,OUTSIDE,WORTH,"shifted towards its minute mark by 0.26% of the dial; genuine up to 0.26%",false
 25369d47-image,round5,OUTSIDE,WITHIN,"",false
 25369d47-image,round7,OUTSIDE,WITHIN,"",false
 25369d47-image,round8,OUTSIDE,WORTH,"shifted towards the 7 by 0.39% of the dial; genuine up to 0.26%",false
-25369d47-image,round10,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
+25369d47-image,round10,OUTSIDE,WITHIN,"",false
 25369d47-image,round11,OUTSIDE,WITHIN,"",false
 25369d47-image,rounds_size,OUTSIDE,WITHIN,"",false
 25369d47-image,ring,WITHIN,WITHIN,"",false
@@ -30,15 +30,15 @@ photo_id,feature,alpha98_status,alpha99_status,short_line,alpha101_only
 4967ffd5-image,twelve,WITHIN,WITHIN,"",false
 4967ffd5-image,six,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 4967ffd5-image,nine,WITHIN,WITHIN,"",false
-4967ffd5-image,round1,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-4967ffd5-image,round2,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-4967ffd5-image,round4,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-4967ffd5-image,round5,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-4967ffd5-image,round7,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-4967ffd5-image,round8,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-4967ffd5-image,round10,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-4967ffd5-image,round11,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-4967ffd5-image,rounds_size,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
+4967ffd5-image,round1,WITHIN,WITHIN,"",false
+4967ffd5-image,round2,WITHIN,WITHIN,"",false
+4967ffd5-image,round4,WITHIN,WITHIN,"",false
+4967ffd5-image,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+4967ffd5-image,round7,WITHIN,WITHIN,"",false
+4967ffd5-image,round8,WITHIN,WITHIN,"",false
+4967ffd5-image,round10,WITHIN,WITHIN,"",false
+4967ffd5-image,round11,WITHIN,WITHIN,"",false
+4967ffd5-image,rounds_size,WITHIN,WITHIN,"",false
 4967ffd5-image,ring,WITHIN,WITHIN,"",false
 4967ffd5-image,date,WITHIN,WITHIN,"",false
 4f87a0d3-image,twelve,NOT_ASSESSED,NOT_ASSESSED,"hand crosses marker",false
@@ -46,11 +46,11 @@ photo_id,feature,alpha98_status,alpha99_status,short_line,alpha101_only
 4f87a0d3-image,nine,WITHIN,WITHIN,"",false
 4f87a0d3-image,round1,WITHIN,WITHIN,"",false
 4f87a0d3-image,round2,WITHIN,WITHIN,"",false
-4f87a0d3-image,round4,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+4f87a0d3-image,round4,WITHIN,WITHIN,"",false
 4f87a0d3-image,round5,WITHIN,WITHIN,"",false
 4f87a0d3-image,round7,WITHIN,WITHIN,"",false
 4f87a0d3-image,round8,WITHIN,WITHIN,"",false
-4f87a0d3-image,round10,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+4f87a0d3-image,round10,WITHIN,WITHIN,"",false
 4f87a0d3-image,round11,WITHIN,WITHIN,"",false
 4f87a0d3-image,rounds_size,WITHIN,WITHIN,"",false
 4f87a0d3-image,ring,WITHIN,WITHIN,"",false
@@ -86,41 +86,41 @@ photo_id,feature,alpha98_status,alpha99_status,short_line,alpha101_only
 EXT_EXT_GEN_BLRO_WEX_01,twelve,NOT_ASSESSED,NOT_ASSESSED,"hand crosses marker",false
 EXT_EXT_GEN_BLRO_WEX_01,six,WITHIN,WITHIN,"",false
 EXT_EXT_GEN_BLRO_WEX_01,nine,WITHIN,WITHIN,"",false
-EXT_EXT_GEN_BLRO_WEX_01,round1,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_01,round2,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_01,round4,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_01,round5,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_01,round7,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_01,round8,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_01,round10,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_01,round11,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_01,rounds_size,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
+EXT_EXT_GEN_BLRO_WEX_01,round1,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_01,round2,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_01,round4,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+EXT_EXT_GEN_BLRO_WEX_01,round5,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_01,round7,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_01,round8,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_01,round10,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_01,round11,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_01,rounds_size,WITHIN,WITHIN,"",false
 EXT_EXT_GEN_BLRO_WEX_01,ring,WITHIN,WITHIN,"",false
 EXT_EXT_GEN_BLRO_WEX_01,date,NOT_ASSESSED,NOT_ASSESSED,"window not found",false
 EXT_EXT_GEN_BLRO_WEX_02,twelve,NOT_ASSESSED,NOT_ASSESSED,"hand crosses marker",false
 EXT_EXT_GEN_BLRO_WEX_02,six,WITHIN,WITHIN,"",false
 EXT_EXT_GEN_BLRO_WEX_02,nine,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-EXT_EXT_GEN_BLRO_WEX_02,round1,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_02,round2,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_02,round4,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_02,round5,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_02,round7,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_02,round8,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_02,round10,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_02,round11,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-EXT_EXT_GEN_BLRO_WEX_02,rounds_size,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
+EXT_EXT_GEN_BLRO_WEX_02,round1,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_02,round2,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_02,round4,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+EXT_EXT_GEN_BLRO_WEX_02,round5,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_02,round7,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_02,round8,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_02,round10,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_02,round11,WITHIN,WITHIN,"",false
+EXT_EXT_GEN_BLRO_WEX_02,rounds_size,WITHIN,WITHIN,"",false
 EXT_EXT_GEN_BLRO_WEX_02,ring,WITHIN,WITHIN,"",false
 EXT_EXT_GEN_BLRO_WEX_02,date,NOT_ASSESSED,NOT_ASSESSED,"glare on magnifier",false
 POOL_GEN_HO_01,twelve,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,six,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,nine,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round1,WITHIN,WITHIN,"",false
-POOL_GEN_HO_01,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+POOL_GEN_HO_01,round2,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round4,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round5,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round7,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round8,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-POOL_GEN_HO_01,round10,WITHIN,WORTH,"plot larger than the others by 0.12% of the dial; genuine up to 0.10%",true
+POOL_GEN_HO_01,round10,WITHIN,WORTH,"marker larger than the others by 0.12% of the dial; genuine up to 0.10%",true
 POOL_GEN_HO_01,round11,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,rounds_size,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,ring,WITHIN,WITHIN,"",false
@@ -128,29 +128,29 @@ POOL_GEN_HO_01,date,NOT_ASSESSED,NOT_ASSESSED,"window not found",false
 POOL_GEN_HO_02,twelve,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 POOL_GEN_HO_02,six,WITHIN,WITHIN,"",false
 POOL_GEN_HO_02,nine,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-POOL_GEN_HO_02,round1,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-POOL_GEN_HO_02,round2,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-POOL_GEN_HO_02,round4,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-POOL_GEN_HO_02,round5,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-POOL_GEN_HO_02,round7,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-POOL_GEN_HO_02,round8,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-POOL_GEN_HO_02,round10,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-POOL_GEN_HO_02,round11,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-POOL_GEN_HO_02,rounds_size,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
+POOL_GEN_HO_02,round1,WITHIN,WITHIN,"",false
+POOL_GEN_HO_02,round2,WITHIN,WITHIN,"",false
+POOL_GEN_HO_02,round4,WITHIN,WITHIN,"",false
+POOL_GEN_HO_02,round5,WITHIN,WITHIN,"",false
+POOL_GEN_HO_02,round7,WITHIN,WITHIN,"",false
+POOL_GEN_HO_02,round8,WITHIN,WITHIN,"",false
+POOL_GEN_HO_02,round10,WITHIN,WITHIN,"",false
+POOL_GEN_HO_02,round11,WITHIN,WITHIN,"",false
+POOL_GEN_HO_02,rounds_size,WITHIN,WITHIN,"",false
 POOL_GEN_HO_02,ring,WITHIN,WITHIN,"",false
 POOL_GEN_HO_02,date,NOT_ASSESSED,NOT_ASSESSED,"glare on magnifier",false
 RL_ARF_BLRO_CROOKED6,twelve,OUTSIDE,CLEAR,"shifted left by 0.85% of the dial; genuine up to 0.23%",false
 RL_ARF_BLRO_CROOKED6,six,OUTSIDE,WORTH,"shifted towards the centre by 0.37% of the dial; genuine up to 0.30%",false
 RL_ARF_BLRO_CROOKED6,nine,WITHIN,WITHIN,"",false
-RL_ARF_BLRO_CROOKED6,round1,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
-RL_ARF_BLRO_CROOKED6,round2,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
+RL_ARF_BLRO_CROOKED6,round1,OUTSIDE,WITHIN,"",false
+RL_ARF_BLRO_CROOKED6,round2,OUTSIDE,WITHIN,"",false
 RL_ARF_BLRO_CROOKED6,round4,OUTSIDE,WITHIN,"",false
-RL_ARF_BLRO_CROOKED6,round5,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
+RL_ARF_BLRO_CROOKED6,round5,OUTSIDE,WITHIN,"",false
 RL_ARF_BLRO_CROOKED6,round7,OUTSIDE,WORTH,"shifted towards the 8 by 0.35% of the dial; genuine up to 0.26%",false
 RL_ARF_BLRO_CROOKED6,round8,OUTSIDE,CLEAR,"shifted towards its minute mark and the 7 by 0.46% of the dial; genuine up to 0.26%",false
 RL_ARF_BLRO_CROOKED6,round10,OUTSIDE,WORTH,"shifted towards the centre by 0.34% of the dial; genuine up to 0.26%",false
 RL_ARF_BLRO_CROOKED6,round11,OUTSIDE,CLEAR,"shifted towards its minute mark by 0.45% of the dial; genuine up to 0.26%",false
-RL_ARF_BLRO_CROOKED6,rounds_size,OUTSIDE,WORTH,"all round plots larger by 0.20% of the dial; genuine up to 0.10%",true
+RL_ARF_BLRO_CROOKED6,rounds_size,OUTSIDE,WORTH,"all round markers larger by 0.20% of the dial; genuine up to 0.10%",true
 RL_ARF_BLRO_CROOKED6,ring,WITHIN,WITHIN,"",false
 RL_ARF_BLRO_CROOKED6,date,NOT_ASSESSED,NOT_ASSESSED,"hand or date change",false
 RL_LOCAL_BLNR,twelve,OUTSIDE,CLEAR,"shifted left by 1.33% of the dial; genuine up to 0.23%",false
@@ -161,7 +161,7 @@ RL_LOCAL_BLNR,round2,WITHIN,WITHIN,"",false
 RL_LOCAL_BLNR,round4,WITHIN,WITHIN,"",false
 RL_LOCAL_BLNR,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 RL_LOCAL_BLNR,round7,WITHIN,WITHIN,"",false
-RL_LOCAL_BLNR,round8,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+RL_LOCAL_BLNR,round8,WITHIN,NOT_ASSESSED,"outline not clear",false
 RL_LOCAL_BLNR,round10,WITHIN,NOT_ASSESSED,"edge not clear",false
 RL_LOCAL_BLNR,round11,WITHIN,NOT_ASSESSED,"edge not clear",false
 RL_LOCAL_BLNR,rounds_size,WITHIN,NOT_ASSESSED,"too few clean markers",false
@@ -170,15 +170,15 @@ RL_LOCAL_BLNR,date,WITHIN,WITHIN,"",false
 RL_THEONE_BLNR,twelve,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
 RL_THEONE_BLNR,six,OUTSIDE,WORTH,"shifted towards its minute mark and the 7 by 0.47% of the dial; genuine up to 0.30%",false
 RL_THEONE_BLNR,nine,OUTSIDE,WORTH,"rotated 0.9° anticlockwise; genuine up to 0.6°",false
-RL_THEONE_BLNR,round1,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-RL_THEONE_BLNR,round2,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-RL_THEONE_BLNR,round4,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-RL_THEONE_BLNR,round5,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-RL_THEONE_BLNR,round7,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-RL_THEONE_BLNR,round8,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-RL_THEONE_BLNR,round10,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-RL_THEONE_BLNR,round11,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-RL_THEONE_BLNR,rounds_size,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
+RL_THEONE_BLNR,round1,OUTSIDE,WORTH,"shifted towards the 12 by 0.40% of the dial; genuine up to 0.27%",false
+RL_THEONE_BLNR,round2,OUTSIDE,WITHIN,"",false
+RL_THEONE_BLNR,round4,OUTSIDE,WITHIN,"",false
+RL_THEONE_BLNR,round5,OUTSIDE,WITHIN,"",false
+RL_THEONE_BLNR,round7,OUTSIDE,WITHIN,"",false
+RL_THEONE_BLNR,round8,OUTSIDE,WITHIN,"",false
+RL_THEONE_BLNR,round10,OUTSIDE,WORTH,"marker smaller than the others by 0.30% of the dial; genuine up to 0.24%",true
+RL_THEONE_BLNR,round11,OUTSIDE,WITHIN,"",false
+RL_THEONE_BLNR,rounds_size,OUTSIDE,WITHIN,"",false
 RL_THEONE_BLNR,ring,WITHIN,WITHIN,"",false
 RL_THEONE_BLNR,date,WITHIN,WITHIN,"",false
 USER_BATGIRL_GMT,twelve,NOT_ASSESSED,NOT_ASSESSED,"hand crosses marker",false
@@ -198,56 +198,56 @@ USER_BATGIRL_GMT,date,WITHIN,WITHIN,"",false
 a805c035-image,twelve,WITHIN,WITHIN,"",false
 a805c035-image,six,NOT_ASSESSED,NOT_ASSESSED,"hand crosses marker",false
 a805c035-image,nine,WITHIN,WITHIN,"",false
-a805c035-image,round1,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-a805c035-image,round2,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-a805c035-image,round4,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-a805c035-image,round5,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-a805c035-image,round7,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-a805c035-image,round8,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-a805c035-image,round10,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-a805c035-image,round11,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-a805c035-image,rounds_size,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
+a805c035-image,round1,WITHIN,WITHIN,"",false
+a805c035-image,round2,WITHIN,WITHIN,"",false
+a805c035-image,round4,WITHIN,WITHIN,"",false
+a805c035-image,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+a805c035-image,round7,WITHIN,WITHIN,"",false
+a805c035-image,round8,WITHIN,WITHIN,"",false
+a805c035-image,round10,WITHIN,WITHIN,"",false
+a805c035-image,round11,WITHIN,WITHIN,"",false
+a805c035-image,rounds_size,WITHIN,WITHIN,"",false
 a805c035-image,ring,WITHIN,WITHIN,"",false
 a805c035-image,date,WITHIN,WITHIN,"",false
 b0b0c79c-image,twelve,WITHIN,WITHIN,"",false
 b0b0c79c-image,six,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
 b0b0c79c-image,nine,WITHIN,WITHIN,"",false
-b0b0c79c-image,round1,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b0b0c79c-image,round2,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b0b0c79c-image,round4,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b0b0c79c-image,round5,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b0b0c79c-image,round7,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b0b0c79c-image,round8,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b0b0c79c-image,round10,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b0b0c79c-image,round11,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b0b0c79c-image,rounds_size,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
+b0b0c79c-image,round1,WITHIN,WITHIN,"",false
+b0b0c79c-image,round2,WITHIN,WITHIN,"",false
+b0b0c79c-image,round4,WITHIN,WITHIN,"",false
+b0b0c79c-image,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+b0b0c79c-image,round7,WITHIN,WITHIN,"",false
+b0b0c79c-image,round8,WITHIN,WITHIN,"",false
+b0b0c79c-image,round10,WITHIN,WITHIN,"",false
+b0b0c79c-image,round11,WITHIN,WITHIN,"",false
+b0b0c79c-image,rounds_size,WITHIN,WITHIN,"",false
 b0b0c79c-image,ring,WITHIN,WITHIN,"",false
 b0b0c79c-image,date,WITHIN,WITHIN,"",false
 b1e67888-image,twelve,WITHIN,WITHIN,"",false
 b1e67888-image,six,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 b1e67888-image,nine,WITHIN,WITHIN,"",false
-b1e67888-image,round1,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b1e67888-image,round2,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b1e67888-image,round4,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b1e67888-image,round5,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b1e67888-image,round7,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b1e67888-image,round8,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b1e67888-image,round10,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b1e67888-image,round11,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-b1e67888-image,rounds_size,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
+b1e67888-image,round1,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+b1e67888-image,round2,WITHIN,WITHIN,"",false
+b1e67888-image,round4,WITHIN,WITHIN,"",false
+b1e67888-image,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+b1e67888-image,round7,WITHIN,WITHIN,"",false
+b1e67888-image,round8,WITHIN,WITHIN,"",false
+b1e67888-image,round10,WITHIN,WITHIN,"",false
+b1e67888-image,round11,WITHIN,WITHIN,"",false
+b1e67888-image,rounds_size,WITHIN,WITHIN,"",false
 b1e67888-image,ring,WITHIN,WITHIN,"",false
 b1e67888-image,date,WITHIN,WITHIN,"",false
 c743d9fb-image,twelve,WITHIN,WITHIN,"",false
 c743d9fb-image,six,NOT_ASSESSED,NOT_ASSESSED,"hand crosses marker",false
 c743d9fb-image,nine,WITHIN,WITHIN,"",false
-c743d9fb-image,round1,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-c743d9fb-image,round2,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-c743d9fb-image,round4,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-c743d9fb-image,round5,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-c743d9fb-image,round7,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-c743d9fb-image,round8,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-c743d9fb-image,round10,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-c743d9fb-image,round11,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
-c743d9fb-image,rounds_size,NOT_ASSESSED,NOT_ASSESSED,"resolution too low",false
+c743d9fb-image,round1,WITHIN,WITHIN,"",false
+c743d9fb-image,round2,WITHIN,WITHIN,"",false
+c743d9fb-image,round4,WITHIN,WITHIN,"",false
+c743d9fb-image,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+c743d9fb-image,round7,WITHIN,WITHIN,"",false
+c743d9fb-image,round8,WITHIN,WITHIN,"",false
+c743d9fb-image,round10,WITHIN,WITHIN,"",false
+c743d9fb-image,round11,WITHIN,WITHIN,"",false
+c743d9fb-image,rounds_size,WITHIN,WITHIN,"",false
 c743d9fb-image,ring,WITHIN,WITHIN,"",false
 c743d9fb-image,date,WITHIN,WITHIN,"",false

@@ -25,6 +25,8 @@ The existing GMT implementation is the known-working control. Do not change its 
 
 The 124060 code and research remain useful evidence, but Submariner expansion is paused until the calibration protocol proves itself on GMT.
 
+**Update 2026-10-08 (Alpha102, branch `feature/android-alpha102-submariner`, not merged):** the protocol has now proved itself on the GMT (Alpha96-101). On the owner's instruction the Submariner family is being added, one reference at a time, through the same genuine-first method (`QC-GUARDRAILS.md` sections 6-8). The 124060 is first. Its genuine master, reference, uncertainty and held-out checks are done, and it ships in a testing build next to the GMT; see `tools/research/sub124060/README.md`. Other Submariner references show nothing until they have their own genuine evidence.
+
 All previously open legacy/research/calibration-stack pull requests were closed during the 2026-10-04 reset. They are history only and must not be resumed merely because they exist.
 
 ## Active direction
@@ -188,6 +190,23 @@ Owner decision: the 12 triangle is assessed with the **robust** readout.
 - **What changed:** model-specific geometry and genuine references moved to data (`android/app/src/main/assets/models/<id>/`). Adding a model is a spec file plus its genuine reference (`docs/ADDING_A_MODEL.md`).
 - **Measurements:** GMT-only refactor; measurements, classifications and screens are identical to Alpha99.
 - **Scope:** no second model was added. That remains a separate decision under "Do not restart without evidence".
+
+## Alpha102 fixes applied to every model - 2026-10-08
+
+Owner instruction: fixes found on one model are applied to all models where relevant and become part of the template
+(`docs/ADDING_A_MODEL.md`, step 7). Each was checked on the GMT genuine catalogue (`gmt-alpha102-check.yml`) before use.
+
+- **12 edge filter** sets the 12's genuine range only. It may never make a clear finding easier: the 12 allowances keep
+  the more cautious of the filtered and unfiltered values (`sub124060/edge_safe_uncertainty.py`). The filtered GMT
+  allowance alone turned a genuine 12 clear, so it was not used. 124060 allowances returned to the unfiltered values.
+- **Round marker with a hand near but not touching:** position measured from the outline away from the hand, at most
+  worth a look; size not assessed (all models).
+- **Low-resolution genuine rows** for round markers and ring (170 px shrunk copies, `max_photo_r`): GMT added; full-resolution
+  limits unchanged.
+- **Print spots:** GMT added (two recurring dim spots at r 0.50); 0 status changes on the genuine catalogue.
+- **Round-marker size allowance** withheld on the GMT as on the 124060 (a genuine GMT photo read two markers' size clear).
+- **Baton-position resolution rule:** 124060 only. On the GMT it would remove about 50 assessments to avoid about 10
+  worth-a-look results, with 0 clear either way, so it was not applied.
 
 ## Do not restart without evidence
 

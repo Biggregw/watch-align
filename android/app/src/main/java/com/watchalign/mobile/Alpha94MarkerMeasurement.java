@@ -186,6 +186,30 @@ final class Alpha94MarkerMeasurement {
         return new Report(out,ring,rpx,tri);
     }
 
+    /**
+     * Re-measures one round marker of a finished report with the outline arc around excludeDeg (+/- halfDeg) ignored, and
+     * computes its offsets against the report's own marker ring. Research / partial-outline use; never changes the report.
+     */
+    static Marker remeasureRound(Bitmap watch,double[] H,Report r,ModelSpec.Marker sm,double excludeDeg,double halfDeg){
+        Marker m=new Marker(sm.hour,sm.kind());m.spec=sm;
+        double rpx=pxPerR(H);
+        if(watch==null||H==null||!(rpx>20)||sm.shape!=ModelSpec.Shape.ROUND){m.reason="unavailable";return m;}
+        Mat rgba=new Mat(),gray=new Mat();Sampler smp;
+        try{Utils.bitmapToMat(watch,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);smp=new Sampler(gray,H);}
+        catch(Throwable t){m.reason="image unavailable";return m;}
+        finally{gray.release();rgba.release();}
+        try{
+            // the dial's own round-marker size: median fitted size of the report's usable round markers
+            List<Double> sz=new ArrayList<>();
+            if(r!=null)for(Marker o:r.markers)if("round".equals(o.kind)&&o.usable&&Double.isFinite(o.radiusErrPx))sz.add(o.radiusErrPx);
+            if(sz.size()<3){m.reason="too few clean round markers for their size";return m;}
+            java.util.Collections.sort(sz);int nz=sz.size();double medErr=nz%2==1?sz.get(nz/2):0.5*(sz.get(nz/2-1)+sz.get(nz/2));
+            double[] c=measureRound(smp,m,0.5/rpx,rpx,excludeDeg,halfDeg,sm.outerR+medErr/rpx);
+            if(m.usable&&c!=null){setOffsets(smp,m,c,rpx);setLocal(smp,m,r==null?null:r.ring,rpx);}
+        }catch(Throwable t){m.usable=false;m.reason="measurement failed";}
+        return m;
+    }
+
     private static void setOffsets(Sampler smp,Marker m,double[] centre,double rpx){
         double[] cm=masterPoint(m);
         double[] er=radial(m.hour),et=tangential(m.hour);
@@ -259,13 +283,25 @@ final class Alpha94MarkerMeasurement {
     }
 
     // ------------------------------------------------------------------ round markers
-    private static double[] measureRound(Sampler s,Marker m,double tol,double rpx){
+    private static double[] measureRound(Sampler s,Marker m,double tol,double rpx){return measureRound(s,m,tol,rpx,Double.NaN,0,Double.NaN);}
+
+    /** Angular distance (deg, 0..180) between two directions. */
+    private static double angDist(double a,double b){double d=Math.abs(((a-b)%360+540)%360-180);return d;}
+
+    /**
+     * Round marker fit; with a finite excludeDeg (direction from the marker centre, canonical frame, deg of atan2(y,x)) the
+     * rays within +/- halfDeg of it are ignored and the outline tests run on the rest only: used when a hand lies near
+     * one side of the marker but not over the rest of its outline (Alpha102 research, validated before use).
+     */
+    private static double[] measureRound(Sampler s,Marker m,double tol,double rpx,double excludeDeg,double halfDeg,double fixedRadius){
+        boolean ex=Double.isFinite(excludeDeg);
         double r0=m.spec.outerR;
         double[] c=masterPoint(m);double cx=c[0],cy=c[1],radius=r0;
         int rays=72;boolean[] inl=null;List<double[]> P=null;
         for(double span:new double[]{WIDE,NARROW}){
             List<double[]> raw=new ArrayList<>();
             for(int k=0;k<rays;k++){
+                if(ex&&angDist(5.0*k,excludeDeg)<halfDeg)continue;
                 double t=Math.toRadians(5.0*k),nx=Math.cos(t),ny=Math.sin(t);
                 double[] e=edgeOnNormal(s,cx+radius*nx,cy+radius*ny,nx,ny,span);if(e!=null)raw.add(e);
             }
@@ -277,6 +313,19 @@ final class Alpha94MarkerMeasurement {
             inl=new boolean[P.size()];int ni=0;
             for(int i=0;i<P.size();i++){inl[i]=Math.abs(Math.hypot(P.get(i)[0]-cx,P.get(i)[1]-cy)-radius)<tol;if(inl[i])ni++;}
             if(ni<6){m.reason="no consistent circular outline";return null;}
+            if(Double.isFinite(fixedRadius)){
+                // partial outline: size and position trade off on an incomplete arc, so the size is fixed (the dial's own
+                // round-marker size) and only the centre is solved, on the inliers, by Gauss-Newton
+                radius=fixedRadius;
+                for(int it=0;it<10;it++){
+                    double sx=0,sy=0;int nn=0;
+                    for(int i=0;i<P.size();i++){if(!inl[i])continue;double dx=P.get(i)[0]-cx,dy=P.get(i)[1]-cy,d=Math.hypot(dx,dy);if(d<1e-9)continue;
+                        sx+=P.get(i)[0]-radius*dx/d;sy+=P.get(i)[1]-radius*dy/d;nn++;}
+                    if(nn<6)break;cx=sx/nn;cy=sy/nn;
+                }
+                ni=0;for(int i=0;i<P.size();i++){inl[i]=Math.abs(Math.hypot(P.get(i)[0]-cx,P.get(i)[1]-cy)-radius)<tol;if(inl[i])ni++;}
+                if(ni<6){m.reason="no consistent circular outline";return null;}
+            }
         }
         int ni=0;boolean[] oct=new boolean[8];
         for(int i=0;i<P.size();i++)if(inl[i]){
@@ -284,15 +333,20 @@ final class Alpha94MarkerMeasurement {
             oct[Math.min(7,(int)(a/45.0))]=true;
         }
         int octants=0;for(boolean b:oct)if(b)octants++;
-        double cov=ni/(double)rays;
-        int np=180;double[][] op=new double[np][2],nr=new double[np][2];
-        for(int k=0;k<np;k++){double t=Math.toRadians(2.0*k);nr[k][0]=Math.cos(t);nr[k][1]=Math.sin(t);op[k][0]=cx+radius*nr[k][0];op[k][1]=cy+radius*nr[k][1];}
+        int eligible=0,lostOct=0;
+        for(int k=0;k<rays;k++)if(!ex||angDist(5.0*k,excludeDeg)>=halfDeg)eligible++;
+        if(ex)for(int o=0;o<8;o++)if(angDist(o*45.0+22.5,excludeDeg)+22.5<=halfDeg)lostOct++;     // octants wholly inside the excluded arc
+        double cov=ni/(double)eligible;
+        List<double[]> opl=new ArrayList<>(),nrl=new ArrayList<>();
+        for(int k=0;k<180;k++){if(ex&&angDist(2.0*k,excludeDeg)<halfDeg)continue;double t=Math.toRadians(2.0*k);
+            nrl.add(new double[]{Math.cos(t),Math.sin(t)});opl.add(new double[]{cx+radius*Math.cos(t),cy+radius*Math.sin(t)});}
+        double[][] op=opl.toArray(new double[0][]),nr=nrl.toArray(new double[0][]);
         double integ=outlineIntegrity(s,op,nr,rpx,0.035);
         m.fitSupport=cov;m.fitScorePx=1.0-integ;
         if(integ<MIN_INTEGRITY){m.reason=String.format(Locale.US,"hand/occluder crosses outline (clean %.2f)",integ);return null;}
-        if(cov<0.60||octants<7){m.reason=String.format(Locale.US,"outline coverage %.2f, %d/8 octants",cov,octants);return null;}
+        if(cov<0.60||octants<7-lostOct){m.reason=String.format(Locale.US,"outline coverage %.2f, %d/8 octants",cov,octants);return null;}
         if(Math.abs(radius-r0)>0.15*r0){m.reason="implausible radius";return null;}
-        m.usable=true;m.rotationDeg=0.0;m.radiusErrPx=(radius-r0)*rpx;
+        m.usable=true;m.rotationDeg=0.0;m.radiusErrPx=Double.isFinite(fixedRadius)?Double.NaN:(radius-r0)*rpx;
         return new double[]{cx,cy};
     }
 

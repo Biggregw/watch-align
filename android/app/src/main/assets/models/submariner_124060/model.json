@@ -1,0 +1,131 @@
+{
+  "id": "submariner_124060",
+  "label": "Submariner 124060 (no date) - testing",
+  "note": "Genuine 124060 master, measured with SubMaster on the sha256-verified genuine catalogue (CI run 37767221075: 42 dial photos of 25 physical watches, 6 sources; median over watches of each watch's median). Minute track 0.933-0.981 and the 12 triangle and round size match the GMT 126710 master; round centres 0.8136 R; batons 3/6/9 0.7591 R (GMT 0.7551). Canonical units: dial radius 1, 12 at the top. In the app for testing (Alpha102): genuine reference, uncertainty and held-out genuine checks done; usefulness on replica / QC photos not yet validated.",
+  "pose": {
+    "minute_track_inner_r": 0.9325,
+    "minute_track_outer_r": 0.9803,
+    "excluded_minutes": [
+      29,
+      30,
+      31
+    ]
+  },
+  "markers": [
+    {
+      "hour": 12,
+      "shape": "triangle",
+      "key": "twelve",
+      "apex_r": 0.5925,
+      "base_r": 0.9025,
+      "half_base": 0.12375,
+      "area_centroid_r": 0.7991666666666667,
+      "corridor_start_r": 0.5
+    },
+    {
+      "hour": 1,
+      "shape": "round",
+      "centre_r": 0.8136,
+      "outer_r": 0.0915
+    },
+    {
+      "hour": 2,
+      "shape": "round",
+      "centre_r": 0.8136,
+      "outer_r": 0.0915
+    },
+    {
+      "hour": 3,
+      "shape": "baton",
+      "key": "three",
+      "centre_r": 0.7591,
+      "radial_half": 0.1525,
+      "tangential_half": 0.0594
+    },
+    {
+      "hour": 4,
+      "shape": "round",
+      "centre_r": 0.8136,
+      "outer_r": 0.0915
+    },
+    {
+      "hour": 5,
+      "shape": "round",
+      "centre_r": 0.8136,
+      "outer_r": 0.0915
+    },
+    {
+      "hour": 6,
+      "shape": "baton",
+      "key": "six",
+      "centre_r": 0.7591,
+      "radial_half": 0.1525,
+      "tangential_half": 0.0594
+    },
+    {
+      "hour": 7,
+      "shape": "round",
+      "centre_r": 0.8136,
+      "outer_r": 0.0915
+    },
+    {
+      "hour": 8,
+      "shape": "round",
+      "centre_r": 0.8136,
+      "outer_r": 0.0915
+    },
+    {
+      "hour": 9,
+      "shape": "baton",
+      "key": "nine",
+      "centre_r": 0.7591,
+      "radial_half": 0.1525,
+      "tangential_half": 0.0594
+    },
+    {
+      "hour": 10,
+      "shape": "round",
+      "centre_r": 0.8136,
+      "outer_r": 0.0915
+    },
+    {
+      "hour": 11,
+      "shape": "round",
+      "centre_r": 0.8136,
+      "outer_r": 0.0915
+    }
+  ],
+  "date_window": null,
+  "seconds_hand": {
+    "dot_r_min": 0.5,
+    "dot_r_max": 0.6,
+    "print_spots": [
+      [
+        144.6,
+        0.529
+      ],
+      [
+        143.4,
+        0.537
+      ],
+      [
+        215.5,
+        0.53
+      ],
+      [
+        214.2,
+        0.521
+      ]
+    ],
+    "print_spot_tol_deg": 2.0,
+    "print_spot_tol_r": 0.012,
+    "print_spot_min_frac": 0.75,
+    "print_spot_note": "Start and end of SUPERLATIVE CHRONOMETER: dim seconds-dot candidates recurring on 3-12 genuine watches (<= 0.70 x lume contrast); real lume dots there read 0.82-0.99 (CI 37795400723)."
+  },
+  "reference": "reference",
+  "resolution_matched": [
+    "three_off",
+    "six_off",
+    "nine_off"
+  ]
+}

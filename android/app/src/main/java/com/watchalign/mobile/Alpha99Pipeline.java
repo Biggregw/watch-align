@@ -22,6 +22,8 @@ final class Alpha99Pipeline {
         Alpha94MarkerMeasurement.Report measurement;
         Alpha98DateWindow.Result date;
         Map<Integer,Alpha99MarkerInterference.Check> checks;
+        /** Alpha102: hand-near round markers re-measured from the outline away from the hand (hour -> marker). */
+        Map<Integer,Alpha94MarkerMeasurement.Marker> partial;
         Alpha99Findings.Summary summary;
         Bitmap overview;
         final Map<String,Bitmap> closeups=new LinkedHashMap<>();
@@ -41,7 +43,8 @@ final class Alpha99Pipeline {
         Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(photo,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
         try{o.date=model.date==null?null:Alpha98DateWindow.analyse(gray,H,model.date);}catch(Throwable t){o.date=null;}
         try{o.checks=Alpha99MarkerInterference.analyse(gray,H,model);}catch(Throwable t){o.checks=null;}
-        o.summary=Alpha99Findings.build(o.measurement,o.date,o.checks,model,ref);
+        try{o.partial=partialRounds(photo,H,o.measurement,o.checks,model);}catch(Throwable t){o.partial=null;}
+        o.summary=Alpha99Findings.build(o.measurement,o.date,o.checks,o.partial,model,ref);
         try{o.overview=Alpha99Overview.render(rgba,H,o.summary,model);}catch(Throwable t){o.overview=null;}
         double[] ring=o.measurement.ring!=null&&o.measurement.ring.usable?o.measurement.ring.model:null;
         for(Alpha99Findings.Finding f:o.summary.tiles()){
@@ -51,6 +54,29 @@ final class Alpha99Pipeline {
         o.technical=technical(o);
         rgba.release();gray.release();
         return o;
+    }
+
+    /** Ignored arc around the hand direction for a partial round fit (+/- deg). */
+    static final double PARTIAL_HALF_DEG=45.0;
+
+    /**
+     * Alpha102: round markers the hand check withholds because a hand is near but does not touch the marker's outline
+     * (gap > 0 px) are re-measured with the arc of outline facing the hand ignored and the size fixed to the dial's own
+     * round size. Only usable re-measurements are returned; Alpha99Findings caps them at worth a look.
+     */
+    static Map<Integer,Alpha94MarkerMeasurement.Marker> partialRounds(Bitmap photo,double[] H,Alpha94MarkerMeasurement.Report r,
+                                                                     Map<Integer,Alpha99MarkerInterference.Check> checks,ModelSpec model){
+        Map<Integer,Alpha94MarkerMeasurement.Marker> out=new LinkedHashMap<>();
+        if(photo==null||H==null||r==null||checks==null)return out;
+        for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.ROUND)){
+            Alpha99MarkerInterference.Check c=checks.get(mk.hour);
+            if(c==null||c.clean||!Alpha99MarkerInterference.HAND.equals(c.reason)||!(c.touchGapPx>0)||!Double.isFinite(c.touchGapPx))continue;
+            double dir=Alpha99MarkerInterference.handDirection(c,mk,H);
+            if(!Double.isFinite(dir))continue;
+            Alpha94MarkerMeasurement.Marker pm=Alpha94MarkerMeasurement.remeasureRound(photo,H,r,mk,dir,PARTIAL_HALF_DEG);
+            if(pm.usable&&Double.isFinite(pm.localOffsetPx))out.put(mk.hour,pm);
+        }
+        return out;
     }
 
     /** Technical numbers for the collapsed "Technical details" section. */
@@ -65,7 +91,8 @@ final class Alpha99Pipeline {
         s.append("\n\nInterference check (hand / glare at each marker):");
         if(o.checks==null)s.append(" unavailable - every marker withheld");
         else for(Alpha99MarkerInterference.Check c:o.checks.values())
-            s.append(String.format(Locale.US,"\n  %d: %s%s",c.hour,c.clean?"clear":c.reason,c.secondsHand?" (seconds-hand line)":""));
+            s.append(String.format(Locale.US,"\n  %d: %s%s%s",c.hour,c.clean?"clear":c.reason,c.secondsHand?" (seconds-hand line)":"",
+                    o.partial!=null&&o.partial.containsKey(c.hour)?String.format(Locale.US," - hand %.1f px away; position measured from the outline away from it",c.touchGapPx):""));
         s.append(String.format(Locale.US,"\n\nEvidence: value / genuine max / allowance (%.0f sigma, photo-to-photo spread of genuine watches):",o.reference.kSigma));
         for(Alpha99Findings.Finding f:o.summary.all){
             if(f.status==Alpha99Findings.Status.NOT_ASSESSED){s.append("\n  ").append(f.title).append(": not assessed (").append(f.reason).append(")");continue;}

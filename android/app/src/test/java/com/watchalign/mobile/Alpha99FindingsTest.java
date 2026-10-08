@@ -121,7 +121,7 @@ public class Alpha99FindingsTest {
         // Alpha101: the recorded values of the genuine Swiss Watch Expo studio photo ce997f77df67b365 (per_photo.csv):
         // right side 4.1 deg off, left side 0.4 deg, centreline 2.5 deg - one lit edge, not a turned marker
         ModelReference ref=TestModels.gmtRef();
-        assertEquals(0.99,ref.limit("twelve_sides_agreement"),0.01);
+        assertEquals(0.96,ref.limit("twelve_sides_agreement"),0.005);   // Alpha102: the more cautious of edge-filtered (0.963) and unfiltered (0.992)
         Alpha94MarkerMeasurement.Report r=report(6,0,9,0);
         Alpha94MarkerMeasurement.Marker tri=new Alpha94MarkerMeasurement.Marker(12,"triangle");tri.spec=TestModels.gmt().atHour(12);
         tri.usable=true;tri.rotationDeg=-2.58445;tri.leftSideErrDeg=-0.59326;tri.rightSideErrDeg=-3.97507;
@@ -160,7 +160,7 @@ public class Alpha99FindingsTest {
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         Alpha99Findings.Finding four=find(s,"round4");
         assertTrue(four.status==Alpha99Findings.Status.CLEAR||four.status==Alpha99Findings.Status.WORTH);
-        assertTrue(four.shortLine(),four.shortLine().startsWith("plot larger than the others by 0.60% of the dial"));
+        assertTrue(four.shortLine(),four.shortLine().startsWith("marker larger than the others by 0.60% of the dial"));
         assertTrue(Alpha99Findings.outsideOnlyByNewMeasures(four));
         assertEquals(Alpha99Findings.Status.WITHIN,find(s,"round5").status);
         assertEquals(Alpha99Findings.Status.WITHIN,find(s,"rounds_size").status);  // dial median unchanged
@@ -168,13 +168,35 @@ public class Alpha99FindingsTest {
         Alpha99Findings.Summary big=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         Alpha99Findings.Finding all=find(big,"rounds_size");
         assertTrue(all.status==Alpha99Findings.Status.CLEAR||all.status==Alpha99Findings.Status.WORTH);
-        assertTrue(all.shortLine().startsWith("all round plots larger by"));
+        assertTrue(all.shortLine().startsWith("all round markers larger by"));
         assertFalse(Alpha99Overview.hasBadge(all));                                  // dial-wide: tile, no badge
         // a hand over a round removes it from the size comparison as well
         Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(4).clean=false;c.get(4).reason=Alpha99MarkerInterference.HAND;
         r.atHour(4).radiusErrPx=0.02*R;
         Alpha99Findings.Summary hand=Alpha99Findings.build(r,null,c,TestModels.gmt(),TestModels.gmtRef());
         assertEquals(Alpha99Findings.Status.NOT_ASSESSED,find(hand,"round4").status);
+    }
+
+    @Test public void handNearRoundIsMeasuredFromThePartAwayFromTheHandAndNeverClear(){
+        // Alpha102: a round marker withheld for a nearby hand is judged from a partial-outline fit, at most worth a look
+        Alpha94MarkerMeasurement.Report r=report(6,0,9,0);double R=r.dialRadiusPx;
+        Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(4).clean=false;c.get(4).reason=Alpha99MarkerInterference.HAND;
+        Map<Integer,Alpha94MarkerMeasurement.Marker> part=new HashMap<>();
+        Alpha94MarkerMeasurement.Marker far=new Alpha94MarkerMeasurement.Marker(4,"round");far.usable=true;
+        far.localOffsetPx=0.05*R;far.localRadialPx=0.05*R;far.localTangentialPx=0;far.radiusErrPx=Double.NaN;part.put(4,far);
+        Alpha99Findings.Finding four=find(Alpha99Findings.build(r,null,c,part,TestModels.gmt(),TestModels.gmtRef()),"round4");
+        assertEquals(Alpha99Findings.Status.WORTH,four.status);                      // 5% of the dial off: still not clear
+        assertTrue(String.join(" ",four.detail()),String.join(" ",four.detail()).contains("away from the hand"));
+        far.localOffsetPx=0;far.localRadialPx=0;
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,c,part,TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(Alpha99Findings.Status.WITHIN,find(s,"round4").status);
+        assertTrue(s.withinLine(),s.withinLine().contains("4 position"));
+        assertTrue(s.notAssessedLine(),s.notAssessedLine().contains("4 size (hand nearby)"));
+        // glare is never re-measured; no partial fit -> still withheld
+        c.get(4).reason=Alpha99MarkerInterference.GLARE;
+        assertEquals(Alpha99Findings.Status.NOT_ASSESSED,find(Alpha99Findings.build(r,null,c,part,TestModels.gmt(),TestModels.gmtRef()),"round4").status);
+        c.get(4).reason=Alpha99MarkerInterference.HAND;
+        assertEquals(Alpha99Findings.Status.NOT_ASSESSED,find(Alpha99Findings.build(r,null,c,null,TestModels.gmt(),TestModels.gmtRef()),"round4").status);
     }
 
     @Test public void batonExamplesFromTheBrief(){

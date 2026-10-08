@@ -1,0 +1,104 @@
+name: Submariner 124060 genuine check (research)
+
+# RESEARCH ONLY. Runs the app's full analysis (Alpha99Pipeline: pose, measurement, per-marker hand/glare check,
+# evidence states) with the research 124060 spec and its genuine reference (tools/research/sub124060/models) on every
+# sha256-verified genuine 124060 photo, plus the per-marker interference table. Then prints a lower-dial close-up of
+# the SwissWatchExpo photos (external held-out set) as base64 JPEG in the LOG ONLY, to see what moves their 6 o'clock.
+# CSVs are uploaded; images are never committed, cached or uploaded.
+on:
+  push:
+    branches:
+      - feature/android-alpha102-submariner
+    paths:
+      - '.github/workflows/sub124060-genuine-check.yml'
+      - 'tools/research/sub124060/models/**'
+      - 'tools/desktop-harness/drivers/SubPeek.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99MarkerInterference.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Findings.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Pipeline.java'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SUB: tools/research/sub124060
+      IMG: sub_images
+      OUT: sub_results
+      JAVA_TOOL_OPTIONS: -Dwatchalign.model=submariner_124060 -Dwatchalign.models_root=tools/research/sub124060
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests opencv-python-headless
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Fetch catalogued photos (sha256-verified)
+        env:
+          JAVA_TOOL_OPTIONS: ''
+        run: |
+          mkdir -p "$IMG" "$OUT"
+          python3 tools/research/alpha96_calibration/fetch_verified.py "$SUB/catalogue_124060.csv" "$IMG" "$OUT/fetch_log.csv"
+          python3 - <<'PY'
+          import csv
+          rows = [r for r in csv.DictReader(open('tools/research/sub124060/catalogue_124060.csv')) if r['class_label'] == 'gen']
+          with open('gen_manifest.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
+          swe = [r for r in rows if 'swisswatchexpo' in r['image_url']]
+          with open('swe_manifest.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(swe)
+          PY
+      - name: Interference check
+        run: tools/desktop-harness/run.sh Alpha99Interference gen_manifest.csv "$IMG" "$OUT" --no-images > "$OUT/interference_log.txt" 2>/dev/null
+      - name: Full analysis (app pipeline)
+        run: tools/desktop-harness/run.sh Alpha99Preview gen_manifest.csv "$IMG" "$OUT" --no-images > "$OUT/preview_log.txt" 2>/dev/null
+      - name: Upload CSVs (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sub124060-genuine-check-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            sub_results/*.csv
+            sub_results/*.txt
+      - name: Print results to log
+        if: always()
+        run: |
+          python3 -c "import csv,collections;print('fetch:',collections.Counter(r['status'] for r in csv.DictReader(open('sub_results/fetch_log.csv'))))"
+          for f in findings.csv interference.csv preview_log.txt interference_log.txt; do echo "=== $f BEGIN"; cat "$OUT/$f"; echo "=== $f END"; done
+      - name: SwissWatchExpo lower-dial close-ups as base64 JPEG (log-only, LAST STEP)
+        if: always()
+        run: |
+          tools/desktop-harness/run.sh SubPeek swe_manifest.csv "$IMG" swe_peek > /dev/null 2>&1 || true
+          # lower-dial close-ups of genuine photos where a seconds-hand line withheld the 5 or 7 (log-only)
+          JAVA_TOOL_OPTIONS= python3 - <<'PY'
+          import csv, re
+          ids = set()
+          for l in open('sub_results/interference_log.txt'):
+              m = re.match(r'== (\S+) R=', l)
+              if m and re.search(r'\b(5|7)\[SEC\]', l): ids.add(m.group(1))
+          rows = [r for r in csv.DictReader(open('gen_manifest.csv')) if r['photo_id'] in ids][:12]
+          with open('sec_manifest.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()) if rows else ['photo_id', 'local_path']); w.writeheader(); w.writerows(rows)
+          print('photos with a 5/7 seconds-line withhold:', len(ids))
+          PY
+          tools/desktop-harness/run.sh SubPeek sec_manifest.csv "$IMG" swe_peek > /dev/null 2>&1 || true
+          JAVA_TOOL_OPTIONS= python3 - <<'PY'
+          import base64, glob, cv2
+          for f in sorted(glob.glob('swe_peek/*.jpg')):
+              im = cv2.imread(f); im = cv2.resize(im, (480, 480))
+              ok, buf = cv2.imencode('.jpg', im, [cv2.IMWRITE_JPEG_QUALITY, 70])
+              print('=== ' + f + ' BASE64 JPEG BEGIN'); print(base64.b64encode(buf.tobytes()).decode()); print('=== END')
+          PY

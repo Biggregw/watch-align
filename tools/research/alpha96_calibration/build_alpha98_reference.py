@@ -156,12 +156,29 @@ def main():
         fh.write('# RESEARCH -> APP. Genuine nominals for signed Alpha98 features (median over reference watches).\n')
         for k in SIGNED:
             fh.write(f'{k}={nominal[k]:.6f}\n')
+    # Alpha102: low-resolution rows (shrunk genuine dial photos, gmt-alpha102-check CI run 37804668525), level 170 px,
+    # round markers and ring only; each carries max_photo_r = the full-resolution coverage, so they apply only to photos
+    # the full-resolution reference cannot cover (sub124060/add_lowres_rows.py; held-out: results/lowres/)
+    low = os.path.join(C, 'results', 'lowres', 'per_photo_lowres.csv')
+    if os.path.exists(low):
+        import subprocess, sys, tempfile
+        tmp = tempfile.NamedTemporaryFile(suffix='.csv', delete=False).name
+        subprocess.run([sys.executable, os.path.join(C, '..', 'sub124060', 'add_lowres_rows.py'),
+                        '--reference', os.path.join(C, 'alpha98_reference.csv'), '--nominal', os.path.join(C, 'alpha98_nominal.properties'),
+                        '--lowres', low, '--dedup', os.path.join(C, 'results/dedup/photos.csv'),
+                        '--spec', os.path.join(C, '..', '..', '..', 'android/app/src/main/assets/models/gmt_126710/model.json'),
+                        '--level', '170', '--feature', 'rounds_off', '--feature', 'rounds_size', '--feature', 'round_size_rel',
+                        '--feature', 'ring_shift', '--out', tmp], check=True)
+        os.replace(tmp, os.path.join(C, 'alpha98_reference.csv'))
     ref = defaultdict(list)
-    for k, w, s, far, R in rows:
-        ref[k].append((far, R))
-    print('reference watches per feature: ' + ', '.join(f'{k} {len(ref[k])}' for k in FEATURES))
+    for k, w, s, far, R in rows:                       # full precision, as before
+        ref[k].append((far, R, w, float('inf')))
+    for r in csv.DictReader(open(os.path.join(C, 'alpha98_reference.csv'))):
+        if r.get('max_photo_r'):
+            ref[r['feature']].append((float(r['far']), fl(r['dial_radius_px']), r['physical_watch_id'], float(r['max_photo_r'])))
+    print('reference watches per feature: ' + ', '.join(f'{k} {len({x[2] for x in ref[k] if x[3] == float("inf")})}' for k in FEATURES))
     print('nominals: ' + ', '.join(f'{k} {nominal[k]:+.3f}' for k in SIGNED))
-    print('genuine max (far): ' + ', '.join(f'{k} {max(x for x, _ in ref[k]):.4f}' for k in FEATURES))
+    print('genuine max (far): ' + ', '.join(f'{k} {max(x[0] for x in ref[k]):.4f}' for k in FEATURES))
 
     # offline check on local / owner photos
     def assess(f, R):
@@ -170,10 +187,11 @@ def main():
             if k not in f:
                 continue
             v = abs(f[k] - nominal[k]) if k in SIGNED else abs(f[k])
-            pool = [x for x, r in ref[k] if (k not in RES_MATCHED) or (r is not None and r <= RES_MATCH * R)]
-            if len(pool) < (MIN_MATCHED if k in RES_MATCHED else 1):
-                out[k] = ('n/a', v, len(pool)); continue
-            out[k] = ('FLAG' if v > max(pool) else 'ok', v, len(pool))
+            m = [(x, w) for x, r, w, mx in ref[k] if (k not in RES_MATCHED) or (r is not None and r <= RES_MATCH * R and R <= mx)]
+            nw = len({w for _, w in m})                 # distinct physical watches, as the app counts
+            if nw < (MIN_MATCHED if k in RES_MATCHED else 1):
+                out[k] = ('n/a', v, nw); continue
+            out[k] = ('FLAG' if v > max(x for x, _ in m) else 'ok', v, nw)
         return out
     print('\nOffline check (FLAG = beyond every genuine reference watch):')
     exp_rows = []

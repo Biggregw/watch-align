@@ -1,0 +1,487 @@
+band,photo_id,physical_watch_id,feature,dial_radius_px,status,value,genuine_max
+full,49ba843c0a7e19d7,bobs_175818,rounds_off,434,WITHIN,0.001869,0.002615
+full,49ba843c0a7e19d7,bobs_175818,ring_shift,434,WITHIN,0.000432,0.006044
+full,49ba843c0a7e19d7,bobs_175818,rounds_size,434,WITHIN,0.000001,0.000991
+full,49ba843c0a7e19d7,bobs_175818,round_size_rel,434,WITHIN,0.000182,0.001605
+full,68b9f82bb2ddbf29,gen_126710BLRO_phillips_146213,rounds_off,244,WITHIN,0.001710,0.002615
+full,68b9f82bb2ddbf29,gen_126710BLRO_phillips_146213,ring_shift,244,WITHIN,0.003006,0.006044
+full,68b9f82bb2ddbf29,gen_126710BLRO_phillips_146213,rounds_size,244,WITHIN,0.000010,0.000991
+full,68b9f82bb2ddbf29,gen_126710BLRO_phillips_146213,round_size_rel,244,WITHIN,0.000691,0.000968
+full,4de80a08ea1d9983,gen_126710BLRO_phillips_146213,rounds_off,342,WITHIN,0.001460,0.002615
+full,4de80a08ea1d9983,gen_126710BLRO_phillips_146213,ring_shift,342,WITHIN,0.003352,0.006044
+full,4de80a08ea1d9983,gen_126710BLRO_phillips_146213,rounds_size,342,WITHIN,0.000206,0.000991
+full,4de80a08ea1d9983,gen_126710BLRO_phillips_146213,round_size_rel,342,WITHIN,0.001026,0.001050
+full,cca876b2faab08dd,gen_126710BLRO_phillips_146213,rounds_off,394,WITHIN,0.001356,0.002615
+full,cca876b2faab08dd,gen_126710BLRO_phillips_146213,ring_shift,394,WITHIN,0.003273,0.006044
+full,cca876b2faab08dd,gen_126710BLRO_phillips_146213,rounds_size,394,WITHIN,0.000364,0.000991
+full,cca876b2faab08dd,gen_126710BLRO_phillips_146213,round_size_rel,394,WITHIN,0.001173,0.001605
+full,2a0fdd5920d4301d,gen_126710BLRO_phillips_146213,rounds_off,228,WITHIN,0.001977,0.002615
+full,2a0fdd5920d4301d,gen_126710BLRO_phillips_146213,ring_shift,228,WITHIN,0.003559,0.006044
+full,2a0fdd5920d4301d,gen_126710BLRO_phillips_146213,rounds_size,228,WITHIN,0.000192,0.000991
+full,2a0fdd5920d4301d,gen_126710BLRO_phillips_146213,round_size_rel,228,WITHIN,0.000904,0.000968
+full,7b1978419d4aa853,gen_126710BLRO_phillips_146213,rounds_off,197,WITHIN,0.002149,0.002615
+full,7b1978419d4aa853,gen_126710BLRO_phillips_146213,ring_shift,197,WITHIN,0.002796,0.006044
+full,7b1978419d4aa853,gen_126710BLRO_phillips_146213,rounds_size,197,WITHIN,0.000152,0.000991
+full,7b1978419d4aa853,gen_126710BLRO_phillips_146213,round_size_rel,197,WITHIN,0.000572,0.000968
+full,192745d7b04a8a03,gen_126710BLRO_phillips_146213,rounds_off,394,WITHIN,0.001267,0.002615
+full,192745d7b04a8a03,gen_126710BLRO_phillips_146213,ring_shift,394,WITHIN,0.003149,0.006044
+full,192745d7b04a8a03,gen_126710BLRO_phillips_146213,rounds_size,394,WITHIN,0.000379,0.000991
+full,192745d7b04a8a03,gen_126710BLRO_phillips_146213,round_size_rel,394,WITHIN,0.001166,0.001605
+low (R<175),406524fb5104d34a,gen_126710BLRO_phillips_146213,rounds_off,160,WITHIN,0.001847,0.002737
+low (R<175),406524fb5104d34a,gen_126710BLRO_phillips_146213,ring_shift,160,WITHIN,0.002425,0.006551
+low (R<175),406524fb5104d34a,gen_126710BLRO_phillips_146213,rounds_size,160,WITHIN,0.000927,0.001986
+low (R<175),406524fb5104d34a,gen_126710BLRO_phillips_146213,round_size_rel,160,WITHIN,0.000883,0.002445
+full,959b9d718208d34b,gen_126710BLRO_phillips_147798,rounds_off,247,WITHIN,0.001420,0.002615
+full,959b9d718208d34b,gen_126710BLRO_phillips_147798,ring_shift,247,WITHIN,0.003203,0.006044
+full,959b9d718208d34b,gen_126710BLRO_phillips_147798,rounds_size,247,WITHIN,0.000014,0.000991
+full,959b9d718208d34b,gen_126710BLRO_phillips_147798,round_size_rel,247,WITHIN,0.000364,0.000968
+full,566ea1840477d363,gen_126710BLRO_phillips_147798,rounds_off,346,WITHIN,0.001450,0.002615
+full,566ea1840477d363,gen_126710BLRO_phillips_147798,ring_shift,346,WITHIN,0.003293,0.006044
+full,566ea1840477d363,gen_126710BLRO_phillips_147798,rounds_size,346,WITHIN,0.000148,0.000991
+full,566ea1840477d363,gen_126710BLRO_phillips_147798,round_size_rel,346,WITHIN,0.000476,0.001050
+full,fc6bb491acf36c86,gen_126710BLRO_phillips_147798,rounds_off,399,WITHIN,0.001518,0.002615
+full,fc6bb491acf36c86,gen_126710BLRO_phillips_147798,ring_shift,399,WITHIN,0.003276,0.006044
+full,fc6bb491acf36c86,gen_126710BLRO_phillips_147798,rounds_size,399,WITHIN,0.000198,0.000991
+full,fc6bb491acf36c86,gen_126710BLRO_phillips_147798,round_size_rel,399,WITHIN,0.000576,0.001605
+full,263919e22c8cb08d,gen_126710BLRO_phillips_147798,rounds_off,231,WITHIN,0.001443,0.002615
+full,263919e22c8cb08d,gen_126710BLRO_phillips_147798,ring_shift,231,WITHIN,0.003301,0.006044
+full,263919e22c8cb08d,gen_126710BLRO_phillips_147798,rounds_size,231,WITHIN,0.000072,0.000991
+full,263919e22c8cb08d,gen_126710BLRO_phillips_147798,round_size_rel,231,WITHIN,0.000449,0.000968
+full,b2baff3925ce65f7,gen_126710BLRO_phillips_147798,rounds_off,200,WITHIN,0.001619,0.002615
+full,b2baff3925ce65f7,gen_126710BLRO_phillips_147798,ring_shift,200,WITHIN,0.003267,0.006044
+full,b2baff3925ce65f7,gen_126710BLRO_phillips_147798,rounds_size,200,WITHIN,0.000007,0.000991
+full,b2baff3925ce65f7,gen_126710BLRO_phillips_147798,round_size_rel,200,WITHIN,0.000795,0.000968
+full,2af8e8c676bcd0cc,gen_126710BLRO_phillips_147798,rounds_off,399,WITHIN,0.001463,0.002615
+full,2af8e8c676bcd0cc,gen_126710BLRO_phillips_147798,ring_shift,399,WITHIN,0.003228,0.006044
+full,2af8e8c676bcd0cc,gen_126710BLRO_phillips_147798,rounds_size,399,WITHIN,0.000077,0.000991
+full,2af8e8c676bcd0cc,gen_126710BLRO_phillips_147798,round_size_rel,399,WITHIN,0.000394,0.001605
+low (R<175),ccbc58888cb443ab,gen_126710BLRO_phillips_147798,rounds_off,160,WITHIN,0.001938,0.002737
+low (R<175),ccbc58888cb443ab,gen_126710BLRO_phillips_147798,ring_shift,160,WITHIN,0.003068,0.006551
+low (R<175),ccbc58888cb443ab,gen_126710BLRO_phillips_147798,rounds_size,160,WITHIN,0.000142,0.001986
+low (R<175),ccbc58888cb443ab,gen_126710BLRO_phillips_147798,round_size_rel,160,WITHIN,0.000685,0.002445
+low (R<175),ca1360a49365e5ff,gen_126710BLRO_phillips_147798,rounds_off,126,NOT_ASSESSED,0.001455,
+low (R<175),ca1360a49365e5ff,gen_126710BLRO_phillips_147798,ring_shift,126,NOT_ASSESSED,0.002526,
+low (R<175),ca1360a49365e5ff,gen_126710BLRO_phillips_147798,rounds_size,126,NOT_ASSESSED,0.000573,
+low (R<175),ca1360a49365e5ff,gen_126710BLRO_phillips_147798,round_size_rel,126,NOT_ASSESSED,0.000614,
+full,cc84120bd459d485,gen_126710BLRO_phillips_210072,rounds_off,235,WITHIN,0.001335,0.002615
+full,cc84120bd459d485,gen_126710BLRO_phillips_210072,ring_shift,235,WITHIN,0.004974,0.006044
+full,cc84120bd459d485,gen_126710BLRO_phillips_210072,rounds_size,235,WITHIN,0.000347,0.000991
+full,cc84120bd459d485,gen_126710BLRO_phillips_210072,round_size_rel,235,WITHIN,0.000415,0.000968
+full,ef5c636efb6480a0,gen_126710BLRO_phillips_210072,rounds_off,330,WITHIN,0.000829,0.002615
+full,ef5c636efb6480a0,gen_126710BLRO_phillips_210072,ring_shift,330,WITHIN,0.005478,0.006044
+full,ef5c636efb6480a0,gen_126710BLRO_phillips_210072,rounds_size,330,WITHIN,0.000511,0.000991
+full,ef5c636efb6480a0,gen_126710BLRO_phillips_210072,round_size_rel,330,WITHIN,0.000474,0.000968
+full,b5be92e3314dc366,gen_126710BLRO_phillips_210072,rounds_off,380,WITHIN,0.001515,0.002615
+full,b5be92e3314dc366,gen_126710BLRO_phillips_210072,ring_shift,380,WITHIN,0.005723,0.006044
+full,b5be92e3314dc366,gen_126710BLRO_phillips_210072,rounds_size,380,WITHIN,0.000199,0.000991
+full,b5be92e3314dc366,gen_126710BLRO_phillips_210072,round_size_rel,380,WITHIN,0.000393,0.001605
+full,addb1b8082d109ff,gen_126710BLRO_phillips_210072,rounds_off,220,WORTH,0.003556,0.002615
+full,addb1b8082d109ff,gen_126710BLRO_phillips_210072,ring_shift,220,WITHIN,0.005828,0.006044
+full,addb1b8082d109ff,gen_126710BLRO_phillips_210072,rounds_size,220,WITHIN,0.000433,0.000991
+full,addb1b8082d109ff,gen_126710BLRO_phillips_210072,round_size_rel,220,WORTH,0.003296,0.000968
+full,bf795611fe399d5f,gen_126710BLRO_phillips_210072,rounds_off,190,WORTH,0.003233,0.002615
+full,bf795611fe399d5f,gen_126710BLRO_phillips_210072,ring_shift,190,WORTH,0.007050,0.006044
+full,bf795611fe399d5f,gen_126710BLRO_phillips_210072,rounds_size,190,WORTH,0.002222,0.000991
+full,bf795611fe399d5f,gen_126710BLRO_phillips_210072,round_size_rel,190,WORTH,0.002171,0.000968
+full,f20c1d09375c981d,gen_126710BLRO_phillips_210072,rounds_off,380,WITHIN,0.000760,0.002615
+full,f20c1d09375c981d,gen_126710BLRO_phillips_210072,ring_shift,380,WITHIN,0.005527,0.006044
+full,f20c1d09375c981d,gen_126710BLRO_phillips_210072,rounds_size,380,WITHIN,0.000306,0.000991
+full,f20c1d09375c981d,gen_126710BLRO_phillips_210072,round_size_rel,380,WITHIN,0.000239,0.001605
+low (R<175),1b1874061e3cb0d5,gen_126710BLRO_phillips_210072,rounds_off,130,NOT_ASSESSED,0.002771,
+low (R<175),1b1874061e3cb0d5,gen_126710BLRO_phillips_210072,ring_shift,130,NOT_ASSESSED,0.008204,
+low (R<175),1b1874061e3cb0d5,gen_126710BLRO_phillips_210072,rounds_size,130,NOT_ASSESSED,0.004320,
+low (R<175),1b1874061e3cb0d5,gen_126710BLRO_phillips_210072,round_size_rel,130,NOT_ASSESSED,0.001229,
+low (R<175),f98441fdf2fdfb49,gen_126710BLRO_phillips_210072,rounds_off,102,NOT_ASSESSED,0.004371,
+low (R<175),f98441fdf2fdfb49,gen_126710BLRO_phillips_210072,ring_shift,102,NOT_ASSESSED,0.007916,
+low (R<175),f98441fdf2fdfb49,gen_126710BLRO_phillips_210072,rounds_size,102,NOT_ASSESSED,0.005626,
+low (R<175),f98441fdf2fdfb49,gen_126710BLRO_phillips_210072,round_size_rel,102,NOT_ASSESSED,0.001338,
+full,0b4ce551b94e7ea0,gen_126710BLRO_phillips_CH080120_75,rounds_off,235,WORTH,0.002723,0.002615
+full,0b4ce551b94e7ea0,gen_126710BLRO_phillips_CH080120_75,ring_shift,235,WORTH,0.005867,0.005776
+full,0b4ce551b94e7ea0,gen_126710BLRO_phillips_CH080120_75,rounds_size,235,WORTH,0.001098,0.000970
+full,0b4ce551b94e7ea0,gen_126710BLRO_phillips_CH080120_75,round_size_rel,235,WITHIN,0.000826,0.000968
+full,3cf5442ab9c87b9c,gen_126710BLRO_phillips_CH080120_75,rounds_off,379,WITHIN,0.001130,0.002615
+full,3cf5442ab9c87b9c,gen_126710BLRO_phillips_CH080120_75,ring_shift,379,WORTH,0.006094,0.005776
+full,3cf5442ab9c87b9c,gen_126710BLRO_phillips_CH080120_75,rounds_size,379,WITHIN,0.000630,0.000970
+full,3cf5442ab9c87b9c,gen_126710BLRO_phillips_CH080120_75,round_size_rel,379,WITHIN,0.000400,0.001605
+full,8e26e5fffbd67274,gen_126710BLRO_phillips_CH080120_75,rounds_off,219,WORTH,0.002651,0.002615
+full,8e26e5fffbd67274,gen_126710BLRO_phillips_CH080120_75,ring_shift,219,WITHIN,0.005688,0.005776
+full,8e26e5fffbd67274,gen_126710BLRO_phillips_CH080120_75,rounds_size,219,WORTH,0.001031,0.000970
+full,8e26e5fffbd67274,gen_126710BLRO_phillips_CH080120_75,round_size_rel,219,WITHIN,0.000844,0.000968
+full,da21757059a23f65,gen_126710BLRO_phillips_CH080120_75,rounds_off,190,WORTH,0.002674,0.002615
+full,da21757059a23f65,gen_126710BLRO_phillips_CH080120_75,ring_shift,190,WORTH,0.005995,0.005776
+full,da21757059a23f65,gen_126710BLRO_phillips_CH080120_75,rounds_size,190,WORTH,0.001202,0.000970
+full,da21757059a23f65,gen_126710BLRO_phillips_CH080120_75,round_size_rel,190,WITHIN,0.000838,0.000968
+full,e8b21325b74bac74,gen_126710BLRO_phillips_CH080120_75,rounds_off,379,WITHIN,0.001114,0.002615
+full,e8b21325b74bac74,gen_126710BLRO_phillips_CH080120_75,ring_shift,379,WORTH,0.006101,0.005776
+full,e8b21325b74bac74,gen_126710BLRO_phillips_CH080120_75,rounds_size,379,WITHIN,0.000717,0.000970
+full,e8b21325b74bac74,gen_126710BLRO_phillips_CH080120_75,round_size_rel,379,WITHIN,0.000436,0.001605
+low (R<175),d6c5edf4cc349905,gen_126710BLRO_phillips_CH080120_75,rounds_off,119,NOT_ASSESSED,0.002440,
+low (R<175),d6c5edf4cc349905,gen_126710BLRO_phillips_CH080120_75,ring_shift,119,NOT_ASSESSED,0.006399,
+low (R<175),d6c5edf4cc349905,gen_126710BLRO_phillips_CH080120_75,rounds_size,119,NOT_ASSESSED,0.000949,
+low (R<175),d6c5edf4cc349905,gen_126710BLRO_phillips_CH080120_75,round_size_rel,119,NOT_ASSESSED,0.001267,
+full,501e07afc5875f4a,gen_126710BLRO_phillips_NY080121_35,rounds_off,232,WITHIN,0.002522,0.002546
+full,501e07afc5875f4a,gen_126710BLRO_phillips_NY080121_35,ring_shift,232,WITHIN,0.005341,0.006044
+full,501e07afc5875f4a,gen_126710BLRO_phillips_NY080121_35,rounds_size,232,WORTH,0.001121,0.000991
+full,501e07afc5875f4a,gen_126710BLRO_phillips_NY080121_35,round_size_rel,232,WORTH,0.000968,0.000904
+full,22075296f80ce8ce,gen_126710BLRO_phillips_NY080121_35,rounds_off,217,WORTH,0.002615,0.002546
+full,22075296f80ce8ce,gen_126710BLRO_phillips_NY080121_35,ring_shift,217,WITHIN,0.005231,0.006044
+full,22075296f80ce8ce,gen_126710BLRO_phillips_NY080121_35,rounds_size,217,WITHIN,0.000969,0.000991
+full,22075296f80ce8ce,gen_126710BLRO_phillips_NY080121_35,round_size_rel,217,WORTH,0.001154,0.000904
+low (R<175),4f28b9bc46ddd1cf,gen_126710BLRO_phillips_NY080121_35,rounds_off,119,NOT_ASSESSED,0.002904,
+low (R<175),4f28b9bc46ddd1cf,gen_126710BLRO_phillips_NY080121_35,ring_shift,119,NOT_ASSESSED,0.005713,
+low (R<175),4f28b9bc46ddd1cf,gen_126710BLRO_phillips_NY080121_35,rounds_size,119,NOT_ASSESSED,0.000745,
+low (R<175),4f28b9bc46ddd1cf,gen_126710BLRO_phillips_NY080121_35,round_size_rel,119,NOT_ASSESSED,0.000931,
+full,29db17a1abe2a166,hv_page_04d00923f7,ring_shift,785,WITHIN,0.002291,0.006044
+full,d8ccb302ebeec29f,hv_page_04d00923f7,rounds_off,274,WITHIN,0.001865,0.002615
+full,d8ccb302ebeec29f,hv_page_04d00923f7,ring_shift,274,WITHIN,0.002366,0.006044
+full,d8ccb302ebeec29f,hv_page_04d00923f7,rounds_size,274,WITHIN,0.000029,0.000991
+full,d8ccb302ebeec29f,hv_page_04d00923f7,round_size_rel,274,WITHIN,0.000827,0.000968
+low (R<175),352072033ade05df,hv_page_04d00923f7,rounds_off,169,WITHIN,0.002684,0.002737
+low (R<175),352072033ade05df,hv_page_04d00923f7,ring_shift,169,WITHIN,0.002905,0.006551
+low (R<175),352072033ade05df,hv_page_04d00923f7,rounds_size,169,WITHIN,0.000315,0.001986
+low (R<175),352072033ade05df,hv_page_04d00923f7,round_size_rel,169,WITHIN,0.001336,0.002445
+full,3559f5c15e7dc88d,hv_page_0d0d369b1f,rounds_off,181,WORTH,0.003330,0.002615
+full,3559f5c15e7dc88d,hv_page_0d0d369b1f,ring_shift,181,WITHIN,0.004849,0.006044
+full,3559f5c15e7dc88d,hv_page_0d0d369b1f,rounds_size,181,WITHIN,0.000506,0.000991
+full,3559f5c15e7dc88d,hv_page_0d0d369b1f,round_size_rel,181,WITHIN,0.000260,0.000968
+full,26398386e9f403a9,hv_page_176399af9b,rounds_off,305,WITHIN,0.001306,0.002615
+full,26398386e9f403a9,hv_page_176399af9b,ring_shift,305,WITHIN,0.002979,0.006044
+full,26398386e9f403a9,hv_page_176399af9b,rounds_size,305,WITHIN,0.000652,0.000991
+full,26398386e9f403a9,hv_page_176399af9b,round_size_rel,305,WITHIN,0.000240,0.000968
+full,1f9ae8fd14b70580,hv_page_176399af9b,rounds_off,218,WITHIN,0.001375,0.002615
+full,1f9ae8fd14b70580,hv_page_176399af9b,ring_shift,218,WITHIN,0.002545,0.006044
+full,1f9ae8fd14b70580,hv_page_176399af9b,rounds_size,218,WITHIN,0.000735,0.000991
+full,1f9ae8fd14b70580,hv_page_176399af9b,round_size_rel,218,WITHIN,0.000402,0.000968
+full,792a785e7276b073,hv_page_176399af9b,rounds_off,352,WITHIN,0.001001,0.002615
+full,792a785e7276b073,hv_page_176399af9b,ring_shift,352,WITHIN,0.003188,0.006044
+full,792a785e7276b073,hv_page_176399af9b,rounds_size,352,WITHIN,0.000573,0.000991
+full,792a785e7276b073,hv_page_176399af9b,round_size_rel,352,WITHIN,0.000312,0.001605
+full,9640ef411267f980,hv_page_176399af9b,rounds_off,203,WITHIN,0.001319,0.002615
+full,9640ef411267f980,hv_page_176399af9b,ring_shift,203,WITHIN,0.002609,0.006044
+full,9640ef411267f980,hv_page_176399af9b,rounds_size,203,WITHIN,0.000624,0.000991
+full,9640ef411267f980,hv_page_176399af9b,round_size_rel,203,WITHIN,0.000312,0.000968
+full,fc82a00cd88ad3e6,hv_page_176399af9b,rounds_off,176,NOT_ASSESSED,0.001048,
+full,fc82a00cd88ad3e6,hv_page_176399af9b,ring_shift,176,NOT_ASSESSED,0.002607,
+full,fc82a00cd88ad3e6,hv_page_176399af9b,rounds_size,176,NOT_ASSESSED,0.000668,
+full,fc82a00cd88ad3e6,hv_page_176399af9b,round_size_rel,176,NOT_ASSESSED,0.000535,
+low (R<175),542cd309ab71ea8f,hv_page_176399af9b,rounds_off,127,NOT_ASSESSED,0.001186,
+low (R<175),542cd309ab71ea8f,hv_page_176399af9b,ring_shift,127,NOT_ASSESSED,0.002927,
+low (R<175),542cd309ab71ea8f,hv_page_176399af9b,rounds_size,127,NOT_ASSESSED,0.000588,
+low (R<175),542cd309ab71ea8f,hv_page_176399af9b,round_size_rel,127,NOT_ASSESSED,0.000643,
+low (R<175),ed8776e7fc28bab4,hv_page_176399af9b,rounds_off,100,NOT_ASSESSED,0.002606,
+low (R<175),ed8776e7fc28bab4,hv_page_176399af9b,ring_shift,100,NOT_ASSESSED,0.002955,
+low (R<175),ed8776e7fc28bab4,hv_page_176399af9b,rounds_size,100,NOT_ASSESSED,0.000150,
+low (R<175),ed8776e7fc28bab4,hv_page_176399af9b,round_size_rel,100,NOT_ASSESSED,0.001094,
+full,9c24872328b08d2c,hv_page_2100d8d80c,rounds_off,437,WITHIN,0.001586,0.002615
+full,9c24872328b08d2c,hv_page_2100d8d80c,ring_shift,437,WITHIN,0.000788,0.006044
+full,9c24872328b08d2c,hv_page_2100d8d80c,rounds_size,437,WITHIN,0.000001,0.000991
+full,9c24872328b08d2c,hv_page_2100d8d80c,round_size_rel,437,WITHIN,0.000333,0.001605
+full,8a1135ada8c85197,hv_page_26529a52bd,rounds_off,435,WITHIN,0.001459,0.002615
+full,8a1135ada8c85197,hv_page_26529a52bd,ring_shift,435,WITHIN,0.001796,0.006044
+full,8a1135ada8c85197,hv_page_26529a52bd,rounds_size,435,WITHIN,0.000548,0.000991
+full,8a1135ada8c85197,hv_page_26529a52bd,round_size_rel,435,WITHIN,0.000515,0.001605
+full,1c4b1b903d471134,hv_page_2874f5a2bc,rounds_off,245,WITHIN,0.001786,0.002615
+full,1c4b1b903d471134,hv_page_2874f5a2bc,ring_shift,245,WITHIN,0.002090,0.006044
+full,1c4b1b903d471134,hv_page_2874f5a2bc,rounds_size,245,WITHIN,0.000021,0.000991
+full,1c4b1b903d471134,hv_page_2874f5a2bc,round_size_rel,245,WITHIN,0.000520,0.000968
+full,0a4e0899bb1001fc,hv_page_2f9546b899,rounds_off,435,WITHIN,0.001902,0.002615
+full,0a4e0899bb1001fc,hv_page_2f9546b899,ring_shift,435,WITHIN,0.001418,0.006044
+full,0a4e0899bb1001fc,hv_page_2f9546b899,rounds_size,435,WITHIN,0.000228,0.000991
+full,0a4e0899bb1001fc,hv_page_2f9546b899,round_size_rel,435,WITHIN,0.000263,0.001605
+full,39b6687a00437d72,hv_page_382ce3b2b1,rounds_off,434,WITHIN,0.001578,0.002615
+full,39b6687a00437d72,hv_page_382ce3b2b1,ring_shift,434,WITHIN,0.002626,0.006044
+full,39b6687a00437d72,hv_page_382ce3b2b1,rounds_size,434,WITHIN,0.000200,0.000991
+full,39b6687a00437d72,hv_page_382ce3b2b1,round_size_rel,434,WITHIN,0.000605,0.001605
+full,acdc661ac31f2074,hv_page_382ce3b2b1,rounds_off,236,WITHIN,0.001231,0.002615
+full,acdc661ac31f2074,hv_page_382ce3b2b1,ring_shift,236,WITHIN,0.002578,0.006044
+full,acdc661ac31f2074,hv_page_382ce3b2b1,rounds_size,236,WITHIN,0.000667,0.000991
+full,acdc661ac31f2074,hv_page_382ce3b2b1,round_size_rel,236,WITHIN,0.000486,0.000968
+full,7ddfc7965075c6f9,hv_page_3b6fda6742,rounds_off,435,WITHIN,0.001380,0.002615
+full,7ddfc7965075c6f9,hv_page_3b6fda6742,ring_shift,435,WITHIN,0.001542,0.006044
+full,7ddfc7965075c6f9,hv_page_3b6fda6742,rounds_size,435,WITHIN,0.000441,0.000991
+full,7ddfc7965075c6f9,hv_page_3b6fda6742,round_size_rel,435,WITHIN,0.000397,0.001605
+full,a7fcdb60d7ce01fe,hv_page_3d5c6dde16,rounds_off,436,WITHIN,0.000969,0.002615
+full,a7fcdb60d7ce01fe,hv_page_3d5c6dde16,ring_shift,436,WITHIN,0.002887,0.006044
+full,a7fcdb60d7ce01fe,hv_page_3d5c6dde16,rounds_size,436,WITHIN,0.000066,0.000991
+full,a7fcdb60d7ce01fe,hv_page_3d5c6dde16,round_size_rel,436,WITHIN,0.000234,0.001605
+full,b0a1a6ff0bf6db97,hv_page_4cffae5ac4,rounds_off,436,WITHIN,0.001044,0.002615
+full,b0a1a6ff0bf6db97,hv_page_4cffae5ac4,ring_shift,436,WITHIN,0.001143,0.006044
+full,b0a1a6ff0bf6db97,hv_page_4cffae5ac4,rounds_size,436,WITHIN,0.000335,0.000991
+full,b0a1a6ff0bf6db97,hv_page_4cffae5ac4,round_size_rel,436,WITHIN,0.000289,0.001605
+full,cbee1a6f6b7b4528,hv_page_4d76330046,ring_shift,628,WITHIN,0.003668,0.006044
+low (R<175),0750b217923d6793,hv_page_4d76330046,rounds_off,170,WITHIN,0.002101,0.002737
+low (R<175),0750b217923d6793,hv_page_4d76330046,ring_shift,170,WITHIN,0.002982,0.006551
+low (R<175),0750b217923d6793,hv_page_4d76330046,rounds_size,170,WITHIN,0.000116,0.001986
+low (R<175),0750b217923d6793,hv_page_4d76330046,round_size_rel,170,WITHIN,0.000804,0.002445
+full,3b269ef3e009a150,hv_page_4f2029765c,rounds_off,272,WITHIN,0.002355,0.002615
+full,3b269ef3e009a150,hv_page_4f2029765c,ring_shift,272,WITHIN,0.003281,0.006044
+full,3b269ef3e009a150,hv_page_4f2029765c,rounds_size,272,WITHIN,0.000774,0.000991
+full,3b269ef3e009a150,hv_page_4f2029765c,round_size_rel,272,WORTH,0.001026,0.000968
+low (R<175),33df0c5378aede8c,hv_page_4f2029765c,rounds_off,173,WITHIN,0.002665,0.002737
+low (R<175),33df0c5378aede8c,hv_page_4f2029765c,ring_shift,173,WITHIN,0.003702,0.006551
+low (R<175),33df0c5378aede8c,hv_page_4f2029765c,rounds_size,173,WITHIN,0.000282,0.001986
+low (R<175),33df0c5378aede8c,hv_page_4f2029765c,round_size_rel,173,WITHIN,0.001069,0.002445
+full,8eb7af5d4e04cb5d,hv_page_525f08a5be,rounds_off,434,WITHIN,0.001481,0.002615
+full,8eb7af5d4e04cb5d,hv_page_525f08a5be,ring_shift,434,WITHIN,0.002037,0.006044
+full,8eb7af5d4e04cb5d,hv_page_525f08a5be,rounds_size,434,WITHIN,0.000185,0.000991
+full,8eb7af5d4e04cb5d,hv_page_525f08a5be,round_size_rel,434,WITHIN,0.000283,0.001605
+full,d57e2051d203d214,hv_page_54612422f7,rounds_off,620,WITHIN,0.002246,0.002615
+full,d57e2051d203d214,hv_page_54612422f7,ring_shift,620,WITHIN,0.002172,0.006044
+full,d57e2051d203d214,hv_page_54612422f7,rounds_size,620,WITHIN,0.000869,0.000991
+full,d57e2051d203d214,hv_page_54612422f7,round_size_rel,620,WITHIN,0.001128,0.001605
+full,2f1a34655a86a340,hv_page_54612422f7,rounds_off,266,WITHIN,0.001357,0.002615
+full,2f1a34655a86a340,hv_page_54612422f7,ring_shift,266,WITHIN,0.001854,0.006044
+full,2f1a34655a86a340,hv_page_54612422f7,rounds_size,266,WITHIN,0.000838,0.000991
+full,2f1a34655a86a340,hv_page_54612422f7,round_size_rel,266,WITHIN,0.000836,0.000968
+full,c68ad7934502cfb2,hv_page_57d486cff3,rounds_off,435,WITHIN,0.001183,0.002615
+full,c68ad7934502cfb2,hv_page_57d486cff3,ring_shift,435,WITHIN,0.003290,0.006044
+full,c68ad7934502cfb2,hv_page_57d486cff3,rounds_size,435,WITHIN,0.000031,0.000991
+full,c68ad7934502cfb2,hv_page_57d486cff3,round_size_rel,435,WITHIN,0.000193,0.001605
+full,708ff4c725496d44,hv_page_58aba667cf,rounds_off,435,WITHIN,0.001492,0.002615
+full,708ff4c725496d44,hv_page_58aba667cf,ring_shift,435,WITHIN,0.000406,0.006044
+full,708ff4c725496d44,hv_page_58aba667cf,rounds_size,435,WITHIN,0.000321,0.000991
+full,708ff4c725496d44,hv_page_58aba667cf,round_size_rel,435,WITHIN,0.000280,0.001605
+full,c399d2c9539f9537,hv_page_6c7e84c33d,rounds_off,434,WITHIN,0.001643,0.002615
+full,c399d2c9539f9537,hv_page_6c7e84c33d,ring_shift,434,WITHIN,0.004155,0.006044
+full,c399d2c9539f9537,hv_page_6c7e84c33d,rounds_size,434,WITHIN,0.000022,0.000991
+full,c399d2c9539f9537,hv_page_6c7e84c33d,round_size_rel,434,WITHIN,0.000392,0.001605
+full,f657ad6292dd4d3c,hv_page_6d3d310e79,rounds_off,333,WITHIN,0.001534,0.002615
+full,f657ad6292dd4d3c,hv_page_6d3d310e79,ring_shift,333,WITHIN,0.003988,0.006044
+full,f657ad6292dd4d3c,hv_page_6d3d310e79,rounds_size,333,WITHIN,0.000910,0.000991
+full,f657ad6292dd4d3c,hv_page_6d3d310e79,round_size_rel,333,WITHIN,0.000311,0.000968
+full,56382dd3f82b79fd,hv_page_6d3d310e79,rounds_off,237,WITHIN,0.001505,0.002615
+full,56382dd3f82b79fd,hv_page_6d3d310e79,ring_shift,237,WITHIN,0.003685,0.006044
+full,56382dd3f82b79fd,hv_page_6d3d310e79,rounds_size,237,WITHIN,0.000497,0.000991
+full,56382dd3f82b79fd,hv_page_6d3d310e79,round_size_rel,237,WITHIN,0.000417,0.000968
+full,7fc62dec9c35f7d5,hv_page_6d3d310e79,rounds_off,383,WITHIN,0.001452,0.002615
+full,7fc62dec9c35f7d5,hv_page_6d3d310e79,ring_shift,383,WITHIN,0.004096,0.006044
+full,7fc62dec9c35f7d5,hv_page_6d3d310e79,rounds_size,383,WORTH,0.000997,0.000991
+full,7fc62dec9c35f7d5,hv_page_6d3d310e79,round_size_rel,383,WITHIN,0.000437,0.001605
+full,ae34d848344b9f7e,hv_page_6d3d310e79,rounds_off,222,WITHIN,0.001551,0.002615
+full,ae34d848344b9f7e,hv_page_6d3d310e79,ring_shift,222,WITHIN,0.003601,0.006044
+full,ae34d848344b9f7e,hv_page_6d3d310e79,rounds_size,222,WITHIN,0.000404,0.000991
+full,ae34d848344b9f7e,hv_page_6d3d310e79,round_size_rel,222,WITHIN,0.000332,0.000968
+full,bce0a850a013817b,hv_page_6d3d310e79,rounds_off,192,WITHIN,0.001466,0.002615
+full,bce0a850a013817b,hv_page_6d3d310e79,ring_shift,192,WITHIN,0.003620,0.006044
+full,bce0a850a013817b,hv_page_6d3d310e79,rounds_size,192,WITHIN,0.000317,0.000991
+full,bce0a850a013817b,hv_page_6d3d310e79,round_size_rel,192,WITHIN,0.000653,0.000968
+full,594c162d7b51ded9,hv_page_6d3d310e79,rounds_off,383,WITHIN,0.001439,0.002615
+full,594c162d7b51ded9,hv_page_6d3d310e79,ring_shift,383,WITHIN,0.004055,0.006044
+full,594c162d7b51ded9,hv_page_6d3d310e79,rounds_size,383,WITHIN,0.000944,0.000991
+full,594c162d7b51ded9,hv_page_6d3d310e79,round_size_rel,383,WITHIN,0.000365,0.001605
+low (R<175),eb1c9ce60c851721,hv_page_6d3d310e79,rounds_off,131,WITHIN,0.001607,0.002180
+low (R<175),eb1c9ce60c851721,hv_page_6d3d310e79,ring_shift,131,WITHIN,0.003033,0.004363
+low (R<175),eb1c9ce60c851721,hv_page_6d3d310e79,rounds_size,131,WITHIN,0.000220,0.000953
+low (R<175),eb1c9ce60c851721,hv_page_6d3d310e79,round_size_rel,131,WORTH,0.003523,0.000657
+low (R<175),265129ed8fcfe43c,hv_page_6d3d310e79,rounds_off,103,NOT_ASSESSED,0.004672,
+low (R<175),265129ed8fcfe43c,hv_page_6d3d310e79,ring_shift,103,NOT_ASSESSED,0.003735,
+low (R<175),265129ed8fcfe43c,hv_page_6d3d310e79,rounds_size,103,NOT_ASSESSED,0.000352,
+low (R<175),265129ed8fcfe43c,hv_page_6d3d310e79,round_size_rel,103,NOT_ASSESSED,0.003811,
+full,215b8f46d1da4a01,hv_page_6f8a29a642,rounds_off,237,WITHIN,0.001678,0.002615
+full,215b8f46d1da4a01,hv_page_6f8a29a642,ring_shift,237,WITHIN,0.002688,0.006044
+full,215b8f46d1da4a01,hv_page_6f8a29a642,rounds_size,237,WITHIN,0.000374,0.000991
+full,215b8f46d1da4a01,hv_page_6f8a29a642,round_size_rel,237,WITHIN,0.000159,0.000968
+full,2ada80cf4a87f599,hv_page_701654bab7,ring_shift,590,WITHIN,0.001765,0.006044
+full,f003a5aece0b6b80,hv_page_701654bab7,rounds_off,238,WITHIN,0.001682,0.002615
+full,f003a5aece0b6b80,hv_page_701654bab7,ring_shift,238,WITHIN,0.000977,0.006044
+full,f003a5aece0b6b80,hv_page_701654bab7,rounds_size,238,WITHIN,0.000186,0.000991
+full,f003a5aece0b6b80,hv_page_701654bab7,round_size_rel,238,WITHIN,0.000697,0.000968
+low (R<175),d545940f96b69a1f,hv_page_701654bab7,rounds_off,159,WITHIN,0.001690,0.002737
+low (R<175),d545940f96b69a1f,hv_page_701654bab7,ring_shift,159,WITHIN,0.000990,0.006551
+low (R<175),d545940f96b69a1f,hv_page_701654bab7,rounds_size,159,WITHIN,0.000970,0.001986
+low (R<175),d545940f96b69a1f,hv_page_701654bab7,round_size_rel,159,WITHIN,0.000653,0.002445
+full,4c4c0f328fdf89be,hv_page_7301586955,rounds_off,785,WORTH,0.003174,0.002615
+full,4c4c0f328fdf89be,hv_page_7301586955,ring_shift,785,WITHIN,0.004007,0.006044
+full,4c4c0f328fdf89be,hv_page_7301586955,rounds_size,785,WITHIN,0.000271,0.000991
+full,4c4c0f328fdf89be,hv_page_7301586955,round_size_rel,785,WORTH,0.001632,0.001605
+full,96f53a4bae137de9,hv_page_7301586955,rounds_off,268,WITHIN,0.001595,0.002615
+full,96f53a4bae137de9,hv_page_7301586955,ring_shift,268,WITHIN,0.003447,0.006044
+full,96f53a4bae137de9,hv_page_7301586955,rounds_size,268,WITHIN,0.000003,0.000991
+full,96f53a4bae137de9,hv_page_7301586955,round_size_rel,268,WITHIN,0.000443,0.000968
+low (R<175),c5ff154e42165f59,hv_page_7301586955,rounds_off,169,WITHIN,0.001989,0.002737
+low (R<175),c5ff154e42165f59,hv_page_7301586955,ring_shift,169,WITHIN,0.003028,0.006551
+low (R<175),c5ff154e42165f59,hv_page_7301586955,rounds_size,169,WITHIN,0.000744,0.001986
+low (R<175),c5ff154e42165f59,hv_page_7301586955,round_size_rel,169,WITHIN,0.000564,0.002445
+full,a5e421ece4056202,hv_page_79c4638087,rounds_off,435,WITHIN,0.001178,0.002615
+full,a5e421ece4056202,hv_page_79c4638087,ring_shift,435,WITHIN,0.000821,0.006044
+full,a5e421ece4056202,hv_page_79c4638087,rounds_size,435,WITHIN,0.000023,0.000991
+full,a5e421ece4056202,hv_page_79c4638087,round_size_rel,435,WITHIN,0.000228,0.001605
+full,7f94f08a2015c94e,hv_page_7a187edba5,rounds_off,434,WITHIN,0.001103,0.002615
+full,7f94f08a2015c94e,hv_page_7a187edba5,ring_shift,434,WITHIN,0.001205,0.006044
+full,7f94f08a2015c94e,hv_page_7a187edba5,rounds_size,434,WITHIN,0.000377,0.000991
+full,7f94f08a2015c94e,hv_page_7a187edba5,round_size_rel,434,WITHIN,0.000299,0.001605
+full,6e82716dcc4cebf7,hv_page_814c8db017,rounds_off,435,WITHIN,0.001239,0.002615
+full,6e82716dcc4cebf7,hv_page_814c8db017,ring_shift,435,WITHIN,0.001547,0.006044
+full,6e82716dcc4cebf7,hv_page_814c8db017,rounds_size,435,WITHIN,0.000033,0.000991
+full,6e82716dcc4cebf7,hv_page_814c8db017,round_size_rel,435,WITHIN,0.000253,0.001605
+full,dbb2cbeadab719f9,hv_page_85b8a94b47,rounds_off,436,WITHIN,0.002076,0.002615
+full,dbb2cbeadab719f9,hv_page_85b8a94b47,ring_shift,436,WITHIN,0.001682,0.006044
+full,dbb2cbeadab719f9,hv_page_85b8a94b47,rounds_size,436,WITHIN,0.000071,0.000991
+full,dbb2cbeadab719f9,hv_page_85b8a94b47,round_size_rel,436,WITHIN,0.000430,0.001605
+low (R<175),53087b7c5cd561fc,hv_page_8b423845eb,rounds_off,162,WORTH,0.002940,0.002737
+low (R<175),53087b7c5cd561fc,hv_page_8b423845eb,ring_shift,162,WITHIN,0.004422,0.006551
+low (R<175),53087b7c5cd561fc,hv_page_8b423845eb,rounds_size,162,WITHIN,0.000217,0.001986
+low (R<175),53087b7c5cd561fc,hv_page_8b423845eb,round_size_rel,162,WITHIN,0.000974,0.002445
+full,afa2302de4e07e7f,hv_page_8d6873b55a,rounds_off,245,WITHIN,0.001388,0.002615
+full,afa2302de4e07e7f,hv_page_8d6873b55a,ring_shift,245,WITHIN,0.000964,0.006044
+full,afa2302de4e07e7f,hv_page_8d6873b55a,rounds_size,245,WITHIN,0.000206,0.000991
+full,afa2302de4e07e7f,hv_page_8d6873b55a,round_size_rel,245,WITHIN,0.000223,0.000968
+full,9566194a0752a8c3,hv_page_942a7f5f12,rounds_off,434,WITHIN,0.001448,0.002615
+full,9566194a0752a8c3,hv_page_942a7f5f12,ring_shift,434,WITHIN,0.001864,0.006044
+full,9566194a0752a8c3,hv_page_942a7f5f12,rounds_size,434,WITHIN,0.000060,0.000991
+full,9566194a0752a8c3,hv_page_942a7f5f12,round_size_rel,434,WITHIN,0.001050,0.001605
+full,2347fbd181eb8847,hv_page_a13e399a8f,rounds_off,434,WITHIN,0.001293,0.002615
+full,2347fbd181eb8847,hv_page_a13e399a8f,ring_shift,434,WITHIN,0.000926,0.006044
+full,2347fbd181eb8847,hv_page_a13e399a8f,rounds_size,434,WITHIN,0.000234,0.000991
+full,2347fbd181eb8847,hv_page_a13e399a8f,round_size_rel,434,WITHIN,0.000111,0.001605
+full,17402db61e730278,hv_page_a13e399a8f,rounds_off,236,WITHIN,0.001626,0.002615
+full,17402db61e730278,hv_page_a13e399a8f,ring_shift,236,WITHIN,0.000996,0.006044
+full,17402db61e730278,hv_page_a13e399a8f,rounds_size,236,WITHIN,0.000656,0.000991
+full,17402db61e730278,hv_page_a13e399a8f,round_size_rel,236,WITHIN,0.000491,0.000968
+full,926772fdb706c1e7,hv_page_a261fbdf78,rounds_off,434,WITHIN,0.001344,0.002615
+full,926772fdb706c1e7,hv_page_a261fbdf78,ring_shift,434,WITHIN,0.002660,0.006044
+full,926772fdb706c1e7,hv_page_a261fbdf78,rounds_size,434,WITHIN,0.000106,0.000991
+full,926772fdb706c1e7,hv_page_a261fbdf78,round_size_rel,434,WITHIN,0.000218,0.001605
+full,4a94d34c327f63b7,hv_page_acf3ed7596,rounds_off,435,WITHIN,0.001079,0.002615
+full,4a94d34c327f63b7,hv_page_acf3ed7596,ring_shift,435,WITHIN,0.002562,0.006044
+full,4a94d34c327f63b7,hv_page_acf3ed7596,rounds_size,435,WITHIN,0.000219,0.000991
+full,4a94d34c327f63b7,hv_page_acf3ed7596,round_size_rel,435,WITHIN,0.000266,0.001605
+full,a5bfa50b177fadd3,hv_page_b0bc85b625,rounds_off,434,WITHIN,0.001197,0.002615
+full,a5bfa50b177fadd3,hv_page_b0bc85b625,ring_shift,434,WITHIN,0.003606,0.006044
+full,a5bfa50b177fadd3,hv_page_b0bc85b625,rounds_size,434,WITHIN,0.000161,0.000991
+full,a5bfa50b177fadd3,hv_page_b0bc85b625,round_size_rel,434,WITHIN,0.000277,0.001605
+full,3108248748f8ed97,hv_page_b4498e472c,rounds_off,435,WITHIN,0.001667,0.002615
+full,3108248748f8ed97,hv_page_b4498e472c,ring_shift,435,WITHIN,0.003123,0.006044
+full,3108248748f8ed97,hv_page_b4498e472c,rounds_size,435,WITHIN,0.000066,0.000991
+full,3108248748f8ed97,hv_page_b4498e472c,round_size_rel,435,WITHIN,0.000240,0.001605
+full,e7a819443fd0d94a,hv_page_b8db5ee0c6,rounds_off,434,WITHIN,0.001800,0.002615
+full,e7a819443fd0d94a,hv_page_b8db5ee0c6,ring_shift,434,WITHIN,0.001990,0.006044
+full,e7a819443fd0d94a,hv_page_b8db5ee0c6,rounds_size,434,WITHIN,0.000201,0.000991
+full,e7a819443fd0d94a,hv_page_b8db5ee0c6,round_size_rel,434,WITHIN,0.000275,0.001605
+full,4ce46215cbff98e6,hv_page_c5c577583b,ring_shift,818,WITHIN,0.004070,0.006044
+full,3c01b0916279a998,hv_page_c5c577583b,rounds_off,250,WITHIN,0.001868,0.002615
+full,3c01b0916279a998,hv_page_c5c577583b,ring_shift,250,WITHIN,0.003429,0.006044
+full,3c01b0916279a998,hv_page_c5c577583b,rounds_size,250,WITHIN,0.000263,0.000991
+full,3c01b0916279a998,hv_page_c5c577583b,round_size_rel,250,WITHIN,0.000369,0.000968
+low (R<175),be110517d85e0198,hv_page_c5c577583b,rounds_off,170,WITHIN,0.001885,0.002737
+low (R<175),be110517d85e0198,hv_page_c5c577583b,ring_shift,170,WITHIN,0.003074,0.006551
+low (R<175),be110517d85e0198,hv_page_c5c577583b,rounds_size,170,WITHIN,0.001113,0.001986
+low (R<175),be110517d85e0198,hv_page_c5c577583b,round_size_rel,170,WITHIN,0.000578,0.002445
+full,d8ca71c3ac69a390,hv_page_c80c027742,rounds_off,436,WITHIN,0.001830,0.002615
+full,d8ca71c3ac69a390,hv_page_c80c027742,ring_shift,436,WITHIN,0.002337,0.006044
+full,d8ca71c3ac69a390,hv_page_c80c027742,rounds_size,436,WITHIN,0.000159,0.000991
+full,d8ca71c3ac69a390,hv_page_c80c027742,round_size_rel,436,WITHIN,0.000242,0.001605
+full,96da6f82989e875c,hv_page_d197aa1d9b,rounds_off,435,WITHIN,0.001447,0.002615
+full,96da6f82989e875c,hv_page_d197aa1d9b,ring_shift,435,WITHIN,0.000476,0.006044
+full,96da6f82989e875c,hv_page_d197aa1d9b,rounds_size,435,WITHIN,0.000144,0.000991
+full,96da6f82989e875c,hv_page_d197aa1d9b,round_size_rel,435,WITHIN,0.000236,0.001605
+low (R<175),3a719f21397b8c3c,hv_page_d487aae880,rounds_off,129,NOT_ASSESSED,0.000573,
+low (R<175),3a719f21397b8c3c,hv_page_d487aae880,ring_shift,129,NOT_ASSESSED,0.004363,
+low (R<175),3a719f21397b8c3c,hv_page_d487aae880,rounds_size,129,NOT_ASSESSED,0.000147,
+low (R<175),3a719f21397b8c3c,hv_page_d487aae880,round_size_rel,129,NOT_ASSESSED,0.000568,
+full,7b291fd266001fcb,hv_page_de90ec603c,rounds_off,435,WITHIN,0.001553,0.002615
+full,7b291fd266001fcb,hv_page_de90ec603c,ring_shift,435,WITHIN,0.000375,0.006044
+full,7b291fd266001fcb,hv_page_de90ec603c,rounds_size,435,WITHIN,0.000027,0.000991
+full,7b291fd266001fcb,hv_page_de90ec603c,round_size_rel,435,WITHIN,0.000191,0.001605
+full,00ff07f016362120,hv_page_e43fbdc8ed,rounds_off,434,WITHIN,0.001345,0.002615
+full,00ff07f016362120,hv_page_e43fbdc8ed,ring_shift,434,WITHIN,0.000898,0.006044
+full,00ff07f016362120,hv_page_e43fbdc8ed,rounds_size,434,WITHIN,0.000347,0.000991
+full,00ff07f016362120,hv_page_e43fbdc8ed,round_size_rel,434,WITHIN,0.000273,0.001605
+full,a71df6c06e554d7b,hv_page_e7c7828487,rounds_off,434,WITHIN,0.001826,0.002615
+full,a71df6c06e554d7b,hv_page_e7c7828487,ring_shift,434,WITHIN,0.002874,0.006044
+full,a71df6c06e554d7b,hv_page_e7c7828487,rounds_size,434,WITHIN,0.000007,0.000991
+full,a71df6c06e554d7b,hv_page_e7c7828487,round_size_rel,434,WITHIN,0.000257,0.001605
+full,748029e3142feabd,hv_page_ec154bc25b,ring_shift,758,WITHIN,0.003140,0.006044
+full,ce6f75a2380a78e1,hv_page_ec154bc25b,rounds_off,274,WITHIN,0.002107,0.002615
+full,ce6f75a2380a78e1,hv_page_ec154bc25b,ring_shift,274,WITHIN,0.002920,0.006044
+full,ce6f75a2380a78e1,hv_page_ec154bc25b,rounds_size,274,WITHIN,0.000207,0.000991
+full,ce6f75a2380a78e1,hv_page_ec154bc25b,round_size_rel,274,WITHIN,0.000792,0.000968
+low (R<175),6a45fb92ba1f601a,hv_page_ec154bc25b,rounds_off,167,WITHIN,0.002138,0.002737
+low (R<175),6a45fb92ba1f601a,hv_page_ec154bc25b,ring_shift,167,WITHIN,0.002521,0.006551
+low (R<175),6a45fb92ba1f601a,hv_page_ec154bc25b,rounds_size,167,WITHIN,0.000952,0.001986
+low (R<175),6a45fb92ba1f601a,hv_page_ec154bc25b,round_size_rel,167,WITHIN,0.000720,0.002445
+full,86e245b2719dd1e7,hv_page_ec8f2a7e33,rounds_off,434,WITHIN,0.001423,0.002615
+full,86e245b2719dd1e7,hv_page_ec8f2a7e33,ring_shift,434,WITHIN,0.002127,0.006044
+full,86e245b2719dd1e7,hv_page_ec8f2a7e33,rounds_size,434,WITHIN,0.000424,0.000991
+full,86e245b2719dd1e7,hv_page_ec8f2a7e33,round_size_rel,434,WITHIN,0.000221,0.001605
+full,8b11a6baadbb4bab,hv_page_ed122bc9fa,rounds_off,273,WITHIN,0.002270,0.002615
+full,8b11a6baadbb4bab,hv_page_ed122bc9fa,ring_shift,273,WITHIN,0.003179,0.006044
+full,8b11a6baadbb4bab,hv_page_ed122bc9fa,rounds_size,273,WITHIN,0.000191,0.000991
+full,8b11a6baadbb4bab,hv_page_ed122bc9fa,round_size_rel,273,WITHIN,0.000596,0.000968
+low (R<175),a681769244cdee29,hv_page_ed122bc9fa,rounds_off,171,WITHIN,0.002298,0.002737
+low (R<175),a681769244cdee29,hv_page_ed122bc9fa,ring_shift,171,WITHIN,0.003064,0.006551
+low (R<175),a681769244cdee29,hv_page_ed122bc9fa,rounds_size,171,WITHIN,0.000804,0.001986
+low (R<175),a681769244cdee29,hv_page_ed122bc9fa,round_size_rel,171,WITHIN,0.000633,0.002445
+full,1d55b01daf63e59d,hv_page_ee91bc679b,rounds_off,435,WITHIN,0.001597,0.002615
+full,1d55b01daf63e59d,hv_page_ee91bc679b,ring_shift,435,WITHIN,0.001249,0.006044
+full,1d55b01daf63e59d,hv_page_ee91bc679b,rounds_size,435,WITHIN,0.000093,0.000991
+full,1d55b01daf63e59d,hv_page_ee91bc679b,round_size_rel,435,WITHIN,0.000285,0.001605
+full,36ffe44ce5170d2b,hv_page_ef7d4016dc,rounds_off,246,WITHIN,0.002312,0.002615
+full,36ffe44ce5170d2b,hv_page_ef7d4016dc,ring_shift,246,WITHIN,0.002424,0.006044
+full,36ffe44ce5170d2b,hv_page_ef7d4016dc,rounds_size,246,WITHIN,0.000058,0.000991
+full,36ffe44ce5170d2b,hv_page_ef7d4016dc,round_size_rel,246,WITHIN,0.000820,0.000968
+full,7443488738a77b10,swe_42335,rounds_off,249,WORTH,0.004185,0.002615
+full,7443488738a77b10,swe_42335,ring_shift,249,WITHIN,0.005473,0.006044
+full,7443488738a77b10,swe_42335,rounds_size,249,WORTH,0.001793,0.000991
+full,7443488738a77b10,swe_42335,round_size_rel,249,WORTH,0.002559,0.000968
+low (R<175),29ec17dc64f82548,swe_42335,rounds_off,162,WORTH,0.004118,0.002737
+low (R<175),29ec17dc64f82548,swe_42335,ring_shift,162,WITHIN,0.006061,0.006551
+low (R<175),29ec17dc64f82548,swe_42335,rounds_size,162,WITHIN,0.000784,0.001986
+low (R<175),29ec17dc64f82548,swe_42335,round_size_rel,162,WITHIN,0.002342,0.002445
+full,cbc2f0249b0e5abb,swe_59259,ring_shift,271,WITHIN,0.004939,0.006044
+low (R<175),ce997f77df67b365,swe_59259,ring_shift,172,WITHIN,0.005558,0.006551
+full,ffe13b6968cc3002,swe_60177,ring_shift,782,WITHIN,0.002928,0.006044
+full,f72f7a88a7838e6f,swe_60177,rounds_off,275,WITHIN,0.001554,0.002615
+full,f72f7a88a7838e6f,swe_60177,ring_shift,275,WITHIN,0.002093,0.006044
+full,f72f7a88a7838e6f,swe_60177,rounds_size,275,WITHIN,0.000043,0.000991
+full,f72f7a88a7838e6f,swe_60177,round_size_rel,275,WITHIN,0.000265,0.000968
+low (R<175),e61baaf7889bf4ce,swe_60177,rounds_off,174,WORTH,0.003424,0.002737
+low (R<175),e61baaf7889bf4ce,swe_60177,ring_shift,174,WITHIN,0.002896,0.006551
+low (R<175),e61baaf7889bf4ce,swe_60177,rounds_size,174,WITHIN,0.000680,0.001986
+low (R<175),e61baaf7889bf4ce,swe_60177,round_size_rel,174,WORTH,0.002950,0.002445
+full,ad1ae3e5b9609de8,swe_68351,ring_shift,834,WITHIN,0.001945,0.006044
+full,81cb2c9f1005c570,swe_68351,rounds_off,261,WITHIN,0.001935,0.002615
+full,81cb2c9f1005c570,swe_68351,ring_shift,261,WITHIN,0.002343,0.006044
+full,81cb2c9f1005c570,swe_68351,rounds_size,261,WITHIN,0.000040,0.000991
+full,81cb2c9f1005c570,swe_68351,round_size_rel,261,WITHIN,0.000828,0.000968
+low (R<175),9399b6c95367ea63,swe_68351,rounds_off,160,WITHIN,0.001802,0.002737
+low (R<175),9399b6c95367ea63,swe_68351,ring_shift,160,WITHIN,0.003082,0.006551
+low (R<175),9399b6c95367ea63,swe_68351,rounds_size,160,WITHIN,0.000289,0.001986
+low (R<175),9399b6c95367ea63,swe_68351,round_size_rel,160,WITHIN,0.001302,0.002445
+full,709160117d0d8944,swe_68408,rounds_off,774,WITHIN,0.001241,0.002615
+full,709160117d0d8944,swe_68408,ring_shift,774,WITHIN,0.000827,0.006044
+full,709160117d0d8944,swe_68408,rounds_size,774,WITHIN,0.000089,0.000991
+full,709160117d0d8944,swe_68408,round_size_rel,774,WITHIN,0.000273,0.001605
+full,8dfc09a813408137,swe_68408,rounds_off,259,WITHIN,0.002425,0.002615
+full,8dfc09a813408137,swe_68408,ring_shift,259,WITHIN,0.000060,0.006044
+full,8dfc09a813408137,swe_68408,rounds_size,259,WITHIN,0.000082,0.000991
+full,8dfc09a813408137,swe_68408,round_size_rel,259,WITHIN,0.000547,0.000968
+low (R<175),e63aae0556929ee2,swe_68408,rounds_off,166,WITHIN,0.002352,0.002737
+low (R<175),e63aae0556929ee2,swe_68408,ring_shift,166,WITHIN,0.000171,0.006551
+low (R<175),e63aae0556929ee2,swe_68408,rounds_size,166,WITHIN,0.000461,0.001986
+low (R<175),e63aae0556929ee2,swe_68408,round_size_rel,166,WITHIN,0.000657,0.002445
+full,212c6d510bdfa0c6,swe_68784,ring_shift,803,WITHIN,0.002542,0.006044
+full,7f67bc326f34d1b4,swe_68784,rounds_off,268,WITHIN,0.000932,0.002615
+full,7f67bc326f34d1b4,swe_68784,ring_shift,268,WITHIN,0.002392,0.006044
+full,7f67bc326f34d1b4,swe_68784,rounds_size,268,WITHIN,0.000283,0.000991
+full,7f67bc326f34d1b4,swe_68784,round_size_rel,268,WITHIN,0.000353,0.000968
+low (R<175),077073afa8d7b7e8,swe_68784,rounds_off,170,WITHIN,0.000973,0.002737
+low (R<175),077073afa8d7b7e8,swe_68784,ring_shift,170,WITHIN,0.002375,0.006551
+low (R<175),077073afa8d7b7e8,swe_68784,rounds_size,170,WITHIN,0.000264,0.001986
+low (R<175),077073afa8d7b7e8,swe_68784,round_size_rel,170,WITHIN,0.000431,0.002445
+full,fc62906af2b272de,swe_77497,rounds_off,585,WITHIN,0.001466,0.002615
+full,fc62906af2b272de,swe_77497,ring_shift,585,WITHIN,0.004756,0.006044
+full,fc62906af2b272de,swe_77497,rounds_size,585,WITHIN,0.000680,0.000991
+full,fc62906af2b272de,swe_77497,round_size_rel,585,WITHIN,0.000497,0.001605
+full,1e4d377d3ca91f43,swe_77497,rounds_off,271,WITHIN,0.002152,0.002615
+full,1e4d377d3ca91f43,swe_77497,ring_shift,271,WITHIN,0.004168,0.006044
+full,1e4d377d3ca91f43,swe_77497,rounds_size,271,WITHIN,0.000082,0.000991
+full,1e4d377d3ca91f43,swe_77497,round_size_rel,271,WITHIN,0.000324,0.000968
+full,7a77e61713240ff8,swe_77497,rounds_off,177,WITHIN,0.001526,0.002615
+full,7a77e61713240ff8,swe_77497,ring_shift,177,WITHIN,0.003625,0.006044
+full,7a77e61713240ff8,swe_77497,rounds_size,177,WITHIN,0.000720,0.000991
+full,7a77e61713240ff8,swe_77497,round_size_rel,177,WITHIN,0.000962,0.000968
+full,a5431af6379b78a5,wos_cpo_40616911,rounds_off,452,WITHIN,0.001244,0.002615
+full,a5431af6379b78a5,wos_cpo_40616911,ring_shift,452,WITHIN,0.001173,0.006044
+full,a5431af6379b78a5,wos_cpo_40616911,rounds_size,452,WITHIN,0.000036,0.000991
+full,a5431af6379b78a5,wos_cpo_40616911,round_size_rel,452,WORTH,0.001605,0.001050

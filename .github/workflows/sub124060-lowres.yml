@@ -1,0 +1,107 @@
+name: Submariner 124060 low-resolution genuine reference (research)
+
+# RESEARCH ONLY. Genuine readings at small dial sizes for the resolution-matched features: every verified genuine 124060
+# dial photo (not shared) is shrunk (INTER_AREA, JPEG q92) to dial radii of 130, 150 and 170 px - only from originals at
+# least 15% larger - and re-measured with the production runner and the 124060 master spec. One physical watch stays one
+# sample (rows keep its physical_watch_id). The real low-resolution genuine photos are never shrunk copies of
+# themselves and serve as the held-out check. CSVs printed / uploaded; images are never committed, cached or uploaded.
+on:
+  push:
+    branches:
+      - feature/android-alpha102-submariner
+    paths:
+      - '.github/workflows/sub124060-lowres.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lowres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SUB: tools/research/sub124060
+      IMG: sub_images
+      OUT: sub_results
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests opencv-python-headless
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Fetch catalogued photos (sha256-verified)
+        run: |
+          mkdir -p "$IMG" "$OUT"
+          python3 tools/research/alpha96_calibration/fetch_verified.py "$SUB/catalogue_124060.csv" "$IMG" "$OUT/fetch_log.csv"
+      - name: Runner on the originals
+        env:
+          JAVA_TOOL_OPTIONS: -Dwatchalign.model=submariner_124060 -Dwatchalign.models_root=tools/research/sub124060
+        run: tools/desktop-harness/run.sh Alpha96Calib "$SUB/catalogue_124060.csv" "$IMG" "$OUT/runner_full.csv" 2> /dev/null
+      - name: Shrink genuine dial photos
+        run: |
+          python3 - <<'PY'
+          import csv, os, cv2
+          sub, img, out = os.environ['SUB'], os.environ['IMG'], os.environ['OUT']
+          cat = {r['photo_id']: r for r in csv.DictReader(open(f'{sub}/catalogue_124060.csv'))}
+          shared = {r['photo_id'] for r in csv.DictReader(open(f'{sub}/results/runner/dedup_measured.csv')) if r['shared_dial'] == '1'}
+          rows = []
+          for r in csv.DictReader(open(f'{out}/runner_full.csv')):
+              c = cat[r['photo_id']]
+              if r['status'] != 'accepted' or c['class_label'] != 'gen' or r['photo_id'] in shared: continue
+              R = float(r['dial_radius_px'])
+              im = cv2.imread(os.path.join(img, c['local_path']), cv2.IMREAD_COLOR)
+              if im is None: continue
+              for T in (130, 150, 170):
+                  if R < 1.15 * T: continue
+                  k = T / R
+                  sm = cv2.resize(im, (max(1, round(im.shape[1] * k)), max(1, round(im.shape[0] * k))), interpolation=cv2.INTER_AREA)
+                  rel = f'lowres/{T}/{r["photo_id"]}.jpg'
+                  os.makedirs(os.path.join(img, os.path.dirname(rel)), exist_ok=True)
+                  cv2.imwrite(os.path.join(img, rel), sm, [cv2.IMWRITE_JPEG_QUALITY, 92])
+                  rows.append({'photo_id': f'{r["photo_id"]}_r{T}', 'local_path': rel, 'source_photo_id': r['photo_id'], 'target_r': T})
+          with open('lowres_manifest.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=['photo_id', 'local_path', 'source_photo_id', 'target_r']); w.writeheader(); w.writerows(rows)
+          print('shrunk copies', len(rows))
+          PY
+      - name: Runner on the shrunk copies
+        env:
+          JAVA_TOOL_OPTIONS: -Dwatchalign.model=submariner_124060 -Dwatchalign.models_root=tools/research/sub124060
+        run: tools/desktop-harness/run.sh Alpha96Calib lowres_manifest.csv "$IMG" "$OUT/runner_lowres.csv" 2> /dev/null
+      - name: Join catalogue columns
+        run: |
+          python3 - <<'PY'
+          import csv, os
+          sub, out = os.environ['SUB'], os.environ['OUT']
+          cat = {r['photo_id']: r for r in csv.DictReader(open(f'{sub}/catalogue_124060.csv'))}
+          man = {r['photo_id']: r for r in csv.DictReader(open('lowres_manifest.csv'))}
+          run = list(csv.DictReader(open(f'{out}/runner_lowres.csv')))
+          keep = ['group', 'class_label', 'physical_watch_id', 'model', 'source', 'image_url']
+          with open(f'{out}/per_photo_lowres.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(run[0].keys()) + ['source_photo_id', 'target_r'] + keep); w.writeheader()
+              for r in run:
+                  m = man[r['photo_id']]; c = cat[m['source_photo_id']]
+                  r.update({'source_photo_id': m['source_photo_id'], 'target_r': m['target_r']}); r.update({k: c[k] for k in keep}); w.writerow(r)
+          import collections
+          print('lowres status:', collections.Counter((r['target_r'], r['status']) for r in csv.DictReader(open(f'{out}/per_photo_lowres.csv'))))
+          PY
+      - name: Upload CSVs (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sub124060-lowres-${{ github.run_id }}
+          retention-days: 30
+          path: sub_results/*.csv
+      - name: Print CSV to log
+        if: always()
+        run: |
+          echo "=== per_photo_lowres.csv BEGIN"; cat "$OUT/per_photo_lowres.csv"; echo "=== per_photo_lowres.csv END"

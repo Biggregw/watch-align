@@ -72,7 +72,7 @@ public class Alpha96Calib {
                     row.add(n(g==null?Double.NaN:g.shiftPx));row.add(n(g==null?Double.NaN:g.scalePct));
                     row.add(n(g==null?Double.NaN:g.rotationDeg));
                     marker(row,r.triangle,true);
-                    marker(row,r.atHour(6),false);marker(row,r.atHour(9),false);
+                    for(int h:batonHours())marker(row,r.atHour(h),false);
                     for(int h:ROUNDS)marker(row,r.atHour(h),false);
                     row.add(Long.toString((System.nanoTime()-t0)/1000000));
                     out.println(String.join(",",row));
@@ -108,7 +108,8 @@ public class Alpha96Calib {
         List<String> h=new ArrayList<>(List.of("photo_id","path","status","width","height","pose_reason","twelve_phase_used",
                 "dial_radius_px_edge","ellipse_ratio","tick_rms_px","ticks_used","tick_sectors","dial_radius_px",
                 "ring_usable","ring_n","ring_shift_x_px","ring_shift_y_px","ring_shift_px","ring_scale_pct","ring_rotation_deg"));
-        for(String p:new String[]{"m12","m6","m9"}){for(String f:MF)h.add(p+"_"+f);if(p.equals("m12"))for(String f:TF)h.add(p+"_"+f);}
+        for(String f:MF)h.add("m12_"+f);for(String f:TF)h.add("m12_"+f);
+        for(int b:batonHours())for(String f:MF)h.add("m"+b+"_"+f);
         for(int r:ROUNDS)for(String f:MF)h.add("m"+r+"_"+f);
         h.add("ms");
         return h;
@@ -127,6 +128,14 @@ public class Alpha96Calib {
         row.add(n(m.fitSupport));
         row.add(Double.isFinite(m.fitScorePx)?n(1.0-m.fitScorePx):"");
         if(tri){row.add(u?n(m.leftSideErrDeg):"");row.add(u?n(m.rightSideErrDeg):"");row.add(u?n(m.baseTiltDeg):"");}
+    }
+
+    /** Baton hours of the harness model in clock order after 12 (GMT: 6, 9 - the original column order; Submariner: 3, 6, 9). */
+    static int[] batonHours(){
+        List<Integer> b=new ArrayList<>();
+        for(ModelSpec.Marker m:HarnessModel.spec().markers)if(m.shape==ModelSpec.Shape.BATON)b.add(m.hour);
+        java.util.Collections.sort(b);
+        int[] o=new int[b.size()];for(int i=0;i<o.length;i++)o[i]=b.get(i);return o;
     }
 
     static void pad(List<String> row){int want=header().size();while(row.size()<want)row.add("");}

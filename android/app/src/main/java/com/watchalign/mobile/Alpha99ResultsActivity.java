@@ -34,6 +34,8 @@ public class Alpha99ResultsActivity extends Activity {
         static Bitmap overview;
         static final Map<String,Bitmap> closeups=new HashMap<>();
         static String technical;
+        /** the model the photo was checked as, and an optional hint that a different model may fit the photo. */
+        static String modelLabel,modelHint;
         static Bitmap photo,overlay;
         private Store(){}
     }
@@ -54,6 +56,8 @@ public class Alpha99ResultsActivity extends Activity {
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-2));
         Alpha99Findings.Summary s=Store.summary;
         root.addView(text("Results",28,Color.WHITE,true));
+        if(Store.modelLabel!=null)root.addView(text("Checked as: "+Store.modelLabel,14,MUTED,false),lp(-1,-2,2));
+        if(Store.modelHint!=null)root.addView(text(Store.modelHint,14,Color.rgb(255,176,50),false),lp(-1,-2,4));
         List<String> head=s.headlineLines();
         for(int i=0;i<head.size();i++)root.addView(text(head.get(i),i==0?19:16,Color.WHITE,i==0),lp(-1,-2,i==0?8:2));
         root.addView(text(Alpha99Findings.DISCLAIMER,13,MUTED,false),lp(-1,-2,6));

@@ -75,6 +75,57 @@ public class ModelSpecTest {
         for(String f:new String[]{"six_rot","six_off","nine_rot","nine_off","rounds_off","ring_rot","ring_shift","date_tilt"})assertTrue(f,r.has(f));
     }
 
+    @Test public void submariner124060ReferenceIsTheResearchFilesAndRoundSizeIsDowngraded()throws Exception{
+        String[][] map={{"alpha98_reference.csv",ModelReference.GENUINE},{"alpha98_nominal.properties",ModelReference.NOMINAL},
+                {"m12_nominal.properties",ModelReference.TRI_NOMINAL},{"m12_genuine_reference.csv",ModelReference.TRI_REFERENCE},
+                {"alpha99_uncertainty.properties",ModelReference.UNCERTAINTY}};
+        File research=new File(researchDir(),"../sub124060/reference_src"),ref=new File(TestModels.assets(),"models/submariner_124060/reference");
+        for(String[] p:map)assertArrayEquals(p[0]+" -> "+p[1]+" (re-run export_model_reference.py --model submariner_124060 --source-dir tools/research/sub124060/reference_src)",
+                Files.readAllBytes(new File(research,p[0]).toPath()),Files.readAllBytes(new File(ref,p[1]).toPath()));
+        ModelSpec m=ModelSpec.load(ModelSpec.directory(TestModels.assets()),"submariner_124060");
+        assertNull(m.date);
+        assertEquals(12,m.markers.size());assertEquals("three",m.atHour(3).key);assertEquals(0.7591,m.atHour(6).centreR,0);
+        ModelReference r=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
+        assertEquals(24,r.triangle.nWatches);assertEquals(3.0,r.kSigma,0);
+        for(String f:new String[]{"three_rot","three_off","six_rot","six_off","nine_rot","nine_off","rounds_off","ring_rot","ring_shift","rounds_size","round_size_rel"})assertTrue(f,r.has(f));
+        assertFalse(r.has("date_tilt"));
+        // QC guardrails 11: held-out genuine conflict on round-plot size -> no allowance, so at most worth a look
+        assertTrue(Double.isNaN(r.sigma("rounds_size","R")));assertTrue(Double.isNaN(r.sigma("round_size_rel","R")));
+        assertTrue(r.sigma("six_rot","deg")>0);
+    }
+
+    @Test public void submarinerBatonPositionIsResolutionMatched()throws Exception{
+        ModelSpec m=ModelSpec.load(ModelSpec.directory(TestModels.assets()),"submariner_124060");
+        ModelReference ref=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
+        assertTrue(m.resolutionMatched.contains("three_off"));assertTrue(TestModels.gmt().resolutionMatched.isEmpty());
+        for(double R:new double[]{131,400}){
+            Alpha94MarkerMeasurement.Marker b=new Alpha94MarkerMeasurement.Marker(3,"baton");b.spec=m.atHour(3);b.usable=true;
+            b.rotationDeg=ref.nominal("three_rot");b.localOffsetPx=0.44;b.localRadialPx=0.35;b.localTangentialPx=0.27;
+            List<Alpha94MarkerMeasurement.Marker> ms=new ArrayList<>();ms.add(b);
+            Alpha94MarkerMeasurement.Report r=new Alpha94MarkerMeasurement.Report(ms,null,R,null);
+            Alpha99MarkerInterference.Check c=new Alpha99MarkerInterference.Check(3);c.clean=true;
+            Alpha99Findings.Finding f=Alpha99Findings.baton(r,m.atHour(3),R,c,ref,true);
+            if(R<150){   // the render case: below the genuine photos' resolution the position is not assessed, rotation is
+                assertEquals("position",f.partNotAssessed);assertEquals(1,f.measures.size());
+                assertEquals(Alpha99Findings.Status.WITHIN,f.status);
+                assertTrue(String.join(" ",f.detail()).contains("position is not assessed"));
+            }else{assertNull(f.partNotAssessed);assertEquals(2,f.measures.size());assertTrue(ref.matchedWatches("three_off",R)>=8);}
+        }
+        // GMT: low-resolution rows (Alpha102) count once per watch and never touch a photo the full-resolution
+        // reference covers: there the limit is exactly the full-resolution rows' limit
+        ModelReference g=TestModels.gmtRef();
+        List<String> lines=Files.readAllLines(new File(TestModels.assets(),"models/gmt_126710/reference/genuine_reference.csv").toPath());
+        List<String> h=java.util.Arrays.asList(lines.get(0).trim().split(",",-1));
+        java.util.Set<String> full=new java.util.HashSet<>();double fullMax=0;int low=0;
+        for(String l:lines.subList(1,lines.size())){String[] f=l.trim().split(",",-1);if(!f[0].equals("rounds_off"))continue;
+            if(f.length>h.indexOf("max_photo_r")&&!f[h.indexOf("max_photo_r")].isEmpty()){low++;continue;}
+            full.add(f[1]);if(Double.parseDouble(f[4])<=1.3*400)fullMax=Math.max(fullMax,Double.parseDouble(f[3]));}
+        assertTrue("low-resolution rows: "+low,low>0);
+        assertEquals(full.size(),g.matchedWatches("rounds_off",1e9));
+        assertEquals(fullMax,g.matchedMax("rounds_off",400),0);
+        assertTrue(g.matchedWatches("rounds_off",140)>=8);                       // small photos now assessable
+    }
+
     @Test public void jsonReaderIsExactAndStrict(){
         @SuppressWarnings("unchecked") Map<String,Object> o=(Map<String,Object>)MiniJson.parse("{\"a\":[0.7991666666666667,-0.38,1e-3],\"b\":\"x\\\"y\",\"c\":null,\"d\":true}");
         @SuppressWarnings("unchecked") List<Object> a=(List<Object>)o.get("a");
