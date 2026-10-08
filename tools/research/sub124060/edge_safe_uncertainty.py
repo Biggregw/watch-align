@@ -13,6 +13,10 @@ Each value keeps its own '.watches' count. Every other key is the filtered file'
 touches only the 12).
 
 Usage: edge_safe_uncertainty.py --filtered alpha99_uncertainty.properties --unfiltered unfiltered.properties --out out.properties
+
+--all-families applies the same rule to every family, not only the 12 (Alpha102: a quality-selected genuine image pack
+must not shrink the photo-to-photo allowances the app applies to ordinary photos; --unfiltered is then the previous
+allowance file).
 """
 import argparse
 
@@ -28,19 +32,22 @@ def main():
     ap = argparse.ArgumentParser()
     for k in ('--filtered', '--unfiltered', '--out'):
         ap.add_argument(k, required=True)
+    ap.add_argument('--all-families', action='store_true')
     a = ap.parse_args()
     lines, f = read(a.filtered)
     _, u = read(a.unfiltered)
     pick = {}
     for k in f:
-        if not k.startswith('twelve_') or k.endswith('.watches') or k not in u:
+        if (not a.all_families and not k.startswith('twelve_')) or k.endswith('.watches') or k not in u:
             continue
         fv, uv = float(f[k]), float(u[k])
+        if k == 'k_sigma':
+            continue
         if k == 'twelve_sides_agreement.limit':
             pick[k] = 'u' if uv < fv else 'f'
         elif k.endswith(SIGMA_SUFFIXES):
             pick[k] = 'u' if uv > fv else 'f'
-    out = ['# 12 values: the more cautious of the edge-filtered and unfiltered genuine data (edge_safe_uncertainty.py)']
+    out = ['# ' + ('all' if a.all_families else '12') + ' values: the more cautious of the two input files (edge_safe_uncertainty.py)']
     for l in lines:
         k = l.split('=')[0].strip() if '=' in l and not l.startswith('#') else None
         base = k[:-len('.watches')] if k and k.endswith('.watches') else k
