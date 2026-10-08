@@ -74,7 +74,9 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle b){
         super.onCreate(b);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        buildUi(); files(); loadState(); setupWeb();
+        buildUi(); files(); loadState();
+        if(imageCount()==0 && !done.isEmpty()){done.clear();hashes.clear();doneFile.delete();hashFile.delete();}
+        setupWeb();
         idle();
     }
 
@@ -197,16 +199,55 @@ public class MainActivity extends Activity {
     void productJs(){
         Product p=current;if(p==null){next();return;}
         String q=JSONObject.quote(p.ref);
-        String js="(function(){const h=(document.querySelector('h1')?.innerText||'').replace(/\\\\s+/g,' ').trim();const b=(document.body.innerText||'').replace(/\\\\s+/g,' ').slice(0,18000);let sku='';const sm=b.match(/SKU\\\\s*[:#-]?\\\\s*(\\\\d{4,8})/i);if(sm)sku=sm[1];const ref="+q+";const out=[],seen=new Set();function add(u,a,w,h){if(!u||seen.has(u))return;seen.add(u);out.push({u:u,a:a||'',w:w||0,h:h||0});}document.querySelectorAll('script[type=\\\"application/ld+json\\\"]').forEach(s=>{try{let d=JSON.parse(s.textContent),n=Array.isArray(d)?d:[d];n.forEach(x=>{if(x&&x['@type']==='Product'){if(!sku&&x.sku)sku=String(x.sku);let m=x.image||[];if(typeof m==='string')m=[m];m.forEach(u=>add(u,'jsonld '+ref,1000,1000));}});}catch(e){}});document.querySelectorAll('img').forEach(im=>{const u=im.currentSrc||im.src||im.getAttribute('data-src')||'',a=im.alt||'',hay=(u+' '+a).toUpperCase();if((ref&&hay.includes(ref.toUpperCase()))||(sku&&hay.includes(sku)))add(u,a,im.naturalWidth||0,im.naturalHeight||0);});return JSON.stringify({h:h,b:b,s:sku,m:out});})();";
+        String js="(function(){"+
+                "const h=(document.querySelector('h1')?.innerText||'').replace(/\\s+/g,' ').trim();"+
+                "const b=(document.body.innerText||'').replace(/\\s+/g,' ').slice(0,18000);"+
+                "let sku='';const sm=b.match(/SKU\\s*[:#-]?\\s*(\\d{4,8})/i);if(sm)sku=sm[1];"+
+                "const ref="+q+";const out=[],seen=new Set();"+
+                "function norm(u){if(!u)return'';if(typeof u==='object')u=u.url||u.contentUrl||u['@id']||'';"+
+                "try{const x=new URL(String(u),location.href);if(!/^https?:$/i.test(x.protocol))return'';return x.href;}catch(e){return'';}}"+
+                "function add(u,a,w,h){u=norm(u);if(!u||seen.has(u))return;seen.add(u);out.push({u:u,a:a||'',w:w||0,h:h||0});}"+
+                "document.querySelectorAll('script[type=\"application/ld+json\"]').forEach(s=>{try{let d=JSON.parse(s.textContent),n=Array.isArray(d)?d:[d];"+
+                "n.forEach(x=>{if(x&&x['@type']==='Product'){if(!sku&&x.sku)sku=String(x.sku);let m=x.image||[];if(!Array.isArray(m))m=[m];m.forEach(u=>add(u,'jsonld '+ref,1000,1000));}});}catch(e){}});"+
+                "document.querySelectorAll('img').forEach(im=>{const u=norm(im.currentSrc||im.src||im.getAttribute('data-src')||''),a=im.alt||'',hay=(u+' '+a).toUpperCase();"+
+                "if(u&&((ref&&hay.includes(ref.toUpperCase()))||(sku&&hay.includes(sku))))add(u,a,im.naturalWidth||0,im.naturalHeight||0);});"+
+                "return JSON.stringify({h:h,b:b,s:sku,m:out});})();";
         web.evaluateJavascript(js,v->{
             if(!running||stopping||p!=current)return;
             try{
-                JSONObject o=new JSONObject(jsValue(v));String h=clean(o.optString("h")),body=o.optString("b"),r=ref(h+" "+body);if(!r.isEmpty())p.ref=r;if(!h.isEmpty())p.title=h;p.sku=o.optString("s");
+                JSONObject o=new JSONObject(jsValue(v));
+                String h=clean(o.optString("h")),body=o.optString("b"),r=ref(h);
+                if(!r.isEmpty())p.ref=r;
+                if(!h.isEmpty())p.title=h;
+                p.sku=o.optString("s");
                 if(p.sku.isEmpty()){Matcher sm=SKU.matcher(body);if(sm.find())p.sku=sm.group(1);}
-                JSONArray m=o.optJSONArray("m");if(m!=null)for(int i=0;i<m.length();i++){JSONObject x=m.getJSONObject(i);String u=x.optString("u");int w=x.optInt("w"),hh=x.optInt("h");if(!u.isEmpty()&&(w==0||hh==0||(w>=350&&hh>=350)))p.imgs.add(u);}
-                List<String> urls=new ArrayList<>(p.imgs);io.submit(()->process(p,urls));
-            }catch(Exception e){msgUi("Product parse failed: "+e.getMessage());markDone(p.url);runOnUiThread(this::next);}
+                JSONArray m=o.optJSONArray("m");
+                if(m!=null)for(int i=0;i<m.length();i++){
+                    JSONObject x=m.optJSONObject(i);if(x==null)continue;
+                    String u=normalizeImageUrl(x.optString("u"),p.url);int w=x.optInt("w"),hh=x.optInt("h");
+                    if(!u.isEmpty()&&(w==0||hh==0||(w>=350&&hh>=350)))p.imgs.add(u);
+                }
+                List<String> urls=new ArrayList<>();
+                for(String u:p.imgs){String n=normalizeImageUrl(u,p.url);if(!n.isEmpty())urls.add(n);}
+                io.submit(()->process(p,urls));
+            }catch(Exception e){
+                msgUi("Product parse failed: "+e.getClass().getSimpleName()+": "+e.getMessage());
+                markDone(p.url);runOnUiThread(this::next);
+            }
         });
+    }
+
+    String normalizeImageUrl(String text,String base){
+        if(text==null)return "";
+        text=text.trim();
+        if(text.isEmpty()||text.startsWith("data:")||text.startsWith("blob:"))return "";
+        try{
+            URI u=URI.create(text);
+            if(!u.isAbsolute())u=URI.create(base).resolve(u);
+            String scheme=u.getScheme(),host=u.getHost();
+            if(scheme==null||host==null||(!scheme.equalsIgnoreCase("http")&&!scheme.equalsIgnoreCase("https")))return "";
+            return u.toString();
+        }catch(Exception e){return "";}
     }
 
     void process(Product p,List<String> urls){
@@ -214,7 +255,7 @@ public class MainActivity extends Activity {
         for(String u:new LinkedHashSet<>(urls)){
             if(stopping)break;ix++;
             try{
-                byte[] bytes=download(u,p.url);if(bytes==null||bytes.length<20000)continue;String sha=sha(bytes);
+                byte[] bytes=download(u,p.url);if(bytes==null||bytes.length<20000){msgUi("Image download skipped: "+shorten(u,90));continue;}String sha=sha(bytes);
                 synchronized(hashes){if(hashes.contains(sha))continue;hashes.add(sha);line(hashFile,sha);}
                 Bitmap bm=BitmapFactory.decodeByteArray(bytes,0,bytes.length);if(bm==null)continue;Fit f=fit(bm);if(!f.ok){bm.recycle();continue;}
                 String rr=safe(p.ref), sku=p.sku.isEmpty()?"listing"+Math.abs(p.url.hashCode()):p.sku;File d=new File(images,rr);d.mkdirs();
@@ -228,6 +269,7 @@ public class MainActivity extends Activity {
     }
 
     byte[] download(String text,String referer)throws Exception{
+        text=normalizeImageUrl(text,referer);if(text.isEmpty())return null;
         URL u=new URL(text);String host=u.getHost().toLowerCase(Locale.US);if(!host.endsWith("bobswatches.com"))return null;
         HttpURLConnection c=(HttpURLConnection)u.openConnection();c.setInstanceFollowRedirects(true);c.setConnectTimeout(25000);c.setReadTimeout(35000);c.setRequestProperty("User-Agent",UA);c.setRequestProperty("Referer",referer);c.setRequestProperty("Accept","image/avif,image/webp,image/apng,image/*,*/*;q=0.8");String ck=CookieManager.getInstance().getCookie(text);if(ck!=null)c.setRequestProperty("Cookie",ck);
         int code=c.getResponseCode();if(code<200||code>=300){c.disconnect();return null;}if(c.getContentLengthLong()>MAX_IMG){c.disconnect();return null;}
@@ -288,10 +330,10 @@ public class MainActivity extends Activity {
     String jsValue(String v)throws Exception{Object x=new JSONTokener(v==null?"null":v).nextValue();return x instanceof String?(String)x:String.valueOf(x);}
     String sha(byte[] b)throws Exception{byte[] d=MessageDigest.getInstance("SHA-256").digest(b);StringBuilder s=new StringBuilder();for(byte x:d)s.append(String.format(Locale.US,"%02x",x&255));return s.toString();}
     void markDone(String u){synchronized(done){if(done.add(u))line(doneFile,u);}}
-    void line(File f,String s){try{File p=f.getParentFile();if(p!=null)p.mkdirs();try(FileWriter w=new FileWriter(f,true)){w.write(s);w.write("\\n");}}catch(Exception ignored){}}
+    void line(File f,String s){try{File p=f.getParentFile();if(p!=null)p.mkdirs();try(FileWriter w=new FileWriter(f,true)){w.write(s);w.write("\n");}}catch(Exception ignored){}}
     void readSet(File f,Set<String>s){if(!f.exists())return;try(BufferedReader r=new BufferedReader(new FileReader(f))){String x;while((x=r.readLine())!=null)if(!x.trim().isEmpty())s.add(x.trim());}catch(Exception ignored){}}
     int imageCount(){int n=0;File[]d=images.listFiles(File::isDirectory);if(d!=null)for(File x:d){File[]f=x.listFiles((a,b)->b.endsWith(".jpg"));if(f!=null)n+=f.length;}return n;}
-    void msg(String s){log.append(s+"\\n");if(log.length()>22000)log.setText(log.getText().subSequence(log.length()-16000,log.length()));}
+    void msg(String s){log.append(s.replace("\\n","\n")+"\n");if(log.length()>22000)log.setText(log.getText().subSequence(log.length()-16000,log.length()));}
     void msgUi(String s){runOnUiThread(()->msg(s));}
     int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
     int cl(int x,int a,int b){return Math.max(a,Math.min(b,x));}
