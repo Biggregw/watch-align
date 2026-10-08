@@ -109,7 +109,7 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView v,String u){
                 if(!running||stopping)return;
                 web.evaluateJavascript("window.scrollTo(0,document.body.scrollHeight);true;",null);
-                web.postDelayed(()->{if(!running||stopping)return;if(mode==Mode.CATALOG)catalogJs();else if(mode==Mode.PRODUCT)productJs();},1400);
+                web.postDelayed(()->{if(!running||stopping)return;if(mode==Mode.CATALOG)catalogJs();else if(mode==Mode.PRODUCT)productJs();},3200);
             }
         });
     }
@@ -128,21 +128,25 @@ public class MainActivity extends Activity {
     void loadCatalog(){mode=Mode.CATALOG;status.setText("Finding Rolex listings… source "+(root+1)+"/"+ROOTS.length+", page "+page+"\\n"+products.size()+" unique product pages found.");web.loadUrl(catUrl());}
 
     void catalogJs(){
-        String js="(function(){const a=[];document.querySelectorAll('a[href]').forEach(x=>{const t=((x.innerText||x.textContent||'').replace(/\\\\s+/g,' ').trim());if(!/^Rolex\\\\s/i.test(t))return;const im=x.querySelector('img');a.push({t:t,u:x.href||'',i:im?(im.currentSrc||im.src||im.getAttribute('data-src')||''):''});});return JSON.stringify({a:a,b:(document.body.innerText||'').slice(0,12000)});})();";
+        String js="(function(){const a=[],seen=new Set();let rolex=0;document.querySelectorAll('a[href]').forEach(x=>{const im=x.querySelector('img');const parts=[x.innerText,x.textContent,x.getAttribute('aria-label'),x.getAttribute('title'),im&&im.alt].filter(Boolean);const t=parts.join(' ').replace(/\\s+/g,' ').trim();const u=x.href||'';if(/Rolex/i.test(t))rolex++;if(!u||seen.has(u))return;const path=(()=>{try{return new URL(u).pathname.toLowerCase()}catch(e){return''}})();if(!/bobswatches\\.com$/i.test((()=>{try{return new URL(u).hostname}catch(e){return''}})()))return;if(!/\\.html$/i.test(path))return;if(/\\/(rolex-blog|sell-|rolex-app|about|faq|shipping|returns)/i.test(path))return;const hay=(t+' '+u).replace(/[-_]/g,' ');if(!/Rolex/i.test(hay))return;if(!/(?:^|[^0-9])(?:[0-9]{4,6}[A-Z]{0,5})(?:[^0-9]|$)/i.test(hay))return;seen.add(u);a.push({t:t,u:u,i:im?(im.currentSrc||im.src||im.getAttribute('data-src')||''):''});});return JSON.stringify({a:a,b:(document.body.innerText||'').slice(0,24000),hrefs:document.querySelectorAll('a[href]').length,rolex:rolex,title:document.title||''});})();";
         web.evaluateJavascript(js,v->{
             if(!running||stopping)return;
             try{
                 JSONObject o=new JSONObject(jsValue(v));JSONArray a=o.getJSONArray("a");int before=products.size();
                 for(int i=0;i<a.length();i++){
-                    JSONObject z=a.getJSONObject(i);String title=clean(z.optString("t")),u=z.optString("u"),ref=ref(title);
-                    if(ref.isEmpty()||!productUrl(u))continue;
-                    Product p=products.get(u);if(p==null){p=new Product();p.url=u;p.title=title;p.ref=ref;products.put(u,p);}
+                    JSONObject z=a.getJSONObject(i);String title=clean(z.optString("t")),u=z.optString("u"),r=ref(title+" "+u);
+                    if(r.isEmpty()||!productUrl(u))continue;
+                    Product p=products.get(u);if(p==null){p=new Product();p.url=u;p.title=title;p.ref=r;products.put(u,p);}
                     String im=z.optString("i");if(!im.isEmpty())p.imgs.add(im);
                 }
-                int add=products.size()-before;msg("Catalogue page "+page+": +"+add+" ("+products.size()+" unique).");
+                int add=products.size()-before;msg("Catalogue page "+page+": +"+add+" ("+products.size()+" unique), "+o.optInt("hrefs")+" links scanned.");
                 empty=add==0?empty+1:0;Integer total=resultTotal(o.optString("b"));
                 boolean end=empty>=2||page>=MAX_PAGES||(root==0&&total!=null&&products.size()>=total);
-                if(page==1&&products.isEmpty()){halt();status.setText("No Rolex cards found. If Bob's is showing a cookie/challenge page below, complete it and tap Start / Resume.");return;}
+                if(page==1&&products.isEmpty()){
+                    msg("No products yet. Page title: "+o.optString("title")+"; Rolex-labelled links seen: "+o.optInt("rolex")+". Retrying after a longer wait.");
+                    web.postDelayed(()->{if(running&&!stopping&&mode==Mode.CATALOG)catalogJs();},5000);
+                    return;
+                }
                 if(end){root++;if(root<ROOTS.length){page=1;empty=0;loadCatalog();}else beginProducts();}
                 else{page++;web.postDelayed(this::loadCatalog,450);}
             }catch(Exception e){msg("Catalogue parse error: "+e.getMessage());page++;if(page>MAX_PAGES)beginProducts();else loadCatalog();}
@@ -245,7 +249,7 @@ public class MainActivity extends Activity {
     void put(ZipOutputStream z,String n,byte[] b)throws Exception{z.putNextEntry(new ZipEntry(n));z.write(b);z.closeEntry();}
     void downloads(File src,String name)throws Exception{ContentResolver cr=getContentResolver();ContentValues v=new ContentValues();v.put(MediaStore.Downloads.DISPLAY_NAME,name);v.put(MediaStore.Downloads.MIME_TYPE,"application/zip");if(Build.VERSION.SDK_INT>=29){v.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS+"/WatchAlign_Bobs_Harvest");v.put(MediaStore.Downloads.IS_PENDING,1);}Uri u=cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,v);if(u==null)throw new IOException("Cannot create download");try(InputStream in=new FileInputStream(src);OutputStream out=cr.openOutputStream(u)){if(out==null)throw new IOException("Cannot open download");byte[] b=new byte[65536];int k;while((k=in.read(b))>=0)out.write(b,0,k);}if(Build.VERSION.SDK_INT>=29){ContentValues q=new ContentValues();q.put(MediaStore.Downloads.IS_PENDING,0);cr.update(u,q,null,null);}}
 
-    boolean productUrl(String s){try{URI u=URI.create(s);String h=u.getHost();if(h==null||!h.toLowerCase(Locale.US).endsWith("bobswatches.com"))return false;String p=u.getPath().toLowerCase(Locale.US);if(p.contains("/rolex-blog/")||p.contains("/sell-")||p.contains("/rolex-app"))return false;return p.endsWith(".html")||p.contains("/used-rolex")||p.contains("/pre-owned-rolex")||p.contains("/mens-rolex");}catch(Exception e){return false;}}
+    boolean productUrl(String s){try{URI u=URI.create(s);String h=u.getHost();if(h==null||!h.toLowerCase(Locale.US).endsWith("bobswatches.com"))return false;String p=u.getPath().toLowerCase(Locale.US);if(p.contains("/rolex-blog/")||p.contains("/sell-")||p.contains("/rolex-app")||p.contains("/about")||p.contains("/faq"))return false;return p.endsWith(".html");}catch(Exception e){return false;}}
     String ref(String s){String u=clean(s).toUpperCase(Locale.US);Matcher x=REF_EX.matcher(u);if(x.find()&&!NONREF.contains(x.group(1)))return variant(x.group(1),u);Matcher m=REF_ANY.matcher(u);List<String>a=new ArrayList<>();while(m.find())if(!NONREF.contains(m.group(1)))a.add(m.group(1));for(String r:a){int n=r.replaceAll("[A-Z]","").length();if(n>=5&&n<=6)return variant(r,u);}return a.isEmpty()?"":variant(a.get(0),u);}
     String variant(String r,String t){r=r.toUpperCase(Locale.US);if(r.equals("126710")){if(t.matches(".*\\b(PEPSI|BLRO)\\b.*"))return"126710BLRO";if(t.matches(".*\\b(BATMAN|BATGIRL|BLNR)\\b.*"))return"126710BLNR";if(t.matches(".*(BRUCE WAYNE|\\bGRNR\\b|GREY.*BLACK|BLACK.*GREY).*"))return"126710GRNR";}if(r.equals("126720")&&t.matches(".*\\b(SPRITE|VTNR)\\b.*"))return"126720VTNR";if(r.equals("126610")){if(t.matches(".*(STARBUCKS|CERMIT|GREEN BEZEL|\\bLV\\b).*"))return"126610LV";if(t.matches(".*(BLACK BEZEL|\\bLN\\b).*"))return"126610LN";}if(r.equals("116610")){if(t.matches(".*(HULK|GREEN DIAL|GREEN BEZEL|\\bLV\\b).*"))return"116610LV";if(t.matches(".*(BLACK BEZEL|\\bLN\\b).*"))return"116610LN";}if(r.equals("16610")&&t.matches(".*(KERMIT|GREEN BEZEL|\\bLV\\b).*"))return"16610LV";return r;}
     Integer resultTotal(String s){Matcher m=Pattern.compile("\\bof\\s+([0-9,]+)\\s+results\\b",Pattern.CASE_INSENSITIVE).matcher(s);if(!m.find())return null;try{return Integer.parseInt(m.group(1).replace(",",""));}catch(Exception e){return null;}}
