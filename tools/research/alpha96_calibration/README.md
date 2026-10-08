@@ -784,3 +784,13 @@ The app no longer has GMT geometry or GMT reference values in code.
 - All 18 rendered results screens and the overlay outline bitmap are pixel-identical to Alpha99 (7f2268f).
 
 **Tests.** `ModelSpecTest` pins the GMT spec to the frozen `Alpha92GmtMaster` / pose / date-window constants and checks that the app's reference copies are byte-identical to the research files. It also runs a second, test-only layout (batons at 3, 6 and 9, no date) through the evidence layer with no code change: with no genuine reference, every feature reads "not assessed".
+
+### 12 side angle on its own: at most worth a look (owner decision, 2026-10-08)
+
+The genuine-catalogue run on the Alpha100 branch (37731661635) fetched a new Swiss Watch Expo 126710BLNR studio photo, `ce997f77df67b365`. Its 12 right side read 4.1° off (genuine max 1.0°), while the 12's centreline and position were within the genuine range: the studio-lighting effect on the 12 described above. Before this rule, that photo was a CLEAR finding.
+
+**Rule:** when only the side angle of the 12 is outside the genuine range, and the centreline and lateral position are not, the 12 is WORTH A LOOK at most. The detail view explains why. A side angle together with an outside centreline or position can still be CLEAR.
+
+**Local photos:** no classification changes. The local 12 CLEAR findings (Local BLNR, ARF) are lateral.
+
+**Test:** `Alpha99FindingsTest.twelveSideAngleOnItsOwnIsAtMostWorthALook`.
