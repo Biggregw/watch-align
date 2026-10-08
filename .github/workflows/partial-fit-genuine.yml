@@ -1,0 +1,74 @@
+name: Partial-outline round fit on genuine catalogues (research)
+
+# RESEARCH ONLY (Alpha102). For the GMT and the 124060 genuine catalogues (sha256-verified fetch), runs the PartialFit driver:
+# (1) on every clean round marker, re-fits with a 90 deg arc ignored in 8 directions (size fixed to the dial's own round
+# size) and records the extra error; (2) on every round marker the hand check withholds, re-fits with the arc facing the
+# hand ignored and records whether it is measurable and its offsets. CSVs printed / uploaded; images never committed.
+on:
+  push:
+    branches:
+      - feature/android-alpha102-submariner
+    paths:
+      - '.github/workflows/partial-fit-genuine.yml'
+      - 'tools/desktop-harness/drivers/PartialFit.java'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  partial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: gmt
+            catalogue: tools/research/alpha96_calibration/catalogue_provenance_strong.csv
+            model: gmt_126710
+            root: android/app/src/main/assets
+          - name: sub124060
+            catalogue: tools/research/sub124060/catalogue_124060.csv
+            model: submariner_124060
+            root: android/app/src/main/assets
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Fetch catalogued photos (sha256-verified)
+        run: |
+          mkdir -p imgs out
+          python3 tools/research/alpha96_calibration/fetch_verified.py "${{ matrix.catalogue }}" imgs out/fetch_log.csv > /dev/null
+          python3 - <<'PY'
+          import csv
+          rows = [r for r in csv.DictReader(open('${{ matrix.catalogue }}')) if r['class_label'] == 'gen']
+          with open('gen.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
+          PY
+      - name: Partial-fit experiment
+        env:
+          JAVA_TOOL_OPTIONS: -Dwatchalign.model=${{ matrix.model }}
+        run: tools/desktop-harness/run.sh PartialFit gen.csv imgs out/pf 2> /dev/null
+      - name: Upload CSVs (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: partial-fit-${{ matrix.name }}-${{ github.run_id }}
+          retention-days: 30
+          path: out/*.csv
+      - name: Print CSVs
+        if: always()
+        run: |
+          for f in pf_simulated pf_hand; do echo "=== ${{ matrix.name }}_$f.csv BEGIN"; cat out/$f.csv; echo "=== ${{ matrix.name }}_$f.csv END"; done
