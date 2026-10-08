@@ -75,12 +75,39 @@ jobs:
           cp $C/src/m12_nominal.properties $C/models/gmt_126710/reference/triangle_nominal.properties
           cp $C/src/m12_ref.csv $C/models/gmt_126710/reference/triangle_reference.csv
           cp $C/src/unc.properties $C/models/gmt_126710/reference/uncertainty.properties
+          # GMT print spots (run 37804668525 interference log: recurring dim seconds-dot candidates at r 0.50, ~153 / ~206 deg,
+          # mirror images, e.g. the printed line on the lower dial; on 2 sharp photos the 206 deg spot won and withheld the 7)
+          python3 - <<'PY'
+          import json
+          p = 'cand/models/gmt_126710/model.json'; s = json.load(open(p))
+          s['seconds_hand'].update({'print_spots': [[153.5, 0.501], [206.3, 0.502]], 'print_spot_tol_deg': 2.0,
+                                    'print_spot_tol_r': 0.012, 'print_spot_min_frac': 0.75})
+          json.dump(s, open(p, 'w'), indent=2)
+          PY
           for f in triangle_nominal.properties triangle_reference.csv uncertainty.properties; do
             echo "--- $f"; diff android/app/src/main/assets/models/gmt_126710/reference/$f $C/models/gmt_126710/reference/$f || true; done
 
       - name: Interference check (current app)
-        if: env.FULL == 'true'
         run: tools/desktop-harness/run.sh Alpha99Interference "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT" --no-images > "$OUT/interference_log.txt" 2>/dev/null
+
+      - name: Interference check (candidate)
+        run: |
+          mkdir -p "$OUT/cand_int"
+          JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Dwatchalign.models_root=cand" \
+            tools/desktop-harness/run.sh Alpha99Interference "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/cand_int" --no-images > "$OUT/cand_int/interference_log.txt" 2>/dev/null
+          python3 - <<'PY'
+          import csv, os
+          out = os.environ['OUT']
+          key = lambda r: (r['photo_id'], r['hour'])
+          a = {key(r): r for r in csv.DictReader(open(f'{out}/interference.csv'))}
+          b = {key(r): r for r in csv.DictReader(open(f'{out}/cand_int/interference.csv'))}
+          n = 0
+          for k in a:
+              if (a[k]['clean'], a[k]['reason']) != (b.get(k, {}).get('clean'), b.get(k, {}).get('reason')):
+                  n += 1; print('INTERFERENCE CHANGE', k, a[k]['clean'], a[k]['reason'], '->', b.get(k, {}).get('clean'), b.get(k, {}).get('reason'))
+          print('interference changes', n)
+          PY
+          grep "\[SEC" "$OUT/cand_int/interference_log.txt" | sed 's/^/CAND /' || true
 
       - name: Classification, current constants
         run: |
