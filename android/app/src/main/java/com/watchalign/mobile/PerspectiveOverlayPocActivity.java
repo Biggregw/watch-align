@@ -36,6 +36,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
      *  to the app's assets only once its genuine reference has passed validation (docs/ADDING_A_MODEL.md). */
     static final String MODEL_ID="gmt_126710";
     private String modelId=MODEL_ID;
+    private static final String PREFS="watchalign",PREF_MODEL="model";
     private final List<String> modelIds=new ArrayList<>(),modelLabels=new ArrayList<>();
     private ModelSpec model;private ModelReference reference;
     private TextView title,intro;
@@ -56,6 +57,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         discoverModels();
+        try{String last=getSharedPreferences(PREFS,MODE_PRIVATE).getString(PREF_MODEL,MODEL_ID);if(modelIds.contains(last))modelId=last;}catch(Exception ignored){}
         title=text("Dial Check",28,Color.WHITE);root.addView(title);
         root.addView(text("Alpha99 · compares the dial with genuine watches · research build, no verdicts",14,ACCENT));
         if(modelIds.size()>1){
@@ -67,6 +69,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
                     String chosen=modelIds.get(position);
                     if(chosen.equals(modelId))return;
                     modelId=chosen;model=null;reference=null;Alpha99ResultsActivity.Store.summary=null;
+                    try{getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString(PREF_MODEL,chosen).apply();}catch(Exception ignored){}
                     inspectButton.setEnabled(false);updateModelText();
                 }
                 @Override public void onNothingSelected(AdapterView<?> parent){}
@@ -82,6 +85,21 @@ public class PerspectiveOverlayPocActivity extends Activity {
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(BG);root.addView(preview,lp(-1,-2,8));
         updateModelText();
         return scroll;
+    }
+
+    /** A model with a date window whose window was not found while another model without a date is offered: suggest it
+     *  (a no-date watch checked as a date model reads its print and its 3 o'clock wrongly). */
+    private String modelHint(Alpha99Pipeline.Output o){
+        if(o.model==null||o.model.date==null||o.date==null||o.date.usable)return null;
+        String why=o.date.reason==null?"":o.date.reason;
+        if(!why.startsWith("window edges not found")&&!why.startsWith("no plausible window"))return null;   // a window was there (glare, digits ...)
+        for(int i=0;i<modelIds.size();i++){
+            if(modelIds.get(i).equals(modelId))continue;
+            try{ModelSpec m=ModelSpec.load(getAssets()::open,modelIds.get(i));
+                if(m.date==null)return "No date window was found. If this watch has no date, choose \""+m.label+"\" on the start screen and check it again.";}
+            catch(Exception ignored){}
+        }
+        return null;
     }
 
     /** Model folders in the app's assets, default first; a folder whose spec cannot be read is not offered. */
@@ -129,6 +147,8 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 Alpha99ResultsActivity.Store.closeups.clear();Alpha99ResultsActivity.Store.closeups.putAll(fo.closeups);
                 Alpha99ResultsActivity.Store.photo=photo;Alpha99ResultsActivity.Store.overlay=q.overlay;
                 Alpha99ResultsActivity.Store.technical=fo.technical;
+                Alpha99ResultsActivity.Store.modelLabel=fo.model==null?null:fo.model.label;
+                Alpha99ResultsActivity.Store.modelHint=modelHint(fo);
                 status.setText(fo.summary.headline());
                 openResults();
             });

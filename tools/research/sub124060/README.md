@@ -170,3 +170,16 @@ Status changes: none, on either model. GMT `results/alpha99/findings_local.csv` 
 - 9 "outline not clear": outline integrity 0.60 vs the 0.80 limit (3 and 6: 1.00). The close-up shows no hand; the polished surround of the 9 reflects brightly along one edge, so the outline test's outside samples land on bright metal.
 
 That is a correct fail-closed (reflection), now worded neutrally. Making the outline test tolerate reflective surrounds would change the shared measurement (GMT too) and is not done here.
+
+## 11. Wrong model selected (owner report "no hand crosses 5 / 7", 16:27)
+
+The screenshot was a GMT-model run. It reported "date window (window not found)", the 12's "genuine up to 1.0 deg", and no 3 o'clock tile, and it reproduces exactly with the GMT spec.
+
+On the GMT, the Submariner's printed "S" / "R" of SUPERLATIVE CHRONOMETER are taken for the seconds hand, because the GMT has no print there. That is why the 124060 has its own print spots.
+
+**Cause:** the picker went back to GMT on every app start, and the results screen did not say which model was used.
+
+**Fix (screen-only, no measurement change):**
+- The chosen model is remembered.
+- The results screen shows "Checked as: <model>".
+- A GMT run whose date window was not found at all ("window edges not found" / "no plausible window") suggests the no-date Submariner. On genuine GMT catalogue photos that happens for about 5% (10 of 213); it is a suggestion only.
