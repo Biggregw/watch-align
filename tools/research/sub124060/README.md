@@ -97,3 +97,11 @@ Using all the shrunk rows would have widened the genuine limit for sharp photos 
 - Real genuine photos under 181 px: round plots and ring assessed on 12 of 13, 0 clear, 1 worth a look per round feature and 3 for the ring. See `reference_src/heldout_lowres.md`.
 
 **New coverage:** round plots are assessed down to about 131 px dial radius (about 262 px across). The 131 px render is just below that and stays "resolution too low".
+
+**Genuine catalogue after both changes** (CI run 37785443660; 72 dial photos this run, 290 verified):
+- 0 clear;
+- 31 worth a look;
+- 296 not assessed, down from 391;
+- 87 readings went from not assessed to within range, and 2 to worth a look.
+
+APK: build run 37785443638.
