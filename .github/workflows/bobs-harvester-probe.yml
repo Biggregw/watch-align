@@ -1,0 +1,61 @@
+name: Bob's harvester live-site probe (diagnostics)
+
+# Bounded diagnostics for the Bob's Rolex Harvester: runs the app's own catalogue / product / capture JavaScript in
+# headless Chromium (app user agent) on a few catalogue pages and product pages, downloads the product images it finds,
+# and runs the app's face-on gate (FitExp, a desktop copy of MainActivity.fit()) on them. Images are never committed,
+# cached or uploaded; a small contact sheet is printed to the log for review.
+on:
+  push:
+    branches:
+      - tool/bobs-rolex-harvester-fix
+    paths:
+      - 'tools/bobs_harvester_probe/**'
+      - '.github/workflows/bobs-harvester-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests playwright opencv-python-headless && python -m playwright install --with-deps chromium
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Probe (bounded)
+        run: python tools/bobs_harvester_probe/probe.py --out probe_out --pages 6 --products 5
+      - name: App face-on gate on downloaded images
+        if: always()
+        run: |
+          cd tools/bobs_harvester_probe && javac FitExp.java && cd -
+          ls probe_out/*.jpg >/dev/null 2>&1 && java -cp tools/bobs_harvester_probe FitExp probe_out/*.jpg || echo "no downloaded images"
+      - name: Contact sheet (log-only base64)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, base64, cv2, numpy as np
+          fs = sorted(glob.glob('probe_out/*.jpg'))[:40]
+          tiles = []
+          for f in fs:
+              im = cv2.imread(f)
+              if im is None: continue
+              s = 220 / max(im.shape[:2]); im = cv2.resize(im, (int(im.shape[1]*s), int(im.shape[0]*s)))
+              t = np.full((250, 220, 3), 255, np.uint8); t[:im.shape[0], :im.shape[1]] = im
+              cv2.putText(t, f.split('/')[-1][:30], (2, 245), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (0, 0, 255), 1); tiles.append(t)
+          if tiles:
+              while len(tiles) % 6: tiles.append(np.full((250, 220, 3), 255, np.uint8))
+              sheet = np.vstack([np.hstack(tiles[i:i+6]) for i in range(0, len(tiles), 6)])
+              ok, b = cv2.imencode('.jpg', sheet, [cv2.IMWRITE_JPEG_QUALITY, 70])
+              print('=== CONTACT SHEET BASE64 JPEG BEGIN'); print(base64.b64encode(b.tobytes()).decode()); print('=== END')
+          PY
+      - name: Print report
+        if: always()
+        run: echo "=== report.json BEGIN"; cat probe_out/report.json || true; echo "=== report.json END"
