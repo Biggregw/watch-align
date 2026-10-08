@@ -215,3 +215,38 @@ genuine watch, not only those photographed at R_ref <= 1.3 R as the app does. Fi
   worth a look 3 o'clock 4 -> 3, 6 o'clock 2 -> 0, 9 o'clock 5 -> 4.
 - External SWE photos: the raw 6 baton clears (seconds hand across the 6, §4) drop from 11 to 8; in the app the
   hand check withholds them. The round-size clear is gone (the app caps round size at worth a look anyway).
+
+## 14. Owner-supplied genuine packs: 31 EWC + 37 Bob's watches (2026-10-08)
+
+Two owner-supplied packs of certified-genuine dealer photos (image URL + sha256 per photo; all hashes verified):
+European Watch Company (48 photos, 31 stock numbers) and Bob's Watches (48 photos, 48 SKUs; 11 already catalogued,
+37 new). Both READMEs ask that they not be promoted silently; the owner approved after each was held out first.
+
+**Held out first (current app reference, 24 watches):** EWC 0 clear / 15 worth a look on 672 readings; Bob's (37 new)
+0 clear / 10 worth a look on 518. Worth-a-look results clustered on the 6's rotation (0.6-0.8 deg vs genuine 0.55), as
+in the owner's genuine photo (0.58 deg).
+
+**Dedup (`dedup_measured.py`, now a script):** EWC listings 59112, 59921 and 62175 agree within 0.0003-0.0006 R,
+closer than any two other genuine watches (two photos of ONE watch typically differ by 0.0012 R): counted as one
+physical watch. No other new duplicates.
+
+**Allowances:** the packs are quality-selected (EWC: dial radius >= 180 px, clean tick fit; Bob's: manually reviewed
+face-on), so their repeat photos understate photo error on ordinary photos. With EWC alone the shrunk allowances made an
+external SWE genuine photo's 3 o'clock clear. Rule (template): new genuine watches may widen genuine ranges, never shrink
+the photo-to-photo allowances: `edge_safe_uncertainty.py --all-families` keeps the larger of the new and previous value
+per family (smaller side-agreement limit).
+
+**Result (90 watches; 12 triangle 89):**
+
+| | before | after |
+|---|---|---|
+| three_rot genuine max | 0.70 | 0.85 |
+| six_rot genuine max | 0.55 | 0.86 |
+| nine_rot genuine max | 0.78 | 0.83 |
+| leave-one-watch-out | 0 clear | 0 clear (27 worth a look) |
+| external SWE | 6 o'clock clears (seconds hand, withheld by the app) | the same; the SWE 3 o'clock photo is not clear |
+
+Owner photos: the 6 on the necoclock QC photo, the 16:32 photo and the genuine photo of the 6 question now read within
+range; no new clear. Rebuild order: `calibrate_m12_nominal.py` + `build_sub_reference.py` on `per_photo.csv`
+(unfiltered) -> `edge_filter.py` -> both again on `per_photo_edge.csv` -> `edge_safe_uncertainty.py` (12) ->
+`edge_safe_uncertainty.py --all-families` against the previous allowance file -> held-out scripts -> export.

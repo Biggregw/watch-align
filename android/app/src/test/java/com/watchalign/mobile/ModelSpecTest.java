@@ -86,7 +86,8 @@ public class ModelSpecTest {
         assertNull(m.date);
         assertEquals(12,m.markers.size());assertEquals("three",m.atHour(3).key);assertEquals(0.7591,m.atHour(6).centreR,0);
         ModelReference r=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
-        assertEquals(24,r.triangle.nWatches);assertEquals(3.0,r.kSigma,0);
+        assertEquals(89,r.triangle.nWatches);   // 24 catalogue watches + 31 EWC + 37 Bob's (owner packs), one listing trio merged, one 12 edge-filtered
+        assertEquals(3.0,r.kSigma,0);
         for(String f:new String[]{"three_rot","three_off","six_rot","six_off","nine_rot","nine_off","rounds_off","ring_rot","ring_shift","rounds_size","round_size_rel"})assertTrue(f,r.has(f));
         assertFalse(r.has("date_tilt"));
         // QC guardrails 11: held-out genuine conflict on round-plot size -> no allowance, so at most worth a look
