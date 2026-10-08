@@ -819,3 +819,15 @@ A real rotation turns both of the triangle's sides together; lighting or blur on
   - The local defect cases read 0.05–0.41° (Local BLNR, ARF, Theonewatches), so they are unaffected.
   - Local classifications are unchanged.
 - **Test:** `Alpha99FindingsTest.twelveWithDisagreeingSidesIsEdgeAffected`, which uses the studio photo's recorded values.
+
+### 2. Findings worded the way QC posts are written
+
+Short lines follow the RepTimeQC guide's "be specific and directional" style, e.g.:
+- "rotated 1.6° anticlockwise; genuine up to 0.6°";
+- "shifted towards the centre and the 1 by 0.44% of the dial";
+- "shifted left by 0.85% of the dial";
+- "markers as a set turned 0.52° clockwise".
+
+A marker shift is named by its dominant direction: towards its minute mark, towards the centre, or towards the neighbouring hour. Both directions are named when neither dominates. No status changed (`results/alpha99/findings_local.csv`).
+
+Real size in mm is deliberately not shown yet. It needs a sourced dial diameter per model; one route is the bezel's outer diameter, the published 40 mm case, measured in dial-radius units on genuine photos.
