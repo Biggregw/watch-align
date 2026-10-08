@@ -27,6 +27,8 @@
     "expected_centre": [0.64, 0.0],
     "interference_exclusion": {"x_min": 0.40, "half_y": 0.20}
   },
-  "seconds_hand": {"dot_r_min": 0.50, "dot_r_max": 0.60},
+  "seconds_hand": {"dot_r_min": 0.50, "dot_r_max": 0.60,
+    "print_spots": [[153.5, 0.501], [206.3, 0.502]], "print_spot_tol_deg": 2.0, "print_spot_tol_r": 0.012, "print_spot_min_frac": 0.75,
+    "print_spot_note": "Dim seconds-dot candidates recurring on genuine GMTs at r 0.50 (dial print, mirror images about 6 o'clock); on two sharp photos the 206 deg spot was taken for the seconds hand and withheld the 7 (CI 37804668525). Checked on the genuine catalogue: 0 status changes (CI 37809820531)."},
   "reference": "reference"
 }

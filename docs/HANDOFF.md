@@ -203,7 +203,8 @@ Owner instruction: fixes found on one model are applied to all models where rele
   worth a look; size not assessed (all models).
 - **Low-resolution genuine rows** for round markers and ring (170 px shrunk copies, `max_photo_r`): GMT added; full-resolution
   limits unchanged.
-- **Print spots:** GMT candidate under test (two recurring dim spots at r 0.50).
+- **Print spots:** GMT added (two recurring dim spots at r 0.50); 0 status changes on the genuine catalogue.
+- **Round-marker size allowance** withheld on the GMT as on the 124060 (a genuine GMT photo read two markers' size clear).
 - **Baton-position resolution rule:** 124060 only. On the GMT it would remove about 50 assessments to avoid about 10
   worth-a-look results, with 0 clear either way, so it was not applied.
 

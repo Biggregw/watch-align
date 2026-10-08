@@ -920,3 +920,22 @@ Two limits of this check:
   - The only differences from Alpha100 are 14 worth-a-look results from the round lume-plot checks on 9 Phillips photos, 6 of them on one photo (`bf795611fe399d5f`). There are 0 clear.
   - The one clear finding on a genuine photo, `ee1933f4d3ba3a7d` (6 shifted towards the centre by 0.72%), is unchanged from Alpha100.
 - **APK:** `1.3.0-alpha101-index-alignment-arm64`, build run 37759432014.
+
+## Alpha102: Submariner fixes applied to the GMT (2026-10-08)
+
+Owner instruction: fixes found on the 124060 are applied to every model where relevant. Each was tested on the GMT
+genuine catalogue by `.github/workflows/gmt-alpha102-check.yml`, which runs the app's classification with the
+current and candidate constants and prints every change.
+
+| Fix | GMT evidence | Applied to the GMT |
+|---|---|---|
+| 12 edge filter (genuine 12 readings whose sides disagree do not set the 12's range) | 7 genuine photos affected; the 12's genuine maxima do not move. Rebuilt on the filtered data, the allowance shrank 3x and turned a genuine 12 (`2a0fdd5920d4301d`) clear (run 37804668525). | Only the rule "never make a clear easier" (`sub124060/edge_safe_uncertainty.py`): allowances unchanged, side-agreement limit 0.99 -> 0.96. The triangle reference stays as is (the filter would not move its range; the prototype parity tests stay valid). 0 status changes (run 37808780610). |
+| Print spots (printed text taken for the seconds hand) | Two dim spots at r 0.50, 153.5 / 206.3 deg, recur on genuine GMTs; on 2 sharp photos the 206 deg spot withheld the 7. | Yes (`model.json` `seconds_hand.print_spots`, the 124060's rule). 0 interference or status changes on the catalogue (run 37809820531). |
+| Round marker with a hand near but not touching: position from the outline away from the hand, at most worth a look | Measurable on 147 of 355 such genuine markers, 3 outside the genuine range, 0 clear (run 37803866932). | Yes (all models, app code). |
+| Low-resolution genuine rows (170 px shrunk copies, round markers and ring, `max_photo_r`) | Full-resolution photos identical; genuine photos under 175 px assessed on 17-18 of 26-27 per feature, 0 clear (`results/lowres/`). | Yes (`build_alpha98_reference.py` adds them). |
+| Round-marker size allowance withheld (at most worth a look) | Run 37809643163 fetched a genuine photo not reached before, `7443488738a77b10`: the 1 and 8 read 0.36-0.38% smaller than the other markers, clear. The 124060 withholds this allowance for the same kind of reading. | Yes (`measurement_uncertainty.py --no-allowance` default rounds_size, round_size_rel). |
+| Baton position compared only with similar-resolution genuine photos | Would remove about 50 baton-position assessments on small genuine photos to avoid about 10 worth-a-look results; 0 clear either way, and 2 sharper genuine photos would newly read worth a look. | No. |
+
+Local GMT photos after all of these: the only status changes are the intended ones. Hand-near round markers are now measured on 9 markers (one worth a look, 25369d47's 4, 0.26% vs genuine 0.26%). Small photos gain round-marker assessment on 10 photos, all genuine ones within range; the RL_THEONE_BLNR replica control reads its 1 and 10 worth a look.
+
+Reproduce the uncertainty file: `measurement_uncertainty.py` (unfiltered) and `measurement_uncertainty.py --per-photo <edge_filter.py output>` (filtered), then `edge_safe_uncertainty.py --filtered … --unfiltered … --out alpha99_uncertainty.properties`.

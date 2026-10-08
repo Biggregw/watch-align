@@ -121,7 +121,7 @@ public class Alpha99FindingsTest {
         // Alpha101: the recorded values of the genuine Swiss Watch Expo studio photo ce997f77df67b365 (per_photo.csv):
         // right side 4.1 deg off, left side 0.4 deg, centreline 2.5 deg - one lit edge, not a turned marker
         ModelReference ref=TestModels.gmtRef();
-        assertEquals(0.99,ref.limit("twelve_sides_agreement"),0.01);
+        assertEquals(0.96,ref.limit("twelve_sides_agreement"),0.005);   // Alpha102: the more cautious of edge-filtered (0.963) and unfiltered (0.992)
         Alpha94MarkerMeasurement.Report r=report(6,0,9,0);
         Alpha94MarkerMeasurement.Marker tri=new Alpha94MarkerMeasurement.Marker(12,"triangle");tri.spec=TestModels.gmt().atHour(12);
         tri.usable=true;tri.rotationDeg=-2.58445;tri.leftSideErrDeg=-0.59326;tri.rightSideErrDeg=-3.97507;

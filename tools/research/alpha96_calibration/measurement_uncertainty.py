@@ -67,7 +67,13 @@ def main():
     ap.add_argument('--m12-nominal', default=os.path.join(HERE, 'm12_nominal.properties'))
     ap.add_argument('--out-props', default=os.path.join(HERE, 'alpha99_uncertainty.properties'))
     ap.add_argument('--out-md', default=os.path.join(HERE, 'results', 'alpha99', 'uncertainty.md'))
+    ap.add_argument('--no-allowance', action='append', default=None,
+                    help="families whose allowance is withheld (QC guardrails 11: downgraded, at most worth a look). Default: "
+                         "rounds_size and round_size_rel (Alpha102: a genuine GMT photo, 7443488738a77b10, read two round markers "
+                         "0.36-0.38%% smaller than the others as clear; the 124060 withholds them for the same reason); "
+                         "pass --no-allowance none to keep all")
     a = ap.parse_args()
+    withheld = set() if a.no_allowance and "none" in a.no_allowance else set(a.no_allowance or ("rounds_size", "round_size_rel"))
     C = HERE
     cat = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(C, 'catalogue_provenance_strong.csv')))}
     shared = {r['photo_id'] for r in csv.DictReader(open(os.path.join(C, 'results/dedup/photos.csv'))) if r['shared_dial'] == '1'}
@@ -136,6 +142,9 @@ def main():
         groups = [lst for w in G[(fam, unit)].values() for lst in w.values()]
         s, dof, ng, nv = pooled(groups)
         nw = sum(1 for w in G[(fam, unit)].values() if any(len(l) >= 2 for l in w.values()))
+        if fam in withheld:
+            lines.append(f'| {fam} | {unit} | withheld (downgraded: at most worth a look) | | {nw} | {nv} | {dof} |')
+            continue
         out[f'{fam}.{unit}'] = s
         out[f'{fam}.{unit}.watches'] = nw
         lines.append(f'| {fam} | {unit} | {s:.6f} | {K * s:.6f} | {nw} | {nv} | {dof} |')
