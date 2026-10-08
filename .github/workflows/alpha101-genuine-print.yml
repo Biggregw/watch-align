@@ -1,0 +1,59 @@
+name: Alpha101 genuine print alignment (research)
+
+# RESEARCH ONLY. Restores the sha256-verified genuine catalogue photos and measures the crown-logo alignment
+# (Alpha101PrintAlignment through the desktop harness driver Alpha101Logo) on every photo, so the genuine range and
+# photo-to-photo uncertainty can be built from genuine watches only. The per-photo CSV is uploaded and printed to the
+# log; images are never committed, cached or uploaded.
+on:
+  push:
+    branches:
+      - feature/android-alpha101-index-alignment
+    paths:
+      - '.github/workflows/alpha101-genuine-print.yml'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha101*.java'
+      - 'tools/desktop-harness/drivers/Alpha101*.java'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  genuine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CAL: tools/research/alpha96_calibration
+      IMG: a101_images
+      OUT: a101_results
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Fetch catalogued photos (sha256-verified)
+        run: |
+          mkdir -p "$IMG" "$OUT"
+          python3 "$CAL/fetch_verified.py" "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/fetch_log.csv"
+      - name: Crown-logo alignment
+        run: tools/desktop-harness/run.sh Alpha101Logo "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/logo_catalogue.csv" > /dev/null
+      - name: Upload CSV (no images)
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha101-genuine-print-${{ github.run_id }}
+          retention-days: 30
+          path: a101_results/*.csv
+      - name: Print CSV to log
+        run: |
+          echo '=== logo_catalogue.csv BEGIN'
+          cat "$OUT/logo_catalogue.csv"
+          echo '=== logo_catalogue.csv END'
