@@ -111,9 +111,19 @@ public class ModelSpecTest {
                 assertTrue(String.join(" ",f.detail()).contains("position is not assessed"));
             }else{assertNull(f.partNotAssessed);assertEquals(2,f.measures.size());assertTrue(ref.matchedWatches("three_off",R)>=8);}
         }
-        // GMT: one reference row per watch, so distinct watches == rows (unchanged behaviour)
+        // GMT: low-resolution rows (Alpha102) count once per watch and never touch a photo the full-resolution
+        // reference covers: there the limit is exactly the full-resolution rows' limit
         ModelReference g=TestModels.gmtRef();
-        assertEquals(g.radius("rounds_off").length,g.matchedWatches("rounds_off",1e9));
+        List<String> lines=Files.readAllLines(new File(TestModels.assets(),"models/gmt_126710/reference/genuine_reference.csv").toPath());
+        List<String> h=java.util.Arrays.asList(lines.get(0).trim().split(",",-1));
+        java.util.Set<String> full=new java.util.HashSet<>();double fullMax=0;int low=0;
+        for(String l:lines.subList(1,lines.size())){String[] f=l.trim().split(",",-1);if(!f[0].equals("rounds_off"))continue;
+            if(f.length>h.indexOf("max_photo_r")&&!f[h.indexOf("max_photo_r")].isEmpty()){low++;continue;}
+            full.add(f[1]);if(Double.parseDouble(f[4])<=1.3*400)fullMax=Math.max(fullMax,Double.parseDouble(f[3]));}
+        assertTrue("low-resolution rows: "+low,low>0);
+        assertEquals(full.size(),g.matchedWatches("rounds_off",1e9));
+        assertEquals(fullMax,g.matchedMax("rounds_off",400),0);
+        assertTrue(g.matchedWatches("rounds_off",140)>=8);                       // small photos now assessable
     }
 
     @Test public void jsonReaderIsExactAndStrict(){

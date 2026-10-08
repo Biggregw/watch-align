@@ -20,16 +20,8 @@
   No measured feature is outside the measured genuine range
   2 features could not be assessed
     6 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
-    1 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    2 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    4 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    5 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    7 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    Round marker size NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-  Within measured genuine range: 12, 9, marker ring, date window
+    5 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
+  Within measured genuine range: 12, 9, 1, 2, 4, 7, 8, 10, 11, round marker size, marker ring, date window
 == 4f87a0d3-image (R=271)
   No measured feature is outside the measured genuine range
   2 features could not be assessed
@@ -62,33 +54,17 @@
   No measured feature is outside the measured genuine range
   3 features could not be assessed
     12 o'clock       NOT_ASSESSED  -> NOT ASSESSED  hand crosses marker
-    1 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    2 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    4 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    5 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    7 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    Round marker size NOT_ASSESSED  -> NOT ASSESSED  resolution too low
+    4 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
     Date window      NOT_ASSESSED  -> NOT ASSESSED  window not found
-  Within measured genuine range: 6, 9, marker ring
+  Within measured genuine range: 6, 9, 1, 2, 5 position, 7, 8, 10, 11, round marker size, marker ring
 == EXT_EXT_GEN_BLRO_WEX_02 (R=155)
   No measured feature is outside the measured genuine range
   4 features could not be assessed
     12 o'clock       NOT_ASSESSED  -> NOT ASSESSED  hand crosses marker
     9 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
-    1 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    2 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    4 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    5 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    7 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    Round marker size NOT_ASSESSED  -> NOT ASSESSED  resolution too low
+    4 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
     Date window      NOT_ASSESSED  -> NOT ASSESSED  glare on magnifier
-  Within measured genuine range: 6, marker ring
+  Within measured genuine range: 6, 1, 2, 5, 7, 8, 10, 11, round marker size, marker ring
 == POOL_GEN_HO_01 (R=203)
   1 measurement is worth a look: 10
   Another clean, straight-on photo would show whether it repeats
@@ -99,20 +75,11 @@
   Within measured genuine range: 12, 6, 9, 1, 2 position, 4, 5, 7, 11, round marker size, marker ring
 == POOL_GEN_HO_02 (R=143)
   No measured feature is outside the measured genuine range
-  4 features could not be assessed
+  3 features could not be assessed
     12 o'clock       WITHIN        -> NOT ASSESSED  hand crosses marker
     9 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
-    1 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    2 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    4 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    5 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    7 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    Round marker size NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     Date window      NOT_ASSESSED  -> NOT ASSESSED  glare on magnifier
-  Within measured genuine range: 6, marker ring
+  Within measured genuine range: 6, 1, 2, 4, 5, 7, 8, 10, 11, round marker size, marker ring
 == RL_ARF_BLRO_CROOKED6 (R=234)
   3 clear alignment findings: 12, 8, 11
   4 other measurements are worth a look: 6, 7, 10, round marker size
@@ -144,22 +111,22 @@
     Dial marker ring OUTSIDE       -> CLEAR FINDING markers as a set turned 0.52° clockwise; genuine up to 0.2°
   Within measured genuine range: 1, 2, 4, 7, date window
 == RL_THEONE_BLNR (R=165)
-  2 measurements are worth a look: 6, 9
+  4 measurements are worth a look: 6, 9, 1, 10
   Another clean, straight-on photo would show whether these repeat
-  2 features could not be assessed
+  1 feature could not be assessed
     12 o'clock       OUTSIDE       -> NOT ASSESSED  hand crosses marker
     6 o'clock        OUTSIDE       -> WORTH A LOOK  shifted towards its minute mark and the 7 by 0.47% of the dial; genuine up to 0.30%
     9 o'clock        OUTSIDE       -> WORTH A LOOK  rotated 0.9° anticlockwise; genuine up to 0.6°
-    1 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    2 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    4 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    5 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    7 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    Round marker size NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-  Within measured genuine range: marker ring, date window
+    1 o'clock        OUTSIDE       -> WORTH A LOOK  shifted towards the 12 by 0.40% of the dial; genuine up to 0.27%
+    2 o'clock        OUTSIDE       -> WITHIN RANGE  
+    4 o'clock        OUTSIDE       -> WITHIN RANGE  
+    5 o'clock        OUTSIDE       -> WITHIN RANGE  
+    7 o'clock        OUTSIDE       -> WITHIN RANGE  
+    8 o'clock        OUTSIDE       -> WITHIN RANGE  
+    10 o'clock       OUTSIDE       -> WORTH A LOOK  marker smaller than the others by 0.30% of the dial; genuine up to 0.24%
+    11 o'clock       OUTSIDE       -> WITHIN RANGE  
+    Round marker size OUTSIDE       -> WITHIN RANGE  
+  Within measured genuine range: 2, 4, 5 position, 7, 8, 11, round marker size, marker ring, date window
 == USER_BATGIRL_GMT (R=205)
   2 clear alignment findings: 9, 2
   2 other measurements are worth a look: 6, 8
@@ -181,55 +148,24 @@
   No measured feature is outside the measured genuine range
   2 features could not be assessed
     6 o'clock        NOT_ASSESSED  -> NOT ASSESSED  hand crosses marker
-    1 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    2 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    4 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    5 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    7 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    Round marker size NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-  Within measured genuine range: 12, 9, marker ring, date window
+    5 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
+  Within measured genuine range: 12, 9, 1, 2, 4, 7, 8, 10, 11, round marker size, marker ring, date window
 == b0b0c79c-image (R=171)
   No measured feature is outside the measured genuine range
   2 features could not be assessed
     6 o'clock        OUTSIDE       -> NOT ASSESSED  hand crosses marker
-    1 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    2 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    4 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    5 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    7 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    Round marker size NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-  Within measured genuine range: 12, 9, marker ring, date window
+    5 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
+  Within measured genuine range: 12, 9, 1, 2, 4, 7, 8, 10, 11, round marker size, marker ring, date window
 == b1e67888-image (R=171)
   No measured feature is outside the measured genuine range
-  2 features could not be assessed
+  3 features could not be assessed
     6 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
-    1 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    2 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    4 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    5 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    7 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    Round marker size NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-  Within measured genuine range: 12, 9, marker ring, date window
+    1 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
+    5 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
+  Within measured genuine range: 12, 9, 2, 4, 7, 8, 10, 11, round marker size, marker ring, date window
 == c743d9fb-image (R=171)
   No measured feature is outside the measured genuine range
   2 features could not be assessed
     6 o'clock        NOT_ASSESSED  -> NOT ASSESSED  hand crosses marker
-    1 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    2 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    4 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    5 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    7 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-    Round marker size NOT_ASSESSED  -> NOT ASSESSED  resolution too low
-  Within measured genuine range: 12, 9, marker ring, date window
+    5 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
+  Within measured genuine range: 12, 9, 1, 2, 4, 7, 8, 10, 11, round marker size, marker ring, date window
