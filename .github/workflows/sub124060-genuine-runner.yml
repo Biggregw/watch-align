@@ -1,0 +1,93 @@
+name: Submariner 124060 genuine runner (research)
+
+# RESEARCH ONLY. Restores the sha256-verified 124060 catalogue and runs the production pose + marker measurement
+# (Alpha96Calib) with the frozen genuine 124060 master spec (tools/research/sub124060/models). Joins the catalogue columns
+# (group, physical watch, source, URL) into per_photo.csv, and flags shared photos: near-identical images (whole-image
+# perceptual hash, Hamming distance <= 6) catalogued under different physical watches, so one stock image never counts
+# as two watches. CSVs are uploaded and printed; images are never committed, cached or uploaded.
+on:
+  push:
+    branches:
+      - feature/android-alpha102-submariner
+    paths:
+      - '.github/workflows/sub124060-genuine-runner.yml'
+      - 'tools/research/sub124060/models/**'
+      - 'tools/research/sub124060/catalogue_124060.csv'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SUB: tools/research/sub124060
+      IMG: sub_images
+      OUT: sub_results
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests pillow imagehash
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Fetch catalogued photos (sha256-verified)
+        run: |
+          mkdir -p "$IMG" "$OUT"
+          python3 tools/research/alpha96_calibration/fetch_verified.py "$SUB/catalogue_124060.csv" "$IMG" "$OUT/fetch_log.csv"
+      - name: Production runner with the 124060 master spec
+        env:
+          JAVA_TOOL_OPTIONS: -Dwatchalign.model=submariner_124060 -Dwatchalign.models_root=tools/research/sub124060
+        run: tools/desktop-harness/run.sh Alpha96Calib "$SUB/catalogue_124060.csv" "$IMG" "$OUT/runner.csv" 2> "$OUT/runner_progress.txt"
+      - name: Join catalogue columns and flag shared photos
+        run: |
+          python3 - <<'PY'
+          import csv, os, itertools
+          from PIL import Image
+          import imagehash
+          sub, img, out = os.environ['SUB'], os.environ['IMG'], os.environ['OUT']
+          cat = {r['photo_id']: r for r in csv.DictReader(open(f'{sub}/catalogue_124060.csv'))}
+          run = list(csv.DictReader(open(f'{out}/runner.csv')))
+          keep = ['group', 'class_label', 'physical_watch_id', 'model', 'source', 'image_url']
+          with open(f'{out}/per_photo.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(run[0].keys()) + keep); w.writeheader()
+              for r in run:
+                  c = cat[r['photo_id']]; r.update({k: c[k] for k in keep}); w.writerow(r)
+          ph = {}
+          for r in run:
+              if r['status'] != 'accepted': continue
+              p = os.path.join(img, cat[r['photo_id']]['local_path'])
+              try: ph[r['photo_id']] = imagehash.phash(Image.open(p).convert('L'))
+              except Exception: pass
+          shared = set(); pairs = []
+          for a, b in itertools.combinations(sorted(ph), 2):
+              if cat[a]['physical_watch_id'] != cat[b]['physical_watch_id'] and ph[a] - ph[b] <= 6:
+                  shared |= {a, b}; pairs.append((a, b, ph[a] - ph[b]))
+          with open(f'{out}/dedup.csv', 'w', newline='') as fh:
+              w = csv.writer(fh); w.writerow(['photo_id', 'shared_dial'])
+              for pid in sorted(cat): w.writerow([pid, '1' if pid in shared else '0'])
+          print('accepted photos hashed', len(ph), 'shared across watches', len(shared))
+          for a, b, d in pairs: print('  shared', a, cat[a]['physical_watch_id'], b, cat[b]['physical_watch_id'], 'dist', d)
+          PY
+      - name: Upload CSVs (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sub124060-genuine-runner-${{ github.run_id }}
+          retention-days: 30
+          path: sub_results/*.csv
+      - name: Print CSVs to log
+        if: always()
+        run: |
+          python3 -c "import csv,collections;print('fetch:',collections.Counter(r['status'] for r in csv.DictReader(open('sub_results/fetch_log.csv'))))"
+          for f in per_photo dedup; do echo "=== $f.csv BEGIN"; cat "$OUT/$f.csv"; echo "=== $f.csv END"; done
