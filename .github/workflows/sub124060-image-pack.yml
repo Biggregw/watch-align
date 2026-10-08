@@ -39,44 +39,41 @@ jobs:
         run: |
           python3 - <<'PY'
           import csv, hashlib, os, requests
+          from concurrent.futures import ThreadPoolExecutor, as_completed
           stocks = ["57714","58678","55139","55297","58150","62088","59112","58030","62097","59921","62175","67390","64518","51884","50093","67830","45714","48227","43020","46278","46174","49826","44294","59697","66197","63861","47706","37836","47106","42174","57290","65028","66045","71823"]
           os.makedirs('imagepack/input', exist_ok=True)
-          session = requests.Session()
-          session.headers.update({
-              'User-Agent': 'Mozilla/5.0 (WatchAlign research image-pack)',
-              'Referer': 'https://www.europeanwatch.com/'
-          })
+          tasks=[(stock,i) for stock in stocks for i in (1,2)]
+          def get_one(task):
+              stock,image_index=task
+              url=f"https://images.europeanwatch.com/images/{stock[:2]}/{stock}-{image_index}.jpg"
+              try:
+                  r=requests.get(url,timeout=15,headers={
+                      'User-Agent':'Mozilla/5.0 (WatchAlign research image-pack)',
+                      'Referer':'https://www.europeanwatch.com/'})
+                  ctype=r.headers.get('content-type','')
+                  if r.status_code!=200 or 'image' not in ctype or len(r.content)<30000:
+                      return None,(stock,image_index,r.status_code,ctype,len(r.content))
+                  sha=hashlib.sha256(r.content).hexdigest()
+                  fn=f"EWC_{stock}_{image_index}_{sha[:10]}.jpg"
+                  open('imagepack/input/'+fn,'wb').write(r.content)
+                  return {'photo_id':f'ewc_{stock}_{image_index}','local_path':fn,'stock':stock,
+                          'image_index':image_index,'image_url':url,'sha256':sha},None
+              except Exception as e:
+                  return None,(stock,image_index,'ERR',repr(e),0)
           rows=[]
-          for stock in stocks:
-              for image_index in (1,2,3):
-                  url=f"https://images.europeanwatch.com/images/{stock[:2]}/{stock}-{image_index}.jpg"
-                  try:
-                      r=session.get(url, timeout=30)
-                      ctype=r.headers.get('content-type','')
-                      if r.status_code != 200 or 'image' not in ctype or len(r.content) < 30000:
-                          print('skip', stock, image_index, r.status_code, ctype, len(r.content))
-                          continue
-                      sha=hashlib.sha256(r.content).hexdigest()
-                      fn=f"EWC_{stock}_{image_index}_{sha[:10]}.jpg"
-                      path='imagepack/input/'+fn
-                      open(path,'wb').write(r.content)
-                      rows.append({
-                          'photo_id': f'ewc_{stock}_{image_index}',
-                          'local_path': fn,
-                          'stock': stock,
-                          'image_index': image_index,
-                          'image_url': url,
-                          'sha256': sha
-                      })
-                      print('ok', stock, image_index, len(r.content), sha[:12])
-                  except Exception as e:
-                      print('error', stock, image_index, repr(e))
+          with ThreadPoolExecutor(max_workers=12) as ex:
+              futs=[ex.submit(get_one,t) for t in tasks]
+              for fut in as_completed(futs):
+                  row,err=fut.result()
+                  if row:
+                      rows.append(row); print('ok',row['stock'],row['image_index'])
+                  else: print('skip',err)
+          rows.sort(key=lambda r:(r['stock'],r['image_index']))
           with open('imagepack/manifest.csv','w',newline='') as f:
-              w=csv.DictWriter(f, fieldnames=['photo_id','local_path','stock','image_index','image_url','sha256'])
-              w.writeheader(); w.writerows(rows)
-          print('downloaded', len(rows), 'candidate images from', len(set(r['stock'] for r in rows)), 'watches')
-          if len(rows) < 20:
-              raise SystemExit('too few images downloaded')
+              w=csv.DictWriter(f,fieldnames=['photo_id','local_path','stock','image_index','image_url','sha256'])
+              w.writeheader();w.writerows(rows)
+          print('downloaded',len(rows),'candidate images from',len(set(r['stock'] for r in rows)),'watches')
+          if len(rows)<20: raise SystemExit('too few images downloaded')
           PY
 
       - name: Measure candidates with current 124060 pose and marker pipeline
