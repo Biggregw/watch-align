@@ -853,3 +853,18 @@ Blur widens the measured outer edge. So, like round-marker positions, both are c
 - Theonewatches and the CPO photos (dial radius about 170 px or less): not assessed, resolution too low.
 
 **Tooling:** these checks have no Alpha98 counterpart, so the Alpha98 regression checks skip them (`Alpha99Findings.outsideOnlyByNewMeasures`, `alpha101_only` column). `alpha99_genuine_summary.py` lists them separately.
+
+**Held-out genuine validation (QC guardrails §8 step 5):** `alpha101_heldout_genuine.py` judges each genuine photo on its own, as the app does. It compares the photo with a reference rebuilt without that photo's physical watch, using the same nominal, resolution-matched genuine max and 3-sigma allowance. Swiss Watch Expo photos never enter the marker reference, so they are judged against the full reference as an external held-out set. Results are in `results/alpha101/heldout_genuine.csv` and `heldout_genuine_summary.txt`.
+
+| Feature | Held-out photos (left-out watch) | Worth a look | Clear | SWE external | Worth a look | Clear |
+|---|---|---|---|---|---|---|
+| `rounds_size` (new) | 74 | 6 | 0 | 20 | 1 | 0 |
+| `round_size_rel` (new) | 74 | 5 | 0 | 20 | 3 | 0 |
+| `rounds_off` (shipped, for comparison) | 74 | 6 | 0 | 20 | 3 | 0 |
+| `six_off` (shipped, for comparison) | 86 | 12 | 0 | 44 | 6 | 0 |
+
+No held-out genuine photo becomes a clear finding. The worth-a-look rate is in line with the shipped round-marker features. Worth a look on genuine single photos is expected: the genuine max is taken over per-watch medians, while the app judges one photo.
+
+Two limits of this check:
+- Offline, the rounds counted are the measurement's usable rounds. The app additionally drops rounds touched by a hand, which can only reduce what is assessed.
+- The edge-consistency limit (section 1) only ever downgrades the 12, so it cannot add a finding. It is not part of this check.

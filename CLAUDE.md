@@ -4,10 +4,30 @@ Before substantial work read:
 
 - `docs/PRODUCT_SCOPE.md`
 - `docs/CALIBRATION_PROTOCOL.md`
+- `docs/QC-GUARDRAILS.md`
 - `docs/HANDOFF.md`
 - `AGENTS.md`
 
 The active project direction is calibration-first and reference-deviation based.
+
+## QC product guardrails
+
+`docs/QC-GUARDRAILS.md` is a governing project document. Read it before changing measurement logic, genuine references, uncertainty, findings/results wording, contamination handling, or adding a watch model.
+
+Its rules are project requirements, not suggestions.
+
+In particular:
+
+- Genuine watches define calibration limits. Replica examples validate usefulness; they never set thresholds.
+- "Outside measured genuine range" is not automatically a defect or bad QC.
+- Keep genuine manufacturing variation and photo/detector uncertainty separate.
+- Hands, glare, reflections, poor angle, insufficient resolution and other material contamination must fail closed for the affected feature.
+- CLEAR findings require materially stronger evidence than a marginal numerical excursion.
+- Borderline evidence should be presented as WORTH A LOOK, not PASS/FAIL or GL/RL.
+- Findings should show visual evidence where practical.
+- Do not make authenticity, accept/reject, GL/RL or purchasing decisions for the user.
+- Adding a new model must not alter an existing model's measurements, references or behaviour unless independently justified and regression-tested.
+- Missing model/reference/uncertainty evidence must fail closed rather than manufacture confidence.
 
 Key rules:
 
