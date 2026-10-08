@@ -51,11 +51,18 @@ The runner job (`sub124060-genuine-runner.yml`) applies the frozen master to eve
 - That is one watch photographed at four sizes. The two large versions cannot measure those plots cleanly, so this is studio lighting at the top of the dial.
 - Under guardrails §11 the round-plot size checks (`rounds_size`, `round_size_rel`) have their uncertainty allowance withheld for the 124060 (`--no-allowance`). They can be at most worth a look.
 
+**After the downgrade** (CI run 37771849905, `results/check/`): 78 genuine dial photos, 308 photos verified. Results across 1,092 feature readings:
+- 0 clear;
+- 34 worth a look: 9 o'clock 11, 3 o'clock 8, ring 5, 12 o'clock 2, single round plots 5, round plot size 2, 6 o'clock 1;
+- 391 not assessed, mostly hands at 10:10 and the resolution-matching rule.
+
 ## 5. In the app (testing build)
 
 `android/app/src/main/assets/models/submariner_124060/` holds the spec and the reference exported from `reference_src/`. `ModelSpecTest` keeps the app copies byte-identical to the research files. The start screen offers it next to the GMT.
 
 GMT regression: findings, hand check and preview text are identical, and all 18 results screens are pixel-identical to main.
+
+APK: `1.4.0-alpha102-submariner-arm64`, build run 37771849644. The build's unit tests pass.
 
 ## 6. Not done yet
 

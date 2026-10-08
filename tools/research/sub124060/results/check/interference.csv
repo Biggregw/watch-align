@@ -1,0 +1,937 @@
+photo_id,dial_radius_px,hour,alpha94_usable,clean,reason,touch_span_R,foreign_frac
+d15ed6cf309dec1f,438.3,12,true,true,"",0.0000,0.0200
+d15ed6cf309dec1f,438.3,1,true,true,"",0.0000,0.0002
+d15ed6cf309dec1f,438.3,2,true,false,"hand crosses or touches this marker",0.1181,0.1863
+d15ed6cf309dec1f,438.3,3,true,true,"",0.0000,0.0000
+d15ed6cf309dec1f,438.3,4,true,true,"",0.0000,0.0003
+d15ed6cf309dec1f,438.3,5,true,false,"hand crosses or touches this marker",0.0000,0.0005
+d15ed6cf309dec1f,438.3,6,true,true,"",0.0000,0.1522
+d15ed6cf309dec1f,438.3,7,true,false,"hand crosses or touches this marker",0.1711,0.0981
+d15ed6cf309dec1f,438.3,8,true,true,"",0.0000,0.0000
+d15ed6cf309dec1f,438.3,9,true,true,"",0.0000,0.0000
+d15ed6cf309dec1f,438.3,10,true,true,"",0.0000,0.0013
+d15ed6cf309dec1f,438.3,11,true,true,"",0.0000,0.0001
+d2d17532532ec40b,405.7,12,true,true,"",0.0000,0.0198
+d2d17532532ec40b,405.7,1,true,true,"",0.0000,0.0005
+d2d17532532ec40b,405.7,2,true,false,"hand crosses or touches this marker",0.1183,0.1724
+d2d17532532ec40b,405.7,3,true,true,"",0.0000,0.0000
+d2d17532532ec40b,405.7,4,true,true,"",0.0000,0.0003
+d2d17532532ec40b,405.7,5,true,true,"",0.0000,0.0004
+d2d17532532ec40b,405.7,6,true,true,"",0.0000,0.1528
+d2d17532532ec40b,405.7,7,true,false,"hand crosses or touches this marker",0.1719,0.0940
+d2d17532532ec40b,405.7,8,true,true,"",0.0000,0.0000
+d2d17532532ec40b,405.7,9,true,true,"",0.0000,0.0001
+d2d17532532ec40b,405.7,10,true,true,"",0.0000,0.0015
+d2d17532532ec40b,405.7,11,true,true,"",0.0000,0.0002
+762af6e930a7eed0,129.6,12,true,true,"",0.0000,0.0324
+762af6e930a7eed0,129.6,1,true,true,"",0.0000,0.0000
+762af6e930a7eed0,129.6,2,true,false,"hand crosses or touches this marker",0.1042,0.2404
+762af6e930a7eed0,129.6,3,true,true,"",0.0000,0.0000
+762af6e930a7eed0,129.6,4,true,true,"",0.0000,0.0000
+762af6e930a7eed0,129.6,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+762af6e930a7eed0,129.6,6,true,true,"",0.0000,0.2126
+762af6e930a7eed0,129.6,7,true,false,"hand crosses or touches this marker",0.1389,0.1173
+762af6e930a7eed0,129.6,8,true,true,"",0.0000,0.0000
+762af6e930a7eed0,129.6,9,true,true,"",0.0000,0.0000
+762af6e930a7eed0,129.6,10,true,true,"",0.0000,0.0000
+762af6e930a7eed0,129.6,11,true,true,"",0.0000,0.0017
+b68d5dd74b3f5162,238.3,12,true,true,"",0.0000,0.0230
+b68d5dd74b3f5162,238.3,1,true,true,"",0.0000,0.0000
+b68d5dd74b3f5162,238.3,2,true,false,"hand crosses or touches this marker",0.1133,0.2161
+b68d5dd74b3f5162,238.3,3,true,true,"",0.0000,0.0000
+b68d5dd74b3f5162,238.3,4,true,true,"",0.0000,0.0002
+b68d5dd74b3f5162,238.3,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+b68d5dd74b3f5162,238.3,6,true,true,"",0.0000,0.2021
+b68d5dd74b3f5162,238.3,7,true,false,"hand crosses or touches this marker",0.1605,0.0984
+b68d5dd74b3f5162,238.3,8,true,true,"",0.0000,0.0000
+b68d5dd74b3f5162,238.3,9,true,true,"",0.0000,0.0000
+b68d5dd74b3f5162,238.3,10,true,true,"",0.0000,0.0023
+b68d5dd74b3f5162,238.3,11,true,true,"",0.0000,0.0000
+a4f28a7240406e2d,438.3,12,true,true,"",0.0000,0.0173
+a4f28a7240406e2d,438.3,1,true,true,"",0.0000,0.0000
+a4f28a7240406e2d,438.3,2,false,false,"hand crosses or touches this marker",0.1609,0.2708
+a4f28a7240406e2d,438.3,3,true,true,"",0.0000,0.0003
+a4f28a7240406e2d,438.3,4,true,true,"",0.0000,0.0000
+a4f28a7240406e2d,438.3,5,true,true,"",0.0000,0.0000
+a4f28a7240406e2d,438.3,6,true,true,"",0.0000,0.1107
+a4f28a7240406e2d,438.3,7,true,true,"",0.0000,0.0005
+a4f28a7240406e2d,438.3,8,true,true,"",0.0000,0.0006
+a4f28a7240406e2d,438.3,9,true,true,"",0.0000,0.0000
+a4f28a7240406e2d,438.3,10,true,true,"",0.0000,0.0005
+a4f28a7240406e2d,438.3,11,true,true,"",0.0000,0.0000
+d04c99024b491471,405.7,12,true,true,"",0.0000,0.0173
+d04c99024b491471,405.7,1,true,true,"",0.0000,0.0002
+d04c99024b491471,405.7,2,false,false,"hand crosses or touches this marker",0.1590,0.2657
+d04c99024b491471,405.7,3,true,true,"",0.0000,0.0006
+d04c99024b491471,405.7,4,true,true,"",0.0000,0.0001
+d04c99024b491471,405.7,5,true,true,"",0.0000,0.0000
+d04c99024b491471,405.7,6,true,true,"",0.0000,0.1033
+d04c99024b491471,405.7,7,true,true,"",0.0000,0.0004
+d04c99024b491471,405.7,8,true,true,"",0.0000,0.0005
+d04c99024b491471,405.7,9,true,true,"",0.0000,0.0000
+d04c99024b491471,405.7,10,true,true,"",0.0000,0.0005
+d04c99024b491471,405.7,11,true,true,"",0.0000,0.0000
+3f07b99e12fa5014,238.4,12,true,true,"",0.0000,0.0198
+3f07b99e12fa5014,238.4,1,true,true,"",0.0000,0.0000
+3f07b99e12fa5014,238.4,2,false,false,"hand crosses or touches this marker",0.1542,0.2734
+3f07b99e12fa5014,238.4,3,true,true,"",0.0000,0.0000
+3f07b99e12fa5014,238.4,4,true,true,"",0.0000,0.0000
+3f07b99e12fa5014,238.4,5,true,true,"",0.0000,0.0000
+3f07b99e12fa5014,238.4,6,true,true,"",0.0000,0.1669
+3f07b99e12fa5014,238.4,7,true,true,"",0.0000,0.0000
+3f07b99e12fa5014,238.4,8,true,true,"",0.0000,0.0002
+3f07b99e12fa5014,238.4,9,true,true,"",0.0000,0.0000
+3f07b99e12fa5014,238.4,10,true,true,"",0.0000,0.0002
+3f07b99e12fa5014,238.4,11,true,true,"",0.0000,0.0000
+63dc466faad01512,438.1,12,true,true,"",0.0000,0.0224
+63dc466faad01512,438.1,1,true,true,"",0.0000,0.0051
+63dc466faad01512,438.1,2,false,false,"hand crosses or touches this marker",0.1335,0.2389
+63dc466faad01512,438.1,3,true,true,"",0.0000,0.0000
+63dc466faad01512,438.1,4,true,true,"",0.0000,0.0001
+63dc466faad01512,438.1,5,true,false,"hand crosses or touches this marker",0.0000,0.0003
+63dc466faad01512,438.1,6,true,true,"",0.0000,0.1379
+63dc466faad01512,438.1,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+63dc466faad01512,438.1,8,true,false,"hand crosses or touches this marker",0.1660,0.0865
+63dc466faad01512,438.1,9,true,true,"",0.0000,0.0004
+63dc466faad01512,438.1,10,true,true,"",0.0000,0.0008
+63dc466faad01512,438.1,11,true,true,"",0.0000,0.0000
+e6368f4187793b43,238.3,12,true,true,"",0.0000,0.0224
+e6368f4187793b43,238.3,1,true,true,"",0.0000,0.0030
+e6368f4187793b43,238.3,2,true,false,"hand crosses or touches this marker",0.1322,0.2644
+e6368f4187793b43,238.3,3,true,true,"",0.0000,0.0000
+e6368f4187793b43,238.3,4,true,true,"",0.0000,0.0000
+e6368f4187793b43,238.3,5,true,true,"",0.0000,0.0000
+e6368f4187793b43,238.3,6,true,true,"",0.0000,0.1904
+e6368f4187793b43,238.3,7,true,true,"",0.0000,0.0000
+e6368f4187793b43,238.3,8,true,false,"hand crosses or touches this marker",0.1542,0.0804
+e6368f4187793b43,238.3,9,true,true,"",0.0000,0.0000
+e6368f4187793b43,238.3,10,true,true,"",0.0000,0.0021
+e6368f4187793b43,238.3,11,true,true,"",0.0000,0.0000
+39d163d48710cb5a,405.7,12,true,true,"",0.0000,0.0181
+39d163d48710cb5a,405.7,1,true,true,"",0.0000,0.0000
+39d163d48710cb5a,405.7,2,false,false,"hand crosses or touches this marker",0.1608,0.2667
+39d163d48710cb5a,405.7,3,true,true,"",0.0000,0.0006
+39d163d48710cb5a,405.7,4,true,true,"",0.0000,0.0000
+39d163d48710cb5a,405.7,5,true,true,"",0.0000,0.0000
+39d163d48710cb5a,405.7,6,true,true,"",0.0000,0.1169
+39d163d48710cb5a,405.7,7,true,true,"",0.0000,0.0006
+39d163d48710cb5a,405.7,8,true,true,"",0.0000,0.0005
+39d163d48710cb5a,405.7,9,true,true,"",0.0000,0.0000
+39d163d48710cb5a,405.7,10,true,true,"",0.0000,0.0004
+39d163d48710cb5a,405.7,11,true,true,"",0.0000,0.0000
+c2c6f5cc69fa1c6c,438.0,12,true,true,"",0.0000,0.0199
+c2c6f5cc69fa1c6c,438.0,1,true,true,"",0.0000,0.0000
+c2c6f5cc69fa1c6c,438.0,2,false,false,"hand crosses or touches this marker",0.1370,0.2496
+c2c6f5cc69fa1c6c,438.0,3,true,false,"hand crosses or touches this marker",0.1027,0.3674
+c2c6f5cc69fa1c6c,438.0,4,true,true,"",0.0000,0.0001
+c2c6f5cc69fa1c6c,438.0,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+c2c6f5cc69fa1c6c,438.0,6,true,true,"",0.0000,0.1565
+c2c6f5cc69fa1c6c,438.0,7,true,true,"",0.0000,0.0000
+c2c6f5cc69fa1c6c,438.0,8,true,true,"",0.0000,0.0000
+c2c6f5cc69fa1c6c,438.0,9,true,true,"",0.0000,0.0010
+c2c6f5cc69fa1c6c,438.0,10,true,true,"",0.0000,0.0004
+c2c6f5cc69fa1c6c,438.0,11,true,true,"",0.0000,0.0006
+aeba8809053dac13,405.4,12,true,true,"",0.0000,0.0202
+aeba8809053dac13,405.4,1,true,true,"",0.0000,0.0002
+aeba8809053dac13,405.4,2,false,false,"hand crosses or touches this marker",0.1369,0.2504
+aeba8809053dac13,405.4,3,true,false,"hand crosses or touches this marker",0.1036,0.3675
+aeba8809053dac13,405.4,4,true,true,"",0.0000,0.0002
+aeba8809053dac13,405.4,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+aeba8809053dac13,405.4,6,true,true,"",0.0000,0.1499
+aeba8809053dac13,405.4,7,true,true,"",0.0000,0.0000
+aeba8809053dac13,405.4,8,true,true,"",0.0000,0.0000
+aeba8809053dac13,405.4,9,true,true,"",0.0000,0.0014
+aeba8809053dac13,405.4,10,true,true,"",0.0000,0.0004
+aeba8809053dac13,405.4,11,true,true,"",0.0000,0.0007
+0cd5716970b500d5,238.2,12,true,true,"",0.0000,0.0211
+0cd5716970b500d5,238.2,1,true,true,"",0.0000,0.0000
+0cd5716970b500d5,238.2,2,false,false,"hand crosses or touches this marker",0.3086,0.2789
+0cd5716970b500d5,238.2,3,true,false,"hand crosses or touches this marker",0.0976,0.3248
+0cd5716970b500d5,238.2,4,true,true,"",0.0000,0.0000
+0cd5716970b500d5,238.2,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+0cd5716970b500d5,238.2,6,true,true,"",0.0000,0.2025
+0cd5716970b500d5,238.2,7,true,true,"",0.0000,0.0000
+0cd5716970b500d5,238.2,8,true,true,"",0.0000,0.0000
+0cd5716970b500d5,238.2,9,true,true,"",0.0000,0.0015
+0cd5716970b500d5,238.2,10,true,true,"",0.0000,0.0009
+0cd5716970b500d5,238.2,11,true,true,"",0.0000,0.0009
+937808e420a1e00b,438.6,12,true,true,"",0.0000,0.0146
+937808e420a1e00b,438.6,1,true,true,"",0.0000,0.0007
+937808e420a1e00b,438.6,2,false,false,"hand crosses or touches this marker",0.1453,0.2317
+937808e420a1e00b,438.6,3,true,true,"",0.0000,0.0000
+937808e420a1e00b,438.6,4,true,true,"",0.0000,0.0001
+937808e420a1e00b,438.6,5,true,true,"",0.0000,0.0008
+937808e420a1e00b,438.6,6,true,true,"",0.0000,0.1166
+937808e420a1e00b,438.6,7,true,true,"",0.0000,0.0000
+937808e420a1e00b,438.6,8,true,true,"",0.0000,0.0010
+937808e420a1e00b,438.6,9,true,true,"",0.0000,0.0014
+937808e420a1e00b,438.6,10,true,true,"",0.0000,0.0007
+937808e420a1e00b,438.6,11,true,true,"",0.0000,0.0000
+122812e316bca62d,406.0,12,true,true,"",0.0000,0.0138
+122812e316bca62d,406.0,1,true,true,"",0.0000,0.0008
+122812e316bca62d,406.0,2,false,false,"hand crosses or touches this marker",0.1348,0.2216
+122812e316bca62d,406.0,3,true,true,"",0.0000,0.0000
+122812e316bca62d,406.0,4,true,true,"",0.0000,0.0003
+122812e316bca62d,406.0,5,true,false,"hand crosses or touches this marker",0.0000,0.0008
+122812e316bca62d,406.0,6,true,true,"",0.0000,0.1036
+122812e316bca62d,406.0,7,true,true,"",0.0000,0.0000
+122812e316bca62d,406.0,8,true,true,"",0.0000,0.0015
+122812e316bca62d,406.0,9,true,true,"",0.0000,0.0015
+122812e316bca62d,406.0,10,true,true,"",0.0000,0.0008
+122812e316bca62d,406.0,11,true,true,"",0.0000,0.0001
+cb9df048dfd43767,438.4,12,true,true,"",0.0000,0.0144
+cb9df048dfd43767,438.4,1,true,true,"",0.0000,0.0003
+cb9df048dfd43767,438.4,2,false,false,"hand crosses or touches this marker",0.3062,0.2626
+cb9df048dfd43767,438.4,3,true,true,"",0.0000,0.0000
+cb9df048dfd43767,438.4,4,true,true,"",0.0000,0.0000
+cb9df048dfd43767,438.4,5,true,false,"hand crosses or touches this marker",0.0000,0.0001
+cb9df048dfd43767,438.4,6,true,true,"",0.0000,0.1520
+cb9df048dfd43767,438.4,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+cb9df048dfd43767,438.4,8,true,true,"",0.0000,0.0000
+cb9df048dfd43767,438.4,9,true,true,"",0.0000,0.0008
+cb9df048dfd43767,438.4,10,true,true,"",0.0000,0.0003
+cb9df048dfd43767,438.4,11,true,false,"hand crosses or touches this marker",0.1540,0.0761
+8518cd227de55495,405.8,12,true,true,"",0.0000,0.0147
+8518cd227de55495,405.8,1,true,true,"",0.0000,0.0002
+8518cd227de55495,405.8,2,false,false,"hand crosses or touches this marker",0.3050,0.2597
+8518cd227de55495,405.8,3,true,true,"",0.0000,0.0000
+8518cd227de55495,405.8,4,true,true,"",0.0000,0.0000
+8518cd227de55495,405.8,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+8518cd227de55495,405.8,6,true,true,"",0.0000,0.1546
+8518cd227de55495,405.8,7,true,true,"",0.0000,0.0000
+8518cd227de55495,405.8,8,true,true,"",0.0000,0.0000
+8518cd227de55495,405.8,9,true,true,"",0.0000,0.0008
+8518cd227de55495,405.8,10,true,true,"",0.0000,0.0000
+8518cd227de55495,405.8,11,true,false,"hand crosses or touches this marker",0.1534,0.0742
+a71c3f6f611907a2,238.4,12,true,true,"",0.0000,0.0169
+a71c3f6f611907a2,238.4,1,true,true,"",0.0000,0.0000
+a71c3f6f611907a2,238.4,2,false,false,"hand crosses or touches this marker",0.1479,0.2623
+a71c3f6f611907a2,238.4,3,true,true,"",0.0000,0.0000
+a71c3f6f611907a2,238.4,4,true,true,"",0.0000,0.0005
+a71c3f6f611907a2,238.4,5,true,true,"",0.0000,0.0000
+a71c3f6f611907a2,238.4,6,true,true,"",0.0000,0.1942
+a71c3f6f611907a2,238.4,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+a71c3f6f611907a2,238.4,8,true,true,"",0.0000,0.0000
+a71c3f6f611907a2,238.4,9,true,true,"",0.0000,0.0009
+a71c3f6f611907a2,238.4,10,true,true,"",0.0000,0.0000
+a71c3f6f611907a2,238.4,11,true,false,"hand crosses or touches this marker",0.1447,0.0785
+077c7533c2846cb2,438.6,12,true,true,"",0.0000,0.0172
+077c7533c2846cb2,438.6,1,true,true,"",0.0000,0.0005
+077c7533c2846cb2,438.6,2,true,false,"hand crosses or touches this marker",0.2804,0.3133
+077c7533c2846cb2,438.6,3,true,true,"",0.0000,0.0006
+077c7533c2846cb2,438.6,4,true,true,"",0.0000,0.0000
+077c7533c2846cb2,438.6,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+077c7533c2846cb2,438.6,6,true,true,"",0.0000,0.1348
+077c7533c2846cb2,438.6,7,true,true,"",0.0000,0.0009
+077c7533c2846cb2,438.6,8,true,true,"",0.0000,0.0003
+077c7533c2846cb2,438.6,9,true,true,"",0.0000,0.1658
+077c7533c2846cb2,438.6,10,true,true,"",0.0000,0.0004
+077c7533c2846cb2,438.6,11,true,true,"",0.0000,0.0006
+067c933e30ac2cc6,406.0,12,true,true,"",0.0000,0.0168
+067c933e30ac2cc6,406.0,1,true,true,"",0.0000,0.0005
+067c933e30ac2cc6,406.0,2,true,false,"hand crosses or touches this marker",0.2826,0.3192
+067c933e30ac2cc6,406.0,3,true,true,"",0.0000,0.0002
+067c933e30ac2cc6,406.0,4,true,true,"",0.0000,0.0000
+067c933e30ac2cc6,406.0,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+067c933e30ac2cc6,406.0,6,true,true,"",0.0000,0.1382
+067c933e30ac2cc6,406.0,7,true,true,"",0.0000,0.0011
+067c933e30ac2cc6,406.0,8,true,true,"",0.0000,0.0005
+067c933e30ac2cc6,406.0,9,true,true,"",0.0000,0.1614
+067c933e30ac2cc6,406.0,10,true,true,"",0.0000,0.0004
+067c933e30ac2cc6,406.0,11,true,true,"",0.0000,0.0005
+245d21c8a6ade530,238.6,12,true,true,"",0.0000,0.0189
+245d21c8a6ade530,238.6,1,true,true,"",0.0000,0.0000
+245d21c8a6ade530,238.6,2,true,false,"hand crosses or touches this marker",0.2830,0.3459
+245d21c8a6ade530,238.6,3,true,true,"",0.0000,0.0000
+245d21c8a6ade530,238.6,4,true,true,"",0.0000,0.0000
+245d21c8a6ade530,238.6,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+245d21c8a6ade530,238.6,6,true,true,"",0.0000,0.1791
+245d21c8a6ade530,238.6,7,true,true,"",0.0000,0.0014
+245d21c8a6ade530,238.6,8,true,true,"",0.0000,0.0000
+245d21c8a6ade530,238.6,9,true,true,"",0.0000,0.1907
+245d21c8a6ade530,238.6,10,true,true,"",0.0000,0.0000
+245d21c8a6ade530,238.6,11,true,true,"",0.0000,0.0011
+e4ea736606798ecd,438.0,12,true,true,"",0.0000,0.0147
+e4ea736606798ecd,438.0,1,true,true,"",0.0000,0.0000
+e4ea736606798ecd,438.0,2,true,true,"",0.0000,0.1722
+e4ea736606798ecd,438.0,3,true,true,"",0.0000,0.0000
+e4ea736606798ecd,438.0,4,true,true,"",0.0000,0.0007
+e4ea736606798ecd,438.0,5,true,false,"hand crosses or touches this marker",0.0000,0.0004
+e4ea736606798ecd,438.0,6,true,true,"",0.0000,0.1371
+e4ea736606798ecd,438.0,7,true,true,"",0.0000,0.0000
+e4ea736606798ecd,438.0,8,true,true,"",0.0000,0.0000
+e4ea736606798ecd,438.0,9,true,true,"",0.0000,0.0507
+e4ea736606798ecd,438.0,10,true,true,"",0.0000,0.0000
+e4ea736606798ecd,438.0,11,true,true,"",0.0000,0.0000
+73da1a5a239908fa,238.2,12,true,true,"",0.0000,0.0181
+73da1a5a239908fa,238.2,1,true,true,"",0.0000,0.0000
+73da1a5a239908fa,238.2,2,true,true,"",0.0000,0.1968
+73da1a5a239908fa,238.2,3,true,true,"",0.0000,0.0000
+73da1a5a239908fa,238.2,4,true,true,"",0.0000,0.0002
+73da1a5a239908fa,238.2,5,true,true,"",0.0000,0.0000
+73da1a5a239908fa,238.2,6,true,true,"",0.0000,0.1889
+73da1a5a239908fa,238.2,7,true,true,"",0.0000,0.0000
+73da1a5a239908fa,238.2,8,true,true,"",0.0000,0.0000
+73da1a5a239908fa,238.2,9,true,true,"",0.0000,0.0535
+73da1a5a239908fa,238.2,10,true,true,"",0.0000,0.0000
+73da1a5a239908fa,238.2,11,true,true,"",0.0000,0.0000
+c14f8b3abb49c038,435.9,12,true,true,"",0.0000,0.0289
+c14f8b3abb49c038,435.9,1,true,false,"hand crosses or touches this marker",0.0000,0.1340
+c14f8b3abb49c038,435.9,2,true,false,"hand crosses or touches this marker",0.2701,0.2708
+c14f8b3abb49c038,435.9,3,true,true,"",0.0000,0.0000
+c14f8b3abb49c038,435.9,4,true,true,"",0.0000,0.0003
+c14f8b3abb49c038,435.9,5,true,true,"",0.0000,0.0005
+c14f8b3abb49c038,435.9,6,true,true,"",0.0000,0.1428
+c14f8b3abb49c038,435.9,7,true,true,"",0.0000,0.0000
+c14f8b3abb49c038,435.9,8,true,true,"",0.0000,0.0000
+c14f8b3abb49c038,435.9,9,true,true,"",0.0000,0.0002
+c14f8b3abb49c038,435.9,10,true,true,"",0.0000,0.0003
+c14f8b3abb49c038,435.9,11,true,true,"",0.0000,0.0003
+383bdfd3e61f568a,403.5,12,true,true,"",0.0000,0.0292
+383bdfd3e61f568a,403.5,1,true,false,"hand crosses or touches this marker",0.0000,0.1361
+383bdfd3e61f568a,403.5,2,true,false,"hand crosses or touches this marker",0.2695,0.2707
+383bdfd3e61f568a,403.5,3,true,true,"",0.0000,0.0000
+383bdfd3e61f568a,403.5,4,true,true,"",0.0000,0.0003
+383bdfd3e61f568a,403.5,5,true,false,"hand crosses or touches this marker",0.0000,0.0004
+383bdfd3e61f568a,403.5,6,true,true,"",0.0000,0.1540
+383bdfd3e61f568a,403.5,7,true,true,"",0.0000,0.0000
+383bdfd3e61f568a,403.5,8,true,true,"",0.0000,0.0000
+383bdfd3e61f568a,403.5,9,true,true,"",0.0000,0.0000
+383bdfd3e61f568a,403.5,10,true,true,"",0.0000,0.0003
+383bdfd3e61f568a,403.5,11,true,true,"",0.0000,0.0002
+b48391fd2abddfb9,237.1,12,true,true,"",0.0000,0.0325
+b48391fd2abddfb9,237.1,1,true,false,"hand crosses or touches this marker",0.0000,0.1534
+b48391fd2abddfb9,237.1,2,true,false,"hand crosses or touches this marker",0.2721,0.2850
+b48391fd2abddfb9,237.1,3,true,true,"",0.0000,0.0000
+b48391fd2abddfb9,237.1,4,true,true,"",0.0000,0.0000
+b48391fd2abddfb9,237.1,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+b48391fd2abddfb9,237.1,6,true,true,"",0.0000,0.1842
+b48391fd2abddfb9,237.1,7,true,true,"",0.0000,0.0000
+b48391fd2abddfb9,237.1,8,true,true,"",0.0000,0.0000
+b48391fd2abddfb9,237.1,9,true,true,"",0.0000,0.0000
+b48391fd2abddfb9,237.1,10,true,true,"",0.0000,0.0000
+b48391fd2abddfb9,237.1,11,true,true,"",0.0000,0.0000
+5986c5a3258ae9ec,715.3,12,true,true,"",0.0000,0.0115
+5986c5a3258ae9ec,715.3,1,false,true,"",0.0000,0.0000
+5986c5a3258ae9ec,715.3,2,false,false,"hand crosses or touches this marker",0.3041,0.3264
+5986c5a3258ae9ec,715.3,3,true,true,"",0.0000,0.0000
+5986c5a3258ae9ec,715.3,4,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5986c5a3258ae9ec,715.3,5,true,true,"",0.0000,0.0000
+5986c5a3258ae9ec,715.3,6,true,false,"hand crosses or touches this marker",0.1604,0.3280
+5986c5a3258ae9ec,715.3,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5986c5a3258ae9ec,715.3,8,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5986c5a3258ae9ec,715.3,9,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5986c5a3258ae9ec,715.3,10,true,true,"",0.0000,0.0000
+5986c5a3258ae9ec,715.3,11,false,false,"hand crosses or touches this marker",0.0000,0.0000
+cb5175ff2c02a6b1,259.7,12,true,true,"",0.0000,0.0238
+cb5175ff2c02a6b1,259.7,1,true,true,"",0.0000,0.0000
+cb5175ff2c02a6b1,259.7,2,false,false,"hand crosses or touches this marker",0.2080,0.3459
+cb5175ff2c02a6b1,259.7,3,true,true,"",0.0000,0.0000
+cb5175ff2c02a6b1,259.7,4,true,true,"",0.0000,0.0002
+cb5175ff2c02a6b1,259.7,5,true,true,"",0.0000,0.0000
+cb5175ff2c02a6b1,259.7,6,true,false,"hand crosses or touches this marker",0.1011,0.3337
+cb5175ff2c02a6b1,259.7,7,true,true,"",0.0000,0.0002
+cb5175ff2c02a6b1,259.7,8,true,true,"",0.0000,0.0000
+cb5175ff2c02a6b1,259.7,9,true,true,"",0.0000,0.0000
+cb5175ff2c02a6b1,259.7,10,true,true,"",0.0000,0.0002
+cb5175ff2c02a6b1,259.7,11,true,true,"",0.0000,0.0000
+a3bed3b63f3e9fd5,583.3,12,true,true,"",0.0000,0.0120
+a3bed3b63f3e9fd5,583.3,1,false,true,"",0.0000,0.0000
+a3bed3b63f3e9fd5,583.3,2,false,false,"hand crosses or touches this marker",0.3048,0.3255
+a3bed3b63f3e9fd5,583.3,3,true,true,"",0.0000,0.0000
+a3bed3b63f3e9fd5,583.3,4,true,true,"",0.0000,0.0000
+a3bed3b63f3e9fd5,583.3,5,true,true,"",0.0000,0.0000
+a3bed3b63f3e9fd5,583.3,6,true,false,"hand crosses or touches this marker",0.1607,0.3276
+a3bed3b63f3e9fd5,583.3,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+a3bed3b63f3e9fd5,583.3,8,true,false,"hand crosses or touches this marker",0.0000,0.0000
+a3bed3b63f3e9fd5,583.3,9,true,false,"hand crosses or touches this marker",0.0000,0.0000
+a3bed3b63f3e9fd5,583.3,10,true,true,"",0.0000,0.0000
+a3bed3b63f3e9fd5,583.3,11,false,true,"",0.0000,0.0000
+6d1efbd6fea5ccfe,163.8,12,true,true,"",0.0000,0.0286
+6d1efbd6fea5ccfe,163.8,1,true,true,"",0.0000,0.0000
+6d1efbd6fea5ccfe,163.8,2,false,false,"hand crosses or touches this marker",0.1968,0.3405
+6d1efbd6fea5ccfe,163.8,3,true,true,"",0.0000,0.0000
+6d1efbd6fea5ccfe,163.8,4,true,true,"",0.0000,0.0000
+6d1efbd6fea5ccfe,163.8,5,true,true,"",0.0000,0.0000
+6d1efbd6fea5ccfe,163.8,6,true,false,"hand crosses or touches this marker",0.0641,0.3099
+6d1efbd6fea5ccfe,163.8,7,true,true,"",0.0000,0.0000
+6d1efbd6fea5ccfe,163.8,8,true,true,"",0.0000,0.0000
+6d1efbd6fea5ccfe,163.8,9,true,true,"",0.0000,0.0000
+6d1efbd6fea5ccfe,163.8,10,true,true,"",0.0000,0.0010
+6d1efbd6fea5ccfe,163.8,11,true,true,"",0.0000,0.0000
+87da4af1942b938d,732.7,12,true,true,"",0.0000,0.0125
+87da4af1942b938d,732.7,1,false,false,"hand crosses or touches this marker",0.0000,0.0000
+87da4af1942b938d,732.7,2,false,false,"hand crosses or touches this marker",0.1638,0.2610
+87da4af1942b938d,732.7,3,true,false,"hand crosses or touches this marker",0.0000,0.0000
+87da4af1942b938d,732.7,4,true,false,"hand crosses or touches this marker",0.0000,0.0000
+87da4af1942b938d,732.7,5,false,false,"hand crosses or touches this marker",0.0000,0.0000
+87da4af1942b938d,732.7,6,true,false,"hand crosses or touches this marker",0.2231,0.2820
+87da4af1942b938d,732.7,7,false,false,"hand crosses or touches this marker",0.0000,0.0000
+87da4af1942b938d,732.7,8,false,false,"hand crosses or touches this marker",0.0000,0.0000
+87da4af1942b938d,732.7,9,true,false,"hand crosses or touches this marker",0.0000,0.0000
+87da4af1942b938d,732.7,10,false,false,"hand crosses or touches this marker",0.0000,0.0000
+87da4af1942b938d,732.7,11,false,false,"hand crosses or touches this marker",0.0000,0.0000
+531bbfa97d5559b8,264.0,12,true,true,"",0.0000,0.0214
+531bbfa97d5559b8,264.0,1,true,true,"",0.0000,0.0000
+531bbfa97d5559b8,264.0,2,false,false,"hand crosses or touches this marker",0.1506,0.2592
+531bbfa97d5559b8,264.0,3,true,true,"",0.0000,0.0000
+531bbfa97d5559b8,264.0,4,true,true,"",0.0000,0.0000
+531bbfa97d5559b8,264.0,5,true,true,"",0.0000,0.0000
+531bbfa97d5559b8,264.0,6,true,false,"hand crosses or touches this marker",0.1620,0.3208
+531bbfa97d5559b8,264.0,7,true,true,"",0.0000,0.0000
+531bbfa97d5559b8,264.0,8,true,true,"",0.0000,0.0000
+531bbfa97d5559b8,264.0,9,true,true,"",0.0000,0.0000
+531bbfa97d5559b8,264.0,10,true,true,"",0.0000,0.0002
+531bbfa97d5559b8,264.0,11,true,true,"",0.0000,0.0000
+3c699da2e30eb356,589.9,12,true,true,"",0.0000,0.0129
+3c699da2e30eb356,589.9,1,false,false,"hand crosses or touches this marker",0.0000,0.0000
+3c699da2e30eb356,589.9,2,false,false,"hand crosses or touches this marker",0.1615,0.2608
+3c699da2e30eb356,589.9,3,true,false,"hand crosses or touches this marker",0.0000,0.0000
+3c699da2e30eb356,589.9,4,true,false,"hand crosses or touches this marker",0.0000,0.0000
+3c699da2e30eb356,589.9,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+3c699da2e30eb356,589.9,6,true,false,"hand crosses or touches this marker",0.2212,0.2822
+3c699da2e30eb356,589.9,7,false,false,"hand crosses or touches this marker",0.0000,0.0000
+3c699da2e30eb356,589.9,8,true,false,"hand crosses or touches this marker",0.0000,0.0000
+3c699da2e30eb356,589.9,9,true,false,"hand crosses or touches this marker",0.0000,0.0000
+3c699da2e30eb356,589.9,10,true,false,"hand crosses or touches this marker",0.0000,0.0000
+3c699da2e30eb356,589.9,11,false,false,"hand crosses or touches this marker",0.0000,0.0000
+72483a476c62cf9e,165.7,12,true,true,"",0.0000,0.0275
+72483a476c62cf9e,165.7,1,true,true,"",0.0000,0.0000
+72483a476c62cf9e,165.7,2,false,false,"hand crosses or touches this marker",0.1448,0.2613
+72483a476c62cf9e,165.7,3,true,true,"",0.0000,0.0000
+72483a476c62cf9e,165.7,4,true,true,"",0.0000,0.0000
+72483a476c62cf9e,165.7,5,true,true,"",0.0000,0.0005
+72483a476c62cf9e,165.7,6,true,false,"hand crosses or touches this marker",0.0996,0.2874
+72483a476c62cf9e,165.7,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+72483a476c62cf9e,165.7,8,true,true,"",0.0000,0.0000
+72483a476c62cf9e,165.7,9,true,true,"",0.0000,0.0000
+72483a476c62cf9e,165.7,10,true,true,"",0.0000,0.0019
+72483a476c62cf9e,165.7,11,true,true,"",0.0000,0.0000
+f27a64f84579f41b,679.5,12,true,true,"",0.0000,0.0101
+f27a64f84579f41b,679.5,1,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f27a64f84579f41b,679.5,2,false,false,"hand crosses or touches this marker",0.3046,0.3256
+f27a64f84579f41b,679.5,3,true,false,"hand crosses or touches this marker",0.0000,0.0003
+f27a64f84579f41b,679.5,4,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f27a64f84579f41b,679.5,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f27a64f84579f41b,679.5,6,true,false,"hand crosses or touches this marker",0.1424,0.3066
+f27a64f84579f41b,679.5,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f27a64f84579f41b,679.5,8,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f27a64f84579f41b,679.5,9,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f27a64f84579f41b,679.5,10,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f27a64f84579f41b,679.5,11,true,true,"",0.0000,0.0000
+c321f6173f473250,255.7,12,true,true,"",0.0000,0.0206
+c321f6173f473250,255.7,1,true,true,"",0.0000,0.0000
+c321f6173f473250,255.7,2,false,false,"hand crosses or touches this marker",0.2053,0.3466
+c321f6173f473250,255.7,3,true,true,"",0.0000,0.0000
+c321f6173f473250,255.7,4,true,true,"",0.0000,0.0002
+c321f6173f473250,255.7,5,true,true,"",0.0000,0.0000
+c321f6173f473250,255.7,6,true,false,"hand crosses or touches this marker",0.0997,0.2927
+c321f6173f473250,255.7,7,true,true,"",0.0000,0.0004
+c321f6173f473250,255.7,8,true,true,"",0.0000,0.0000
+c321f6173f473250,255.7,9,true,true,"",0.0000,0.0000
+c321f6173f473250,255.7,10,true,true,"",0.0000,0.0004
+c321f6173f473250,255.7,11,true,true,"",0.0000,0.0000
+afdea66df8e58c0f,554.2,12,true,true,"",0.0000,0.0111
+afdea66df8e58c0f,554.2,1,true,false,"hand crosses or touches this marker",0.0000,0.0000
+afdea66df8e58c0f,554.2,2,false,false,"hand crosses or touches this marker",0.3045,0.3267
+afdea66df8e58c0f,554.2,3,true,false,"hand crosses or touches this marker",0.0000,0.0002
+afdea66df8e58c0f,554.2,4,true,false,"hand crosses or touches this marker",0.0000,0.0000
+afdea66df8e58c0f,554.2,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+afdea66df8e58c0f,554.2,6,true,false,"hand crosses or touches this marker",0.1272,0.3132
+afdea66df8e58c0f,554.2,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+afdea66df8e58c0f,554.2,8,true,false,"hand crosses or touches this marker",0.0000,0.0000
+afdea66df8e58c0f,554.2,9,true,false,"hand crosses or touches this marker",0.0000,0.0000
+afdea66df8e58c0f,554.2,10,true,false,"hand crosses or touches this marker",0.0000,0.0000
+afdea66df8e58c0f,554.2,11,true,true,"",0.0000,0.0000
+cbf0cb6844dde503,155.7,12,true,true,"",0.0000,0.0264
+cbf0cb6844dde503,155.7,1,true,true,"",0.0000,0.0000
+cbf0cb6844dde503,155.7,2,false,false,"hand crosses or touches this marker",0.1831,0.3319
+cbf0cb6844dde503,155.7,3,true,true,"",0.0000,0.0008
+cbf0cb6844dde503,155.7,4,true,true,"",0.0000,0.0000
+cbf0cb6844dde503,155.7,5,true,true,"",0.0000,0.0000
+cbf0cb6844dde503,155.7,6,true,false,"hand crosses or touches this marker",0.0964,0.2989
+cbf0cb6844dde503,155.7,7,true,true,"",0.0000,0.0000
+cbf0cb6844dde503,155.7,8,true,true,"",0.0000,0.0005
+cbf0cb6844dde503,155.7,9,true,true,"",0.0000,0.0000
+cbf0cb6844dde503,155.7,10,true,true,"",0.0000,0.0000
+cbf0cb6844dde503,155.7,11,true,true,"",0.0000,0.0005
+5e97eb15aa3ce07d,776.7,12,true,false,"hand crosses or touches this marker",0.0000,0.0104
+5e97eb15aa3ce07d,776.7,1,false,false,"hand crosses or touches this marker",0.0000,0.0000
+5e97eb15aa3ce07d,776.7,2,false,false,"hand crosses or touches this marker",0.3042,0.3517
+5e97eb15aa3ce07d,776.7,3,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5e97eb15aa3ce07d,776.7,4,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5e97eb15aa3ce07d,776.7,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5e97eb15aa3ce07d,776.7,6,true,false,"hand crosses or touches this marker",0.0000,0.2952
+5e97eb15aa3ce07d,776.7,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5e97eb15aa3ce07d,776.7,8,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5e97eb15aa3ce07d,776.7,9,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5e97eb15aa3ce07d,776.7,10,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5e97eb15aa3ce07d,776.7,11,false,false,"hand crosses or touches this marker",0.0000,0.0000
+5eaf2ff81c7622bc,272.3,12,true,true,"",0.0000,0.0187
+5eaf2ff81c7622bc,272.3,1,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5eaf2ff81c7622bc,272.3,2,false,false,"hand crosses or touches this marker",0.3085,0.3632
+5eaf2ff81c7622bc,272.3,3,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5eaf2ff81c7622bc,272.3,4,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5eaf2ff81c7622bc,272.3,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5eaf2ff81c7622bc,272.3,6,true,false,"hand crosses or touches this marker",0.0000,0.3589
+5eaf2ff81c7622bc,272.3,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5eaf2ff81c7622bc,272.3,8,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5eaf2ff81c7622bc,272.3,9,true,false,"hand crosses or touches this marker",0.0000,0.0000
+5eaf2ff81c7622bc,272.3,10,true,false,"hand crosses or touches this marker",0.0000,0.0002
+5eaf2ff81c7622bc,272.3,11,true,false,"hand crosses or touches this marker",0.0000,0.0000
+1d9060e2f0ed6313,583.6,12,true,false,"hand crosses or touches this marker",0.0000,0.0111
+1d9060e2f0ed6313,583.6,1,true,false,"hand crosses or touches this marker",0.0000,0.0000
+1d9060e2f0ed6313,583.6,2,false,false,"hand crosses or touches this marker",0.3046,0.3518
+1d9060e2f0ed6313,583.6,3,true,false,"hand crosses or touches this marker",0.0000,0.0000
+1d9060e2f0ed6313,583.6,4,true,false,"hand crosses or touches this marker",0.0000,0.0000
+1d9060e2f0ed6313,583.6,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+1d9060e2f0ed6313,583.6,6,true,false,"hand crosses or touches this marker",0.0000,0.3010
+1d9060e2f0ed6313,583.6,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+1d9060e2f0ed6313,583.6,8,true,false,"hand crosses or touches this marker",0.0000,0.0000
+1d9060e2f0ed6313,583.6,9,true,false,"hand crosses or touches this marker",0.0000,0.0000
+1d9060e2f0ed6313,583.6,10,true,false,"hand crosses or touches this marker",0.0000,0.0000
+1d9060e2f0ed6313,583.6,11,true,false,"hand crosses or touches this marker",0.0000,0.0000
+27628aadf410d2ab,164.0,12,true,true,"",0.0000,0.0259
+27628aadf410d2ab,164.0,1,true,false,"hand crosses or touches this marker",0.0000,0.0005
+27628aadf410d2ab,164.0,2,false,false,"hand crosses or touches this marker",0.2379,0.3564
+27628aadf410d2ab,164.0,3,true,true,"",0.0000,0.0000
+27628aadf410d2ab,164.0,4,true,true,"",0.0000,0.0005
+27628aadf410d2ab,164.0,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+27628aadf410d2ab,164.0,6,true,false,"reflection or glare around this marker",0.0000,0.3522
+27628aadf410d2ab,164.0,7,true,true,"",0.0000,0.0000
+27628aadf410d2ab,164.0,8,true,true,"",0.0000,0.0000
+27628aadf410d2ab,164.0,9,true,true,"",0.0000,0.0000
+27628aadf410d2ab,164.0,10,true,true,"",0.0000,0.0000
+27628aadf410d2ab,164.0,11,true,true,"",0.0000,0.0000
+9e6811c0987db1f0,722.3,12,true,true,"",0.0000,0.0096
+9e6811c0987db1f0,722.3,1,true,false,"hand crosses or touches this marker",0.0000,0.0002
+9e6811c0987db1f0,722.3,2,true,false,"hand crosses or touches this marker",0.3042,0.4816
+9e6811c0987db1f0,722.3,3,true,true,"",0.0000,0.0002
+9e6811c0987db1f0,722.3,4,true,false,"hand crosses or touches this marker",0.0000,0.0003
+9e6811c0987db1f0,722.3,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+9e6811c0987db1f0,722.3,6,false,false,"hand crosses or touches this marker",0.4267,0.3644
+9e6811c0987db1f0,722.3,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+9e6811c0987db1f0,722.3,8,false,false,"hand crosses or touches this marker",0.0000,0.0000
+9e6811c0987db1f0,722.3,9,true,true,"",0.0000,0.0003
+9e6811c0987db1f0,722.3,10,true,false,"hand crosses or touches this marker",0.0000,0.0000
+9e6811c0987db1f0,722.3,11,false,false,"hand crosses or touches this marker",0.0000,0.0000
+31fc7762c10c98fa,269.3,12,true,true,"",0.0000,0.0195
+31fc7762c10c98fa,269.3,1,true,true,"",0.0000,0.0000
+31fc7762c10c98fa,269.3,2,false,true,"",0.0000,0.0000
+31fc7762c10c98fa,269.3,3,true,true,"",0.0000,0.0000
+31fc7762c10c98fa,269.3,4,true,true,"",0.0000,0.0000
+31fc7762c10c98fa,269.3,5,true,true,"",0.0000,0.0000
+31fc7762c10c98fa,269.3,6,false,false,"hand crosses or touches this marker",0.3064,0.2911
+31fc7762c10c98fa,269.3,7,true,true,"",0.0000,0.0000
+31fc7762c10c98fa,269.3,8,true,true,"",0.0000,0.0000
+31fc7762c10c98fa,269.3,9,true,true,"",0.0000,0.0000
+31fc7762c10c98fa,269.3,10,true,false,"hand crosses or touches this marker",0.0000,0.0002
+31fc7762c10c98fa,269.3,11,true,true,"",0.0000,0.0000
+c384dcf12a73f9a3,589.1,12,true,true,"",0.0000,0.0101
+c384dcf12a73f9a3,589.1,1,true,false,"hand crosses or touches this marker",0.0000,0.0003
+c384dcf12a73f9a3,589.1,2,false,false,"hand crosses or touches this marker",0.3055,0.4855
+c384dcf12a73f9a3,589.1,3,true,true,"",0.0000,0.0002
+c384dcf12a73f9a3,589.1,4,true,false,"hand crosses or touches this marker",0.0000,0.0002
+c384dcf12a73f9a3,589.1,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+c384dcf12a73f9a3,589.1,6,false,false,"hand crosses or touches this marker",0.4265,0.3695
+c384dcf12a73f9a3,589.1,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+c384dcf12a73f9a3,589.1,8,true,false,"hand crosses or touches this marker",0.0000,0.0000
+c384dcf12a73f9a3,589.1,9,true,true,"",0.0000,0.0002
+c384dcf12a73f9a3,589.1,10,true,false,"hand crosses or touches this marker",0.0000,0.0000
+c384dcf12a73f9a3,589.1,11,true,false,"hand crosses or touches this marker",0.0000,0.0000
+4c8a1e9cee3e03b7,165.5,12,true,true,"",0.0000,0.0226
+4c8a1e9cee3e03b7,165.5,1,true,true,"",0.0000,0.0000
+4c8a1e9cee3e03b7,165.5,2,false,true,"",0.0000,0.0000
+4c8a1e9cee3e03b7,165.5,3,true,true,"",0.0000,0.0000
+4c8a1e9cee3e03b7,165.5,4,true,true,"",0.0000,0.0000
+4c8a1e9cee3e03b7,165.5,5,true,true,"",0.0000,0.0005
+4c8a1e9cee3e03b7,165.5,6,false,false,"hand crosses or touches this marker",0.0906,0.2094
+4c8a1e9cee3e03b7,165.5,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+4c8a1e9cee3e03b7,165.5,8,true,true,"",0.0000,0.0005
+4c8a1e9cee3e03b7,165.5,9,true,true,"",0.0000,0.0000
+4c8a1e9cee3e03b7,165.5,10,true,true,"",0.0000,0.0005
+4c8a1e9cee3e03b7,165.5,11,true,true,"",0.0000,0.0000
+f127a52bacf6b822,732.4,12,true,true,"",0.0000,0.0122
+f127a52bacf6b822,732.4,1,false,false,"hand crosses or touches this marker",0.0000,0.0001
+f127a52bacf6b822,732.4,2,false,false,"hand crosses or touches this marker",0.3041,0.3246
+f127a52bacf6b822,732.4,3,true,true,"",0.0000,0.0000
+f127a52bacf6b822,732.4,4,true,true,"",0.0000,0.0005
+f127a52bacf6b822,732.4,5,true,false,"hand crosses or touches this marker",0.0000,0.0002
+f127a52bacf6b822,732.4,6,true,false,"hand crosses or touches this marker",0.0000,0.2264
+f127a52bacf6b822,732.4,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f127a52bacf6b822,732.4,8,true,false,"hand crosses or touches this marker",0.0000,0.0004
+f127a52bacf6b822,732.4,9,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f127a52bacf6b822,732.4,10,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f127a52bacf6b822,732.4,11,false,false,"hand crosses or touches this marker",0.0000,0.0000
+ec2537fa08837262,272.8,12,true,true,"",0.0000,0.0240
+ec2537fa08837262,272.8,1,true,true,"",0.0000,0.0000
+ec2537fa08837262,272.8,2,false,false,"hand crosses or touches this marker",0.2282,0.3362
+ec2537fa08837262,272.8,3,true,true,"",0.0000,0.0000
+ec2537fa08837262,272.8,4,true,true,"",0.0000,0.0010
+ec2537fa08837262,272.8,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+ec2537fa08837262,272.8,6,true,true,"",0.0000,0.2764
+ec2537fa08837262,272.8,7,true,false,"hand crosses or touches this marker",0.0000,0.0007
+ec2537fa08837262,272.8,8,true,true,"",0.0000,0.0002
+ec2537fa08837262,272.8,9,true,true,"",0.0000,0.0000
+ec2537fa08837262,272.8,10,true,false,"hand crosses or touches this marker",0.0000,0.0009
+ec2537fa08837262,272.8,11,true,true,"",0.0000,0.0003
+c58f78ef6c1cd5b7,638.2,12,true,true,"",0.0000,0.0125
+c58f78ef6c1cd5b7,638.2,1,false,false,"hand crosses or touches this marker",0.0000,0.0000
+c58f78ef6c1cd5b7,638.2,2,false,false,"hand crosses or touches this marker",0.3044,0.3284
+c58f78ef6c1cd5b7,638.2,3,true,true,"",0.0000,0.0000
+c58f78ef6c1cd5b7,638.2,4,true,true,"",0.0000,0.0004
+c58f78ef6c1cd5b7,638.2,5,true,false,"hand crosses or touches this marker",0.0000,0.0002
+c58f78ef6c1cd5b7,638.2,6,true,false,"hand crosses or touches this marker",0.0000,0.2319
+c58f78ef6c1cd5b7,638.2,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+c58f78ef6c1cd5b7,638.2,8,true,false,"hand crosses or touches this marker",0.0000,0.0002
+c58f78ef6c1cd5b7,638.2,9,true,true,"",0.0000,0.0000
+c58f78ef6c1cd5b7,638.2,10,true,false,"hand crosses or touches this marker",0.0000,0.0000
+c58f78ef6c1cd5b7,638.2,11,false,true,"",0.0000,0.0000
+6313ac0f2a504448,179.3,12,true,true,"",0.0000,0.0259
+6313ac0f2a504448,179.3,1,true,true,"",0.0000,0.0000
+6313ac0f2a504448,179.3,2,false,false,"hand crosses or touches this marker",0.2050,0.3305
+6313ac0f2a504448,179.3,3,true,true,"",0.0000,0.0000
+6313ac0f2a504448,179.3,4,true,true,"",0.0000,0.0008
+6313ac0f2a504448,179.3,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+6313ac0f2a504448,179.3,6,true,true,"",0.0000,0.3113
+6313ac0f2a504448,179.3,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+6313ac0f2a504448,179.3,8,true,true,"",0.0000,0.0000
+6313ac0f2a504448,179.3,9,true,true,"",0.0000,0.0000
+6313ac0f2a504448,179.3,10,true,true,"",0.0000,0.0021
+6313ac0f2a504448,179.3,11,true,true,"",0.0000,0.0004
+f830414d02ab4d92,194.0,12,true,true,"",0.0000,0.0188
+f830414d02ab4d92,194.0,1,true,true,"",0.0000,0.0000
+f830414d02ab4d92,194.0,2,true,false,"hand crosses or touches this marker",0.3093,0.2525
+f830414d02ab4d92,194.0,3,true,true,"",0.0000,0.0000
+f830414d02ab4d92,194.0,4,true,true,"",0.0000,0.0000
+f830414d02ab4d92,194.0,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f830414d02ab4d92,194.0,6,true,true,"",0.0000,0.1933
+f830414d02ab4d92,194.0,7,true,true,"",0.0000,0.0166
+f830414d02ab4d92,194.0,8,true,true,"",0.0000,0.0000
+f830414d02ab4d92,194.0,9,true,true,"",0.0000,0.0000
+f830414d02ab4d92,194.0,10,true,true,"",0.0000,0.0000
+f830414d02ab4d92,194.0,11,true,true,"",0.0000,0.0000
+295ff012729b77e6,280.0,12,true,true,"",0.0000,0.0151
+295ff012729b77e6,280.0,1,true,true,"",0.0000,0.0000
+295ff012729b77e6,280.0,2,true,false,"hand crosses or touches this marker",0.3081,0.2208
+295ff012729b77e6,280.0,3,true,true,"",0.0000,0.0000
+295ff012729b77e6,280.0,4,true,true,"",0.0000,0.0000
+295ff012729b77e6,280.0,5,true,true,"",0.0000,0.0000
+295ff012729b77e6,280.0,6,true,true,"",0.0000,0.1562
+295ff012729b77e6,280.0,7,true,true,"",0.0000,0.0000
+295ff012729b77e6,280.0,8,true,true,"",0.0000,0.0000
+295ff012729b77e6,280.0,9,true,true,"",0.0000,0.0110
+295ff012729b77e6,280.0,10,true,true,"",0.0000,0.0000
+295ff012729b77e6,280.0,11,true,true,"",0.0000,0.0000
+448814812e7079fd,188.2,12,true,true,"",0.0000,0.0196
+448814812e7079fd,188.2,1,true,true,"",0.0000,0.0000
+448814812e7079fd,188.2,2,false,false,"hand crosses or touches this marker",0.1594,0.2395
+448814812e7079fd,188.2,3,true,true,"",0.0000,0.0932
+448814812e7079fd,188.2,4,true,true,"",0.0000,0.0000
+448814812e7079fd,188.2,5,true,true,"",0.0000,0.0000
+448814812e7079fd,188.2,6,true,true,"",0.0000,0.1979
+448814812e7079fd,188.2,7,true,true,"",0.0000,0.0000
+448814812e7079fd,188.2,8,true,true,"",0.0000,0.0000
+448814812e7079fd,188.2,9,true,true,"",0.0000,0.0000
+448814812e7079fd,188.2,10,true,true,"",0.0000,0.0000
+448814812e7079fd,188.2,11,true,true,"",0.0000,0.0000
+8b8c84ce9219f904,283.9,12,true,true,"",0.0000,0.0140
+8b8c84ce9219f904,283.9,1,true,true,"",0.0000,0.0000
+8b8c84ce9219f904,283.9,2,false,false,"hand crosses or touches this marker",0.1480,0.2189
+8b8c84ce9219f904,283.9,3,true,true,"",0.0000,0.0000
+8b8c84ce9219f904,283.9,4,true,false,"hand crosses or touches this marker",0.1585,0.0679
+8b8c84ce9219f904,283.9,5,true,true,"",0.0000,0.0000
+8b8c84ce9219f904,283.9,6,true,true,"",0.0000,0.1418
+8b8c84ce9219f904,283.9,7,true,true,"",0.0000,0.0000
+8b8c84ce9219f904,283.9,8,true,true,"",0.0000,0.0000
+8b8c84ce9219f904,283.9,9,true,true,"",0.0000,0.0000
+8b8c84ce9219f904,283.9,10,true,true,"",0.0000,0.0000
+8b8c84ce9219f904,283.9,11,true,true,"",0.0000,0.0000
+6cac8c2178b1448e,192.8,12,true,true,"",0.0000,0.0198
+6cac8c2178b1448e,192.8,1,true,true,"",0.0000,0.0000
+6cac8c2178b1448e,192.8,2,false,false,"hand crosses or touches this marker",0.3073,0.3284
+6cac8c2178b1448e,192.8,3,true,true,"",0.0000,0.0801
+6cac8c2178b1448e,192.8,4,true,true,"",0.0000,0.0000
+6cac8c2178b1448e,192.8,5,true,true,"",0.0000,0.0000
+6cac8c2178b1448e,192.8,6,true,true,"",0.0000,0.1903
+6cac8c2178b1448e,192.8,7,true,true,"",0.0000,0.0000
+6cac8c2178b1448e,192.8,8,true,true,"",0.0000,0.0000
+6cac8c2178b1448e,192.8,9,true,true,"",0.0000,0.0000
+6cac8c2178b1448e,192.8,10,true,true,"",0.0000,0.0000
+6cac8c2178b1448e,192.8,11,true,true,"",0.0000,0.0000
+cb8e33b7dc48de42,275.7,12,true,true,"",0.0000,0.0146
+cb8e33b7dc48de42,275.7,1,true,true,"",0.0000,0.0000
+cb8e33b7dc48de42,275.7,2,true,false,"hand crosses or touches this marker",0.1251,0.2525
+cb8e33b7dc48de42,275.7,3,true,true,"",0.0000,0.0000
+cb8e33b7dc48de42,275.7,4,true,false,"hand crosses or touches this marker",0.1061,0.0455
+cb8e33b7dc48de42,275.7,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+cb8e33b7dc48de42,275.7,6,true,true,"",0.0000,0.1664
+cb8e33b7dc48de42,275.7,7,true,true,"",0.0000,0.0000
+cb8e33b7dc48de42,275.7,8,true,true,"",0.0000,0.0000
+cb8e33b7dc48de42,275.7,9,true,true,"",0.0000,0.0000
+cb8e33b7dc48de42,275.7,10,true,true,"",0.0000,0.0000
+cb8e33b7dc48de42,275.7,11,true,true,"",0.0000,0.0000
+14a800efc5982cf7,196.0,12,true,true,"",0.0000,0.0182
+14a800efc5982cf7,196.0,1,true,true,"",0.0000,0.0000
+14a800efc5982cf7,196.0,2,false,false,"hand crosses or touches this marker",0.1684,0.2202
+14a800efc5982cf7,196.0,3,true,true,"",0.0000,0.0244
+14a800efc5982cf7,196.0,4,true,true,"",0.0000,0.0000
+14a800efc5982cf7,196.0,5,true,true,"",0.0000,0.0000
+14a800efc5982cf7,196.0,6,true,true,"",0.0000,0.1863
+14a800efc5982cf7,196.0,7,true,true,"",0.0000,0.0000
+14a800efc5982cf7,196.0,8,true,true,"",0.0000,0.0000
+14a800efc5982cf7,196.0,9,true,true,"",0.0000,0.0000
+14a800efc5982cf7,196.0,10,true,true,"",0.0000,0.0000
+14a800efc5982cf7,196.0,11,true,true,"",0.0000,0.0000
+39333b0946ed7fd0,279.5,12,true,true,"",0.0000,0.0159
+39333b0946ed7fd0,279.5,1,true,true,"",0.0000,0.0000
+39333b0946ed7fd0,279.5,2,false,false,"hand crosses or touches this marker",0.1610,0.2246
+39333b0946ed7fd0,279.5,3,true,true,"",0.0000,0.0000
+39333b0946ed7fd0,279.5,4,true,true,"",0.0000,0.0000
+39333b0946ed7fd0,279.5,5,true,true,"",0.0000,0.0092
+39333b0946ed7fd0,279.5,6,true,true,"",0.0000,0.1509
+39333b0946ed7fd0,279.5,7,true,true,"",0.0000,0.0000
+39333b0946ed7fd0,279.5,8,true,true,"",0.0000,0.0000
+39333b0946ed7fd0,279.5,9,true,true,"",0.0000,0.0000
+39333b0946ed7fd0,279.5,10,true,true,"",0.0000,0.0000
+39333b0946ed7fd0,279.5,11,true,true,"",0.0000,0.0000
+8cc107d61cf3afca,197.5,12,true,true,"",0.0000,0.0189
+8cc107d61cf3afca,197.5,1,true,true,"",0.0000,0.0000
+8cc107d61cf3afca,197.5,2,false,false,"hand crosses or touches this marker",0.1329,0.2140
+8cc107d61cf3afca,197.5,3,true,true,"",0.0000,0.0000
+8cc107d61cf3afca,197.5,4,true,true,"",0.0000,0.0000
+8cc107d61cf3afca,197.5,5,true,true,"",0.0000,0.0000
+8cc107d61cf3afca,197.5,6,true,true,"",0.0000,0.2032
+8cc107d61cf3afca,197.5,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+8cc107d61cf3afca,197.5,8,true,true,"",0.0000,0.0000
+8cc107d61cf3afca,197.5,9,true,true,"",0.0000,0.0000
+8cc107d61cf3afca,197.5,10,true,true,"",0.0000,0.0000
+8cc107d61cf3afca,197.5,11,true,true,"",0.0000,0.0000
+e11198980d028b5f,273.5,12,true,false,"hand crosses or touches this marker",0.1646,0.1125
+e11198980d028b5f,273.5,1,true,true,"",0.0000,0.0000
+e11198980d028b5f,273.5,2,false,false,"hand crosses or touches this marker",0.1508,0.2415
+e11198980d028b5f,273.5,3,true,true,"",0.0000,0.0000
+e11198980d028b5f,273.5,4,true,true,"",0.0000,0.0000
+e11198980d028b5f,273.5,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+e11198980d028b5f,273.5,6,true,true,"",0.0000,0.1695
+e11198980d028b5f,273.5,7,true,true,"",0.0000,0.0000
+e11198980d028b5f,273.5,8,true,true,"",0.0000,0.0000
+e11198980d028b5f,273.5,9,true,true,"",0.0000,0.0000
+e11198980d028b5f,273.5,10,true,true,"",0.0000,0.0000
+e11198980d028b5f,273.5,11,true,true,"",0.0000,0.0000
+f97405415bac87e3,230.9,12,true,true,"",0.0000,0.0196
+f97405415bac87e3,230.9,1,true,true,"",0.0000,0.0000
+f97405415bac87e3,230.9,2,false,false,"hand crosses or touches this marker",0.1397,0.2313
+f97405415bac87e3,230.9,3,true,true,"",0.0000,0.0000
+f97405415bac87e3,230.9,4,true,true,"",0.0000,0.0000
+f97405415bac87e3,230.9,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f97405415bac87e3,230.9,6,true,true,"",0.0000,0.1943
+f97405415bac87e3,230.9,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+f97405415bac87e3,230.9,8,true,true,"",0.0000,0.0000
+f97405415bac87e3,230.9,9,true,true,"",0.0000,0.0000
+f97405415bac87e3,230.9,10,true,false,"hand crosses or touches this marker",0.1332,0.0697
+f97405415bac87e3,230.9,11,true,true,"",0.0000,0.0000
+c2143f68590be66c,309.7,12,true,true,"",0.0000,0.0169
+c2143f68590be66c,309.7,1,true,true,"",0.0000,0.0000
+c2143f68590be66c,309.7,2,false,false,"hand crosses or touches this marker",0.1574,0.2595
+c2143f68590be66c,309.7,3,true,true,"",0.0000,0.0000
+c2143f68590be66c,309.7,4,true,true,"",0.0000,0.0000
+c2143f68590be66c,309.7,5,true,false,"hand crosses or touches this marker",0.0000,0.0000
+c2143f68590be66c,309.7,6,true,true,"",0.0000,0.1834
+c2143f68590be66c,309.7,7,true,false,"hand crosses or touches this marker",0.0000,0.0013
+c2143f68590be66c,309.7,8,true,true,"",0.0000,0.0000
+c2143f68590be66c,309.7,9,true,true,"",0.0000,0.0000
+c2143f68590be66c,309.7,10,true,true,"",0.0000,0.0000
+c2143f68590be66c,309.7,11,true,false,"hand crosses or touches this marker",0.3076,0.1183
+445e3c952d68ede4,204.9,12,true,true,"",0.0000,0.0172
+445e3c952d68ede4,204.9,1,true,true,"",0.0000,0.0000
+445e3c952d68ede4,204.9,2,false,false,"hand crosses or touches this marker",0.1757,0.2464
+445e3c952d68ede4,204.9,3,true,true,"",0.0000,0.2061
+445e3c952d68ede4,204.9,4,true,true,"",0.0000,0.0000
+445e3c952d68ede4,204.9,5,true,true,"",0.0000,0.0000
+445e3c952d68ede4,204.9,6,true,true,"",0.0000,0.1853
+445e3c952d68ede4,204.9,7,true,true,"",0.0000,0.0000
+445e3c952d68ede4,204.9,8,true,true,"",0.0000,0.0000
+445e3c952d68ede4,204.9,9,true,true,"",0.0000,0.0000
+445e3c952d68ede4,204.9,10,true,true,"",0.0000,0.0000
+445e3c952d68ede4,204.9,11,true,true,"",0.0000,0.0000
+728e4c157ef1075d,270.5,12,true,true,"",0.0000,0.0146
+728e4c157ef1075d,270.5,1,true,true,"",0.0000,0.0000
+728e4c157ef1075d,270.5,2,false,false,"hand crosses or touches this marker",0.2301,0.3225
+728e4c157ef1075d,270.5,3,true,true,"",0.0000,0.0000
+728e4c157ef1075d,270.5,4,true,false,"hand crosses or touches this marker",0.1164,0.0485
+728e4c157ef1075d,270.5,5,true,true,"",0.0000,0.0000
+728e4c157ef1075d,270.5,6,true,true,"",0.0000,0.1342
+728e4c157ef1075d,270.5,7,true,true,"",0.0000,0.0000
+728e4c157ef1075d,270.5,8,true,true,"",0.0000,0.0000
+728e4c157ef1075d,270.5,9,true,true,"",0.0000,0.0000
+728e4c157ef1075d,270.5,10,true,true,"",0.0000,0.0000
+728e4c157ef1075d,270.5,11,true,true,"",0.0000,0.0000
+855041528fc1ac79,199.3,12,true,true,"",0.0000,0.0170
+855041528fc1ac79,199.3,1,false,true,"",0.0000,0.0000
+855041528fc1ac79,199.3,2,false,false,"hand crosses or touches this marker",0.1919,0.2579
+855041528fc1ac79,199.3,3,true,true,"",0.0000,0.0000
+855041528fc1ac79,199.3,4,false,true,"",0.0000,0.0000
+855041528fc1ac79,199.3,5,true,true,"",0.0000,0.0993
+855041528fc1ac79,199.3,6,true,true,"",0.0000,0.2034
+855041528fc1ac79,199.3,7,true,false,"hand crosses or touches this marker",0.0000,0.0000
+855041528fc1ac79,199.3,8,true,true,"",0.0000,0.0000
+855041528fc1ac79,199.3,9,true,true,"",0.0000,0.0000
+855041528fc1ac79,199.3,10,false,true,"",0.0000,0.0000
+855041528fc1ac79,199.3,11,false,true,"",0.0000,0.0000
+6ac54fe6dfcbd61a,277.1,12,true,true,"",0.0000,0.0135
+6ac54fe6dfcbd61a,277.1,1,false,true,"",0.0000,0.0000
+6ac54fe6dfcbd61a,277.1,2,false,false,"hand crosses or touches this marker",0.1678,0.2089
+6ac54fe6dfcbd61a,277.1,3,true,true,"",0.0000,0.0000
+6ac54fe6dfcbd61a,277.1,4,true,true,"",0.0000,0.0000
+6ac54fe6dfcbd61a,277.1,5,true,true,"",0.0000,0.0000
+6ac54fe6dfcbd61a,277.1,6,true,true,"",0.0000,0.3006
+6ac54fe6dfcbd61a,277.1,7,true,true,"",0.0000,0.0000
+6ac54fe6dfcbd61a,277.1,8,true,true,"",0.0000,0.0000
+6ac54fe6dfcbd61a,277.1,9,true,true,"",0.0000,0.0000
+6ac54fe6dfcbd61a,277.1,10,false,true,"",0.0000,0.0000
+6ac54fe6dfcbd61a,277.1,11,false,true,"",0.0000,0.0000
+fe415ba6ad0b207e,161.4,12,true,true,"",0.0000,0.0246
+fe415ba6ad0b207e,161.4,1,true,true,"",0.0000,0.0000
+fe415ba6ad0b207e,161.4,2,false,true,"",0.0000,0.0000
+fe415ba6ad0b207e,161.4,3,true,true,"",0.0000,0.0000
+fe415ba6ad0b207e,161.4,4,true,true,"",0.0000,0.0000
+fe415ba6ad0b207e,161.4,5,true,true,"",0.0000,0.0000
+fe415ba6ad0b207e,161.4,6,true,true,"",0.0000,0.1871
+fe415ba6ad0b207e,161.4,7,true,true,"",0.0000,0.1302
+fe415ba6ad0b207e,161.4,8,true,true,"",0.0000,0.0000
+fe415ba6ad0b207e,161.4,9,true,true,"",0.0000,0.0000
+fe415ba6ad0b207e,161.4,10,true,true,"",0.0000,0.0000
+fe415ba6ad0b207e,161.4,11,true,true,"",0.0000,0.0000
+3cce6d1b709364b0,263.7,12,true,true,"",0.0000,0.0153
+3cce6d1b709364b0,263.7,1,true,false,"hand crosses or touches this marker",0.0000,0.0011
+3cce6d1b709364b0,263.7,2,false,false,"hand crosses or touches this marker",0.1308,0.1914
+3cce6d1b709364b0,263.7,3,true,true,"",0.0000,0.0000
+3cce6d1b709364b0,263.7,4,true,true,"",0.0000,0.0000
+3cce6d1b709364b0,263.7,5,true,true,"",0.0000,0.0000
+3cce6d1b709364b0,263.7,6,true,true,"",0.0000,0.1343
+3cce6d1b709364b0,263.7,7,true,true,"",0.0000,0.0000
+3cce6d1b709364b0,263.7,8,true,true,"",0.0000,0.0000
+3cce6d1b709364b0,263.7,9,true,true,"",0.0000,0.0000
+3cce6d1b709364b0,263.7,10,true,true,"",0.0000,0.0000
+3cce6d1b709364b0,263.7,11,true,true,"",0.0000,0.0000
+493539781bde43cf,154.2,12,true,true,"",0.0000,0.0211
+493539781bde43cf,154.2,1,true,true,"",0.0000,0.0000
+493539781bde43cf,154.2,2,true,true,"",0.0000,0.2121
+493539781bde43cf,154.2,3,true,true,"",0.0000,0.0024
+493539781bde43cf,154.2,4,true,true,"",0.0000,0.0000
+493539781bde43cf,154.2,5,true,true,"",0.0000,0.0000
+493539781bde43cf,154.2,6,true,true,"",0.0000,0.2027
+493539781bde43cf,154.2,7,true,true,"",0.0000,0.0000
+493539781bde43cf,154.2,8,true,true,"",0.0000,0.0000
+493539781bde43cf,154.2,9,true,true,"",0.0000,0.0000
+493539781bde43cf,154.2,10,true,false,"hand crosses or touches this marker",0.1703,0.1279
+493539781bde43cf,154.2,11,true,true,"",0.0000,0.0000
+300443c8ae84ff63,257.6,12,true,true,"",0.0000,0.0155
+300443c8ae84ff63,257.6,1,true,true,"",0.0000,0.0000
+300443c8ae84ff63,257.6,2,false,false,"hand crosses or touches this marker",0.1339,0.1660
+300443c8ae84ff63,257.6,3,true,true,"",0.0000,0.0000
+300443c8ae84ff63,257.6,4,true,true,"",0.0000,0.0000
+300443c8ae84ff63,257.6,5,true,true,"",0.0000,0.0000
+300443c8ae84ff63,257.6,6,true,true,"",0.0000,0.1456
+300443c8ae84ff63,257.6,7,true,true,"",0.0000,0.0000
+300443c8ae84ff63,257.6,8,true,true,"",0.0000,0.0000
+300443c8ae84ff63,257.6,9,true,true,"",0.0000,0.0000
+300443c8ae84ff63,257.6,10,true,true,"",0.0000,0.0000
+300443c8ae84ff63,257.6,11,true,true,"",0.0000,0.0000
+5fa5736bf56385c3,154.3,12,true,true,"",0.0000,0.0247
+5fa5736bf56385c3,154.3,1,true,true,"",0.0000,0.0000
+5fa5736bf56385c3,154.3,2,true,true,"",0.0000,0.0000
+5fa5736bf56385c3,154.3,3,false,false,"hand crosses or touches this marker",0.0924,0.3405
+5fa5736bf56385c3,154.3,4,true,false,"hand crosses or touches this marker",0.1215,0.2438
+5fa5736bf56385c3,154.3,5,true,true,"",0.0000,0.0000
+5fa5736bf56385c3,154.3,6,true,true,"",0.0000,0.2225
+5fa5736bf56385c3,154.3,7,true,true,"",0.0000,0.0000
+5fa5736bf56385c3,154.3,8,true,true,"",0.0000,0.0000
+5fa5736bf56385c3,154.3,9,true,true,"",0.0000,0.0000
+5fa5736bf56385c3,154.3,10,true,true,"",0.0000,0.0000
+5fa5736bf56385c3,154.3,11,true,true,"",0.0000,0.0000
+033133202cf757da,250.4,12,true,true,"",0.0000,0.0139
+033133202cf757da,250.4,1,true,true,"",0.0000,0.0000
+033133202cf757da,250.4,2,true,true,"",0.0000,0.0000
+033133202cf757da,250.4,3,true,true,"",0.0000,0.0000
+033133202cf757da,250.4,4,false,false,"hand crosses or touches this marker",0.1138,0.1659
+033133202cf757da,250.4,5,true,true,"",0.0000,0.0008
+033133202cf757da,250.4,6,true,true,"",0.0000,0.1481
+033133202cf757da,250.4,7,true,true,"",0.0000,0.0000
+033133202cf757da,250.4,8,true,true,"",0.0000,0.0000
+033133202cf757da,250.4,9,true,true,"",0.0000,0.0000
+033133202cf757da,250.4,10,true,true,"",0.0000,0.0000
+033133202cf757da,250.4,11,true,true,"",0.0000,0.0000
+6831c54c06b80361,153.8,12,true,true,"",0.0000,0.0284
+6831c54c06b80361,153.8,1,true,true,"",0.0000,0.0000
+6831c54c06b80361,153.8,2,true,true,"",0.0000,0.0000
+6831c54c06b80361,153.8,3,true,true,"",0.0000,0.0000
+6831c54c06b80361,153.8,4,true,false,"hand crosses or touches this marker",0.2633,0.3789
+6831c54c06b80361,153.8,5,true,true,"",0.0000,0.0000
+6831c54c06b80361,153.8,6,true,true,"",0.0000,0.1858
+6831c54c06b80361,153.8,7,true,true,"",0.0000,0.0000
+6831c54c06b80361,153.8,8,true,true,"",0.0000,0.0000
+6831c54c06b80361,153.8,9,true,true,"",0.0000,0.2697
+6831c54c06b80361,153.8,10,true,true,"",0.0000,0.0000
+6831c54c06b80361,153.8,11,true,true,"",0.0000,0.0000
+5cec141d6bc20f7a,256.1,12,true,true,"",0.0000,0.0169
+5cec141d6bc20f7a,256.1,1,true,true,"",0.0000,0.0000
+5cec141d6bc20f7a,256.1,2,true,true,"",0.0000,0.0000
+5cec141d6bc20f7a,256.1,3,true,true,"",0.0000,0.0000
+5cec141d6bc20f7a,256.1,4,true,false,"hand crosses or touches this marker",0.1318,0.2088
+5cec141d6bc20f7a,256.1,5,true,true,"",0.0000,0.0000
+5cec141d6bc20f7a,256.1,6,true,true,"",0.0000,0.1585
+5cec141d6bc20f7a,256.1,7,true,true,"",0.0000,0.0000
+5cec141d6bc20f7a,256.1,8,true,true,"",0.0000,0.0000
+5cec141d6bc20f7a,256.1,9,true,true,"",0.0000,0.0000
+5cec141d6bc20f7a,256.1,10,true,true,"",0.0000,0.0000
+5cec141d6bc20f7a,256.1,11,true,true,"",0.0000,0.0000
+cc22ce01fa0e766c,147.8,12,true,true,"",0.0000,0.0292
+cc22ce01fa0e766c,147.8,1,true,true,"",0.0000,0.0000
+cc22ce01fa0e766c,147.8,2,true,true,"",0.0000,0.0000
+cc22ce01fa0e766c,147.8,3,true,true,"",0.0000,0.0380
+cc22ce01fa0e766c,147.8,4,false,false,"hand crosses or touches this marker",0.1371,0.2686
+cc22ce01fa0e766c,147.8,5,true,true,"",0.0000,0.0000
+cc22ce01fa0e766c,147.8,6,true,true,"",0.0000,0.1986
+cc22ce01fa0e766c,147.8,7,true,true,"",0.0000,0.0000
+cc22ce01fa0e766c,147.8,8,true,true,"",0.0000,0.0000
+cc22ce01fa0e766c,147.8,9,true,true,"",0.0000,0.0000
+cc22ce01fa0e766c,147.8,10,true,true,"",0.0000,0.0000
+cc22ce01fa0e766c,147.8,11,true,true,"",0.0000,0.0000
+2fdf38169ee1b57a,276.3,12,true,true,"",0.0000,0.0154
+2fdf38169ee1b57a,276.3,1,true,true,"",0.0000,0.0000
+2fdf38169ee1b57a,276.3,2,true,true,"",0.0000,0.0000
+2fdf38169ee1b57a,276.3,3,true,true,"",0.0000,0.0000
+2fdf38169ee1b57a,276.3,4,false,false,"hand crosses or touches this marker",0.3067,0.2695
+2fdf38169ee1b57a,276.3,5,true,true,"",0.0000,0.0000
+2fdf38169ee1b57a,276.3,6,true,true,"",0.0000,0.1157
+2fdf38169ee1b57a,276.3,7,true,true,"",0.0000,0.0000
+2fdf38169ee1b57a,276.3,8,true,true,"",0.0000,0.0000
+2fdf38169ee1b57a,276.3,9,true,true,"",0.0000,0.0000
+2fdf38169ee1b57a,276.3,10,true,true,"",0.0000,0.0000
+2fdf38169ee1b57a,276.3,11,true,true,"",0.0000,0.0000
+ea6471c0ef6ada52,162.7,12,true,true,"",0.0000,0.0221
+ea6471c0ef6ada52,162.7,1,true,false,"hand crosses or touches this marker",0.3088,0.1792
+ea6471c0ef6ada52,162.7,2,true,true,"",0.0000,0.0000
+ea6471c0ef6ada52,162.7,3,true,true,"",0.0000,0.0000
+ea6471c0ef6ada52,162.7,4,false,true,"",0.0000,0.0000
+ea6471c0ef6ada52,162.7,5,true,true,"",0.0000,0.0000
+ea6471c0ef6ada52,162.7,6,true,true,"",0.0000,0.1866
+ea6471c0ef6ada52,162.7,7,true,true,"",0.0000,0.0000
+ea6471c0ef6ada52,162.7,8,true,true,"",0.0000,0.0000
+ea6471c0ef6ada52,162.7,9,true,true,"",0.0000,0.0000
+ea6471c0ef6ada52,162.7,10,true,true,"",0.0000,0.0000
+ea6471c0ef6ada52,162.7,11,true,true,"",0.0000,0.0000
+d6113f3297e054a5,335.4,12,true,true,"",0.0000,0.0165
+d6113f3297e054a5,335.4,1,true,true,"",0.0000,0.0002
+d6113f3297e054a5,335.4,2,false,false,"hand crosses or touches this marker",0.1699,0.2874
+d6113f3297e054a5,335.4,3,true,true,"",0.0000,0.0003
+d6113f3297e054a5,335.4,4,true,true,"",0.0000,0.0024
+d6113f3297e054a5,335.4,5,true,true,"",0.0000,0.0011
+d6113f3297e054a5,335.4,6,true,true,"",0.0000,0.1314
+d6113f3297e054a5,335.4,7,true,true,"",0.0000,0.0097
+d6113f3297e054a5,335.4,8,true,true,"",0.0000,0.0020
+d6113f3297e054a5,335.4,9,true,true,"",0.0000,0.0000
+d6113f3297e054a5,335.4,10,true,true,"",0.0000,0.0024
+d6113f3297e054a5,335.4,11,true,true,"",0.0000,0.0000
