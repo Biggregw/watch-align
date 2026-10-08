@@ -22,17 +22,20 @@ public class Alpha101Logo {
         List<String> lines=Files.readAllLines(Path.of(a[0]));String[] hdr=lines.get(0).split(",",-1);int iPath=-1,iId=-1;
         for(int i=0;i<hdr.length;i++){if(hdr[i].equals("local_path")||hdr[i].equals("path"))iPath=i;if(hdr[i].equals("photo_id"))iId=i;}
         try(PrintWriter csv=new PrintWriter(new FileWriter(a[2]))){
-            csv.println("photo_id,status,dial_radius_px,usable,reason,offset_R,tilt_deg,symmetry");
+            csv.println("photo_id,status,dial_radius_px,usable,reason,offset_R,tilt_deg,symmetry,twelve_clean,twelve_reason,seconds_hand_at_12");
             for(int li=1;li<lines.size();li++){
                 String[] f=lines.get(li).split(",",-1);String id=iId>=0?f[iId]:f[iPath];
-                Path p=Path.of(a[1]).resolve(f[iPath]);if(!Files.exists(p)){csv.println(id+",missing,,,,,,");continue;}
+                Path p=Path.of(a[1]).resolve(f[iPath]);if(!Files.exists(p)){csv.println(id+",missing,,,,,,,,,");continue;}
                 Bitmap b=Alpha96Calib.loadAlpha96(p.toString());
                 AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b,HarnessModel.spec());
-                if(q==null||!q.valid||q.homography==null){csv.println(id+",pose_rejected,,,,,,");continue;}
+                if(q==null||!q.valid||q.homography==null){csv.println(id+",pose_rejected,,,,,,,,,");continue;}
                 Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(b,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
                 Alpha101PrintAlignment.Result r=Alpha101PrintAlignment.measure(gray,q.homography,12,new double[]{0.12,0.42,0.57});
                 double R=Alpha99MarkerInterference.pxPerR(q.homography);
-                String line=String.format(Locale.US,"%s,accepted,%.1f,%b,\"%s\",%.6f,%.4f,%.4f",id,R,r.usable,r.reason,r.offsetR,r.tiltDeg,r.symmetry);
+                // hand / glare gate: the 12's Alpha99 interference check, whose corridor (from 0.50 R) overlaps the logo box
+                Alpha99MarkerInterference.Check c=null;try{c=Alpha99MarkerInterference.analyse(gray,q.homography,HarnessModel.spec()).get(12);}catch(Throwable t){c=null;}
+                String line=String.format(Locale.US,"%s,accepted,%.1f,%b,\"%s\",%.6f,%.4f,%.4f,%s,\"%s\",%s",id,R,r.usable,r.reason,r.offsetR,r.tiltDeg,r.symmetry,
+                        c==null?"":String.valueOf(c.clean),c==null?"unavailable":c.clean?"":c.reason,c==null?"":String.valueOf(c.secondsHand));
                 csv.println(line);System.out.println(line);
             }
         }
