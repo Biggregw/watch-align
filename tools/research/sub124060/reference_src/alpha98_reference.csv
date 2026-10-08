@@ -1,0 +1,262 @@
+feature,physical_watch_id,source,far,dial_radius_px
+three_rot,auto_bobs_124060_d758a78acef9,Bob's Watches,0.728280,405.7
+three_rot,auto_bobs_124060_36490c8b564e,Bob's Watches,0.670570,238.3
+three_rot,auto_bobs_124060_53360dc3b324,Bob's Watches,0.184425,421.7
+three_rot,auto_bobs_124060_bad22cadcb43,Bob's Watches,0.386000,406.0
+three_rot,auto_bobs_124060_3d1f0a3378e2,Bob's Watches,0.529205,422.1
+three_rot,auto_bobs_124060_2905d2d5bc5c,Bob's Watches,0.310075,406.0
+three_rot,auto_bobs_124060_51facf8c751c,Bob's Watches,0.220005,438.0
+three_rot,auto_bobs_124060_3a293ae091d4,Bob's Watches,0.222480,403.5
+three_rot,auto_ewc_124060_ad749eab5fe7,European Watch Company,0.354615,237.0
+three_rot,auto_ewc_124060_dd10dd8bfba9,European Watch Company,0.160295,236.0
+three_rot,auto_ewc_124060_a42ce22b328c,European Watch Company,0.225685,234.3
+three_rot,auto_ewc_124060_7761710b6ccf,European Watch Company,0.261100,237.8
+three_rot,auto_ewc_124060_61da7322ed22,European Watch Company,0.686820,235.5
+three_rot,auto_ewc_124060_e50d1ad826ff,European Watch Company,0.196210,270.3
+three_rot,auto_ewc_124060_ceb5b8d52802,European Watch Company,0.592255,237.7
+three_rot,auto_ewc_124060_5812eb095371,European Watch Company,0.325665,238.2
+three_rot,auto_davidsw_124060_911ce140f7b9,DavidSW,0.207295,212.6
+three_rot,auto_davidsw_124060_36185ea2c96c,DavidSW,0.298425,205.9
+three_rot,auto_davidsw_124060_5f3e76a1ef3e,DavidSW,0.230605,202.3
+three_rot,auto_davidsw_124060_47ed7fb4d547,DavidSW,0.378030,205.0
+three_rot,auto_davidsw_124060_dc4ee2d322fd,DavidSW,0.160295,147.8
+three_rot,auto_davidsw_124060_e840fd0e1afd,DavidSW,0.278735,276.3
+three_rot,auto_davidsw_124060_5c3a5b60da5d,DavidSW,0.381130,162.7
+three_rot,auto_phillips_124060_e677bdc312cb,Phillips,0.353465,335.4
+three_off,auto_bobs_124060_d758a78acef9,Bob's Watches,0.001127,405.7
+three_off,auto_bobs_124060_36490c8b564e,Bob's Watches,0.000896,238.3
+three_off,auto_bobs_124060_53360dc3b324,Bob's Watches,0.002545,421.7
+three_off,auto_bobs_124060_bad22cadcb43,Bob's Watches,0.000550,406.0
+three_off,auto_bobs_124060_3d1f0a3378e2,Bob's Watches,0.000900,422.1
+three_off,auto_bobs_124060_2905d2d5bc5c,Bob's Watches,0.000776,406.0
+three_off,auto_bobs_124060_51facf8c751c,Bob's Watches,0.001396,438.0
+three_off,auto_bobs_124060_3a293ae091d4,Bob's Watches,0.002001,403.5
+three_off,auto_ewc_124060_ad749eab5fe7,European Watch Company,0.001316,237.0
+three_off,auto_ewc_124060_dd10dd8bfba9,European Watch Company,0.001964,236.0
+three_off,auto_ewc_124060_a42ce22b328c,European Watch Company,0.000923,234.3
+three_off,auto_ewc_124060_7761710b6ccf,European Watch Company,0.001157,237.8
+three_off,auto_ewc_124060_61da7322ed22,European Watch Company,0.001262,235.5
+three_off,auto_ewc_124060_e50d1ad826ff,European Watch Company,0.000310,270.3
+three_off,auto_ewc_124060_ceb5b8d52802,European Watch Company,0.000733,237.7
+three_off,auto_ewc_124060_5812eb095371,European Watch Company,0.001558,238.2
+three_off,auto_davidsw_124060_911ce140f7b9,DavidSW,0.000643,212.6
+three_off,auto_davidsw_124060_36185ea2c96c,DavidSW,0.001689,205.9
+three_off,auto_davidsw_124060_5f3e76a1ef3e,DavidSW,0.000675,202.3
+three_off,auto_davidsw_124060_47ed7fb4d547,DavidSW,0.001335,205.0
+three_off,auto_davidsw_124060_dc4ee2d322fd,DavidSW,0.002200,147.8
+three_off,auto_davidsw_124060_e840fd0e1afd,DavidSW,0.001151,276.3
+three_off,auto_davidsw_124060_5c3a5b60da5d,DavidSW,0.000904,162.7
+three_off,auto_phillips_124060_e677bdc312cb,Phillips,0.000791,335.4
+six_rot,auto_bobs_124060_d758a78acef9,Bob's Watches,0.160870,405.7
+six_rot,auto_bobs_124060_36490c8b564e,Bob's Watches,0.145570,238.3
+six_rot,auto_bobs_124060_53360dc3b324,Bob's Watches,0.163510,421.7
+six_rot,auto_bobs_124060_bad22cadcb43,Bob's Watches,0.227580,406.0
+six_rot,auto_bobs_124060_3d1f0a3378e2,Bob's Watches,0.159660,422.1
+six_rot,auto_bobs_124060_2905d2d5bc5c,Bob's Watches,0.044420,406.0
+six_rot,auto_bobs_124060_51facf8c751c,Bob's Watches,0.029630,438.0
+six_rot,auto_bobs_124060_3a293ae091d4,Bob's Watches,0.047960,403.5
+six_rot,auto_ewc_124060_ad749eab5fe7,European Watch Company,0.058255,237.0
+six_rot,auto_ewc_124060_dd10dd8bfba9,European Watch Company,0.123715,236.0
+six_rot,auto_ewc_124060_a42ce22b328c,European Watch Company,0.244210,234.3
+six_rot,auto_ewc_124060_7761710b6ccf,European Watch Company,0.224150,237.8
+six_rot,auto_ewc_124060_61da7322ed22,European Watch Company,0.320785,235.5
+six_rot,auto_ewc_124060_e50d1ad826ff,European Watch Company,0.324025,270.3
+six_rot,auto_ewc_124060_ceb5b8d52802,European Watch Company,0.337825,237.7
+six_rot,auto_ewc_124060_5812eb095371,European Watch Company,0.009740,238.2
+six_rot,auto_davidsw_124060_911ce140f7b9,DavidSW,0.307780,212.6
+six_rot,auto_davidsw_124060_36185ea2c96c,DavidSW,0.364280,205.9
+six_rot,auto_davidsw_124060_5f3e76a1ef3e,DavidSW,0.152360,202.3
+six_rot,auto_davidsw_124060_47ed7fb4d547,DavidSW,0.322525,205.0
+six_rot,auto_davidsw_124060_dc4ee2d322fd,DavidSW,0.009740,147.8
+six_rot,auto_davidsw_124060_e840fd0e1afd,DavidSW,0.313950,276.3
+six_rot,auto_davidsw_124060_5c3a5b60da5d,DavidSW,0.552090,162.7
+six_rot,auto_phillips_124060_e677bdc312cb,Phillips,0.403190,335.4
+six_off,auto_bobs_124060_d758a78acef9,Bob's Watches,0.001421,405.7
+six_off,auto_bobs_124060_36490c8b564e,Bob's Watches,0.001571,238.3
+six_off,auto_bobs_124060_53360dc3b324,Bob's Watches,0.001965,421.7
+six_off,auto_bobs_124060_bad22cadcb43,Bob's Watches,0.000625,406.0
+six_off,auto_bobs_124060_3d1f0a3378e2,Bob's Watches,0.000867,422.1
+six_off,auto_bobs_124060_2905d2d5bc5c,Bob's Watches,0.000467,406.0
+six_off,auto_bobs_124060_51facf8c751c,Bob's Watches,0.001254,438.0
+six_off,auto_bobs_124060_3a293ae091d4,Bob's Watches,0.001261,403.5
+six_off,auto_ewc_124060_ad749eab5fe7,European Watch Company,0.000763,237.0
+six_off,auto_ewc_124060_dd10dd8bfba9,European Watch Company,0.000893,236.0
+six_off,auto_ewc_124060_a42ce22b328c,European Watch Company,0.000351,234.3
+six_off,auto_ewc_124060_7761710b6ccf,European Watch Company,0.001060,237.8
+six_off,auto_ewc_124060_61da7322ed22,European Watch Company,0.000937,235.5
+six_off,auto_ewc_124060_e50d1ad826ff,European Watch Company,0.001527,270.3
+six_off,auto_ewc_124060_ceb5b8d52802,European Watch Company,0.000350,237.7
+six_off,auto_ewc_124060_5812eb095371,European Watch Company,0.000911,238.2
+six_off,auto_davidsw_124060_911ce140f7b9,DavidSW,0.002819,212.6
+six_off,auto_davidsw_124060_36185ea2c96c,DavidSW,0.001428,205.9
+six_off,auto_davidsw_124060_5f3e76a1ef3e,DavidSW,0.000924,202.3
+six_off,auto_davidsw_124060_47ed7fb4d547,DavidSW,0.001117,205.0
+six_off,auto_davidsw_124060_dc4ee2d322fd,DavidSW,0.002596,147.8
+six_off,auto_davidsw_124060_e840fd0e1afd,DavidSW,0.001742,276.3
+six_off,auto_davidsw_124060_5c3a5b60da5d,DavidSW,0.003526,162.7
+six_off,auto_phillips_124060_e677bdc312cb,Phillips,0.000442,335.4
+nine_rot,auto_bobs_124060_d758a78acef9,Bob's Watches,0.713630,405.7
+nine_rot,auto_bobs_124060_36490c8b564e,Bob's Watches,0.675030,238.3
+nine_rot,auto_bobs_124060_53360dc3b324,Bob's Watches,0.140100,421.7
+nine_rot,auto_bobs_124060_bad22cadcb43,Bob's Watches,0.316295,406.0
+nine_rot,auto_bobs_124060_3d1f0a3378e2,Bob's Watches,0.776300,422.1
+nine_rot,auto_bobs_124060_2905d2d5bc5c,Bob's Watches,0.224510,406.0
+nine_rot,auto_bobs_124060_51facf8c751c,Bob's Watches,0.071670,438.0
+nine_rot,auto_bobs_124060_3a293ae091d4,Bob's Watches,0.211065,403.5
+nine_rot,auto_ewc_124060_ad749eab5fe7,European Watch Company,0.243100,237.0
+nine_rot,auto_ewc_124060_dd10dd8bfba9,European Watch Company,0.089065,236.0
+nine_rot,auto_ewc_124060_a42ce22b328c,European Watch Company,0.138080,234.3
+nine_rot,auto_ewc_124060_7761710b6ccf,European Watch Company,0.322910,237.8
+nine_rot,auto_ewc_124060_61da7322ed22,European Watch Company,0.284635,235.5
+nine_rot,auto_ewc_124060_e50d1ad826ff,European Watch Company,0.181790,270.3
+nine_rot,auto_ewc_124060_ceb5b8d52802,European Watch Company,0.571495,237.7
+nine_rot,auto_ewc_124060_5812eb095371,European Watch Company,0.049395,238.2
+nine_rot,auto_davidsw_124060_911ce140f7b9,DavidSW,0.162660,212.6
+nine_rot,auto_davidsw_124060_36185ea2c96c,DavidSW,0.049395,205.9
+nine_rot,auto_davidsw_124060_5f3e76a1ef3e,DavidSW,0.402610,202.3
+nine_rot,auto_davidsw_124060_47ed7fb4d547,DavidSW,0.189940,205.0
+nine_rot,auto_davidsw_124060_dc4ee2d322fd,DavidSW,0.324640,147.8
+nine_rot,auto_davidsw_124060_e840fd0e1afd,DavidSW,0.085090,276.3
+nine_rot,auto_davidsw_124060_5c3a5b60da5d,DavidSW,0.123245,162.7
+nine_rot,auto_phillips_124060_e677bdc312cb,Phillips,0.597645,335.4
+nine_off,auto_bobs_124060_d758a78acef9,Bob's Watches,0.000696,405.7
+nine_off,auto_bobs_124060_36490c8b564e,Bob's Watches,0.000906,238.3
+nine_off,auto_bobs_124060_53360dc3b324,Bob's Watches,0.000538,421.7
+nine_off,auto_bobs_124060_bad22cadcb43,Bob's Watches,0.000947,406.0
+nine_off,auto_bobs_124060_3d1f0a3378e2,Bob's Watches,0.000488,422.1
+nine_off,auto_bobs_124060_2905d2d5bc5c,Bob's Watches,0.000514,406.0
+nine_off,auto_bobs_124060_51facf8c751c,Bob's Watches,0.001141,438.0
+nine_off,auto_bobs_124060_3a293ae091d4,Bob's Watches,0.002065,403.5
+nine_off,auto_ewc_124060_ad749eab5fe7,European Watch Company,0.001505,237.0
+nine_off,auto_ewc_124060_dd10dd8bfba9,European Watch Company,0.000899,236.0
+nine_off,auto_ewc_124060_a42ce22b328c,European Watch Company,0.001241,234.3
+nine_off,auto_ewc_124060_7761710b6ccf,European Watch Company,0.001099,237.8
+nine_off,auto_ewc_124060_61da7322ed22,European Watch Company,0.000285,235.5
+nine_off,auto_ewc_124060_e50d1ad826ff,European Watch Company,0.001583,270.3
+nine_off,auto_ewc_124060_ceb5b8d52802,European Watch Company,0.001433,237.7
+nine_off,auto_ewc_124060_5812eb095371,European Watch Company,0.001398,238.2
+nine_off,auto_davidsw_124060_911ce140f7b9,DavidSW,0.001754,212.6
+nine_off,auto_davidsw_124060_36185ea2c96c,DavidSW,0.001042,205.9
+nine_off,auto_davidsw_124060_5f3e76a1ef3e,DavidSW,0.000561,202.3
+nine_off,auto_davidsw_124060_47ed7fb4d547,DavidSW,0.000753,205.0
+nine_off,auto_davidsw_124060_dc4ee2d322fd,DavidSW,0.000646,147.8
+nine_off,auto_davidsw_124060_e840fd0e1afd,DavidSW,0.000854,276.3
+nine_off,auto_davidsw_124060_5c3a5b60da5d,DavidSW,0.001078,162.7
+nine_off,auto_phillips_124060_e677bdc312cb,Phillips,0.000145,335.4
+rounds_off,auto_bobs_124060_d758a78acef9,Bob's Watches,0.001801,405.7
+rounds_off,auto_bobs_124060_36490c8b564e,Bob's Watches,0.001472,238.3
+rounds_off,auto_bobs_124060_53360dc3b324,Bob's Watches,0.002874,421.7
+rounds_off,auto_bobs_124060_bad22cadcb43,Bob's Watches,0.000507,406.0
+rounds_off,auto_bobs_124060_3d1f0a3378e2,Bob's Watches,0.001257,422.1
+rounds_off,auto_bobs_124060_2905d2d5bc5c,Bob's Watches,0.000848,406.0
+rounds_off,auto_bobs_124060_51facf8c751c,Bob's Watches,0.000847,438.0
+rounds_off,auto_bobs_124060_3a293ae091d4,Bob's Watches,0.001252,403.5
+rounds_off,auto_ewc_124060_ad749eab5fe7,European Watch Company,0.001191,237.0
+rounds_off,auto_ewc_124060_dd10dd8bfba9,European Watch Company,0.000940,236.0
+rounds_off,auto_ewc_124060_a42ce22b328c,European Watch Company,0.000922,234.3
+rounds_off,auto_ewc_124060_7761710b6ccf,European Watch Company,0.000848,237.8
+rounds_off,auto_ewc_124060_61da7322ed22,European Watch Company,0.000764,235.5
+rounds_off,auto_ewc_124060_e50d1ad826ff,European Watch Company,0.001227,270.3
+rounds_off,auto_ewc_124060_ceb5b8d52802,European Watch Company,0.001159,237.7
+rounds_off,auto_davidsw_124060_911ce140f7b9,DavidSW,0.001521,212.6
+rounds_off,auto_davidsw_124060_36185ea2c96c,DavidSW,0.001247,205.9
+rounds_off,auto_davidsw_124060_5f3e76a1ef3e,DavidSW,0.002173,202.3
+rounds_off,auto_davidsw_124060_47ed7fb4d547,DavidSW,0.002641,205.0
+rounds_off,auto_davidsw_124060_dc4ee2d322fd,DavidSW,0.001711,147.8
+rounds_off,auto_davidsw_124060_e840fd0e1afd,DavidSW,0.001425,276.3
+rounds_off,auto_davidsw_124060_5c3a5b60da5d,DavidSW,0.001847,162.7
+rounds_off,auto_phillips_124060_e677bdc312cb,Phillips,0.001040,335.4
+ring_rot,auto_bobs_124060_d758a78acef9,Bob's Watches,0.026750,405.7
+ring_rot,auto_bobs_124060_36490c8b564e,Bob's Watches,0.025290,238.3
+ring_rot,auto_bobs_124060_53360dc3b324,Bob's Watches,0.082810,421.7
+ring_rot,auto_bobs_124060_bad22cadcb43,Bob's Watches,0.002140,406.0
+ring_rot,auto_bobs_124060_3d1f0a3378e2,Bob's Watches,0.047105,422.1
+ring_rot,auto_bobs_124060_2905d2d5bc5c,Bob's Watches,0.058280,406.0
+ring_rot,auto_bobs_124060_51facf8c751c,Bob's Watches,0.108010,438.0
+ring_rot,auto_bobs_124060_3a293ae091d4,Bob's Watches,0.108220,403.5
+ring_rot,auto_ewc_124060_ad749eab5fe7,European Watch Company,0.107980,237.0
+ring_rot,auto_ewc_124060_dd10dd8bfba9,European Watch Company,0.002140,236.0
+ring_rot,auto_ewc_124060_a42ce22b328c,European Watch Company,0.066700,234.3
+ring_rot,auto_ewc_124060_7761710b6ccf,European Watch Company,0.147195,237.8
+ring_rot,auto_ewc_124060_61da7322ed22,European Watch Company,0.012155,235.5
+ring_rot,auto_ewc_124060_e50d1ad826ff,European Watch Company,0.025095,270.3
+ring_rot,auto_ewc_124060_ceb5b8d52802,European Watch Company,0.019495,237.7
+ring_rot,auto_ewc_124060_5812eb095371,European Watch Company,0.145900,238.2
+ring_rot,auto_davidsw_124060_911ce140f7b9,DavidSW,0.007175,212.6
+ring_rot,auto_davidsw_124060_36185ea2c96c,DavidSW,0.136610,205.9
+ring_rot,auto_davidsw_124060_5f3e76a1ef3e,DavidSW,0.027485,202.3
+ring_rot,auto_davidsw_124060_47ed7fb4d547,DavidSW,0.047845,205.0
+ring_rot,auto_davidsw_124060_dc4ee2d322fd,DavidSW,0.023970,147.8
+ring_rot,auto_davidsw_124060_e840fd0e1afd,DavidSW,0.028060,276.3
+ring_rot,auto_davidsw_124060_5c3a5b60da5d,DavidSW,0.011570,162.7
+ring_rot,auto_phillips_124060_e677bdc312cb,Phillips,0.131580,335.4
+ring_shift,auto_bobs_124060_d758a78acef9,Bob's Watches,0.002373,405.7
+ring_shift,auto_bobs_124060_36490c8b564e,Bob's Watches,0.002343,238.3
+ring_shift,auto_bobs_124060_53360dc3b324,Bob's Watches,0.000738,421.7
+ring_shift,auto_bobs_124060_bad22cadcb43,Bob's Watches,0.001395,406.0
+ring_shift,auto_bobs_124060_3d1f0a3378e2,Bob's Watches,0.003192,422.1
+ring_shift,auto_bobs_124060_2905d2d5bc5c,Bob's Watches,0.002701,406.0
+ring_shift,auto_bobs_124060_51facf8c751c,Bob's Watches,0.001666,438.0
+ring_shift,auto_bobs_124060_3a293ae091d4,Bob's Watches,0.002416,403.5
+ring_shift,auto_ewc_124060_ad749eab5fe7,European Watch Company,0.001971,237.0
+ring_shift,auto_ewc_124060_dd10dd8bfba9,European Watch Company,0.001664,236.0
+ring_shift,auto_ewc_124060_a42ce22b328c,European Watch Company,0.002009,234.3
+ring_shift,auto_ewc_124060_7761710b6ccf,European Watch Company,0.000670,237.8
+ring_shift,auto_ewc_124060_61da7322ed22,European Watch Company,0.001118,235.5
+ring_shift,auto_ewc_124060_e50d1ad826ff,European Watch Company,0.003269,270.3
+ring_shift,auto_ewc_124060_ceb5b8d52802,European Watch Company,0.001438,237.7
+ring_shift,auto_ewc_124060_5812eb095371,European Watch Company,0.001416,238.2
+ring_shift,auto_davidsw_124060_911ce140f7b9,DavidSW,0.004546,212.6
+ring_shift,auto_davidsw_124060_36185ea2c96c,DavidSW,0.005572,205.9
+ring_shift,auto_davidsw_124060_5f3e76a1ef3e,DavidSW,0.003384,202.3
+ring_shift,auto_davidsw_124060_47ed7fb4d547,DavidSW,0.003084,205.0
+ring_shift,auto_davidsw_124060_dc4ee2d322fd,DavidSW,0.006096,147.8
+ring_shift,auto_davidsw_124060_e840fd0e1afd,DavidSW,0.001996,276.3
+ring_shift,auto_davidsw_124060_5c3a5b60da5d,DavidSW,0.006614,162.7
+ring_shift,auto_phillips_124060_e677bdc312cb,Phillips,0.003037,335.4
+rounds_size,auto_bobs_124060_d758a78acef9,Bob's Watches,0.000490,405.7
+rounds_size,auto_bobs_124060_36490c8b564e,Bob's Watches,0.000996,238.3
+rounds_size,auto_bobs_124060_53360dc3b324,Bob's Watches,0.000481,421.7
+rounds_size,auto_bobs_124060_bad22cadcb43,Bob's Watches,0.000044,406.0
+rounds_size,auto_bobs_124060_3d1f0a3378e2,Bob's Watches,0.000397,422.1
+rounds_size,auto_bobs_124060_2905d2d5bc5c,Bob's Watches,0.000094,406.0
+rounds_size,auto_bobs_124060_51facf8c751c,Bob's Watches,0.000295,438.0
+rounds_size,auto_bobs_124060_3a293ae091d4,Bob's Watches,0.000182,403.5
+rounds_size,auto_ewc_124060_ad749eab5fe7,European Watch Company,0.000846,237.0
+rounds_size,auto_ewc_124060_dd10dd8bfba9,European Watch Company,0.000755,236.0
+rounds_size,auto_ewc_124060_a42ce22b328c,European Watch Company,0.000427,234.3
+rounds_size,auto_ewc_124060_7761710b6ccf,European Watch Company,0.000722,237.8
+rounds_size,auto_ewc_124060_61da7322ed22,European Watch Company,0.000731,235.5
+rounds_size,auto_ewc_124060_e50d1ad826ff,European Watch Company,0.001216,270.3
+rounds_size,auto_ewc_124060_ceb5b8d52802,European Watch Company,0.000725,237.7
+rounds_size,auto_davidsw_124060_911ce140f7b9,DavidSW,0.000726,212.6
+rounds_size,auto_davidsw_124060_36185ea2c96c,DavidSW,0.000807,205.9
+rounds_size,auto_davidsw_124060_5f3e76a1ef3e,DavidSW,0.000313,202.3
+rounds_size,auto_davidsw_124060_47ed7fb4d547,DavidSW,0.000568,205.0
+rounds_size,auto_davidsw_124060_dc4ee2d322fd,DavidSW,0.000138,147.8
+rounds_size,auto_davidsw_124060_e840fd0e1afd,DavidSW,0.000634,276.3
+rounds_size,auto_davidsw_124060_5c3a5b60da5d,DavidSW,0.001150,162.7
+rounds_size,auto_phillips_124060_e677bdc312cb,Phillips,0.000285,335.4
+round_size_rel,auto_bobs_124060_d758a78acef9,Bob's Watches,0.000452,405.7
+round_size_rel,auto_bobs_124060_36490c8b564e,Bob's Watches,0.000160,238.3
+round_size_rel,auto_bobs_124060_53360dc3b324,Bob's Watches,0.000340,421.7
+round_size_rel,auto_bobs_124060_bad22cadcb43,Bob's Watches,0.000122,406.0
+round_size_rel,auto_bobs_124060_3d1f0a3378e2,Bob's Watches,0.000224,422.1
+round_size_rel,auto_bobs_124060_2905d2d5bc5c,Bob's Watches,0.000181,406.0
+round_size_rel,auto_bobs_124060_51facf8c751c,Bob's Watches,0.000252,438.0
+round_size_rel,auto_bobs_124060_3a293ae091d4,Bob's Watches,0.000209,403.5
+round_size_rel,auto_ewc_124060_ad749eab5fe7,European Watch Company,0.000180,237.0
+round_size_rel,auto_ewc_124060_dd10dd8bfba9,European Watch Company,0.000917,236.0
+round_size_rel,auto_ewc_124060_a42ce22b328c,European Watch Company,0.000111,234.3
+round_size_rel,auto_ewc_124060_7761710b6ccf,European Watch Company,0.000430,237.8
+round_size_rel,auto_ewc_124060_61da7322ed22,European Watch Company,0.000197,235.5
+round_size_rel,auto_ewc_124060_e50d1ad826ff,European Watch Company,0.001374,270.3
+round_size_rel,auto_ewc_124060_ceb5b8d52802,European Watch Company,0.000574,237.7
+round_size_rel,auto_davidsw_124060_911ce140f7b9,DavidSW,0.000510,212.6
+round_size_rel,auto_davidsw_124060_36185ea2c96c,DavidSW,0.000490,205.9
+round_size_rel,auto_davidsw_124060_5f3e76a1ef3e,DavidSW,0.000697,202.3
+round_size_rel,auto_davidsw_124060_47ed7fb4d547,DavidSW,0.001017,205.0
+round_size_rel,auto_davidsw_124060_dc4ee2d322fd,DavidSW,0.000512,147.8
+round_size_rel,auto_davidsw_124060_e840fd0e1afd,DavidSW,0.000487,276.3
+round_size_rel,auto_davidsw_124060_5c3a5b60da5d,DavidSW,0.001142,162.7
+round_size_rel,auto_phillips_124060_e677bdc312cb,Phillips,0.000373,335.4
