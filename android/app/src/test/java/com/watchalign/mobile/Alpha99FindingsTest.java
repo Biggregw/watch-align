@@ -160,7 +160,7 @@ public class Alpha99FindingsTest {
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         Alpha99Findings.Finding four=find(s,"round4");
         assertTrue(four.status==Alpha99Findings.Status.CLEAR||four.status==Alpha99Findings.Status.WORTH);
-        assertTrue(four.shortLine(),four.shortLine().startsWith("plot larger than the others by 0.60% of the dial"));
+        assertTrue(four.shortLine(),four.shortLine().startsWith("marker larger than the others by 0.60% of the dial"));
         assertTrue(Alpha99Findings.outsideOnlyByNewMeasures(four));
         assertEquals(Alpha99Findings.Status.WITHIN,find(s,"round5").status);
         assertEquals(Alpha99Findings.Status.WITHIN,find(s,"rounds_size").status);  // dial median unchanged
@@ -168,7 +168,7 @@ public class Alpha99FindingsTest {
         Alpha99Findings.Summary big=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         Alpha99Findings.Finding all=find(big,"rounds_size");
         assertTrue(all.status==Alpha99Findings.Status.CLEAR||all.status==Alpha99Findings.Status.WORTH);
-        assertTrue(all.shortLine().startsWith("all round plots larger by"));
+        assertTrue(all.shortLine().startsWith("all round markers larger by"));
         assertFalse(Alpha99Overview.hasBadge(all));                                  // dial-wide: tile, no badge
         // a hand over a round removes it from the size comparison as well
         Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(4).clean=false;c.get(4).reason=Alpha99MarkerInterference.HAND;

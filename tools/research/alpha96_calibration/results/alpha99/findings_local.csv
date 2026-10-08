@@ -120,7 +120,7 @@ POOL_GEN_HO_01,round4,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round5,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round7,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round8,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-POOL_GEN_HO_01,round10,WITHIN,WORTH,"plot larger than the others by 0.12% of the dial; genuine up to 0.10%",true
+POOL_GEN_HO_01,round10,WITHIN,WORTH,"marker larger than the others by 0.12% of the dial; genuine up to 0.10%",true
 POOL_GEN_HO_01,round11,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,rounds_size,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,ring,WITHIN,WITHIN,"",false
@@ -150,7 +150,7 @@ RL_ARF_BLRO_CROOKED6,round7,OUTSIDE,WORTH,"shifted towards the 8 by 0.35% of the
 RL_ARF_BLRO_CROOKED6,round8,OUTSIDE,CLEAR,"shifted towards its minute mark and the 7 by 0.46% of the dial; genuine up to 0.26%",false
 RL_ARF_BLRO_CROOKED6,round10,OUTSIDE,WORTH,"shifted towards the centre by 0.34% of the dial; genuine up to 0.26%",false
 RL_ARF_BLRO_CROOKED6,round11,OUTSIDE,CLEAR,"shifted towards its minute mark by 0.45% of the dial; genuine up to 0.26%",false
-RL_ARF_BLRO_CROOKED6,rounds_size,OUTSIDE,WORTH,"all round plots larger by 0.20% of the dial; genuine up to 0.10%",true
+RL_ARF_BLRO_CROOKED6,rounds_size,OUTSIDE,WORTH,"all round markers larger by 0.20% of the dial; genuine up to 0.10%",true
 RL_ARF_BLRO_CROOKED6,ring,WITHIN,WITHIN,"",false
 RL_ARF_BLRO_CROOKED6,date,NOT_ASSESSED,NOT_ASSESSED,"hand or date change",false
 RL_LOCAL_BLNR,twelve,OUTSIDE,CLEAR,"shifted left by 1.33% of the dial; genuine up to 0.23%",false

@@ -352,13 +352,13 @@ final class Alpha99Findings {
                     String.format(Locale.US,"shifted %s by %.2f%% of the dial",towards(m),100*off),
                     String.format(Locale.US,"The %d o'clock marker sits %.1f px out of place relative to the other markers (%.2f%% of the dial radius, mostly %s); compared with genuine photos of similar or lower resolution",
                             h,m.localOffsetPx,100*off,Alpha98Findings.direction(m))));
-            // Alpha101: this lume plot's size against the other round plots on the same dial (lighting and blur cancel)
+            // Alpha101: this round marker's size against the other round markers on the same dial (lighting and blur cancel)
             double med=cleanRoundSizeMedian(r,R,checks,model);
             if(Double.isFinite(med)&&Double.isFinite(m.radiusErrPx)&&sizeN>=Alpha98Findings.MIN_MATCHED){
                 double rel=m.radiusErrPx/R-med;
                 f.measures.add(new Measure("size",Math.abs(rel),sizeLim,sigmaPos(ref,"round_size_rel",R),ref.kSigma,sizeN,"R",
-                        String.format(Locale.US,"plot %s than the others by %.2f%% of the dial",rel>=0?"larger":"smaller",100*Math.abs(rel)),
-                        String.format(Locale.US,"Its lume plot is %s than the other round plots on this dial by %.2f%% of the dial radius; compared with genuine photos of similar or lower resolution",
+                        String.format(Locale.US,"marker %s than the others by %.2f%% of the dial",rel>=0?"larger":"smaller",100*Math.abs(rel)),
+                        String.format(Locale.US,"The marker (outer edge of its metal surround) is %s than the other round markers on this dial by %.2f%% of the dial radius; compared with genuine photos of similar or lower resolution",
                                 rel>=0?"larger":"smaller",100*Math.abs(rel))));
             }
             settle(f);
@@ -379,9 +379,11 @@ final class Alpha99Findings {
         return n%2==1?v.get(n/2):0.5*(v.get(n/2-1)+v.get(n/2));
     }
 
-    /** Alpha101: overall size of the round lume plots (all clean rounds together) against genuine dials. */
+    /** Alpha101: overall size of the round markers (all clean rounds together) against genuine dials. The fit reads the
+     *  outermost bright edge, which is the outer edge of the polished metal surround on ~97% of genuine photos (the lume's own
+     *  edge only when the surround looks dark), so this is the applied marker's size, not the lume fill's. */
     static Finding roundsSize(Alpha94MarkerMeasurement.Report r,double R,Map<Integer,Alpha99MarkerInterference.Check> checks,ModelSpec model,ModelReference ref){
-        Finding f=new Finding("rounds_size","Round lume plots","round plot size");f.shape=Shape.ROUND;f.half=0.17;f.dialWide=true;
+        Finding f=new Finding("rounds_size","Round marker size","round marker size");f.shape=Shape.ROUND;f.half=0.17;f.dialWide=true;
         ModelSpec.Marker first=model.withShape(ModelSpec.Shape.ROUND).get(0);
         double a=Math.toRadians(first.hour*30.0);f.hour=first.hour;f.cx=Math.sin(a)*first.centreR;f.cy=-Math.cos(a)*first.centreR;
         if((!ref.has("rounds_size")||!Double.isFinite(ref.nominal("rounds_size")))&&noReference(f)){f.group="round markers";return f;}
@@ -392,8 +394,8 @@ final class Alpha99Findings {
         double d=med-ref.nominal("rounds_size");
         f.measures.add(new Measure("dial size",Math.abs(d),ref.matchedMax("rounds_size",R),
                 sigmaPos(ref,"rounds_size",R),ref.kSigma,n,"R",
-                String.format(Locale.US,"all round plots %s by %.2f%% of the dial",d>=0?"larger":"smaller",100*Math.abs(d)),
-                String.format(Locale.US,"Taken together, the round lume plots are %s than on genuine dials by %.2f%% of the dial radius; compared with genuine photos of similar or lower resolution",
+                String.format(Locale.US,"all round markers %s by %.2f%% of the dial",d>=0?"larger":"smaller",100*Math.abs(d)),
+                String.format(Locale.US,"Taken together, the round markers (outer edge of the metal surround) are %s than on genuine dials by %.2f%% of the dial radius; compared with genuine photos of similar or lower resolution",
                         d>=0?"larger":"smaller",100*Math.abs(d))));
         settle(f);return f;
     }
