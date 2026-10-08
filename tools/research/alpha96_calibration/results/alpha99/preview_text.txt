@@ -1,6 +1,6 @@
 == 12f1d177-image (R=186)
   No measured feature is outside the measured genuine range
-  Within measured genuine range: 12, 6, 9, 1, 2, 4, 5, 7, 8, 10, 11, marker ring, date window
+  Within measured genuine range: 12, 6, 9, 1, 2, 4, 5, 7, 8, 10, 11, round plot size, marker ring, date window
 == 25369d47-image (R=278)
   2 clear alignment findings
   2 other measurements are worth a look
@@ -15,7 +15,8 @@
     8 o'clock        OUTSIDE       -> WORTH A LOOK  shifted towards the 7 by 0.39% of the dial; genuine up to 0.26%
     10 o'clock       OUTSIDE       -> NOT ASSESSED  hand crosses marker
     11 o'clock       OUTSIDE       -> WITHIN RANGE  
-  Within measured genuine range: 12, 1, 5, 7, 11, marker ring, date window
+    Round lume plots OUTSIDE       -> WITHIN RANGE  
+  Within measured genuine range: 12, 1, 5, 7, 11, round plot size, marker ring, date window
 == 4967ffd5-image (R=171)
   No measured feature is outside the measured genuine range
   2 features could not be assessed
@@ -28,6 +29,7 @@
     8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
+    Round lume plots NOT_ASSESSED  -> NOT ASSESSED  resolution too low
   Within measured genuine range: 12, 9, marker ring, date window
 == 4f87a0d3-image (R=271)
   No measured feature is outside the measured genuine range
@@ -36,7 +38,7 @@
     4 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
     10 o'clock       WITHIN        -> NOT ASSESSED  hand crosses marker
     Date window      NOT_ASSESSED  -> NOT ASSESSED  glare on magnifier
-  Within measured genuine range: 6, 9, 1, 2, 5, 7, 8, 11, marker ring
+  Within measured genuine range: 6, 9, 1, 2, 5, 7, 8, 11, round plot size, marker ring
 == 548a49c1-image (R=170)
   No measured feature is outside the measured genuine range
   4 features could not be assessed
@@ -49,6 +51,7 @@
     8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  too few clean markers
     10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  too few clean markers
     11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  too few clean markers
+    Round lume plots NOT_ASSESSED  -> NOT ASSESSED  too few clean markers
     Dial marker ring NOT_ASSESSED  -> NOT ASSESSED  too few clean markers
     Date window      WITHIN        -> NOT ASSESSED  orientation not confirmed
   Within measured genuine range: 6, 9
@@ -57,7 +60,7 @@
   2 features could not be assessed
     9 o'clock        NOT_ASSESSED  -> NOT ASSESSED  hand crosses marker
     Date window      NOT_ASSESSED  -> NOT ASSESSED  window not found
-  Within measured genuine range: 12, 6, 1, 2, 4, 5, 7, 8, 10, 11, marker ring
+  Within measured genuine range: 12, 6, 1, 2, 4, 5, 7, 8, 10, 11, round plot size, marker ring
 == EXT_EXT_GEN_BLRO_WEX_01 (R=140)
   No measured feature is outside the measured genuine range
   3 features could not be assessed
@@ -70,6 +73,7 @@
     8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
+    Round lume plots NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     Date window      NOT_ASSESSED  -> NOT ASSESSED  window not found
   Within measured genuine range: 6, 9, marker ring
 == EXT_EXT_GEN_BLRO_WEX_02 (R=155)
@@ -85,15 +89,17 @@
     8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
+    Round lume plots NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     Date window      NOT_ASSESSED  -> NOT ASSESSED  glare on magnifier
   Within measured genuine range: 6, marker ring
 == POOL_GEN_HO_01 (R=203)
-  No measured feature is outside the measured genuine range
+  1 measurement is worth a look
   3 features could not be assessed
     2 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
     8 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
+    10 o'clock       WITHIN        -> WORTH A LOOK  plot larger than the others by 0.12% of the dial; genuine up to 0.10%
     Date window      NOT_ASSESSED  -> NOT ASSESSED  window not found
-  Within measured genuine range: 12, 6, 9, 1, 4, 5, 7, 10, 11, marker ring
+  Within measured genuine range: 12, 6, 9, 1, 4, 5, 7, 11, round plot size, marker ring
 == POOL_GEN_HO_02 (R=143)
   No measured feature is outside the measured genuine range
   4 features could not be assessed
@@ -107,11 +113,12 @@
     8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
+    Round lume plots NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     Date window      NOT_ASSESSED  -> NOT ASSESSED  glare on magnifier
   Within measured genuine range: 6, marker ring
 == RL_ARF_BLRO_CROOKED6 (R=234)
   3 clear alignment findings
-  3 other measurements are worth a look
+  4 other measurements are worth a look
   4 features could not be assessed
     12 o'clock       OUTSIDE       -> CLEAR FINDING shifted left by 0.85% of the dial; genuine up to 0.23%
     6 o'clock        OUTSIDE       -> WORTH A LOOK  shifted towards the centre by 0.37% of the dial; genuine up to 0.30%
@@ -123,11 +130,12 @@
     8 o'clock        OUTSIDE       -> CLEAR FINDING shifted towards its minute mark and the 7 by 0.46% of the dial; genuine up to 0.26%
     10 o'clock       OUTSIDE       -> WORTH A LOOK  shifted towards the centre by 0.34% of the dial; genuine up to 0.26%
     11 o'clock       OUTSIDE       -> CLEAR FINDING shifted towards its minute mark by 0.45% of the dial; genuine up to 0.26%
+    Round lume plots OUTSIDE       -> WORTH A LOOK  all round plots larger by 0.20% of the dial; genuine up to 0.10%
     Date window      NOT_ASSESSED  -> NOT ASSESSED  hand or date change
   Within measured genuine range: 9, 4, marker ring
 == RL_LOCAL_BLNR (R=220)
   2 clear alignment findings
-  6 features could not be assessed
+  7 features could not be assessed
     12 o'clock       OUTSIDE       -> CLEAR FINDING shifted left by 1.33% of the dial; genuine up to 0.23%
     6 o'clock        OUTSIDE       -> NOT ASSESSED  hand crosses marker
     9 o'clock        NOT_ASSESSED  -> NOT ASSESSED  hand crosses marker
@@ -135,6 +143,7 @@
     8 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
     10 o'clock       WITHIN        -> NOT ASSESSED  edge not clear
     11 o'clock       WITHIN        -> NOT ASSESSED  edge not clear
+    Round lume plots WITHIN        -> NOT ASSESSED  too few clean markers
     Dial marker ring OUTSIDE       -> CLEAR FINDING markers as a set turned 0.52° clockwise; genuine up to 0.2°
   Within measured genuine range: 1, 2, 4, 7, date window
 == RL_THEONE_BLNR (R=165)
@@ -151,6 +160,7 @@
     8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
+    Round lume plots NOT_ASSESSED  -> NOT ASSESSED  resolution too low
   Within measured genuine range: marker ring, date window
 == USER_BATGIRL_GMT (R=205)
   2 clear alignment findings
@@ -167,7 +177,8 @@
     8 o'clock        OUTSIDE       -> WORTH A LOOK  shifted towards the 7 by 0.39% of the dial; genuine up to 0.26%
     10 o'clock       OUTSIDE       -> WITHIN RANGE  
     11 o'clock       OUTSIDE       -> WITHIN RANGE  
-  Within measured genuine range: 1, 4, 5, 7, 10, 11, marker ring, date window
+    Round lume plots OUTSIDE       -> WITHIN RANGE  
+  Within measured genuine range: 1, 4, 5, 7, 10, 11, round plot size, marker ring, date window
 == a805c035-image (R=170)
   No measured feature is outside the measured genuine range
   2 features could not be assessed
@@ -180,6 +191,7 @@
     8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
+    Round lume plots NOT_ASSESSED  -> NOT ASSESSED  resolution too low
   Within measured genuine range: 12, 9, marker ring, date window
 == b0b0c79c-image (R=171)
   No measured feature is outside the measured genuine range
@@ -193,6 +205,7 @@
     8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
+    Round lume plots NOT_ASSESSED  -> NOT ASSESSED  resolution too low
   Within measured genuine range: 12, 9, marker ring, date window
 == b1e67888-image (R=171)
   No measured feature is outside the measured genuine range
@@ -206,6 +219,7 @@
     8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
+    Round lume plots NOT_ASSESSED  -> NOT ASSESSED  resolution too low
   Within measured genuine range: 12, 9, marker ring, date window
 == c743d9fb-image (R=171)
   No measured feature is outside the measured genuine range
@@ -219,4 +233,5 @@
     8 o'clock        NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     10 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
     11 o'clock       NOT_ASSESSED  -> NOT ASSESSED  resolution too low
+    Round lume plots NOT_ASSESSED  -> NOT ASSESSED  resolution too low
   Within measured genuine range: 12, 9, marker ring, date window

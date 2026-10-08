@@ -152,6 +152,31 @@ public class Alpha99FindingsTest {
         assertEquals("towards the 12",Alpha99Findings.towards(one));
     }
 
+    @Test public void roundLumePlotSize(){
+        // Alpha101: one plot much larger than the others on the same dial, and all plots larger than genuine
+        Alpha94MarkerMeasurement.Report r=report(6,0,9,0);double R=r.dialRadiusPx;
+        for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind))m.radiusErrPx=0.001*R;
+        r.atHour(4).radiusErrPx=0.007*R;                                           // 0.6% larger than its neighbours
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        Alpha99Findings.Finding four=find(s,"round4");
+        assertTrue(four.status==Alpha99Findings.Status.CLEAR||four.status==Alpha99Findings.Status.WORTH);
+        assertTrue(four.shortLine(),four.shortLine().startsWith("plot larger than the others by 0.60% of the dial"));
+        assertTrue(Alpha99Findings.outsideOnlyByNewMeasures(four));
+        assertEquals(Alpha99Findings.Status.WITHIN,find(s,"round5").status);
+        assertEquals(Alpha99Findings.Status.WITHIN,find(s,"rounds_size").status);  // dial median unchanged
+        for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind))m.radiusErrPx=0.005*R;
+        Alpha99Findings.Summary big=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        Alpha99Findings.Finding all=find(big,"rounds_size");
+        assertTrue(all.status==Alpha99Findings.Status.CLEAR||all.status==Alpha99Findings.Status.WORTH);
+        assertTrue(all.shortLine().startsWith("all round plots larger by"));
+        assertFalse(Alpha99Overview.hasBadge(all));                                  // dial-wide: tile, no badge
+        // a hand over a round removes it from the size comparison as well
+        Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(4).clean=false;c.get(4).reason=Alpha99MarkerInterference.HAND;
+        r.atHour(4).radiusErrPx=0.02*R;
+        Alpha99Findings.Summary hand=Alpha99Findings.build(r,null,c,TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(Alpha99Findings.Status.NOT_ASSESSED,find(hand,"round4").status);
+    }
+
     @Test public void batonExamplesFromTheBrief(){
         // 6 rotation ~0.8 deg vs genuine max ~0.7 -> worth a look; 9 rotation ~1.6 deg vs max ~0.65 -> clear
         Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
@@ -216,6 +241,7 @@ public class Alpha99FindingsTest {
             Alpha99Findings.Summary now=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
             for(Alpha99Findings.Finding f:now.all){
                 if(f.status!=Alpha99Findings.Status.CLEAR&&f.status!=Alpha99Findings.Status.WORTH)continue;
+                if(Alpha99Findings.outsideOnlyByNewMeasures(f))continue;                // Alpha101 checks have no Alpha98 counterpart
                 String key=f.key.startsWith("round")?"rounds":f.key;
                 Alpha98Findings.Finding o=null;for(Alpha98Findings.Finding x:old.all)if(x.key.equals(key))o=x;
                 assertNotNull(o);
@@ -242,7 +268,7 @@ public class Alpha99FindingsTest {
             for(Alpha99Findings.Finding f:s.all){texts.add(f.text());texts.add(f.shortLine());texts.addAll(f.detail());}
             for(String t:texts)for(String w:new String[]{"PASS","FAIL","fake","Fake","replica","Replica","counterfeit","authentic watch"})
                 assertFalse(row.get("photo_id")+": "+t,t.contains(w));
-            assertEquals(13,s.all.size());                                                  // 12, 6, 9, 8 rounds, ring, date
+            assertEquals(14,s.all.size());                                                  // 12, 6, 9, 8 rounds, round plot size, ring, date
             for(Alpha99Findings.Finding f:s.notAssessed())assertFalse(f.reason.isEmpty());
         }
         assertTrue(Alpha99Findings.DISCLAIMER.contains("not an authenticity verdict"));

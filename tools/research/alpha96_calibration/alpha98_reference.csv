@@ -374,3 +374,99 @@ date_tilt,swe_68784,catalogue,0.744730,
 date_tilt,owner_official_126710blnr_oyster,owner priority,0.042180,171.0
 date_tilt,owner_cpo_126710blnr_jubilee,owner priority,0.463160,170.8
 date_tilt,owner_cpo_126715chnr,owner priority,0.100760,170.8
+rounds_size,bobs_175818,catalogue,0.000003,433.8
+rounds_size,gen_126710BLRO_phillips_146213,catalogue,0.000011,243.8
+rounds_size,gen_126710BLRO_phillips_147798,catalogue,0.000076,238.9
+rounds_size,gen_126710BLRO_phillips_210072,catalogue,0.000473,227.8
+rounds_size,gen_126710BLRO_phillips_CH080120_75,catalogue,0.000991,227.0
+rounds_size,gen_126710BLRO_phillips_NY080121_35,catalogue,0.000970,216.5
+rounds_size,hv_page_176399af9b,catalogue,0.000625,203.4
+rounds_size,hv_page_2100d8d80c,catalogue,0.000003,436.9
+rounds_size,hv_page_26529a52bd,catalogue,0.000550,434.8
+rounds_size,hv_page_2874f5a2bc,catalogue,0.000023,245.2
+rounds_size,hv_page_2f9546b899,catalogue,0.000229,434.7
+rounds_size,hv_page_382ce3b2b1,catalogue,0.000435,334.8
+rounds_size,hv_page_3b6fda6742,catalogue,0.000442,434.9
+rounds_size,hv_page_3d5c6dde16,catalogue,0.000067,435.9
+rounds_size,hv_page_4cffae5ac4,catalogue,0.000337,435.9
+rounds_size,hv_page_525f08a5be,catalogue,0.000187,434.3
+rounds_size,hv_page_57d486cff3,catalogue,0.000032,434.6
+rounds_size,hv_page_58aba667cf,catalogue,0.000322,434.6
+rounds_size,hv_page_6c7e84c33d,catalogue,0.000023,433.7
+rounds_size,hv_page_6d3d310e79,catalogue,0.000452,229.5
+rounds_size,hv_page_6f8a29a642,catalogue,0.000375,236.5
+rounds_size,hv_page_79c4638087,catalogue,0.000024,434.8
+rounds_size,hv_page_7a187edba5,catalogue,0.000378,434.0
+rounds_size,hv_page_814c8db017,catalogue,0.000034,434.9
+rounds_size,hv_page_85b8a94b47,catalogue,0.000072,435.5
+rounds_size,hv_page_8d6873b55a,catalogue,0.000207,245.0
+rounds_size,hv_page_942a7f5f12,catalogue,0.000062,434.3
+rounds_size,hv_page_a13e399a8f,catalogue,0.000446,335.0
+rounds_size,hv_page_a261fbdf78,catalogue,0.000107,434.3
+rounds_size,hv_page_acf3ed7596,catalogue,0.000220,435.3
+rounds_size,hv_page_b0bc85b625,catalogue,0.000163,433.6
+rounds_size,hv_page_b4498e472c,catalogue,0.000068,434.6
+rounds_size,hv_page_b8db5ee0c6,catalogue,0.000202,434.4
+rounds_size,hv_page_c80c027742,catalogue,0.000160,435.8
+rounds_size,hv_page_d197aa1d9b,catalogue,0.000145,435.3
+rounds_size,hv_page_d487aae880,catalogue,0.000148,129.0
+rounds_size,hv_page_de90ec603c,catalogue,0.000028,434.7
+rounds_size,hv_page_e43fbdc8ed,catalogue,0.000349,433.9
+rounds_size,hv_page_e7c7828487,catalogue,0.000008,433.9
+rounds_size,hv_page_ec8f2a7e33,catalogue,0.000425,434.0
+rounds_size,hv_page_ee91bc679b,catalogue,0.000095,434.5
+rounds_size,hv_page_ef7d4016dc,catalogue,0.000059,246.1
+rounds_size,wos_cpo_40616911,catalogue,0.000037,452.2
+rounds_size,owner_official_126710grnr,owner priority,0.000768,252.2
+rounds_size,owner_official_126710blnr_oyster,owner priority,0.000289,171.0
+rounds_size,owner_cpo_126710blnr_jubilee,owner priority,0.000305,170.8
+rounds_size,owner_cpo_126715chnr,owner priority,0.000771,170.8
+rounds_size,owner_dealer_126710blro,owner priority,0.000290,270.7
+round_size_rel,bobs_175818,catalogue,0.000182,433.8
+round_size_rel,gen_126710BLRO_phillips_146213,catalogue,0.000904,243.8
+round_size_rel,gen_126710BLRO_phillips_147798,catalogue,0.000526,238.9
+round_size_rel,gen_126710BLRO_phillips_210072,catalogue,0.000852,227.8
+round_size_rel,gen_126710BLRO_phillips_CH080120_75,catalogue,0.000832,227.0
+round_size_rel,gen_126710BLRO_phillips_NY080121_35,catalogue,0.000968,216.5
+round_size_rel,hv_page_176399af9b,catalogue,0.000402,203.4
+round_size_rel,hv_page_2100d8d80c,catalogue,0.000333,436.9
+round_size_rel,hv_page_26529a52bd,catalogue,0.000515,434.8
+round_size_rel,hv_page_2874f5a2bc,catalogue,0.000520,245.2
+round_size_rel,hv_page_2f9546b899,catalogue,0.000263,434.7
+round_size_rel,hv_page_382ce3b2b1,catalogue,0.000546,334.8
+round_size_rel,hv_page_3b6fda6742,catalogue,0.000397,434.9
+round_size_rel,hv_page_3d5c6dde16,catalogue,0.000234,435.9
+round_size_rel,hv_page_4cffae5ac4,catalogue,0.000289,435.9
+round_size_rel,hv_page_525f08a5be,catalogue,0.000283,434.3
+round_size_rel,hv_page_57d486cff3,catalogue,0.000193,434.6
+round_size_rel,hv_page_58aba667cf,catalogue,0.000280,434.6
+round_size_rel,hv_page_6c7e84c33d,catalogue,0.000392,433.7
+round_size_rel,hv_page_6d3d310e79,catalogue,0.000427,229.5
+round_size_rel,hv_page_6f8a29a642,catalogue,0.000159,236.5
+round_size_rel,hv_page_79c4638087,catalogue,0.000228,434.8
+round_size_rel,hv_page_7a187edba5,catalogue,0.000299,434.0
+round_size_rel,hv_page_814c8db017,catalogue,0.000253,434.9
+round_size_rel,hv_page_85b8a94b47,catalogue,0.000430,435.5
+round_size_rel,hv_page_8d6873b55a,catalogue,0.000223,245.0
+round_size_rel,hv_page_942a7f5f12,catalogue,0.001050,434.3
+round_size_rel,hv_page_a13e399a8f,catalogue,0.000301,335.0
+round_size_rel,hv_page_a261fbdf78,catalogue,0.000218,434.3
+round_size_rel,hv_page_acf3ed7596,catalogue,0.000266,435.3
+round_size_rel,hv_page_b0bc85b625,catalogue,0.000277,433.6
+round_size_rel,hv_page_b4498e472c,catalogue,0.000240,434.6
+round_size_rel,hv_page_b8db5ee0c6,catalogue,0.000275,434.4
+round_size_rel,hv_page_c80c027742,catalogue,0.000242,435.8
+round_size_rel,hv_page_d197aa1d9b,catalogue,0.000236,435.3
+round_size_rel,hv_page_d487aae880,catalogue,0.000568,129.0
+round_size_rel,hv_page_de90ec603c,catalogue,0.000191,434.7
+round_size_rel,hv_page_e43fbdc8ed,catalogue,0.000273,433.9
+round_size_rel,hv_page_e7c7828487,catalogue,0.000257,433.9
+round_size_rel,hv_page_ec8f2a7e33,catalogue,0.000221,434.0
+round_size_rel,hv_page_ee91bc679b,catalogue,0.000285,434.5
+round_size_rel,hv_page_ef7d4016dc,catalogue,0.000820,246.1
+round_size_rel,wos_cpo_40616911,catalogue,0.001605,452.2
+round_size_rel,owner_official_126710grnr,owner priority,0.000379,252.2
+round_size_rel,owner_official_126710blnr_oyster,owner priority,0.000443,171.0
+round_size_rel,owner_cpo_126710blnr_jubilee,owner priority,0.000269,170.8
+round_size_rel,owner_cpo_126715chnr,owner priority,0.000288,170.8
+round_size_rel,owner_dealer_126710blro,owner priority,0.000527,270.7

@@ -102,7 +102,7 @@ public class ModelSpecTest {
         Map<Integer,Alpha99MarkerInterference.Check> clean=new java.util.LinkedHashMap<>();
         for(ModelSpec.Marker k:m.markers){Alpha99MarkerInterference.Check c=new Alpha99MarkerInterference.Check(k.hour);c.clean=true;clean.put(k.hour,c);}
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,clean,m,ref);
-        assertEquals(1+3+8+1,s.all.size());                                  // triangle, 3 batons, 8 rounds, ring; no date
+        assertEquals(1+3+8+1+1,s.all.size());                                // triangle, 3 batons, 8 rounds, round plot size, ring; no date
         assertTrue(s.clear().isEmpty());assertTrue(s.worth().isEmpty());
         for(Alpha99Findings.Finding f:s.all){assertEquals(f.key,Alpha99Findings.Status.NOT_ASSESSED,f.status);assertEquals("no genuine reference yet",f.shortReason);}
         assertEquals("3 o'clock",s.all.get(1).title);

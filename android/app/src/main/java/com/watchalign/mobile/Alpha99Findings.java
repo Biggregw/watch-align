@@ -28,6 +28,15 @@ final class Alpha99Findings {
     static final String INTERFERENCE_NOTE="Close-ups are shown so you can check for hands, reflections, dust or other interference.";
 
     /** One measured quantity compared with the genuine reference. */
+    /** Measures added in Alpha101 (no Alpha98 counterpart): regression checks against Alpha98 skip them. */
+    static final java.util.Set<String> ALPHA101_MEASURES=new java.util.HashSet<>(java.util.Arrays.asList("size","dial size"));
+    /** True when the finding is outside only because of Alpha101 measures. */
+    static boolean outsideOnlyByNewMeasures(Finding f){
+        boolean any=false;
+        for(Measure m:f.measures)if(m.outside()){if(!ALPHA101_MEASURES.contains(m.name))return false;any=true;}
+        return any;
+    }
+
     static final class Measure {
         final String name;final double value,genuineMax,sigma,k;final int n;final String unit;
         /** short phrase for the tile, e.g. "1.7° CCW" / detail sentence start, e.g. "It is rotated 1.7° anticlockwise". */
@@ -62,6 +71,8 @@ final class Alpha99Findings {
         boolean visual;
         /** set when a whole group was not assessed for one shared reason (e.g. "round markers"): counted once. */
         String group;
+        /** a whole-dial measurement shown as a tile but without a badge at one marker (e.g. round lume-plot size). */
+        boolean dialWide;
         /** Close-up region in canonical dial units (dial radius 1, 12 at the top) and what outline to draw. */
         double cx,cy,half;Shape shape;int hour;
         /** short name used in the "within" line, e.g. "4" or "date window". */
@@ -168,6 +179,7 @@ final class Alpha99Findings {
         for(ModelSpec.Marker mk:model.markers)if(mk.shape==ModelSpec.Shape.TRIANGLE)s.all.add(twelve(r,check(checks,mk.hour),R,mk,ref));
         for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.BATON))s.all.add(baton(r,mk,R,check(checks,mk.hour),ref));
         s.all.addAll(rounds(r,R,checks,model,ref));
+        if(!model.withShape(ModelSpec.Shape.ROUND).isEmpty())s.all.add(roundsSize(r,R,checks,model,ref));
         s.all.add(ring(r,R,ref));
         if(model.date!=null)s.all.add(date(date,R,r!=null&&r.ring!=null&&r.ring.usable,ref,model.date));
         return s;
@@ -293,6 +305,8 @@ final class Alpha99Findings {
         int n=Alpha98Findings.matchedCount(ref.radius("rounds_off"),R);
         double lim=Alpha98Findings.matchedMax(ref.far("rounds_off"),ref.radius("rounds_off"),R);
         double sOff=sigmaPos(ref,"rounds_off",R);
+        int sizeN=ref.has("round_size_rel")?Alpha98Findings.matchedCount(ref.radius("round_size_rel"),R):0;
+        double sizeLim=Alpha98Findings.matchedMax(ref.far("round_size_rel"),ref.radius("round_size_rel"),R);
         for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.ROUND)){
             int h=mk.hour;
             Finding f=new Finding("round"+h,h+" o'clock",""+h);
@@ -309,9 +323,50 @@ final class Alpha99Findings {
                     String.format(Locale.US,"shifted %s by %.2f%% of the dial",towards(m),100*off),
                     String.format(Locale.US,"The %d o'clock marker sits %.1f px out of place relative to the other markers (%.2f%% of the dial radius, mostly %s); compared with genuine photos of similar or lower resolution",
                             h,m.localOffsetPx,100*off,Alpha98Findings.direction(m))));
+            // Alpha101: this lume plot's size against the other round plots on the same dial (lighting and blur cancel)
+            double med=cleanRoundSizeMedian(r,R,checks,model);
+            if(Double.isFinite(med)&&Double.isFinite(m.radiusErrPx)&&sizeN>=Alpha98Findings.MIN_MATCHED){
+                double rel=m.radiusErrPx/R-med;
+                f.measures.add(new Measure("size",Math.abs(rel),sizeLim,sigmaPos(ref,"round_size_rel",R),ref.kSigma,sizeN,"R",
+                        String.format(Locale.US,"plot %s than the others by %.2f%% of the dial",rel>=0?"larger":"smaller",100*Math.abs(rel)),
+                        String.format(Locale.US,"Its lume plot is %s than the other round plots on this dial by %.2f%% of the dial radius; compared with genuine photos of similar or lower resolution",
+                                rel>=0?"larger":"smaller",100*Math.abs(rel))));
+            }
             settle(f);
         }
         return out;
+    }
+
+    /** Median size (fitted radius error / R) of the round markers that are measured and clear of hands; NaN below 5. */
+    static double cleanRoundSizeMedian(Alpha94MarkerMeasurement.Report r,double R,Map<Integer,Alpha99MarkerInterference.Check> checks,ModelSpec model){
+        if(r==null||!(R>0))return Double.NaN;
+        List<Double> v=new ArrayList<>();
+        for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.ROUND)){
+            Alpha94MarkerMeasurement.Marker m=r.atHour(mk.hour);Alpha99MarkerInterference.Check c=check(checks,mk.hour);
+            if(m!=null&&m.usable&&Double.isFinite(m.radiusErrPx)&&c!=null&&c.clean)v.add(m.radiusErrPx/R);
+        }
+        if(v.size()<5)return Double.NaN;
+        java.util.Collections.sort(v);int n=v.size();
+        return n%2==1?v.get(n/2):0.5*(v.get(n/2-1)+v.get(n/2));
+    }
+
+    /** Alpha101: overall size of the round lume plots (all clean rounds together) against genuine dials. */
+    static Finding roundsSize(Alpha94MarkerMeasurement.Report r,double R,Map<Integer,Alpha99MarkerInterference.Check> checks,ModelSpec model,ModelReference ref){
+        Finding f=new Finding("rounds_size","Round lume plots","round plot size");f.shape=Shape.ROUND;f.half=0.17;f.dialWide=true;
+        ModelSpec.Marker first=model.withShape(ModelSpec.Shape.ROUND).get(0);
+        double a=Math.toRadians(first.hour*30.0);f.hour=first.hour;f.cx=Math.sin(a)*first.centreR;f.cy=-Math.cos(a)*first.centreR;
+        if((!ref.has("rounds_size")||!Double.isFinite(ref.nominal("rounds_size")))&&noReference(f)){f.group="round markers";return f;}
+        double med=cleanRoundSizeMedian(r,R,checks,model);
+        if(!Double.isFinite(med)){f.status=Status.NOT_ASSESSED;f.reason="too few round markers could be measured cleanly";f.shortReason="too few clean markers";f.group="round markers";return f;}
+        int n=Alpha98Findings.matchedCount(ref.radius("rounds_size"),R);
+        if(n<Alpha98Findings.MIN_MATCHED){f.status=Status.NOT_ASSESSED;f.reason="the photo's resolution is too low to compare round markers with genuine photos";f.shortReason="resolution too low";f.group="round markers";return f;}
+        double d=med-ref.nominal("rounds_size");
+        f.measures.add(new Measure("dial size",Math.abs(d),Alpha98Findings.matchedMax(ref.far("rounds_size"),ref.radius("rounds_size"),R),
+                sigmaPos(ref,"rounds_size",R),ref.kSigma,n,"R",
+                String.format(Locale.US,"all round plots %s by %.2f%% of the dial",d>=0?"larger":"smaller",100*Math.abs(d)),
+                String.format(Locale.US,"Taken together, the round lume plots are %s than on genuine dials by %.2f%% of the dial radius; compared with genuine photos of similar or lower resolution",
+                        d>=0?"larger":"smaller",100*Math.abs(d))));
+        settle(f);return f;
     }
 
     static Finding ring(Alpha94MarkerMeasurement.Report r,double R,ModelReference ref){
