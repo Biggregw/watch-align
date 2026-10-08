@@ -905,3 +905,18 @@ No held-out genuine photo becomes a clear finding. The worth-a-look rate is in l
 Two limits of this check:
 - Offline, the rounds counted are the measurement's usable rounds. The app additionally drops rounds touched by a hand, which can only reduce what is assessed.
 - The edge-consistency limit (section 1) only ever downgrades the 12, so it cannot add a finding. It is not part of this check.
+
+### Alpha101 final validation (2026-10-08, de25d49; app features without the parked logo)
+
+- **Local regression against Alpha100 (main fe064ba):**
+  - 0 measurement differences: 1,592 local values and 1,791 owner values;
+  - hand/glare check identical (`interference_local.csv`);
+  - one status change on an existing feature: POOL_GEN_HO_01's 10 o'clock round goes from within to worth a look (round plot size, section 5);
+  - the new "round plot size" row is worth a look on ARF only;
+  - 40 unit tests pass.
+- **Held-out genuine (§8 step 5):** `alpha101_heldout_genuine.py` reproduces. No held-out genuine photo becomes a clear finding.
+- **Genuine catalogue:** CI run 37759432007, set against the Alpha100 run 37744977988. This run fetched 116 of 213 photos (102 with a pose); the Alpha100 run fetched 120 (105 with a pose).
+  - 0 new findings compared with Alpha98.
+  - The only differences from Alpha100 are 14 worth-a-look results from the round lume-plot checks on 9 Phillips photos, 6 of them on one photo (`bf795611fe399d5f`). There are 0 clear.
+  - The one clear finding on a genuine photo, `ee1933f4d3ba3a7d` (6 shifted towards the centre by 0.72%), is unchanged from Alpha100.
+- **APK:** `1.3.0-alpha101-index-alignment-arm64`, build run 37759432014.
