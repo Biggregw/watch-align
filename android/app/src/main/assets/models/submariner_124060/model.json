@@ -100,5 +100,10 @@
     "dot_r_min": 0.5,
     "dot_r_max": 0.6
   },
-  "reference": "reference"
+  "reference": "reference",
+  "resolution_matched": [
+    "three_off",
+    "six_off",
+    "nine_off"
+  ]
 }

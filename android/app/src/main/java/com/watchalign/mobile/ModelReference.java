@@ -40,6 +40,7 @@ final class ModelReference {
     }
 
     private final Map<String,double[]> far=new HashMap<>(),radius=new HashMap<>();
+    private final Map<String,String[]> watch=new HashMap<>();
     private final Map<String,Double> nominal=new HashMap<>(),sigma=new HashMap<>();
     private final Map<String,Integer> sigmaWatches=new HashMap<>();
     /** null when the model has no triangle reference. */
@@ -68,12 +69,15 @@ final class ModelReference {
         ModelReference r=new ModelReference(t,k);
         List<Map<String,String>> g=csv(assets,dir+GENUINE);
         if(g!=null){
-            Map<String,List<double[]>> by=new LinkedHashMap<>();
-            for(Map<String,String> row:g)by.computeIfAbsent(row.get("feature"),x->new ArrayList<>()).add(new double[]{d(row.get("far")),d(row.get("dial_radius_px"))});
+            Map<String,List<double[]>> by=new LinkedHashMap<>();Map<String,List<String>> ids=new HashMap<>();
+            for(Map<String,String> row:g){
+                by.computeIfAbsent(row.get("feature"),x->new ArrayList<>()).add(new double[]{d(row.get("far")),d(row.get("dial_radius_px"))});
+                ids.computeIfAbsent(row.get("feature"),x->new ArrayList<>()).add(row.get("physical_watch_id"));
+            }
             for(Map.Entry<String,List<double[]>> e:by.entrySet()){
                 double[] f=new double[e.getValue().size()],R=new double[f.length];
                 for(int i=0;i<f.length;i++){f[i]=e.getValue().get(i)[0];R[i]=e.getValue().get(i)[1];}
-                r.far.put(e.getKey(),f);r.radius.put(e.getKey(),R);
+                r.far.put(e.getKey(),f);r.radius.put(e.getKey(),R);r.watch.put(e.getKey(),ids.get(e.getKey()).toArray(new String[0]));
             }
         }
         Properties nom=props(assets,dir+NOMINAL);
@@ -90,6 +94,15 @@ final class ModelReference {
     double[] far(String feature){double[] v=far.get(feature);return v==null?new double[0]:v;}
     /** Dial radius (px) of each reference watch's photos, aligned with far(); NaN where not recorded. */
     double[] radius(String feature){double[] v=radius.get(feature);return v==null?new double[0]:v;}
+    /** Number of distinct genuine watches with a reference row for the feature photographed at R_ref <= 1.3 x R (a watch
+     *  can have rows at several resolutions, e.g. its photos re-measured shrunk; it still counts once). */
+    int matchedWatches(String feature,double R){
+        double[] rr=radius(feature);String[] id=watch.get(feature);java.util.Set<String> s=new java.util.HashSet<>();
+        for(int i=0;i<rr.length;i++)if(Double.isFinite(rr[i])&&rr[i]<=Alpha98Findings.RES_MATCH*R)s.add(id==null||id[i]==null?"#"+i:id[i]);
+        return s.size();
+    }
+    /** Furthest genuine reading among the reference rows photographed at R_ref <= 1.3 x R. */
+    double matchedMax(String feature,double R){return Alpha98Findings.matchedMax(far(feature),radius(feature),R);}
     boolean has(String feature){return far.containsKey(feature)&&far.get(feature).length>0;}
     /** Genuine nominal of a signed feature, NaN when missing. */
     double nominal(String feature){Double v=nominal.get(feature);return v==null?Double.NaN:v;}

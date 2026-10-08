@@ -94,6 +94,28 @@ public class ModelSpecTest {
         assertTrue(r.sigma("six_rot","deg")>0);
     }
 
+    @Test public void submarinerBatonPositionIsResolutionMatched()throws Exception{
+        ModelSpec m=ModelSpec.load(ModelSpec.directory(TestModels.assets()),"submariner_124060");
+        ModelReference ref=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
+        assertTrue(m.resolutionMatched.contains("three_off"));assertTrue(TestModels.gmt().resolutionMatched.isEmpty());
+        for(double R:new double[]{131,400}){
+            Alpha94MarkerMeasurement.Marker b=new Alpha94MarkerMeasurement.Marker(3,"baton");b.spec=m.atHour(3);b.usable=true;
+            b.rotationDeg=ref.nominal("three_rot");b.localOffsetPx=0.44;b.localRadialPx=0.35;b.localTangentialPx=0.27;
+            List<Alpha94MarkerMeasurement.Marker> ms=new ArrayList<>();ms.add(b);
+            Alpha94MarkerMeasurement.Report r=new Alpha94MarkerMeasurement.Report(ms,null,R,null);
+            Alpha99MarkerInterference.Check c=new Alpha99MarkerInterference.Check(3);c.clean=true;
+            Alpha99Findings.Finding f=Alpha99Findings.baton(r,m.atHour(3),R,c,ref,true);
+            if(R<150){   // the render case: below the genuine photos' resolution the position is not assessed, rotation is
+                assertEquals("position",f.partNotAssessed);assertEquals(1,f.measures.size());
+                assertEquals(Alpha99Findings.Status.WITHIN,f.status);
+                assertTrue(String.join(" ",f.detail()).contains("position is not assessed"));
+            }else{assertNull(f.partNotAssessed);assertEquals(2,f.measures.size());assertTrue(ref.matchedWatches("three_off",R)>=8);}
+        }
+        // GMT: one reference row per watch, so distinct watches == rows (unchanged behaviour)
+        ModelReference g=TestModels.gmtRef();
+        assertEquals(g.radius("rounds_off").length,g.matchedWatches("rounds_off",1e9));
+    }
+
     @Test public void jsonReaderIsExactAndStrict(){
         @SuppressWarnings("unchecked") Map<String,Object> o=(Map<String,Object>)MiniJson.parse("{\"a\":[0.7991666666666667,-0.38,1e-3],\"b\":\"x\\\"y\",\"c\":null,\"d\":true}");
         @SuppressWarnings("unchecked") List<Object> a=(List<Object>)o.get("a");

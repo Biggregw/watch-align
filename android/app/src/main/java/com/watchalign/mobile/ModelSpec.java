@@ -89,6 +89,9 @@ final class ModelSpec {
     final double secondsDotRMin,secondsDotRMax;
     /** Folder (relative to the model folder) holding the genuine reference; see ModelReference. */
     final String referenceDir;
+    /** Features compared only with genuine watches photographed at similar or lower resolution (in addition to the
+     *  always-matched round / ring features), from the optional "resolution_matched" list; empty when absent. */
+    java.util.Set<String> resolutionMatched=java.util.Collections.emptySet();
     /** Folder of this model under the assets root, e.g. "models/gmt_126710". */
     final String dir;
 
@@ -138,8 +141,14 @@ final class ModelSpec {
                     (Double)ec.get(0),(Double)ec.get(1),num(e,"x_min"),num(e,"half_y"));
         }
         Map<String,Object> sec=obj(o,"seconds_hand");
-        return new ModelSpec((String)o.get("id"),(String)o.get("label"),num(pose,"minute_track_inner_r"),num(pose,"minute_track_outer_r"),
+        ModelSpec spec=new ModelSpec((String)o.get("id"),(String)o.get("label"),num(pose,"minute_track_inner_r"),num(pose,"minute_track_outer_r"),
                 excl,ms,dw,num(sec,"dot_r_min"),num(sec,"dot_r_max"),(String)o.get("reference"),dir);
+        if(o.get("resolution_matched")!=null){
+            java.util.Set<String> rm=new java.util.LinkedHashSet<>();
+            for(Object x:(List<Object>)o.get("resolution_matched"))rm.add((String)x);
+            spec.resolutionMatched=java.util.Collections.unmodifiableSet(rm);
+        }
+        return spec;
     }
 
     static String read(Assets assets,String path)throws IOException{
