@@ -9,15 +9,17 @@ adb shell pm clear "$PKG" >/dev/null
 adb shell rm -rf /sdcard/Download/WatchAlign_Bobs_Harvest
 adb shell am start -n "$PKG/.MainActivity" --es filter "$FILTER" --ei max_products "$MAXP" --ez auto_zip true >/dev/null
 BASE=/sdcard/Android/data/$PKG/files/Bobs_Rolex_Harvest
-fetch(){ adb exec-out run-as "$PKG" cat "$BASE/$1" 2>/dev/null || adb exec-out cat "$BASE/$1" 2>/dev/null; }
-for i in $(seq 1 90); do
+# Android 14 refuses shell reads of Android/data; the google_apis emulator allows adb root (set up by the workflow)
+fetch(){ adb exec-out cat "$BASE/$1" 2>&1; }
+for i in $(seq 1 72); do
   sleep 10
   fetch run_log.txt > "$D/run_log.txt"
   if grep -q "Export summary\|ZIP export: nothing to export" "$D/run_log.txt"; then break; fi
 done
 sleep 3
 fetch run_log.txt > "$D/run_log.txt"; fetch image_decisions.csv > "$D/image_decisions.csv"; fetch accepted.csv > "$D/accepted.csv"
-adb exec-out run-as "$PKG" sh -c "cd $BASE && tar -cf - accepted_images" > "$D/accepted.tar" 2>/dev/null || adb exec-out sh -c "cd $BASE && tar -cf - accepted_images" > "$D/accepted.tar"
+adb exec-out sh -c "cd $BASE && tar -cf - accepted_images" > "$D/accepted.tar"
 tar -xf "$D/accepted.tar" -C "$D/files" 2>/dev/null; rm -f "$D/accepted.tar"
 adb pull /sdcard/Download/WatchAlign_Bobs_Harvest/. "$D/zips/" >/dev/null 2>&1 || true
-echo "=== $NAME: run_log.txt"; cat "$D/run_log.txt"
+echo "=== $NAME: finished after ~$((i*10)) s of polling; run_log.txt:"; cat "$D/run_log.txt"
+echo "=== $NAME: Downloads/WatchAlign_Bobs_Harvest:"; ls -la "$D/zips"

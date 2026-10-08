@@ -21,7 +21,10 @@ for run in sorted(os.listdir(out)):
         size = os.path.getsize(z); good = size < 30 * 1024 * 1024
         with zipfile.ZipFile(z) as zf:
             bad = zf.testzip(); names = zf.namelist(); imgs = [n for n in names if n.startswith('images/')]
-            man = list(csv.DictReader(io.StringIO(zf.read('manifest.csv').decode()))) if 'manifest.csv' in names else []
+            H = 'reference,sku,title,product_url,image_url,file,sha256,width,height,acquisition,dial_radius_px,axis_ratio,ring_support,sharpness'.split(',')
+            txt = zf.read('manifest.csv').decode() if 'manifest.csv' in names else ''
+            # 1.4 wrote per-reference manifests without a header row (fixed in 1.4.1)
+            man = list(csv.DictReader(io.StringIO(txt))) if txt.startswith('reference,') else [dict(zip(H, r)) for r in csv.reader(io.StringIO(txt))]
             decoded = 0; traced = 0
             for n in imgs:
                 b = zf.read(n); im = cv2.imdecode(np.frombuffer(b, np.uint8), cv2.IMREAD_COLOR)
