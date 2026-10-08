@@ -1,0 +1,198 @@
+name: Temporary 124060 extra genuine image pack
+
+on:
+  push:
+    branches:
+      - tmp/sub124060-extra-gen-pack
+    paths:
+      - '.github/workflows/sub124060-image-pack.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python helpers
+        run: python -m pip install -q requests pillow
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Download additional EWC 124060 candidates
+        run: |
+          python3 - <<'PY'
+          import csv, hashlib, os, requests
+          stocks = ["57714","58678","55139","55297","58150","62088","59112","58030","62097","59921","62175","67390","64518","51884","50093","67830","45714","48227","43020","46278","46174","49826","44294","59697","66197","63861","47706","37836","47106","42174","57290","65028","66045","71823"]
+          os.makedirs('imagepack/input', exist_ok=True)
+          session = requests.Session()
+          session.headers.update({
+              'User-Agent': 'Mozilla/5.0 (WatchAlign research image-pack)',
+              'Referer': 'https://www.europeanwatch.com/'
+          })
+          rows=[]
+          for stock in stocks:
+              for image_index in (1,2,3):
+                  url=f"https://images.europeanwatch.com/images/{stock[:2]}/{stock}-{image_index}.jpg"
+                  try:
+                      r=session.get(url, timeout=30)
+                      ctype=r.headers.get('content-type','')
+                      if r.status_code != 200 or 'image' not in ctype or len(r.content) < 30000:
+                          print('skip', stock, image_index, r.status_code, ctype, len(r.content))
+                          continue
+                      sha=hashlib.sha256(r.content).hexdigest()
+                      fn=f"EWC_{stock}_{image_index}_{sha[:10]}.jpg"
+                      path='imagepack/input/'+fn
+                      open(path,'wb').write(r.content)
+                      rows.append({
+                          'photo_id': f'ewc_{stock}_{image_index}',
+                          'local_path': fn,
+                          'stock': stock,
+                          'image_index': image_index,
+                          'image_url': url,
+                          'sha256': sha
+                      })
+                      print('ok', stock, image_index, len(r.content), sha[:12])
+                  except Exception as e:
+                      print('error', stock, image_index, repr(e))
+          with open('imagepack/manifest.csv','w',newline='') as f:
+              w=csv.DictWriter(f, fieldnames=['photo_id','local_path','stock','image_index','image_url','sha256'])
+              w.writeheader(); w.writerows(rows)
+          print('downloaded', len(rows), 'candidate images from', len(set(r['stock'] for r in rows)), 'watches')
+          if len(rows) < 20:
+              raise SystemExit('too few images downloaded')
+          PY
+
+      - name: Measure candidates with current 124060 pose and marker pipeline
+        env:
+          JAVA_TOOL_OPTIONS: -Dwatchalign.model=submariner_124060 -Dwatchalign.models_root=tools/research/sub124060
+        run: |
+          mkdir -p imagepack/results
+          tools/desktop-harness/run.sh SubMaster imagepack/manifest.csv imagepack/input imagepack/results/candidates
+
+      - name: Select QC-suitable face-on images
+        run: |
+          python3 - <<'PY'
+          import csv, os, shutil
+          from collections import defaultdict
+          from PIL import Image, ImageOps, ImageDraw
+
+          mani={r['photo_id']:r for r in csv.DictReader(open('imagepack/manifest.csv'))}
+          track={r['photo_id']:r for r in csv.DictReader(open('imagepack/results/candidates_track.csv'))}
+          mr=defaultdict(list)
+          for r in csv.DictReader(open('imagepack/results/candidates_markers.csv')):
+              mr[r['photo_id']].append(r)
+
+          good=[]
+          for pid,m in mani.items():
+              t=track.get(pid)
+              if not t or t.get('status')!='accepted':
+                  continue
+              try:
+                  radius=float(t['dial_radius_px']); rms=float(t['tick_rms_px'])
+                  ticks=int(t['ticks_used']); sectors=int(t['tick_sectors'])
+              except Exception:
+                  continue
+              rows=mr.get(pid,[])
+              usable=[r for r in rows if r.get('usable','').lower()=='true']
+              hours={int(r['hour']) for r in usable if r.get('hour','').isdigit()}
+              # "QC suitable" here is deliberately strict: reliable pose, useful resolution,
+              # good minute lattice and all four cardinal markers measurable.
+              if radius < 180 or rms > 0.22 or ticks < 45 or sectors < 10:
+                  continue
+              if not {12,3,6,9}.issubset(hours) or len(hours) < 10:
+                  continue
+              score=(min(radius,500)/500)*2 + (0.22-rms)*4 + len(hours)/12
+              good.append((score,pid,radius,rms,ticks,sectors,len(hours)))
+
+          good.sort(reverse=True)
+          # Keep at most two views of one physical dealer stock, and at most 48 images.
+          per_stock=defaultdict(int); selected=[]
+          for x in good:
+              pid=x[1]; stock=mani[pid]['stock']
+              if per_stock[stock] >= 2: continue
+              selected.append(x); per_stock[stock]+=1
+              if len(selected) >= 48: break
+
+          os.makedirs('imagepack/selected',exist_ok=True)
+          out=[]
+          for rank,x in enumerate(selected,1):
+              score,pid,radius,rms,ticks,sectors,nusable=x
+              m=mani[pid]
+              src='imagepack/input/'+m['local_path']
+              dst=f"imagepack/selected/{rank:02d}_EWC_{m['stock']}_view{m['image_index']}.jpg"
+              shutil.copy2(src,dst)
+              out.append({
+                  'file':os.path.basename(dst),'source':'European Watch Company',
+                  'stock':m['stock'],'image_index':m['image_index'],
+                  'image_url':m['image_url'],'sha256':m['sha256'],
+                  'dial_radius_px':f'{radius:.1f}','tick_rms_px':f'{rms:.3f}',
+                  'ticks_used':ticks,'tick_sectors':sectors,'usable_markers':nusable
+              })
+          with open('imagepack/selected_manifest.csv','w',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=out[0].keys() if out else ['file'])
+              w.writeheader(); w.writerows(out)
+
+          with open('imagepack/README.txt','w') as f:
+              f.write('Watch Align extra genuine Rolex Submariner 124060 image pack\n\n')
+              f.write('Source: European Watch Company archive/listings, which identifies these as Rolex 124060 and certified authentic.\n')
+              f.write('Each stock number is a distinct dealer listing / physical watch.\n')
+              f.write('Images were selected automatically using Watch Align current 124060 pipeline.\n')
+              f.write('Selection: pose accepted; dial radius >=180 px; tick RMS <=0.22 px; >=45 ticks; >=10 sectors;\n')
+              f.write('12/3/6/9 markers measurable; at least 10 hour markers measurable.\n')
+              f.write('These are for independent visual/QC testing, not automatically promoted into calibration truth.\n')
+              f.write(f'\nSelected images: {len(out)} from {len(set(r["stock"] for r in out))} distinct watches.\n')
+
+          # Contact sheet for quick visual inspection.
+          thumbs=[]
+          for r in out:
+              p='imagepack/selected/'+r['file']
+              im=Image.open(p).convert('RGB')
+              im.thumbnail((360,360))
+              canvas=Image.new('RGB',(380,405),'white')
+              x=(380-im.width)//2; y=5+(360-im.height)//2
+              canvas.paste(im,(x,y))
+              d=ImageDraw.Draw(canvas)
+              d.text((8,372),r['file'],fill='black')
+              thumbs.append(canvas)
+          if thumbs:
+              cols=4; rows=(len(thumbs)+cols-1)//cols
+              sheet=Image.new('RGB',(cols*380,rows*405),'white')
+              for i,im in enumerate(thumbs):
+                  sheet.paste(im,((i%cols)*380,(i//cols)*405))
+              sheet.save('imagepack/contact_sheet.jpg',quality=90)
+          print('SELECTED',len(out),'images from',len(set(r['stock'] for r in out)),'distinct watches')
+          if len(out) < 25:
+              raise SystemExit('fewer than 25 QC-suitable images survived')
+          PY
+
+      - name: Make zip
+        run: |
+          cd imagepack
+          zip -q -r ../Rolex-124060-extra-genuine-QC-images.zip selected selected_manifest.csv README.txt contact_sheet.jpg
+          cd ..
+          ls -lh Rolex-124060-extra-genuine-QC-images.zip
+          cat imagepack/README.txt
+
+      - name: Upload image pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rolex-124060-extra-genuine-QC-images
+          retention-days: 7
+          path: Rolex-124060-extra-genuine-QC-images.zip
