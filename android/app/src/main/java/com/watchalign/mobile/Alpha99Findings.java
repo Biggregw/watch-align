@@ -35,6 +35,8 @@ final class Alpha99Findings {
         /** Owner decision 2026-10-08: never a clear finding on its own (e.g. a 12 side angle without a matching
          *  centreline or position change); at most worth a look. */
         boolean capAtWorth;
+        /** Why capAtWorth was set; shown in the detail view. */
+        String capReason="";
         /** @param k the model's K: clear when the excess exceeds k x sigma (NaN: nothing can be clear). */
         Measure(String name,double value,double genuineMax,double sigma,double k,int n,String unit,String shortValue,String sentence){
             this.name=name;this.value=value;this.genuineMax=genuineMax;this.sigma=sigma;this.k=k;this.n=n;this.unit=unit;this.shortValue=shortValue;this.sentence=sentence;
@@ -90,8 +92,7 @@ final class Alpha99Findings {
             for(Measure m:measures){
                 if(!m.outside())continue;
                 String s=m.sentence+". The furthest of "+m.n+" genuine reference watches reads "+fmt(m.genuineMax,m.unit)+".";
-                if(m.capAtWorth)s+=" Only the side angle reads outside: the triangle's direction and position are within the genuine range."
-                        +" Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.";
+                if(m.capAtWorth)s+=" "+m.capReason;
                 else if(!m.hasAllowance())s+=" No measurement-uncertainty estimate exists for this feature, so it is not rated as a clear finding.";
                 else if(m.status()==Status.CLEAR)s+=String.format(Locale.US," The excess (%s) is more than %.0f times the photo-to-photo spread measured on genuine watches (%s), so measurement error alone is unlikely to explain it.",
                         fmt(m.excess(),m.unit),m.k,fmt(m.sigma,m.unit));
@@ -238,7 +239,16 @@ final class Alpha99Findings {
         // genuine SWE studio photo read its right side 4.1 deg off with centreline and position in range)
         boolean corroborated=false;
         for(Measure x:f.measures)if(!x.name.equals("sides")&&x.outside())corroborated=true;
-        if(!corroborated)for(Measure x:f.measures)if(x.name.equals("sides"))x.capAtWorth=true;
+        if(!corroborated)for(Measure x:f.measures)if(x.name.equals("sides")){x.capAtWorth=true;
+            x.capReason="Only the side angle reads outside: the triangle's direction and position are within the genuine range."
+                    +" Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.";}
+        // Alpha101 edge consistency: a real rotation turns both sides together; when the two sides disagree by more than
+        // genuine triangles ever do, one edge is affected by lighting or blur, and every angle read from those edges
+        // (centreline, sides) is at most worth a look. Position (lateral) is unaffected.
+        double agree=ref.limit(fam+"_sides_agreement"),dis=Math.abs(t.leftSideDeg-t.rightSideDeg);
+        if(Double.isFinite(agree)&&dis>agree)for(Measure x:f.measures)if(x.name.equals("sides")||x.name.equals("centreline")){
+            x.capAtWorth=true;
+            x.capReason=String.format(Locale.US,"The triangle's two sides disagree by %.1f° (on genuine watches they agree within %.1f°), which points to lighting or blur on one edge rather than a turned marker, so its angles are shown as worth a look, not a clear finding.",dis,agree);}
         settle(f);return f;
     }
 

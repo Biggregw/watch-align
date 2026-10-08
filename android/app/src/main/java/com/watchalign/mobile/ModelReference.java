@@ -95,6 +95,8 @@ final class ModelReference {
     double nominal(String feature){Double v=nominal.get(feature);return v==null?Double.NaN:v;}
     /** Single-photo uncertainty of a family in a unit ("deg", "degR", "R", "px"), NaN when missing. */
     double sigma(String family,String unit){Double v=sigma.get(family+"."+unit);return v==null?Double.NaN:v;}
+    /** A genuine-derived limit (uncertainty.properties "<name>.limit"), NaN when the model has none. */
+    double limit(String name){return sigma(name,"limit");}
     int sigmaWatches(String family,String unit){Integer v=sigmaWatches.get(family+"."+unit);return v==null?0:v;}
 
     // ------------------------------------------------------------------ file helpers (missing file -> null)

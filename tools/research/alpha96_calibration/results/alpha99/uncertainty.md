@@ -28,3 +28,9 @@ only when the excess beyond the genuine maximum exceeds K = 3 sigma.
 | twelve_lateral | px | 0.412108 | 1.236325 | 9 | 51 | 42 |
 | twelve_sides | deg | 0.486607 | 1.459822 | 9 | 102 | 84 |
 | twelve_sides | degR | 82.765016 | 248.295048 | 9 | 102 | 84 |
+
+## 12 triangle side agreement (Alpha101 edge-consistency limit)
+
+Genuine watches with 2+ photos: 25 (96 photos), SWE included (lighting is
+exactly what this measures). Max per-watch median |left - right| 0.770 deg;
+robust photo-to-photo spread 0.074 deg; limit = max + 3 x spread = 0.992 deg.

@@ -799,3 +799,23 @@ The app no longer has GMT geometry or GMT reference values in code.
 | Lateral | 0.25% | 0.23% | just outside |
 
 So the rule does not apply, and the photo is still a CLEAR finding. Its two sides disagree (left about 0.42° off, right 4.1°), so the centreline, which is computed from the same edges, is moved by the one side edge. The run that checked the rule (37733632259) did not fetch this photo.
+
+## Alpha101: index alignment round (2026-10-08)
+
+### 1. Edge consistency of the 12 triangle
+
+A real rotation turns both of the triangle's sides together; lighting or blur on one edge moves one side alone.
+
+- **Measure:** |left side − right side|, both relative to the genuine nominal.
+- **Genuine data** (`ci_run_37500197377/per_photo.csv`, all 131 usable genuine photos):
+  - median 0.14°, 90% within 0.48°;
+  - the large values are single bad photos. Watch `hv_page_6d3d310e79` reads 6.0° on its 103 px photo but 0.00–0.18° on its 7 other photos; the SWE watch `swe_59259` reads 3.7° on `ce997f77df67b365` but 0.23–0.25° on its 2 others.
+- **Limit** (written by `measurement_uncertainty.py`, `twelve_sides_agreement.limit` = 0.99°): the largest per-watch median across the 25 watches with 2+ photos (0.77°), plus 3× the robust photo-to-photo spread (0.074°).
+  - Single-photo watches are excluded from the range: their "median" is the photo itself.
+  - The spread is robust (MAD), because the photos this targets would inflate a plain SD.
+- **Rule:** when the two sides disagree by more than the limit, the 12's centreline and side readings are at most WORTH A LOOK; the detail view gives the reason. Lateral position is unaffected.
+- **Effect:**
+  - 6 of 131 genuine photos exceed the limit, all of them tiny, studio-lit or blurred; this includes `ce997f77df67b365`, which is now WORTH A LOOK instead of CLEAR.
+  - The local defect cases read 0.05–0.41° (Local BLNR, ARF, Theonewatches), so they are unaffected.
+  - Local classifications are unchanged.
+- **Test:** `Alpha99FindingsTest.twelveWithDisagreeingSidesIsEdgeAffected`, which uses the studio photo's recorded values.
