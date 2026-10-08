@@ -183,3 +183,22 @@ On the GMT, the Submariner's printed "S" / "R" of SUPERLATIVE CHRONOMETER are ta
 - The chosen model is remembered.
 - The results screen shows "Checked as: <model>".
 - A GMT run whose date window was not found at all ("window edges not found" / "no plausible window") suggests the no-date Submariner. On genuine GMT catalogue photos that happens for about 5% (10 of 213); it is a suggestion only.
+
+## 12. Experiment: let a bright bevel pass the outline test (tried, reverted)
+
+The owner's QC photo's 9 fails the outline test because its polished surround reflects just outside the lower lume edge: 2.5 px outside reads 56-165 grey instead of dark dial.
+
+**Tried:** "outside" = the darkest of 2.5 px, +0.008 R and +0.016 R beyond the edge, so a narrow bevel passes.
+
+**GMT result:**
+- The real hand over RL_LOCAL_BLNR's 8 is still caught (0.67).
+- 0 finding changes on the local photos.
+- One marker becomes withheld (Theonewatches 2, 0.78).
+
+**Owner's photo:** the 9 became measurable and read a clear finding, shifted 0.59% towards the 10. The 1, 7 and ring moved to worth a look.
+
+**Independent check:** a brightness profile across the rectified 9 and 3 puts the 9 about 0.8 px higher than the 3. The fit puts it 2.3 px higher. Below its lume the 9 has a long bright bevel tail that the 3 does not, so the fitted edge is pulled by the reflection. The finding would come largely from the bevel.
+
+**Reverted.** The original test was right to withhold this 9.
+
+**Possible later work:** measure a baton from its clean edges when exactly one edge is bevel-contaminated, validated on genuine photos first.
