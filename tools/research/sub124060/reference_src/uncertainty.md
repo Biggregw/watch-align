@@ -35,22 +35,22 @@ beyond the genuine maximum exceeds K = 3 sigma.
 | twelve_sides | deg | 0.110285 | 0.330854 | 31 | 138 | 76 |
 | twelve_sides | degR | 36.264931 | 108.794792 | 31 | 138 | 76 |
 
-12 side agreement: 37 watches with 2+ photos; max per-watch median |left - right| 0.690 deg; robust spread 0.073 deg; limit 0.909 deg.
+12 side agreement: 37 watches with 2+ photos; max per-watch median |left - right| 0.659 deg; robust spread 0.073 deg; limit 0.878 deg.
 
 ## Genuine reference
 
 | feature | watches | genuine max (far) |
 |---|---:|---:|
-| three_rot | 90 | 0.8509 |
-| three_off | 90 | 0.0025 |
-| six_rot | 84 | 0.8625 |
-| six_off | 84 | 0.0035 |
-| nine_rot | 90 | 0.8317 |
-| nine_off | 90 | 0.0025 |
-| rounds_off | 89 | 0.0029 |
-| ring_rot | 90 | 0.1677 |
-| ring_shift | 90 | 0.0066 |
-| rounds_size | 89 | 0.0012 |
-| round_size_rel | 89 | 0.0029 |
+| three_rot | 95 | 0.8551 |
+| three_off | 95 | 0.0025 |
+| six_rot | 88 | 0.8617 |
+| six_off | 88 | 0.0035 |
+| nine_rot | 96 | 0.8317 |
+| nine_off | 96 | 0.0025 |
+| rounds_off | 95 | 0.0029 |
+| ring_rot | 96 | 0.1688 |
+| ring_shift | 96 | 0.0066 |
+| rounds_size | 95 | 0.0012 |
+| round_size_rel | 95 | 0.0029 |
 
-Nominals: three_rot -0.1203, six_rot -0.0718, nine_rot +0.0130, ring_rot -0.0070, rounds_size -0.0004
+Nominals: three_rot -0.1277, six_rot -0.0712, nine_rot +0.0126, ring_rot -0.0076, rounds_size -0.0004

@@ -250,3 +250,15 @@ Owner photos: the 6 on the necoclock QC photo, the 16:32 photo and the genuine p
 range; no new clear. Rebuild order: `calibrate_m12_nominal.py` + `build_sub_reference.py` on `per_photo.csv`
 (unfiltered) -> `edge_filter.py` -> both again on `per_photo_edge.csv` -> `edge_safe_uncertainty.py` (12) ->
 `edge_safe_uncertainty.py --all-families` against the previous allowance file -> held-out scripts -> export.
+
+## 15. Six more genuine watches from the Bob's Rolex Harvester (2026-10-08)
+
+The owner's first run of the repaired harvester (1.4) on a phone exported 30 face-on-filtered 124060 photos with
+traceable SKU, listing URL and sha256. Checked: 30 distinct files from 25 listings; 6 were off-axis (3/4 views, wrist
+shots: harvester 1.4.1 now rejects them); of the 24 face-on photos, 18 are watches already in this catalogue (measured
+dial match <= 0.0005 R; 16 identical files). The 6 new watches (SKUs 188829, 188842, 188960, 189216, 189892, 194255)
+were held out first against the 90-watch reference: all within on every assessed feature (0 clear, 0 worth a look).
+
+Rebuilt in the section-14 order: 96 watches (12 triangle 95). Genuine maxima move by at most 0.004 deg; allowances
+unchanged (never shrink); leave-one-watch-out 0 clear (27 worth a look); low-resolution held-out 0 clear; no status
+change on any owner photo.
