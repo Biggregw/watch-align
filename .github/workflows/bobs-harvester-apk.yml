@@ -1,0 +1,37 @@
+name: Bob's Rolex harvester APK
+
+on:
+  push:
+    branches:
+      - tool/bobs-rolex-harvester-apk
+    paths:
+      - 'android/settings.gradle'
+      - 'android/bobsharvester/**'
+      - '.github/workflows/bobs-harvester-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build standalone APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew :bobsharvester:assembleDebug --stacktrace
+      - name: Rename APK
+        run: cp android/bobsharvester/build/outputs/apk/debug/bobsharvester-debug.apk Bobs-Rolex-Harvester-1.0-arm64.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Bobs-Rolex-Harvester-APK
+          path: Bobs-Rolex-Harvester-1.0-arm64.apk
+          retention-days: 7
