@@ -107,7 +107,7 @@ public class Alpha99FindingsTest {
         Alpha94MarkerMeasurement.Report alone=new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,tri);
         Alpha99Findings.Finding f=find(Alpha99Findings.build(alone,null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"twelve");
         assertEquals(Alpha99Findings.Status.WORTH,f.status);
-        assertTrue(f.shortLine().startsWith("right side 4.1° CCW"));
+        assertTrue(f.shortLine(),f.shortLine().startsWith("right side angled 4.1° anticlockwise"));
         assertTrue(String.join(" ",f.detail()).contains("not a clear finding"));
         // a turned triangle (both sides moved together) that is also clearly off-centre is corroborated: it can be clear
         tri.leftSideErrDeg=t.nominalLeftSideDeg-4.1;
@@ -140,6 +140,18 @@ public class Alpha99FindingsTest {
         assertEquals(Alpha99Findings.Status.CLEAR,g.status);
     }
 
+    @Test public void directionsInQcStyle(){
+        Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(7,"round");
+        m.localRadialPx=-1;m.localTangentialPx=0.1;assertEquals("towards the centre",Alpha99Findings.towards(m));
+        m.localRadialPx=0.1;m.localTangentialPx=1;assertEquals("towards the 8",Alpha99Findings.towards(m));
+        m.localTangentialPx=-1;assertEquals("towards the 6",Alpha99Findings.towards(m));
+        m.localRadialPx=1;m.localTangentialPx=-0.8;assertEquals("towards its minute mark and the 6",Alpha99Findings.towards(m));
+        Alpha94MarkerMeasurement.Marker t=new Alpha94MarkerMeasurement.Marker(12,"triangle");t.localRadialPx=0;t.localTangentialPx=1;
+        assertEquals("towards the 1",Alpha99Findings.towards(t));t.localTangentialPx=-1;assertEquals("towards the 11",Alpha99Findings.towards(t));
+        Alpha94MarkerMeasurement.Marker one=new Alpha94MarkerMeasurement.Marker(1,"round");one.localRadialPx=0;one.localTangentialPx=-1;
+        assertEquals("towards the 12",Alpha99Findings.towards(one));
+    }
+
     @Test public void batonExamplesFromTheBrief(){
         // 6 rotation ~0.8 deg vs genuine max ~0.7 -> worth a look; 9 rotation ~1.6 deg vs max ~0.65 -> clear
         Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
@@ -147,7 +159,7 @@ public class Alpha99FindingsTest {
         assertEquals(Alpha99Findings.Status.WORTH,find(s,"six").status);
         assertEquals(Alpha99Findings.Status.CLEAR,find(s,"nine").status);
         assertEquals("9 o'clock",s.tiles().get(0).title);                                 // clear first
-        assertTrue(find(s,"nine").shortLine().startsWith("1.6° CCW; genuine max 0.6°"));
+        assertTrue(find(s,"nine").shortLine(),find(s,"nine").shortLine().startsWith("rotated 1.6° anticlockwise; genuine up to 0.6°"));
     }
 
     // ---------------------------------------------------------------- interference gate
