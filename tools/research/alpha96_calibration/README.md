@@ -784,18 +784,3 @@ The app no longer has GMT geometry or GMT reference values in code.
 - All 18 rendered results screens and the overlay outline bitmap are pixel-identical to Alpha99 (7f2268f).
 
 **Tests.** `ModelSpecTest` pins the GMT spec to the frozen `Alpha92GmtMaster` / pose / date-window constants and checks that the app's reference copies are byte-identical to the research files. It also runs a second, test-only layout (batons at 3, 6 and 9, no date) through the evidence layer with no code change: with no genuine reference, every feature reads "not assessed".
-
-### 12 side angle on its own: at most worth a look (owner decision, 2026-10-08)
-
-**Rule:** when only the side angle of the 12 is outside the genuine range, and the centreline and lateral position are not, the 12 is WORTH A LOOK at most. The detail view explains why. A side angle together with an outside centreline or position can still be CLEAR. Test: `Alpha99FindingsTest.twelveSideAngleOnItsOwnIsAtMostWorthALook`. Local photos: no classification changes; the local 12 CLEAR findings (Local BLNR, ARF) are lateral.
-
-**Correction: the photo that prompted the rule is not side-only.** It was proposed after the Alpha100 genuine-catalogue run (37731661635), which flagged a Swiss Watch Expo 126710BLNR studio photo, `ce997f77df67b365`, as a CLEAR finding. That run's log showed only the strongest measure, the right side at 4.1°. Re-evaluated from its recorded measurements (`ci_run_37500197377/per_photo.csv`, dial radius 172 px):
-
-| Measure | Reading | Genuine max | Status |
-|---|---|---|---|
-| Right side | 4.1° CCW | 1.0° | outside |
-| Left side | 0.42° off | — | within |
-| Centreline | 2.5° CCW | 1.0° | outside; excess 1.5° vs a 3-sigma allowance of about 1.3° |
-| Lateral | 0.25% | 0.23% | just outside |
-
-So the rule does not apply, and the photo is still a CLEAR finding. Its two sides disagree (left about 0.42° off, right 4.1°), so the centreline, which is computed from the same edges, is moved by the one side edge. The run that checked the rule (37733632259) did not fetch this photo.
