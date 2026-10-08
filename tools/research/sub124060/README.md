@@ -157,3 +157,16 @@ That test sometimes catches real hands the hand check misses, e.g. GMT `RL_LOCAL
 Following the owner's rule (name a hand only when the hand check detects one), these now read **"outline not clear"**: "part of the marker's outline could not be measured cleanly (see the close-up)". The close-up stays, so the cause is visible.
 
 Status changes: none, on either model. GMT `results/alpha99/findings_local.csv` and `preview_text.txt` are updated for that one tile's wording.
+
+**Genuine catalogue after sections 8-10** (CI run 37798406503, 79 genuine dial photos):
+- 0 clear;
+- 38 worth a look;
+- 269 not assessed. The 5 / 7 round plots are now withheld on 16 / 20 photos, down from 46 / 39 of 72, after the print-spot fix.
+
+**Owner's QC photo (necoclock, dial radius 234 px):**
+- 12 worth a look: 1.4 deg anticlockwise, genuine up to 1.3.
+- 6 worth a look.
+- Round plot size worth a look: 0.26% larger, genuine up to 0.12%.
+- 9 "outline not clear": outline integrity 0.60 vs the 0.80 limit (3 and 6: 1.00). The close-up shows no hand; the polished surround of the 9 reflects brightly along one edge, so the outline test's outside samples land on bright metal.
+
+That is a correct fail-closed (reflection), now worded neutrally. Making the outline test tolerate reflective surrounds would change the shared measurement (GMT too) and is not done here.

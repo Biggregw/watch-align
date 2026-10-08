@@ -6,7 +6,7 @@ d15ed6cf309dec1f,nine,WITHIN,WITHIN,"",false
 d15ed6cf309dec1f,round1,WITHIN,WITHIN,"",false
 d15ed6cf309dec1f,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 d15ed6cf309dec1f,round4,WITHIN,WITHIN,"",false
-d15ed6cf309dec1f,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+d15ed6cf309dec1f,round5,WITHIN,WITHIN,"",false
 d15ed6cf309dec1f,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 d15ed6cf309dec1f,round8,WITHIN,WITHIN,"",false
 d15ed6cf309dec1f,round10,WITHIN,WITHIN,"",false
@@ -48,13 +48,27 @@ b68d5dd74b3f5162,nine,WITHIN,WITHIN,"",false
 b68d5dd74b3f5162,round1,WITHIN,WITHIN,"",false
 b68d5dd74b3f5162,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 b68d5dd74b3f5162,round4,WITHIN,WITHIN,"",false
-b68d5dd74b3f5162,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+b68d5dd74b3f5162,round5,WITHIN,WITHIN,"",false
 b68d5dd74b3f5162,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 b68d5dd74b3f5162,round8,WITHIN,WITHIN,"",false
 b68d5dd74b3f5162,round10,WITHIN,WITHIN,"",false
 b68d5dd74b3f5162,round11,WITHIN,WITHIN,"",false
 b68d5dd74b3f5162,rounds_size,WITHIN,WITHIN,"",false
 b68d5dd74b3f5162,ring,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,twelve,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,three,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,six,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,nine,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,round1,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+a4f28a7240406e2d,round4,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,round5,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,round7,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,round8,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,round10,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,round11,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,rounds_size,WITHIN,WITHIN,"",false
+a4f28a7240406e2d,ring,OUTSIDE,WORTH,"markers as a set turned 0.16° clockwise; genuine up to 0.1°",false
 d04c99024b491471,twelve,WITHIN,WITHIN,"",false
 d04c99024b491471,three,WITHIN,WITHIN,"",false
 d04c99024b491471,six,WITHIN,WITHIN,"",false
@@ -69,6 +83,20 @@ d04c99024b491471,round10,WITHIN,WITHIN,"",false
 d04c99024b491471,round11,WITHIN,WITHIN,"",false
 d04c99024b491471,rounds_size,WITHIN,WITHIN,"",false
 d04c99024b491471,ring,OUTSIDE,WORTH,"markers as a set turned 0.16° clockwise; genuine up to 0.1°",false
+3f07b99e12fa5014,twelve,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,three,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,six,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,nine,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,round1,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+3f07b99e12fa5014,round4,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,round5,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,round7,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,round8,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,round10,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,round11,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,rounds_size,WITHIN,WITHIN,"",false
+3f07b99e12fa5014,ring,OUTSIDE,WORTH,"markers as a set turned 0.15° clockwise; genuine up to 0.1°",false
 63dc466faad01512,twelve,WITHIN,WITHIN,"",false
 63dc466faad01512,three,WITHIN,WITHIN,"",false
 63dc466faad01512,six,WITHIN,WITHIN,"",false
@@ -76,13 +104,27 @@ d04c99024b491471,ring,OUTSIDE,WORTH,"markers as a set turned 0.16° clockwise; g
 63dc466faad01512,round1,WITHIN,WITHIN,"",false
 63dc466faad01512,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 63dc466faad01512,round4,WITHIN,WITHIN,"",false
-63dc466faad01512,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-63dc466faad01512,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+63dc466faad01512,round5,WITHIN,WITHIN,"",false
+63dc466faad01512,round7,WITHIN,WITHIN,"",false
 63dc466faad01512,round8,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 63dc466faad01512,round10,WITHIN,WITHIN,"",false
 63dc466faad01512,round11,WITHIN,WITHIN,"",false
-63dc466faad01512,rounds_size,WITHIN,NOT_ASSESSED,"too few clean markers",false
+63dc466faad01512,rounds_size,WITHIN,WITHIN,"",false
 63dc466faad01512,ring,WITHIN,WITHIN,"",false
+e6368f4187793b43,twelve,WITHIN,WITHIN,"",false
+e6368f4187793b43,three,OUTSIDE,WORTH,"rotated 0.8° anticlockwise; genuine up to 0.7°",false
+e6368f4187793b43,six,WITHIN,WITHIN,"",false
+e6368f4187793b43,nine,WITHIN,WITHIN,"",false
+e6368f4187793b43,round1,WITHIN,WITHIN,"",false
+e6368f4187793b43,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+e6368f4187793b43,round4,WITHIN,WITHIN,"",false
+e6368f4187793b43,round5,WITHIN,WITHIN,"",false
+e6368f4187793b43,round7,WITHIN,WITHIN,"",false
+e6368f4187793b43,round8,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+e6368f4187793b43,round10,WITHIN,WITHIN,"",false
+e6368f4187793b43,round11,WITHIN,WITHIN,"",false
+e6368f4187793b43,rounds_size,WITHIN,WITHIN,"",false
+e6368f4187793b43,ring,WITHIN,WITHIN,"",false
 39d163d48710cb5a,twelve,WITHIN,WITHIN,"",false
 39d163d48710cb5a,three,WITHIN,WITHIN,"",false
 39d163d48710cb5a,six,WITHIN,WITHIN,"",false
@@ -104,7 +146,7 @@ c2c6f5cc69fa1c6c,nine,WITHIN,WITHIN,"",false
 c2c6f5cc69fa1c6c,round1,WITHIN,WITHIN,"",false
 c2c6f5cc69fa1c6c,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 c2c6f5cc69fa1c6c,round4,WITHIN,WITHIN,"",false
-c2c6f5cc69fa1c6c,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+c2c6f5cc69fa1c6c,round5,WITHIN,WITHIN,"",false
 c2c6f5cc69fa1c6c,round7,WITHIN,WITHIN,"",false
 c2c6f5cc69fa1c6c,round8,WITHIN,WITHIN,"",false
 c2c6f5cc69fa1c6c,round10,WITHIN,WITHIN,"",false
@@ -118,13 +160,27 @@ aeba8809053dac13,nine,WITHIN,WITHIN,"",false
 aeba8809053dac13,round1,OUTSIDE,WITHIN,"",false
 aeba8809053dac13,round2,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
 aeba8809053dac13,round4,OUTSIDE,WITHIN,"",false
-aeba8809053dac13,round5,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
+aeba8809053dac13,round5,OUTSIDE,WITHIN,"",false
 aeba8809053dac13,round7,OUTSIDE,WITHIN,"",false
 aeba8809053dac13,round8,OUTSIDE,WITHIN,"",false
 aeba8809053dac13,round10,OUTSIDE,WORTH,"shifted towards the 9 by 0.29% of the dial; genuine up to 0.29%",false
 aeba8809053dac13,round11,OUTSIDE,WITHIN,"",false
 aeba8809053dac13,rounds_size,OUTSIDE,WITHIN,"",false
 aeba8809053dac13,ring,WITHIN,WITHIN,"",false
+0cd5716970b500d5,twelve,WITHIN,WITHIN,"",false
+0cd5716970b500d5,three,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
+0cd5716970b500d5,six,WITHIN,WITHIN,"",false
+0cd5716970b500d5,nine,WITHIN,WITHIN,"",false
+0cd5716970b500d5,round1,OUTSIDE,WITHIN,"",false
+0cd5716970b500d5,round2,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
+0cd5716970b500d5,round4,OUTSIDE,WITHIN,"",false
+0cd5716970b500d5,round5,OUTSIDE,WITHIN,"",false
+0cd5716970b500d5,round7,OUTSIDE,WITHIN,"",false
+0cd5716970b500d5,round8,OUTSIDE,WITHIN,"",false
+0cd5716970b500d5,round10,OUTSIDE,WORTH,"shifted towards the 9 by 0.31% of the dial; genuine up to 0.26%",false
+0cd5716970b500d5,round11,OUTSIDE,WITHIN,"",false
+0cd5716970b500d5,rounds_size,OUTSIDE,WITHIN,"",false
+0cd5716970b500d5,ring,WITHIN,WITHIN,"",false
 a873cd649dee3d36,twelve,WITHIN,WITHIN,"",false
 a873cd649dee3d36,three,OUTSIDE,WORTH,"rotated 0.8° anticlockwise; genuine up to 0.7°",false
 a873cd649dee3d36,six,WITHIN,WITHIN,"",false
@@ -132,12 +188,12 @@ a873cd649dee3d36,nine,WITHIN,WITHIN,"",false
 a873cd649dee3d36,round1,WITHIN,WITHIN,"",false
 a873cd649dee3d36,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 a873cd649dee3d36,round4,WITHIN,WITHIN,"",false
-a873cd649dee3d36,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-a873cd649dee3d36,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+a873cd649dee3d36,round5,WITHIN,WITHIN,"",false
+a873cd649dee3d36,round7,WITHIN,WITHIN,"",false
 a873cd649dee3d36,round8,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 a873cd649dee3d36,round10,WITHIN,WITHIN,"",false
 a873cd649dee3d36,round11,WITHIN,WITHIN,"",false
-a873cd649dee3d36,rounds_size,WITHIN,NOT_ASSESSED,"too few clean markers",false
+a873cd649dee3d36,rounds_size,WITHIN,WITHIN,"",false
 a873cd649dee3d36,ring,WITHIN,WITHIN,"",false
 937808e420a1e00b,twelve,WITHIN,WITHIN,"",false
 937808e420a1e00b,three,WITHIN,WITHIN,"",false
@@ -160,27 +216,13 @@ a873cd649dee3d36,ring,WITHIN,WITHIN,"",false
 122812e316bca62d,round1,WITHIN,WITHIN,"",false
 122812e316bca62d,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 122812e316bca62d,round4,WITHIN,WITHIN,"",false
-122812e316bca62d,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+122812e316bca62d,round5,WITHIN,WITHIN,"",false
 122812e316bca62d,round7,WITHIN,WITHIN,"",false
 122812e316bca62d,round8,WITHIN,WITHIN,"",false
 122812e316bca62d,round10,WITHIN,WITHIN,"",false
 122812e316bca62d,round11,WITHIN,WITHIN,"",false
 122812e316bca62d,rounds_size,WITHIN,WITHIN,"",false
 122812e316bca62d,ring,WITHIN,WITHIN,"",false
-d12dd0a74835a475,twelve,WITHIN,WITHIN,"",false
-d12dd0a74835a475,three,WITHIN,WITHIN,"",false
-d12dd0a74835a475,six,WITHIN,WITHIN,"",false
-d12dd0a74835a475,nine,WITHIN,WITHIN,"",false
-d12dd0a74835a475,round1,WITHIN,WITHIN,"",false
-d12dd0a74835a475,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-d12dd0a74835a475,round4,WITHIN,WORTH,"plot smaller than the others by 0.18% of the dial; genuine up to 0.14%",true
-d12dd0a74835a475,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-d12dd0a74835a475,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-d12dd0a74835a475,round8,WITHIN,WITHIN,"",false
-d12dd0a74835a475,round10,WITHIN,WITHIN,"",false
-d12dd0a74835a475,round11,WITHIN,WITHIN,"",false
-d12dd0a74835a475,rounds_size,WITHIN,WITHIN,"",false
-d12dd0a74835a475,ring,WITHIN,WITHIN,"",false
 cb9df048dfd43767,twelve,WITHIN,WITHIN,"",false
 cb9df048dfd43767,three,WITHIN,WITHIN,"",false
 cb9df048dfd43767,six,WITHIN,WITHIN,"",false
@@ -189,11 +231,11 @@ cb9df048dfd43767,round1,WITHIN,WITHIN,"",false
 cb9df048dfd43767,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 cb9df048dfd43767,round4,WITHIN,WITHIN,"",false
 cb9df048dfd43767,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-cb9df048dfd43767,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+cb9df048dfd43767,round7,WITHIN,WITHIN,"",false
 cb9df048dfd43767,round8,WITHIN,WITHIN,"",false
 cb9df048dfd43767,round10,WITHIN,WITHIN,"",false
 cb9df048dfd43767,round11,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-cb9df048dfd43767,rounds_size,WITHIN,NOT_ASSESSED,"too few clean markers",false
+cb9df048dfd43767,rounds_size,WITHIN,WITHIN,"",false
 cb9df048dfd43767,ring,WITHIN,WITHIN,"",false
 8518cd227de55495,twelve,WITHIN,WITHIN,"",false
 8518cd227de55495,three,WITHIN,WITHIN,"",false
@@ -202,13 +244,41 @@ cb9df048dfd43767,ring,WITHIN,WITHIN,"",false
 8518cd227de55495,round1,WITHIN,WITHIN,"",false
 8518cd227de55495,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 8518cd227de55495,round4,WITHIN,WITHIN,"",false
-8518cd227de55495,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+8518cd227de55495,round5,WITHIN,WITHIN,"",false
 8518cd227de55495,round7,WITHIN,WITHIN,"",false
 8518cd227de55495,round8,WITHIN,WITHIN,"",false
 8518cd227de55495,round10,WITHIN,WITHIN,"",false
 8518cd227de55495,round11,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 8518cd227de55495,rounds_size,WITHIN,WITHIN,"",false
 8518cd227de55495,ring,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,twelve,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,three,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,six,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,nine,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,round1,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+a71c3f6f611907a2,round4,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,round5,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,round7,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,round8,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,round10,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,round11,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+a71c3f6f611907a2,rounds_size,WITHIN,WITHIN,"",false
+a71c3f6f611907a2,ring,WITHIN,WITHIN,"",false
+077c7533c2846cb2,twelve,WITHIN,WITHIN,"",false
+077c7533c2846cb2,three,WITHIN,WITHIN,"",false
+077c7533c2846cb2,six,WITHIN,WITHIN,"",false
+077c7533c2846cb2,nine,WITHIN,WITHIN,"",false
+077c7533c2846cb2,round1,WITHIN,WITHIN,"",false
+077c7533c2846cb2,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+077c7533c2846cb2,round4,WITHIN,WITHIN,"",false
+077c7533c2846cb2,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+077c7533c2846cb2,round7,WITHIN,WITHIN,"",false
+077c7533c2846cb2,round8,WITHIN,WITHIN,"",false
+077c7533c2846cb2,round10,WITHIN,WITHIN,"",false
+077c7533c2846cb2,round11,WITHIN,WITHIN,"",false
+077c7533c2846cb2,rounds_size,WITHIN,WITHIN,"",false
+077c7533c2846cb2,ring,WITHIN,WITHIN,"",false
 067c933e30ac2cc6,twelve,WITHIN,WITHIN,"",false
 067c933e30ac2cc6,three,WITHIN,WITHIN,"",false
 067c933e30ac2cc6,six,WITHIN,WITHIN,"",false
@@ -216,13 +286,27 @@ cb9df048dfd43767,ring,WITHIN,WITHIN,"",false
 067c933e30ac2cc6,round1,WITHIN,WITHIN,"",false
 067c933e30ac2cc6,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 067c933e30ac2cc6,round4,WITHIN,WITHIN,"",false
-067c933e30ac2cc6,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+067c933e30ac2cc6,round5,WITHIN,WITHIN,"",false
 067c933e30ac2cc6,round7,WITHIN,WITHIN,"",false
 067c933e30ac2cc6,round8,WITHIN,WITHIN,"",false
 067c933e30ac2cc6,round10,WITHIN,WITHIN,"",false
 067c933e30ac2cc6,round11,WITHIN,WITHIN,"",false
 067c933e30ac2cc6,rounds_size,WITHIN,WITHIN,"",false
 067c933e30ac2cc6,ring,WITHIN,WITHIN,"",false
+245d21c8a6ade530,twelve,WITHIN,WITHIN,"",false
+245d21c8a6ade530,three,WITHIN,WITHIN,"",false
+245d21c8a6ade530,six,WITHIN,WITHIN,"",false
+245d21c8a6ade530,nine,WITHIN,WITHIN,"",false
+245d21c8a6ade530,round1,WITHIN,WITHIN,"",false
+245d21c8a6ade530,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+245d21c8a6ade530,round4,WITHIN,WITHIN,"",false
+245d21c8a6ade530,round5,WITHIN,WITHIN,"",false
+245d21c8a6ade530,round7,WITHIN,WITHIN,"",false
+245d21c8a6ade530,round8,WITHIN,WITHIN,"",false
+245d21c8a6ade530,round10,WITHIN,WITHIN,"",false
+245d21c8a6ade530,round11,WITHIN,WITHIN,"",false
+245d21c8a6ade530,rounds_size,WITHIN,WITHIN,"",false
+245d21c8a6ade530,ring,WITHIN,WITHIN,"",false
 e4ea736606798ecd,twelve,WITHIN,WITHIN,"",false
 e4ea736606798ecd,three,WITHIN,WITHIN,"",false
 e4ea736606798ecd,six,WITHIN,WITHIN,"",false
@@ -230,13 +314,27 @@ e4ea736606798ecd,nine,WITHIN,WITHIN,"",false
 e4ea736606798ecd,round1,WITHIN,WITHIN,"",false
 e4ea736606798ecd,round2,WITHIN,WITHIN,"",false
 e4ea736606798ecd,round4,WITHIN,WITHIN,"",false
-e4ea736606798ecd,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+e4ea736606798ecd,round5,WITHIN,WITHIN,"",false
 e4ea736606798ecd,round7,WITHIN,WITHIN,"",false
 e4ea736606798ecd,round8,WITHIN,WITHIN,"",false
 e4ea736606798ecd,round10,WITHIN,WITHIN,"",false
 e4ea736606798ecd,round11,WITHIN,WITHIN,"",false
 e4ea736606798ecd,rounds_size,WITHIN,WITHIN,"",false
 e4ea736606798ecd,ring,WITHIN,WITHIN,"",false
+73da1a5a239908fa,twelve,WITHIN,WITHIN,"",false
+73da1a5a239908fa,three,WITHIN,WITHIN,"",false
+73da1a5a239908fa,six,WITHIN,WITHIN,"",false
+73da1a5a239908fa,nine,OUTSIDE,WORTH,"shifted towards the 8 by 0.22% of the dial; genuine up to 0.18%",false
+73da1a5a239908fa,round1,WITHIN,WITHIN,"",false
+73da1a5a239908fa,round2,WITHIN,WITHIN,"",false
+73da1a5a239908fa,round4,WITHIN,WITHIN,"",false
+73da1a5a239908fa,round5,WITHIN,WITHIN,"",false
+73da1a5a239908fa,round7,WITHIN,WITHIN,"",false
+73da1a5a239908fa,round8,WITHIN,WITHIN,"",false
+73da1a5a239908fa,round10,WITHIN,WITHIN,"",false
+73da1a5a239908fa,round11,WITHIN,WITHIN,"",false
+73da1a5a239908fa,rounds_size,WITHIN,WITHIN,"",false
+73da1a5a239908fa,ring,WITHIN,WITHIN,"",false
 c14f8b3abb49c038,twelve,WITHIN,WITHIN,"",false
 c14f8b3abb49c038,three,WITHIN,WITHIN,"",false
 c14f8b3abb49c038,six,WITHIN,WITHIN,"",false
@@ -258,7 +356,7 @@ c14f8b3abb49c038,ring,WITHIN,WITHIN,"",false
 383bdfd3e61f568a,round1,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 383bdfd3e61f568a,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 383bdfd3e61f568a,round4,WITHIN,WITHIN,"",false
-383bdfd3e61f568a,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+383bdfd3e61f568a,round5,WITHIN,WITHIN,"",false
 383bdfd3e61f568a,round7,WITHIN,WITHIN,"",false
 383bdfd3e61f568a,round8,WITHIN,WITHIN,"",false
 383bdfd3e61f568a,round10,WITHIN,WITHIN,"",false
@@ -272,8 +370,8 @@ b48391fd2abddfb9,nine,OUTSIDE,WORTH,"shifted towards its minute mark and the 8 b
 b48391fd2abddfb9,round1,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 b48391fd2abddfb9,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 b48391fd2abddfb9,round4,WITHIN,WITHIN,"",false
-b48391fd2abddfb9,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-b48391fd2abddfb9,round7,WITHIN,WITHIN,"",false
+b48391fd2abddfb9,round5,WITHIN,WITHIN,"",false
+b48391fd2abddfb9,round7,WITHIN,WORTH,"plot smaller than the others by 0.15% of the dial; genuine up to 0.14%",true
 b48391fd2abddfb9,round8,WITHIN,WITHIN,"",false
 b48391fd2abddfb9,round10,WITHIN,WITHIN,"",false
 b48391fd2abddfb9,round11,WITHIN,WITHIN,"",false
@@ -381,11 +479,11 @@ a3bed3b63f3e9fd5,ring,WITHIN,WITHIN,"",false
 72483a476c62cf9e,three,WITHIN,WITHIN,"",false
 72483a476c62cf9e,six,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
 72483a476c62cf9e,nine,OUTSIDE,WITHIN,"",false
-72483a476c62cf9e,round1,WITHIN,WORTH,"plot smaller than the others by 0.16% of the dial; genuine up to 0.13%",true
+72483a476c62cf9e,round1,WITHIN,WORTH,"plot smaller than the others by 0.17% of the dial; genuine up to 0.13%",true
 72483a476c62cf9e,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 72483a476c62cf9e,round4,WITHIN,WITHIN,"",false
 72483a476c62cf9e,round5,WITHIN,WITHIN,"",false
-72483a476c62cf9e,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+72483a476c62cf9e,round7,WITHIN,WITHIN,"",false
 72483a476c62cf9e,round8,WITHIN,WITHIN,"",false
 72483a476c62cf9e,round10,WITHIN,WITHIN,"",false
 72483a476c62cf9e,round11,WITHIN,WITHIN,"",false
@@ -496,7 +594,7 @@ cbf0cb6844dde503,ring,WITHIN,WITHIN,"",false
 27628aadf410d2ab,round1,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 27628aadf410d2ab,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 27628aadf410d2ab,round4,WITHIN,WITHIN,"",false
-27628aadf410d2ab,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+27628aadf410d2ab,round5,WITHIN,WITHIN,"",false
 27628aadf410d2ab,round7,WITHIN,WITHIN,"",false
 27628aadf410d2ab,round8,WITHIN,WITHIN,"",false
 27628aadf410d2ab,round10,WITHIN,WITHIN,"",false
@@ -553,7 +651,7 @@ c384dcf12a73f9a3,ring,WITHIN,WITHIN,"",false
 4c8a1e9cee3e03b7,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 4c8a1e9cee3e03b7,round4,WITHIN,WITHIN,"",false
 4c8a1e9cee3e03b7,round5,WITHIN,WITHIN,"",false
-4c8a1e9cee3e03b7,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+4c8a1e9cee3e03b7,round7,WITHIN,WITHIN,"",false
 4c8a1e9cee3e03b7,round8,WITHIN,WITHIN,"",false
 4c8a1e9cee3e03b7,round10,WITHIN,WITHIN,"",false
 4c8a1e9cee3e03b7,round11,WITHIN,WITHIN,"",false
@@ -580,12 +678,12 @@ ec2537fa08837262,nine,WITHIN,WITHIN,"",false
 ec2537fa08837262,round1,WITHIN,WITHIN,"",false
 ec2537fa08837262,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 ec2537fa08837262,round4,WITHIN,WITHIN,"",false
-ec2537fa08837262,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-ec2537fa08837262,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+ec2537fa08837262,round5,WITHIN,WITHIN,"",false
+ec2537fa08837262,round7,WITHIN,WITHIN,"",false
 ec2537fa08837262,round8,WITHIN,WITHIN,"",false
 ec2537fa08837262,round10,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 ec2537fa08837262,round11,WITHIN,WITHIN,"",false
-ec2537fa08837262,rounds_size,WITHIN,NOT_ASSESSED,"too few clean markers",false
+ec2537fa08837262,rounds_size,WITHIN,WITHIN,"",false
 ec2537fa08837262,ring,WITHIN,WITHIN,"",false
 c58f78ef6c1cd5b7,twelve,WITHIN,WITHIN,"",false
 c58f78ef6c1cd5b7,three,OUTSIDE,WORTH,"rotated 0.8° clockwise; genuine up to 0.7°",false
@@ -608,8 +706,8 @@ c58f78ef6c1cd5b7,ring,WITHIN,WITHIN,"",false
 6313ac0f2a504448,round1,WITHIN,WITHIN,"",false
 6313ac0f2a504448,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 6313ac0f2a504448,round4,WITHIN,WITHIN,"",false
-6313ac0f2a504448,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-6313ac0f2a504448,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+6313ac0f2a504448,round5,WITHIN,WITHIN,"",false
+6313ac0f2a504448,round7,WITHIN,WITHIN,"",false
 6313ac0f2a504448,round8,WITHIN,WITHIN,"",false
 6313ac0f2a504448,round10,WITHIN,WITHIN,"",false
 6313ac0f2a504448,round11,WITHIN,WITHIN,"",false
@@ -622,7 +720,7 @@ f830414d02ab4d92,nine,WITHIN,WITHIN,"",false
 f830414d02ab4d92,round1,WITHIN,WITHIN,"",false
 f830414d02ab4d92,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 f830414d02ab4d92,round4,WITHIN,WITHIN,"",false
-f830414d02ab4d92,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+f830414d02ab4d92,round5,WITHIN,WITHIN,"",false
 f830414d02ab4d92,round7,WITHIN,WITHIN,"",false
 f830414d02ab4d92,round8,WITHIN,WITHIN,"",false
 f830414d02ab4d92,round10,WITHIN,WITHIN,"",false
@@ -692,7 +790,7 @@ cb8e33b7dc48de42,nine,WITHIN,WITHIN,"",false
 cb8e33b7dc48de42,round1,WITHIN,WITHIN,"",false
 cb8e33b7dc48de42,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 cb8e33b7dc48de42,round4,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-cb8e33b7dc48de42,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+cb8e33b7dc48de42,round5,WITHIN,WITHIN,"",false
 cb8e33b7dc48de42,round7,WITHIN,WITHIN,"",false
 cb8e33b7dc48de42,round8,WITHIN,WITHIN,"",false
 cb8e33b7dc48de42,round10,WITHIN,WITHIN,"",false
@@ -735,7 +833,7 @@ cb8e33b7dc48de42,ring,WITHIN,WITHIN,"",false
 8cc107d61cf3afca,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 8cc107d61cf3afca,round4,WITHIN,WITHIN,"",false
 8cc107d61cf3afca,round5,WITHIN,WITHIN,"",false
-8cc107d61cf3afca,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+8cc107d61cf3afca,round7,WITHIN,WITHIN,"",false
 8cc107d61cf3afca,round8,WITHIN,WITHIN,"",false
 8cc107d61cf3afca,round10,WITHIN,WITHIN,"",false
 8cc107d61cf3afca,round11,WITHIN,WITHIN,"",false
@@ -748,7 +846,7 @@ e11198980d028b5f,nine,WITHIN,WITHIN,"",false
 e11198980d028b5f,round1,WITHIN,WITHIN,"",false
 e11198980d028b5f,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 e11198980d028b5f,round4,WITHIN,WITHIN,"",false
-e11198980d028b5f,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+e11198980d028b5f,round5,WITHIN,WITHIN,"",false
 e11198980d028b5f,round7,WITHIN,WITHIN,"",false
 e11198980d028b5f,round8,WITHIN,WITHIN,"",false
 e11198980d028b5f,round10,WITHIN,WITHIN,"",false
@@ -762,12 +860,12 @@ f97405415bac87e3,nine,WITHIN,WITHIN,"",false
 f97405415bac87e3,round1,WITHIN,WITHIN,"",false
 f97405415bac87e3,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 f97405415bac87e3,round4,WITHIN,WITHIN,"",false
-f97405415bac87e3,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-f97405415bac87e3,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+f97405415bac87e3,round5,WITHIN,WITHIN,"",false
+f97405415bac87e3,round7,WITHIN,WITHIN,"",false
 f97405415bac87e3,round8,WITHIN,WITHIN,"",false
 f97405415bac87e3,round10,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 f97405415bac87e3,round11,WITHIN,WITHIN,"",false
-f97405415bac87e3,rounds_size,WITHIN,NOT_ASSESSED,"too few clean markers",false
+f97405415bac87e3,rounds_size,WITHIN,WITHIN,"",false
 f97405415bac87e3,ring,WITHIN,WITHIN,"",false
 c2143f68590be66c,twelve,WITHIN,WITHIN,"",false
 c2143f68590be66c,three,WITHIN,WITHIN,"",false
@@ -776,14 +874,14 @@ c2143f68590be66c,nine,WITHIN,WITHIN,"",false
 c2143f68590be66c,round1,WITHIN,WITHIN,"",false
 c2143f68590be66c,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 c2143f68590be66c,round4,WITHIN,WITHIN,"",false
-c2143f68590be66c,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+c2143f68590be66c,round5,WITHIN,WITHIN,"",false
 c2143f68590be66c,round7,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 c2143f68590be66c,round8,WITHIN,WITHIN,"",false
 c2143f68590be66c,round10,WITHIN,WITHIN,"",false
 c2143f68590be66c,round11,WITHIN,NOT_ASSESSED,"hand crosses marker",false
-c2143f68590be66c,rounds_size,WITHIN,NOT_ASSESSED,"too few clean markers",false
+c2143f68590be66c,rounds_size,WITHIN,WORTH,"all round plots larger by 0.15% of the dial; genuine up to 0.12%",true
 c2143f68590be66c,ring,WITHIN,WITHIN,"",false
-445e3c952d68ede4,twelve,WITHIN,WITHIN,"",false
+445e3c952d68ede4,twelve,OUTSIDE,WORTH,"tilted 1.4° anticlockwise; genuine up to 1.3°",false
 445e3c952d68ede4,three,WITHIN,WITHIN,"",false
 445e3c952d68ede4,six,WITHIN,WITHIN,"",false
 445e3c952d68ede4,nine,WITHIN,WITHIN,"",false
@@ -923,7 +1021,7 @@ fe415ba6ad0b207e,ring,OUTSIDE,WORTH,"markers as a set off-centre by 0.71% of the
 033133202cf757da,round11,WITHIN,WITHIN,"",false
 033133202cf757da,rounds_size,WITHIN,WITHIN,"",false
 033133202cf757da,ring,WITHIN,WITHIN,"",false
-6831c54c06b80361,twelve,OUTSIDE,WORTH,"left side angled 4.3° anticlockwise; genuine up to 2.4°",false
+6831c54c06b80361,twelve,OUTSIDE,WORTH,"left side angled 4.3° anticlockwise; genuine up to 1.4°",false
 6831c54c06b80361,three,WITHIN,WITHIN,"",false
 6831c54c06b80361,six,WITHIN,WITHIN,"",false
 6831c54c06b80361,nine,WITHIN,WITHIN,"",false
