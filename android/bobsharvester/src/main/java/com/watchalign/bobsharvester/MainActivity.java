@@ -63,6 +63,7 @@ public class MainActivity extends Activity {
     static final String UA="Mozilla/5.0 (Linux; Android 17) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0 Mobile Safari/537.36";
     static final long MAX_IMG=25L*1024*1024;
     static final int MAX_PAGES=450, PAGE_TIMEOUT_MS=60000;
+    static final String MANIFEST_HEADER="reference,sku,title,product_url,image_url,file,sha256,width,height,acquisition,dial_radius_px,axis_ratio,parallax,ring_support,sharpness";
     static final String[] ROOTS={"https://www.bobswatches.com/rolex/","https://www.bobswatches.com/rolex/?waitlist=1"};
 
     enum Mode{IDLE,CATALOG,PRODUCT}
@@ -108,7 +109,7 @@ public class MainActivity extends Activity {
         File base=getExternalFilesDir(null);if(base==null)base=getFilesDir();
         work=new File(base,"Bobs_Rolex_Harvest"); images=new File(work,"accepted_images"); images.mkdirs();
         doneFile=new File(work,"done_products.txt"); hashFile=new File(work,"hashes.txt"); manifest=new File(work,"accepted.csv"); decisions=new File(work,"image_decisions.csv"); runLog=new File(work,"run_log.txt");
-        String header="reference,sku,title,product_url,image_url,file,sha256,width,height,acquisition,dial_radius_px,axis_ratio,ring_support,sharpness";
+        String header=MANIFEST_HEADER;
         if(manifest.exists()&&!header.equals(firstLine(manifest)))manifest.renameTo(new File(work,"accepted_old_format_"+System.currentTimeMillis()+".csv"));
         if(!manifest.exists())line(manifest,"reference,sku,title,product_url,image_url,file,sha256,width,height,acquisition,dial_radius_px,axis_ratio,ring_support,sharpness");
         if(!decisions.exists())line(decisions,"time,reference,sku,product_url,image_url,stage,outcome,reason");
@@ -310,6 +311,7 @@ public class MainActivity extends Activity {
     boolean assessAndSave(Product p,String u,byte[] bytes,String acquisition){
         try{
             String sha=sha(bytes);
+            if(HarvestLogic.wristShot(u)){stats.reject("wrist shot (Bob's file name SKU…w): camera off-axis");decision(p,u,"assess","REJECTED","wrist shot (Bob's file name SKU…w): camera off-axis");return false;}
             synchronized(hashes){if(hashes.contains(sha)){stats.duplicates++;decision(p,u,"assess","DUPLICATE","identical file already saved");return false;}}
             BitmapFactory.Options bo=new BitmapFactory.Options();bo.inJustDecodeBounds=true;BitmapFactory.decodeByteArray(bytes,0,bytes.length,bo);
             int ow=bo.outWidth,oh=bo.outHeight;
@@ -330,8 +332,9 @@ public class MainActivity extends Activity {
             try(FileOutputStream os=new FileOutputStream(dest)){os.write(bytes);}
             synchronized(hashes){hashes.add(sha);line(hashFile,sha);}
             stats.accepted++;
-            String row=csv(rr)+","+csv(p.sku)+","+csv(p.title)+","+csv(p.url)+","+csv(u)+","+csv(dest.getName())+","+csv(sha)+","+ow+","+oh+","+csv(acquisition)+","+fmt(f.radiusPx)+","+fmt(f.axis)+","+fmt(f.support)+","+fmt(f.sharpness);
-            line(manifest,row);line(new File(d,"manifest.csv"),row);decision(p,u,"assess","ACCEPTED",f.summary());
+            String row=csv(rr)+","+csv(p.sku)+","+csv(p.title)+","+csv(p.url)+","+csv(u)+","+csv(dest.getName())+","+csv(sha)+","+ow+","+oh+","+csv(acquisition)+","+fmt(f.radiusPx)+","+fmt(f.axis)+","+fmt(f.concentricity)+","+fmt(f.support)+","+fmt(f.sharpness);
+            File rm=new File(d,"manifest.csv");if(!rm.exists())line(rm,MANIFEST_HEADER);
+            line(manifest,row);line(rm,row);decision(p,u,"assess","ACCEPTED",f.summary());
             msgUi("KEEP "+rr+" "+dest.getName()+"  "+f.summary());
             return true;
         }catch(Exception e){stats.reject("error: "+e.getClass().getSimpleName());decision(p,u,"assess","REJECTED","error "+e.getClass().getSimpleName());return false;}

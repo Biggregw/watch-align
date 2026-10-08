@@ -40,11 +40,11 @@ jobs:
         working-directory: android
         run: ./gradlew :bobsharvester:assembleDebug --stacktrace
       - name: Rename APK
-        run: cp android/bobsharvester/build/outputs/apk/debug/bobsharvester-debug.apk Bobs-Rolex-Harvester-1.4-arm64.apk
+        run: cp android/bobsharvester/build/outputs/apk/debug/bobsharvester-debug.apk Bobs-Rolex-Harvester-1.4.1-arm64.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Bobs-Rolex-Harvester-APK
-          path: Bobs-Rolex-Harvester-1.4-arm64.apk
+          path: Bobs-Rolex-Harvester-1.4.1-arm64.apk
           retention-days: 30
 
   e2e:
@@ -73,7 +73,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           script: |
-            adb install -r Bobs-Rolex-Harvester-1.4-arm64.apk
+            adb install -r Bobs-Rolex-Harvester-1.4.1-arm64.apk
             tools/bobs_harvester_probe/e2e_run.sh 1_submariner_124060 "submariner 124060" 4
             tools/bobs_harvester_probe/e2e_run.sh 2_exact_124060 "124060" 3
             tools/bobs_harvester_probe/e2e_run.sh 3_submariner "submariner" 3

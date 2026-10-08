@@ -111,6 +111,11 @@ public final class HarvestLogic {
         return null;
     }
 
+    /** Bob's names its on-the-wrist photographs with a 'w' after the SKU (zUsed-Rolex-Submariner-124060-SKU189182w.jpg).
+     *  They are only mildly tilted (dial ellipse 0.98-0.99, bezel/dial parallax 0.020-0.023 vs <= 0.020 face-on) but
+     *  Watch Align cannot fit their pose (owner's 1.4 phone run: 3 of 3 rejected by the Watch Align runner). */
+    public static boolean wristShot(String url){return url!=null&&url.matches("(?i).*SKU[0-9]{5,8}w\\.(jpe?g|png|webp)(\\?.*)?$");}
+
     // ------------------------------------------------------------------ export
     /** Splits files (sizes in bytes) into consecutive parts whose payload stays below the limit; a single file over the
      *  limit gets its own part (and is reported by the exporter as unexportable). */

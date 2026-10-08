@@ -18,13 +18,15 @@ import java.util.Locale;
 public final class FaceOnGate {
     /** minimum ellipse axis ratio: cos(18 deg) ~ 0.951. Face-on Bob's photos read 0.982-0.995 (48 manually reviewed 124060s); simulated 30-45 deg tilts that lock onto a mixed ring read up to 0.943. */
     public static final double MIN_AXIS=0.95;
-    public static final double MIN_SUPPORT=0.70, MAX_CENTRE_OFFSET=0.22, MAX_FIT_RMS=0.035;
+    public static final double MAX_PARALLAX=0.030, MIN_SUPPORT=0.70, MAX_CENTRE_OFFSET=0.22, MAX_FIT_RMS=0.035;
     public static final int MIN_SIDE=500, MIN_RADIUS_PX=130, RAYS=180;
 
     public static final class Result {
         public boolean ok; public String reason="";
+        public double ex=Double.NaN,ey=Double.NaN,ea=Double.NaN,eb=Double.NaN,eang=Double.NaN,coarseR=Double.NaN; public double[] ringX,ringY;
+        public double concentricity=Double.NaN, secondRadiusRatio=Double.NaN;
         public double radiusPx=Double.NaN, axis=Double.NaN, support=Double.NaN, centreOffset=Double.NaN, fitRms=Double.NaN, sharpness=Double.NaN;
-        public String summary(){return String.format(Locale.US,"%s axis=%.3f support=%.2f rms=%.3f R=%.0fpx sharp=%.1f%s",ok?"ACCEPT":"REJECT",axis,support,fitRms,radiusPx,sharpness,reason.isEmpty()?"":" ("+reason+")");}
+        public String summary(){return String.format(Locale.US,"%s axis=%.3f parallax=%.3f support=%.2f rms=%.3f R=%.0fpx sharp=%.1f%s",ok?"ACCEPT":"REJECT",axis,concentricity,support,fitRms,radiusPx,sharpness,reason.isEmpty()?"":" ("+reason+")");}
     }
 
     private FaceOnGate(){}
@@ -46,39 +48,58 @@ public final class FaceOnGate {
             if(sup>=.5&&score>bs){bs=score;bx=cx;by=cy;br=r;}
         }
         if(br==0){z.reason="no circular dial/bezel edge found near the centre";return z;}
-        // 2. polar unwrap and ring tracking around (bx,by): radii 0.55-1.30 x br within the frame
-        int rmin=(int)(br*.55),rmax=(int)Math.min(br*1.30,Math.min(Math.min(bx,by),Math.min(w-1-bx,h-1-by))-3);
-        if(rmax-rmin<8){z.reason="dial too close to the image edge";return z;}
-        int nr=rmax-rmin+1,lap=RAYS+RAYS/4;
-        int[][] gr=new int[RAYS][nr];
-        for(int k=0;k<RAYS;k++){double a=2*Math.PI*k/RAYS;for(int j=0;j<nr;j++)gr[k][j]=Math.min(80,grad(g,w,h,bx,by,rmin+j,a,2));}
-        int step=Math.max(2,(int)Math.ceil(br*2*Math.PI/RAYS*0.45));   // allows axis ratios down to ~0.6
-        double[][] dp=new double[lap][nr];int[][] from=new int[lap][nr];
-        for(int j=0;j<nr;j++)dp[0][j]=gr[0][j];
-        for(int t=1;t<lap;t++){int k=t%RAYS;for(int j=0;j<nr;j++){double best=-1;int bj=j;for(int d=-step;d<=step;d++){int q=j+d;if(q<0||q>=nr)continue;double v=dp[t-1][q]-Math.abs(d)*1.5;if(v>best){best=v;bj=q;}}dp[t][j]=best+gr[k][j];from[t][j]=bj;}}
-        int j=0;for(int q=1;q<nr;q++)if(dp[lap-1][q]>dp[lap-1][j])j=q;
-        int[] path=new int[lap];for(int t=lap-1;t>=0;t--){path[t]=j;if(t>0)j=from[t][j];}
-        // use the last full revolution (the start-up ray is free to settle)
-        double[] xs=new double[RAYS],ys=new double[RAYS];int good=0;double rsum=0;
-        for(int t=lap-RAYS;t<lap;t++){int k=t%RAYS;double a=2*Math.PI*k/RAYS,r=rmin+path[t];int i=t-(lap-RAYS);xs[i]=bx+r*Math.cos(a);ys[i]=by+r*Math.sin(a);rsum+=r;if(gr[k][path[t]]>=12)good++;}
-        z.support=good/(double)RAYS;
+        // 2. ring tracking around (bx,by): radii 0.55-1.30 x br within the frame
+        int lim=(int)(Math.min(Math.min(bx,by),Math.min(w-1-bx,h-1-by))-3);
+        Ring ring=track(g,w,h,bx,by,(int)(br*.55),(int)Math.min(br*1.30,lim),br);
+        if(ring==null){z.reason="dial too close to the image edge";return z;}
+        double[] xs=ring.xs,ys=ring.ys;z.support=ring.support;
         // 3. ellipse fit (conic through the ring points, centred for conditioning)
         double[] e=fitEllipse(xs,ys);
         if(e==null){z.reason="ring is not an ellipse";return z;}
-        double ex=e[0],ey=e[1],ra=e[2],rb=e[3];
+        double ex=e[0],ey=e[1],ra=e[2],rb=e[3];z.ex=ex;z.ey=ey;z.ea=ra;z.eb=rb;z.eang=e[4];z.ringX=xs;z.ringY=ys;z.coarseR=br;
         z.axis=Math.min(ra,rb)/Math.max(ra,rb);
         double meanR=Math.sqrt(ra*rb);z.radiusPx=meanR*scaleToOriginal;
         z.centreOffset=Math.hypot(ex-w/2.0,ey-h/2.0)/mn;
         z.fitRms=e[5]/meanR;
         z.sharpness=sharp(g,w,h,(int)Math.round(ex),(int)Math.round(ey),(int)(meanR*.7));
+        // 4. parallax: the bezel stands above the dial, so off-axis the two rings stop sharing a centre even when each
+        //    still looks round (Bob's 3/4 product views and wrist shots: dial ratio 0.96-0.99, like face-on photos)
+        double[] e2=null;double best=-1;
+        for(double[] band:new double[][]{{.60,.86},{1.14,1.40}}){
+            int a0=(int)(meanR*band[0]),a1=(int)Math.min(meanR*band[1],lim);if(a1-a0<8)continue;
+            Ring r2=track(g,w,h,(int)Math.round(ex),(int)Math.round(ey),a0,a1,(int)(meanR*(band[0]+band[1])/2));
+            if(r2==null||r2.support<MIN_SUPPORT)continue;
+            double[] f2=fitEllipse(r2.xs,r2.ys);if(f2==null||f2[5]/Math.sqrt(f2[2]*f2[3])>MAX_FIT_RMS)continue;
+            if(r2.score>best){best=r2.score;e2=f2;}
+        }
+        if(e2!=null){z.concentricity=Math.hypot(e2[0]-ex,e2[1]-ey)/meanR;z.secondRadiusRatio=Math.sqrt(e2[2]*e2[3])/meanR;}
         StringBuilder why=new StringBuilder();
         if(z.support<MIN_SUPPORT)why.append("edge ring too weak/broken (support ").append(f2(z.support)).append("); ");
         if(z.fitRms>MAX_FIT_RMS)why.append("edge ring not elliptical (rms ").append(f3(z.fitRms)).append("); ");
         if(z.axis<MIN_AXIS)why.append("not face-on: dial ellipse ratio ").append(f3(z.axis)).append(" < ").append(f3(MIN_AXIS)).append(" (tilt ~").append(Math.round(Math.toDegrees(Math.acos(Math.min(1,z.axis))))).append(" deg); ");
+        if(!(z.concentricity<=MAX_PARALLAX))why.append(Double.isNaN(z.concentricity)?"no second concentric ring (dial / bezel) to confirm a face-on view; ":"not face-on: bezel and dial rings off-centre by "+f3(z.concentricity)+" of the dial radius (camera off-axis); ");
         if(z.centreOffset>MAX_CENTRE_OFFSET)why.append("dial not near the image centre; ");
         if(z.radiusPx<MIN_RADIUS_PX)why.append("dial too small (").append(Math.round(z.radiusPx)).append(" px); ");
         if(z.sharpness<5)why.append("dial blurred; ");
         z.reason=why.length()==0?"":why.substring(0,why.length()-2);z.ok=why.length()==0;return z;
+    }
+
+    static final class Ring{double[] xs,ys;double support,score;}
+    /** strongest closed edge ring around (cx,cy) between radii rmin..rmax (dynamic programming over RAYS rays) */
+    static Ring track(int[] g,int w,int h,int cx,int cy,int rmin,int rmax,int rnom){
+        if(rmax-rmin<8||rmin<4)return null;
+        int nr=rmax-rmin+1,lap=RAYS+RAYS/4;
+        int[][] gr=new int[RAYS][nr];
+        for(int k=0;k<RAYS;k++){double a=2*Math.PI*k/RAYS;for(int j=0;j<nr;j++)gr[k][j]=Math.min(80,grad(g,w,h,cx,cy,rmin+j,a,2));}
+        int step=Math.max(2,(int)Math.ceil(rnom*2*Math.PI/RAYS*0.45));
+        double[][] dp=new double[lap][nr];int[][] from=new int[lap][nr];
+        for(int j=0;j<nr;j++)dp[0][j]=gr[0][j];
+        for(int t=1;t<lap;t++){int k=t%RAYS;for(int j=0;j<nr;j++){double best=-1;int bj=j;for(int d=-step;d<=step;d++){int q=j+d;if(q<0||q>=nr)continue;double v=dp[t-1][q]-Math.abs(d)*1.5;if(v>best){best=v;bj=q;}}dp[t][j]=best+gr[k][j];from[t][j]=bj;}}
+        int j=0;for(int q=1;q<nr;q++)if(dp[lap-1][q]>dp[lap-1][j])j=q;
+        int[] path=new int[lap];for(int t=lap-1;t>=0;t--){path[t]=j;if(t>0)j=from[t][j];}
+        Ring r=new Ring();r.xs=new double[RAYS];r.ys=new double[RAYS];int good=0;double sc=0;
+        for(int t=lap-RAYS;t<lap;t++){int k=t%RAYS;double a=2*Math.PI*k/RAYS,rr=rmin+path[t];int i=t-(lap-RAYS);r.xs[i]=cx+rr*Math.cos(a);r.ys[i]=cy+rr*Math.sin(a);if(gr[k][path[t]]>=12)good++;sc+=gr[k][path[t]];}
+        r.support=good/(double)RAYS;r.score=sc/RAYS;return r;
     }
 
     static int grad(int[] g,int w,int h,double cx,double cy,double r,double a,int d){

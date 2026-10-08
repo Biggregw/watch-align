@@ -69,6 +69,14 @@ public class HarvestLogicTest {
         assertEquals("194818",HarvestLogic.skuFrom("Stock SKU: 194818 Ref 124060"));
     }
 
+    @Test public void bobsWristShotsAreRecognisedByName(){
+        // owner's 1.4 phone run (2026-10-08): these three passed the dial-roundness test but Watch Align cannot fit them
+        assertTrue(HarvestLogic.wristShot("https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU189182w.jpg"));
+        assertTrue(HarvestLogic.wristShot("https://www.bobswatches.com/images/zUsed-Rolex-Daytona-126515-SKU192468w.jpg"));
+        assertFalse(HarvestLogic.wristShot("https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU189182.jpg"));
+        assertFalse(HarvestLogic.wristShot("https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU194818PL.jpg"));
+    }
+
     @Test public void csvIsRfc4180(){
         assertEquals("\"a \"\"b\"\", c\"",HarvestLogic.csv("a \"b\", c"));   // v1.3 wrote \"a\" (backslash-quotes)
     }
