@@ -202,3 +202,16 @@ The owner's QC photo's 9 fails the outline test because its polished surround re
 **Reverted.** The original test was right to withhold this 9.
 
 **Possible later work:** measure a baton from its clean edges when exactly one edge is bevel-contaminated, validated on genuine photos first.
+
+## 13. Held-out script now applies the spec's resolution rule (2026-10-08)
+
+`heldout_genuine.py` matched resolution only for the built-in features (rounds, ring). It ignored the spec's
+`resolution_matched` list, so the baton positions (`three_off`, `six_off`, `nine_off`) were held out against every
+genuine watch, not only those photographed at R_ref <= 1.3 R as the app does. Fixed (built-in + spec list, as
+`heldout_lowres.py` and the app). Rerun on the current reference input (`results/runner/per_photo_edge.csv`):
+`reference_src/heldout_genuine.md`.
+
+- Leave-one-watch-out: still 0 clear on every feature. Baton positions now "not assessed" on 6-7 small photos each;
+  worth a look 3 o'clock 4 -> 3, 6 o'clock 2 -> 0, 9 o'clock 5 -> 4.
+- External SWE photos: the raw 6 baton clears (seconds hand across the 6, §4) drop from 11 to 8; in the app the
+  hand check withholds them. The round-size clear is gone (the app caps round size at worth a look anyway).

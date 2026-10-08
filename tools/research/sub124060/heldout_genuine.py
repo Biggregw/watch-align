@@ -27,6 +27,7 @@ def main():
     ap.add_argument('--exclude-host', action='append', default=['swisswatchexpo'])
     a = ap.parse_args()
     spec = json.load(open(a.spec)); batons, rounds = b.layout(spec)
+    rm = set(b.RES_MATCHED) | set(spec.get('resolution_matched', []))   # as the app: built-in + the spec's list
     unc = {l.split('=')[0]: float(l.split('=')[1]) for l in open(a.uncertainty) if '=' in l and not l.startswith('#')}
     K = unc['k_sigma']
     shared = {r['photo_id'] for r in csv.DictReader(open(a.dedup)) if r['shared_dial'] == '1'}
@@ -62,8 +63,8 @@ def main():
             far = {w: abs(x - median([y for ww, y in vals.items() if ww != w])) for w, x in vals.items()}
         else:
             val = abs(v); far = {w: abs(x) for w, x in vals.items()}
-        pool = [x for w, x in far.items() if k not in b.RES_MATCHED or WR[w] <= RES_MATCH * R]
-        if len(pool) < (MIN_MATCHED if k in b.RES_MATCHED else 1):
+        pool = [x for w, x in far.items() if k not in rm or WR[w] <= RES_MATCH * R]
+        if len(pool) < (MIN_MATCHED if k in rm else 1):
             return 'NOT_ASSESSED', val, None
         mx = max(pool)
         if val <= mx:
