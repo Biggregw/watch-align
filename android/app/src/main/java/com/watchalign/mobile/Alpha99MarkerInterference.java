@@ -41,6 +41,7 @@ final class Alpha99MarkerInterference {
     static final double TOUCH_R=0.012,TOUCH_PX=1.0;
     static final String HAND="hand crosses or touches this marker";
     static final String GLARE="reflection or glare around this marker";
+    static final String UNCHECKED="marker surroundings could not be checked";
 
     static final class Check {
         final int hour;
@@ -48,6 +49,8 @@ final class Alpha99MarkerInterference {
         String reason="";
         /** radial span (R) of the longest structure touching the marker; foreign share of the strip. */
         double touchSpanR,acrossSpanR,foreignFrac;
+        /** grey-level difference from the row background that counts as foreign (higher = less sensitive); NaN if unchecked. */
+        double threshold=Double.NaN;
         /** the seconds hand's line (centre -> lume dot) crosses this marker. */
         boolean secondsHand;
         /** closest approach (px) of a structure that withholds the marker to the marker's master outline. */
@@ -64,6 +67,11 @@ final class Alpha99MarkerInterference {
 
     /** Checks for 12 and every Alpha94 hour. Never null; a missing image / pose gives every marker not clean. */
     static Map<Integer,Check> analyse(Mat gray,double[] H,ModelSpec model){
+        return analyse(sampler(gray,H),H,model);
+    }
+
+    /** Spline sampler over the dial's bounding box; null when the image or pose cannot be sampled. */
+    static Sampler sampler(Mat gray,double[] H){
         double rpx=pxPerR(H);
         Sampler img=null;
         try{
@@ -74,7 +82,43 @@ final class Alpha99MarkerInterference {
                 if(Double.isFinite(minX)){Alpha91SplineImage sp=new Alpha91SplineImage(gray,(int)Math.floor(minX)-4,(int)Math.floor(minY)-4,(int)Math.ceil(maxX)+5,(int)Math.ceil(maxY)+5);img=sp::at;}
             }
         }catch(Throwable t){img=null;}
-        return analyse(img,H,model);
+        return img;
+    }
+
+    /** Seconds-hand radial lines (deg clockwise from 12) from its lume dot; null when the photo cannot be read. */
+    static java.util.List<Double> secondsLines(Sampler img,double[] H,double rpx,ModelSpec model){
+        java.util.List<Double> seconds=new java.util.ArrayList<>();
+        try{
+            double L=lumeContrast(img,H,model);
+            if(Double.isFinite(L)&&L>0)for(double[] d:dots(img,H,rpx,model))if(d[2]>=DOT_MIN_FRAC*L)seconds.add(d[0]);
+        }catch(Throwable t){return null;}
+        return seconds;
+    }
+
+    /**
+     * The same check on any area shaped like a marker (e.g. a printed logo's box, given as a baton-shaped rectangle):
+     * its corridor towards the centre, halo and the seconds-hand line, without the marker-face test (a logo's own thin
+     * printing would read as a hand there). HAND only when a hand is positively detected; GLARE for a strip dominated
+     * by foreign samples; otherwise clean, or not clean with "surroundings could not be checked" (fail closed).
+     */
+    static Check region(Mat gray,double[] H,ModelSpec model,ModelSpec.Marker area){
+        double rpx=pxPerR(H);
+        Sampler img=rpx>20?sampler(gray,H):null;
+        java.util.List<Double> seconds=img==null?null:secondsLines(img,H,rpx,model);
+        Check c;
+        try{c=img==null||seconds==null?null:check(img,H,area,rpx,false);}catch(Throwable t){c=null;}
+        if(c==null){c=new Check(area.hour);c.clean=false;c.reason=UNCHECKED;return c;}
+        for(double psi:seconds)if(onLine(area,psi,TOUCH_R+TOUCH_PX/rpx+SHAFT_HALF)){c.secondsHand=true;if(c.clean){c.clean=false;c.reason=HAND;}}
+        // Printed detail or a large hand in the area's own strip inflates the row-background noise until nothing reads as
+        // foreign. "Clean" is trusted only when the check was at least as sensitive as on this photo's own marker
+        // strips (plain dial, where the check is validated); otherwise the area could not be checked (fail closed).
+        if(c.clean){
+            double worst=Double.NaN;
+            for(ModelSpec.Marker mk:model.markers){Check m;try{m=check(img,H,mk,rpx);}catch(Throwable t){m=null;}
+                if(m!=null&&Double.isFinite(m.threshold))worst=Double.isFinite(worst)?Math.max(worst,m.threshold):m.threshold;}
+            if(!(c.threshold<=worst)){c.clean=false;c.reason=UNCHECKED;}
+        }
+        return c;
     }
 
     /** As above on any sampler; a null sampler or unusable pose withholds every marker. */
@@ -86,23 +130,24 @@ final class Alpha99MarkerInterference {
         // lume dot fixes the line (centre -> dot) it runs along; every marker on that line is withheld
         java.util.List<Double> seconds=new java.util.ArrayList<>();
         if(img!=null){
-            try{
-                double L=lumeContrast(img,H,model);
-                if(Double.isFinite(L)&&L>0)for(double[] d:dots(img,H,rpx,model))if(d[2]>=DOT_MIN_FRAC*L)seconds.add(d[0]);
-            }catch(Throwable t){img=null;}
+            java.util.List<Double> s=secondsLines(img,H,rpx,model);
+            if(s==null)img=null;else seconds=s;
         }
         for(ModelSpec.Marker mk:model.markers){
             int h=mk.hour;
             Check c;
             try{c=img==null?null:check(img,H,mk,rpx);}catch(Throwable t){c=null;}
-            if(c==null){c=new Check(h);c.clean=false;c.reason="marker surroundings could not be checked";}
+            if(c==null){c=new Check(h);c.clean=false;c.reason=UNCHECKED;}
             for(double psi:seconds)if(onLine(mk,psi,TOUCH_R+TOUCH_PX/rpx+SHAFT_HALF)){c.secondsHand=true;if(c.clean){c.clean=false;c.reason=HAND;}}
             out.put(h,c);
         }
         return out;
     }
 
-    static Check check(Sampler img,double[] H,ModelSpec.Marker mk,double rpx){
+    static Check check(Sampler img,double[] H,ModelSpec.Marker mk,double rpx){return check(img,H,mk,rpx,true);}
+
+    /** @param faceTest also look for thin structures across the marker's own face (off for printed logos). */
+    static Check check(Sampler img,double[] H,ModelSpec.Marker mk,double rpx,boolean faceTest){
         int hour=mk.hour;
         Check c=new Check(hour);
         double a=Math.toRadians(hour*30.0);double[] er={Math.sin(a),-Math.cos(a)},et={Math.cos(a),Math.sin(a)};
@@ -131,6 +176,7 @@ final class Alpha99MarkerInterference {
             if(Double.isFinite(rowMed[i]))for(int j=0;j<cols;j++){int k=i*cols+j;if(g[k]==0)res[nres++]=Math.abs(v[k]-rowMed[i]);}}
         if(nres<50)return null;
         double sigma=1.4826*median(Arrays.copyOf(res,nres)),thr=Math.max(MIN_LEVELS,NOISE_K*sigma);
+        c.threshold=thr;
         int valid=0,foreign=0;
         for(int i=0;i<rows;i++)for(int j=0;j<cols;j++){int k=i*cols+j;if(g[k]!=0)continue;
             if(!Double.isFinite(rowMed[i])){g[k]=-1;continue;}
@@ -156,7 +202,7 @@ final class Alpha99MarkerInterference {
         }
         c.touchSpanR=best;
         // a thin structure across the marker's own face (hand over the lume): elongated, narrow, darker or brighter
-        double across=interior(g,v,rows,cols,step);
+        double across=faceTest?interior(g,v,rows,cols,step):0;
         c.acrossSpanR=across;
         if(best>=MIN_SPAN||across>=MIN_SPAN){c.clean=false;c.reason=HAND;}
         else if(c.foreignFrac>MAX_FOREIGN){c.clean=false;c.reason=GLARE;}

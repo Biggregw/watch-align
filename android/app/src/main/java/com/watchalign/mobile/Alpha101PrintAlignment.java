@@ -18,6 +18,22 @@ import org.opencv.imgproc.Imgproc;
  * maximises the grey-level correlation of the box with its own mirror image (bilinear, coarse-to-fine); the IoU of
  * the binary ink with its mirror across that axis is the symmetry score: a hand, the seconds-hand dot, glare or a cropped logo breaks the symmetry, and below MIN_SYMMETRY
  * the logo is withheld (fail closed). Read-only: nothing feeds back into pose or measurement.
+ *
+ * Contamination gate on the logo's own measurement region (QC guardrails 3): the Alpha99 interference check runs on the
+ * logo box itself (as a baton-shaped area: its corridor towards the centre, its halo and the seconds-hand line, without
+ * the marker-face test, which the logo's own thin printing would trip). The reason names a hand only when that check
+ * positively detects one crossing or touching the box; otherwise the logo fails closed with what was actually found
+ * (glare, not clearly visible, resolution, measurement unavailable).
+ *
+ * Known limit (Alpha101 research, 2026-10-08): the printing next to the logo (ROLEX under the crown) breaks that check's
+ * plain-dial assumption both ways: its lettering touches the box and reads as a hand on clean genuine photos, and with a
+ * large hand present the background noise inflates until nothing reads as foreign. So the only hand it names on the
+ * logo is the seconds-hand line (from the lume dot, independent of printing); a structure-test hit means "could not be
+ * checked". It cannot certify the area clean on its own either, hence, all fail closed:
+ * the region's "clean" counts only when the check was as sensitive as on the photo's own marker strips; a hand or
+ * glare at the 12 marker next to the logo also withholds it ("could not be confirmed clear", not "hand on the logo");
+ * and the symmetry gate stays. GMT box {0.12, 0.38, 0.575}: the whole crown, base oval 0.385 R to the top dots 0.56 R,
+ * from upright genuine crops.
  */
 final class Alpha101PrintAlignment {
     static final double MIN_SYMMETRY=0.80;
@@ -29,22 +45,61 @@ final class Alpha101PrintAlignment {
         /** tilt of the symmetry axis against the dial's radial line, degrees (+ = clockwise). */
         double tiltDeg=Double.NaN;
         double symmetry=Double.NaN;
+        /** the interference check positively detected a hand (incl. the seconds-hand line) crossing or touching the logo box. */
+        boolean handDetected;
+        /** the logo box's own interference check (null when it could not run). */
+        Alpha99MarkerInterference.Check region;
+    }
+
+    static final String HAND="hand crosses or touches the logo",GLARE="reflection or glare around the logo",
+            UNCHECKED="logo surroundings could not be checked",NEXT_TO="the area next to the logo could not be confirmed clear",NO_POSE="measurement unavailable (no dial pose)",
+            LOW_RES="resolution too low for the logo",NOT_FOUND="logo not found";
+
+    /** The logo box as a marker-shaped area for the interference check: {halfWidth, rInner, rOuter} at the hour. */
+    static ModelSpec.Marker area(int hour,double[] box){
+        double n=Double.NaN;
+        return new ModelSpec.Marker(hour,ModelSpec.Shape.BATON,"logo",(box[1]+box[2])/2,n,(box[2]-box[1])/2,box[0],n,n,n,n,n);
+    }
+
+    /** Measurement plus the contamination gate on the logo's own region; any contamination withholds the reading. */
+    static Result measure(Mat gray,double[] H,int hour,double[] box,ModelSpec model){
+        Result o=measure(gray,H,hour,box);
+        if(o.reason.equals(NO_POSE)||o.reason.equals(LOW_RES))return o;
+        Alpha99MarkerInterference.Check c;
+        try{c=Alpha99MarkerInterference.region(gray,H,model,area(hour,box));}catch(Throwable t){c=null;}
+        o.region=c;
+        if(c!=null&&c.clean){
+            Alpha99MarkerInterference.Check twelve;
+            try{twelve=Alpha99MarkerInterference.analyse(gray,H,model).get(hour);}catch(Throwable t){twelve=null;}
+            if(twelve==null||twelve.clean)return o;                 // no marker at the logo's hour: nothing more to check
+            o.usable=false;o.offsetR=Double.NaN;o.tiltDeg=Double.NaN;o.reason=NEXT_TO;
+            return o;
+        }
+        o.usable=false;o.offsetR=Double.NaN;o.tiltDeg=Double.NaN;
+        if(c==null||Alpha99MarkerInterference.UNCHECKED.equals(c.reason))o.reason=UNCHECKED;
+        // a hand is named only on the seconds-hand line (from its lume dot, unaffected by printing); the strip's own
+        // structure test also fires on the lettering next to the logo, so its verdict here only means "not checked"
+        else if(c.secondsHand){o.handDetected=true;o.reason=HAND;}
+        else if(Alpha99MarkerInterference.GLARE.equals(c.reason))o.reason=GLARE;
+        else o.reason=UNCHECKED;
+        return o;
     }
 
     private Alpha101PrintAlignment(){}
 
     /**
+     * Measurement only, without the contamination gate (research and tests); the app uses the gated overload.
      * @param box canonical box of the logo as seen with its hour at the top: {halfWidth, rInner, rOuter} (radii along the
-     *            hour's radial line), e.g. GMT crown {0.12, 0.42, 0.57}.
+     *            hour's radial line), e.g. GMT crown {0.12, 0.38, 0.575}.
      */
     static Result measure(Mat gray,double[] H,int hour,double[] box){
         Result o=new Result();
         double rpx=Alpha99MarkerInterference.pxPerR(H);
-        if(gray==null||gray.empty()||!(rpx>20)){o.reason="pose unavailable";return o;}
+        if(gray==null||gray.empty()||!(rpx>20)){o.reason=NO_POSE;return o;}
         double hw=box[0],r0=box[1],r1=box[2];
         double step=0.5/rpx;                                   // ~2 samples per photo pixel
         int w=(int)Math.ceil(2*hw/step),h=(int)Math.ceil((r1-r0)/step);
-        if(w<16||h<16){o.reason="logo too small in this photo";return o;}
+        if(w<16||h<16){o.reason=LOW_RES;return o;}
         // canonical sample (col i, row j): tangential t = -hw + (i+0.5) step (+ = clockwise), radial r = r1 - (j+0.5) step
         double a=Math.toRadians(hour*30.0),erx=Math.sin(a),ery=-Math.cos(a),etx=Math.cos(a),ety=Math.sin(a);
         Mat T=new Mat(3,3,CvType.CV_64F);
@@ -61,7 +116,7 @@ final class Alpha101PrintAlignment {
         boolean inkIsBright=on<=w*h-on;
         boolean[] ink=new boolean[w*h];int n=0;
         for(int k=0;k<px.length;k++){ink[k]=(px[k]!=0)==inkIsBright;if(ink[k])n++;}
-        if(n<20){o.reason="logo not found";return o;}
+        if(n<20){o.reason=NOT_FOUND;return o;}
         // symmetry gate on the binary ink (robust to exposure), axis from a smooth grey-level mirror correlation
         float[] g=new float[w*h];byte[] gv=new byte[w*h];crop.get(0,0,gv);
         double mean=0;for(int k=0;k<g.length;k++){g[k]=(gv[k]&0xff)*(inkIsBright?1f:-1f);mean+=g[k];}mean/=g.length;
@@ -78,7 +133,7 @@ final class Alpha101PrintAlignment {
         }
         bestS=iou(ink,w,h,xc+bestDx,yc,bestTh);
         o.symmetry=bestS;
-        if(bestS<MIN_SYMMETRY){o.reason=String.format(java.util.Locale.US,"logo not clearly visible (symmetry %.2f: a hand, glare or blur)",bestS);return o;}
+        if(bestS<MIN_SYMMETRY){o.reason=String.format(java.util.Locale.US,"logo not clearly visible (symmetry %.2f)",bestS);return o;}
         o.usable=true;
         o.offsetR=bestDx*step;
         // image rows run outward-to-inward (r decreases downward); a clockwise-tilted logo leans its outer end clockwise

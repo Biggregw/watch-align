@@ -832,6 +832,27 @@ A marker shift is named by its dominant direction: towards its minute mark, towa
 
 Real size in mm is deliberately not shown yet. It needs a sourced dial diameter per model; one route is the bezel's outer diameter, the published 40 mm case, measured in dial-radius units on genuine photos.
 
+### 3. Crown-logo alignment (research only, not in the app)
+
+`Alpha101PrintAlignment` measures the crown's sideways offset and tilt against the 12's radial line from its mirror symmetry. The genuine catalogue run is job `alpha101-genuine-print`; the readings are kept in CI artifacts and logs, never as images.
+
+**Contamination gate on the logo's own region (QC guardrails §3).** The Alpha99 interference check runs on the logo box, treated as a baton-shaped area with its corridor towards the centre, its halo and the seconds-hand line. The marker-face test is off, because the crown's thin printed prongs would trip it.
+
+On the local photos, the check's plain-dial assumption fails on the logo area in both directions. Upright crops and the check's own grids were inspected locally and not committed.
+- **False hands:** with the box covering the whole crown, the ROLEX lettering touches the halo and reads as a hand on clean genuine photos, e.g. `669b4aea`.
+- **Blind to real hands:** where a hand is present (WEX_01, Batgirl), the printing plus the hand inflate the background noise. The threshold then reaches 230–370 grey levels, so nothing reads as foreign and the visible GMT or hour hand goes undetected.
+
+So the logo fails closed as follows:
+- **Hand:** "hand crosses or touches the logo" only when the seconds-hand line, which comes from its lume dot and is unaffected by printing, crosses the box. A hit from the strip's structure test means "logo surroundings could not be checked".
+- **Sensitivity:** the region's "clean" counts only when its threshold is no higher than on the photo's own marker strips, where the check is validated. Otherwise "logo surroundings could not be checked".
+- **12 marker:** a hand or glare at the 12 marker next to the logo also withholds it, with the reason "the area next to the logo could not be confirmed clear".
+- **Symmetry:** below 0.80, "logo not clearly visible (symmetry x)". Other reasons are "resolution too low for the logo", "measurement unavailable (no dial pose)" and "logo not found".
+- **Box:** corrected to {half-width 0.12, r 0.38–0.575}, the whole crown from the base oval (0.385 R) to the top dots (0.56 R) on upright genuine crops. The earlier 0.42 R start clipped the base oval.
+
+**Local effect:** 2 of 18 photos keep a logo reading. Two are withheld for a detected seconds hand; the rest could not be checked or confirmed clear.
+
+**Status:** under guardrails §11, the logo stays research-only. The reused check cannot certify the logo area clean. A gate that models the expected genuine printing, rather than a plain dial, would be the next bounded experiment. The marker checks are unchanged (`results/alpha99/interference_local.csv` is identical).
+
 ### 4. Whole-dial summary
 
 The QC guide judges a dial by how many markers are off as well as how far: one slight misalignment is fine; one major or several slight ones matter. QC guardrails §4 adds that a borderline reading should lead to a request for another photo, not more severity. Presentation only: no classification changes (`results/alpha99/findings_local.csv` is unchanged), only the headline lines in `results/alpha99/preview_text.txt`.
