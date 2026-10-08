@@ -25,6 +25,8 @@ The existing GMT implementation is the known-working control. Do not change its 
 
 The 124060 code and research remain useful evidence, but Submariner expansion is paused until the calibration protocol proves itself on GMT.
 
+**Update 2026-10-08 (Alpha102, branch `feature/android-alpha102-submariner`, not merged):** the protocol has now proved itself on the GMT (Alpha96-101). On the owner's instruction the Submariner family is being added, one reference at a time, through the same genuine-first method (`QC-GUARDRAILS.md` sections 6-8). The 124060 is first. Its genuine master, reference, uncertainty and held-out checks are done, and it ships in a testing build next to the GMT; see `tools/research/sub124060/README.md`. Other Submariner references show nothing until they have their own genuine evidence.
+
 All previously open legacy/research/calibration-stack pull requests were closed during the 2026-10-04 reset. They are history only and must not be resumed merely because they exist.
 
 ## Active direction

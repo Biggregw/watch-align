@@ -90,6 +90,9 @@ def main():
     ap.add_argument('--spec', required=True)
     ap.add_argument('--out-dir', required=True)
     ap.add_argument('--exclude-host', action='append', default=['swisswatchexpo'])
+    ap.add_argument('--no-allowance', action='append', default=[],
+                    help='feature families written without an uncertainty allowance, so they can be at most WORTH A LOOK '
+                         '(QC guardrails 11: downgrade a feature whose held-out genuine evidence conflicts)')
     a = ap.parse_args()
     spec = json.load(open(a.spec)); batons, rounds = layout(spec)
     shared = {r['photo_id'] for r in csv.DictReader(open(a.dedup)) if r['shared_dial'] == '1'}
@@ -174,6 +177,9 @@ def main():
         nw = sum(1 for w in G[(fam, unit)].values() if any(len(l) >= 2 for l in w.values()))
         if not math.isfinite(s):
             continue                                   # no repeat photos: no allowance (the feature can never be CLEAR)
+        if fam in a.no_allowance:
+            lines.append(f'| {fam} | {unit} | withheld (downgraded: at most worth a look) | | {nw} | {nv} | {dof} |')
+            continue
         out[f'{fam}.{unit}'] = s; out[f'{fam}.{unit}.watches'] = nw
         lines.append(f'| {fam} | {unit} | {s:.6f} | {K * s:.6f} | {nw} | {nv} | {dof} |')
     # 12 triangle side agreement (Alpha101 edge-consistency limit), relative to the triangle nominal

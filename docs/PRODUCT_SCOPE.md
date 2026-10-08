@@ -65,7 +65,7 @@ This stage determines whether a feature should be implemented in code, AI, hybri
 
 Until the GMT control experiment proves the new method, do not restart:
 
-- broad Submariner-family expansion;
+- broad Submariner-family expansion (superseded 2026-10-08 by owner decision: the Submariner family is added one reference at a time, each with its own genuine reference before it can report anything; see `docs/HANDOFF.md`);
 - calibration-platform/contract migrations;
 - open-ended corpus growth;
 - projective/homography research as a goal in itself;

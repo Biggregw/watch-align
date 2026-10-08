@@ -75,6 +75,25 @@ public class ModelSpecTest {
         for(String f:new String[]{"six_rot","six_off","nine_rot","nine_off","rounds_off","ring_rot","ring_shift","date_tilt"})assertTrue(f,r.has(f));
     }
 
+    @Test public void submariner124060ReferenceIsTheResearchFilesAndRoundSizeIsDowngraded()throws Exception{
+        String[][] map={{"alpha98_reference.csv",ModelReference.GENUINE},{"alpha98_nominal.properties",ModelReference.NOMINAL},
+                {"m12_nominal.properties",ModelReference.TRI_NOMINAL},{"m12_genuine_reference.csv",ModelReference.TRI_REFERENCE},
+                {"alpha99_uncertainty.properties",ModelReference.UNCERTAINTY}};
+        File research=new File(researchDir(),"../sub124060/reference_src"),ref=new File(TestModels.assets(),"models/submariner_124060/reference");
+        for(String[] p:map)assertArrayEquals(p[0]+" -> "+p[1]+" (re-run export_model_reference.py --model submariner_124060 --source-dir tools/research/sub124060/reference_src)",
+                Files.readAllBytes(new File(research,p[0]).toPath()),Files.readAllBytes(new File(ref,p[1]).toPath()));
+        ModelSpec m=ModelSpec.load(ModelSpec.directory(TestModels.assets()),"submariner_124060");
+        assertNull(m.date);
+        assertEquals(12,m.markers.size());assertEquals("three",m.atHour(3).key);assertEquals(0.7591,m.atHour(6).centreR,0);
+        ModelReference r=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
+        assertEquals(24,r.triangle.nWatches);assertEquals(3.0,r.kSigma,0);
+        for(String f:new String[]{"three_rot","three_off","six_rot","six_off","nine_rot","nine_off","rounds_off","ring_rot","ring_shift","rounds_size","round_size_rel"})assertTrue(f,r.has(f));
+        assertFalse(r.has("date_tilt"));
+        // QC guardrails 11: held-out genuine conflict on round-plot size -> no allowance, so at most worth a look
+        assertTrue(Double.isNaN(r.sigma("rounds_size","R")));assertTrue(Double.isNaN(r.sigma("round_size_rel","R")));
+        assertTrue(r.sigma("six_rot","deg")>0);
+    }
+
     @Test public void jsonReaderIsExactAndStrict(){
         @SuppressWarnings("unchecked") Map<String,Object> o=(Map<String,Object>)MiniJson.parse("{\"a\":[0.7991666666666667,-0.38,1e-3],\"b\":\"x\\\"y\",\"c\":null,\"d\":true}");
         @SuppressWarnings("unchecked") List<Object> a=(List<Object>)o.get("a");

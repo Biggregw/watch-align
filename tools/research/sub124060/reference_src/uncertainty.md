@@ -14,12 +14,12 @@ beyond the genuine maximum exceeds K = 3 sigma.
 | ring_rot | degR | 5.688415 | 17.065245 | 17 | 37 | 20 |
 | ring_shift | R | 0.001713 | 0.005140 | 17 | 74 | 40 |
 | ring_shift | px | 0.316616 | 0.949847 | 17 | 74 | 40 |
-| round_size_rel | R | 0.000439 | 0.001316 | 16 | 35 | 19 |
-| round_size_rel | px | 0.104980 | 0.314941 | 16 | 35 | 19 |
+| round_size_rel | R | withheld (downgraded: at most worth a look) | | 16 | 35 | 19 |
+| round_size_rel | px | withheld (downgraded: at most worth a look) | | 16 | 35 | 19 |
 | rounds_off | R | 0.000323 | 0.000968 | 16 | 510 | 278 |
 | rounds_off | px | 0.090341 | 0.271024 | 16 | 510 | 278 |
-| rounds_size | R | 0.000580 | 0.001740 | 16 | 35 | 19 |
-| rounds_size | px | 0.124699 | 0.374098 | 16 | 35 | 19 |
+| rounds_size | R | withheld (downgraded: at most worth a look) | | 16 | 35 | 19 |
+| rounds_size | px | withheld (downgraded: at most worth a look) | | 16 | 35 | 19 |
 | six_off | R | 0.000682 | 0.002046 | 17 | 74 | 40 |
 | six_off | px | 0.161369 | 0.484108 | 17 | 74 | 40 |
 | six_rot | deg | 0.130996 | 0.392988 | 17 | 37 | 20 |
