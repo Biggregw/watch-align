@@ -15,32 +15,39 @@ Interference check - markers withheld (hand / glare) per hour:
   all: 38/198 (19.2%), Alpha94 also withheld 23
 
 Alpha98 -> Alpha99 status (all features, all photos):
-  NOT_ASSESSED  -> NOT_ASSESSED  97
+  NOT_ASSESSED  -> NOT_ASSESSED  107
   OUTSIDE       -> CLEAR         9
   OUTSIDE       -> NOT_ASSESSED  8
-  OUTSIDE       -> WITHIN        11
-  OUTSIDE       -> WORTH         9
-  WITHIN        -> NOT_ASSESSED  14
-  WITHIN        -> WITHIN        86
+  OUTSIDE       -> WITHIN        13
+  OUTSIDE       -> WORTH         10
+  WITHIN        -> NOT_ASSESSED  15
+  WITHIN        -> WITHIN        89
+  WITHIN        -> WORTH         1
 
 new findings (Alpha99 outside where Alpha98 was not): 0
 
-photos with any Alpha99 finding: 5 (features: 18)
-   25369d47-image  six WORTH 1.0° CW; genuine max 0.7°
-   25369d47-image  nine CLEAR 1.4° CCW; genuine max 0.6°
-   25369d47-image  round2 CLEAR 0.43% out of place; genuine max 0.26%
-   25369d47-image  round8 WORTH 0.39% out of place; genuine max 0.26%
-   RL_ARF_BLRO_CROOKED6  twelve CLEAR 0.85% to the left; genuine max 0.23%
-   RL_ARF_BLRO_CROOKED6  six WORTH 0.37% out of place; genuine max 0.30%
-   RL_ARF_BLRO_CROOKED6  round7 WORTH 0.35% out of place; genuine max 0.26%
-   RL_ARF_BLRO_CROOKED6  round8 CLEAR 0.46% out of place; genuine max 0.26%
-   RL_ARF_BLRO_CROOKED6  round10 WORTH 0.34% out of place; genuine max 0.26%
-   RL_ARF_BLRO_CROOKED6  round11 CLEAR 0.45% out of place; genuine max 0.26%
-   RL_LOCAL_BLNR  twelve CLEAR 1.33% to the left; genuine max 0.23%
-   RL_LOCAL_BLNR  ring CLEAR set turned 0.52° CW; genuine max 0.2°
-   RL_THEONE_BLNR  six WORTH 0.47% out of place; genuine max 0.30%
-   RL_THEONE_BLNR  nine WORTH 0.9° CCW; genuine max 0.6°
-   USER_BATGIRL_GMT  six WORTH 0.8° CW; genuine max 0.7°
-   USER_BATGIRL_GMT  nine CLEAR 1.6° CCW; genuine max 0.6°
-   USER_BATGIRL_GMT  round2 CLEAR 0.44% out of place; genuine max 0.26%
-   USER_BATGIRL_GMT  round8 WORTH 0.39% out of place; genuine max 0.26%
+Alpha101 checks (no Alpha98 counterpart) outside: 2 (CLEAR 0)
+   POOL_GEN_HO_01  round10 WORTH plot larger than the others by 0.12% of the dial; genuine up to 0.10%
+   RL_ARF_BLRO_CROOKED6  rounds_size WORTH all round plots larger by 0.20% of the dial; genuine up to 0.10%
+
+photos with any Alpha99 finding: 6 (features: 20)
+   25369d47-image  six WORTH rotated 1.0° clockwise; genuine up to 0.7°
+   25369d47-image  nine CLEAR rotated 1.4° anticlockwise; genuine up to 0.6°
+   25369d47-image  round2 CLEAR shifted towards the centre and the 1 by 0.43% of the dial; genuine up to 0.26%
+   25369d47-image  round8 WORTH shifted towards the 7 by 0.39% of the dial; genuine up to 0.26%
+   POOL_GEN_HO_01  round10 WORTH plot larger than the others by 0.12% of the dial; genuine up to 0.10%
+   RL_ARF_BLRO_CROOKED6  twelve CLEAR shifted left by 0.85% of the dial; genuine up to 0.23%
+   RL_ARF_BLRO_CROOKED6  six WORTH shifted towards the centre by 0.37% of the dial; genuine up to 0.30%
+   RL_ARF_BLRO_CROOKED6  round7 WORTH shifted towards the 8 by 0.35% of the dial; genuine up to 0.26%
+   RL_ARF_BLRO_CROOKED6  round8 CLEAR shifted towards its minute mark and the 7 by 0.46% of the dial; genuine up to 0.26%
+   RL_ARF_BLRO_CROOKED6  round10 WORTH shifted towards the centre by 0.34% of the dial; genuine up to 0.26%
+   RL_ARF_BLRO_CROOKED6  round11 CLEAR shifted towards its minute mark by 0.45% of the dial; genuine up to 0.26%
+   RL_ARF_BLRO_CROOKED6  rounds_size WORTH all round plots larger by 0.20% of the dial; genuine up to 0.10%
+   RL_LOCAL_BLNR  twelve CLEAR shifted left by 1.33% of the dial; genuine up to 0.23%
+   RL_LOCAL_BLNR  ring CLEAR markers as a set turned 0.52° clockwise; genuine up to 0.2°
+   RL_THEONE_BLNR  six WORTH shifted towards its minute mark and the 7 by 0.47% of the dial; genuine up to 0.30%
+   RL_THEONE_BLNR  nine WORTH rotated 0.9° anticlockwise; genuine up to 0.6°
+   USER_BATGIRL_GMT  six WORTH rotated 0.8° clockwise; genuine up to 0.7°
+   USER_BATGIRL_GMT  nine CLEAR rotated 1.6° anticlockwise; genuine up to 0.6°
+   USER_BATGIRL_GMT  round2 CLEAR shifted towards the centre and the 1 by 0.44% of the dial; genuine up to 0.26%
+   USER_BATGIRL_GMT  round8 WORTH shifted towards the 7 by 0.39% of the dial; genuine up to 0.26%

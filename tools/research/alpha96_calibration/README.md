@@ -784,3 +784,139 @@ The app no longer has GMT geometry or GMT reference values in code.
 - All 18 rendered results screens and the overlay outline bitmap are pixel-identical to Alpha99 (7f2268f).
 
 **Tests.** `ModelSpecTest` pins the GMT spec to the frozen `Alpha92GmtMaster` / pose / date-window constants and checks that the app's reference copies are byte-identical to the research files. It also runs a second, test-only layout (batons at 3, 6 and 9, no date) through the evidence layer with no code change: with no genuine reference, every feature reads "not assessed".
+
+### 12 side angle on its own: at most worth a look (owner decision, 2026-10-08)
+
+**Rule:** when only the side angle of the 12 is outside the genuine range, and the centreline and lateral position are not, the 12 is WORTH A LOOK at most. The detail view explains why. A side angle together with an outside centreline or position can still be CLEAR. Test: `Alpha99FindingsTest.twelveSideAngleOnItsOwnIsAtMostWorthALook`. Local photos: no classification changes; the local 12 CLEAR findings (Local BLNR, ARF) are lateral.
+
+**Correction: the photo that prompted the rule is not side-only.** It was proposed after the Alpha100 genuine-catalogue run (37731661635), which flagged a Swiss Watch Expo 126710BLNR studio photo, `ce997f77df67b365`, as a CLEAR finding. That run's log showed only the strongest measure, the right side at 4.1°. Re-evaluated from its recorded measurements (`ci_run_37500197377/per_photo.csv`, dial radius 172 px):
+
+| Measure | Reading | Genuine max | Status |
+|---|---|---|---|
+| Right side | 4.1° CCW | 1.0° | outside |
+| Left side | 0.42° off | — | within |
+| Centreline | 2.5° CCW | 1.0° | outside; excess 1.5° vs a 3-sigma allowance of about 1.3° |
+| Lateral | 0.25% | 0.23% | just outside |
+
+So the rule does not apply, and the photo is still a CLEAR finding. Its two sides disagree (left about 0.42° off, right 4.1°), so the centreline, which is computed from the same edges, is moved by the one side edge. The run that checked the rule (37733632259) did not fetch this photo.
+
+## Alpha101: index alignment round (2026-10-08)
+
+### 1. Edge consistency of the 12 triangle
+
+A real rotation turns both of the triangle's sides together; lighting or blur on one edge moves one side alone.
+
+- **Measure:** |left side − right side|, both relative to the genuine nominal.
+- **Genuine data** (`ci_run_37500197377/per_photo.csv`, all 131 usable genuine photos):
+  - median 0.14°, 90% within 0.48°;
+  - the large values are single bad photos. Watch `hv_page_6d3d310e79` reads 6.0° on its 103 px photo but 0.00–0.18° on its 7 other photos; the SWE watch `swe_59259` reads 3.7° on `ce997f77df67b365` but 0.23–0.25° on its 2 others.
+- **Limit** (written by `measurement_uncertainty.py`, `twelve_sides_agreement.limit` = 0.99°): the largest per-watch median across the 25 watches with 2+ photos (0.77°), plus 3× the robust photo-to-photo spread (0.074°).
+  - Single-photo watches are excluded from the range: their "median" is the photo itself.
+  - The spread is robust (MAD), because the photos this targets would inflate a plain SD.
+- **Rule:** when the two sides disagree by more than the limit, the 12's centreline and side readings are at most WORTH A LOOK; the detail view gives the reason. Lateral position is unaffected.
+- **Effect:**
+  - 6 of 131 genuine photos exceed the limit, all of them tiny, studio-lit or blurred; this includes `ce997f77df67b365`, which is now WORTH A LOOK instead of CLEAR.
+  - The local defect cases read 0.05–0.41° (Local BLNR, ARF, Theonewatches), so they are unaffected.
+  - Local classifications are unchanged.
+- **Test:** `Alpha99FindingsTest.twelveWithDisagreeingSidesIsEdgeAffected`, which uses the studio photo's recorded values.
+
+### 2. Findings worded the way QC posts are written
+
+Short lines follow the RepTimeQC guide's "be specific and directional" style, e.g.:
+- "rotated 1.6° anticlockwise; genuine up to 0.6°";
+- "shifted towards the centre and the 1 by 0.44% of the dial";
+- "shifted left by 0.85% of the dial";
+- "markers as a set turned 0.52° clockwise".
+
+A marker shift is named by its dominant direction: towards its minute mark, towards the centre, or towards the neighbouring hour. Both directions are named when neither dominates. No status changed (`results/alpha99/findings_local.csv`).
+
+Real size in mm is deliberately not shown yet. It needs a sourced dial diameter per model; one route is the bezel's outer diameter, the published 40 mm case, measured in dial-radius units on genuine photos.
+
+### 3. Crown-logo alignment (PARKED research, not in the app)
+
+`Alpha101PrintAlignment` measures the crown's sideways offset and tilt against the 12's radial line from its mirror symmetry. The genuine catalogue run is job `alpha101-genuine-print`; the readings are kept in CI artifacts and logs, never as images.
+
+**Contamination gate on the logo's own region (QC guardrails §3).** The Alpha99 interference check runs on the logo box, treated as a baton-shaped area with its corridor towards the centre, its halo and the seconds-hand line. The marker-face test is off, because the crown's thin printed prongs would trip it.
+
+On the local photos, the check's plain-dial assumption fails on the logo area in both directions. Upright crops and the check's own grids were inspected locally and not committed.
+- **False hands:** with the box covering the whole crown, the ROLEX lettering touches the halo and reads as a hand on clean genuine photos, e.g. `669b4aea`.
+- **Blind to real hands:** where a hand is present (WEX_01, Batgirl), the printing plus the hand inflate the background noise. The threshold then reaches 230–370 grey levels, so nothing reads as foreign and the visible GMT or hour hand goes undetected.
+
+So the logo fails closed as follows:
+- **Hand:** "hand crosses or touches the logo" only when the seconds-hand line, which comes from its lume dot and is unaffected by printing, crosses the box. A hit from the strip's structure test means "logo surroundings could not be checked".
+- **Sensitivity:** the region's "clean" counts only when its threshold is no higher than on the photo's own marker strips, where the check is validated. Otherwise "logo surroundings could not be checked".
+- **12 marker:** a hand or glare at the 12 marker next to the logo also withholds it, with the reason "the area next to the logo could not be confirmed clear".
+- **Symmetry:** below 0.80, "logo not clearly visible (symmetry x)". Other reasons are "resolution too low for the logo", "measurement unavailable (no dial pose)" and "logo not found".
+- **Box:** corrected to {half-width 0.12, r 0.38–0.575}, the whole crown from the base oval (0.385 R) to the top dots (0.56 R) on upright genuine crops. The earlier 0.42 R start clipped the base oval.
+
+**Local effect:** 2 of 18 photos keep a logo reading. Two are withheld for a detected seconds hand; the rest could not be checked or confirmed clear.
+
+**Genuine catalogue (CI run 37747936901, `results/alpha101/logo_catalogue.csv`):** of 102 accepted photos:
+- 33 keep a logo reading;
+- 65 could not be checked;
+- 3 are withheld for a seconds hand on the logo;
+- 1 is withheld because the area next to the logo could not be confirmed clear.
+
+The gate still passes the one known contaminated genuine photo, `66c4527d45cf91b0` (Phillips, 120 px dial). Its hour hand lies along the 12 and it reads 4.3% R / 5.0°. The logo region and the 12 both read clean with 0.000 foreign: at that resolution the check sees nothing, and the sensitivity rule does not catch it, because the photo's marker strips are equally insensitive. So the gate gives a false clean on genuine data.
+
+**Status: parked (owner decision, 2026-10-08).** Under guardrails §11 the logo is not in Alpha101. `Alpha101PrintAlignment` now lives with the desktop-harness drivers, outside the app sources. It affects no finding, and its CI job (`alpha101-genuine-print.yml`) runs only on manual dispatch. The code, the genuine readings and these notes are kept for possible future dial-print research. The reused check cannot certify the logo area clean. A gate that models the expected genuine printing, rather than a plain dial, would be the next bounded experiment. The marker checks are unchanged (`results/alpha99/interference_local.csv` is identical).
+
+### 4. Whole-dial summary
+
+The QC guide judges a dial by how many markers are off as well as how far: one slight misalignment is fine; one major or several slight ones matter. QC guardrails §4 adds that a borderline reading should lead to a request for another photo, not more severity. Presentation only: no classification changes (`results/alpha99/findings_local.csv` is unchanged), only the headline lines in `results/alpha99/preview_text.txt`.
+
+- The headline names what it counts, e.g. "2 clear alignment findings: 9, 2" and "2 other measurements are worth a look: 6, 8".
+- When nothing is clear and something is worth a look, the headline adds "Another clean, straight-on photo would show whether it repeats" (or "these repeat").
+- Test: `Alpha99FindingsTest.borderlineAloneSuggestsAnotherPhoto`.
+
+### 5. Round lume-plot size
+
+Each round marker's fitted outer radius was already measured (Alpha94 `radius_err_px`). There are two features, built like the others in `build_alpha98_reference.py` and `measurement_uncertainty.py`, from genuine photos only:
+
+- **`rounds_size`:** the median size of a dial's round plots (signed; the genuine nominal is +0.09% R). It answers "all plots oversized or undersized".
+- **`round_size_rel`:** the largest single plot's size difference from its own dial's median (magnitude). It answers "one plot larger or smaller than the others". Lighting and blur cancel because they affect every plot equally.
+
+Blur widens the measured outer edge. So, like round-marker positions, both are compared only with genuine watches photographed at a similar or lower resolution (8 or more needed), and a photo below that is not assessed. In the app, only rounds clear of hands count; fewer than 5 clean rounds means not assessed.
+
+**Genuine reference:**
+- `rounds_size`: 48 watches, max distance from nominal 0.10% R; uncertainty 0.09% R / 0.14 px.
+- `round_size_rel`: 48 watches, max 0.16% R; uncertainty 0.08% R / 0.13 px.
+- Existing reference rows are byte-identical.
+
+**Local photos:**
+- ARF: all round plots larger by 0.20% (WORTH A LOOK).
+- Local BLNR: +0.28% offline, but not assessed in the app (only 4 rounds are clean of hands).
+- Marketplace genuine-candidate POOL_GEN_HO_01: its 10 o'clock plot is 0.12% larger than the others (genuine up to 0.10%), WORTH A LOOK.
+- Theonewatches and the CPO photos (dial radius about 170 px or less): not assessed, resolution too low.
+
+**Tooling:** these checks have no Alpha98 counterpart, so the Alpha98 regression checks skip them (`Alpha99Findings.outsideOnlyByNewMeasures`, `alpha101_only` column). `alpha99_genuine_summary.py` lists them separately.
+
+**Held-out genuine validation (QC guardrails §8 step 5):** `alpha101_heldout_genuine.py` judges each genuine photo on its own, as the app does. It compares the photo with a reference rebuilt without that photo's physical watch, using the same nominal, resolution-matched genuine max and 3-sigma allowance. Swiss Watch Expo photos never enter the marker reference, so they are judged against the full reference as an external held-out set. Results are in `results/alpha101/heldout_genuine.csv` and `heldout_genuine_summary.txt`.
+
+| Feature | Held-out photos (left-out watch) | Worth a look | Clear | SWE external | Worth a look | Clear |
+|---|---|---|---|---|---|---|
+| `rounds_size` (new) | 74 | 6 | 0 | 20 | 1 | 0 |
+| `round_size_rel` (new) | 74 | 5 | 0 | 20 | 3 | 0 |
+| `rounds_off` (shipped, for comparison) | 74 | 6 | 0 | 20 | 3 | 0 |
+| `six_off` (shipped, for comparison) | 86 | 12 | 0 | 44 | 6 | 0 |
+
+No held-out genuine photo becomes a clear finding. The worth-a-look rate is in line with the shipped round-marker features. Worth a look on genuine single photos is expected: the genuine max is taken over per-watch medians, while the app judges one photo.
+
+Two limits of this check:
+- Offline, the rounds counted are the measurement's usable rounds. The app additionally drops rounds touched by a hand, which can only reduce what is assessed.
+- The edge-consistency limit (section 1) only ever downgrades the 12, so it cannot add a finding. It is not part of this check.
+
+### Alpha101 final validation (2026-10-08, de25d49; app features without the parked logo)
+
+- **Local regression against Alpha100 (main fe064ba):**
+  - 0 measurement differences: 1,592 local values and 1,791 owner values;
+  - hand/glare check identical (`interference_local.csv`);
+  - one status change on an existing feature: POOL_GEN_HO_01's 10 o'clock round goes from within to worth a look (round plot size, section 5);
+  - the new "round plot size" row is worth a look on ARF only;
+  - 40 unit tests pass.
+- **Held-out genuine (§8 step 5):** `alpha101_heldout_genuine.py` reproduces. No held-out genuine photo becomes a clear finding.
+- **Genuine catalogue:** CI run 37759432007, set against the Alpha100 run 37744977988. This run fetched 116 of 213 photos (102 with a pose); the Alpha100 run fetched 120 (105 with a pose).
+  - 0 new findings compared with Alpha98.
+  - The only differences from Alpha100 are 14 worth-a-look results from the round lume-plot checks on 9 Phillips photos, 6 of them on one photo (`bf795611fe399d5f`). There are 0 clear.
+  - The one clear finding on a genuine photo, `ee1933f4d3ba3a7d` (6 shifted towards the centre by 0.72%), is unchanged from Alpha100.
+- **APK:** `1.3.0-alpha101-index-alignment-arm64`, build run 37759432014.

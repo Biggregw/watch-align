@@ -16,8 +16,12 @@ only when the excess beyond the genuine maximum exceeds K = 3 sigma.
 | ring_rot | degR | 7.908438 | 23.725313 | 9 | 51 | 42 |
 | ring_shift | R | 0.000592 | 0.001775 | 9 | 102 | 84 |
 | ring_shift | px | 0.319598 | 0.958795 | 9 | 102 | 84 |
+| round_size_rel | R | 0.000781 | 0.002343 | 9 | 51 | 42 |
+| round_size_rel | px | 0.126451 | 0.379354 | 9 | 51 | 42 |
 | rounds_off | R | 0.000573 | 0.001718 | 9 | 688 | 560 |
 | rounds_off | px | 0.112675 | 0.338024 | 9 | 688 | 560 |
+| rounds_size | R | 0.000907 | 0.002722 | 9 | 51 | 42 |
+| rounds_size | px | 0.136601 | 0.409804 | 9 | 51 | 42 |
 | six_off | R | 0.001246 | 0.003738 | 9 | 102 | 84 |
 | six_off | px | 0.250860 | 0.752581 | 9 | 102 | 84 |
 | six_rot | deg | 0.194996 | 0.584988 | 9 | 51 | 42 |
@@ -28,3 +32,9 @@ only when the excess beyond the genuine maximum exceeds K = 3 sigma.
 | twelve_lateral | px | 0.412108 | 1.236325 | 9 | 51 | 42 |
 | twelve_sides | deg | 0.486607 | 1.459822 | 9 | 102 | 84 |
 | twelve_sides | degR | 82.765016 | 248.295048 | 9 | 102 | 84 |
+
+## 12 triangle side agreement (Alpha101 edge-consistency limit)
+
+Genuine watches with 2+ photos: 25 (96 photos), SWE included (lighting is
+exactly what this measures). Max per-watch median |left - right| 0.770 deg;
+robust photo-to-photo spread 0.074 deg; limit = max + 3 x spread = 0.992 deg.

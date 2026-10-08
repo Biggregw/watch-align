@@ -1,0 +1,19 @@
+set           feature         assessed  within  worth  clear   n/a  watches worth/clear
+lowo          nine_off              86      80      6      0     0  5/0
+lowo          nine_rot              87      83      4      0     0  2/0
+lowo          ring_rot              90      89      1      0     0  1/0
+lowo          ring_shift            74      69      5      0    16  2/0
+lowo          round_size_rel *       74      69      5      0    16  3/0
+lowo          rounds_off            74      68      6      0    16  3/0
+lowo          rounds_size *         74      68      6      0    16  4/0
+lowo          six_off               86      74     12      0     0  6/0
+lowo          six_rot               86      80      6      0     0  4/0
+swe_external  nine_off              44      39      5      0     0  5/0
+swe_external  nine_rot              47      46      1      0     0  1/0
+swe_external  ring_rot              44      44      0      0     0  0/0
+swe_external  ring_shift            29      29      0      0    15  0/0
+swe_external  round_size_rel *       20      17      3      0    14  3/0
+swe_external  rounds_off            20      17      3      0    14  3/0
+swe_external  rounds_size *         20      19      1      0    14  1/0
+swe_external  six_off               44      38      6      0     0  4/0
+swe_external  six_rot               47      44      3      0     0  3/0

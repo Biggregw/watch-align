@@ -28,10 +28,24 @@ final class Alpha99Findings {
     static final String INTERFERENCE_NOTE="Close-ups are shown so you can check for hands, reflections, dust or other interference.";
 
     /** One measured quantity compared with the genuine reference. */
+    /** Measures added in Alpha101 (no Alpha98 counterpart): regression checks against Alpha98 skip them. */
+    static final java.util.Set<String> ALPHA101_MEASURES=new java.util.HashSet<>(java.util.Arrays.asList("size","dial size"));
+    /** True when the finding is outside only because of Alpha101 measures. */
+    static boolean outsideOnlyByNewMeasures(Finding f){
+        boolean any=false;
+        for(Measure m:f.measures)if(m.outside()){if(!ALPHA101_MEASURES.contains(m.name))return false;any=true;}
+        return any;
+    }
+
     static final class Measure {
         final String name;final double value,genuineMax,sigma,k;final int n;final String unit;
         /** short phrase for the tile, e.g. "1.7° CCW" / detail sentence start, e.g. "It is rotated 1.7° anticlockwise". */
         final String shortValue,sentence;
+        /** Owner decision 2026-10-08: never a clear finding on its own (e.g. a 12 side angle without a matching
+         *  centreline or position change); at most worth a look. */
+        boolean capAtWorth;
+        /** Why capAtWorth was set; shown in the detail view. */
+        String capReason="";
         /** @param k the model's K: clear when the excess exceeds k x sigma (NaN: nothing can be clear). */
         Measure(String name,double value,double genuineMax,double sigma,double k,int n,String unit,String shortValue,String sentence){
             this.name=name;this.value=value;this.genuineMax=genuineMax;this.sigma=sigma;this.k=k;this.n=n;this.unit=unit;this.shortValue=shortValue;this.sentence=sentence;
@@ -42,6 +56,7 @@ final class Alpha99Findings {
         double allowance(){return k*sigma;}
         Status status(){
             if(!outside())return Status.WITHIN;
+            if(capAtWorth)return Status.WORTH;
             return hasAllowance()&&excess()>allowance()?Status.CLEAR:Status.WORTH;
         }
         /** excess in units of sigma (for ranking); infinite-less when there is no allowance. */
@@ -56,6 +71,8 @@ final class Alpha99Findings {
         boolean visual;
         /** set when a whole group was not assessed for one shared reason (e.g. "round markers"): counted once. */
         String group;
+        /** a whole-dial measurement shown as a tile but without a badge at one marker (e.g. round lume-plot size). */
+        boolean dialWide;
         /** Close-up region in canonical dial units (dial radius 1, 12 at the top) and what outline to draw. */
         double cx,cy,half;Shape shape;int hour;
         /** short name used in the "within" line, e.g. "4" or "date window". */
@@ -77,7 +94,7 @@ final class Alpha99Findings {
             if(status==Status.NOT_ASSESSED)return shortReason;
             if(status==Status.WITHIN)return "within measured genuine range";
             Measure m=strongest();
-            return m.shortValue+"; genuine max "+fmt(m.genuineMax,m.unit);
+            return m.shortValue+"; genuine up to "+fmt(m.genuineMax,m.unit);
         }
         /** Detail sentences for the larger evidence view. */
         List<String> detail(){
@@ -86,7 +103,8 @@ final class Alpha99Findings {
             for(Measure m:measures){
                 if(!m.outside())continue;
                 String s=m.sentence+". The furthest of "+m.n+" genuine reference watches reads "+fmt(m.genuineMax,m.unit)+".";
-                if(!m.hasAllowance())s+=" No measurement-uncertainty estimate exists for this feature, so it is not rated as a clear finding.";
+                if(m.capAtWorth)s+=" "+m.capReason;
+                else if(!m.hasAllowance())s+=" No measurement-uncertainty estimate exists for this feature, so it is not rated as a clear finding.";
                 else if(m.status()==Status.CLEAR)s+=String.format(Locale.US," The excess (%s) is more than %.0f times the photo-to-photo spread measured on genuine watches (%s), so measurement error alone is unlikely to explain it.",
                         fmt(m.excess(),m.unit),m.k,fmt(m.sigma,m.unit));
                 else s+=String.format(Locale.US," The excess (%s) is within %.0f times the photo-to-photo spread measured on genuine watches (%s), so photo or measurement error could account for it.",
@@ -119,13 +137,20 @@ final class Alpha99Findings {
         }
         List<String> headlineLines(){
             List<String> h=new ArrayList<>();int c=clear().size(),w=worth().size(),na=notAssessedCount();
-            if(c>0)h.add(c+" clear alignment finding"+(c==1?"":"s"));
-            if(w>0)h.add(w+(c>0?" other":"")+(w==1?" measurement is":" measurements are")+" worth a look");
+            if(c>0)h.add(c+" clear alignment finding"+(c==1?"":"s")+": "+names(clear()));
+            if(w>0)h.add(w+(c>0?" other":"")+(w==1?" measurement is":" measurements are")+" worth a look: "+names(worth()));
             if(c==0&&w==0)h.add("No measured feature is outside the measured genuine range");
+            // QC guardrails 4: borderline readings alone are not escalated; a repeat on another photo is the stronger evidence
+            if(c==0&&w>0)h.add("Another clean, straight-on photo would show whether "+(w==1?"it repeats":"these repeat"));
             if(na>0)h.add(na+(na==1?" feature":" features")+" could not be assessed");
             return h;
         }
         String headline(){return String.join("\n",headlineLines());}
+        private static String names(List<Finding> fs){
+            StringBuilder b=new StringBuilder();
+            for(Finding f:fs){if(b.length()>0)b.append(", ");b.append(f.shortName);}
+            return b.toString();
+        }
         /** Not-assessed features, a group withheld for one shared reason counting once. */
         int notAssessedCount(){
             java.util.Set<String> groups=new java.util.HashSet<>();int n=0;
@@ -161,6 +186,7 @@ final class Alpha99Findings {
         for(ModelSpec.Marker mk:model.markers)if(mk.shape==ModelSpec.Shape.TRIANGLE)s.all.add(twelve(r,check(checks,mk.hour),R,mk,ref));
         for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.BATON))s.all.add(baton(r,mk,R,check(checks,mk.hour),ref));
         s.all.addAll(rounds(r,R,checks,model,ref));
+        if(!model.withShape(ModelSpec.Shape.ROUND).isEmpty())s.all.add(roundsSize(r,R,checks,model,ref));
         s.all.add(ring(r,R,ref));
         if(model.date!=null)s.all.add(date(date,R,r!=null&&r.ring!=null&&r.ring.usable,ref,model.date));
         return s;
@@ -213,21 +239,35 @@ final class Alpha99Findings {
         int n=ref.triangle.nWatches;String fam=spec.key;double k=ref.kSigma;
         f.measures.add(new Measure("centreline",Math.abs(t.centrelineDeg),Alpha98Findings.max(ref.triangle.centrelineDeg),
                 sigmaAng(ref,fam+"_centreline",R),k,n,"deg",
-                String.format(Locale.US,"points %.1f° %s",Math.abs(t.centrelineDeg),cwShort(t.centrelineDeg)),
+                String.format(Locale.US,"tilted %.1f° %s",Math.abs(t.centrelineDeg),Alpha98Findings.cw(t.centrelineDeg)),
                 String.format(Locale.US,"It points %.1f° %s of the genuine direction",Math.abs(t.centrelineDeg),Alpha98Findings.cw(t.centrelineDeg))));
         boolean left=Math.abs(t.leftSideDeg)>=Math.abs(t.rightSideDeg);double sd=left?t.leftSideDeg:t.rightSideDeg;
         f.measures.add(new Measure("sides",t.sidesDeg,Alpha98Findings.max(ref.triangle.sidesDeg),
                 sigmaAng(ref,fam+"_sides",R),k,n,"deg",
-                String.format(Locale.US,"%s side %.1f° %s",left?"left":"right",Math.abs(sd),cwShort(sd)),
+                String.format(Locale.US,"%s side angled %.1f° %s",left?"left":"right",Math.abs(sd),Alpha98Findings.cw(sd)),
                 String.format(Locale.US,"Its %s side is angled %.1f° %s",left?"left":"right",Math.abs(sd),Alpha98Findings.cw(sd))));
         f.measures.add(new Measure("lateral",Math.abs(t.lateralR),Alpha98Findings.max(ref.triangle.lateralR),
                 sigmaPos(ref,fam+"_lateral",R),k,n,"R",
-                String.format(Locale.US,"%.2f%% to the %s",100*Math.abs(t.lateralR),t.lateralPx<0?"left":"right"),
+                String.format(Locale.US,"shifted %s by %.2f%% of the dial",t.lateralPx<0?"left":"right",100*Math.abs(t.lateralR)),
                 String.format(Locale.US,"It sits %.1f px to the %s (%.2f%% of the dial radius)",Math.abs(t.lateralPx),t.lateralPx<0?"left":"right",100*Math.abs(t.lateralR))));
         // Alpha98 rule for the 12: outside when no genuine watch reads at least as far (Alpha97TwelveReadout counts)
         if(t.atLeastCentreline>0)neutralise(f,"centreline");
         if(t.atLeastSides>0)neutralise(f,"sides");
         if(t.atLeastLateral>0)neutralise(f,"lateral");
+        // side angle only (centreline and position within range): worth a look at most (owner decision 2026-10-08; a
+        // genuine SWE studio photo read its right side 4.1 deg off with centreline and position in range)
+        boolean corroborated=false;
+        for(Measure x:f.measures)if(!x.name.equals("sides")&&x.outside())corroborated=true;
+        if(!corroborated)for(Measure x:f.measures)if(x.name.equals("sides")){x.capAtWorth=true;
+            x.capReason="Only the side angle reads outside: the triangle's direction and position are within the genuine range."
+                    +" Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.";}
+        // Alpha101 edge consistency: a real rotation turns both sides together; when the two sides disagree by more than
+        // genuine triangles ever do, one edge is affected by lighting or blur, and every angle read from those edges
+        // (centreline, sides) is at most worth a look. Position (lateral) is unaffected.
+        double agree=ref.limit(fam+"_sides_agreement"),dis=Math.abs(t.leftSideDeg-t.rightSideDeg);
+        if(Double.isFinite(agree)&&dis>agree)for(Measure x:f.measures)if(x.name.equals("sides")||x.name.equals("centreline")){
+            x.capAtWorth=true;
+            x.capReason=String.format(Locale.US,"The triangle's two sides disagree by %.1f° (on genuine watches they agree within %.1f°), which points to lighting or blur on one edge rather than a turned marker, so its angles are shown as worth a look, not a clear finding.",dis,agree);}
         settle(f);return f;
     }
 
@@ -253,11 +293,11 @@ final class Alpha99Findings {
         double sOff=sigmaPos(ref,key+"_off",R);double k=ref.kSigma;
         double rot=m.rotationDeg-nom;
         f.measures.add(new Measure("rotation",Math.abs(rot),Alpha98Findings.max(rotRef),sRot,k,rotRef.length,"deg",
-                String.format(Locale.US,"%.1f° %s",Math.abs(rot),cwShort(rot)),
+                String.format(Locale.US,"rotated %.1f° %s",Math.abs(rot),Alpha98Findings.cw(rot)),
                 String.format(Locale.US,"It is rotated %.1f° %s",Math.abs(rot),Alpha98Findings.cw(rot))));
         double off=m.localOffsetPx/R;
         f.measures.add(new Measure("position",off,Alpha98Findings.max(offRef),sOff,k,offRef.length,"R",
-                String.format(Locale.US,"%.2f%% out of place",100*off),
+                String.format(Locale.US,"shifted %s by %.2f%% of the dial",towards(m),100*off),
                 String.format(Locale.US,"It sits %.1f px out of place relative to the other markers (%.2f%% of the dial radius, mostly %s)",
                         m.localOffsetPx,100*off,Alpha98Findings.direction(m))));
         settle(f);return f;
@@ -272,6 +312,8 @@ final class Alpha99Findings {
         int n=Alpha98Findings.matchedCount(ref.radius("rounds_off"),R);
         double lim=Alpha98Findings.matchedMax(ref.far("rounds_off"),ref.radius("rounds_off"),R);
         double sOff=sigmaPos(ref,"rounds_off",R);
+        int sizeN=ref.has("round_size_rel")?Alpha98Findings.matchedCount(ref.radius("round_size_rel"),R):0;
+        double sizeLim=Alpha98Findings.matchedMax(ref.far("round_size_rel"),ref.radius("round_size_rel"),R);
         for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.ROUND)){
             int h=mk.hour;
             Finding f=new Finding("round"+h,h+" o'clock",""+h);
@@ -285,12 +327,53 @@ final class Alpha99Findings {
             if(m==null||!m.usable||!Double.isFinite(m.localOffsetPx)){withheldByMeasurement(f,m==null?"unavailable":m.reason);continue;}
             double off=m.localOffsetPx/R;
             f.measures.add(new Measure("position",off,lim,sOff,ref.kSigma,n,"R",
-                    String.format(Locale.US,"%.2f%% out of place",100*off),
+                    String.format(Locale.US,"shifted %s by %.2f%% of the dial",towards(m),100*off),
                     String.format(Locale.US,"The %d o'clock marker sits %.1f px out of place relative to the other markers (%.2f%% of the dial radius, mostly %s); compared with genuine photos of similar or lower resolution",
                             h,m.localOffsetPx,100*off,Alpha98Findings.direction(m))));
+            // Alpha101: this lume plot's size against the other round plots on the same dial (lighting and blur cancel)
+            double med=cleanRoundSizeMedian(r,R,checks,model);
+            if(Double.isFinite(med)&&Double.isFinite(m.radiusErrPx)&&sizeN>=Alpha98Findings.MIN_MATCHED){
+                double rel=m.radiusErrPx/R-med;
+                f.measures.add(new Measure("size",Math.abs(rel),sizeLim,sigmaPos(ref,"round_size_rel",R),ref.kSigma,sizeN,"R",
+                        String.format(Locale.US,"plot %s than the others by %.2f%% of the dial",rel>=0?"larger":"smaller",100*Math.abs(rel)),
+                        String.format(Locale.US,"Its lume plot is %s than the other round plots on this dial by %.2f%% of the dial radius; compared with genuine photos of similar or lower resolution",
+                                rel>=0?"larger":"smaller",100*Math.abs(rel))));
+            }
             settle(f);
         }
         return out;
+    }
+
+    /** Median size (fitted radius error / R) of the round markers that are measured and clear of hands; NaN below 5. */
+    static double cleanRoundSizeMedian(Alpha94MarkerMeasurement.Report r,double R,Map<Integer,Alpha99MarkerInterference.Check> checks,ModelSpec model){
+        if(r==null||!(R>0))return Double.NaN;
+        List<Double> v=new ArrayList<>();
+        for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.ROUND)){
+            Alpha94MarkerMeasurement.Marker m=r.atHour(mk.hour);Alpha99MarkerInterference.Check c=check(checks,mk.hour);
+            if(m!=null&&m.usable&&Double.isFinite(m.radiusErrPx)&&c!=null&&c.clean)v.add(m.radiusErrPx/R);
+        }
+        if(v.size()<5)return Double.NaN;
+        java.util.Collections.sort(v);int n=v.size();
+        return n%2==1?v.get(n/2):0.5*(v.get(n/2-1)+v.get(n/2));
+    }
+
+    /** Alpha101: overall size of the round lume plots (all clean rounds together) against genuine dials. */
+    static Finding roundsSize(Alpha94MarkerMeasurement.Report r,double R,Map<Integer,Alpha99MarkerInterference.Check> checks,ModelSpec model,ModelReference ref){
+        Finding f=new Finding("rounds_size","Round lume plots","round plot size");f.shape=Shape.ROUND;f.half=0.17;f.dialWide=true;
+        ModelSpec.Marker first=model.withShape(ModelSpec.Shape.ROUND).get(0);
+        double a=Math.toRadians(first.hour*30.0);f.hour=first.hour;f.cx=Math.sin(a)*first.centreR;f.cy=-Math.cos(a)*first.centreR;
+        if((!ref.has("rounds_size")||!Double.isFinite(ref.nominal("rounds_size")))&&noReference(f)){f.group="round markers";return f;}
+        double med=cleanRoundSizeMedian(r,R,checks,model);
+        if(!Double.isFinite(med)){f.status=Status.NOT_ASSESSED;f.reason="too few round markers could be measured cleanly";f.shortReason="too few clean markers";f.group="round markers";return f;}
+        int n=Alpha98Findings.matchedCount(ref.radius("rounds_size"),R);
+        if(n<Alpha98Findings.MIN_MATCHED){f.status=Status.NOT_ASSESSED;f.reason="the photo's resolution is too low to compare round markers with genuine photos";f.shortReason="resolution too low";f.group="round markers";return f;}
+        double d=med-ref.nominal("rounds_size");
+        f.measures.add(new Measure("dial size",Math.abs(d),Alpha98Findings.matchedMax(ref.far("rounds_size"),ref.radius("rounds_size"),R),
+                sigmaPos(ref,"rounds_size",R),ref.kSigma,n,"R",
+                String.format(Locale.US,"all round plots %s by %.2f%% of the dial",d>=0?"larger":"smaller",100*Math.abs(d)),
+                String.format(Locale.US,"Taken together, the round lume plots are %s than on genuine dials by %.2f%% of the dial radius; compared with genuine photos of similar or lower resolution",
+                        d>=0?"larger":"smaller",100*Math.abs(d))));
+        settle(f);return f;
     }
 
     static Finding ring(Alpha94MarkerMeasurement.Report r,double R,ModelReference ref){
@@ -300,13 +383,13 @@ final class Alpha99Findings {
         if(g==null||!g.usable){f.status=Status.NOT_ASSESSED;f.reason="too few markers could be measured cleanly";f.shortReason="too few clean markers";return f;}
         double rot=g.rotationDeg-ref.nominal("ring_rot");
         f.measures.add(new Measure("rotation",Math.abs(rot),Alpha98Findings.max(ref.far("ring_rot")),sigmaAng(ref,"ring_rot",R),ref.kSigma,
-                ref.far("ring_rot").length,"deg",String.format(Locale.US,"set turned %.2f° %s",Math.abs(rot),cwShort(rot)),
+                ref.far("ring_rot").length,"deg",String.format(Locale.US,"markers as a set turned %.2f° %s",Math.abs(rot),Alpha98Findings.cw(rot)),
                 String.format(Locale.US,"Taken together, the hour markers are turned %.2f° %s relative to the printed minute track (a whole-dial measurement: it does not mean each marker is rotated)",
                         Math.abs(rot),Alpha98Findings.cw(rot))));
         int n=Alpha98Findings.matchedCount(ref.radius("ring_shift"),R);
         if(n>=Alpha98Findings.MIN_MATCHED){double lim=Alpha98Findings.matchedMax(ref.far("ring_shift"),ref.radius("ring_shift"),R);double sh=g.shiftPx/R;
             f.measures.add(new Measure("shift",sh,lim,sigmaPos(ref,"ring_shift",R),ref.kSigma,n,"R",
-                    String.format(Locale.US,"set off-centre %.2f%%",100*sh),
+                    String.format(Locale.US,"markers as a set off-centre by %.2f%% of the dial",100*sh),
                     String.format(Locale.US,"Taken together, the hour markers are off-centre by %.1f px (%.2f%% of the dial radius); compared with genuine photos of similar or lower resolution",g.shiftPx,100*sh)));}
         settle(f);return f;
     }
@@ -328,7 +411,7 @@ final class Alpha99Findings {
         f.cx=d.cx;f.cy=d.cy;
         double t=d.windowTiltDeg-ref.nominal("date_tilt");
         f.measures.add(new Measure("tilt",Math.abs(t),Alpha98Findings.max(ref.far("date_tilt")),sigmaAng(ref,"date_tilt",R),ref.kSigma,
-                ref.far("date_tilt").length,"deg",String.format(Locale.US,"tilted %.1f° %s",Math.abs(t),cwShort(t)),
+                ref.far("date_tilt").length,"deg",String.format(Locale.US,"tilted %.1f° %s",Math.abs(t),Alpha98Findings.cw(t)),
                 String.format(Locale.US,"It is tilted %.1f° %s relative to the dial",Math.abs(t),Alpha98Findings.cw(t))));
         settle(f);return f;
     }
@@ -347,7 +430,19 @@ final class Alpha99Findings {
         f.status=s;
     }
 
-    static String cwShort(double deg){return deg>=0?"CW":"CCW";}
+    /** QC-style direction of a marker's local offset (radial + = outward, tangential + = clockwise): towards its minute
+     *  mark / the centre, or towards the neighbouring hour, e.g. "towards the 3"; both when neither dominates. */
+    static String towards(Alpha94MarkerMeasurement.Marker m){
+        double rd=m.localRadialPx,tg=m.localTangentialPx;
+        if(!Double.isFinite(rd)||!Double.isFinite(tg))return "out of place";
+        String radial=rd>=0?"towards its minute mark":"towards the centre";
+        int next=tg>=0?m.hour%12+1:(m.hour+10)%12+1;
+        String tangential="towards the "+next;
+        double a=Math.abs(rd),b=Math.abs(tg);
+        if(Math.min(a,b)>=0.5*Math.max(a,b))return radial+" and the "+next;
+        return a>=b?radial:tangential;
+    }
+
     static String fmt(double v,String unit){
         if("deg".equals(unit))return String.format(Locale.US,Math.abs(v)<0.095?"%.2f°":"%.1f°",v);
         if("R".equals(unit))return String.format(Locale.US,"%.2f%%",100*v);

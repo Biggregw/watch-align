@@ -96,6 +96,87 @@ public class Alpha99FindingsTest {
         assertEquals(Alpha99Findings.Status.WITHIN,Alpha99Findings.date(d,250,true,TestModels.gmtRef(),TestModels.gmt().date).status);
     }
 
+    @Test public void twelveSideAngleOnItsOwnIsAtMostWorthALook(){
+        // owner decision 2026-10-08: a genuine SWE studio photo read its 12 right side 4.1 deg off with direction and
+        // position in range; a side angle alone is worth a look, never a clear finding
+        ModelReference.Triangle t=TestModels.gmtRef().triangle;double R=250;
+        Alpha94MarkerMeasurement.Report r=report(6,0,9,0);
+        Alpha94MarkerMeasurement.Marker tri=new Alpha94MarkerMeasurement.Marker(12,"triangle");tri.spec=TestModels.gmt().atHour(12);
+        tri.usable=true;tri.rotationDeg=t.nominalRotationDeg;tri.leftSideErrDeg=t.nominalLeftSideDeg;tri.rightSideErrDeg=t.nominalRightSideDeg-4.1;
+        tri.localRadialPx=t.nominalRadialR*R;tri.localTangentialPx=t.nominalTangentialR*R;
+        Alpha94MarkerMeasurement.Report alone=new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,tri);
+        Alpha99Findings.Finding f=find(Alpha99Findings.build(alone,null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"twelve");
+        assertEquals(Alpha99Findings.Status.WORTH,f.status);
+        assertTrue(f.shortLine(),f.shortLine().startsWith("right side angled 4.1° anticlockwise"));
+        assertTrue(String.join(" ",f.detail()).contains("not a clear finding"));
+        // a turned triangle (both sides moved together) that is also clearly off-centre is corroborated: it can be clear
+        tri.leftSideErrDeg=t.nominalLeftSideDeg-4.1;
+        tri.localTangentialPx=(t.nominalTangentialR+0.012)*R;
+        Alpha99Findings.Finding g=find(Alpha99Findings.build(new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,tri),null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"twelve");
+        assertEquals(Alpha99Findings.Status.CLEAR,g.status);
+        for(Alpha99Findings.Measure m:g.measures)if(m.name.equals("sides"))assertEquals(Alpha99Findings.Status.CLEAR,m.status());
+    }
+
+    @Test public void twelveWithDisagreeingSidesIsEdgeAffected(){
+        // Alpha101: the recorded values of the genuine Swiss Watch Expo studio photo ce997f77df67b365 (per_photo.csv):
+        // right side 4.1 deg off, left side 0.4 deg, centreline 2.5 deg - one lit edge, not a turned marker
+        ModelReference ref=TestModels.gmtRef();
+        assertEquals(0.99,ref.limit("twelve_sides_agreement"),0.01);
+        Alpha94MarkerMeasurement.Report r=report(6,0,9,0);
+        Alpha94MarkerMeasurement.Marker tri=new Alpha94MarkerMeasurement.Marker(12,"triangle");tri.spec=TestModels.gmt().atHour(12);
+        tri.usable=true;tri.rotationDeg=-2.58445;tri.leftSideErrDeg=-0.59326;tri.rightSideErrDeg=-3.97507;
+        tri.localRadialPx=-1.62185;tri.localTangentialPx=-0.54516;
+        double R=171.51663;
+        Alpha99Findings.Finding f=find(Alpha99Findings.build(new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,tri),null,allClean(),
+                TestModels.gmt(),ref),"twelve");
+        assertEquals(Alpha99Findings.Status.WORTH,f.status);
+        for(Alpha99Findings.Measure m:f.measures)if(!m.name.equals("lateral"))assertTrue(m.name,m.capAtWorth);
+        assertTrue(String.join(" ",f.detail()).contains("two sides disagree"));
+        // the same two sides moved together (a turned marker) are not edge-affected
+        tri.leftSideErrDeg=tri.rightSideErrDeg;
+        Alpha99Findings.Finding g=find(Alpha99Findings.build(new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,tri),null,allClean(),
+                TestModels.gmt(),ref),"twelve");
+        for(Alpha99Findings.Measure m:g.measures)if(m.name.equals("centreline"))assertFalse(m.capAtWorth);
+        assertEquals(Alpha99Findings.Status.CLEAR,g.status);
+    }
+
+    @Test public void directionsInQcStyle(){
+        Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(7,"round");
+        m.localRadialPx=-1;m.localTangentialPx=0.1;assertEquals("towards the centre",Alpha99Findings.towards(m));
+        m.localRadialPx=0.1;m.localTangentialPx=1;assertEquals("towards the 8",Alpha99Findings.towards(m));
+        m.localTangentialPx=-1;assertEquals("towards the 6",Alpha99Findings.towards(m));
+        m.localRadialPx=1;m.localTangentialPx=-0.8;assertEquals("towards its minute mark and the 6",Alpha99Findings.towards(m));
+        Alpha94MarkerMeasurement.Marker t=new Alpha94MarkerMeasurement.Marker(12,"triangle");t.localRadialPx=0;t.localTangentialPx=1;
+        assertEquals("towards the 1",Alpha99Findings.towards(t));t.localTangentialPx=-1;assertEquals("towards the 11",Alpha99Findings.towards(t));
+        Alpha94MarkerMeasurement.Marker one=new Alpha94MarkerMeasurement.Marker(1,"round");one.localRadialPx=0;one.localTangentialPx=-1;
+        assertEquals("towards the 12",Alpha99Findings.towards(one));
+    }
+
+    @Test public void roundLumePlotSize(){
+        // Alpha101: one plot much larger than the others on the same dial, and all plots larger than genuine
+        Alpha94MarkerMeasurement.Report r=report(6,0,9,0);double R=r.dialRadiusPx;
+        for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind))m.radiusErrPx=0.001*R;
+        r.atHour(4).radiusErrPx=0.007*R;                                           // 0.6% larger than its neighbours
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        Alpha99Findings.Finding four=find(s,"round4");
+        assertTrue(four.status==Alpha99Findings.Status.CLEAR||four.status==Alpha99Findings.Status.WORTH);
+        assertTrue(four.shortLine(),four.shortLine().startsWith("plot larger than the others by 0.60% of the dial"));
+        assertTrue(Alpha99Findings.outsideOnlyByNewMeasures(four));
+        assertEquals(Alpha99Findings.Status.WITHIN,find(s,"round5").status);
+        assertEquals(Alpha99Findings.Status.WITHIN,find(s,"rounds_size").status);  // dial median unchanged
+        for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind))m.radiusErrPx=0.005*R;
+        Alpha99Findings.Summary big=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        Alpha99Findings.Finding all=find(big,"rounds_size");
+        assertTrue(all.status==Alpha99Findings.Status.CLEAR||all.status==Alpha99Findings.Status.WORTH);
+        assertTrue(all.shortLine().startsWith("all round plots larger by"));
+        assertFalse(Alpha99Overview.hasBadge(all));                                  // dial-wide: tile, no badge
+        // a hand over a round removes it from the size comparison as well
+        Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(4).clean=false;c.get(4).reason=Alpha99MarkerInterference.HAND;
+        r.atHour(4).radiusErrPx=0.02*R;
+        Alpha99Findings.Summary hand=Alpha99Findings.build(r,null,c,TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(Alpha99Findings.Status.NOT_ASSESSED,find(hand,"round4").status);
+    }
+
     @Test public void batonExamplesFromTheBrief(){
         // 6 rotation ~0.8 deg vs genuine max ~0.7 -> worth a look; 9 rotation ~1.6 deg vs max ~0.65 -> clear
         Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
@@ -103,7 +184,7 @@ public class Alpha99FindingsTest {
         assertEquals(Alpha99Findings.Status.WORTH,find(s,"six").status);
         assertEquals(Alpha99Findings.Status.CLEAR,find(s,"nine").status);
         assertEquals("9 o'clock",s.tiles().get(0).title);                                 // clear first
-        assertTrue(find(s,"nine").shortLine().startsWith("1.6° CCW; genuine max 0.6°"));
+        assertTrue(find(s,"nine").shortLine(),find(s,"nine").shortLine().startsWith("rotated 1.6° anticlockwise; genuine up to 0.6°"));
     }
 
     // ---------------------------------------------------------------- interference gate
@@ -160,6 +241,7 @@ public class Alpha99FindingsTest {
             Alpha99Findings.Summary now=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
             for(Alpha99Findings.Finding f:now.all){
                 if(f.status!=Alpha99Findings.Status.CLEAR&&f.status!=Alpha99Findings.Status.WORTH)continue;
+                if(Alpha99Findings.outsideOnlyByNewMeasures(f))continue;                // Alpha101 checks have no Alpha98 counterpart
                 String key=f.key.startsWith("round")?"rounds":f.key;
                 Alpha98Findings.Finding o=null;for(Alpha98Findings.Finding x:old.all)if(x.key.equals(key))o=x;
                 assertNotNull(o);
@@ -186,7 +268,7 @@ public class Alpha99FindingsTest {
             for(Alpha99Findings.Finding f:s.all){texts.add(f.text());texts.add(f.shortLine());texts.addAll(f.detail());}
             for(String t:texts)for(String w:new String[]{"PASS","FAIL","fake","Fake","replica","Replica","counterfeit","authentic watch"})
                 assertFalse(row.get("photo_id")+": "+t,t.contains(w));
-            assertEquals(13,s.all.size());                                                  // 12, 6, 9, 8 rounds, ring, date
+            assertEquals(14,s.all.size());                                                  // 12, 6, 9, 8 rounds, round plot size, ring, date
             for(Alpha99Findings.Finding f:s.notAssessed())assertFalse(f.reason.isEmpty());
         }
         assertTrue(Alpha99Findings.DISCLAIMER.contains("not an authenticity verdict"));
@@ -197,9 +279,18 @@ public class Alpha99FindingsTest {
         Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
         Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(12).clean=false;c.get(12).reason=Alpha99MarkerInterference.HAND;
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,c,TestModels.gmt(),TestModels.gmtRef());
-        assertEquals("1 clear alignment finding",s.headlineLines().get(0));
-        assertEquals("1 other measurement is worth a look",s.headlineLines().get(1));
+        assertEquals("1 clear alignment finding: 9",s.headlineLines().get(0));
+        assertEquals("1 other measurement is worth a look: 6",s.headlineLines().get(1));
         assertTrue(s.headlineLines().get(2).endsWith("could not be assessed"));
+    }
+
+    @Test public void borderlineAloneSuggestsAnotherPhoto(){
+        // QC guardrails 4: a worth-a-look reading on its own is not escalated; the headline asks for a repeat instead
+        Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,TestModels.gmtRef().nominal("nine_rot"));
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(0,s.clear().size());
+        assertEquals("1 measurement is worth a look: 6",s.headlineLines().get(0));
+        assertEquals("Another clean, straight-on photo would show whether it repeats",s.headlineLines().get(1));
     }
 
     // ---------------------------------------------------------------- interference check on synthetic dials

@@ -1,0 +1,215 @@
+photo_id,status,dial_radius_px,usable,reason,offset_R,tilt_deg,symmetry,logo_clean,logo_reason,hand_detected,seconds_hand,foreign_frac,twelve_clean,twelve_reason
+49ba843c0a7e19d7,accepted,433.8,false,"logo surroundings could not be checked",NaN,NaN,0.9718,false,"marker surroundings could not be checked",false,false,0.219,true,""
+cae9ed4ca889fc44,accepted,434.5,false,"logo surroundings could not be checked",NaN,NaN,0.9663,false,"marker surroundings could not be checked",false,false,0.151,true,""
+641dc405c27149d0,pose_rejected,,,,,,,,,,,,,
+68b9f82bb2ddbf29,accepted,243.8,false,"logo surroundings could not be checked",NaN,NaN,0.9329,false,"marker surroundings could not be checked",false,false,0.206,true,""
+4de80a08ea1d9983,accepted,342.1,false,"logo surroundings could not be checked",NaN,NaN,0.9298,false,"marker surroundings could not be checked",false,false,0.239,true,""
+cca876b2faab08dd,accepted,394.1,false,"logo surroundings could not be checked",NaN,NaN,0.9290,false,"marker surroundings could not be checked",false,false,0.219,true,""
+2a0fdd5920d4301d,accepted,228.1,false,"logo surroundings could not be checked",NaN,NaN,0.9171,false,"marker surroundings could not be checked",false,false,0.211,true,""
+7b1978419d4aa853,accepted,197.0,false,"logo surroundings could not be checked",NaN,NaN,0.8655,false,"marker surroundings could not be checked",false,false,0.221,true,""
+192745d7b04a8a03,accepted,394.1,false,"logo surroundings could not be checked",NaN,NaN,0.9333,false,"marker surroundings could not be checked",false,false,0.218,true,""
+406524fb5104d34a,accepted,159.8,false,"logo surroundings could not be checked",NaN,NaN,0.8612,false,"hand crosses or touches this marker",false,false,0.176,true,""
+f73f5f4bb560c8b1,pose_rejected,,,,,,,,,,,,,
+959b9d718208d34b,accepted,246.9,false,"logo surroundings could not be checked",NaN,NaN,0.9468,false,"marker surroundings could not be checked",false,false,0.189,true,""
+566ea1840477d363,accepted,346.4,false,"logo surroundings could not be checked",NaN,NaN,0.9417,false,"marker surroundings could not be checked",false,false,0.208,true,""
+fc6bb491acf36c86,accepted,399.2,false,"logo surroundings could not be checked",NaN,NaN,0.9510,false,"marker surroundings could not be checked",false,false,0.207,true,""
+263919e22c8cb08d,accepted,230.9,false,"logo surroundings could not be checked",NaN,NaN,0.8749,false,"marker surroundings could not be checked",false,false,0.178,true,""
+b2baff3925ce65f7,accepted,199.7,false,"logo surroundings could not be checked",NaN,NaN,0.8670,false,"marker surroundings could not be checked",false,false,0.179,true,""
+2af8e8c676bcd0cc,accepted,399.1,false,"logo surroundings could not be checked",NaN,NaN,0.9513,false,"marker surroundings could not be checked",false,false,0.192,true,""
+ccbc58888cb443ab,accepted,160.1,false,"logo surroundings could not be checked",NaN,NaN,0.9086,false,"hand crosses or touches this marker",false,false,0.175,true,""
+ca1360a49365e5ff,accepted,125.9,false,"logo surroundings could not be checked",NaN,NaN,0.8959,false,"marker surroundings could not be checked",false,false,0.135,true,""
+6de22511c60b1ca2,pose_rejected,,,,,,,,,,,,,
+0196a54bb8662bd6,pose_rejected,,,,,,,,,,,,,
+237b623f0e13ac6a,pose_rejected,,,,,,,,,,,,,
+1eb396cba1b95704,pose_rejected,,,,,,,,,,,,,
+cc84120bd459d485,accepted,235.4,false,"logo surroundings could not be checked",NaN,NaN,0.8825,false,"hand crosses or touches this marker",false,false,0.231,true,""
+ef5c636efb6480a0,accepted,330.2,true,"",-0.001893,0.0625,0.9135,true,"",false,false,0.233,true,""
+b5be92e3314dc366,accepted,380.5,true,"",-0.001745,0.0625,0.9448,true,"",false,false,0.236,true,""
+addb1b8082d109ff,accepted,220.2,true,"",-0.001809,0.0469,0.8901,true,"",false,false,0.239,true,""
+bf795611fe399d5f,accepted,190.3,true,"",-0.002381,0.0469,0.9423,true,"",false,false,0.228,true,""
+f20c1d09375c981d,accepted,380.4,true,"",-0.001746,0.0625,0.9398,true,"",false,false,0.234,true,""
+1b1874061e3cb0d5,accepted,130.0,false,"logo surroundings could not be checked",NaN,NaN,0.8493,false,"hand crosses or touches this marker",false,false,0.140,true,""
+f98441fdf2fdfb49,accepted,102.0,true,"",-0.001531,0.1875,0.8348,true,"",false,false,0.067,true,""
+0b4ce551b94e7ea0,accepted,234.6,true,"",-0.000832,-0.0781,0.9368,true,"",false,false,0.213,true,""
+3cf5442ab9c87b9c,accepted,379.2,true,"",-0.001154,-0.1094,0.9268,true,"",false,false,0.227,true,""
+8e26e5fffbd67274,accepted,219.4,true,"",-0.001175,-0.1094,0.9599,true,"",false,false,0.216,true,""
+da21757059a23f65,accepted,189.6,false,"logo surroundings could not be checked",NaN,NaN,0.8753,false,"hand crosses or touches this marker",false,false,0.191,true,""
+e8b21325b74bac74,accepted,379.2,true,"",-0.001154,-0.1250,0.9331,true,"",false,false,0.232,true,""
+d6c5edf4cc349905,accepted,119.3,true,"",-0.002227,-0.1719,0.9067,true,"",false,false,0.145,true,""
+501e07afc5875f4a,accepted,231.6,false,"logo surroundings could not be checked",NaN,NaN,0.9107,false,"marker surroundings could not be checked",false,false,0.238,true,""
+22075296f80ce8ce,accepted,216.5,false,"logo surroundings could not be checked",NaN,NaN,0.9173,false,"hand crosses or touches this marker",false,false,0.206,true,""
+4f28b9bc46ddd1cf,accepted,119.2,false,"logo surroundings could not be checked",NaN,NaN,0.8741,false,"marker surroundings could not be checked",false,false,0.133,true,""
+d0bda0f8f6726fa9,pose_rejected,,,,,,,,,,,,,
+e9b6fe2e1100dbd9,pose_rejected,,,,,,,,,,,,,
+29db17a1abe2a166,missing,,,,,,,,,,,,,
+d8ccb302ebeec29f,missing,,,,,,,,,,,,,
+352072033ade05df,missing,,,,,,,,,,,,,
+3b4fa22c3a852c10,accepted,434.6,false,"hand crosses or touches the logo",NaN,NaN,0.5792,false,"hand crosses or touches this marker",true,true,0.133,false,"hand crosses or touches this marker"
+748e48cfff43579e,missing,,,,,,,,,,,,,
+6d4b667ae0c528f6,missing,,,,,,,,,,,,,
+7a483ed5298141ef,missing,,,,,,,,,,,,,
+3559f5c15e7dc88d,missing,,,,,,,,,,,,,
+c652c207a6b82064,missing,,,,,,,,,,,,,
+26398386e9f403a9,accepted,305.2,true,"",-0.000563,-0.0625,0.9238,true,"",false,false,0.226,true,""
+1f9ae8fd14b70580,accepted,217.5,true,"",-0.000718,-0.0625,0.8845,true,"",false,false,0.198,true,""
+792a785e7276b073,accepted,351.6,true,"",-0.000267,-0.0625,0.9146,true,"",false,false,0.243,true,""
+9640ef411267f980,accepted,203.4,false,"logo surroundings could not be checked",NaN,NaN,0.8642,false,"hand crosses or touches this marker",false,false,0.218,true,""
+fc82a00cd88ad3e6,accepted,175.8,true,"",-0.000844,-0.1094,0.8939,true,"",false,false,0.200,true,""
+542cd309ab71ea8f,accepted,127.4,false,"logo surroundings could not be checked",NaN,NaN,0.9392,false,"hand crosses or touches this marker",false,false,0.168,true,""
+ed8776e7fc28bab4,accepted,100.1,true,"",-0.002419,-0.1250,0.9617,true,"",false,false,0.122,true,""
+b5a3712a20ede636,missing,,,,,,,,,,,,,
+5350069ae2e623e9,missing,,,,,,,,,,,,,
+4317344b7d56fb10,accepted,434.7,false,"logo surroundings could not be checked",NaN,NaN,0.9262,false,"hand crosses or touches this marker",false,false,0.217,true,""
+9c24872328b08d2c,accepted,436.9,false,"hand crosses or touches the logo",NaN,NaN,0.4979,false,"hand crosses or touches this marker",true,true,0.162,false,"hand crosses or touches this marker"
+a1181da10cfbe444,accepted,434.3,false,"logo surroundings could not be checked",NaN,NaN,0.9492,false,"marker surroundings could not be checked",false,false,0.220,true,""
+8a1135ada8c85197,missing,,,,,,,,,,,,,
+e29610476dd71542,missing,,,,,,,,,,,,,
+c7bbe5da2e41dd7c,accepted,434.2,false,"logo surroundings could not be checked",NaN,NaN,0.9352,false,"marker surroundings could not be checked",false,false,0.240,true,""
+27e9b4708fcb9eaf,missing,,,,,,,,,,,,,
+1c4b1b903d471134,accepted,245.2,false,"logo surroundings could not be checked",NaN,NaN,0.9453,false,"hand crosses or touches this marker",false,false,0.244,true,""
+ede4d7279065e197,accepted,435.1,true,"",-0.000162,0.0313,0.9530,true,"",false,false,0.231,true,""
+3ffe939bd9385410,accepted,433.5,false,"logo surroundings could not be checked",NaN,NaN,0.9321,false,"marker surroundings could not be checked",false,false,0.262,true,""
+ee1933f4d3ba3a7d,accepted,245.3,true,"",-0.000478,0.0000,0.8837,true,"",false,false,0.255,true,""
+69e62d2c551bffc4,missing,,,,,,,,,,,,,
+b6605eca11930309,accepted,245.6,true,"",-0.000573,0.0313,0.8952,true,"",false,false,0.237,true,""
+060ba51cbd5c62e4,missing,,,,,,,,,,,,,
+635dfddb1777b617,accepted,434.4,false,"logo surroundings could not be checked",NaN,NaN,0.9706,false,"marker surroundings could not be checked",false,false,0.207,true,""
+0a4e0899bb1001fc,accepted,434.7,false,"logo surroundings could not be checked",NaN,NaN,0.9615,false,"hand crosses or touches this marker",false,false,0.156,true,""
+a1181da10cfbe444,accepted,434.3,false,"logo surroundings could not be checked",NaN,NaN,0.9492,false,"marker surroundings could not be checked",false,false,0.220,true,""
+c79c7553f6f5a5b2,missing,,,,,,,,,,,,,
+3e54fd179cb170a8,accepted,434.5,true,"",-0.000198,0.0000,0.9493,true,"",false,false,0.222,true,""
+39b6687a00437d72,missing,,,,,,,,,,,,,
+acdc661ac31f2074,missing,,,,,,,,,,,,,
+7ddfc7965075c6f9,accepted,434.9,true,"",-0.000880,-0.1250,0.9371,true,"",false,false,0.266,true,""
+a7fcdb60d7ce01fe,missing,,,,,,,,,,,,,
+454db39fb22b7f94,accepted,245.1,true,"",-0.001116,0.0000,0.9613,true,"",false,false,0.221,true,""
+4f60c0e0ce1d3f49,missing,,,,,,,,,,,,,
+7a28dfdca6f5027e,missing,,,,,,,,,,,,,
+8d35b6970b618157,accepted,361.3,false,"the area next to the logo could not be confirmed clear",NaN,NaN,0.8862,true,"",false,false,0.258,false,"hand crosses or touches this marker"
+b0a1a6ff0bf6db97,missing,,,,,,,,,,,,,
+cbee1a6f6b7b4528,missing,,,,,,,,,,,,,
+294af860f7372d1c,missing,,,,,,,,,,,,,
+0750b217923d6793,missing,,,,,,,,,,,,,
+e4e203107901244d,missing,,,,,,,,,,,,,
+3b269ef3e009a150,missing,,,,,,,,,,,,,
+33df0c5378aede8c,missing,,,,,,,,,,,,,
+8eb7af5d4e04cb5d,missing,,,,,,,,,,,,,
+234ac251289608b7,missing,,,,,,,,,,,,,
+d57e2051d203d214,missing,,,,,,,,,,,,,
+2f1a34655a86a340,missing,,,,,,,,,,,,,
+e83a47485e646330,missing,,,,,,,,,,,,,
+c68ad7934502cfb2,missing,,,,,,,,,,,,,
+708ff4c725496d44,missing,,,,,,,,,,,,,
+7bd6fe4932a1eaf0,accepted,434.7,false,"logo surroundings could not be checked",NaN,NaN,0.8398,false,"hand crosses or touches this marker",false,false,0.217,true,""
+6d02e5958a9b0e47,accepted,433.9,false,"logo surroundings could not be checked",NaN,NaN,0.9420,false,"marker surroundings could not be checked",false,false,0.248,true,""
+9b6e4919c0ab2400,accepted,246.0,false,"logo surroundings could not be checked",NaN,NaN,0.9492,false,"marker surroundings could not be checked",false,false,0.255,true,""
+fcb2c12c29a4aa93,missing,,,,,,,,,,,,,
+84aa128bff06f3d7,accepted,142.5,true,"",-0.001042,-0.2969,0.8182,true,"",false,false,0.000,true,""
+c5f55ae2950cbedf,accepted,128.7,false,"logo surroundings could not be checked",NaN,NaN,0.9063,false,"hand crosses or touches this marker",false,false,0.122,true,""
+16a03b0b59f31090,missing,,,,,,,,,,,,,
+5ce1990b5d31c023,accepted,433.8,false,"logo surroundings could not be checked",NaN,NaN,0.9289,false,"hand crosses or touches this marker",false,false,0.172,true,""
+56da938a17284e9f,missing,,,,,,,,,,,,,
+c399d2c9539f9537,accepted,433.7,true,"",-0.000991,0.0625,0.9552,true,"",false,false,0.046,true,""
+f657ad6292dd4d3c,accepted,332.8,false,"logo surroundings could not be checked",NaN,NaN,0.9393,false,"marker surroundings could not be checked",false,false,0.241,true,""
+56382dd3f82b79fd,accepted,237.2,false,"logo surroundings could not be checked",NaN,NaN,0.9445,false,"hand crosses or touches this marker",false,false,0.221,true,""
+7fc62dec9c35f7d5,accepted,383.4,false,"logo surroundings could not be checked",NaN,NaN,0.9591,false,"marker surroundings could not be checked",false,false,0.244,true,""
+ae34d848344b9f7e,accepted,221.8,false,"logo surroundings could not be checked",NaN,NaN,0.9273,false,"hand crosses or touches this marker",false,false,0.211,true,""
+bce0a850a013817b,accepted,191.8,false,"logo surroundings could not be checked",NaN,NaN,0.8358,false,"marker surroundings could not be checked",false,false,0.198,true,""
+594c162d7b51ded9,accepted,383.4,false,"logo surroundings could not be checked",NaN,NaN,0.9610,false,"marker surroundings could not be checked",false,false,0.243,true,""
+eb1c9ce60c851721,accepted,130.7,false,"logo surroundings could not be checked",NaN,NaN,0.8239,false,"hand crosses or touches this marker",false,false,0.110,true,""
+265129ed8fcfe43c,accepted,102.6,false,"logo surroundings could not be checked",NaN,NaN,0.9271,false,"marker surroundings could not be checked",false,false,0.043,true,""
+6784943b0c490835,accepted,435.0,false,"logo surroundings could not be checked",NaN,NaN,0.9593,false,"marker surroundings could not be checked",false,false,0.211,true,""
+bcdb61c83062c3be,accepted,435.1,true,"",-0.001490,0.1719,0.9456,true,"",false,false,0.229,true,""
+215b8f46d1da4a01,accepted,236.5,true,"",-0.001783,0.1719,0.9228,true,"",false,false,0.225,true,""
+2ada80cf4a87f599,missing,,,,,,,,,,,,,
+f003a5aece0b6b80,missing,,,,,,,,,,,,,
+d545940f96b69a1f,missing,,,,,,,,,,,,,
+4c4c0f328fdf89be,missing,,,,,,,,,,,,,
+96f53a4bae137de9,missing,,,,,,,,,,,,,
+c5ff154e42165f59,missing,,,,,,,,,,,,,
+a5e421ece4056202,accepted,434.8,true,"",0.000054,0.0156,0.9713,true,"",false,false,0.234,true,""
+7f94f08a2015c94e,missing,,,,,,,,,,,,,
+7d2e45775a7f0140,accepted,434.1,false,"logo surroundings could not be checked",NaN,NaN,0.9446,false,"marker surroundings could not be checked",false,false,0.247,true,""
+5a25cdb409b7c6cd,accepted,433.9,false,"logo surroundings could not be checked",NaN,NaN,0.9675,false,"marker surroundings could not be checked",false,false,0.235,true,""
+c1037a6b728c9875,missing,,,,,,,,,,,,,
+6e82716dcc4cebf7,missing,,,,,,,,,,,,,
+dbb2cbeadab719f9,missing,,,,,,,,,,,,,
+63986cb1d64a9b73,pose_rejected,,,,,,,,,,,,,
+9c413fa7e1acc217,missing,,,,,,,,,,,,,
+f85a71afc43a58de,missing,,,,,,,,,,,,,
+53087b7c5cd561fc,missing,,,,,,,,,,,,,
+afa2302de4e07e7f,accepted,245.0,false,"logo surroundings could not be checked",NaN,NaN,0.9752,false,"marker surroundings could not be checked",false,false,0.222,true,""
+83e5cea4c73fcaee,accepted,433.6,false,"logo surroundings could not be checked",NaN,NaN,0.9643,false,"marker surroundings could not be checked",false,false,0.208,true,""
+9566194a0752a8c3,missing,,,,,,,,,,,,,
+c5f55ae2950cbedf,accepted,128.7,false,"logo surroundings could not be checked",NaN,NaN,0.9063,false,"hand crosses or touches this marker",false,false,0.122,true,""
+2347fbd181eb8847,accepted,433.9,true,"",-0.000540,0.0469,0.9715,true,"",false,false,0.236,true,""
+17402db61e730278,accepted,236.0,true,"",-0.000827,0.0156,0.9396,true,"",false,false,0.217,true,""
+926772fdb706c1e7,accepted,434.3,false,"logo surroundings could not be checked",NaN,NaN,0.9792,false,"hand crosses or touches this marker",false,false,0.264,true,""
+efaeab699876765e,missing,,,,,,,,,,,,,
+4a94d34c327f63b7,missing,,,,,,,,,,,,,
+a5bfa50b177fadd3,missing,,,,,,,,,,,,,
+0556ad9173b440ec,missing,,,,,,,,,,,,,
+734ed2e51fcdbe6d,accepted,432.9,false,"logo surroundings could not be checked",NaN,NaN,0.9229,false,"marker surroundings could not be checked",false,false,0.255,true,""
+3108248748f8ed97,missing,,,,,,,,,,,,,
+7888550a54853ebb,missing,,,,,,,,,,,,,
+b93685d799ec9f84,accepted,142.5,true,"",-0.001042,-0.2969,0.8329,true,"",false,false,0.000,true,""
+12647e0fbeac93c0,missing,,,,,,,,,,,,,
+e7a819443fd0d94a,accepted,434.4,false,"logo surroundings could not be checked",NaN,NaN,0.9304,false,"hand crosses or touches this marker",false,false,0.148,true,""
+3fce7641f179dfd5,accepted,434.3,true,"",-0.000198,-0.0156,0.9537,true,"",false,false,0.236,true,""
+7a28dfdca6f5027e,missing,,,,,,,,,,,,,
+d980c3ce25b52abf,missing,,,,,,,,,,,,,
+e1e61fe540a68a89,missing,,,,,,,,,,,,,
+4ce46215cbff98e6,missing,,,,,,,,,,,,,
+3c01b0916279a998,missing,,,,,,,,,,,,,
+be110517d85e0198,missing,,,,,,,,,,,,,
+177912ce520bf5a1,accepted,245.5,false,"logo surroundings could not be checked",NaN,NaN,0.8906,false,"marker surroundings could not be checked",false,false,0.249,true,""
+d8ca71c3ac69a390,missing,,,,,,,,,,,,,
+96da6f82989e875c,missing,,,,,,,,,,,,,
+3a719f21397b8c3c,accepted,129.0,false,"logo surroundings could not be checked",NaN,NaN,0.7543,false,"marker surroundings could not be checked",false,false,0.000,true,""
+798e9924b69c2d08,pose_rejected,,,,,,,,,,,,,
+504afdd89aee3e15,accepted,434.9,false,"logo surroundings could not be checked",NaN,NaN,0.9656,false,"marker surroundings could not be checked",false,false,0.228,true,""
+7b291fd266001fcb,missing,,,,,,,,,,,,,
+00ff07f016362120,accepted,433.9,true,"",-0.000684,0.0469,0.9629,true,"",false,false,0.219,true,""
+a71df6c06e554d7b,missing,,,,,,,,,,,,,
+62f006bb34dde963,accepted,245.1,false,"logo surroundings could not be checked",NaN,NaN,0.9315,false,"hand crosses or touches this marker",false,false,0.251,true,""
+748029e3142feabd,missing,,,,,,,,,,,,,
+ce6f75a2380a78e1,missing,,,,,,,,,,,,,
+6a45fb92ba1f601a,missing,,,,,,,,,,,,,
+86e245b2719dd1e7,accepted,434.0,false,"logo surroundings could not be checked",NaN,NaN,0.7190,false,"hand crosses or touches this marker",false,false,0.236,false,"hand crosses or touches this marker"
+8b11a6baadbb4bab,missing,,,,,,,,,,,,,
+a681769244cdee29,missing,,,,,,,,,,,,,
+1d55b01daf63e59d,accepted,434.5,false,"hand crosses or touches the logo",NaN,NaN,0.7731,false,"hand crosses or touches this marker",true,true,0.142,true,""
+ca414681c03421ec,accepted,245.8,false,"logo surroundings could not be checked",NaN,NaN,0.9707,false,"marker surroundings could not be checked",false,false,0.227,true,""
+36ffe44ce5170d2b,accepted,246.1,false,"logo surroundings could not be checked",NaN,NaN,0.9320,false,"marker surroundings could not be checked",false,false,0.166,true,""
+e2d63a47c33b2c07,missing,,,,,,,,,,,,,
+71bd35628e4ed6ac,accepted,436.6,false,"logo surroundings could not be checked",NaN,NaN,0.9296,false,"marker surroundings could not be checked",false,false,0.243,true,""
+ce1600bb75d41ca8,missing,,,,,,,,,,,,,
+91bff020783974d8,pose_rejected,,,,,,,,,,,,,
+baf57b66c2a15daa,pose_rejected,,,,,,,,,,,,,
+66c4527d45cf91b0,accepted,120.4,true,"",0.042686,4.9688,0.8463,true,"",false,false,0.000,true,""
+6d440f240015dd64,missing,,,,,,,,,,,,,
+7443488738a77b10,missing,,,,,,,,,,,,,
+29ec17dc64f82548,missing,,,,,,,,,,,,,
+972c2f9279ee489c,missing,,,,,,,,,,,,,
+cbc2f0249b0e5abb,missing,,,,,,,,,,,,,
+ce997f77df67b365,missing,,,,,,,,,,,,,
+ffe13b6968cc3002,missing,,,,,,,,,,,,,
+f72f7a88a7838e6f,missing,,,,,,,,,,,,,
+e61baaf7889bf4ce,missing,,,,,,,,,,,,,
+ad1ae3e5b9609de8,missing,,,,,,,,,,,,,
+81cb2c9f1005c570,missing,,,,,,,,,,,,,
+9399b6c95367ea63,missing,,,,,,,,,,,,,
+709160117d0d8944,missing,,,,,,,,,,,,,
+8dfc09a813408137,missing,,,,,,,,,,,,,
+e63aae0556929ee2,missing,,,,,,,,,,,,,
+212c6d510bdfa0c6,missing,,,,,,,,,,,,,
+7f67bc326f34d1b4,missing,,,,,,,,,,,,,
+077073afa8d7b7e8,missing,,,,,,,,,,,,,
+6da5df4eb2ac6ff5,missing,,,,,,,,,,,,,
+b845692c269994d7,missing,,,,,,,,,,,,,
+cd8b5cf3e9fc987a,missing,,,,,,,,,,,,,
+fc62906af2b272de,accepted,584.9,false,"logo surroundings could not be checked",NaN,NaN,0.9520,false,"hand crosses or touches this marker",false,false,0.342,true,""
+1e4d377d3ca91f43,accepted,271.2,false,"logo surroundings could not be checked",NaN,NaN,0.9273,false,"marker surroundings could not be checked",false,false,0.000,true,""
+7a77e61713240ff8,accepted,177.1,false,"logo surroundings could not be checked",NaN,NaN,0.8841,false,"marker surroundings could not be checked",false,false,0.000,true,""
+a5431af6379b78a5,accepted,452.2,false,"logo surroundings could not be checked",NaN,NaN,0.9381,false,"marker surroundings could not be checked",false,false,0.221,true,""
+

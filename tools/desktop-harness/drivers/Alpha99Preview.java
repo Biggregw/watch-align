@@ -37,7 +37,7 @@ public class Alpha99Preview {
         for(int i=0;i<hdr.length;i++){if(hdr[i].equals("local_path")||hdr[i].equals("path"))iPath=i;if(hdr[i].equals("photo_id"))iId=i;}
         Path out=Path.of(a[2]);Files.createDirectories(out);
         try(PrintWriter csv=new PrintWriter(new FileWriter(out.resolve("findings.csv").toFile()))){
-            csv.println("photo_id,feature,alpha98_status,alpha99_status,short_line");
+            csv.println("photo_id,feature,alpha98_status,alpha99_status,short_line,alpha101_only");
             for(int li=1;li<lines.size();li++){
                 String[] f=lines.get(li).split(",",-1);String id=iId>=0?f[iId]:f[iPath];
                 Path p=Path.of(a[1]).resolve(f[iPath]);if(!Files.exists(p)){System.out.println("== "+id+": missing");continue;}
@@ -49,7 +49,8 @@ public class Alpha99Preview {
                 for(String h:o.summary.headlineLines())System.out.println("  "+h);
                 for(Alpha99Findings.Finding x:o.summary.all){
                     String before=alpha98Status(old,x);
-                    csv.println(String.join(",",id,x.key,before,x.status.name(),"\""+(x.status==Alpha99Findings.Status.WITHIN?"":x.shortLine()).replace("\"","'")+"\""));
+                    csv.println(String.join(",",id,x.key,before,x.status.name(),"\""+(x.status==Alpha99Findings.Status.WITHIN?"":x.shortLine()).replace("\"","'")+"\"",
+                            ""+Alpha99Findings.outsideOnlyByNewMeasures(x)));
                     if(x.status!=Alpha99Findings.Status.WITHIN||"OUTSIDE".equals(before))
                         System.out.println(String.format("    %-16s %-13s -> %-13s %s",x.title,before,x.statusLabel(),x.status==Alpha99Findings.Status.WITHIN?"":x.shortLine()));
                 }

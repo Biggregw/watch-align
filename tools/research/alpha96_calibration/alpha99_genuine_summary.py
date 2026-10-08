@@ -37,10 +37,16 @@ def main():
     print('\nAlpha98 -> Alpha99 status (all features, all photos):')
     for (a, b), n in sorted(trans.items()):
         print(f'  {a:13s} -> {b:13s} {n}')
-    bad = [r for r in f if r['alpha99_status'] in ('CLEAR', 'WORTH') and r['alpha98_status'] != 'OUTSIDE']
+    new_only = [r for r in f if r['alpha99_status'] in ('CLEAR', 'WORTH') and r.get('alpha101_only') == 'true']
+    bad = [r for r in f if r['alpha99_status'] in ('CLEAR', 'WORTH') and r['alpha98_status'] != 'OUTSIDE'
+           and r.get('alpha101_only') != 'true']
     print(f'\nnew findings (Alpha99 outside where Alpha98 was not): {len(bad)}')
     for r in bad:
         print('  ', r['photo_id'], src.get(r['photo_id'], ''), r['feature'], r['alpha98_status'], '->', r['alpha99_status'], r['short_line'])
+    print(f'\nAlpha101 checks (no Alpha98 counterpart) outside: {len(new_only)} '
+          f'(CLEAR {sum(r["alpha99_status"] == "CLEAR" for r in new_only)})')
+    for r in new_only:
+        print('  ', r['photo_id'], src.get(r['photo_id'], ''), r['feature'], r['alpha99_status'], r['short_line'])
     out = [r for r in f if r['alpha99_status'] in ('CLEAR', 'WORTH')]
     print(f'\nphotos with any Alpha99 finding: {len({r["photo_id"] for r in out})} (features: {len(out)})')
     for r in out:
