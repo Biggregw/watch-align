@@ -30,6 +30,8 @@ jobs:
       CAL: tools/research/alpha96_calibration
       IMG: gmt_images
       OUT: gmt_results
+      # interference log and shrunk copies: measured in run 37804668525; set to 'true' to repeat them
+      FULL: 'false'
     steps:
       - uses: actions/checkout@v4
 
@@ -65,7 +67,10 @@ jobs:
           cp "$CAL/m12_nominal.properties" $C/src/m12_nominal.properties
           python3 "$CAL/calibrate_m12_nominal.py" --per-photo $C/src/per_photo.csv --priority-runner $C/src/priority_runner.csv \
             --properties $C/src/m12_nominal.properties --reference $C/src/m12_ref.csv --out $C/src/cal.md > /dev/null
-          python3 "$CAL/measurement_uncertainty.py" --per-photo $C/src/per_photo.csv --out-props $C/src/unc.properties --out-md $C/src/unc.md > /dev/null
+          python3 "$CAL/measurement_uncertainty.py" --per-photo $C/src/per_photo.csv --out-props $C/src/unc_filtered.properties --out-md $C/src/unc.md > /dev/null
+          # the edge filter never makes a clear finding easier (run 37804668525: the filtered allowance alone turned a genuine 12 clear)
+          python3 tools/research/sub124060/edge_safe_uncertainty.py --filtered $C/src/unc_filtered.properties \
+            --unfiltered "$CAL/alpha99_uncertainty.properties" --out $C/src/unc.properties
           cp -r android/app/src/main/assets/models $C/
           cp $C/src/m12_nominal.properties $C/models/gmt_126710/reference/triangle_nominal.properties
           cp $C/src/m12_ref.csv $C/models/gmt_126710/reference/triangle_reference.csv
@@ -74,6 +79,7 @@ jobs:
             echo "--- $f"; diff android/app/src/main/assets/models/gmt_126710/reference/$f $C/models/gmt_126710/reference/$f || true; done
 
       - name: Interference check (current app)
+        if: env.FULL == 'true'
         run: tools/desktop-harness/run.sh Alpha99Interference "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT" --no-images > "$OUT/interference_log.txt" 2>/dev/null
 
       - name: Classification, current constants
@@ -105,13 +111,14 @@ jobs:
               print(side, 'genuine 12 statuses:', collections.Counter(r['alpha99_status'] for k, r in d.items() if k[1] == 'twelve' and cat.get(k[0], {}).get('class_label') == 'gen'))
               print(side, 'genuine CLEAR (any feature):', sorted({k[0] for k, r in d.items() if r['alpha99_status'] == 'CLEAR' and cat.get(k[0], {}).get('class_label') == 'gen'}))
           sec = collections.Counter()
-          for l in open(f'{out}/interference_log.txt'):
+          for l in (open(f'{out}/interference_log.txt') if os.path.exists(f'{out}/interference_log.txt') else []):
               for h in re.findall(r' (\d+)(?:\([^)]*\))?\[SEC', l):
                   sec[int(h)] += 1
           print('[SEC] withholdings by hour:', dict(sorted(sec.items())))
           PY
 
       - name: Shrink genuine dial photos
+        if: env.FULL == 'true'
         run: |
           python3 - <<'PY'
           import csv, os, cv2
@@ -139,9 +146,11 @@ jobs:
           PY
 
       - name: Runner on the shrunk copies
+        if: env.FULL == 'true'
         run: tools/desktop-harness/run.sh Alpha96Calib lowres_manifest.csv "$IMG" "$OUT/runner_lowres.csv" 2> /dev/null
 
       - name: Join catalogue columns
+        if: env.FULL == 'true'
         run: |
           python3 - <<'PY'
           import csv, os, collections
