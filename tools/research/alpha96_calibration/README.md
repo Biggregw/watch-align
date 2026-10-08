@@ -851,6 +851,14 @@ So the logo fails closed as follows:
 
 **Local effect:** 2 of 18 photos keep a logo reading. Two are withheld for a detected seconds hand; the rest could not be checked or confirmed clear.
 
+**Genuine catalogue (CI run 37747936901, `results/alpha101/logo_catalogue.csv`):** of 102 accepted photos:
+- 33 keep a logo reading;
+- 65 could not be checked;
+- 3 are withheld for a seconds hand on the logo;
+- 1 is withheld because the area next to the logo could not be confirmed clear.
+
+The gate still passes the one known contaminated genuine photo, `66c4527d45cf91b0` (Phillips, 120 px dial). Its hour hand lies along the 12 and it reads 4.3% R / 5.0°. The logo region and the 12 both read clean with 0.000 foreign: at that resolution the check sees nothing, and the sensitivity rule does not catch it, because the photo's marker strips are equally insensitive. So the gate gives a false clean on genuine data.
+
 **Status:** under guardrails §11, the logo stays research-only. The reused check cannot certify the logo area clean. A gate that models the expected genuine printing, rather than a plain dial, would be the next bounded experiment. The marker checks are unchanged (`results/alpha99/interference_local.csv` is identical).
 
 ### 4. Whole-dial summary
