@@ -137,13 +137,20 @@ final class Alpha99Findings {
         }
         List<String> headlineLines(){
             List<String> h=new ArrayList<>();int c=clear().size(),w=worth().size(),na=notAssessedCount();
-            if(c>0)h.add(c+" clear alignment finding"+(c==1?"":"s"));
-            if(w>0)h.add(w+(c>0?" other":"")+(w==1?" measurement is":" measurements are")+" worth a look");
+            if(c>0)h.add(c+" clear alignment finding"+(c==1?"":"s")+": "+names(clear()));
+            if(w>0)h.add(w+(c>0?" other":"")+(w==1?" measurement is":" measurements are")+" worth a look: "+names(worth()));
             if(c==0&&w==0)h.add("No measured feature is outside the measured genuine range");
+            // QC guardrails 4: borderline readings alone are not escalated; a repeat on another photo is the stronger evidence
+            if(c==0&&w>0)h.add("Another clean, straight-on photo would show whether "+(w==1?"it repeats":"these repeat"));
             if(na>0)h.add(na+(na==1?" feature":" features")+" could not be assessed");
             return h;
         }
         String headline(){return String.join("\n",headlineLines());}
+        private static String names(List<Finding> fs){
+            StringBuilder b=new StringBuilder();
+            for(Finding f:fs){if(b.length()>0)b.append(", ");b.append(f.shortName);}
+            return b.toString();
+        }
         /** Not-assessed features, a group withheld for one shared reason counting once. */
         int notAssessedCount(){
             java.util.Set<String> groups=new java.util.HashSet<>();int n=0;

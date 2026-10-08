@@ -279,9 +279,18 @@ public class Alpha99FindingsTest {
         Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
         Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(12).clean=false;c.get(12).reason=Alpha99MarkerInterference.HAND;
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,c,TestModels.gmt(),TestModels.gmtRef());
-        assertEquals("1 clear alignment finding",s.headlineLines().get(0));
-        assertEquals("1 other measurement is worth a look",s.headlineLines().get(1));
+        assertEquals("1 clear alignment finding: 9",s.headlineLines().get(0));
+        assertEquals("1 other measurement is worth a look: 6",s.headlineLines().get(1));
         assertTrue(s.headlineLines().get(2).endsWith("could not be assessed"));
+    }
+
+    @Test public void borderlineAloneSuggestsAnotherPhoto(){
+        // QC guardrails 4: a worth-a-look reading on its own is not escalated; the headline asks for a repeat instead
+        Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,TestModels.gmtRef().nominal("nine_rot"));
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(0,s.clear().size());
+        assertEquals("1 measurement is worth a look: 6",s.headlineLines().get(0));
+        assertEquals("Another clean, straight-on photo would show whether it repeats",s.headlineLines().get(1));
     }
 
     // ---------------------------------------------------------------- interference check on synthetic dials

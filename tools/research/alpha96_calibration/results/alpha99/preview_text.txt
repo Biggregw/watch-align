@@ -2,8 +2,8 @@
   No measured feature is outside the measured genuine range
   Within measured genuine range: 12, 6, 9, 1, 2, 4, 5, 7, 8, 10, 11, round plot size, marker ring, date window
 == 25369d47-image (R=278)
-  2 clear alignment findings
-  2 other measurements are worth a look
+  2 clear alignment findings: 9, 2
+  2 other measurements are worth a look: 6, 8
   2 features could not be assessed
     6 o'clock        OUTSIDE       -> WORTH A LOOK  rotated 1.0° clockwise; genuine up to 0.7°
     9 o'clock        OUTSIDE       -> CLEAR FINDING rotated 1.4° anticlockwise; genuine up to 0.6°
@@ -93,7 +93,8 @@
     Date window      NOT_ASSESSED  -> NOT ASSESSED  glare on magnifier
   Within measured genuine range: 6, marker ring
 == POOL_GEN_HO_01 (R=203)
-  1 measurement is worth a look
+  1 measurement is worth a look: 10
+  Another clean, straight-on photo would show whether it repeats
   3 features could not be assessed
     2 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
     8 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
@@ -117,8 +118,8 @@
     Date window      NOT_ASSESSED  -> NOT ASSESSED  glare on magnifier
   Within measured genuine range: 6, marker ring
 == RL_ARF_BLRO_CROOKED6 (R=234)
-  3 clear alignment findings
-  4 other measurements are worth a look
+  3 clear alignment findings: 12, 8, 11
+  4 other measurements are worth a look: 6, 7, 10, round plot size
   4 features could not be assessed
     12 o'clock       OUTSIDE       -> CLEAR FINDING shifted left by 0.85% of the dial; genuine up to 0.23%
     6 o'clock        OUTSIDE       -> WORTH A LOOK  shifted towards the centre by 0.37% of the dial; genuine up to 0.30%
@@ -134,7 +135,7 @@
     Date window      NOT_ASSESSED  -> NOT ASSESSED  hand or date change
   Within measured genuine range: 9, 4, marker ring
 == RL_LOCAL_BLNR (R=220)
-  2 clear alignment findings
+  2 clear alignment findings: 12, marker ring
   7 features could not be assessed
     12 o'clock       OUTSIDE       -> CLEAR FINDING shifted left by 1.33% of the dial; genuine up to 0.23%
     6 o'clock        OUTSIDE       -> NOT ASSESSED  hand crosses marker
@@ -147,7 +148,8 @@
     Dial marker ring OUTSIDE       -> CLEAR FINDING markers as a set turned 0.52° clockwise; genuine up to 0.2°
   Within measured genuine range: 1, 2, 4, 7, date window
 == RL_THEONE_BLNR (R=165)
-  2 measurements are worth a look
+  2 measurements are worth a look: 6, 9
+  Another clean, straight-on photo would show whether these repeat
   2 features could not be assessed
     12 o'clock       OUTSIDE       -> NOT ASSESSED  hand crosses marker
     6 o'clock        OUTSIDE       -> WORTH A LOOK  shifted towards its minute mark and the 7 by 0.47% of the dial; genuine up to 0.30%
@@ -163,8 +165,8 @@
     Round lume plots NOT_ASSESSED  -> NOT ASSESSED  resolution too low
   Within measured genuine range: marker ring, date window
 == USER_BATGIRL_GMT (R=205)
-  2 clear alignment findings
-  2 other measurements are worth a look
+  2 clear alignment findings: 9, 2
+  2 other measurements are worth a look: 6, 8
   1 feature could not be assessed
     12 o'clock       NOT_ASSESSED  -> NOT ASSESSED  hand crosses marker
     6 o'clock        OUTSIDE       -> WORTH A LOOK  rotated 0.8° clockwise; genuine up to 0.7°

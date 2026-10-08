@@ -832,6 +832,14 @@ A marker shift is named by its dominant direction: towards its minute mark, towa
 
 Real size in mm is deliberately not shown yet. It needs a sourced dial diameter per model; one route is the bezel's outer diameter, the published 40 mm case, measured in dial-radius units on genuine photos.
 
+### 4. Whole-dial summary
+
+The QC guide judges a dial by how many markers are off as well as how far: one slight misalignment is fine; one major or several slight ones matter. QC guardrails §4 adds that a borderline reading should lead to a request for another photo, not more severity. Presentation only: no classification changes (`results/alpha99/findings_local.csv` is unchanged), only the headline lines in `results/alpha99/preview_text.txt`.
+
+- The headline names what it counts, e.g. "2 clear alignment findings: 9, 2" and "2 other measurements are worth a look: 6, 8".
+- When nothing is clear and something is worth a look, the headline adds "Another clean, straight-on photo would show whether it repeats" (or "these repeat").
+- Test: `Alpha99FindingsTest.borderlineAloneSuggestsAnotherPhoto`.
+
 ### 5. Round lume-plot size
 
 Each round marker's fitted outer radius was already measured (Alpha94 `radius_err_px`). There are two features, built like the others in `build_alpha98_reference.py` and `measurement_uncertainty.py`, from genuine photos only:
