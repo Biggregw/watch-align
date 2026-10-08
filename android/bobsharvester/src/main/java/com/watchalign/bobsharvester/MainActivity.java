@@ -20,6 +20,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -62,13 +63,13 @@ public class MainActivity extends Activity {
     static final Set<String> NONREF=new HashSet<>(Arrays.asList("1905","1926","1931","1945","1953","1955","1956","1963","2024","2025","2026"));
 
     enum Mode{IDLE,CATALOG,PRODUCT}
-    WebView web; TextView status,log; ProgressBar bar; Button start,stop,zip;
+    WebView web; TextView status,log; ProgressBar bar; Button start,stop,zip; EditText filter;
     final ExecutorService io=Executors.newSingleThreadExecutor();
     final LinkedHashMap<String,Product> products=new LinkedHashMap<>();
     final ArrayDeque<Product> queue=new ArrayDeque<>();
     final Set<String> done=new HashSet<>(), hashes=new HashSet<>(), rootSeen=new HashSet<>();
     volatile boolean running=false, stopping=false;
-    Mode mode=Mode.IDLE; int root=0,page=1,empty=0,doneRun=0,keptRun=0; boolean returnToCatalog=false,catalogPageEnd=false; Product current;
+    Mode mode=Mode.IDLE; int root=0,page=1,empty=0,doneRun=0,keptRun=0; boolean returnToCatalog=false,catalogPageEnd=false; String activeFilter=""; Product current;
     File work,images,doneFile,hashFile,manifest;
 
     @Override public void onCreate(Bundle b){
@@ -84,6 +85,7 @@ public class MainActivity extends Activity {
         LinearLayout r=new LinearLayout(this); r.setOrientation(LinearLayout.VERTICAL); r.setPadding(dp(10),dp(10),dp(10),dp(10));
         TextView t=new TextView(this); t.setText("Bob's Rolex Harvester"); t.setTextSize(22); t.setGravity(Gravity.CENTER); r.addView(t);
         TextView h=new TextView(this); h.setText("One-off run. Leave the app open. It keeps only face-on QC-style images and creates model/reference ZIPs below 30 MB."); h.setPadding(0,dp(4),0,dp(6)); r.addView(h);
+        filter=new EditText(this);filter.setSingleLine(true);filter.setHint("Keyword filter: e.g. Submariner, 124060, GMT-Master II");filter.setTextSize(16);filter.setPadding(dp(10),dp(4),dp(10),dp(6));r.addView(filter,new LinearLayout.LayoutParams(-1,-2));
         LinearLayout row=new LinearLayout(this);
         start=new Button(this);start.setText("Start / Resume"); stop=new Button(this);stop.setText("Stop");stop.setEnabled(false); zip=new Button(this);zip.setText("Build ZIPs");
         row.addView(start,new LinearLayout.LayoutParams(0,-2,1));row.addView(stop,new LinearLayout.LayoutParams(0,-2,.55f));row.addView(zip,new LinearLayout.LayoutParams(0,-2,.7f));r.addView(row);
@@ -118,12 +120,13 @@ public class MainActivity extends Activity {
 
     void begin(){
         if(running)return;
+        activeFilter=clean(filter.getText().toString());filter.setEnabled(false);
         running=true;stopping=false;products.clear();queue.clear();rootSeen.clear();root=0;page=1;empty=0;doneRun=0;keptRun=0;returnToCatalog=false;catalogPageEnd=false;
-        start.setEnabled(false);stop.setEnabled(true);bar.setVisibility(View.VISIBLE);mode=Mode.CATALOG;msg("Starting catalogue crawl.");loadCatalog();
+        start.setEnabled(false);stop.setEnabled(true);bar.setVisibility(View.VISIBLE);mode=Mode.CATALOG;msg("Starting catalogue crawl"+(activeFilter.isEmpty()?".":" with keyword filter: "+activeFilter));loadCatalog();
     }
     void halt(){
         stopping=true;running=false;mode=Mode.IDLE;web.stopLoading();start.setEnabled(true);stop.setEnabled(false);bar.setVisibility(View.GONE);
-        status.setText("Stopped. Progress is saved. Tap Start / Resume to continue, or Build ZIPs for what is already collected.");
+        filter.setEnabled(true);status.setText("Stopped. Progress is saved. Tap Start / Resume to continue, or Build ZIPs for what is already collected.");
     }
 
     String catUrl(){String x=ROOTS[root];return page==1?x:x+(x.contains("?")?"&":"?")+"page="+page;}
@@ -136,8 +139,9 @@ public class MainActivity extends Activity {
             try{
                 JSONObject o=new JSONObject(jsValue(v));JSONArray a=o.getJSONArray("a");int beforeRoot=rootSeen.size(),queued=0;
                 for(int i=0;i<a.length();i++){
-                    JSONObject z=a.getJSONObject(i);String title=clean(z.optString("t")),u=canonicalProductUrl(z.optString("u")),r=ref(title+" "+u);
-                    if(r.isEmpty()||!productUrl(u))continue;
+                    JSONObject z=a.getJSONObject(i);String title=clean(z.optString("t")),u=canonicalProductUrl(z.optString("u"));
+                    if(!matchesFilter(title,u))continue;
+                    String r=ref(title+" "+u);if(r.isEmpty()||!productUrl(u))continue;
                     rootSeen.add(u);
                     Product p=products.get(u);if(p==null){p=new Product();p.url=u;p.title=title;p.ref=r;products.put(u,p);}
                     String im=z.optString("i");if(!im.isEmpty())p.imgs.add(im);
@@ -173,7 +177,7 @@ public class MainActivity extends Activity {
     }
 
     void finishHarvest(){
-        running=false;mode=Mode.IDLE;stop.setEnabled(false);start.setEnabled(true);bar.setVisibility(View.GONE);
+        running=false;mode=Mode.IDLE;stop.setEnabled(false);start.setEnabled(true);filter.setEnabled(true);bar.setVisibility(View.GONE);
         msg("Harvest pass complete: "+doneRun+" product pages processed, "+keptRun+" accepted images this run.");
         status.setText("Harvest complete. "+imageCount()+" accepted images are stored locally. Tap BUILD ZIPS to export model/reference ZIPs.");
     }
@@ -321,6 +325,15 @@ public class MainActivity extends Activity {
     void put(ZipOutputStream z,File f,String n)throws Exception{z.putNextEntry(new ZipEntry(n));try(InputStream in=new BufferedInputStream(new FileInputStream(f))){byte[] b=new byte[65536];int k;while((k=in.read(b))>=0)z.write(b,0,k);}z.closeEntry();}
     void put(ZipOutputStream z,String n,byte[] b)throws Exception{z.putNextEntry(new ZipEntry(n));z.write(b);z.closeEntry();}
     void downloads(File src,String name)throws Exception{ContentResolver cr=getContentResolver();ContentValues v=new ContentValues();v.put(MediaStore.Downloads.DISPLAY_NAME,name);v.put(MediaStore.Downloads.MIME_TYPE,"application/zip");if(Build.VERSION.SDK_INT>=29){v.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS+"/WatchAlign_Bobs_Harvest");v.put(MediaStore.Downloads.IS_PENDING,1);}Uri u=cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,v);if(u==null)throw new IOException("Cannot create download");try(InputStream in=new FileInputStream(src);OutputStream out=cr.openOutputStream(u)){if(out==null)throw new IOException("Cannot open download");byte[] b=new byte[65536];int k;while((k=in.read(b))>=0)out.write(b,0,k);}if(Build.VERSION.SDK_INT>=29){ContentValues q=new ContentValues();q.put(MediaStore.Downloads.IS_PENDING,0);cr.update(u,q,null,null);}}
+
+    boolean matchesFilter(String title,String url){
+        if(activeFilter==null||activeFilter.trim().isEmpty())return true;
+        String hay=searchText((title==null?"":title)+" "+(url==null?"":url));
+        String q=searchText(activeFilter);
+        for(String part:q.split(" ")){if(!part.isEmpty()&&!hay.contains(part))return false;}
+        return true;
+    }
+    String searchText(String s){return clean(s==null?"":s).toLowerCase(Locale.US).replaceAll("[^a-z0-9]+"," ").trim();}
 
     String canonicalProductUrl(String s){try{URI u=URI.create(s);String scheme=u.getScheme()==null?"https":u.getScheme(),host=u.getHost();if(host==null)return s;return new URI(scheme,host.toLowerCase(Locale.US),u.getPath(),null,null).toString();}catch(Exception e){return s;}}
     boolean productUrl(String s){try{URI u=URI.create(s);String h=u.getHost();if(h==null||!h.toLowerCase(Locale.US).endsWith("bobswatches.com"))return false;String p=u.getPath().toLowerCase(Locale.US);if(p.contains("/rolex-blog/")||p.contains("/sell-")||p.contains("/rolex-app")||p.contains("/about")||p.contains("/faq"))return false;return p.endsWith(".html");}catch(Exception e){return false;}}
