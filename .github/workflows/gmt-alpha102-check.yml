@@ -1,0 +1,175 @@
+name: GMT check of the Alpha102 fixes (research)
+
+# RESEARCH ONLY. Checks, on the sha256-verified GMT genuine catalogue, whether the fixes made for the Submariner 124060
+# apply to the GMT (owner: "any fixes applied to all watches if relevant"):
+#  1. 12 edge filter: genuine photos whose 12-triangle sides disagree beyond the app's own edge-consistency limit are
+#     removed from the 12 reference and its uncertainty (guardrails 1). A candidate model root is built from the
+#     committed research CSVs and the app's GMT classification is run with the current and the candidate constants;
+#     every status change is printed.
+#  2. Print spots: the interference log (seconds-hand dot lines behind each [SEC] withholding) shows whether any
+#     printed text on the GMT dial is taken for the seconds hand, as the 124060's SUPERLATIVE CHRONOMETER was.
+#  3. Low resolution: every genuine GMT dial photo (not shared) is shrunk to dial radii 130 / 150 / 170 px (originals at
+#     least 15% larger only) and re-measured, for a resolution-matched round-marker reference like the 124060's.
+# CSVs printed / uploaded; images are never committed, cached or uploaded.
+on:
+  push:
+    branches:
+      - feature/android-alpha102-submariner
+    paths:
+      - '.github/workflows/gmt-alpha102-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      CAL: tools/research/alpha96_calibration
+      IMG: gmt_images
+      OUT: gmt_results
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: python -m pip install -q requests opencv-python-headless
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+
+      - name: Fetch catalogued photos (sha256-verified)
+        run: |
+          mkdir -p "$IMG" "$OUT"
+          python3 "$CAL/fetch_verified.py" "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/fetch_log.csv"
+
+      - name: Build the edge-filtered candidate model root
+        run: |
+          C=cand; mkdir -p $C/src
+          python3 tools/research/sub124060/edge_filter.py --per-photo "$CAL/results/ci_run_37500197377/per_photo.csv" \
+            --nominal "$CAL/m12_nominal.properties" --uncertainty "$CAL/alpha99_uncertainty.properties" --out $C/src/per_photo.csv
+          python3 tools/research/sub124060/edge_filter.py --per-photo "$CAL/results/priority_genuine_runner.csv" \
+            --nominal "$CAL/m12_nominal.properties" --uncertainty "$CAL/alpha99_uncertainty.properties" --out $C/src/priority_runner.csv
+          cp "$CAL/m12_nominal.properties" $C/src/m12_nominal.properties
+          python3 "$CAL/calibrate_m12_nominal.py" --per-photo $C/src/per_photo.csv --priority-runner $C/src/priority_runner.csv \
+            --properties $C/src/m12_nominal.properties --reference $C/src/m12_ref.csv --out $C/src/cal.md > /dev/null
+          python3 "$CAL/measurement_uncertainty.py" --per-photo $C/src/per_photo.csv --out-props $C/src/unc.properties --out-md $C/src/unc.md > /dev/null
+          cp -r android/app/src/main/assets/models $C/
+          cp $C/src/m12_nominal.properties $C/models/gmt_126710/reference/triangle_nominal.properties
+          cp $C/src/m12_ref.csv $C/models/gmt_126710/reference/triangle_reference.csv
+          cp $C/src/unc.properties $C/models/gmt_126710/reference/uncertainty.properties
+          for f in triangle_nominal.properties triangle_reference.csv uncertainty.properties; do
+            echo "--- $f"; diff android/app/src/main/assets/models/gmt_126710/reference/$f $C/models/gmt_126710/reference/$f || true; done
+
+      - name: Interference check (current app)
+        run: tools/desktop-harness/run.sh Alpha99Interference "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT" --no-images > "$OUT/interference_log.txt" 2>/dev/null
+
+      - name: Classification, current constants
+        run: |
+          mkdir -p "$OUT/base"
+          tools/desktop-harness/run.sh Alpha99Preview "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/base" --no-images > "$OUT/base/preview_log.txt" 2>/dev/null
+
+      - name: Classification, edge-filtered candidate constants
+        run: |
+          mkdir -p "$OUT/cand"
+          JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Dwatchalign.models_root=cand" \
+            tools/desktop-harness/run.sh Alpha99Preview "$CAL/catalogue_provenance_strong.csv" "$IMG" "$OUT/cand" --no-images > "$OUT/cand/preview_log.txt" 2>/dev/null
+
+      - name: Status changes and seconds-hand withholdings
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import csv, collections, os, re
+          out, cal = os.environ['OUT'], os.environ['CAL']
+          cat = {r['photo_id']: r for r in csv.DictReader(open(f'{cal}/catalogue_provenance_strong.csv'))}
+          key = lambda r: (r['photo_id'], r['feature'])
+          a = {key(r): r for r in csv.DictReader(open(f'{out}/base/findings.csv'))}
+          b = {key(r): r for r in csv.DictReader(open(f'{out}/cand/findings.csv'))}
+          ch = [(k, a[k]['alpha99_status'], b.get(k, {}).get('alpha99_status')) for k in a if a[k]['alpha99_status'] != b.get(k, {}).get('alpha99_status')]
+          print('rows', len(a), 'status changes', len(ch))
+          for (p, f), x, y in ch:
+              print('CHANGE', p, cat.get(p, {}).get('class_label'), f, x, '->', y)
+          for side, d in (('current', a), ('candidate', b)):
+              print(side, 'genuine 12 statuses:', collections.Counter(r['alpha99_status'] for k, r in d.items() if k[1] == 'twelve' and cat.get(k[0], {}).get('class_label') == 'gen'))
+              print(side, 'genuine CLEAR (any feature):', sorted({k[0] for k, r in d.items() if r['alpha99_status'] == 'CLEAR' and cat.get(k[0], {}).get('class_label') == 'gen'}))
+          sec = collections.Counter()
+          for l in open(f'{out}/interference_log.txt'):
+              for h in re.findall(r' (\d+)(?:\([^)]*\))?\[SEC', l):
+                  sec[int(h)] += 1
+          print('[SEC] withholdings by hour:', dict(sorted(sec.items())))
+          PY
+
+      - name: Shrink genuine dial photos
+        run: |
+          python3 - <<'PY'
+          import csv, os, cv2
+          cal, img = os.environ['CAL'], os.environ['IMG']
+          cat = {r['photo_id']: r for r in csv.DictReader(open(f'{cal}/catalogue_provenance_strong.csv'))}
+          shared = {r['photo_id'] for r in csv.DictReader(open(f'{cal}/results/dedup/photos.csv')) if r['shared_dial'] == '1'}
+          rows = []
+          for r in csv.DictReader(open(f'{cal}/results/ci_run_37500197377/per_photo.csv')):
+              c = cat.get(r['photo_id'])
+              if c is None or r['status'] != 'accepted' or r['group'] != 'genuine_population' or r['photo_id'] in shared: continue
+              R = float(r['dial_radius_px'])
+              im = cv2.imread(os.path.join(img, c['local_path']), cv2.IMREAD_COLOR)
+              if im is None: continue
+              for T in (130, 150, 170):
+                  if R < 1.15 * T: continue
+                  k = T / R
+                  sm = cv2.resize(im, (max(1, round(im.shape[1] * k)), max(1, round(im.shape[0] * k))), interpolation=cv2.INTER_AREA)
+                  rel = f'lowres/{T}/{r["photo_id"]}.jpg'
+                  os.makedirs(os.path.join(img, os.path.dirname(rel)), exist_ok=True)
+                  cv2.imwrite(os.path.join(img, rel), sm, [cv2.IMWRITE_JPEG_QUALITY, 92])
+                  rows.append({'photo_id': f'{r["photo_id"]}_r{T}', 'local_path': rel, 'source_photo_id': r['photo_id'], 'target_r': T})
+          with open('lowres_manifest.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=['photo_id', 'local_path', 'source_photo_id', 'target_r']); w.writeheader(); w.writerows(rows)
+          print('shrunk copies', len(rows))
+          PY
+
+      - name: Runner on the shrunk copies
+        run: tools/desktop-harness/run.sh Alpha96Calib lowres_manifest.csv "$IMG" "$OUT/runner_lowres.csv" 2> /dev/null
+
+      - name: Join catalogue columns
+        run: |
+          python3 - <<'PY'
+          import csv, os, collections
+          cal, out = os.environ['CAL'], os.environ['OUT']
+          cat = {r['photo_id']: r for r in csv.DictReader(open(f'{cal}/catalogue_provenance_strong.csv'))}
+          man = {r['photo_id']: r for r in csv.DictReader(open('lowres_manifest.csv'))}
+          run = list(csv.DictReader(open(f'{out}/runner_lowres.csv')))
+          keep = ['group', 'class_label', 'physical_watch_id', 'model', 'source', 'image_url']
+          with open(f'{out}/per_photo_lowres.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(run[0].keys()) + ['source_photo_id', 'target_r'] + keep, extrasaction='ignore'); w.writeheader()
+              for r in run:
+                  m = man[r['photo_id']]; c = cat[m['source_photo_id']]
+                  r.update({'source_photo_id': m['source_photo_id'], 'target_r': m['target_r']}); r.update({k: c[k] for k in keep}); w.writerow(r)
+          print('lowres status:', collections.Counter((r['target_r'], r['status']) for r in csv.DictReader(open(f'{out}/per_photo_lowres.csv'))))
+          PY
+
+      - name: Upload CSVs (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmt-alpha102-check-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            gmt_results/**/*.csv
+            gmt_results/**/*.txt
+
+      - name: Print results to log
+        if: always()
+        run: |
+          echo "=== interference_log.txt BEGIN"; cat "$OUT/interference_log.txt" || true; echo "=== interference_log.txt END"
+          echo "=== per_photo_lowres.csv BEGIN"; cat "$OUT/per_photo_lowres.csv" || true; echo "=== per_photo_lowres.csv END"

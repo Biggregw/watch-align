@@ -60,12 +60,20 @@ def pooled(groups):
 
 
 def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--per-photo', default=os.path.join(HERE, 'results/ci_run_37500197377/per_photo.csv'),
+                    help='catalogue per-photo runner output (e.g. with edge-affected 12 readings removed by edge_filter.py)')
+    ap.add_argument('--m12-nominal', default=os.path.join(HERE, 'm12_nominal.properties'))
+    ap.add_argument('--out-props', default=os.path.join(HERE, 'alpha99_uncertainty.properties'))
+    ap.add_argument('--out-md', default=os.path.join(HERE, 'results', 'alpha99', 'uncertainty.md'))
+    a = ap.parse_args()
     C = HERE
     cat = {r['photo_id']: r for r in csv.DictReader(open(os.path.join(C, 'catalogue_provenance_strong.csv')))}
     shared = {r['photo_id'] for r in csv.DictReader(open(os.path.join(C, 'results/dedup/photos.csv'))) if r['shared_dial'] == '1'}
     # (family, unit) -> watch -> component -> list
     G = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    for r in csv.DictReader(open(os.path.join(C, 'results/ci_run_37500197377/per_photo.csv'))):
+    for r in csv.DictReader(open(a.per_photo)):
         if r['group'] != 'genuine_population' or r['status'] != 'accepted' or r['photo_id'] in shared:
             continue
         if 'swisswatchexpo' in cat[r['photo_id']]['image_url']:
@@ -109,7 +117,7 @@ def main():
     for r in csv.DictReader(open(os.path.join(D, 'run1', 'date_window_catalogue.csv'))):
         if r.get('status') == 'accepted' and r['photo_id'] not in meas:
             meas[r['photo_id']] = r
-    radius = {r['photo_id']: fl(r['dial_radius_px']) for r in csv.DictReader(open(os.path.join(C, 'results/ci_run_37500197377/per_photo.csv')))}
+    radius = {r['photo_id']: fl(r['dial_radius_px']) for r in csv.DictReader(open(a.per_photo))}
     for pid, m in meas.items():
         if m.get('usable') != 'True' or pid in shared or fl(m.get('window_tilt_deg')) is None:
             continue
@@ -136,10 +144,10 @@ def main():
     # over watches with 2+ photos of the watch's median |left - right| (single-photo watches excluded: their "median"
     # is that one photo, which may be the very artefact this detects), plus K x the robust (MAD) photo-to-photo spread
     # of the difference (robust because the photos this is meant to catch would inflate a plain SD).
-    nom12 = {l.split('=')[0].strip(): float(l.split('=')[1]) for l in open(os.path.join(C, 'm12_nominal.properties'))
+    nom12 = {l.split('=')[0].strip(): float(l.split('=')[1]) for l in open(a.m12_nominal)
              if '=' in l and not l.startswith('#')}
     sd = defaultdict(list)
-    for r in csv.DictReader(open(os.path.join(C, 'results/ci_run_37500197377/per_photo.csv'))):
+    for r in csv.DictReader(open(a.per_photo)):
         if (r['group'] != 'genuine_population' or r['status'] != 'accepted' or r['photo_id'] in shared
                 or r['m12_usable'] != 'true'):
             continue
@@ -158,15 +166,15 @@ def main():
               f'Genuine watches with 2+ photos: {len(multi)} ({sum(len(v) for v in multi.values())} photos), SWE included (lighting is',
               f'exactly what this measures). Max per-watch median |left - right| {max(abs(m) for m in meds.values()):.3f} deg;',
               f'robust photo-to-photo spread {mad:.3f} deg; limit = max + {K:g} x spread = {agree_limit:.3f} deg.']
-    with open(os.path.join(C, 'alpha99_uncertainty.properties'), 'w') as fh:
+    with open(a.out_props, 'w') as fh:
         fh.write('# RESEARCH -> APP. Alpha99 single-photo measurement uncertainty (pooled within-watch SD, genuine only).\n'
                  '# Written by measurement_uncertainty.py; see results/alpha99/uncertainty.md.\n')
         fh.write(f'k_sigma={K:g}\n')
         for k in sorted(out):
             v = out[k]
             fh.write(f'{k}={v:.6f}\n' if isinstance(v, float) else f'{k}={v}\n')
-    os.makedirs(os.path.join(C, 'results', 'alpha99'), exist_ok=True)
-    with open(os.path.join(C, 'results', 'alpha99', 'uncertainty.md'), 'w') as fh:
+    os.makedirs(os.path.dirname(a.out_md), exist_ok=True)
+    with open(a.out_md, 'w') as fh:
         fh.write('\n'.join(lines) + '\n')
     print('\n'.join(lines))
 

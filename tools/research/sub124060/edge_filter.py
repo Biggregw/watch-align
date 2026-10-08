@@ -27,7 +27,7 @@ def main():
             d = abs((float(r['m12_left_side_err_deg']) - nom['left_side_deg']) - (float(r['m12_right_side_err_deg']) - nom['right_side_deg']))
             if d > lim:
                 r['m12_usable'] = 'false'; r['m12_reason'] = f'sides disagree by {d:.2f} deg (> {lim:.2f}): edge-affected'; n += 1
-                print('excluded 12 of', r['photo_id'], r['physical_watch_id'], f'{d:.2f} deg')
+                print('excluded 12 of', r['photo_id'], r.get('physical_watch_id', ''), f'{d:.2f} deg')
     with open(a.out, 'w', newline='') as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
     print(f'{n} photo(s) excluded from the 12 reference; limit {lim:.3f} deg')
