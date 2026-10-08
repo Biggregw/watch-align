@@ -191,6 +191,22 @@ Owner decision: the 12 triangle is assessed with the **robust** readout.
 - **Measurements:** GMT-only refactor; measurements, classifications and screens are identical to Alpha99.
 - **Scope:** no second model was added. That remains a separate decision under "Do not restart without evidence".
 
+## Alpha102 fixes applied to every model - 2026-10-08
+
+Owner instruction: fixes found on one model are applied to all models where relevant and become part of the template
+(`docs/ADDING_A_MODEL.md`, step 7). Each was checked on the GMT genuine catalogue (`gmt-alpha102-check.yml`) before use.
+
+- **12 edge filter** sets the 12's genuine range only. It may never make a clear finding easier: the 12 allowances keep
+  the more cautious of the filtered and unfiltered values (`sub124060/edge_safe_uncertainty.py`). The filtered GMT
+  allowance alone turned a genuine 12 clear, so it was not used. 124060 allowances returned to the unfiltered values.
+- **Round marker with a hand near but not touching:** position measured from the outline away from the hand, at most
+  worth a look; size not assessed (all models).
+- **Low-resolution genuine rows** for round markers and ring (170 px shrunk copies, `max_photo_r`): GMT added; full-resolution
+  limits unchanged.
+- **Print spots:** GMT candidate under test (two recurring dim spots at r 0.50).
+- **Baton-position resolution rule:** 124060 only. On the GMT it would remove about 50 assessments to avoid about 10
+  worth-a-look results, with 0 clear either way, so it was not applied.
+
 ## Do not restart without evidence
 
 The following are not active programmes:
