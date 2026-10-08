@@ -39,7 +39,8 @@ def main():
     ref = defaultdict(list)
     for r in csv.DictReader(open(a.reference)):
         if r['feature'] in rm:
-            ref[r['feature']].append((r['physical_watch_id'], float(r['far']), float(r['dial_radius_px'])))
+            mp = float(r['max_photo_r']) if r.get('max_photo_r') else float('inf')
+            ref[r['feature']].append((r['physical_watch_id'], float(r['far']), float(r['dial_radius_px']), mp))
     dirty = defaultdict(set)
     if a.interference:
         for r in csv.DictReader(open(a.interference)):
@@ -60,7 +61,7 @@ def main():
             if k not in f:
                 continue
             val = abs(f[k] - nom[k]) if k in nom else abs(f[k])
-            rows = [(ww, far) for ww, far, rr in ref[k] if ww != w and rr <= 1.3 * R]
+            rows = [(ww, far) for ww, far, rr, mp in ref[k] if ww != w and rr <= 1.3 * R and R <= mp]
             if len({ww for ww, _ in rows}) < 8:
                 st, mx = 'NOT_ASSESSED', None
             else:

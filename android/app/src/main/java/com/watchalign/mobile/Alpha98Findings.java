@@ -120,7 +120,7 @@ final class Alpha98Findings {
         for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind)&&m.usable&&Double.isFinite(m.localOffsetPx)){usable++;if(worst==null||m.localOffsetPx>worst.localOffsetPx)worst=m;}
         if(usable<5||worst==null){f.status=Status.NOT_ASSESSED;f.reason="too few round markers could be measured cleanly";return f;}
         double a=Math.toRadians(worst.hour*30.0),cr=worst.spec!=null?worst.spec.centreR:Double.NaN;f.cx=Math.sin(a)*cr;f.cy=-Math.cos(a)*cr;f.hour=worst.hour;
-        double lim=matchedMax(ref.far("rounds_off"),ref.radius("rounds_off"),R);int n=matchedCount(ref.radius("rounds_off"),R);
+        double lim=ref.matchedMax("rounds_off",R);int n=ref.matchedWatches("rounds_off",R);
         if(n<MIN_MATCHED){f.status=Status.NOT_ASSESSED;f.reason="the photo's resolution is too low to compare round markers with genuine photos";return f;}
         double off=worst.localOffsetPx/R;
         if(beyond(off,lim)){f.status=Status.OUTSIDE;
@@ -139,8 +139,8 @@ final class Alpha98Findings {
         if(Double.isFinite(rot)&&beyond(Math.abs(rot),max(ref.far("ring_rot"))))
             f.lines.add(String.format(Locale.US,"The hour markers as a set are turned %.2f° %s relative to the printed minute track - further than all %d genuine reference watches (largest %.2f°).",
                     Math.abs(rot),cw(rot),ref.far("ring_rot").length,max(ref.far("ring_rot"))));
-        int n=matchedCount(ref.radius("ring_shift"),R);
-        if(n>=MIN_MATCHED){double lim=matchedMax(ref.far("ring_shift"),ref.radius("ring_shift"),R);double sh=g.shiftPx/R;
+        int n=ref.matchedWatches("ring_shift",R);
+        if(n>=MIN_MATCHED){double lim=ref.matchedMax("ring_shift",R);double sh=g.shiftPx/R;
             if(Double.isFinite(sh)&&beyond(sh,lim))f.lines.add(String.format(Locale.US,"The hour markers as a set are off-centre by %.1f px (%.2f%% of the dial radius) - further than all %d comparable genuine reference watches (largest %.2f%%).",
                     g.shiftPx,100*sh,n,100*lim));}
         if(!f.lines.isEmpty()){f.status=Status.OUTSIDE;f.lines.add("Check the full overlay as well as the close-up.");}

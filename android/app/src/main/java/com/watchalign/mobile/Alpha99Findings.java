@@ -329,10 +329,10 @@ final class Alpha99Findings {
         if(r!=null)for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind)&&m.usable&&Double.isFinite(m.localOffsetPx))usable++;
         boolean hasRef=ref.has("rounds_off");
         int n=ref.matchedWatches("rounds_off",R);
-        double lim=Alpha98Findings.matchedMax(ref.far("rounds_off"),ref.radius("rounds_off"),R);
+        double lim=ref.matchedMax("rounds_off",R);
         double sOff=sigmaPos(ref,"rounds_off",R);
         int sizeN=ref.has("round_size_rel")?ref.matchedWatches("round_size_rel",R):0;
-        double sizeLim=Alpha98Findings.matchedMax(ref.far("round_size_rel"),ref.radius("round_size_rel"),R);
+        double sizeLim=ref.matchedMax("round_size_rel",R);
         for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.ROUND)){
             int h=mk.hour;
             Finding f=new Finding("round"+h,h+" o'clock",""+h);
@@ -387,7 +387,7 @@ final class Alpha99Findings {
         int n=ref.matchedWatches("rounds_size",R);
         if(n<Alpha98Findings.MIN_MATCHED){f.status=Status.NOT_ASSESSED;f.reason="the photo's resolution is too low to compare round markers with genuine photos";f.shortReason="resolution too low";f.group="round markers";return f;}
         double d=med-ref.nominal("rounds_size");
-        f.measures.add(new Measure("dial size",Math.abs(d),Alpha98Findings.matchedMax(ref.far("rounds_size"),ref.radius("rounds_size"),R),
+        f.measures.add(new Measure("dial size",Math.abs(d),ref.matchedMax("rounds_size",R),
                 sigmaPos(ref,"rounds_size",R),ref.kSigma,n,"R",
                 String.format(Locale.US,"all round plots %s by %.2f%% of the dial",d>=0?"larger":"smaller",100*Math.abs(d)),
                 String.format(Locale.US,"Taken together, the round lume plots are %s than on genuine dials by %.2f%% of the dial radius; compared with genuine photos of similar or lower resolution",
@@ -406,7 +406,7 @@ final class Alpha99Findings {
                 String.format(Locale.US,"Taken together, the hour markers are turned %.2f° %s relative to the printed minute track (a whole-dial measurement: it does not mean each marker is rotated)",
                         Math.abs(rot),Alpha98Findings.cw(rot))));
         int n=ref.matchedWatches("ring_shift",R);
-        if(n>=Alpha98Findings.MIN_MATCHED){double lim=Alpha98Findings.matchedMax(ref.far("ring_shift"),ref.radius("ring_shift"),R);double sh=g.shiftPx/R;
+        if(n>=Alpha98Findings.MIN_MATCHED){double lim=ref.matchedMax("ring_shift",R);double sh=g.shiftPx/R;
             f.measures.add(new Measure("shift",sh,lim,sigmaPos(ref,"ring_shift",R),ref.kSigma,n,"R",
                     String.format(Locale.US,"markers as a set off-centre by %.2f%% of the dial",100*sh),
                     String.format(Locale.US,"Taken together, the hour markers are off-centre by %.1f px (%.2f%% of the dial radius); compared with genuine photos of similar or lower resolution",g.shiftPx,100*sh)));}

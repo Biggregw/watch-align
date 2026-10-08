@@ -95,6 +95,8 @@ def main():
                          '(QC guardrails 11: downgrade a feature whose held-out genuine evidence conflicts)')
     ap.add_argument('--lowres', help='per_photo CSV of shrunk genuine photos (sub124060-lowres job): adds one row per '
                     'physical watch per shrink level for the resolution-matched features, at that level\'s dial radius')
+    ap.add_argument('--lowres-level', action='append', default=[], help='shrink levels (target dial radius px) to use, e.g. 170')
+    ap.add_argument('--lowres-feature', action='append', default=[], help='features that get low-resolution rows')
     a = ap.parse_args()
     spec = json.load(open(a.spec)); batons, rounds = layout(spec)
     shared = {r['photo_id'] for r in csv.DictReader(open(a.dedup)) if r['shared_dial'] == '1'}
@@ -124,10 +126,13 @@ def main():
     # re-measured. Each watch still counts once in the app (matched counts are distinct watches). A signed feature's far
     # is taken against the full-resolution nominal of the other watches, exactly what the app compares a photo with.
     if a.lowres:
-        rm = set(RES_MATCHED) | set(spec.get('resolution_matched', []))
+        rm = set(a.lowres_feature) or (set(RES_MATCHED) | set(spec.get('resolution_matched', [])))
+        levels = set(a.lowres_level)
         lw = defaultdict(lambda: defaultdict(list))
         for r in csv.DictReader(open(a.lowres)):
             if r['group'] != 'genuine_population' or r['source_photo_id'] in shared or any(h in r['image_url'] for h in a.exclude_host):
+                continue
+            if levels and r['target_r'] not in levels:
                 continue
             f = photo_features(r, batons, rounds)
             if not f:
@@ -135,6 +140,12 @@ def main():
             for k, v in f.items():
                 lw[(r['physical_watch_id'], r['target_r'])][k].append(v)
         n_low = 0
+        # full-resolution coverage: smallest photo R with 8+ full-resolution reference watches at R_ref <= 1.3 R; a
+        # shrunk row is used only for photos below it, so the limits for photos the full reference covers never change
+        cover = {}
+        for k in feats:
+            rs = sorted(WR[w] for w in W[k])
+            cover[k] = rs[7] / 1.3 if len(rs) >= 8 else float('inf')
         for (w, T), d in sorted(lw.items()):
             Rl = median(d['R'])
             for k in feats:
@@ -142,13 +153,15 @@ def main():
                     continue
                 v = median(d[k])
                 far = abs(v - median([x for ww, x in W[k].items() if ww != w])) if k in signed else abs(v)
-                out_rows.append((k, w, src.get(w, ''), far, Rl)); n_low += 1
+                out_rows.append((k, w, src.get(w, ''), far, Rl, cover[k])); n_low += 1
         print(f'low-resolution rows added: {n_low} ({len({w for w, _ in lw})} watches)')
     os.makedirs(a.out_dir, exist_ok=True)
     with open(os.path.join(a.out_dir, 'alpha98_reference.csv'), 'w', newline='') as fh:
-        wr = csv.writer(fh); wr.writerow(['feature', 'physical_watch_id', 'source', 'far', 'dial_radius_px'])
-        for k, w, s, far, R in out_rows:
-            wr.writerow([k, w, s, f'{far:.6f}', f'{R:.1f}'])
+        low = any(len(x) > 5 for x in out_rows)
+        wr = csv.writer(fh); wr.writerow(['feature', 'physical_watch_id', 'source', 'far', 'dial_radius_px'] + (['max_photo_r'] if low else []))
+        for x in out_rows:
+            k, w, s, far, R = x[:5]
+            wr.writerow([k, w, s, f'{far:.6f}', f'{R:.1f}'] + ([f'{x[5]:.1f}' if len(x) > 5 else ''] if low else []))
     with open(os.path.join(a.out_dir, 'alpha98_nominal.properties'), 'w') as fh:
         fh.write(f'# RESEARCH -> APP. Genuine nominals for signed features of {spec["id"]} (median over reference watches).\n')
         for k in signed:
@@ -237,7 +250,7 @@ def main():
             v = out[k]; fh.write(f'{k}={v:.6f}\n' if isinstance(v, float) else f'{k}={v}\n')
     summary = ['', '## Genuine reference', '', '| feature | watches | genuine max (far) |', '|---|---:|---:|']
     for k in feats:
-        fs = [far for kk, _, _, far, _ in out_rows if kk == k]
+        fs = [x[3] for x in out_rows if x[0] == k and len(x) == 5]
         if fs:
             summary.append(f'| {k} | {len(fs)} | {max(fs):.4f} |')
     summary += ['', 'Nominals: ' + ', '.join(f'{k} {v:+.4f}' for k, v in nominal.items())]
