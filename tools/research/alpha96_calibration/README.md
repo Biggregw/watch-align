@@ -832,7 +832,7 @@ A marker shift is named by its dominant direction: towards its minute mark, towa
 
 Real size in mm is deliberately not shown yet. It needs a sourced dial diameter per model; one route is the bezel's outer diameter, the published 40 mm case, measured in dial-radius units on genuine photos.
 
-### 3. Crown-logo alignment (research only, not in the app)
+### 3. Crown-logo alignment (PARKED research, not in the app)
 
 `Alpha101PrintAlignment` measures the crown's sideways offset and tilt against the 12's radial line from its mirror symmetry. The genuine catalogue run is job `alpha101-genuine-print`; the readings are kept in CI artifacts and logs, never as images.
 
@@ -859,7 +859,7 @@ So the logo fails closed as follows:
 
 The gate still passes the one known contaminated genuine photo, `66c4527d45cf91b0` (Phillips, 120 px dial). Its hour hand lies along the 12 and it reads 4.3% R / 5.0°. The logo region and the 12 both read clean with 0.000 foreign: at that resolution the check sees nothing, and the sensitivity rule does not catch it, because the photo's marker strips are equally insensitive. So the gate gives a false clean on genuine data.
 
-**Status:** under guardrails §11, the logo stays research-only. The reused check cannot certify the logo area clean. A gate that models the expected genuine printing, rather than a plain dial, would be the next bounded experiment. The marker checks are unchanged (`results/alpha99/interference_local.csv` is identical).
+**Status: parked (owner decision, 2026-10-08).** Under guardrails §11 the logo is not in Alpha101. `Alpha101PrintAlignment` now lives with the desktop-harness drivers, outside the app sources. It affects no finding, and its CI job (`alpha101-genuine-print.yml`) runs only on manual dispatch. The code, the genuine readings and these notes are kept for possible future dial-print research. The reused check cannot certify the logo area clean. A gate that models the expected genuine printing, rather than a plain dial, would be the next bounded experiment. The marker checks are unchanged (`results/alpha99/interference_local.csv` is identical).
 
 ### 4. Whole-dial summary
 

@@ -8,6 +8,9 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 /**
+ * PARKED RESEARCH (2026-10-08): not part of the app, not used by any finding. Kept with the desktop-harness drivers for
+ * possible future dial-print research; see tools/research/alpha96_calibration/README.md, Alpha101 section 3.
+ *
  * Alpha101 alignment of a mirror-symmetric printed or applied logo (e.g. the crown under the 12): where its symmetry
  * axis lies relative to the dial's own radial line through it, as a sideways offset (units of dial radius) and a tilt
  * (degrees, + = clockwise). Generic: the model spec gives the logo's canonical box (dial radius 1, 12 at the top) and

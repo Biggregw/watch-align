@@ -1,17 +1,11 @@
 name: Alpha101 genuine print alignment (research)
 
-# RESEARCH ONLY. Restores the sha256-verified genuine catalogue photos and measures the crown-logo alignment
+# RESEARCH ONLY, PARKED. Restores the sha256-verified genuine catalogue photos and measures the crown-logo alignment
 # (Alpha101PrintAlignment through the desktop harness driver Alpha101Logo) on every photo, so the genuine range and
 # photo-to-photo uncertainty can be built from genuine watches only. The per-photo CSV is uploaded and printed to the
 # log; images are never committed, cached or uploaded.
 on:
-  push:
-    branches:
-      - feature/android-alpha101-index-alignment
-    paths:
-      - '.github/workflows/alpha101-genuine-print.yml'
-      - 'android/app/src/main/java/com/watchalign/mobile/Alpha101*.java'
-      - 'tools/desktop-harness/drivers/Alpha101*.java'
+  # parked research (2026-10-08): manual runs only
   workflow_dispatch:
 
 permissions:

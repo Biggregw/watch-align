@@ -10,6 +10,7 @@ on:
     branches:
       - feature/android-alpha99-hybrid-results
       - feature/android-alpha100-model-spec
+      - feature/android-alpha101-index-alignment
     paths:
       - '.github/workflows/alpha99-genuine-interference.yml'
       - 'android/app/src/main/java/com/watchalign/mobile/Alpha99*.java'
