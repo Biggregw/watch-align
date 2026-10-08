@@ -224,7 +224,10 @@ final class Alpha99Findings {
     private static void withheldByMeasurement(Finding f,String raw){
         f.status=Status.NOT_ASSESSED;f.reason=Alpha98Findings.reasonFor(raw);
         String s=raw==null?"":raw.toLowerCase(Locale.US);
-        if(s.contains("hand")||s.contains("occlu")){f.reason="a hand crosses or touches this marker";f.shortReason="hand crosses marker";f.visual=true;}
+        // Reached only after the hand / glare check cleared this marker: the measurement's own outline test failed (part of
+        // the outline does not match cleanly). That can be a hand the hand check missed, glare, a reflection or the photo,
+        // so no cause is named; the close-up shows it. A hand is named only when the hand check detects one (guardrails 3/10).
+        if(s.contains("hand")||s.contains("occlu")){f.reason="part of the marker's outline could not be measured cleanly (see the close-up)";f.shortReason="outline not clear";f.visual=true;}
         else{f.shortReason="edge not clear";f.visual=false;}
     }
 

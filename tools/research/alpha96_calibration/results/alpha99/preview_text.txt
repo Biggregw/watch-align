@@ -141,7 +141,7 @@
     6 o'clock        OUTSIDE       -> NOT ASSESSED  hand crosses marker
     9 o'clock        NOT_ASSESSED  -> NOT ASSESSED  hand crosses marker
     5 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
-    8 o'clock        WITHIN        -> NOT ASSESSED  hand crosses marker
+    8 o'clock        WITHIN        -> NOT ASSESSED  outline not clear
     10 o'clock       WITHIN        -> NOT ASSESSED  edge not clear
     11 o'clock       WITHIN        -> NOT ASSESSED  edge not clear
     Round lume plots WITHIN        -> NOT ASSESSED  too few clean markers

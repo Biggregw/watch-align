@@ -161,7 +161,7 @@ RL_LOCAL_BLNR,round2,WITHIN,WITHIN,"",false
 RL_LOCAL_BLNR,round4,WITHIN,WITHIN,"",false
 RL_LOCAL_BLNR,round5,WITHIN,NOT_ASSESSED,"hand crosses marker",false
 RL_LOCAL_BLNR,round7,WITHIN,WITHIN,"",false
-RL_LOCAL_BLNR,round8,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+RL_LOCAL_BLNR,round8,WITHIN,NOT_ASSESSED,"outline not clear",false
 RL_LOCAL_BLNR,round10,WITHIN,NOT_ASSESSED,"edge not clear",false
 RL_LOCAL_BLNR,round11,WITHIN,NOT_ASSESSED,"edge not clear",false
 RL_LOCAL_BLNR,rounds_size,WITHIN,NOT_ASSESSED,"too few clean markers",false

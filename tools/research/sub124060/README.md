@@ -147,3 +147,13 @@ The marker reference is unchanged. The owner's 12 now reads 1.35 vs 1.25 deg wit
 **The remaining 1.25 deg:** it comes from genuine EWC watch `ceb5b8d52802` (-1.21 / -0.92 deg, sides agreeing), so it is valid and kept. But in both its photos every marker reads anticlockwise: 3 at -0.5/-0.6, 6 at -0.4/-0.3, 9 at -0.6/-0.3 deg. That is a shared offset of about -0.5 deg, so this 12 is only about -0.5 deg off relative to its own dial.
 
 **Proposed next feature (not implemented):** judge the 12's rotation relative to the dial's common marker rotation. It must be validated on genuine GMT and 124060 data first.
+
+## 10. Wording: "hand crosses marker" when no hand was detected (owner report on the 9)
+
+A marker that passed the hand / glare check, but failed the measurement's own outline test, was labelled "hand crosses marker". The underlying reason is "hand/occluder crosses outline (clean x)".
+
+That test sometimes catches real hands the hand check misses, e.g. GMT `RL_LOCAL_BLNR` 8 o'clock (the GMT hand's arrow tip covers it). Other times it is glare, a reflection or the photo, e.g. the owner's 124060 9 o'clock.
+
+Following the owner's rule (name a hand only when the hand check detects one), these now read **"outline not clear"**: "part of the marker's outline could not be measured cleanly (see the close-up)". The close-up stays, so the cause is visible.
+
+Status changes: none, on either model. GMT `results/alpha99/findings_local.csv` and `preview_text.txt` are updated for that one tile's wording.
