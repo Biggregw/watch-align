@@ -92,6 +92,11 @@ final class ModelSpec {
     /** Features compared only with genuine watches photographed at similar or lower resolution (in addition to the
      *  always-matched round / ring features), from the optional "resolution_matched" list; empty when absent. */
     java.util.Set<String> resolutionMatched=java.util.Collections.emptySet();
+    /** Printed dial details that look like the seconds-hand lume dot (seconds_hand.print_spots: {angle deg clockwise
+     *  from 12, r}), measured on genuine dials. A dot candidate within printSpotTolDeg / printSpotTolR of one counts as the
+     *  seconds hand only at >= printSpotMinFrac x the photo's lume contrast (the print itself never gets that bright). */
+    double[][] printSpots=new double[0][];
+    double printSpotTolDeg=Double.NaN,printSpotTolR=Double.NaN,printSpotMinFrac=Double.NaN;
     /** Folder of this model under the assets root, e.g. "models/gmt_126710". */
     final String dir;
 
@@ -143,12 +148,24 @@ final class ModelSpec {
         Map<String,Object> sec=obj(o,"seconds_hand");
         ModelSpec spec=new ModelSpec((String)o.get("id"),(String)o.get("label"),num(pose,"minute_track_inner_r"),num(pose,"minute_track_outer_r"),
                 excl,ms,dw,num(sec,"dot_r_min"),num(sec,"dot_r_max"),(String)o.get("reference"),dir);
+        if(sec.get("print_spots")!=null){
+            List<Object> ps=(List<Object>)sec.get("print_spots");
+            spec.printSpots=new double[ps.size()][];
+            for(int i=0;i<ps.size();i++){List<Object> q=(List<Object>)ps.get(i);spec.printSpots[i]=new double[]{(Double)q.get(0),(Double)q.get(1)};}
+            spec.printSpotTolDeg=num(sec,"print_spot_tol_deg");spec.printSpotTolR=num(sec,"print_spot_tol_r");spec.printSpotMinFrac=num(sec,"print_spot_min_frac");
+        }
         if(o.get("resolution_matched")!=null){
             java.util.Set<String> rm=new java.util.LinkedHashSet<>();
             for(Object x:(List<Object>)o.get("resolution_matched"))rm.add((String)x);
             spec.resolutionMatched=java.util.Collections.unmodifiableSet(rm);
         }
         return spec;
+    }
+
+    /** Is a seconds-dot candidate at (angle, r) on a known printed spot? */
+    boolean onPrintSpot(double angleDeg,double r){
+        for(double[] p:printSpots){double da=Math.abs(((angleDeg-p[0])%360+540)%360-180);if(da<=printSpotTolDeg&&Math.abs(r-p[1])<=printSpotTolR)return true;}
+        return false;
     }
 
     static String read(Assets assets,String path)throws IOException{

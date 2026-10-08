@@ -90,7 +90,11 @@ final class Alpha99MarkerInterference {
         java.util.List<Double> seconds=new java.util.ArrayList<>();
         try{
             double L=lumeContrast(img,H,model);
-            if(Double.isFinite(L)&&L>0)for(double[] d:dots(img,H,rpx,model))if(d[2]>=DOT_MIN_FRAC*L)seconds.add(d[0]);
+            if(Double.isFinite(L)&&L>0)for(double[] d:dots(img,H,rpx,model)){
+                if(d[2]<DOT_MIN_FRAC*L)continue;
+                if(model.onPrintSpot(d[0],d[1])&&d[2]<model.printSpotMinFrac*L)continue;     // printed detail, not the lume dot
+                seconds.add(d[0]);
+            }
         }catch(Throwable t){return null;}
         return seconds;
     }

@@ -105,3 +105,23 @@ Using all the shrunk rows would have widened the genuine limit for sharp photos 
 - 87 readings went from not assessed to within range, and 2 to worth a look.
 
 APK: build run 37785443638.
+
+## 8. Seconds-hand check and the dial print (owner report: "no hand crossed the 5 or 7")
+
+The seconds-hand check finds the hand by its lume dot: a bright filled disc at r 0.50-0.60 (the GMT band), at >= 0.45 x the photo's lume contrast. Every marker on the line from the centre through that dot is withheld.
+
+**What went wrong on the 124060:** the start ("S") and end ("R") of the printed line SUPERLATIVE CHRONOMETER sit at r 0.52-0.54, at 143-145 deg and 214-216 deg. On 33 genuine photos (CI 37795400723, `results/check/interference_log_before_print_spots.txt`) they passed as dots, and their lines withheld the 5 and/or 7.
+
+| Candidate | Score (x lume contrast) |
+|---|---|
+| Print, recurring on 3-12 different genuine watches at the same spot | 0.45-0.70 |
+| Real lume dots at those spots | 0.82-0.99 |
+| Real lume dot elsewhere: SWE studio photos, hand over the 6 | as low as 0.47 |
+
+A global threshold would therefore lose real hands.
+
+**Fix:** the spec lists the four print spots (`seconds_hand.print_spots`). A candidate within 2 deg and 0.012 R of one counts as the seconds hand only at >= 0.75 x lume contrast, which lies between the two genuine ranges. Elsewhere the GMT rule applies unchanged.
+
+**Results:**
+- On the owner's photo the 5 and 7 are no longer withheld. The 1 (minute hand) and the 6 (seconds hand) still are.
+- The GMT has no print spots: findings, hand check and preview text are identical.

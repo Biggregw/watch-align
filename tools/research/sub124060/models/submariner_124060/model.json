@@ -98,7 +98,29 @@
   "date_window": null,
   "seconds_hand": {
     "dot_r_min": 0.5,
-    "dot_r_max": 0.6
+    "dot_r_max": 0.6,
+    "print_spots": [
+      [
+        144.6,
+        0.529
+      ],
+      [
+        143.4,
+        0.537
+      ],
+      [
+        215.5,
+        0.53
+      ],
+      [
+        214.2,
+        0.521
+      ]
+    ],
+    "print_spot_tol_deg": 2.0,
+    "print_spot_tol_r": 0.012,
+    "print_spot_min_frac": 0.75,
+    "print_spot_note": "Start and end of SUPERLATIVE CHRONOMETER: dim seconds-dot candidates recurring on 3-12 genuine watches (<= 0.70 x lume contrast); real lume dots there read 0.82-0.99 (CI 37795400723)."
   },
   "reference": "reference",
   "resolution_matched": [
