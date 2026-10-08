@@ -32,6 +32,9 @@ final class Alpha99Findings {
         final String name;final double value,genuineMax,sigma,k;final int n;final String unit;
         /** short phrase for the tile, e.g. "1.7° CCW" / detail sentence start, e.g. "It is rotated 1.7° anticlockwise". */
         final String shortValue,sentence;
+        /** Owner decision 2026-10-08: never a clear finding on its own (e.g. a 12 side angle without a matching
+         *  centreline or position change); at most worth a look. */
+        boolean capAtWorth;
         /** @param k the model's K: clear when the excess exceeds k x sigma (NaN: nothing can be clear). */
         Measure(String name,double value,double genuineMax,double sigma,double k,int n,String unit,String shortValue,String sentence){
             this.name=name;this.value=value;this.genuineMax=genuineMax;this.sigma=sigma;this.k=k;this.n=n;this.unit=unit;this.shortValue=shortValue;this.sentence=sentence;
@@ -42,6 +45,7 @@ final class Alpha99Findings {
         double allowance(){return k*sigma;}
         Status status(){
             if(!outside())return Status.WITHIN;
+            if(capAtWorth)return Status.WORTH;
             return hasAllowance()&&excess()>allowance()?Status.CLEAR:Status.WORTH;
         }
         /** excess in units of sigma (for ranking); infinite-less when there is no allowance. */
@@ -86,7 +90,9 @@ final class Alpha99Findings {
             for(Measure m:measures){
                 if(!m.outside())continue;
                 String s=m.sentence+". The furthest of "+m.n+" genuine reference watches reads "+fmt(m.genuineMax,m.unit)+".";
-                if(!m.hasAllowance())s+=" No measurement-uncertainty estimate exists for this feature, so it is not rated as a clear finding.";
+                if(m.capAtWorth)s+=" Only the side angle reads outside: the triangle's direction and position are within the genuine range."
+                        +" Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.";
+                else if(!m.hasAllowance())s+=" No measurement-uncertainty estimate exists for this feature, so it is not rated as a clear finding.";
                 else if(m.status()==Status.CLEAR)s+=String.format(Locale.US," The excess (%s) is more than %.0f times the photo-to-photo spread measured on genuine watches (%s), so measurement error alone is unlikely to explain it.",
                         fmt(m.excess(),m.unit),m.k,fmt(m.sigma,m.unit));
                 else s+=String.format(Locale.US," The excess (%s) is within %.0f times the photo-to-photo spread measured on genuine watches (%s), so photo or measurement error could account for it.",
@@ -228,6 +234,11 @@ final class Alpha99Findings {
         if(t.atLeastCentreline>0)neutralise(f,"centreline");
         if(t.atLeastSides>0)neutralise(f,"sides");
         if(t.atLeastLateral>0)neutralise(f,"lateral");
+        // side angle only (centreline and position within range): worth a look at most (owner decision 2026-10-08; a
+        // genuine SWE studio photo read its right side 4.1 deg off with centreline and position in range)
+        boolean corroborated=false;
+        for(Measure x:f.measures)if(!x.name.equals("sides")&&x.outside())corroborated=true;
+        if(!corroborated)for(Measure x:f.measures)if(x.name.equals("sides"))x.capAtWorth=true;
         settle(f);return f;
     }
 

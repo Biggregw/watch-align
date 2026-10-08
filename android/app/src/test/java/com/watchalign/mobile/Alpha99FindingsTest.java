@@ -96,6 +96,26 @@ public class Alpha99FindingsTest {
         assertEquals(Alpha99Findings.Status.WITHIN,Alpha99Findings.date(d,250,true,TestModels.gmtRef(),TestModels.gmt().date).status);
     }
 
+    @Test public void twelveSideAngleOnItsOwnIsAtMostWorthALook(){
+        // owner decision 2026-10-08: a genuine SWE studio photo read its 12 right side 4.1 deg off with direction and
+        // position in range; a side angle alone is worth a look, never a clear finding
+        ModelReference.Triangle t=TestModels.gmtRef().triangle;double R=250;
+        Alpha94MarkerMeasurement.Report r=report(6,0,9,0);
+        Alpha94MarkerMeasurement.Marker tri=new Alpha94MarkerMeasurement.Marker(12,"triangle");tri.spec=TestModels.gmt().atHour(12);
+        tri.usable=true;tri.rotationDeg=t.nominalRotationDeg;tri.leftSideErrDeg=t.nominalLeftSideDeg;tri.rightSideErrDeg=t.nominalRightSideDeg-4.1;
+        tri.localRadialPx=t.nominalRadialR*R;tri.localTangentialPx=t.nominalTangentialR*R;
+        Alpha94MarkerMeasurement.Report alone=new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,tri);
+        Alpha99Findings.Finding f=find(Alpha99Findings.build(alone,null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"twelve");
+        assertEquals(Alpha99Findings.Status.WORTH,f.status);
+        assertTrue(f.shortLine().startsWith("right side 4.1° CCW"));
+        assertTrue(String.join(" ",f.detail()).contains("side angle on its own"));
+        // the same side angle with the triangle also clearly off-centre is corroborated: it can be clear
+        tri.localTangentialPx=(t.nominalTangentialR+0.012)*R;
+        Alpha99Findings.Finding g=find(Alpha99Findings.build(new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,tri),null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"twelve");
+        assertEquals(Alpha99Findings.Status.CLEAR,g.status);
+        for(Alpha99Findings.Measure m:g.measures)if(m.name.equals("sides"))assertEquals(Alpha99Findings.Status.CLEAR,m.status());
+    }
+
     @Test public void batonExamplesFromTheBrief(){
         // 6 rotation ~0.8 deg vs genuine max ~0.7 -> worth a look; 9 rotation ~1.6 deg vs max ~0.65 -> clear
         Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
