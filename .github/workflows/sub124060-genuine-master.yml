@@ -1,0 +1,67 @@
+name: Submariner 124060 genuine master (research)
+
+# RESEARCH ONLY. Restores the sha256-verified 124060 catalogue (tools/research/sub124060/catalogue_124060.csv) and runs
+# the app's frozen pose and marker measurement with the provisional research spec (tools/research/sub124060/models),
+# through the model-generic SubMaster driver, to measure the genuine 124060 dial master (minute-track extent, marker
+# positions, rotations, round sizes). Replica seed photos are measured too but kept apart (group column); they never
+# define the master. Per-photo CSVs are uploaded and printed to the log; images are never committed, cached or uploaded.
+on:
+  push:
+    branches:
+      - feature/android-alpha102-submariner
+    paths:
+      - '.github/workflows/sub124060-genuine-master.yml'
+      - 'tools/research/sub124060/**'
+      - 'tools/desktop-harness/drivers/SubMaster.java'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  master:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SUB: tools/research/sub124060
+      IMG: sub_images
+      OUT: sub_results
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Fetch catalogued photos (sha256-verified)
+        run: |
+          mkdir -p "$IMG" "$OUT"
+          python3 tools/research/alpha96_calibration/fetch_verified.py "$SUB/catalogue_124060.csv" "$IMG" "$OUT/fetch_log.csv"
+      - name: Measure with the provisional spec
+        env:
+          JAVA_TOOL_OPTIONS: -Dwatchalign.model=submariner_124060 -Dwatchalign.models_root=tools/research/sub124060
+        run: tools/desktop-harness/run.sh SubMaster "$SUB/catalogue_124060.csv" "$IMG" "$OUT/master" 2> "$OUT/master_progress.txt"
+      - name: Upload CSVs (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sub124060-genuine-master-${{ github.run_id }}
+          retention-days: 30
+          path: sub_results/*.csv
+      - name: Print CSVs to log
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import csv, collections
+          f = list(csv.DictReader(open('sub_results/fetch_log.csv')))
+          print('fetch:', collections.Counter(r['status'] for r in f))
+          PY
+          for f in master_track master_markers; do echo "=== $f.csv BEGIN"; cat "$OUT/$f.csv"; echo "=== $f.csv END"; done
