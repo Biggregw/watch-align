@@ -126,6 +126,33 @@ def main():
         out[f'{fam}.{unit}'] = s
         out[f'{fam}.{unit}.watches'] = nw
         lines.append(f'| {fam} | {unit} | {s:.6f} | {K * s:.6f} | {nw} | {nv} | {dof} |')
+    # Alpha101 edge-consistency limit for the 12 triangle: how far its two side angles may disagree on a genuine watch.
+    # A real rotation turns both sides together; lighting / blur on one edge moves one side alone. Genuine range = max
+    # over watches with 2+ photos of the watch's median |left - right| (single-photo watches excluded: their "median"
+    # is that one photo, which may be the very artefact this detects), plus K x the robust (MAD) photo-to-photo spread
+    # of the difference (robust because the photos this is meant to catch would inflate a plain SD).
+    nom12 = {l.split('=')[0].strip(): float(l.split('=')[1]) for l in open(os.path.join(C, 'm12_nominal.properties'))
+             if '=' in l and not l.startswith('#')}
+    sd = defaultdict(list)
+    for r in csv.DictReader(open(os.path.join(C, 'results/ci_run_37500197377/per_photo.csv'))):
+        if (r['group'] != 'genuine_population' or r['status'] != 'accepted' or r['photo_id'] in shared
+                or r['m12_usable'] != 'true'):
+            continue
+        L, Rr = fl(r['m12_left_side_err_deg']), fl(r['m12_right_side_err_deg'])
+        if L is None or Rr is None:
+            continue
+        sd[r['physical_watch_id']].append((L - nom12['left_side_deg']) - (Rr - nom12['right_side_deg']))
+    multi = {w: v for w, v in sd.items() if len(v) >= 2}
+    meds = {w: sorted(v)[len(v) // 2] if len(v) % 2 else 0.5 * (sorted(v)[len(v) // 2 - 1] + sorted(v)[len(v) // 2]) for w, v in multi.items()}
+    devs = sorted(abs(x - meds[w]) for w, v in multi.items() for x in v)
+    mad = 1.4826 * (devs[len(devs) // 2] if len(devs) % 2 else 0.5 * (devs[len(devs) // 2 - 1] + devs[len(devs) // 2]))
+    agree_limit = max(abs(m) for m in meds.values()) + K * mad
+    out['twelve_sides_agreement.limit'] = agree_limit
+    out['twelve_sides_agreement.limit.watches'] = len(multi)
+    lines += ['', '## 12 triangle side agreement (Alpha101 edge-consistency limit)', '',
+              f'Genuine watches with 2+ photos: {len(multi)} ({sum(len(v) for v in multi.values())} photos), SWE included (lighting is',
+              f'exactly what this measures). Max per-watch median |left - right| {max(abs(m) for m in meds.values()):.3f} deg;',
+              f'robust photo-to-photo spread {mad:.3f} deg; limit = max + {K:g} x spread = {agree_limit:.3f} deg.']
     with open(os.path.join(C, 'alpha99_uncertainty.properties'), 'w') as fh:
         fh.write('# RESEARCH -> APP. Alpha99 single-photo measurement uncertainty (pooled within-watch SD, genuine only).\n'
                  '# Written by measurement_uncertainty.py; see results/alpha99/uncertainty.md.\n')

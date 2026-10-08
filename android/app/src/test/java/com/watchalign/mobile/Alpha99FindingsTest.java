@@ -108,12 +108,36 @@ public class Alpha99FindingsTest {
         Alpha99Findings.Finding f=find(Alpha99Findings.build(alone,null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"twelve");
         assertEquals(Alpha99Findings.Status.WORTH,f.status);
         assertTrue(f.shortLine().startsWith("right side 4.1° CCW"));
-        assertTrue(String.join(" ",f.detail()).contains("side angle on its own"));
-        // the same side angle with the triangle also clearly off-centre is corroborated: it can be clear
+        assertTrue(String.join(" ",f.detail()).contains("not a clear finding"));
+        // a turned triangle (both sides moved together) that is also clearly off-centre is corroborated: it can be clear
+        tri.leftSideErrDeg=t.nominalLeftSideDeg-4.1;
         tri.localTangentialPx=(t.nominalTangentialR+0.012)*R;
         Alpha99Findings.Finding g=find(Alpha99Findings.build(new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,tri),null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"twelve");
         assertEquals(Alpha99Findings.Status.CLEAR,g.status);
         for(Alpha99Findings.Measure m:g.measures)if(m.name.equals("sides"))assertEquals(Alpha99Findings.Status.CLEAR,m.status());
+    }
+
+    @Test public void twelveWithDisagreeingSidesIsEdgeAffected(){
+        // Alpha101: the recorded values of the genuine Swiss Watch Expo studio photo ce997f77df67b365 (per_photo.csv):
+        // right side 4.1 deg off, left side 0.4 deg, centreline 2.5 deg - one lit edge, not a turned marker
+        ModelReference ref=TestModels.gmtRef();
+        assertEquals(0.99,ref.limit("twelve_sides_agreement"),0.01);
+        Alpha94MarkerMeasurement.Report r=report(6,0,9,0);
+        Alpha94MarkerMeasurement.Marker tri=new Alpha94MarkerMeasurement.Marker(12,"triangle");tri.spec=TestModels.gmt().atHour(12);
+        tri.usable=true;tri.rotationDeg=-2.58445;tri.leftSideErrDeg=-0.59326;tri.rightSideErrDeg=-3.97507;
+        tri.localRadialPx=-1.62185;tri.localTangentialPx=-0.54516;
+        double R=171.51663;
+        Alpha99Findings.Finding f=find(Alpha99Findings.build(new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,tri),null,allClean(),
+                TestModels.gmt(),ref),"twelve");
+        assertEquals(Alpha99Findings.Status.WORTH,f.status);
+        for(Alpha99Findings.Measure m:f.measures)if(!m.name.equals("lateral"))assertTrue(m.name,m.capAtWorth);
+        assertTrue(String.join(" ",f.detail()).contains("two sides disagree"));
+        // the same two sides moved together (a turned marker) are not edge-affected
+        tri.leftSideErrDeg=tri.rightSideErrDeg;
+        Alpha99Findings.Finding g=find(Alpha99Findings.build(new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,tri),null,allClean(),
+                TestModels.gmt(),ref),"twelve");
+        for(Alpha99Findings.Measure m:g.measures)if(m.name.equals("centreline"))assertFalse(m.capAtWorth);
+        assertEquals(Alpha99Findings.Status.CLEAR,g.status);
     }
 
     @Test public void batonExamplesFromTheBrief(){
