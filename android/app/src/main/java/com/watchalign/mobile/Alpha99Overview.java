@@ -22,13 +22,13 @@ final class Alpha99Overview {
 
     private Alpha99Overview(){}
 
-    static Bitmap render(Mat rgba,double[] H,Alpha99Findings.Summary s){
+    static Bitmap render(Mat rgba,double[] H,Alpha99Findings.Summary s,ModelSpec model){
         Mat m=Alpha98Closeups.render(rgba,H,0,0,HALF);
         Mat big=new Mat();Imgproc.resize(m,big,new org.opencv.core.Size(SIZE,SIZE),0,0,Imgproc.INTER_CUBIC);
         double scale=SIZE/(2*HALF);
         for(Alpha99Findings.Finding f:s.all){
             if(!hasBadge(f))continue;
-            double[] p=badgeAt(f);if(p==null)continue;
+            double[] p=badgeAt(f,model);if(p==null)continue;
             badge(big,new Point((p[0]+HALF)*scale,(p[1]+HALF)*scale),f.status,f.shape==Alpha99Findings.Shape.RING?"ring":null);
         }
         Bitmap b=Bitmap.createBitmap(SIZE,SIZE,Bitmap.Config.ARGB_8888);Utils.matToBitmap(big,b);return b;
@@ -43,14 +43,13 @@ final class Alpha99Overview {
 
     /** Badge position in canonical units: just inside each marker (towards the centre), beside the date window, the
      *  ring badge in the top-left corner. */
-    static double[] badgeAt(Alpha99Findings.Finding f){
+    static double[] badgeAt(Alpha99Findings.Finding f,ModelSpec model){
         switch(f.shape){
             case RING:return new double[]{-HALF+0.12,-HALF+0.12};
             case DATE:return new double[]{f.cx-0.27,f.cy};
             default:{
-                double rin=f.shape==Alpha99Findings.Shape.TRIANGLE?Alpha92GmtMaster.TRI_APEX_R:
-                        f.shape==Alpha99Findings.Shape.BATON?Alpha92GmtMaster.BATON_CENTER_R-Alpha92GmtMaster.BATON_RADIAL_HALF:
-                                Alpha92GmtMaster.ROUND_CENTER_R-Alpha92GmtMaster.ROUND_OUTER_R;
+                ModelSpec.Marker mk=model.atHour(f.hour);if(mk==null)return null;
+                double rin=mk.innerR();
                 double r=rin-0.09,a=Math.toRadians(f.hour*30.0);
                 return new double[]{Math.sin(a)*r,-Math.cos(a)*r};
             }

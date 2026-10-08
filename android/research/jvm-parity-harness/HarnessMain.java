@@ -9,8 +9,11 @@ public class HarnessMain {
     String path=a[0],name=a[1];
     Mat bgr=Imgcodecs.imread(path),rgba=new Mat(),gray=new Mat();
     Imgproc.cvtColor(bgr,rgba,Imgproc.COLOR_BGR2RGBA); Imgproc.cvtColor(bgr,gray,Imgproc.COLOR_BGR2GRAY);
+    // model spec from the app assets (repo checkout); -Dwatchalign.assets overrides the assets directory
+    ModelSpec model=ModelSpec.load(ModelSpec.directory(new File(System.getProperty("watchalign.assets","android/app/src/main/assets"))),
+        System.getProperty("watchalign.model","gmt_126710"));
     long t0=System.nanoTime();
-    AutomaticDialOverlay.Result r=AutomaticDialOverlay.build(new Bitmap(rgba));
+    AutomaticDialOverlay.Result r=AutomaticDialOverlay.build(new Bitmap(rgba),model);
     double ms=(System.nanoTime()-t0)/1e6;
     StringBuilder o=new StringBuilder();
     o.append("FULL ").append(name).append(" valid=").append(r.valid).append(" phaseUsed=").append(r.twelvePhaseUsed)
@@ -20,13 +23,13 @@ public class HarnessMain {
     if(a.length>2){
       String[] p=a[2].split(",");Mat seed=new Mat(3,3,CvType.CV_64F);double[] v=new double[9];for(int i=0;i<9;i++)v[i]=Double.parseDouble(p[i]);seed.put(0,0,v);
       t0=System.nanoTime();
-      Alpha91MinuteLatticeFitter.Result f=Alpha91MinuteLatticeFitter.fit(gray,seed);
+      Alpha91MinuteLatticeFitter.Result f=Alpha91MinuteLatticeFitter.fit(gray,seed,model);
       ms=(System.nanoTime()-t0)/1e6;
       o.append("FIT ").append(name).append(" accepted=").append(f.accepted).append(" ticks=").append(f.ticksUsed).append(" sectors=").append(f.sectorsUsed)
        .append(" rms=").append(f.tickRmsPx).append(" median=").append(f.tickMedianPx).append(" ms=").append((int)ms).append(" reason=").append(f.reason.replace(' ','_')).append('\n');
       if(f.homography!=null&&!f.homography.empty()){double[] m=new double[9];f.homography.get(0,0,m);o.append("H_FIT ");for(double x:m)o.append(x/m[8]).append(',');o.append('\n');}
       // measurement on the PYTHON-frozen H so it is comparable to the research layer
-      Alpha94MarkerMeasurement.Report rep=Alpha94MarkerMeasurement.analyse(new Bitmap(rgba),v);
+      Alpha94MarkerMeasurement.Report rep=Alpha94MarkerMeasurement.analyse(new Bitmap(rgba),v,model);
       for(Alpha94MarkerMeasurement.Marker m:rep.markers)
         o.append(String.format(Locale.US,"M %s %d %s usable=%b dx=%.3f dy=%.3f rad=%.3f tan=%.3f rot=%.3f local=%.3f score=%.3f support=%.3f reason=%s%n",
           name,m.hour,m.kind,m.usable,m.rawDxPx,m.rawDyPx,m.radialPx,m.tangentialPx,m.rotationDeg,m.localOffsetPx,m.fitScorePx,m.fitSupport,m.reason.replace(' ','_')));

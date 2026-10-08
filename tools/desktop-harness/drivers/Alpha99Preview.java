@@ -42,9 +42,9 @@ public class Alpha99Preview {
                 String[] f=lines.get(li).split(",",-1);String id=iId>=0?f[iId]:f[iPath];
                 Path p=Path.of(a[1]).resolve(f[iPath]);if(!Files.exists(p)){System.out.println("== "+id+": missing");continue;}
                 Bitmap b=Alpha96Calib.loadAlpha96(p.toString());
-                Alpha99Pipeline.Output o=b==null?null:Alpha99Pipeline.run(b);
+                Alpha99Pipeline.Output o=b==null?null:Alpha99Pipeline.run(b,HarnessModel.spec(),HarnessModel.ref());
                 if(o==null||!o.ok()){System.out.println("== "+id+": dial not found");continue;}
-                Alpha98Findings.Summary old=Alpha98Findings.build(o.measurement,o.date);
+                Alpha98Findings.Summary old=Alpha98Findings.build(o.measurement,o.date,HarnessModel.spec(),HarnessModel.ref());
                 System.out.println("== "+id+String.format(java.util.Locale.US," (R=%.0f)",o.measurement.dialRadiusPx));
                 for(String h:o.summary.headlineLines())System.out.println("  "+h);
                 for(Alpha99Findings.Finding x:o.summary.all){

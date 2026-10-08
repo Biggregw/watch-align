@@ -57,14 +57,14 @@ public class Alpha96Calib {
                 try{
                     Bitmap b=loadAlpha96(img.getPath());
                     if(b==null){row.add("unreadable");pad(row);out.println(String.join(",",row));continue;}
-                    AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(b);
+                    AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(b,HarnessModel.spec());
                     row.add(q.valid?"accepted":"pose_rejected");
                     row.add(Integer.toString(b.getWidth()));row.add(Integer.toString(b.getHeight()));
                     row.add(csv(q.reason));row.add(Boolean.toString(q.twelvePhaseUsed));
                     row.add(n(q.dialRadius));row.add(n(q.ellipseRatio));row.add(n(q.fitAfter));
                     row.add(Integer.toString(q.detectedTicks));row.add(Integer.toString(q.completePairs));
                     if(!q.valid||q.homography==null){pad(row);out.println(String.join(",",row));continue;}
-                    Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography);
+                    Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography,HarnessModel.spec());
                     row.add(n(r.dialRadiusPx));
                     Alpha94MarkerMeasurement.Ring g=r.ring;
                     row.add(Boolean.toString(g!=null&&g.usable));row.add(g==null?"":Integer.toString(g.n));

@@ -50,9 +50,9 @@ public class M12Inner {
                 File img=Path.of(a[1]).resolve(rel).toFile();
                 if(!img.exists()){out.println(id+",missing");continue;}
                 Bitmap b=Alpha96Calib.loadAlpha96(img.getPath());
-                AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b);
+                AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b,HarnessModel.spec());
                 if(q==null||!q.valid||q.homography==null){out.println(id+",pose_rejected");continue;}
-                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography);
+                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography,HarnessModel.spec());
                 Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(b,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
                 Object smp=SAMPLER.newInstance(gray,q.homography);
                 double[] x=r.ring!=null&&r.ring.usable?r.ring.model:new double[]{0,0,0,0};

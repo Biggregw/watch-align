@@ -49,7 +49,7 @@ final class AutomaticDialOverlay {
 
     private AutomaticDialOverlay(){}
 
-    static Result build(Bitmap input){
+    static Result build(Bitmap input,ModelSpec model){
         if(input==null)return new Result("no candidate image");
         Mat rgba=new Mat(),bgr=new Mat(),gray=new Mat(),enh=new Mat();
         Mat h0=null,coarse=null,h=null;
@@ -95,7 +95,7 @@ final class AutomaticDialOverlay {
             coarse=OpposingMinuteHomographyFitter.coarseSeed(enh,h0);
             if(coarse==null||coarse.empty())coarse=h0.clone();
 
-            lattice=Alpha91MinuteLatticeFitter.fit(gray,coarse);
+            lattice=Alpha91MinuteLatticeFitter.fit(gray,coarse,model);
             if(lattice==null||!lattice.accepted||lattice.homography==null||lattice.homography.empty()){
                 String why=lattice==null?"minute-lattice solve unavailable":lattice.reason;
                 return new Result("overlay unavailable: "+why);
@@ -112,7 +112,7 @@ final class AutomaticDialOverlay {
             String guard=physicalGuardReason(h,edge);
             if(guard!=null)return new Result("overlay unavailable: "+guard);
 
-            Bitmap overlay=warpOutline(input.getWidth(),input.getHeight(),h);
+            Bitmap overlay=warpOutline(input.getWidth(),input.getHeight(),h,model);
             if(overlay==null)return new Result("dial outline rendering failed");
             return new Result(overlay,edge,lattice,phaseUsed,h);
         }catch(Throwable t){
@@ -207,8 +207,8 @@ final class AutomaticDialOverlay {
 
     private static double wrap180(double d){while(d>180)d-=360;while(d<=-180)d+=360;return d;}
 
-    private static Bitmap warpOutline(int w,int h,Mat canonicalToImage){
-        Bitmap ref=Alpha92BakedDialOutline.bitmap();
+    private static Bitmap warpOutline(int w,int h,Mat canonicalToImage,ModelSpec model){
+        Bitmap ref=Alpha92BakedDialOutline.bitmap(model);
         Mat src=new Mat(),dst=new Mat(),n=Mat.eye(3,3,CvType.CV_64F),m=null;
         try{
             Utils.bitmapToMat(ref,src);

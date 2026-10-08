@@ -31,19 +31,19 @@ public class Alpha98Preview {
             for(int li=1;li<lines.size();li++){
                 String[] f=lines.get(li).split(",",-1);String id=iId>=0?f[iId]:f[iPath];
                 Bitmap b=Alpha96Calib.loadAlpha96(Path.of(a[1]).resolve(f[iPath]).toString());
-                AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b);
+                AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b,HarnessModel.spec());
                 if(q==null||!q.valid||q.homography==null){System.out.println("== "+id+": dial not found");continue;}
-                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography);
+                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography,HarnessModel.spec());
                 Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(b,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
-                Alpha98DateWindow.Result d=Alpha98DateWindow.analyse(gray,q.homography);
-                Alpha98Findings.Summary s=Alpha98Findings.build(r,d);
+                Alpha98DateWindow.Result d=Alpha98DateWindow.analyse(gray,q.homography,HarnessModel.spec().date);
+                Alpha98Findings.Summary s=Alpha98Findings.build(r,d,HarnessModel.spec(),HarnessModel.ref());
                 System.out.println("== "+id+"\n"+s.headline());
                 int k=0;
                 for(Alpha98Findings.Finding x:s.all){
                     csv.println(String.join(",",id,x.key,x.status.name(),"\""+x.text().replace("\"","'")+"\""));
                     if(x.status==Alpha98Findings.Status.OUTSIDE){
                         System.out.println("  [close-up] "+x.text());
-                        Bitmap c=Alpha98Closeups.forFinding(rgba,q.homography,x,d,r.ring!=null&&r.ring.usable?r.ring.model:null);
+                        Bitmap c=Alpha98Closeups.forFinding(rgba,q.homography,x,d,r.ring!=null&&r.ring.usable?r.ring.model:null,HarnessModel.spec(),HarnessModel.ref());
                         Mat cm=new Mat();Utils.bitmapToMat(c,cm);Imgproc.cvtColor(cm,cm,Imgproc.COLOR_RGBA2BGR);
                         Imgcodecs.imwrite(out.resolve(id+"_"+(k++)+"_"+x.key+".png").toString(),cm);
                     }

@@ -27,6 +27,9 @@ public class PerspectiveOverlayPocActivity extends Activity {
     private static final int PICK_CANDIDATE=2301;
     private static final int BG=Color.rgb(8,17,31),ACCENT=Color.rgb(50,213,242),MUTED=Color.rgb(158,176,201);
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
+    /** The watch model this screen checks (assets/models/<id>/); only the GMT has a genuine reference so far. */
+    static final String MODEL_ID="gmt_126710";
+    private ModelSpec model;private ModelReference reference;
     private Bitmap candidateBitmap,lastOverlay;
     private Alpha94MarkerMeasurement.Report lastMeasurement;
     private ImageView preview;
@@ -62,7 +65,10 @@ public class PerspectiveOverlayPocActivity extends Activity {
         buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Measuring the dial…");
         worker.submit(()->{
             Alpha99Pipeline.Output o;
-            try{o=Alpha99Pipeline.run(photo);}catch(Throwable t){o=new Alpha99Pipeline.Output();}
+            try{
+                if(model==null){model=ModelSpec.load(getAssets()::open,MODEL_ID);reference=ModelReference.load(getAssets()::open,model);}
+                o=Alpha99Pipeline.run(photo,model,reference);
+            }catch(Throwable t){o=new Alpha99Pipeline.Output();}
             final Alpha99Pipeline.Output fo=o;final AutomaticDialOverlay.Result q=o.pose;
             runOnUiThread(()->{
                 buildButton.setEnabled(true);

@@ -93,7 +93,7 @@ public class Alpha90BatchValidationTest {
                 Bitmap watch = load(test, ASSET_DIR + "/" + name);
                 savePng(watch, new File(caseDir, "candidate.png"));
                 long t0 = System.nanoTime();
-                AutomaticDialOverlay.Result r = AutomaticDialOverlay.build(watch);
+                AutomaticDialOverlay.Result r = AutomaticDialOverlay.build(watch, gmtModel());
                 long ms = (System.nanoTime() - t0) / 1_000_000L;
 
                 String status = r.valid ? "ACCEPTED" : "UNASSESSABLE";
@@ -278,5 +278,11 @@ public class Alpha90BatchValidationTest {
         if (f.isDirectory()) { File[] xs=f.listFiles(); if (xs!=null) for (File x:xs) deleteRecursively(x); }
         //noinspection ResultOfMethodCallIgnored
         f.delete();
+    }
+
+    /** The app's GMT model spec (app assets), as the production screen loads it. */
+    private static ModelSpec gmtModel() throws java.io.IOException {
+        Context app = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        return ModelSpec.load(app.getAssets()::open, PerspectiveOverlayPocActivity.MODEL_ID);
     }
 }

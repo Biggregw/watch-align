@@ -56,9 +56,9 @@ public class M12Diag {
                 File img=Path.of(a[1]).resolve(rel).toFile();
                 if(!img.exists()){out.println(id+",missing");continue;}
                 Bitmap b=Alpha96Calib.loadAlpha96(img.getPath());
-                AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b);
+                AutomaticDialOverlay.Result q=b==null?null:AutomaticDialOverlay.build(b,HarnessModel.spec());
                 if(q==null||!q.valid||q.homography==null){out.println(id+",pose_rejected");continue;}
-                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography);
+                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography,HarnessModel.spec());
                 Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(b,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
                 Object smp=SAMPLER.newInstance(gray,q.homography);
                 double R=r.dialRadiusPx;double[] x=r.ring!=null&&r.ring.usable?r.ring.model:new double[]{0,0,0,0};
@@ -80,7 +80,7 @@ public class M12Diag {
                 }
                 // round markers: edge distance from the master circle (ring-moved), outward radial normals
                 List<Double> rt=new ArrayList<>();
-                for(int h:Alpha94MarkerMeasurement.ROUND_HOURS){
+                for(int h:HarnessModel.spec().roundHours()){
                     double ang=Math.toRadians(h*30.0),ex=Math.sin(ang),ey=-Math.cos(ang),c0x=ex*Alpha92GmtMaster.ROUND_CENTER_R,c0y=ey*Alpha92GmtMaster.ROUND_CENTER_R;
                     double mx=c0x+x[0]+x[2]*c0x-x[3]*c0y,my=c0y+x[1]+x[2]*c0y+x[3]*c0x,rr=Alpha92GmtMaster.ROUND_OUTER_R*(1+x[2]);
                     List<Double> t=new ArrayList<>(),s=new ArrayList<>();

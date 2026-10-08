@@ -26,10 +26,10 @@ public class Alpha97AppParity {
             String[] f=lines.get(li).split(",",-1);String id=iId>=0?f[iId]:f[iPath];
             Bitmap b=Alpha96Calib.loadAlpha96(Path.of(a[1]).resolve(f[iPath]).toString());
             if(b==null)continue;
-            AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(b);
+            AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(b,HarnessModel.spec());
             if(!q.valid||q.homography==null)continue;
-            Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography);
-            Alpha97TwelveReadout.Result app=Alpha97TwelveReadout.from(r);
+            Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography,HarnessModel.spec());
+            Alpha97TwelveReadout.Result app=Alpha97TwelveReadout.from(r,HarnessModel.ref());
             Alpha97TwelveAngles.Result pro=proto.apply(r);
             n++;
             if(app.usable!=pro.usable){System.out.println("MISMATCH usable "+id);bad++;continue;}
@@ -41,7 +41,7 @@ public class Alpha97AppParity {
                 if(app.atLeastCentreline!=pro.atLeastCentreline||app.atLeastSides!=pro.atLeastSides||app.atLeastLateral!=pro.atLeastLateral){
                     System.out.println("MISMATCH counts "+id);bad++;}
             }
-            String[] a96=r.compactSummary().split("\n",-1),a97=Alpha97TwelveReadout.summary(r).split("\n",-1);
+            String[] a96=r.compactSummary().split("\n",-1),a97=Alpha97TwelveReadout.summary(r,HarnessModel.ref()).split("\n",-1);
             if(a96.length!=a97.length){System.out.println("MISMATCH summary length "+id);bad++;}
             else for(int i=0;i<a96.length;i++)if(i!=1&&!a96[i].equals(a97[i])){System.out.println("MISMATCH summary line "+i+" "+id);bad++;}
         }

@@ -37,9 +37,9 @@ public class Alpha97TriProto {
                 String rel=f[iPath],id=iId>=0?f[iId]:rel;
                 Bitmap b=Alpha96Calib.loadAlpha96(Path.of(a[1]).resolve(rel).toString());
                 if(b==null){out.println(id+",unreadable");continue;}
-                AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(b);
+                AutomaticDialOverlay.Result q=AutomaticDialOverlay.build(b,HarnessModel.spec());
                 if(!q.valid||q.homography==null){out.println(id+",pose_rejected");System.out.println(id+": pose rejected ("+q.reason+")");continue;}
-                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography);
+                Alpha94MarkerMeasurement.Report r=Alpha94MarkerMeasurement.analyse(b,q.homography,HarnessModel.spec());
                 Alpha97TriangleNominal.Result t=nom.apply(r);
                 Alpha94MarkerMeasurement.Marker m=r.triangle;
                 boolean mu=m!=null&&m.usable;

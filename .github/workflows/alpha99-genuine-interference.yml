@@ -9,9 +9,12 @@ on:
   push:
     branches:
       - feature/android-alpha99-hybrid-results
+      - feature/android-alpha100-model-spec
     paths:
       - '.github/workflows/alpha99-genuine-interference.yml'
       - 'android/app/src/main/java/com/watchalign/mobile/Alpha99*.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Model*.java'
+      - 'android/app/src/main/assets/models/**'
       - 'tools/research/alpha96_calibration/alpha99_genuine_summary.py'
   workflow_dispatch:
 

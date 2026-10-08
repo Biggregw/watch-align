@@ -20,8 +20,9 @@ import java.util.Map;
  * offset / rotation is never reported as a finding. A strip dominated by foreign samples (glare, reflections) also
  * withholds it. Fail closed: if the strip cannot be sampled, the marker is withheld.
  *
- * Fixed geometry (canonical dial units, R = 1), set from the Alpha92 master before any photo was looked at:
- *   strip half-width = marker half-width + 0.04; corridor 0.12 inward of the marker's inner edge (12: from r 0.50);
+ * Fixed geometry (canonical dial units, R = 1; marker shapes from the model spec), set before any photo was looked at:
+ *   strip half-width = marker half-width + 0.04; corridor 0.12 inward of the marker's inner edge (triangle: from the
+ *   spec's corridor_start_r, GMT 0.50);
  *   outer limit = marker outer edge, at most 0.92 (inside the minute track); marker halo = 0.012 + 2.5 px;
  *   foreign = |I - row median| > max(20 grey levels, 5 x robust noise); a hand = a component reaching the halo,
  *   spanning at least 0.05 R radially, whose closest approach to the outline (followed into the halo against the
@@ -29,14 +30,14 @@ import java.util.Map;
  *   outline, so anything closer can enter the measured edge, anything further cannot.
  * Thin hands over the marker face (elongated, at most 0.05 R wide, spanning 0.05 R) also withhold it.
  * Seconds hand: on a black dial its dark shaft is visible only where it crosses a marker's bright edge, so its lume
- * dot (a bright disc on a thin shaft, centred r 0.50-0.60, contrast >= 0.45 x the marker lume contrast) fixes the
+ * dot (a bright disc on a thin shaft, centred within the spec's seconds_hand radii, GMT r 0.50-0.60, contrast >= 0.45 x the marker lume contrast) fixes the
  * radial line it runs along, and every marker that line passes within 0.012 R + 1 px + 0.006 R (shaft half-width) of
  * is withheld.
  */
 final class Alpha99MarkerInterference {
     static final double MARGIN=0.04,CORRIDOR=0.12,OUTER_LIMIT=0.92,HALO=0.012,HALO_PX=2.5;
     static final double MIN_LEVELS=20,NOISE_K=5,MIN_SPAN=0.05,MAX_FOREIGN=0.35,INNER=0.02,MAX_HAND_WIDTH=0.05;
-    static final double DATE_X0=0.40,DATE_HALF_Y=0.20,DOT_R0=0.50,DOT_R1=0.60,DOT_IN=0.02,DOT_OUT=0.065,DOT_EDGE=0.05,DOT_ALONG=0.06,DOT_SHAFT=0.012,DOT_MIN_FRAC=0.45,SHAFT_HALF=0.006;
+    static final double DOT_IN=0.02,DOT_OUT=0.065,DOT_EDGE=0.05,DOT_ALONG=0.06,DOT_SHAFT=0.012,DOT_MIN_FRAC=0.45,SHAFT_HALF=0.006;
     static final double TOUCH_R=0.012,TOUCH_PX=1.0;
     static final String HAND="hand crosses or touches this marker";
     static final String GLARE="reflection or glare around this marker";
@@ -62,7 +63,7 @@ final class Alpha99MarkerInterference {
     private Alpha99MarkerInterference(){}
 
     /** Checks for 12 and every Alpha94 hour. Never null; a missing image / pose gives every marker not clean. */
-    static Map<Integer,Check> analyse(Mat gray,double[] H){
+    static Map<Integer,Check> analyse(Mat gray,double[] H,ModelSpec model){
         double rpx=pxPerR(H);
         Sampler img=null;
         try{
@@ -73,14 +74,12 @@ final class Alpha99MarkerInterference {
                 if(Double.isFinite(minX)){Alpha91SplineImage sp=new Alpha91SplineImage(gray,(int)Math.floor(minX)-4,(int)Math.floor(minY)-4,(int)Math.ceil(maxX)+5,(int)Math.ceil(maxY)+5);img=sp::at;}
             }
         }catch(Throwable t){img=null;}
-        return analyse(img,H);
+        return analyse(img,H,model);
     }
 
     /** As above on any sampler; a null sampler or unusable pose withholds every marker. */
-    static Map<Integer,Check> analyse(Sampler img,double[] H){
+    static Map<Integer,Check> analyse(Sampler img,double[] H,ModelSpec model){
         Map<Integer,Check> out=new LinkedHashMap<>();
-        int[] hours=new int[Alpha94MarkerMeasurement.HOURS.length+1];hours[0]=12;
-        System.arraycopy(Alpha94MarkerMeasurement.HOURS,0,hours,1,Alpha94MarkerMeasurement.HOURS.length);
         double rpx=pxPerR(H);
         if(!(rpx>20))img=null;
         // seconds hand: a dark shaft is invisible on a black dial except where it crosses a marker's bright edge, so its
@@ -88,35 +87,35 @@ final class Alpha99MarkerInterference {
         java.util.List<Double> seconds=new java.util.ArrayList<>();
         if(img!=null){
             try{
-                double L=lumeContrast(img,H);
-                if(Double.isFinite(L)&&L>0)for(double[] d:dots(img,H,rpx))if(d[2]>=DOT_MIN_FRAC*L)seconds.add(d[0]);
+                double L=lumeContrast(img,H,model);
+                if(Double.isFinite(L)&&L>0)for(double[] d:dots(img,H,rpx,model))if(d[2]>=DOT_MIN_FRAC*L)seconds.add(d[0]);
             }catch(Throwable t){img=null;}
         }
-        for(int h:hours){
+        for(ModelSpec.Marker mk:model.markers){
+            int h=mk.hour;
             Check c;
-            try{c=img==null?null:check(img,H,h,rpx);}catch(Throwable t){c=null;}
+            try{c=img==null?null:check(img,H,mk,rpx);}catch(Throwable t){c=null;}
             if(c==null){c=new Check(h);c.clean=false;c.reason="marker surroundings could not be checked";}
-            for(double psi:seconds)if(onLine(h,psi,TOUCH_R+TOUCH_PX/rpx+SHAFT_HALF)){c.secondsHand=true;if(c.clean){c.clean=false;c.reason=HAND;}}
+            for(double psi:seconds)if(onLine(mk,psi,TOUCH_R+TOUCH_PX/rpx+SHAFT_HALF)){c.secondsHand=true;if(c.clean){c.clean=false;c.reason=HAND;}}
             out.put(h,c);
         }
         return out;
     }
 
-    static Check check(Sampler img,double[] H,int hour,double rpx){
+    static Check check(Sampler img,double[] H,ModelSpec.Marker mk,double rpx){
+        int hour=mk.hour;
         Check c=new Check(hour);
         double a=Math.toRadians(hour*30.0);double[] er={Math.sin(a),-Math.cos(a)},et={Math.cos(a),Math.sin(a)};
         double hw,rin,rout;
-        if(hour==12){hw=Alpha92GmtMaster.TRI_HALF_BASE;rin=Alpha92GmtMaster.TRI_APEX_R;rout=Alpha92GmtMaster.TRI_BASE_R;}
-        else if(hour==6||hour==9||hour==3){hw=Alpha92GmtMaster.BATON_TANGENTIAL_HALF;rin=Alpha92GmtMaster.BATON_CENTER_R-Alpha92GmtMaster.BATON_RADIAL_HALF;rout=Alpha92GmtMaster.BATON_CENTER_R+Alpha92GmtMaster.BATON_RADIAL_HALF;}
-        else{hw=Alpha92GmtMaster.ROUND_OUTER_R;rin=Alpha92GmtMaster.ROUND_CENTER_R-hw;rout=Alpha92GmtMaster.ROUND_CENTER_R+hw;}
-        double r0=hour==12?0.50:rin-CORRIDOR,r1=Math.min(rout,OUTER_LIMIT),tw=hw+MARGIN;
+        hw=mk.halfWidth();rin=mk.innerR();rout=mk.outerEdgeR();
+        double r0=mk.shape==ModelSpec.Shape.TRIANGLE?mk.corridorStartR:rin-CORRIDOR,r1=Math.min(rout,OUTER_LIMIT),tw=hw+MARGIN;
         double step=0.75/rpx,halo=HALO+HALO_PX/rpx,inner=INNER+HALO_PX/rpx;
         int rows=(int)Math.ceil((r1-r0)/step)+1,cols=2*(int)Math.ceil(tw/step)+1;
         float[] v=new float[rows*cols],dd=new float[rows*cols];int[] g=new int[rows*cols];
         for(int i=0;i<rows;i++){double r=r0+i*step;
             for(int j=0;j<cols;j++){double t=(j-(cols-1)/2)*step;int k=i*cols+j;
                 if(Math.hypot(r,t)>OUTER_LIMIT){g[k]=-1;continue;}
-                double d=dist(hour,r,t);dd[k]=(float)d;
+                double d=dist(mk,r,t);dd[k]=(float)d;
                 if(d<=halo&&d>-inner)g[k]=3;
                 else if(d<=-inner)g[k]=4;
                 double[] p=project(H,r*er[0]+t*et[0],r*er[1]+t*et[1]);
@@ -215,7 +214,8 @@ final class Alpha99MarkerInterference {
      * carries its dot). Returns {angle deg clockwise from 12, r, score} rows with score = darkest disc sample minus the
      * median of the surrounding ring, in grey levels.
      */
-    static java.util.List<double[]> dots(Sampler img,double[] H,double rpx){
+    static java.util.List<double[]> dots(Sampler img,double[] H,double rpx,ModelSpec model){
+        final double DOT_R0=model.secondsDotRMin,DOT_R1=model.secondsDotRMax;
         java.util.List<double[]> out=new java.util.ArrayList<>();
         double step=1.0/rpx;
         int na=(int)Math.ceil(2*Math.PI*0.55/step);
@@ -223,7 +223,7 @@ final class Alpha99MarkerInterference {
         for(int ia=0;ia<na;ia++){double a=2*Math.PI*ia/na;best[ia]=Double.NEGATIVE_INFINITY;
             for(double r=DOT_R0;r<=DOT_R1+1e-9;r+=step){
                 double cx=r*Math.sin(a),cy=-r*Math.cos(a);
-                if(cx>DATE_X0&&Math.abs(cy)<DATE_HALF_Y)continue;    // date window + frame (fixed master region)
+                if(model.date!=null&&cx>model.date.exclXMin&&Math.abs(cy)<model.date.exclHalfY)continue;    // date window + frame (model spec region)
                 double mn=Double.POSITIVE_INFINITY;boolean ok=true;
                 for(int k=-1;k<8;k++){double x=cx,y=cy;if(k>=0){double b=k*Math.PI/4;x+=DOT_IN*Math.cos(b);y+=DOT_IN*Math.sin(b);}
                     double[] p=project(H,x,y);double v=p==null?Double.NaN:img.at(p[0],p[1]);if(!Double.isFinite(v)){ok=false;break;}mn=Math.min(mn,v);}
@@ -253,9 +253,11 @@ final class Alpha99MarkerInterference {
     }
 
     /** Lume contrast of this photo: median round-marker centre minus median dial between markers (grey levels). */
-    static double lumeContrast(Sampler img,double[] H){
-        double[] lume=new double[8],dial=new double[24];int i=0;
-        for(int h:Alpha94MarkerMeasurement.ROUND_HOURS){double a=Math.toRadians(h*30.0);double[] p=project(H,Alpha92GmtMaster.ROUND_CENTER_R*Math.sin(a),-Alpha92GmtMaster.ROUND_CENTER_R*Math.cos(a));lume[i++]=p==null?Double.NaN:img.at(p[0],p[1]);}
+    static double lumeContrast(Sampler img,double[] H,ModelSpec model){
+        java.util.List<ModelSpec.Marker> faces=model.withShape(ModelSpec.Shape.ROUND);if(faces.isEmpty())faces=model.markers;
+        double[] lume=new double[faces.size()],dial=new double[24];int i=0;
+        for(ModelSpec.Marker mk:faces){double a=Math.toRadians(mk.hour*30.0),cr=mk.shape==ModelSpec.Shape.TRIANGLE?mk.areaCentroidR:mk.centreR;
+            double[] p=project(H,cr*Math.sin(a),-cr*Math.cos(a));lume[i++]=p==null?Double.NaN:img.at(p[0],p[1]);}
         for(int k=0;k<24;k++){double a=Math.toRadians(k*15.0+7.5);double[] p=project(H,0.66*Math.sin(a),-0.66*Math.cos(a));dial[k]=p==null?Double.NaN:img.at(p[0],p[1]);}
         for(double x:lume)if(!Double.isFinite(x))return Double.NaN;
         for(double x:dial)if(!Double.isFinite(x))return Double.NaN;
@@ -263,9 +265,9 @@ final class Alpha99MarkerInterference {
     }
 
     /** Does the radial line at psi (deg clockwise from 12) pass within tol of marker hour's master shape? */
-    static boolean onLine(int hour,double psi,double tol){
-        double d=Math.toRadians(psi-hour*30.0);
-        for(double rho=0.45;rho<=0.95;rho+=0.0025)if(dist(hour,rho*Math.cos(d),rho*Math.sin(d))<=tol)return true;
+    static boolean onLine(ModelSpec.Marker mk,double psi,double tol){
+        double d=Math.toRadians(psi-mk.hour*30.0);
+        for(double rho=0.45;rho<=0.95;rho+=0.0025)if(dist(mk,rho*Math.cos(d),rho*Math.sin(d))<=tol)return true;
         return false;
     }
 
@@ -274,9 +276,9 @@ final class Alpha99MarkerInterference {
     }
 
     /** Signed distance (canonical units, > 0 outside) from (r, t) in the marker's frame to the master marker shape. */
-    static double dist(int hour,double r,double t){
-        if(hour==12){
-            double[][] P={{Alpha92GmtMaster.TRI_APEX_R,0},{Alpha92GmtMaster.TRI_BASE_R,Alpha92GmtMaster.TRI_HALF_BASE},{Alpha92GmtMaster.TRI_BASE_R,-Alpha92GmtMaster.TRI_HALF_BASE}};
+    static double dist(ModelSpec.Marker mk,double r,double t){
+        if(mk.shape==ModelSpec.Shape.TRIANGLE){
+            double[][] P={{mk.apexR,0},{mk.baseR,mk.halfBase},{mk.baseR,-mk.halfBase}};
             double d=Double.POSITIVE_INFINITY;boolean inside=true;
             for(int i=0;i<3;i++){double[] p=P[i],q=P[(i+1)%3];double ex=q[0]-p[0],ey=q[1]-p[1];
                 double u=Math.max(0,Math.min(1,((r-p[0])*ex+(t-p[1])*ey)/(ex*ex+ey*ey)));
@@ -285,11 +287,11 @@ final class Alpha99MarkerInterference {
                 if(cr*cr3<0)inside=false;}
             return inside?-d:d;
         }
-        if(hour==3||hour==6||hour==9){
-            double dr=Math.abs(r-Alpha92GmtMaster.BATON_CENTER_R)-Alpha92GmtMaster.BATON_RADIAL_HALF,dt=Math.abs(t)-Alpha92GmtMaster.BATON_TANGENTIAL_HALF;
+        if(mk.shape==ModelSpec.Shape.BATON){
+            double dr=Math.abs(r-mk.centreR)-mk.radialHalf,dt=Math.abs(t)-mk.tangentialHalf;
             return dr>0||dt>0?Math.hypot(Math.max(dr,0),Math.max(dt,0)):Math.max(dr,dt);
         }
-        return Math.hypot(r-Alpha92GmtMaster.ROUND_CENTER_R,t)-Alpha92GmtMaster.ROUND_OUTER_R;
+        return Math.hypot(r-mk.centreR,t)-mk.outerR;
     }
 
     private static double[] project(double[] H,double x,double y){

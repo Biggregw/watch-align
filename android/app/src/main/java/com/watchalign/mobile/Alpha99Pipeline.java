@@ -11,7 +11,8 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Alpha99 analysis of one photo, shared by the app and the desktop preview: frozen pose -> unchanged Alpha94
+ * Alpha99 analysis of one photo of a given model (ModelSpec + its ModelReference), shared by the app and the desktop
+ * preview: frozen pose -> unchanged Alpha94
  * measurement -> unchanged Alpha98 date window -> Alpha99 interference check -> Alpha99 evidence -> overview and
  * close-ups for the tiles. Nothing here feeds back into the pose or the measurement.
  */
@@ -25,25 +26,26 @@ final class Alpha99Pipeline {
         Bitmap overview;
         final Map<String,Bitmap> closeups=new LinkedHashMap<>();
         String technical;
+        ModelSpec model;ModelReference reference;
         boolean ok(){return pose!=null&&pose.valid&&pose.homography!=null&&summary!=null;}
     }
 
     private Alpha99Pipeline(){}
 
-    static Output run(Bitmap photo){
-        Output o=new Output();
-        o.pose=AutomaticDialOverlay.build(photo);
+    static Output run(Bitmap photo,ModelSpec model,ModelReference ref){
+        Output o=new Output();o.model=model;o.reference=ref;
+        o.pose=AutomaticDialOverlay.build(photo,model);
         if(o.pose==null||!o.pose.valid||o.pose.homography==null)return o;
         double[] H=o.pose.homography;
-        o.measurement=Alpha94MarkerMeasurement.analyse(photo,H);
+        o.measurement=Alpha94MarkerMeasurement.analyse(photo,H,model);
         Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(photo,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
-        try{o.date=Alpha98DateWindow.analyse(gray,H);}catch(Throwable t){o.date=null;}
-        try{o.checks=Alpha99MarkerInterference.analyse(gray,H);}catch(Throwable t){o.checks=null;}
-        o.summary=Alpha99Findings.build(o.measurement,o.date,o.checks);
-        try{o.overview=Alpha99Overview.render(rgba,H,o.summary);}catch(Throwable t){o.overview=null;}
+        try{o.date=model.date==null?null:Alpha98DateWindow.analyse(gray,H,model.date);}catch(Throwable t){o.date=null;}
+        try{o.checks=Alpha99MarkerInterference.analyse(gray,H,model);}catch(Throwable t){o.checks=null;}
+        o.summary=Alpha99Findings.build(o.measurement,o.date,o.checks,model,ref);
+        try{o.overview=Alpha99Overview.render(rgba,H,o.summary,model);}catch(Throwable t){o.overview=null;}
         double[] ring=o.measurement.ring!=null&&o.measurement.ring.usable?o.measurement.ring.model:null;
         for(Alpha99Findings.Finding f:o.summary.tiles()){
-            Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring);}catch(Throwable t){c=null;}
+            Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref);}catch(Throwable t){c=null;}
             if(c!=null)o.closeups.put(f.key,c);
         }
         o.technical=technical(o);
@@ -54,17 +56,17 @@ final class Alpha99Pipeline {
     /** Technical numbers for the collapsed "Technical details" section. */
     static String technical(Output o){
         AutomaticDialOverlay.Result q=o.pose;Alpha94MarkerMeasurement.Report m=o.measurement;Alpha98DateWindow.Result d=o.date;
-        StringBuilder s=new StringBuilder();
+        StringBuilder s=new StringBuilder("Model: "+o.model.label+"\n");
         s.append(String.format(Locale.US,"Pose: %d ticks · %d sectors · tick RMS %.2f px · dial radius %.0f px · 12 phase %s",
                 q.detectedTicks,q.completePairs,q.fitAfter,m.dialRadiusPx,q.twelvePhaseUsed?"locked":"guarded by coarse pose"));
-        s.append("\n").append(Alpha97TwelveReadout.summary(m));
+        s.append("\n").append(o.reference.triangle!=null&&m.triangle!=null?Alpha97TwelveReadout.summary(m,o.reference):m.compactSummary());
         if(d!=null&&d.usable)s.append(String.format(Locale.US,"\nDate window: tilt %+.2f° (+ = clockwise)",d.windowTiltDeg));
         else s.append("\nDate window: not measured").append(d==null?"":" ("+d.reason+")");
         s.append("\n\nInterference check (hand / glare at each marker):");
         if(o.checks==null)s.append(" unavailable - every marker withheld");
         else for(Alpha99MarkerInterference.Check c:o.checks.values())
             s.append(String.format(Locale.US,"\n  %d: %s%s",c.hour,c.clean?"clear":c.reason,c.secondsHand?" (seconds-hand line)":""));
-        s.append(String.format(Locale.US,"\n\nEvidence: value / genuine max / allowance (%.0f sigma, photo-to-photo spread of genuine watches):",Alpha99Uncertainty.K_SIGMA));
+        s.append(String.format(Locale.US,"\n\nEvidence: value / genuine max / allowance (%.0f sigma, photo-to-photo spread of genuine watches):",o.reference.kSigma));
         for(Alpha99Findings.Finding f:o.summary.all){
             if(f.status==Alpha99Findings.Status.NOT_ASSESSED){s.append("\n  ").append(f.title).append(": not assessed (").append(f.reason).append(")");continue;}
             for(Alpha99Findings.Measure x:f.measures)
