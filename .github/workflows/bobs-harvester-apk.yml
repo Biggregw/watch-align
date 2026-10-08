@@ -1,12 +1,17 @@
 name: Bob's Rolex harvester APK
 
+# Builds the standalone harvester, runs its unit tests, then installs the APK on an Android emulator and runs bounded
+# end-to-end harvests against the live Bob's site (keyword filter + listing limit), exports the ZIPs and checks them.
+# Only text reports are uploaded; images stay on the runner (a log-only contact sheet is printed for review).
 on:
   push:
     branches:
       - tool/bobs-rolex-harvester-apk
+      - tool/bobs-rolex-harvester-fix
     paths:
       - 'android/settings.gradle'
       - 'android/bobsharvester/**'
+      - 'tools/bobs_harvester_probe/e2e_*'
       - '.github/workflows/bobs-harvester-apk.yml'
   workflow_dispatch:
 
@@ -23,15 +28,66 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Build standalone APK
+      - name: Unit tests
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew :bobsharvester:assembleDebug --stacktrace
+          ./gradlew :bobsharvester:testDebugUnitTest --stacktrace
+      - name: Print unit test results
+        if: always()
+        run: for f in android/bobsharvester/build/test-results/testDebugUnitTest/*.xml; do grep -o '<testsuite [^>]*>' "$f"; grep -A3 '<failure' "$f" | head -20; done
+      - name: Build standalone APK
+        working-directory: android
+        run: ./gradlew :bobsharvester:assembleDebug --stacktrace
       - name: Rename APK
-        run: cp android/bobsharvester/build/outputs/apk/debug/bobsharvester-debug.apk Bobs-Rolex-Harvester-1.0-arm64.apk
+        run: cp android/bobsharvester/build/outputs/apk/debug/bobsharvester-debug.apk Bobs-Rolex-Harvester-1.4-arm64.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Bobs-Rolex-Harvester-APK
-          path: Bobs-Rolex-Harvester-1.0-arm64.apk
-          retention-days: 7
+          path: Bobs-Rolex-Harvester-1.4-arm64.apk
+          retention-days: 30
+
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Bobs-Rolex-Harvester-APK
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q opencv-python-headless numpy
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: End-to-end harvests on an emulator (live site, bounded)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            adb install -r Bobs-Rolex-Harvester-1.4-arm64.apk
+            tools/bobs_harvester_probe/e2e_run.sh 1_submariner_124060 "submariner 124060" 4
+            tools/bobs_harvester_probe/e2e_run.sh 2_exact_124060 "124060" 3
+            tools/bobs_harvester_probe/e2e_run.sh 3_submariner "submariner" 3
+            tools/bobs_harvester_probe/e2e_run.sh 4_daytona "daytona" 2
+      - name: Check runs and ZIPs
+        if: always()
+        run: python3 tools/bobs_harvester_probe/e2e_check.py e2e_out
+      - name: Upload text reports (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bobs-harvester-e2e-reports
+          retention-days: 30
+          path: |
+            e2e_out/*/run_log.txt
+            e2e_out/*/image_decisions.csv
+            e2e_out/*/accepted.csv
