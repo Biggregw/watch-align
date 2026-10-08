@@ -1,4 +1,4 @@
-name: Temporary 124060 extra genuine image pack
+name: Temporary Bob's 124060 image-pack transport
 
 on:
   push:
@@ -13,183 +13,76 @@ permissions:
 jobs:
   pack:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: Install Python helpers
-        run: python -m pip install -q requests pillow
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: OpenCV jar cache
-        uses: actions/cache@v4
-        with:
-          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
-          key: opencv-4.9.0-0-jar
-
-      - name: Download additional EWC 124060 candidates
+      - run: python -m pip install -q requests pillow
+      - name: Download the 48 manually reviewed Bob's Watches images
         run: |
           python3 - <<'PY'
           import csv, hashlib, os, requests
+          from PIL import Image, ImageDraw
           from concurrent.futures import ThreadPoolExecutor, as_completed
-          stocks = ["57714","58678","55139","55297","58150","62088","59112","58030","62097","59921","62175","67390","64518","51884","50093","67830","45714","48227","43020","46278","46174","49826","44294","59697","66197","63861","47706","37836","47106","42174","57290","65028","66045","71823"]
-          os.makedirs('imagepack/input', exist_ok=True)
-          tasks=[(stock,i) for stock in stocks for i in (1,2)]
-          def get_one(task):
-              stock,image_index=task
-              url=f"https://images.europeanwatch.com/images/{stock[:2]}/{stock}-{image_index}.jpg"
-              try:
-                  r=requests.get(url,timeout=15,headers={
-                      'User-Agent':'Mozilla/5.0 (WatchAlign research image-pack)',
-                      'Referer':'https://www.europeanwatch.com/'})
-                  ctype=r.headers.get('content-type','')
-                  if r.status_code!=200 or 'image' not in ctype or len(r.content)<30000:
-                      return None,(stock,image_index,r.status_code,ctype,len(r.content))
-                  sha=hashlib.sha256(r.content).hexdigest()
-                  fn=f"EWC_{stock}_{image_index}_{sha[:10]}.jpg"
-                  open('imagepack/input/'+fn,'wb').write(r.content)
-                  return {'photo_id':f'ewc_{stock}_{image_index}','local_path':fn,'stock':stock,
-                          'image_index':image_index,'image_url':url,'sha256':sha},None
-              except Exception as e:
-                  return None,(stock,image_index,'ERR',repr(e),0)
-          rows=[]
+          ITEMS=[["186406","zUsed-Rolex-Submariner-124060-186406.jpg"],["174149","zUsed-Rolex-Submariner-124060-SKU174149-Black-Dial.jpg"],["182482","zUsed-Rolex-Submariner-124060-SKU182482.jpg"],["190826","zUsed-Rolex-Submariner-124060-SKU190826.jpg"],["190837","zUsed-Rolex-Submariner-124060-SKU190837.jpg"],["192314","zUsed-Rolex-Submariner-124060-SKU192314.jpg"],["184467","zUsed-Rolex-Submariner-124060-SKU184467-PL.jpg"],["185013","zUsed-Rolex-Submariner-124060-Black-Dial-SKU185013.jpg"],["188850","zUsed-Rolex-Submariner-124060-SKU188850.jpg"],["186502","zUsed-Rolex-Submariner-124060-SKU186502.jpg"],["185570","zUsed-Rolex-Submariner-124060-SKU185570.jpg"],["187509","zPre-Owned-Rolex-Submariner-124060-SKU187509-Black-Dial.jpg"],["187191","zUsed-Rolex-Submariner-124060-Black-Dial-SKU187191-PL.jpg"],["190902","z190902-Used-Rolex-Submariner-124060-SKU190902.jpg"],["190126","zUsed-Rolex-Submariner-124060-SKU190126.jpg"],["191878","zUsed-Rolex-Submariner-124060-SKU191878.jpg"],["193105","zUsed-Rolex-Submariner-124060-SKU193105.jpg"],["188311","zUsed-Rolex-Submariner-124060-SKU188311.jpg"],["184502","zUsed-Rolex-Submariner-124060-SKU184502-PL.jpg"],["191304","z191304-Used-Rolex-Submariner-124060-SKU191304.jpg"],["185429","zUsed-Rolex-Submariner-124060-Black-Dial-SKU185429.jpg"],["185853","zUsed-Rolex-Submariner-124060-Black-Dial-SKU185853.jpg"],["182762","zUsed-Rolex-Submariner-124060-Black-Chromalight-Dial-SKU182762.jpg"],["189982","zUsed-Rolex-Submariner-124060-SKU189982.jpg"],["192468","zUsed-Rolex-Submariner-124060-SKU192468.jpg"],["194074","zUsed-Rolex-Submariner-124060-SKU194074PL.jpg"],["194034","zUsed-Rolex-Submariner-124060-SKU194034PL.jpg"],["187661","z187661-Used-Rolex-Submariner-124060-SKU187661-Black-Dial.jpg"],["189182","zUsed-Rolex-Submariner-124060-SKU189182.jpg"],["187178","zUsed-Rolex-Submariner-124060-SKU187178-PL.jpg"],["180527","zUsed-Rolex-Submariner-124060-SKU180527-PL.jpg"],["182386","zUsed-Rolex-Submariner-124060-Black-Chromalight-Dial-SKU182386PL.jpg"],["187194","zUsed-Rolex-Submariner-124060-Black-Dial-SKU187194-PL.jpg"],["187502","zUsed-Rolex-Submariner-124060-SKU187502-PL.jpg"],["189163","zUsed-Rolex-Submariner-124060-SKU189163.jpg"],["185595","zUsed-Rolex-Submariner-124060-Black-Dial-SKU185595.jpg"],["189885","z189885-Used-Master-Rolex-Submariner-124060-SKU189885.jpg"],["194063","zUsed-Rolex-Submariner-124060-SKU194063.jpg"],["193191","zUsed-Rolex-Submariner-124060-SKU193191.jpg"],["190835","zUsed-Rolex-Submariner-124060-SKU190835.jpg"],["190698","zUsed-Rolex-Submariner-124060-SKU190698.jpg"],["185878","zUsed-Rolex-Submariner-124060-SKU185878.jpg"],["159617","zUsed-Rolex-Submariner-124060-SKU159617.jpg"],["151200","zMens-Rolex-Submariner-124060-151200.jpg"],["191110","z191110-Used-Rolex-Submariner-124060-SKU191110.jpg"],["180726","zUsed-Rolex-Submariner-124060-Black-Dial-SKU180726.jpg"],["182626","zUsed-Rolex-Submariner-124060-SKU182626.jpg"],["182059","zUsed-Rolex-Submariner-124060-SKU182059.jpg"]]
+          os.makedirs('pack/images',exist_ok=True)
+          def get(item):
+              sku,fn=item
+              direct='https://www.bobswatches.com/images/'+fn
+              cdn='https://www.bobswatches.com/cdn-cgi/image/width=768,quality=85,sharpen=0.5/images/'+fn
+              headers={'User-Agent':'Mozilla/5.0','Referer':'https://www.bobswatches.com/'}
+              last=None
+              for url in (direct,cdn):
+                  try:
+                      r=requests.get(url,headers=headers,timeout=25)
+                      if r.status_code==200 and r.headers.get('content-type','').startswith('image/') and len(r.content)>30000:
+                          p=f'pack/images/{sku}.jpg'
+                          open(p,'wb').write(r.content)
+                          with Image.open(p) as im:
+                              w,h=im.size
+                              if w<500 or h<500: raise ValueError(f'too small {w}x{h}')
+                          return {'sku':sku,'file':f'{sku}.jpg','source':'Bob\'s Watches','image_url':url,
+                                  'sha256':hashlib.sha256(r.content).hexdigest(),'width':w,'height':h}
+                      last=f'{url} HTTP {r.status_code} {len(r.content)}'
+                  except Exception as e: last=repr(e)
+              raise RuntimeError(f'{sku}: {last}')
+          rows=[]; errors=[]
           with ThreadPoolExecutor(max_workers=12) as ex:
-              futs=[ex.submit(get_one,t) for t in tasks]
+              futs={ex.submit(get,it):it for it in ITEMS}
               for fut in as_completed(futs):
-                  row,err=fut.result()
-                  if row:
-                      rows.append(row); print('ok',row['stock'],row['image_index'])
-                  else: print('skip',err)
-          rows.sort(key=lambda r:(r['stock'],r['image_index']))
-          with open('imagepack/manifest.csv','w',newline='') as f:
-              w=csv.DictWriter(f,fieldnames=['photo_id','local_path','stock','image_index','image_url','sha256'])
-              w.writeheader();w.writerows(rows)
-          print('downloaded',len(rows),'candidate images from',len(set(r['stock'] for r in rows)),'watches')
-          if len(rows)<20: raise SystemExit('too few images downloaded')
-          PY
-
-      - name: Measure candidates with current 124060 pose and marker pipeline
-        env:
-          JAVA_TOOL_OPTIONS: -Dwatchalign.model=submariner_124060 -Dwatchalign.models_root=tools/research/sub124060
-        run: |
-          mkdir -p imagepack/results
-          tools/desktop-harness/run.sh SubMaster imagepack/manifest.csv imagepack/input imagepack/results/candidates
-
-      - name: Select QC-suitable face-on images
-        run: |
-          python3 - <<'PY'
-          import csv, os, shutil
-          from collections import defaultdict
-          from PIL import Image, ImageOps, ImageDraw
-
-          mani={r['photo_id']:r for r in csv.DictReader(open('imagepack/manifest.csv'))}
-          track={r['photo_id']:r for r in csv.DictReader(open('imagepack/results/candidates_track.csv'))}
-          mr=defaultdict(list)
-          for r in csv.DictReader(open('imagepack/results/candidates_markers.csv')):
-              mr[r['photo_id']].append(r)
-
-          good=[]
-          for pid,m in mani.items():
-              t=track.get(pid)
-              if not t or t.get('status')!='accepted':
-                  continue
-              try:
-                  radius=float(t['dial_radius_px']); rms=float(t['tick_rms_px'])
-                  ticks=int(t['ticks_used']); sectors=int(t['tick_sectors'])
-              except Exception:
-                  continue
-              rows=mr.get(pid,[])
-              usable=[r for r in rows if r.get('usable','').lower()=='true']
-              hours={int(r['hour']) for r in usable if r.get('hour','').isdigit()}
-              # "QC suitable" here is deliberately strict: reliable pose, useful resolution,
-              # good minute lattice and all four cardinal markers measurable.
-              if radius < 180 or rms > 0.22 or ticks < 45 or sectors < 10:
-                  continue
-              if not {12,3,6,9}.issubset(hours) or len(hours) < 10:
-                  continue
-              score=(min(radius,500)/500)*2 + (0.22-rms)*4 + len(hours)/12
-              good.append((score,pid,radius,rms,ticks,sectors,len(hours)))
-
-          good.sort(reverse=True)
-          # Keep at most two views of one physical dealer stock, and at most 48 images.
-          per_stock=defaultdict(int); selected=[]
-          for x in good:
-              pid=x[1]; stock=mani[pid]['stock']
-              if per_stock[stock] >= 2: continue
-              selected.append(x); per_stock[stock]+=1
-              if len(selected) >= 48: break
-
-          os.makedirs('imagepack/selected',exist_ok=True)
-          out=[]
-          for rank,x in enumerate(selected,1):
-              score,pid,radius,rms,ticks,sectors,nusable=x
-              m=mani[pid]
-              src='imagepack/input/'+m['local_path']
-              dst=f"imagepack/selected/{rank:02d}_EWC_{m['stock']}_view{m['image_index']}.jpg"
-              shutil.copy2(src,dst)
-              out.append({
-                  'file':os.path.basename(dst),'source':'European Watch Company',
-                  'stock':m['stock'],'image_index':m['image_index'],
-                  'image_url':m['image_url'],'sha256':m['sha256'],
-                  'dial_radius_px':f'{radius:.1f}','tick_rms_px':f'{rms:.3f}',
-                  'ticks_used':ticks,'tick_sectors':sectors,'usable_markers':nusable
-              })
-          with open('imagepack/selected_manifest.csv','w',newline='') as f:
-              w=csv.DictWriter(f,fieldnames=out[0].keys() if out else ['file'])
-              w.writeheader(); w.writerows(out)
-
-          with open('imagepack/README.txt','w') as f:
-              f.write('Watch Align extra genuine Rolex Submariner 124060 image pack\n\n')
-              f.write('Source: European Watch Company archive/listings, which identifies these as Rolex 124060 and certified authentic.\n')
-              f.write('Each stock number is a distinct dealer listing / physical watch.\n')
-              f.write('Images were selected automatically using Watch Align current 124060 pipeline.\n')
-              f.write('Selection: pose accepted; dial radius >=180 px; tick RMS <=0.22 px; >=45 ticks; >=10 sectors;\n')
-              f.write('12/3/6/9 markers measurable; at least 10 hour markers measurable.\n')
-              f.write('These are for independent visual/QC testing, not automatically promoted into calibration truth.\n')
-              f.write(f'\nSelected images: {len(out)} from {len(set(r["stock"] for r in out))} distinct watches.\n')
-
-          # Contact sheet for quick visual inspection.
+                  try: rows.append(fut.result())
+                  except Exception as e: errors.append(str(e))
+          if errors:
+              print('\n'.join(errors)); raise SystemExit(f'{len(errors)} downloads failed')
+          rows.sort(key=lambda r:[x[0] for x in ITEMS].index(r['sku']))
+          if len(rows)!=48: raise SystemExit(f'expected 48, got {len(rows)}')
+          hashes=[r['sha256'] for r in rows]
+          if len(set(hashes))!=48: raise SystemExit('duplicate image bytes detected')
+          with open('pack/manifest.csv','w',newline='') as fh:
+              w=csv.DictWriter(fh,fieldnames=rows[0].keys()); w.writeheader(); w.writerows(rows)
+          with open('pack/README.txt','w') as fh:
+              fh.write("48 genuine Rolex Submariner 124060 front/QC images from Bob's Watches.\n")
+              fh.write("Each image was manually reviewed for a substantially face-on, useful dial view before this pack was built.\n")
+              fh.write("Bob's listing pages identify these as Rolex 124060 and state that their pre-owned Rolex watches are guaranteed genuine/certified authentic.\n")
+              fh.write("Use as an independent visual/QC test set; do not silently promote into calibration limits.\n")
           thumbs=[]
-          for r in out:
-              p='imagepack/selected/'+r['file']
-              im=Image.open(p).convert('RGB')
-              im.thumbnail((360,360))
-              canvas=Image.new('RGB',(380,405),'white')
-              x=(380-im.width)//2; y=5+(360-im.height)//2
-              canvas.paste(im,(x,y))
-              d=ImageDraw.Draw(canvas)
-              d.text((8,372),r['file'],fill='black')
-              thumbs.append(canvas)
-          if thumbs:
-              cols=4; rows=(len(thumbs)+cols-1)//cols
-              sheet=Image.new('RGB',(cols*380,rows*405),'white')
-              for i,im in enumerate(thumbs):
-                  sheet.paste(im,((i%cols)*380,(i//cols)*405))
-              sheet.save('imagepack/contact_sheet.jpg',quality=90)
-          print('SELECTED',len(out),'images from',len(set(r['stock'] for r in out)),'distinct watches')
-          if len(out) < 25:
-              raise SystemExit('fewer than 25 QC-suitable images survived')
+          for r in rows:
+              im=Image.open('pack/images/'+r['file']).convert('RGB')
+              im.thumbnail((300,300))
+              c=Image.new('RGB',(320,340),'white'); c.paste(im,((320-im.width)//2,5+(300-im.height)//2))
+              ImageDraw.Draw(c).text((10,315),'Bob '+r['sku'],fill='black'); thumbs.append(c)
+          cols=6; nrows=(len(thumbs)+cols-1)//cols
+          sheet=Image.new('RGB',(cols*320,nrows*340),'white')
+          for i,im in enumerate(thumbs): sheet.paste(im,((i%cols)*320,(i//cols)*340))
+          sheet.save('pack/contact_sheet.jpg',quality=92)
+          print('Built pack with',len(rows),'unique images')
           PY
-
-      - name: Make zip
-        run: |
-          cd imagepack
-          zip -q -r ../Rolex-124060-extra-genuine-QC-images.zip selected selected_manifest.csv README.txt contact_sheet.jpg
-          cd ..
-          ls -lh Rolex-124060-extra-genuine-QC-images.zip
-          cat imagepack/README.txt
-
-      - name: Upload image pack
-        uses: actions/upload-artifact@v4
+      - name: Zip pack
+        run: zip -q -r Rolex-124060-Bobs-48-QC-images.zip pack
+      - uses: actions/upload-artifact@v4
         with:
-          name: Rolex-124060-extra-genuine-QC-images
-          retention-days: 7
-          path: Rolex-124060-extra-genuine-QC-images.zip
+          name: Rolex-124060-Bobs-48-QC-images
+          retention-days: 3
+          path: Rolex-124060-Bobs-48-QC-images.zip
