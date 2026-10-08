@@ -91,6 +91,11 @@ def main():
             for h in ROUNDS:
                 if r[f'm{h}_usable'] == 'true':
                     add('rounds_off', f'{h}r', fl(r[f'm{h}_local_radial_px'])); add('rounds_off', f'{h}t', fl(r[f'm{h}_local_tangential_px']))
+        rs = [fl(r[f'm{h}_radius_err_px']) for h in ROUNDS if r[f'm{h}_usable'] == 'true']
+        rs = [x for x in rs if x is not None]
+        if len(rs) >= 5:                                       # Alpha101 lume-plot size (dial-wide, and worst single round)
+            srt = sorted(rs); ms = srt[len(srt) // 2] if len(srt) % 2 else 0.5 * (srt[len(srt) // 2 - 1] + srt[len(srt) // 2])
+            add('rounds_size', 'size', ms); add('round_size_rel', 'rel', max(abs(x - ms) for x in rs))
         if r['ring_usable'] == 'true':
             add('ring_rot', 'rot', fl(r['ring_rotation_deg']), False)
             add('ring_shift', 'x', fl(r['ring_shift_x_px'])); add('ring_shift', 'y', fl(r['ring_shift_y_px']))

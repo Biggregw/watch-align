@@ -58,6 +58,14 @@ def photo_features(r):
     rl = [x for x in rl if x is not None]
     if len(rl) >= 5:
         f['rounds_off'] = max(rl) / R
+    # Alpha101 lume-plot size: dial-wide round size (median fitted radius error, signed, / R) and the largest single
+    # round's size difference from its own dial's median (magnitude, / R) - the latter cancels lighting and blur
+    rs = [fl(r[f'm{h}_radius_err_px']) for h in ROUNDS if r[f'm{h}_usable'] == 'true']
+    rs = [x / R for x in rs if x is not None]
+    if len(rs) >= 5:
+        ms = median(rs)
+        f['rounds_size'] = ms
+        f['round_size_rel'] = max(abs(x - ms) for x in rs)
     if r.get('ring_usable') == 'true':
         f['ring_rot'] = fl(r['ring_rotation_deg'])
         s = fl(r['ring_shift_px'])
@@ -65,9 +73,10 @@ def photo_features(r):
     return {k: v for k, v in f.items() if v is not None}
 
 
-SIGNED = ('six_rot', 'nine_rot', 'ring_rot', 'date_tilt')
-FEATURES = ('six_rot', 'six_off', 'nine_rot', 'nine_off', 'rounds_off', 'ring_rot', 'ring_shift', 'date_tilt')
-RES_MATCHED = ('rounds_off', 'ring_shift')
+SIGNED = ('six_rot', 'nine_rot', 'ring_rot', 'date_tilt', 'rounds_size')
+FEATURES = ('six_rot', 'six_off', 'nine_rot', 'nine_off', 'rounds_off', 'ring_rot', 'ring_shift', 'date_tilt', 'rounds_size',
+            'round_size_rel')
+RES_MATCHED = ('rounds_off', 'ring_shift', 'rounds_size', 'round_size_rel')
 
 
 def main():

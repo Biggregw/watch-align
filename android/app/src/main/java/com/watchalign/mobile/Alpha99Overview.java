@@ -38,7 +38,7 @@ final class Alpha99Overview {
      *  withheld as a group for a photo-wide reason (e.g. round markers at too low a resolution) get none: the reason is
      *  the photo, not the marker, and the not-assessed line under the grid says so. */
     static boolean hasBadge(Alpha99Findings.Finding f){
-        return !(f.status==Alpha99Findings.Status.NOT_ASSESSED&&f.group!=null);
+        return !f.dialWide&&!(f.status==Alpha99Findings.Status.NOT_ASSESSED&&f.group!=null);
     }
 
     /** Badge position in canonical units: just inside each marker (towards the centre), beside the date window, the

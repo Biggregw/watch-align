@@ -6,6 +6,8 @@ GEN_CAND_WEX_BLRO_01,nine_off,ok,0.002394,45
 GEN_CAND_WEX_BLRO_01,rounds_off,n/a,0.001896,4
 GEN_CAND_WEX_BLRO_01,ring_rot,ok,0.022695,48
 GEN_CAND_WEX_BLRO_01,ring_shift,n/a,0.002837,4
+GEN_CAND_WEX_BLRO_01,rounds_size,n/a,0.001129,4
+GEN_CAND_WEX_BLRO_01,round_size_rel,n/a,0.000363,4
 GEN_CAND_WEX_BLRO_02,six_rot,ok,0.118833,44
 GEN_CAND_WEX_BLRO_02,six_off,ok,0.002817,44
 GEN_CAND_WEX_BLRO_02,nine_rot,ok,0.025760,46
@@ -13,6 +15,8 @@ GEN_CAND_WEX_BLRO_02,nine_off,ok,0.002524,45
 GEN_CAND_WEX_BLRO_02,rounds_off,n/a,0.001896,4
 GEN_CAND_WEX_BLRO_02,ring_rot,ok,0.001315,48
 GEN_CAND_WEX_BLRO_02,ring_shift,n/a,0.001800,4
+GEN_CAND_WEX_BLRO_02,rounds_size,n/a,0.000589,4
+GEN_CAND_WEX_BLRO_02,round_size_rel,n/a,0.000471,4
 GEN_CAND_HO_01,six_rot,ok,0.462078,44
 GEN_CAND_HO_01,six_off,ok,0.001726,44
 GEN_CAND_HO_01,nine_rot,ok,0.139040,46
@@ -20,6 +24,8 @@ GEN_CAND_HO_01,nine_off,ok,0.002900,45
 GEN_CAND_HO_01,rounds_off,ok,0.002449,16
 GEN_CAND_HO_01,ring_rot,ok,0.051315,48
 GEN_CAND_HO_01,ring_shift,ok,0.003482,16
+GEN_CAND_HO_01,rounds_size,ok,0.000489,16
+GEN_CAND_HO_01,round_size_rel,FLAG,0.001183,16
 GEN_CAND_HO_02,six_rot,ok,0.461232,44
 GEN_CAND_HO_02,six_off,ok,0.002439,44
 GEN_CAND_HO_02,nine_rot,ok,0.095720,46
@@ -27,6 +33,8 @@ GEN_CAND_HO_02,nine_off,ok,0.001963,45
 GEN_CAND_HO_02,rounds_off,n/a,0.001905,4
 GEN_CAND_HO_02,ring_rot,ok,0.005185,48
 GEN_CAND_HO_02,ring_shift,n/a,0.002857,4
+GEN_CAND_HO_02,rounds_size,n/a,0.001763,4
+GEN_CAND_HO_02,round_size_rel,n/a,0.000781,4
 RL_THEONE_BLNR,six_rot,ok,0.318598,44
 RL_THEONE_BLNR,six_off,FLAG,0.004704,44
 RL_THEONE_BLNR,nine_rot,FLAG,0.907070,46
@@ -35,6 +43,8 @@ RL_THEONE_BLNR,rounds_off,n/a,0.003977,5
 RL_THEONE_BLNR,ring_rot,ok,0.030575,48
 RL_THEONE_BLNR,ring_shift,n/a,0.003193,5
 RL_THEONE_BLNR,date_tilt,ok,0.150940,52
+RL_THEONE_BLNR,rounds_size,n/a,0.000450,5
+RL_THEONE_BLNR,round_size_rel,n/a,0.003350,5
 RL_USER_BATGIRL,six_rot,FLAG,0.763387,44
 RL_USER_BATGIRL,six_off,ok,0.002654,44
 RL_USER_BATGIRL,nine_rot,FLAG,1.577780,46
@@ -42,12 +52,16 @@ RL_USER_BATGIRL,nine_off,FLAG,0.004541,45
 RL_USER_BATGIRL,rounds_off,FLAG,0.004398,16
 RL_USER_BATGIRL,ring_rot,ok,0.088335,48
 RL_USER_BATGIRL,ring_shift,ok,0.003439,16
+RL_USER_BATGIRL,rounds_size,ok,0.000947,16
+RL_USER_BATGIRL,round_size_rel,ok,0.000670,16
 RL_LOCAL_BLNR,six_rot,ok,0.025592,44
 RL_LOCAL_BLNR,six_off,FLAG,0.003928,44
 RL_LOCAL_BLNR,rounds_off,ok,0.001674,17
 RL_LOCAL_BLNR,ring_rot,FLAG,0.524575,48
 RL_LOCAL_BLNR,ring_shift,ok,0.002223,17
 RL_LOCAL_BLNR,date_tilt,ok,1.040200,52
+RL_LOCAL_BLNR,rounds_size,FLAG,0.002785,17
+RL_LOCAL_BLNR,round_size_rel,ok,0.000346,17
 RL_ARF_BLRO_CROOKED6,six_rot,ok,0.004412,44
 RL_ARF_BLRO_CROOKED6,six_off,FLAG,0.003679,44
 RL_ARF_BLRO_CROOKED6,nine_rot,ok,0.095150,46
@@ -55,6 +69,8 @@ RL_ARF_BLRO_CROOKED6,nine_off,ok,0.001622,45
 RL_ARF_BLRO_CROOKED6,rounds_off,FLAG,0.004608,17
 RL_ARF_BLRO_CROOKED6,ring_rot,ok,0.073415,48
 RL_ARF_BLRO_CROOKED6,ring_shift,ok,0.004821,17
+RL_ARF_BLRO_CROOKED6,rounds_size,FLAG,0.001983,17
+RL_ARF_BLRO_CROOKED6,round_size_rel,ok,0.000570,17
 U1_16700_CPO,six_rot,ok,0.091623,44
 U1_16700_CPO,nine_rot,ok,0.191740,46
 U1_16700_CPO,date_tilt,ok,0.148270,52
@@ -64,11 +80,15 @@ U2_116710LN_CPO_a,rounds_off,n/a,0.001054,6
 U2_116710LN_CPO_a,ring_rot,ok,0.006945,48
 U2_116710LN_CPO_a,ring_shift,n/a,0.001399,6
 U2_116710LN_CPO_a,date_tilt,ok,0.616800,52
+U2_116710LN_CPO_a,rounds_size,n/a,0.000974,6
+U2_116710LN_CPO_a,round_size_rel,n/a,0.000259,6
 U3_126710GRNR_dealer,six_rot,ok,0.290472,44
 U3_126710GRNR_dealer,six_off,ok,0.001948,44
 U3_126710GRNR_dealer,rounds_off,ok,0.002505,17
 U3_126710GRNR_dealer,ring_rot,ok,0.012085,48
 U3_126710GRNR_dealer,ring_shift,ok,0.001023,17
+U3_126710GRNR_dealer,rounds_size,ok,0.000767,17
+U3_126710GRNR_dealer,round_size_rel,ok,0.000379,17
 U4_116710LN_listing_screenshot,six_rot,ok,0.238477,44
 U4_116710LN_listing_screenshot,six_off,ok,0.002160,44
 U4_116710LN_listing_screenshot,nine_rot,ok,0.162730,46
@@ -77,12 +97,16 @@ U4_116710LN_listing_screenshot,rounds_off,ok,0.001624,11
 U4_116710LN_listing_screenshot,ring_rot,ok,0.047935,48
 U4_116710LN_listing_screenshot,ring_shift,ok,0.001885,11
 U4_116710LN_listing_screenshot,date_tilt,ok,0.063720,52
+U4_116710LN_listing_screenshot,rounds_size,ok,0.000325,11
+U4_116710LN_listing_screenshot,round_size_rel,ok,0.000552,11
 U5_116710LN_CPO_b,nine_rot,ok,0.208550,46
 U5_116710LN_CPO_b,nine_off,ok,0.000508,45
 U5_116710LN_CPO_b,rounds_off,n/a,0.001277,6
 U5_116710LN_CPO_b,ring_rot,ok,0.026505,48
 U5_116710LN_CPO_b,ring_shift,n/a,0.000922,6
 U5_116710LN_CPO_b,date_tilt,ok,0.024220,52
+U5_116710LN_CPO_b,rounds_size,n/a,0.000348,6
+U5_116710LN_CPO_b,round_size_rel,n/a,0.000222,6
 U6_126710BLNR_oyster,six_rot,ok,0.370112,44
 U6_126710BLNR_oyster,six_off,ok,0.001444,44
 U6_126710BLNR_oyster,nine_rot,ok,0.151430,46
@@ -91,6 +115,8 @@ U6_126710BLNR_oyster,rounds_off,n/a,0.001171,6
 U6_126710BLNR_oyster,ring_rot,ok,0.072375,48
 U6_126710BLNR_oyster,ring_shift,n/a,0.000777,6
 U6_126710BLNR_oyster,date_tilt,ok,0.038070,52
+U6_126710BLNR_oyster,rounds_size,n/a,0.000288,6
+U6_126710BLNR_oyster,round_size_rel,n/a,0.000443,6
 U7_126710BLNR_jubilee_CPO,six_rot,ok,0.228683,44
 U7_126710BLNR_jubilee_CPO,six_off,ok,0.002512,44
 U7_126710BLNR_jubilee_CPO,nine_rot,ok,0.304450,46
@@ -99,6 +125,8 @@ U7_126710BLNR_jubilee_CPO,rounds_off,n/a,0.002162,6
 U7_126710BLNR_jubilee_CPO,ring_rot,ok,0.000615,48
 U7_126710BLNR_jubilee_CPO,ring_shift,n/a,0.001506,6
 U7_126710BLNR_jubilee_CPO,date_tilt,ok,0.459050,52
+U7_126710BLNR_jubilee_CPO,rounds_size,n/a,0.000303,6
+U7_126710BLNR_jubilee_CPO,round_size_rel,n/a,0.000269,6
 U8_126715CHNR_CPO,six_rot,FLAG,2.282917,44
 U8_126715CHNR_CPO,six_off,FLAG,0.005286,44
 U8_126715CHNR_CPO,nine_rot,ok,0.011080,46
@@ -107,6 +135,8 @@ U8_126715CHNR_CPO,rounds_off,n/a,0.002501,6
 U8_126715CHNR_CPO,ring_rot,ok,0.072115,48
 U8_126715CHNR_CPO,ring_shift,n/a,0.000990,6
 U8_126715CHNR_CPO,date_tilt,ok,0.096650,52
+U8_126715CHNR_CPO,rounds_size,n/a,0.000770,6
+U8_126715CHNR_CPO,round_size_rel,n/a,0.000288,6
 U9_126710BLRO_dealer_screenshot,six_rot,ok,0.370042,44
 U9_126710BLRO_dealer_screenshot,six_off,ok,0.002993,44
 U9_126710BLRO_dealer_screenshot,nine_rot,ok,0.453760,46
@@ -114,3 +144,5 @@ U9_126710BLRO_dealer_screenshot,nine_off,ok,0.002206,45
 U9_126710BLRO_dealer_screenshot,rounds_off,ok,0.001700,19
 U9_126710BLRO_dealer_screenshot,ring_rot,ok,0.118185,48
 U9_126710BLRO_dealer_screenshot,ring_shift,ok,0.003501,19
+U9_126710BLRO_dealer_screenshot,rounds_size,ok,0.000289,19
+U9_126710BLRO_dealer_screenshot,round_size_rel,ok,0.000527,19

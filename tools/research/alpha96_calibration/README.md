@@ -831,3 +831,25 @@ Short lines follow the RepTimeQC guide's "be specific and directional" style, e.
 A marker shift is named by its dominant direction: towards its minute mark, towards the centre, or towards the neighbouring hour. Both directions are named when neither dominates. No status changed (`results/alpha99/findings_local.csv`).
 
 Real size in mm is deliberately not shown yet. It needs a sourced dial diameter per model; one route is the bezel's outer diameter, the published 40 mm case, measured in dial-radius units on genuine photos.
+
+### 5. Round lume-plot size
+
+Each round marker's fitted outer radius was already measured (Alpha94 `radius_err_px`). There are two features, built like the others in `build_alpha98_reference.py` and `measurement_uncertainty.py`, from genuine photos only:
+
+- **`rounds_size`:** the median size of a dial's round plots (signed; the genuine nominal is +0.09% R). It answers "all plots oversized or undersized".
+- **`round_size_rel`:** the largest single plot's size difference from its own dial's median (magnitude). It answers "one plot larger or smaller than the others". Lighting and blur cancel because they affect every plot equally.
+
+Blur widens the measured outer edge. So, like round-marker positions, both are compared only with genuine watches photographed at a similar or lower resolution (8 or more needed), and a photo below that is not assessed. In the app, only rounds clear of hands count; fewer than 5 clean rounds means not assessed.
+
+**Genuine reference:**
+- `rounds_size`: 48 watches, max distance from nominal 0.10% R; uncertainty 0.09% R / 0.14 px.
+- `round_size_rel`: 48 watches, max 0.16% R; uncertainty 0.08% R / 0.13 px.
+- Existing reference rows are byte-identical.
+
+**Local photos:**
+- ARF: all round plots larger by 0.20% (WORTH A LOOK).
+- Local BLNR: +0.28% offline, but not assessed in the app (only 4 rounds are clean of hands).
+- Marketplace genuine-candidate POOL_GEN_HO_01: its 10 o'clock plot is 0.12% larger than the others (genuine up to 0.10%), WORTH A LOOK.
+- Theonewatches and the CPO photos (dial radius about 170 px or less): not assessed, resolution too low.
+
+**Tooling:** these checks have no Alpha98 counterpart, so the Alpha98 regression checks skip them (`Alpha99Findings.outsideOnlyByNewMeasures`, `alpha101_only` column). `alpha99_genuine_summary.py` lists them separately.
