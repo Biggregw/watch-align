@@ -93,6 +93,8 @@ def main():
     ap.add_argument('--no-allowance', action='append', default=[],
                     help='feature families written without an uncertainty allowance, so they can be at most WORTH A LOOK '
                          '(QC guardrails 11: downgrade a feature whose held-out genuine evidence conflicts)')
+    ap.add_argument('--lowres', help='per_photo CSV of shrunk genuine photos (sub124060-lowres job): adds one row per '
+                    'physical watch per shrink level for the resolution-matched features, at that level\'s dial radius')
     a = ap.parse_args()
     spec = json.load(open(a.spec)); batons, rounds = layout(spec)
     shared = {r['photo_id'] for r in csv.DictReader(open(a.dedup)) if r['shared_dial'] == '1'}
@@ -118,6 +120,30 @@ def main():
         for w, v in W[k].items():
             far = abs(v - median([x for ww, x in W[k].items() if ww != w])) if k in signed else abs(v)
             out_rows.append((k, w, src[w], far, WR[w]))
+    # Low-resolution rows (resolution-matched features only): the same genuine watches, their photos shrunk and
+    # re-measured. Each watch still counts once in the app (matched counts are distinct watches). A signed feature's far
+    # is taken against the full-resolution nominal of the other watches, exactly what the app compares a photo with.
+    if a.lowres:
+        rm = set(RES_MATCHED) | set(spec.get('resolution_matched', []))
+        lw = defaultdict(lambda: defaultdict(list))
+        for r in csv.DictReader(open(a.lowres)):
+            if r['group'] != 'genuine_population' or r['source_photo_id'] in shared or any(h in r['image_url'] for h in a.exclude_host):
+                continue
+            f = photo_features(r, batons, rounds)
+            if not f:
+                continue
+            for k, v in f.items():
+                lw[(r['physical_watch_id'], r['target_r'])][k].append(v)
+        n_low = 0
+        for (w, T), d in sorted(lw.items()):
+            Rl = median(d['R'])
+            for k in feats:
+                if k not in rm or not d.get(k):
+                    continue
+                v = median(d[k])
+                far = abs(v - median([x for ww, x in W[k].items() if ww != w])) if k in signed else abs(v)
+                out_rows.append((k, w, src.get(w, ''), far, Rl)); n_low += 1
+        print(f'low-resolution rows added: {n_low} ({len({w for w, _ in lw})} watches)')
     os.makedirs(a.out_dir, exist_ok=True)
     with open(os.path.join(a.out_dir, 'alpha98_reference.csv'), 'w', newline='') as fh:
         wr = csv.writer(fh); wr.writerow(['feature', 'physical_watch_id', 'source', 'far', 'dial_radius_px'])
