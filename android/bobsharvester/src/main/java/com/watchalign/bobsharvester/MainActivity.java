@@ -132,7 +132,7 @@ public class MainActivity extends Activity {
     }
 
     String catUrl(){String x=ROOTS[root];return page==1?x:x+(x.contains("?")?"&":"?")+"page="+page;}
-    void loadCatalog(){mode=Mode.CATALOG;status.setText("Finding Rolex listings… source "+(root+1)+"/"+ROOTS.length+", page "+page+"\\n"+products.size()+" unique product pages found.");web.loadUrl(catUrl());}
+    void loadCatalog(){mode=Mode.CATALOG;status.setText("Finding Rolex listings… source "+(root+1)+"/"+ROOTS.length+", page "+page+"\n"+products.size()+" unique product pages found"+(activeFilter.isEmpty()?"":"\nFilter: "+activeFilter));web.loadUrl(catUrl());}
 
     void catalogJs(){
         String js="(function(){const a=[],seen=new Set();let rolex=0;document.querySelectorAll('a[href]').forEach(x=>{const im=x.querySelector('img');const parts=[x.innerText,x.textContent,x.getAttribute('aria-label'),x.getAttribute('title'),im&&im.alt].filter(Boolean);const t=parts.join(' ').replace(/\\s+/g,' ').trim();const u=x.href||'';if(/Rolex/i.test(t))rolex++;if(!u||seen.has(u))return;let q;try{q=new URL(u)}catch(e){return}const path=q.pathname.toLowerCase();if(!/bobswatches\\.com$/i.test(q.hostname))return;if(!/\\.html$/i.test(path))return;if(/\\/(rolex-blog|sell-|rolex-app|about|faq|shipping|returns)/i.test(path))return;const hay=(t+' '+u).replace(/[-_]/g,' ');if(!/Rolex/i.test(hay))return;if(!/(?:^|[^0-9])(?:[0-9]{4,6}[A-Z]{0,5})(?:[^0-9]|$)/i.test(hay))return;seen.add(u);a.push({t:t,u:u,i:im?(im.currentSrc||im.src||im.getAttribute('data-src')||''):''});});return JSON.stringify({a:a,b:(document.body.innerText||'').slice(0,24000),hrefs:document.querySelectorAll('a[href]').length,rolex:rolex,title:document.title||''});})();";
@@ -153,6 +153,11 @@ public class MainActivity extends Activity {
                 empty=add==0?empty+1:0;Integer total=resultTotal(o.optString("b"));
                 boolean endPage=empty>=2||page>=MAX_PAGES||(total!=null&&rootSeen.size()>=total);
                 if(page==1&&rootSeen.isEmpty()){
+                    if(!activeFilter.isEmpty() && o.optInt("rolex")>0){
+                        msg("No listings on catalogue source "+(root+1)+" match filter: "+activeFilter+". Moving on.");
+                        advanceCatalog(true);
+                        return;
+                    }
                     msg("No products yet. Page title: "+o.optString("title")+"; Rolex-labelled links seen: "+o.optInt("rolex")+". Retrying after a longer wait.");
                     web.postDelayed(()->{if(running&&!stopping&&mode==Mode.CATALOG)catalogJs();},5000);
                     return;
