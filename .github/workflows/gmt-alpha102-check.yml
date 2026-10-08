@@ -110,6 +110,14 @@ jobs:
           for side, d in (('current', a), ('candidate', b)):
               print(side, 'genuine 12 statuses:', collections.Counter(r['alpha99_status'] for k, r in d.items() if k[1] == 'twelve' and cat.get(k[0], {}).get('class_label') == 'gen'))
               print(side, 'genuine CLEAR (any feature):', sorted({k[0] for k, r in d.items() if r['alpha99_status'] == 'CLEAR' and cat.get(k[0], {}).get('class_label') == 'gen'}))
+          for side, d in (('current', a), ('candidate', b)):
+              t = collections.defaultdict(collections.Counter)
+              for k, r in d.items():
+                  if cat.get(k[0], {}).get('class_label') == 'gen': t[k[1]][r['alpha99_status']] += 1
+              print(side, 'genuine statuses by feature:', {f: dict(c) for f, c in sorted(t.items())})
+          for k, r in sorted(a.items()):
+              if r['alpha99_status'] in ('WORTH', 'CLEAR') and cat.get(k[0], {}).get('class_label') == 'gen':
+                  print('GENUINE', r['alpha99_status'], k[0], k[1], r['short_line'])
           sec = collections.Counter()
           for l in (open(f'{out}/interference_log.txt') if os.path.exists(f'{out}/interference_log.txt') else []):
               for h in re.findall(r' (\d+)(?:\([^)]*\))?\[SEC', l):

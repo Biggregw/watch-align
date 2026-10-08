@@ -18,11 +18,11 @@ photo_id,feature,alpha98_status,alpha99_status,short_line,alpha101_only
 25369d47-image,nine,OUTSIDE,CLEAR,"rotated 1.4° anticlockwise; genuine up to 0.6°",false
 25369d47-image,round1,OUTSIDE,WITHIN,"",false
 25369d47-image,round2,OUTSIDE,CLEAR,"shifted towards the centre and the 1 by 0.43% of the dial; genuine up to 0.26%",false
-25369d47-image,round4,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
+25369d47-image,round4,OUTSIDE,WORTH,"shifted towards its minute mark by 0.26% of the dial; genuine up to 0.26%",false
 25369d47-image,round5,OUTSIDE,WITHIN,"",false
 25369d47-image,round7,OUTSIDE,WITHIN,"",false
 25369d47-image,round8,OUTSIDE,WORTH,"shifted towards the 7 by 0.39% of the dial; genuine up to 0.26%",false
-25369d47-image,round10,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
+25369d47-image,round10,OUTSIDE,WITHIN,"",false
 25369d47-image,round11,OUTSIDE,WITHIN,"",false
 25369d47-image,rounds_size,OUTSIDE,WITHIN,"",false
 25369d47-image,ring,WITHIN,WITHIN,"",false
@@ -46,11 +46,11 @@ photo_id,feature,alpha98_status,alpha99_status,short_line,alpha101_only
 4f87a0d3-image,nine,WITHIN,WITHIN,"",false
 4f87a0d3-image,round1,WITHIN,WITHIN,"",false
 4f87a0d3-image,round2,WITHIN,WITHIN,"",false
-4f87a0d3-image,round4,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+4f87a0d3-image,round4,WITHIN,WITHIN,"",false
 4f87a0d3-image,round5,WITHIN,WITHIN,"",false
 4f87a0d3-image,round7,WITHIN,WITHIN,"",false
 4f87a0d3-image,round8,WITHIN,WITHIN,"",false
-4f87a0d3-image,round10,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+4f87a0d3-image,round10,WITHIN,WITHIN,"",false
 4f87a0d3-image,round11,WITHIN,WITHIN,"",false
 4f87a0d3-image,rounds_size,WITHIN,WITHIN,"",false
 4f87a0d3-image,ring,WITHIN,WITHIN,"",false
@@ -115,7 +115,7 @@ POOL_GEN_HO_01,twelve,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,six,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,nine,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round1,WITHIN,WITHIN,"",false
-POOL_GEN_HO_01,round2,WITHIN,NOT_ASSESSED,"hand crosses marker",false
+POOL_GEN_HO_01,round2,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round4,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round5,WITHIN,WITHIN,"",false
 POOL_GEN_HO_01,round7,WITHIN,WITHIN,"",false
@@ -142,10 +142,10 @@ POOL_GEN_HO_02,date,NOT_ASSESSED,NOT_ASSESSED,"glare on magnifier",false
 RL_ARF_BLRO_CROOKED6,twelve,OUTSIDE,CLEAR,"shifted left by 0.85% of the dial; genuine up to 0.23%",false
 RL_ARF_BLRO_CROOKED6,six,OUTSIDE,WORTH,"shifted towards the centre by 0.37% of the dial; genuine up to 0.30%",false
 RL_ARF_BLRO_CROOKED6,nine,WITHIN,WITHIN,"",false
-RL_ARF_BLRO_CROOKED6,round1,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
-RL_ARF_BLRO_CROOKED6,round2,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
+RL_ARF_BLRO_CROOKED6,round1,OUTSIDE,WITHIN,"",false
+RL_ARF_BLRO_CROOKED6,round2,OUTSIDE,WITHIN,"",false
 RL_ARF_BLRO_CROOKED6,round4,OUTSIDE,WITHIN,"",false
-RL_ARF_BLRO_CROOKED6,round5,OUTSIDE,NOT_ASSESSED,"hand crosses marker",false
+RL_ARF_BLRO_CROOKED6,round5,OUTSIDE,WITHIN,"",false
 RL_ARF_BLRO_CROOKED6,round7,OUTSIDE,WORTH,"shifted towards the 8 by 0.35% of the dial; genuine up to 0.26%",false
 RL_ARF_BLRO_CROOKED6,round8,OUTSIDE,CLEAR,"shifted towards its minute mark and the 7 by 0.46% of the dial; genuine up to 0.26%",false
 RL_ARF_BLRO_CROOKED6,round10,OUTSIDE,WORTH,"shifted towards the centre by 0.34% of the dial; genuine up to 0.26%",false

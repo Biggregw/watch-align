@@ -79,6 +79,8 @@ final class Alpha99Findings {
         final List<String> notes=new ArrayList<>();
         /** a part of this feature that was not assessed (e.g. "position"), with its short reason; null when complete. */
         String partNotAssessed,partReason;
+        /** the part that was assessed, named in the "within" line (default "rotation", the baton case). */
+        String partAssessed;
         /** short name used in the "within" line, e.g. "4" or "date window". */
         final String shortName;
         Finding(String key,String title,String shortName){this.key=key;this.title=title;this.shortName=shortName;}
@@ -164,7 +166,7 @@ final class Alpha99Findings {
         }
         String withinLine(){
             StringBuilder b=new StringBuilder();
-            for(Finding f:within()){if(b.length()>0)b.append(", ");b.append(f.shortName);if(f.partNotAssessed!=null)b.append(" rotation");}
+            for(Finding f:within()){if(b.length()>0)b.append(", ");b.append(f.shortName);if(f.partNotAssessed!=null)b.append(" ").append(f.partAssessed!=null?f.partAssessed:"rotation");}
             return b.length()==0?"":"Within measured genuine range: "+b;
         }
         /** Not-assessed features without a tile, grouped by reason. */
@@ -188,11 +190,17 @@ final class Alpha99Findings {
      */
     static Summary build(Alpha94MarkerMeasurement.Report r,Alpha98DateWindow.Result date,Map<Integer,Alpha99MarkerInterference.Check> checks,
                          ModelSpec model,ModelReference ref){
+        return build(r,date,checks,null,model,ref);
+    }
+    /** @param partial Alpha102: round markers withheld because a hand is near (not touching) re-measured from the part
+     *                 of their outline away from the hand (Alpha99Pipeline.partialRounds); null = none. */
+    static Summary build(Alpha94MarkerMeasurement.Report r,Alpha98DateWindow.Result date,Map<Integer,Alpha99MarkerInterference.Check> checks,
+                         Map<Integer,Alpha94MarkerMeasurement.Marker> partial,ModelSpec model,ModelReference ref){
         Summary s=new Summary();
         double R=r==null?Double.NaN:r.dialRadiusPx;
         for(ModelSpec.Marker mk:model.markers)if(mk.shape==ModelSpec.Shape.TRIANGLE)s.all.add(twelve(r,check(checks,mk.hour),R,mk,ref));
         for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.BATON))s.all.add(baton(r,mk,R,check(checks,mk.hour),ref,model.resolutionMatched.contains(mk.key+"_off")));
-        s.all.addAll(rounds(r,R,checks,model,ref));
+        s.all.addAll(rounds(r,R,checks,partial,model,ref));
         if(!model.withShape(ModelSpec.Shape.ROUND).isEmpty())s.all.add(roundsSize(r,R,checks,model,ref));
         s.all.add(ring(r,R,ref));
         if(model.date!=null)s.all.add(date(date,R,r!=null&&r.ring!=null&&r.ring.usable,ref,model.date));
@@ -327,6 +335,10 @@ final class Alpha99Findings {
 
     static List<Finding> rounds(Alpha94MarkerMeasurement.Report r,double R,Map<Integer,Alpha99MarkerInterference.Check> checks,
                                 ModelSpec model,ModelReference ref){
+        return rounds(r,R,checks,null,model,ref);
+    }
+    static List<Finding> rounds(Alpha94MarkerMeasurement.Report r,double R,Map<Integer,Alpha99MarkerInterference.Check> checks,
+                                Map<Integer,Alpha94MarkerMeasurement.Marker> partial,ModelSpec model,ModelReference ref){
         List<Finding> out=new ArrayList<>();
         int usable=0;
         if(r!=null)for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind)&&m.usable&&Double.isFinite(m.localOffsetPx))usable++;
@@ -344,14 +356,30 @@ final class Alpha99Findings {
             if(!hasRef){noReference(f);f.group="round markers";continue;}
             if(r==null||usable<5){f.status=Status.NOT_ASSESSED;f.reason="too few round markers could be measured cleanly";f.shortReason="too few clean markers";f.group="round markers";continue;}
             if(n<Alpha98Findings.MIN_MATCHED){f.status=Status.NOT_ASSESSED;f.reason="the photo's resolution is too low to compare round markers with genuine photos";f.shortReason="resolution too low";f.group="round markers";continue;}
-            if(!gate(f,check(checks,h)))continue;
-            Alpha94MarkerMeasurement.Marker m=r.atHour(h);
+            Alpha94MarkerMeasurement.Marker pm=partial==null?null:partial.get(h);
+            boolean part=false;
+            if(!gate(f,check(checks,h))){
+                // Alpha102: a hand near (not touching) this marker -> its position from the outline away from the hand
+                Alpha99MarkerInterference.Check c=check(checks,h);
+                if(c==null||!Alpha99MarkerInterference.HAND.equals(c.reason)||pm==null||!pm.usable||!Double.isFinite(pm.localOffsetPx))continue;
+                f.status=Status.WITHIN;f.reason="";f.shortReason="";f.visual=false;part=true;
+            }
+            Alpha94MarkerMeasurement.Marker m=part?pm:r.atHour(h);
             if(m==null||!m.usable||!Double.isFinite(m.localOffsetPx)){withheldByMeasurement(f,m==null?"unavailable":m.reason);continue;}
             double off=m.localOffsetPx/R;
             f.measures.add(new Measure("position",off,lim,sOff,ref.kSigma,n,"R",
                     String.format(Locale.US,"shifted %s by %.2f%% of the dial",towards(m),100*off),
                     String.format(Locale.US,"The %d o'clock marker sits %.1f px out of place relative to the other markers (%.2f%% of the dial radius, mostly %s); compared with genuine photos of similar or lower resolution",
                             h,m.localOffsetPx,100*off,Alpha98Findings.direction(m))));
+            if(part){
+                // genuine catalogues (CI 37803866932): measurable on 88 of 128 (124060) and 147 of 355 (GMT) hand-near
+                // markers, 2 and 3 of them outside the genuine range; the partial fit adds error (p99 0.003 R), so at most worth a look
+                Measure pos=f.measures.get(f.measures.size()-1);pos.capAtWorth=true;
+                pos.capReason="A hand lies close to this marker, so its position was measured from the part of its outline away from the hand; that is less precise, so it is shown as worth a look at most.";
+                f.notes.add("Measured from the part of the marker's outline away from a nearby hand (the quarter facing the hand is ignored). Its size is not assessed.");
+                f.partAssessed="position";f.partNotAssessed="size";f.partReason="hand nearby";
+                settle(f);continue;
+            }
             // Alpha101: this round marker's size against the other round markers on the same dial (lighting and blur cancel)
             double med=cleanRoundSizeMedian(r,R,checks,model);
             if(Double.isFinite(med)&&Double.isFinite(m.radiusErrPx)&&sizeN>=Alpha98Findings.MIN_MATCHED){

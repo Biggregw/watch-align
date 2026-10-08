@@ -177,6 +177,28 @@ public class Alpha99FindingsTest {
         assertEquals(Alpha99Findings.Status.NOT_ASSESSED,find(hand,"round4").status);
     }
 
+    @Test public void handNearRoundIsMeasuredFromThePartAwayFromTheHandAndNeverClear(){
+        // Alpha102: a round marker withheld for a nearby hand is judged from a partial-outline fit, at most worth a look
+        Alpha94MarkerMeasurement.Report r=report(6,0,9,0);double R=r.dialRadiusPx;
+        Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(4).clean=false;c.get(4).reason=Alpha99MarkerInterference.HAND;
+        Map<Integer,Alpha94MarkerMeasurement.Marker> part=new HashMap<>();
+        Alpha94MarkerMeasurement.Marker far=new Alpha94MarkerMeasurement.Marker(4,"round");far.usable=true;
+        far.localOffsetPx=0.05*R;far.localRadialPx=0.05*R;far.localTangentialPx=0;far.radiusErrPx=Double.NaN;part.put(4,far);
+        Alpha99Findings.Finding four=find(Alpha99Findings.build(r,null,c,part,TestModels.gmt(),TestModels.gmtRef()),"round4");
+        assertEquals(Alpha99Findings.Status.WORTH,four.status);                      // 5% of the dial off: still not clear
+        assertTrue(String.join(" ",four.detail()),String.join(" ",four.detail()).contains("away from the hand"));
+        far.localOffsetPx=0;far.localRadialPx=0;
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,c,part,TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(Alpha99Findings.Status.WITHIN,find(s,"round4").status);
+        assertTrue(s.withinLine(),s.withinLine().contains("4 position"));
+        assertTrue(s.notAssessedLine(),s.notAssessedLine().contains("4 size (hand nearby)"));
+        // glare is never re-measured; no partial fit -> still withheld
+        c.get(4).reason=Alpha99MarkerInterference.GLARE;
+        assertEquals(Alpha99Findings.Status.NOT_ASSESSED,find(Alpha99Findings.build(r,null,c,part,TestModels.gmt(),TestModels.gmtRef()),"round4").status);
+        c.get(4).reason=Alpha99MarkerInterference.HAND;
+        assertEquals(Alpha99Findings.Status.NOT_ASSESSED,find(Alpha99Findings.build(r,null,c,null,TestModels.gmt(),TestModels.gmtRef()),"round4").status);
+    }
+
     @Test public void batonExamplesFromTheBrief(){
         // 6 rotation ~0.8 deg vs genuine max ~0.7 -> worth a look; 9 rotation ~1.6 deg vs max ~0.65 -> clear
         Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));

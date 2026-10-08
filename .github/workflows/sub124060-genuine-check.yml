@@ -14,6 +14,8 @@ on:
       - 'tools/research/sub124060/models/**'
       - 'tools/desktop-harness/drivers/SubPeek.java'
       - 'android/app/src/main/java/com/watchalign/mobile/Alpha99MarkerInterference.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Findings.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Pipeline.java'
   workflow_dispatch:
 
 permissions:
