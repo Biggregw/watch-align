@@ -38,7 +38,10 @@ final class Alpha99Findings {
      *  below this fraction of the marker's own width, or an angle below VISIBLE_DEG, is too small to see on the watch.
      *  Set from what a careful human QC can pick out (a 'super slight' baton tilt of ~1 deg is reported by eye), never from
      *  replica results. */
-    static final double VISIBLE_FRACTION=0.05,VISIBLE_DEG=0.75;
+    /** Alpha105: VISIBLE_DEG 0.75 -> 1.0, the project's visible-rotation bar (GmtTwelveLandmarkAnalyzer.ROTATION_VISIBLE_DEG).
+     *  At 0.75 it sat below the genuine angle maxima (batons 0.8-0.9 deg) and never applied: a 0.9 deg baton (each end
+     *  0.4 px off at R 216, owner's 124060 QC photo 2026-10-09) was listed as worth a look. */
+    static final double VISIBLE_FRACTION=0.05,VISIBLE_DEG=1.0;
     enum Shape{BATON,TRIANGLE,ROUND,RING,DATE}
 
     static final String DISCLAIMER="These results compare this photo's measurements with genuine watches. They are not an authenticity verdict.";

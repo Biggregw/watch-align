@@ -204,8 +204,8 @@ public class Alpha99FindingsTest {
     }
 
     @Test public void batonExamplesFromTheBrief(){
-        // 6 rotation ~0.8 deg vs genuine max ~0.7 -> worth a look; 9 rotation ~1.6 deg vs max ~0.65 -> clear
-        Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
+        // 6 rotation ~1.1 deg vs genuine max ~0.7 -> worth a look (Alpha105: 0.8 deg is now under the 1.0 deg visibility bar); 9 rotation ~1.6 deg vs max ~0.65 -> clear
+        Alpha94MarkerMeasurement.Report r=report(6,1.1+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         assertEquals(Alpha99Findings.Status.WORTH,find(s,"six").status);
         assertEquals(Alpha99Findings.Status.CLEAR,find(s,"nine").status);
@@ -360,7 +360,7 @@ public class Alpha99FindingsTest {
     }
 
     @Test public void headlineCountsByEvidenceStrength(){
-        Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
+        Alpha94MarkerMeasurement.Report r=report(6,1.1+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
         Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(12).clean=false;c.get(12).reason=Alpha99MarkerInterference.HAND;
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,c,TestModels.gmt(),TestModels.gmtRef());
         assertEquals("1 clear alignment finding: 9",s.headlineLines().get(0));
@@ -370,7 +370,7 @@ public class Alpha99FindingsTest {
 
     @Test public void borderlineAloneSuggestsAnotherPhoto(){
         // QC guardrails 4: a worth-a-look reading on its own is not escalated; the headline asks for a repeat instead
-        Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,TestModels.gmtRef().nominal("nine_rot"));
+        Alpha94MarkerMeasurement.Report r=report(6,1.1+TestModels.gmtRef().nominal("six_rot"),9,TestModels.gmtRef().nominal("nine_rot"));
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         assertEquals(0,s.clear().size());
         assertEquals("1 measurement is worth a look: 6",s.headlineLines().get(0));

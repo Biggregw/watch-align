@@ -39,7 +39,7 @@ jobs:
             catalogue: tools/research/sub126610/catalogue_126610.csv
             opts: -Dwatchalign.model=submariner_126610
     env:
-      BASE: c7cd2e3   # Alpha105 lighting-gap round fit vs the commit before it
+      BASE: 95f5337   # Alpha105c angle visibility bar 1.0 deg vs the commit before it
       IMG: reg_images
     steps:
       - uses: actions/checkout@v4
