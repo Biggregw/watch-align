@@ -29,6 +29,8 @@ final class AutomaticDialOverlay {
         final double dialCx,dialCy,dialRadius,ellipseRatio,edgeRms;
         final double fitBefore,fitAfter,holdoutBefore,holdoutAfter;
         final int detectedTicks,completePairs,inliers;
+        /** Alpha104: minutes the hour markers moved the pose from the branch the 12 cue chose (0 = confirmed). */
+        int markerBranchTurn;
         /** Frozen canonical-dial -> image homography, copied after all pose checks pass. */
         final double[] homography;
 
@@ -52,7 +54,7 @@ final class AutomaticDialOverlay {
     static Result build(Bitmap input,ModelSpec model){
         if(input==null)return new Result("no candidate image");
         Mat rgba=new Mat(),bgr=new Mat(),gray=new Mat(),enh=new Mat();
-        Mat h0=null,coarse=null,h=null;
+        Mat h0=null,coarse=null,h=null;int markerBranchTurn=0;
         Alpha91MinuteLatticeFitter.Result lattice=null;
         try{
             Utils.bitmapToMat(input,rgba);
@@ -103,6 +105,29 @@ final class AutomaticDialOverlay {
 
             h=lattice.homography.clone();
 
+            // Alpha104: the applied markers vote on the minute branch. The 12 cue can be hidden by the hands and lock one
+            // minute off; then every marker reads misplaced. A decisive vote for a neighbouring branch re-fits the lattice
+            // there; an undecided vote fails closed with that reason (never a guessed branch).
+            double[] hn=copyNormalisedHomography(h);
+            Alpha104MarkerBranch.Result vote=Alpha104MarkerBranch.analyse(Alpha99MarkerInterference.sampler(gray,hn),hn,model);
+            if(vote.best!=0){
+                if(!vote.decisive)return new Result("overlay unavailable: the hour markers do not confirm the 12 direction (hands over the 12?)");
+                double[] turned=Alpha104MarkerBranch.turnPose(hn,Math.toRadians(6.0*vote.best));
+                Mat turnSeed=new Mat(3,3,CvType.CV_64F);turnSeed.put(0,0,turned);
+                Alpha91MinuteLatticeFitter.Result again=Alpha91MinuteLatticeFitter.fit(gray,turnSeed,model);
+                turnSeed.release();
+                if(again==null||!again.accepted||again.homography==null||again.homography.empty())
+                    return new Result("overlay unavailable: the hour markers point to another 12 direction and the minute track could not be re-fitted there");
+                double moved=Math.abs(wrap180(Alpha91MinuteLatticeFitter.clock12Deg(again.homography)-Alpha91MinuteLatticeFitter.clock12Deg(h)));
+                double[] an=copyNormalisedHomography(again.homography);
+                Alpha104MarkerBranch.Result check=Alpha104MarkerBranch.analyse(Alpha99MarkerInterference.sampler(gray,an),an,model);
+                if(Math.abs(moved-6.0*Math.abs(vote.best))>=2.0||check.best!=0||!check.decisive)
+                    return new Result("overlay unavailable: the hour markers do not confirm the 12 direction (hands over the 12?)");
+                h.release();h=again.homography.clone();lattice=again;
+                phaseDeg=Alpha91MinuteLatticeFitter.clock12Deg(h);                  // the markers, not the hidden 12, set the branch
+                markerBranchTurn=vote.best;
+            }
+
             // Explicit 12-branch guard: the refined lattice must stay on the branch the 12 cue selected.
             double finalPhase=Alpha91MinuteLatticeFitter.clock12Deg(h);
             double d=wrap180(finalPhase-phaseDeg);
@@ -114,7 +139,8 @@ final class AutomaticDialOverlay {
 
             Bitmap overlay=warpOutline(input.getWidth(),input.getHeight(),h,model);
             if(overlay==null)return new Result("dial outline rendering failed");
-            return new Result(overlay,edge,lattice,phaseUsed,h);
+            Result res=new Result(overlay,edge,lattice,phaseUsed,h);res.markerBranchTurn=markerBranchTurn;
+            return res;
         }catch(Throwable t){
             return new Result("automatic overlay failed: "+t.getClass().getSimpleName());
         }finally{

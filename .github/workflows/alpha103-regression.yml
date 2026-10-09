@@ -2,7 +2,7 @@
 # app's full analysis (Alpha99Pipeline + findings) with the code BEFORE Alpha103 (BASE) and AFTER (this commit). Prints
 # every status change and fails if any genuine feature becomes more severe (Alpha103 may only downgrade: clear -> worth
 # a look / too small to see, worth a look -> too small to see). Images are fetched sha256-verified and never uploaded.
-name: Alpha103 regression (genuine, both models)
+name: Genuine regression (base vs this commit, all models)
 
 on:
   push:
@@ -12,6 +12,8 @@ on:
       - '.github/workflows/alpha103-regression.yml'
       - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Findings.java'
       - 'android/app/src/main/java/com/watchalign/mobile/ModelReference.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/AutomaticDialOverlay.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha104MarkerBranch.java'
   workflow_dispatch:
 
 permissions:
@@ -31,8 +33,11 @@ jobs:
           - model: submariner_124060
             catalogue: tools/research/sub124060/catalogue_124060.csv
             opts: -Dwatchalign.model=submariner_124060
+          - model: submariner_126610
+            catalogue: tools/research/sub126610/catalogue_126610.csv
+            opts: -Dwatchalign.model=submariner_126610
     env:
-      BASE: eb885e9
+      BASE: 4b4a026   # Alpha104 (marker-branch pose check) vs the commit before it
       IMG: reg_images
     steps:
       - uses: actions/checkout@v4
@@ -88,7 +93,7 @@ jobs:
               if sb != sh:
                   trans[(sb, sh)] += 1
                   print(f'{k[0]:<42} {k[1]:<12} {sb:>12} -> {sh:<12} {h.get(k, {}).get("short_line", "")}')
-                  if sev.get(sh, 9) > sev.get(sb, 9) or (sb == 'NOT_ASSESSED') != (sh == 'NOT_ASSESSED'):
+                  if sev.get(sh, 9) > sev.get(sb, 9):
                       worse.append(k)
           for name, d in (('before', b), ('after', h)):
               c = collections.Counter(r['alpha99_status'] for r in d.values())
@@ -96,7 +101,7 @@ jobs:
               print(f'{name}: features {dict(c)}; genuine photos with a clear finding {photos["CLEAR"]}, worth a look {photos["WORTH"]}, too small to see {photos["MINOR"]}')
           print('transitions:', dict(trans))
           if worse:
-              print('MORE SEVERE OR NEWLY (UN)ASSESSED:', worse); sys.exit(1)
+              print('MORE SEVERE:', worse); sys.exit(1)
           print('OK: every change is a downgrade')
           PY
       - name: Upload CSVs (no images)

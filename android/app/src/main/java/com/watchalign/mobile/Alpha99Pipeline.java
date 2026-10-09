@@ -84,7 +84,7 @@ final class Alpha99Pipeline {
         AutomaticDialOverlay.Result q=o.pose;Alpha94MarkerMeasurement.Report m=o.measurement;Alpha98DateWindow.Result d=o.date;
         StringBuilder s=new StringBuilder("Model: "+o.model.label+"\n");
         s.append(String.format(Locale.US,"Pose: %d ticks · %d sectors · tick RMS %.2f px · dial radius %.0f px · 12 phase %s",
-                q.detectedTicks,q.completePairs,q.fitAfter,m.dialRadiusPx,q.twelvePhaseUsed?"locked":"guarded by coarse pose"));
+                q.detectedTicks,q.completePairs,q.fitAfter,m.dialRadiusPx,q.twelvePhaseUsed?(q.markerBranchTurn==0?"locked":"set by the hour markers ("+q.markerBranchTurn+" min from the 12 cue)"):"guarded by coarse pose"));
         s.append("\n").append(o.reference.triangle!=null&&m.triangle!=null?Alpha97TwelveReadout.summary(m,o.reference):m.compactSummary());
         if(d!=null&&d.usable)s.append(String.format(Locale.US,"\nDate window: tilt %+.2f° (+ = clockwise)",d.windowTiltDeg));
         else s.append("\nDate window: not measured").append(d==null?"":" ("+d.reason+")");
