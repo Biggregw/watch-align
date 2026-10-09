@@ -95,8 +95,8 @@ public class Alpha99ResultsActivity extends Activity {
             root.addView(ov,lp(-1,dp(48),18));
         }
         TextView tech=text(Store.technical==null?"":Store.technical,12,MUTED,false);tech.setTextIsSelectable(true);tech.setVisibility(View.GONE);
-        Button details=new Button(this);details.setText("Technical details  ▸");details.setAllCaps(false);
-        details.setOnClickListener(v->{boolean show=tech.getVisibility()!=View.VISIBLE;tech.setVisibility(show?View.VISIBLE:View.GONE);details.setText(show?"Technical details  ▾":"Technical details  ▸");});
+        Button details=new Button(this);details.setText("Exact measurements  ▸");details.setAllCaps(false);
+        details.setOnClickListener(v->{boolean show=tech.getVisibility()!=View.VISIBLE;tech.setVisibility(show?View.VISIBLE:View.GONE);details.setText(show?"Exact measurements  ▾":"Exact measurements  ▸");});
         root.addView(details,lp(-1,dp(48),8));root.addView(tech,lp(-1,-2,6));
         return scroll;
     }

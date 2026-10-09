@@ -44,6 +44,9 @@ final class Alpha94MarkerMeasurement {
         /** fitScorePx = 1 - outline integrity (0 = perfectly clean outline); fitSupport = edge coverage. */
         double fitScorePx=Double.NaN,fitSupport=Double.NaN;
         double radiusErrPx=Double.NaN;
+        /** Alpha105, round markers: the widest arc of outline without a fitted edge (deg) and its middle direction
+         *  (canonical atan2(y,x) deg, 0..360), set when the coverage test fails; NaN otherwise. */
+        double edgeGapDeg=Double.NaN,edgeGapDirDeg=Double.NaN;
         double canonDx=Double.NaN,canonDy=Double.NaN;
         /** 12 triangle only (research-only display): side angle errors and base tilt, + = clockwise. */
         double leftSideErrDeg=Double.NaN,rightSideErrDeg=Double.NaN,baseTiltDeg=Double.NaN;
@@ -344,7 +347,13 @@ final class Alpha94MarkerMeasurement {
         double integ=outlineIntegrity(s,op,nr,rpx,0.035);
         m.fitSupport=cov;m.fitScorePx=1.0-integ;
         if(integ<MIN_INTEGRITY){m.reason=String.format(Locale.US,"hand/occluder crosses outline (clean %.2f)",integ);return null;}
-        if(cov<0.60||octants<7-lostOct){m.reason=String.format(Locale.US,"outline coverage %.2f, %d/8 octants",cov,octants);return null;}
+        if(cov<0.60||octants<7-lostOct){
+            List<Double> ang=new ArrayList<>();
+            for(int i=0;i<P.size();i++)if(inl[i]){double a=Math.toDegrees(Math.atan2(P.get(i)[1]-cy,P.get(i)[0]-cx));ang.add(((a%360)+360)%360);}
+            java.util.Collections.sort(ang);
+            for(int i=0;i<ang.size();i++){double a0=ang.get(i),a1=i+1<ang.size()?ang.get(i+1):ang.get(0)+360,gap=a1-a0;
+                if(!(gap<=m.edgeGapDeg)){m.edgeGapDeg=gap;m.edgeGapDirDeg=((a0+gap/2)%360+360)%360;}}
+            m.reason=String.format(Locale.US,"outline coverage %.2f, %d/8 octants",cov,octants);return null;}
         if(Math.abs(radius-r0)>0.15*r0){m.reason="implausible radius";return null;}
         m.usable=true;m.rotationDeg=0.0;m.radiusErrPx=Double.isFinite(fixedRadius)?Double.NaN:(radius-r0)*rpx;
         return new double[]{cx,cy};

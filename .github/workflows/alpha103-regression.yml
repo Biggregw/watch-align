@@ -14,6 +14,8 @@ on:
       - 'android/app/src/main/java/com/watchalign/mobile/ModelReference.java'
       - 'android/app/src/main/java/com/watchalign/mobile/AutomaticDialOverlay.java'
       - 'android/app/src/main/java/com/watchalign/mobile/Alpha104MarkerBranch.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha94MarkerMeasurement.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Pipeline.java'
   workflow_dispatch:
 
 permissions:
@@ -37,7 +39,7 @@ jobs:
             catalogue: tools/research/sub126610/catalogue_126610.csv
             opts: -Dwatchalign.model=submariner_126610
     env:
-      BASE: 4b4a026   # Alpha104 (marker-branch pose check) vs the commit before it
+      BASE: c7cd2e3   # Alpha105 lighting-gap round fit vs the commit before it
       IMG: reg_images
     steps:
       - uses: actions/checkout@v4

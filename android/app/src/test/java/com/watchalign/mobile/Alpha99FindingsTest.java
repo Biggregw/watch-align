@@ -242,7 +242,7 @@ public class Alpha99FindingsTest {
         assertTrue(s.headline(),s.headline().startsWith("No visible deviation"));
         // Alpha105: shown as within (green, no tile), named in the within line
         assertFalse(s.headline(),s.headline().contains("Too small"));
-        assertTrue(s.withinLine(),s.withinLine().contains("Within what the eye can see: 8, 11"));
+        assertTrue(s.withinLine(),s.withinLine().contains("8")&&s.withinLine().contains("11"));
         for(Alpha99Findings.Finding f:s.tiles())assertNotEquals(Alpha99Findings.Status.MINOR,f.status);
         for(Alpha94MarkerMeasurement.Marker m:r.markers)if(m.hour==8||m.hour==11)m.localOffsetPx=0.012*r.dialRadiusPx;
         s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
@@ -448,4 +448,14 @@ public class Alpha99FindingsTest {
         return new Alpha94MarkerMeasurement.Report(ms,g,250,t);
     }
     static Alpha99Findings.Finding find(Alpha99Findings.Summary s,String key){for(Alpha99Findings.Finding f:s.all)if(f.key.equals(key))return f;throw new AssertionError(key);}
+
+    @Test public void onlyACleanOutlineWithOneModestEdgelessArcGetsTheLightingGapFit(){
+        Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(10,"round");
+        m.usable=false;m.reason="outline coverage 0.61, 6/8 octants";m.fitScorePx=0.0;m.edgeGapDeg=120;m.edgeGapDirDeg=140;
+        assertTrue(Alpha99Pipeline.edgeGapOnly(m));
+        m.edgeGapDeg=140;assertFalse(Alpha99Pipeline.edgeGapOnly(m));                      // too much outline missing
+        m.edgeGapDeg=120;m.fitScorePx=0.2;assertFalse(Alpha99Pipeline.edgeGapOnly(m));      // outline not clean: hand / glare
+        m.fitScorePx=0.0;m.reason="hand/occluder crosses outline (clean 0.40)";assertFalse(Alpha99Pipeline.edgeGapOnly(m));
+        m.reason="outline coverage 0.61, 6/8 octants";m.usable=true;assertFalse(Alpha99Pipeline.edgeGapOnly(m));
+    }
 }

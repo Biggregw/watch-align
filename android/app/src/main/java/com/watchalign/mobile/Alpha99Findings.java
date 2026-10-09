@@ -194,12 +194,9 @@ final class Alpha99Findings {
         }
         String withinLine(){
             StringBuilder b=new StringBuilder();
-            for(Finding f:within()){if(b.length()>0)b.append(", ");b.append(f.shortName);if(f.partNotAssessed!=null)b.append(" ").append(f.partAssessed!=null?f.partAssessed:"rotation");}
-            String out=b.length()==0?"":"Within measured genuine range: "+b;
-            List<Finding> mi=minor();
-            if(!mi.isEmpty())out+=(out.isEmpty()?"":"\n")+"Within what the eye can see: "+names(mi)
-                    +" (measured differences smaller than the eye can pick out; see Technical details)";
-            return out;
+            List<Finding> w=new ArrayList<>();for(Finding f:all)if(f.status==Status.WITHIN||f.status==Status.MINOR)w.add(f);
+            for(Finding f:w){if(b.length()>0)b.append(", ");b.append(f.shortName);if(f.partNotAssessed!=null)b.append(" ").append(f.partAssessed!=null?f.partAssessed:"rotation");}
+            return b.length()==0?"":"Within measured genuine range: "+b;
         }
         /** Not-assessed features without a tile, grouped by reason. */
         String notAssessedLine(){
@@ -405,6 +402,8 @@ final class Alpha99Findings {
                 f.status=Status.WITHIN;f.reason="";f.shortReason="";f.visual=false;part=true;
             }
             Alpha94MarkerMeasurement.Marker m=part?pm:r.atHour(h);
+            boolean gapFit=false;
+            if(!part&&(m==null||!m.usable)&&pm!=null&&pm.usable&&Double.isFinite(pm.localOffsetPx)){m=pm;part=true;gapFit=true;}
             if(m==null||!m.usable||!Double.isFinite(m.localOffsetPx)){withheldByMeasurement(f,m==null?"unavailable":m.reason);continue;}
             double off=m.localOffsetPx/R;
             f.measures.add(new Measure("position",off,lim,sOff,ref.kSigma,n,"R",
@@ -412,6 +411,13 @@ final class Alpha99Findings {
                     String.format(Locale.US,"The %d o'clock marker sits %.1f px out of place relative to the other markers (%.2f%% of the dial radius, mostly %s); compared with genuine photos of similar or lower resolution",
                             h,m.localOffsetPx,100*off,Alpha98Findings.direction(m))));
             Measure pos=f.measures.get(f.measures.size()-1);pos.visibleBar=VISIBLE_FRACTION*2*mk.outerR;smallPhoto(pos,ref,"rounds_off",R);
+            if(gapFit){
+                pos.capAtWorth=true;
+                pos.capReason="Part of this marker's outline edge was not visible (its polished surround reflecting the dark), so its position was measured from the rest of the outline; that is less precise, so it is shown as worth a look at most.";
+                f.notes.add("Measured from the part of the marker's outline where its edge is visible. Its size is not assessed.");
+                f.partAssessed="position";f.partNotAssessed="size";f.partReason="edge not visible all round";
+                settle(f);continue;
+            }
             if(part){
                 // genuine catalogues (CI 37803866932): measurable on 88 of 128 (124060) and 147 of 355 (GMT) hand-near
                 // markers, 2 and 3 of them outside the genuine range; the partial fit adds error (p99 0.003 R), so at most worth a look

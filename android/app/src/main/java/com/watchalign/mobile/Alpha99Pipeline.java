@@ -70,6 +70,15 @@ final class Alpha99Pipeline {
         if(photo==null||H==null||r==null||checks==null)return out;
         for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.ROUND)){
             Alpha99MarkerInterference.Check c=checks.get(mk.hour);
+            Alpha94MarkerMeasurement.Marker fm=r.atHour(mk.hour);
+            if(c!=null&&c.clean&&fm!=null&&edgeGapOnly(fm)){
+                // Alpha105: clean marker whose outline edge vanishes on one side only (its polished surround reflecting
+                // the dark, NecoClock frame 4's 10): position from the rest of the outline, the edgeless arc ignored
+                double half=Math.max(PARTIAL_HALF_DEG,fm.edgeGapDeg/2+5);
+                Alpha94MarkerMeasurement.Marker pm=Alpha94MarkerMeasurement.remeasureRound(photo,H,r,mk,fm.edgeGapDirDeg,half);
+                if(pm.usable&&Double.isFinite(pm.localOffsetPx)){pm.edgeGapDeg=fm.edgeGapDeg;out.put(mk.hour,pm);}
+                continue;
+            }
             if(c==null||c.clean||!Alpha99MarkerInterference.HAND.equals(c.reason)||!(c.touchGapPx>0)||!Double.isFinite(c.touchGapPx))continue;
             double dir=Alpha99MarkerInterference.handDirection(c,mk,H);
             if(!Double.isFinite(dir))continue;
@@ -77,6 +86,16 @@ final class Alpha99Pipeline {
             if(pm.usable&&Double.isFinite(pm.localOffsetPx))out.put(mk.hour,pm);
         }
         return out;
+    }
+
+    /** Largest edgeless arc allowed for a lighting-gap partial fit (deg); the rest (>= 235 deg) carries the position. */
+    static final double MAX_EDGE_GAP_DEG=125.0;
+
+    /** Alpha105: the round fit failed only on edge coverage, with a clean outline (integrity >= 0.95) and one edgeless
+     *  arc no wider than MAX_EDGE_GAP_DEG. */
+    static boolean edgeGapOnly(Alpha94MarkerMeasurement.Marker m){
+        return !m.usable&&m.reason!=null&&m.reason.startsWith("outline coverage")&&Double.isFinite(m.fitScorePx)&&m.fitScorePx<=0.05
+                &&Double.isFinite(m.edgeGapDeg)&&m.edgeGapDeg<=MAX_EDGE_GAP_DEG;
     }
 
     /** Technical numbers for the collapsed "Technical details" section. */
@@ -92,13 +111,16 @@ final class Alpha99Pipeline {
         if(o.checks==null)s.append(" unavailable - every marker withheld");
         else for(Alpha99MarkerInterference.Check c:o.checks.values())
             s.append(String.format(Locale.US,"\n  %d: %s%s%s",c.hour,c.clean?"clear":c.reason,c.secondsHand?" (seconds-hand line)":"",
-                    o.partial!=null&&o.partial.containsKey(c.hour)?String.format(Locale.US," - hand %.1f px away; position measured from the outline away from it",c.touchGapPx):""));
+                    o.partial!=null&&o.partial.containsKey(c.hour)&&!c.clean?String.format(Locale.US," - hand %.1f px away; position measured from the outline away from it",c.touchGapPx):""));
         s.append(String.format(Locale.US,"\n\nEvidence: value / genuine max / allowance (%.0f sigma, photo-to-photo spread of genuine watches):",o.reference.kSigma));
         for(Alpha99Findings.Finding f:o.summary.all){
             if(f.status==Alpha99Findings.Status.NOT_ASSESSED){s.append("\n  ").append(f.title).append(": not assessed (").append(f.reason).append(")");continue;}
             for(Alpha99Findings.Measure x:f.measures)
                 s.append(String.format(Locale.US,"\n  %s %s: %s / %s / %s -> %s",f.title,x.name,Alpha99Findings.fmt(x.value,x.unit),Alpha99Findings.fmt(x.genuineMax,x.unit),
-                        x.hasAllowance()?Alpha99Findings.fmt(x.allowance(),x.unit):"none",x.status()));
+                        x.hasAllowance()?Alpha99Findings.fmt(x.allowance(),x.unit):"none",
+                        x.status()==Alpha99Findings.Status.MINOR?"WITHIN (too small to see: under "+Alpha99Findings.fmt(x.visibleBar,x.unit)+")":x.status()));
+            if(o.partial!=null&&o.partial.containsKey(f.hour)&&f.shape==Alpha99Findings.Shape.ROUND&&o.checks!=null&&o.checks.get(f.hour)!=null&&o.checks.get(f.hour).clean)
+                s.append(String.format(Locale.US,"\n    (outline edge not visible over %.0f° of the %d marker; position measured from the rest)",o.partial.get(f.hour).edgeGapDeg,f.hour));
         }
         s.append("\n\nMeasurement only - comparisons with genuine watches, not a verdict. Directions in the upright dial frame (12 at top).");
         return s.toString();
