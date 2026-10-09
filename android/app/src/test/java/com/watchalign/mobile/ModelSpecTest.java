@@ -3,6 +3,7 @@ package com.watchalign.mobile;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -93,6 +94,29 @@ public class ModelSpecTest {
         // QC guardrails 11: held-out genuine conflict on round-plot size -> no allowance, so at most worth a look
         assertTrue(Double.isNaN(r.sigma("rounds_size","R")));assertTrue(Double.isNaN(r.sigma("round_size_rel","R")));
         assertTrue(r.sigma("six_rot","deg")>0);
+    }
+
+    @Test public void submarinerDate126610IsThe124060DialWithADateWindowAndItsOwnGenuineReference()throws Exception{
+        String[][] map={{"alpha98_reference.csv",ModelReference.GENUINE},{"alpha98_nominal.properties",ModelReference.NOMINAL},
+                {"m12_nominal.properties",ModelReference.TRI_NOMINAL},{"m12_genuine_reference.csv",ModelReference.TRI_REFERENCE},
+                {"alpha99_uncertainty.properties",ModelReference.UNCERTAINTY}};
+        File research=new File(researchDir(),"../sub126610/reference_src"),ref=new File(TestModels.assets(),"models/submariner_126610/reference");
+        for(String[] p:map)assertArrayEquals(p[0]+" -> "+p[1]+" (re-run export_model_reference.py --model submariner_126610 --source-dir tools/research/sub126610/reference_src)",
+                Files.readAllBytes(new File(research,p[0]).toPath()),Files.readAllBytes(new File(ref,p[1]).toPath()));
+        ModelSpec m=ModelSpec.load(ModelSpec.directory(TestModels.assets()),"submariner_126610");
+        ModelSpec sub=ModelSpec.load(ModelSpec.directory(TestModels.assets()),"submariner_124060");
+        assertNotNull(m.date);assertNull(m.atHour(3));assertEquals(11,m.markers.size());
+        for(ModelSpec.Marker x:m.markers){ModelSpec.Marker y=sub.atHour(x.hour);       // the 124060 dial master, unchanged
+            assertEquals(x.shape,y.shape);assertEquals(y.centreR,x.centreR,0);assertEquals(y.outerR,x.outerR,0);}
+        ModelReference r=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
+        assertTrue(r.triangle.nWatches>=100);
+        for(String f:new String[]{"six_rot","six_off","nine_rot","nine_off","rounds_off","ring_rot","ring_shift"})assertTrue(f,r.has(f));
+        assertFalse(r.has("three_rot"));
+        assertFalse(r.has("date_tilt"));                                         // date window: no genuine reference yet -> not assessed
+        assertTrue(Double.isNaN(r.sigma("rounds_size","R")));assertTrue(Double.isNaN(r.sigma("round_size_rel","R")));
+        // no repeat photos in the 126610 catalogue: the 124060 photo-to-photo allowances are used
+        ModelReference rs=ModelReference.load(ModelSpec.directory(TestModels.assets()),sub);
+        assertEquals(rs.sigma("six_rot","deg"),r.sigma("six_rot","deg"),0);
     }
 
     @Test public void submarinerBatonPositionIsResolutionMatched()throws Exception{

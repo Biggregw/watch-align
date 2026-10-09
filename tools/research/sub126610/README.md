@@ -15,3 +15,17 @@ are currently replicated (TheOneWatches / Clean / VS listings) - the 41 mm Subma
    more cautious of this catalogue's and the 124060's (`edge_safe_uncertainty.py --all-families`), because one-photo-
    per-listing catalogues have few repeat photos.
 4. **Date window.** Not referenced yet: reported "not assessed - no genuine reference yet" (fails closed).
+
+## Build 1 (2026-10-09)
+
+- Runner (CI 37941638232): 121 of 358 catalogued photos byte-verified (Bob's CDN re-encodes the rest even when JPEG
+  is requested), 120 measured. Whole-image hash dedup flags 117 of 120 (studio photos look alike) and is not used;
+  measured dedup (`dedup_measured.py`, 0.0005 R): 2 shared photos.
+- Reference: 118 watches (12 triangle 118, 6 baton 109, 9 baton 117, rounds 118). `calibrate_m12_nominal.py` now skips
+  the leave-one-source-out check for a single-source catalogue.
+- Allowances: no watch has two photos, so the 126610 photo-to-photo spread cannot be measured; the 124060 allowance
+  file is used (same detector, 41 mm dial geometry and dealer photography). The 12 edge filter uses the 124060 limit.
+- Held-out (leave one watch out): 0 clear on every feature except one watch, bobs_126613LB_181567 (6 baton rotation
+  2.04 deg, position 0.71% R; every other watch <= 0.75 deg / 0.36% R). It stays in the reference until its photo is
+  inspected (QC guardrails 1: exclusions need a documented contamination reason); `sub126610-genuine-check.yml`
+  runs the app (hand / glare check) on the catalogue and prints that photo.

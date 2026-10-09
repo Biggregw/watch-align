@@ -133,6 +133,8 @@ def main():
     loso = defaultdict(list); loso_nom = {}
     for s in sorted({w['src'] for w in W}):
         rest = [x for x in W if x['src'] != s]
+        if not rest:                      # single-source catalogue (e.g. 126610: Bob's only): no leave-one-source-out
+            continue
         loso_nom[s] = nominal(rest)
         loso[s] = [offset(w, loso_nom[s]) for w in W if w['src'] == s]
     rnd = random.Random(12)
