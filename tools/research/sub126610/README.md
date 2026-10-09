@@ -29,3 +29,13 @@ are currently replicated (TheOneWatches / Clean / VS listings) - the 41 mm Subma
   2.04 deg, position 0.71% R; every other watch <= 0.75 deg / 0.36% R). It stays in the reference until its photo is
   inspected (QC guardrails 1: exclusions need a documented contamination reason); `sub126610-genuine-check.yml`
   runs the app (hand / glare check) on the catalogue and prints that photo.
+
+## Build 2: the app's hand / glare withholds applied (2026-10-09)
+
+`sub126610-genuine-check.yml` (CI 37945684586, app at 25d15a7) ran the app on the catalogue: 0 clear, 0 worth a look,
+4 too small to see on genuine photos. Its hand check withholds the 6 on bobs_126613LB_181567: the seconds hand runs
+straight across the 6 baton (photo printed in the log and inspected) - the 2.04 deg reading was the hand, not the
+watch. `../sub124060/apply_interference.py` now marks every marker the app withholds (hand / glare) as unusable before
+the reference is built (116 markers on 104 photos), so the reference holds only readings the app would trust.
+Result: 6 baton genuine max 2.04 -> 0.75 deg (124060: 0.86), 108-118 watches per feature; leave-one-watch-out 0 clear
+(10 worth a look). The 124060 reference was built without this step; adopting it there needs its own regression run.
