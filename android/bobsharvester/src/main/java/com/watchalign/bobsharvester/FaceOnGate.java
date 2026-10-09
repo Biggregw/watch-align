@@ -16,9 +16,13 @@ import java.util.Locale;
  * 124060 photos were rejected.
  */
 public final class FaceOnGate {
-    /** minimum ellipse axis ratio: cos(18 deg) ~ 0.951. Face-on Bob's photos read 0.982-0.995 (48 manually reviewed 124060s); simulated 30-45 deg tilts that lock onto a mixed ring read up to 0.943. */
-    public static final double MIN_AXIS=0.95;
-    public static final double MAX_PARALLAX=0.030, MIN_SUPPORT=0.70, MAX_CENTRE_OFFSET=0.22, MAX_FIT_RMS=0.035;
+    /** minimum ellipse axis ratio. Face-on Bob's photos read 0.982-0.995 (48 manually reviewed 124060s) and >= 0.976 on the
+     *  48 Submariner photos of 15 references that Watch Align measured (owner packs 2026-10-09); 3/4 product views that
+     *  passed 1.4 / 1.4.1 read 0.950-0.982 (1.4.2: 0.95 -> 0.96). */
+    public static final double MIN_AXIS=0.96;
+    /** bezel/dial ring parallax: face-on <= 0.020 (72 reviewed), 3/4 views 0.038-0.043; a 1.4.1 3/4 view read 0.0288
+     *  (1.4.2: 0.030 -> 0.025). */
+    public static final double MAX_PARALLAX=0.025, MIN_SUPPORT=0.70, MAX_CENTRE_OFFSET=0.22, MAX_FIT_RMS=0.035;
     public static final int MIN_SIDE=500, MIN_RADIUS_PX=130, RAYS=180;
 
     public static final class Result {
