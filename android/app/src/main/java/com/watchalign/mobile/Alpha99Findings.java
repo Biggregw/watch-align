@@ -18,10 +18,27 @@ import java.util.Map;
  *     The genuine range itself is not widened: range and uncertainty (both in ModelReference) are separate. A feature without
  *     an uncertainty estimate can be outside the range but never CLEAR.
  *  3. round markers judged one by one and named by hour.
+ *  4. (Alpha103, QC guardrails 3 and 4) practical significance and photo trust:
+ *       TOO SMALL TO SEE  outside the measured genuine range, but by less than the eye can pick out on the watch
+ *                         (VISIBLE_FRACTION of the marker's width for positions and sizes, VISIBLE_DEG for angles). Listed,
+ *                         never headlined as a deviation and never a clear finding, however many sigma it is.
+ *       small photos      a feature judged against shrunk-genuine rows (photo below the full-resolution coverage) is at
+ *                         most worth a look: shrinking genuine photos to that size alone moves markers by as much as the
+ *                         allowance (sub124060 shrink data: p99 0.53% of the dial at 150 px).
+ *       opposite markers  opposite markers (3/9, 1/7, ...) displaced the same way in the picture: the shared shift comes
+ *                         from the photo (angle, lighting), not two separately misplaced markers -> at most worth a look.
+ *       glare             a round marker whose size reads off by at least half its position offset: one-sided glare or
+ *                         bleed on its metal surround moves both together -> its position is at most worth a look.
  * Wording compares measurements with genuine watches; it never says genuine / fake.
  */
 final class Alpha99Findings {
-    enum Status{CLEAR,WORTH,NOT_ASSESSED,WITHIN}
+    enum Status{CLEAR,WORTH,MINOR,NOT_ASSESSED,WITHIN}
+
+    /** Alpha103 visibility bar (QC guardrails 4, a presentation rule, not a genuine limit): a position or size difference
+     *  below this fraction of the marker's own width, or an angle below VISIBLE_DEG, is too small to see on the watch.
+     *  Set from what a careful human QC can pick out (a 'super slight' baton tilt of ~1 deg is reported by eye), never from
+     *  replica results. */
+    static final double VISIBLE_FRACTION=0.05,VISIBLE_DEG=0.75;
     enum Shape{BATON,TRIANGLE,ROUND,RING,DATE}
 
     static final String DISCLAIMER="These results compare this photo's measurements with genuine watches. They are not an authenticity verdict.";
@@ -46,6 +63,8 @@ final class Alpha99Findings {
         boolean capAtWorth;
         /** Why capAtWorth was set; shown in the detail view. */
         String capReason="";
+        /** Alpha103: below this value the difference is too small to see (MINOR); NaN = no bar. */
+        double visibleBar=Double.NaN;
         /** @param k the model's K: clear when the excess exceeds k x sigma (NaN: nothing can be clear). */
         Measure(String name,double value,double genuineMax,double sigma,double k,int n,String unit,String shortValue,String sentence){
             this.name=name;this.value=value;this.genuineMax=genuineMax;this.sigma=sigma;this.k=k;this.n=n;this.unit=unit;this.shortValue=shortValue;this.sentence=sentence;
@@ -54,8 +73,12 @@ final class Alpha99Findings {
         double excess(){return value-genuineMax;}
         boolean hasAllowance(){return Double.isFinite(sigma)&&sigma>0&&Double.isFinite(k)&&k>0;}
         double allowance(){return k*sigma;}
+        boolean belowVisible(){return Double.isFinite(visibleBar)&&value<visibleBar;}
+        /** Caps at worth a look, keeping the first reason given. */
+        void cap(String reason){if(!capAtWorth){capAtWorth=true;capReason=reason;}}
         Status status(){
             if(!outside())return Status.WITHIN;
+            if(belowVisible())return Status.MINOR;
             if(capAtWorth)return Status.WORTH;
             return hasAllowance()&&excess()>allowance()?Status.CLEAR:Status.WORTH;
         }
@@ -90,10 +113,11 @@ final class Alpha99Findings {
             for(Measure m:measures)if(m.outside()&&(b==null||rank(m)>rank(b)))b=m;
             return b;
         }
-        private static double rank(Measure m){return (m.status()==Status.CLEAR?1e6:0)+m.strength()+(m.excess()/Math.max(1e-12,Math.abs(m.genuineMax)));}
+        private static double rank(Measure m){Status st=m.status();
+            return (st==Status.CLEAR?1e6:st==Status.WORTH?1e3:0)+m.strength()+(m.excess()/Math.max(1e-12,Math.abs(m.genuineMax)));}
 
         String statusLabel(){
-            switch(status){case CLEAR:return "CLEAR FINDING";case WORTH:return "WORTH A LOOK";case NOT_ASSESSED:return "NOT ASSESSED";default:return "WITHIN RANGE";}
+            switch(status){case CLEAR:return "CLEAR FINDING";case WORTH:return "WORTH A LOOK";case MINOR:return "TOO SMALL TO SEE";case NOT_ASSESSED:return "NOT ASSESSED";default:return "WITHIN RANGE";}
         }
         /** One short line for the tile. */
         String shortLine(){
@@ -109,7 +133,8 @@ final class Alpha99Findings {
             for(Measure m:measures){
                 if(!m.outside())continue;
                 String s=m.sentence+". The furthest of "+m.n+" genuine reference watches reads "+fmt(m.genuineMax,m.unit)+".";
-                if(m.capAtWorth)s+=" "+m.capReason;
+                if(m.belowVisible())s+=" That is less than the eye can pick out on the watch (about "+fmt(m.visibleBar,m.unit)+" here), so it is listed as too small to see, not as a deviation.";
+                else if(m.capAtWorth)s+=" "+m.capReason;
                 else if(!m.hasAllowance())s+=" No measurement-uncertainty estimate exists for this feature, so it is not rated as a clear finding.";
                 else if(m.status()==Status.CLEAR)s+=String.format(Locale.US," The excess (%s) is more than %.0f times the photo-to-photo spread measured on genuine watches (%s), so measurement error alone is unlikely to explain it.",
                         fmt(m.excess(),m.unit),m.k,fmt(m.sigma,m.unit));
@@ -134,19 +159,22 @@ final class Alpha99Findings {
         List<Finding> with(Status st){List<Finding> o=new ArrayList<>();for(Finding f:all)if(f.status==st)o.add(f);return o;}
         List<Finding> clear(){return with(Status.CLEAR);}
         List<Finding> worth(){return with(Status.WORTH);}
+        List<Finding> minor(){return with(Status.MINOR);}
         List<Finding> within(){return with(Status.WITHIN);}
         List<Finding> notAssessed(){return with(Status.NOT_ASSESSED);}
-        /** Tiles: clear findings, then worth a look, then not-assessed markers whose close-up shows the reason. */
+        /** Tiles: clear findings, then worth a look, then too small to see, then not-assessed markers whose close-up shows
+         *  the reason. */
         List<Finding> tiles(){
-            List<Finding> o=new ArrayList<>(clear());o.addAll(worth());
+            List<Finding> o=new ArrayList<>(clear());o.addAll(worth());o.addAll(minor());
             for(Finding f:notAssessed())if(f.visual)o.add(f);
             return o;
         }
         List<String> headlineLines(){
-            List<String> h=new ArrayList<>();int c=clear().size(),w=worth().size(),na=notAssessedCount();
+            List<String> h=new ArrayList<>();int c=clear().size(),w=worth().size(),mi=minor().size(),na=notAssessedCount();
             if(c>0)h.add(c+" clear alignment finding"+(c==1?"":"s")+": "+names(clear()));
             if(w>0)h.add(w+(c>0?" other":"")+(w==1?" measurement is":" measurements are")+" worth a look: "+names(worth()));
-            if(c==0&&w==0)h.add("No measured feature is outside the measured genuine range");
+            if(c==0&&w==0)h.add(mi>0?"No visible deviation from the genuine watches measured":"No measured feature is outside the measured genuine range");
+            if(mi>0)h.add("Too small to see: "+names(minor())+" ("+(mi==1?"differs":"differ")+" from genuine by less than the eye can pick out)");
             // QC guardrails 4: borderline readings alone are not escalated; a repeat on another photo is the stronger evidence
             if(c==0&&w>0)h.add("Another clean, straight-on photo would show whether "+(w==1?"it repeats":"these repeat"));
             if(na>0)h.add(na+(na==1?" feature":" features")+" could not be assessed");
@@ -202,8 +230,9 @@ final class Alpha99Findings {
         for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.BATON))s.all.add(baton(r,mk,R,check(checks,mk.hour),ref,model.resolutionMatched.contains(mk.key+"_off")));
         s.all.addAll(rounds(r,R,checks,partial,model,ref));
         if(!model.withShape(ModelSpec.Shape.ROUND).isEmpty())s.all.add(roundsSize(r,R,checks,model,ref));
-        s.all.add(ring(r,R,ref));
+        s.all.add(ring(r,R,ref,model));
         if(model.date!=null)s.all.add(date(date,R,r!=null&&r.ring!=null&&r.ring.usable,ref,model.date));
+        oppositeMarkers(s,r);
         return s;
     }
 
@@ -268,6 +297,7 @@ final class Alpha99Findings {
                 sigmaPos(ref,fam+"_lateral",R),k,n,"R",
                 String.format(Locale.US,"shifted %s by %.2f%% of the dial",t.lateralPx<0?"left":"right",100*Math.abs(t.lateralR)),
                 String.format(Locale.US,"It sits %.1f px to the %s (%.2f%% of the dial radius)",Math.abs(t.lateralPx),t.lateralPx<0?"left":"right",100*Math.abs(t.lateralR))));
+        for(Measure x:f.measures)x.visibleBar=x.unit.equals("deg")?VISIBLE_DEG:VISIBLE_FRACTION*2*spec.halfBase;
         // Alpha98 rule for the 12: outside when no genuine watch reads at least as far (Alpha97TwelveReadout counts)
         if(t.atLeastCentreline>0)neutralise(f,"centreline");
         if(t.atLeastSides>0)neutralise(f,"sides");
@@ -292,7 +322,8 @@ final class Alpha99Findings {
     /** Replace a measure with one that is never outside (keeps the 12 on its Alpha98 'at least as far' counts). */
     private static void neutralise(Finding f,String name){
         for(int i=0;i<f.measures.size();i++){Measure m=f.measures.get(i);
-            if(m.name.equals(name)&&m.outside())f.measures.set(i,new Measure(m.name,Math.min(m.value,m.genuineMax),m.genuineMax,m.sigma,m.k,m.n,m.unit,m.shortValue,m.sentence));}
+            if(m.name.equals(name)&&m.outside()){Measure x=new Measure(m.name,Math.min(m.value,m.genuineMax),m.genuineMax,m.sigma,m.k,m.n,m.unit,m.shortValue,m.sentence);
+                x.visibleBar=m.visibleBar;f.measures.set(i,x);}}
     }
 
     static Finding baton(Alpha94MarkerMeasurement.Report r,ModelSpec.Marker spec,double R,Alpha99MarkerInterference.Check c,ModelReference ref){
@@ -318,6 +349,7 @@ final class Alpha99Findings {
         f.measures.add(new Measure("rotation",Math.abs(rot),Alpha98Findings.max(rotRef),sRot,k,rotRef.length,"deg",
                 String.format(Locale.US,"rotated %.1f° %s",Math.abs(rot),Alpha98Findings.cw(rot)),
                 String.format(Locale.US,"It is rotated %.1f° %s",Math.abs(rot),Alpha98Findings.cw(rot))));
+        f.measures.get(0).visibleBar=VISIBLE_DEG;
         double off=m.localOffsetPx/R;
         int nOff=resMatched?ref.matchedWatches(key+"_off",R):offRef.length;
         double offMax=resMatched?ref.matchedMax(key+"_off",R):Alpha98Findings.max(offRef);
@@ -330,6 +362,8 @@ final class Alpha99Findings {
                 String.format(Locale.US,"shifted %s by %.2f%% of the dial",towards(m),100*off),
                 String.format(Locale.US,"It sits %.1f px out of place relative to the other markers (%.2f%% of the dial radius, mostly %s)",
                         m.localOffsetPx,100*off,Alpha98Findings.direction(m))));
+        Measure pos=f.measures.get(f.measures.size()-1);pos.visibleBar=VISIBLE_FRACTION*2*spec.tangentialHalf;
+        if(resMatched)smallPhoto(pos,ref,key+"_off",R);
         settle(f);return f;
     }
 
@@ -371,10 +405,11 @@ final class Alpha99Findings {
                     String.format(Locale.US,"shifted %s by %.2f%% of the dial",towards(m),100*off),
                     String.format(Locale.US,"The %d o'clock marker sits %.1f px out of place relative to the other markers (%.2f%% of the dial radius, mostly %s); compared with genuine photos of similar or lower resolution",
                             h,m.localOffsetPx,100*off,Alpha98Findings.direction(m))));
+            Measure pos=f.measures.get(f.measures.size()-1);pos.visibleBar=VISIBLE_FRACTION*2*mk.outerR;smallPhoto(pos,ref,"rounds_off",R);
             if(part){
                 // genuine catalogues (CI 37803866932): measurable on 88 of 128 (124060) and 147 of 355 (GMT) hand-near
                 // markers, 2 and 3 of them outside the genuine range; the partial fit adds error (p99 0.003 R), so at most worth a look
-                Measure pos=f.measures.get(f.measures.size()-1);pos.capAtWorth=true;
+                pos.capAtWorth=true;
                 pos.capReason="A hand lies close to this marker, so its position was measured from the part of its outline away from the hand; that is less precise, so it is shown as worth a look at most.";
                 f.notes.add("Measured from the part of the marker's outline away from a nearby hand (the quarter facing the hand is ignored). Its size is not assessed.");
                 f.partAssessed="position";f.partNotAssessed="size";f.partReason="hand nearby";
@@ -388,6 +423,10 @@ final class Alpha99Findings {
                         String.format(Locale.US,"marker %s than the others by %.2f%% of the dial",rel>=0?"larger":"smaller",100*Math.abs(rel)),
                         String.format(Locale.US,"The marker (outer edge of its metal surround) is %s than the other round markers on this dial by %.2f%% of the dial radius; compared with genuine photos of similar or lower resolution",
                                 rel>=0?"larger":"smaller",100*Math.abs(rel))));
+                Measure sz=f.measures.get(f.measures.size()-1);sz.visibleBar=VISIBLE_FRACTION*mk.outerR;smallPhoto(sz,ref,"round_size_rel",R);
+                // one-sided glare or bleed on the metal surround grows the fitted outline and moves its centre together
+                if(pos.outside()&&sz.outside()&&Math.abs(rel)>=0.5*off)
+                    pos.cap(String.format(Locale.US,"Its size also reads off (%.2f%% of the dial). Glare or a bright edge on one side of the metal surround moves a marker's outline and its centre together, so its position is shown as worth a look, not a clear finding.",100*Math.abs(rel)));
             }
             settle(f);
         }
@@ -425,10 +464,14 @@ final class Alpha99Findings {
                 String.format(Locale.US,"all round markers %s by %.2f%% of the dial",d>=0?"larger":"smaller",100*Math.abs(d)),
                 String.format(Locale.US,"Taken together, the round markers (outer edge of the metal surround) are %s than on genuine dials by %.2f%% of the dial radius; compared with genuine photos of similar or lower resolution",
                         d>=0?"larger":"smaller",100*Math.abs(d))));
+        Measure m0=f.measures.get(0);m0.visibleBar=VISIBLE_FRACTION*first.outerR;smallPhoto(m0,ref,"rounds_size",R);
         settle(f);return f;
     }
 
-    static Finding ring(Alpha94MarkerMeasurement.Report r,double R,ModelReference ref){
+    static Finding ring(Alpha94MarkerMeasurement.Report r,double R,ModelReference ref){return ring(r,R,ref,null);}
+    static Finding ring(Alpha94MarkerMeasurement.Report r,double R,ModelReference ref,ModelSpec model){
+        List<ModelSpec.Marker> rs=model==null?new ArrayList<>():model.withShape(ModelSpec.Shape.ROUND);
+        double roundBar=rs.isEmpty()?Double.NaN:VISIBLE_FRACTION*2*rs.get(0).outerR;
         Finding f=new Finding("ring","Dial marker ring","marker ring");f.shape=Shape.RING;f.cx=0;f.cy=0;f.half=1.05;
         if((!ref.has("ring_rot")||!Double.isFinite(ref.nominal("ring_rot")))&&noReference(f))return f;
         Alpha94MarkerMeasurement.Ring g=r==null?null:r.ring;
@@ -438,11 +481,13 @@ final class Alpha99Findings {
                 ref.far("ring_rot").length,"deg",String.format(Locale.US,"markers as a set turned %.2f° %s",Math.abs(rot),Alpha98Findings.cw(rot)),
                 String.format(Locale.US,"Taken together, the hour markers are turned %.2f° %s relative to the printed minute track (a whole-dial measurement: it does not mean each marker is rotated)",
                         Math.abs(rot),Alpha98Findings.cw(rot))));
+        f.measures.get(0).visibleBar=VISIBLE_DEG;
         int n=ref.matchedWatches("ring_shift",R);
         if(n>=Alpha98Findings.MIN_MATCHED){double lim=ref.matchedMax("ring_shift",R);double sh=g.shiftPx/R;
             f.measures.add(new Measure("shift",sh,lim,sigmaPos(ref,"ring_shift",R),ref.kSigma,n,"R",
                     String.format(Locale.US,"markers as a set off-centre by %.2f%% of the dial",100*sh),
-                    String.format(Locale.US,"Taken together, the hour markers are off-centre by %.1f px (%.2f%% of the dial radius); compared with genuine photos of similar or lower resolution",g.shiftPx,100*sh)));}
+                    String.format(Locale.US,"Taken together, the hour markers are off-centre by %.1f px (%.2f%% of the dial radius); compared with genuine photos of similar or lower resolution",g.shiftPx,100*sh)));
+            Measure m1=f.measures.get(1);m1.visibleBar=roundBar;smallPhoto(m1,ref,"ring_shift",R);}
         settle(f);return f;
     }
 
@@ -465,6 +510,7 @@ final class Alpha99Findings {
         f.measures.add(new Measure("tilt",Math.abs(t),Alpha98Findings.max(ref.far("date_tilt")),sigmaAng(ref,"date_tilt",R),ref.kSigma,
                 ref.far("date_tilt").length,"deg",String.format(Locale.US,"tilted %.1f° %s",Math.abs(t),Alpha98Findings.cw(t)),
                 String.format(Locale.US,"It is tilted %.1f° %s relative to the dial",Math.abs(t),Alpha98Findings.cw(t))));
+        f.measures.get(0).visibleBar=VISIBLE_DEG;
         settle(f);return f;
     }
 
@@ -475,11 +521,61 @@ final class Alpha99Findings {
         return "window not found";
     }
 
-    /** Finding status = strongest measure: any CLEAR -> CLEAR, else any outside -> WORTH, else WITHIN. */
+    /** Finding status = strongest measure: CLEAR, then WORTH, then MINOR (too small to see), else WITHIN. */
     static void settle(Finding f){
         Status s=Status.WITHIN;
-        for(Measure m:f.measures){Status x=m.status();if(x==Status.CLEAR)s=Status.CLEAR;else if(x==Status.WORTH&&s!=Status.CLEAR)s=Status.WORTH;}
+        for(Measure m:f.measures){Status x=m.status();
+            if(x==Status.CLEAR)s=Status.CLEAR;else if(x==Status.WORTH&&s!=Status.CLEAR)s=Status.WORTH;else if(x==Status.MINOR&&s==Status.WITHIN)s=Status.MINOR;}
         f.status=s;
+    }
+
+    /** Alpha103: a feature judged against rows from shrunk genuine photos (this photo is below the full-resolution
+     *  coverage) is at most worth a look: shrinking genuine photos to that size alone moves their readings by as much as
+     *  the single-photo allowance (QC guardrails 3: low resolution must not manufacture confidence). */
+    static void smallPhoto(Measure m,ModelReference ref,String feature,double R){
+        if(ref.usesShrunkRows(feature,R))m.cap(String.format(Locale.US,"This photo is small (dial radius %.0f px). Shrinking genuine photos to this size moves their markers by as much as this from the shrinking alone, so it is shown as worth a look, not a clear finding.",R));
+    }
+
+    /** Opposite marker pairs (hours) checked for a shared displacement. */
+    static final int[][] OPPOSITE={{3,9},{1,7},{2,8},{4,10},{5,11}};
+
+    /**
+     * Alpha103: two opposite markers displaced the same way in the picture (directions within 45 deg, sizes within 2x)
+     * share a cause in the photo - camera angle or lighting - rather than being two separately misplaced markers (CLAUDE.md:
+     * use opposing marker relationships to identify perspective contamination). Their positions are at most worth a look.
+     */
+    static void oppositeMarkers(Summary s,Alpha94MarkerMeasurement.Report r){
+        if(r==null)return;
+        for(int[] p:OPPOSITE){
+            Finding a=byHour(s,p[0]),b=byHour(s,p[1]);
+            Measure ma=position(a),mb=position(b);
+            if(ma==null||mb==null||!(ma.outside()||mb.outside()))continue;
+            double[] va=imageVector(r.atHour(p[0])),vb=imageVector(r.atHour(p[1]));
+            if(va==null||vb==null)continue;
+            double la=Math.hypot(va[0],va[1]),lb=Math.hypot(vb[0],vb[1]);
+            if(la<=0||lb<=0||Math.min(la,lb)<0.5*Math.max(la,lb))continue;
+            if((va[0]*vb[0]+va[1]*vb[1])/(la*lb)<Math.cos(Math.toRadians(45)))continue;
+            ma.cap(oppositeReason(p[1]));mb.cap(oppositeReason(p[0]));
+            settle(a);settle(b);
+        }
+    }
+    static String oppositeReason(int other){
+        return String.format(Locale.US,"The opposite %d o'clock marker is displaced the same way in the picture. Two opposite markers moving together point to the camera angle or lighting rather than a misplaced marker, so this is shown as worth a look, not a clear finding.",other);
+    }
+    private static Finding byHour(Summary s,int h){
+        for(Finding f:s.all)if(f.hour==h&&(f.shape==Shape.BATON||f.shape==Shape.ROUND)&&!f.dialWide)return f;
+        return null;
+    }
+    private static Measure position(Finding f){
+        if(f==null||f.status==Status.NOT_ASSESSED)return null;
+        for(Measure m:f.measures)if(m.name.equals("position"))return m;
+        return null;
+    }
+    /** Local offset in picture-aligned dial axes (x right, y down; 12 at the top), from radial (+ out) / tangential (+ cw). */
+    static double[] imageVector(Alpha94MarkerMeasurement.Marker m){
+        if(m==null||!Double.isFinite(m.localRadialPx)||!Double.isFinite(m.localTangentialPx))return null;
+        double a=Math.toRadians(m.hour*30.0),rd=m.localRadialPx,tg=m.localTangentialPx;
+        return new double[]{rd*Math.sin(a)+tg*Math.cos(a),-rd*Math.cos(a)+tg*Math.sin(a)};
     }
 
     /** QC-style direction of a marker's local offset (radial + = outward, tangential + = clockwise): towards its minute

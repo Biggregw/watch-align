@@ -115,6 +115,20 @@ only when that model's genuine evidence supports it; otherwise the reason is rec
   reading beyond the genuine range is at most "worth a look", never "clear".
 - **Too few resolution-matched genuine watches:** "not assessed - resolution too low".
 
+## Practical significance and photo trust (Alpha103, every model)
+
+Applied by the findings layer to every model from its `model.json`, with no per-model data:
+
+- **Too small to see:** a reading outside the genuine range by less than 5% of the marker's own width (positions,
+  sizes) or 0.75° (angles) is listed as "too small to see", never as a deviation (QC guardrails §4). It cannot be clear.
+- **Small photos:** a feature judged against shrunk-genuine rows (`max_photo_r`) is at most worth a look.
+- **Opposite markers** (3/9, 1/7, 2/8, 4/10, 5/11) displaced the same way in the picture: at most worth a look (photo
+  angle or lighting, not two misplaced markers).
+- **Glare:** a round marker whose size reads off by at least half its position offset: its position is at most worth a look.
+
+Origin: a replica QC video (4 frames of one watch) gave clear findings that changed from frame to frame, all about one
+pixel; `.github/workflows/alpha103-regression.yml` checks that the genuine catalogues only ever get less severe.
+
 ## When code is still needed
 
 - **A new marker shape** (Arabic numerals, Explorer 3-6-9, applied logos): new measurement code, a new `shape`, and the

@@ -1,0 +1,110 @@
+# Alpha103 regression: the genuine catalogues of every model with a reference (GMT 126710, Submariner 124060) through the
+# app's full analysis (Alpha99Pipeline + findings) with the code BEFORE Alpha103 (BASE) and AFTER (this commit). Prints
+# every status change and fails if any genuine feature becomes more severe (Alpha103 may only downgrade: clear -> worth
+# a look / too small to see, worth a look -> too small to see). Images are fetched sha256-verified and never uploaded.
+name: Alpha103 regression (genuine, both models)
+
+on:
+  push:
+    branches:
+      - feature/android-alpha102-submariner
+    paths:
+      - '.github/workflows/alpha103-regression.yml'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Findings.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/ModelReference.java'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - model: gmt_126710
+            catalogue: tools/research/alpha96_calibration/catalogue_provenance_strong.csv
+            opts: ''
+          - model: submariner_124060
+            catalogue: tools/research/sub124060/catalogue_124060.csv
+            opts: -Dwatchalign.model=submariner_124060
+    env:
+      BASE: eb885e9
+      IMG: reg_images
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests opencv-python-headless
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Fetch genuine photos (sha256-verified)
+        run: |
+          mkdir -p "$IMG" out_base out_head
+          python3 tools/research/alpha96_calibration/fetch_verified.py "${{ matrix.catalogue }}" "$IMG" fetch_log.csv
+          python3 - <<'PY'
+          import csv
+          rows = list(csv.DictReader(open('${{ matrix.catalogue }}')))
+          if 'class_label' in rows[0]:
+              rows = [r for r in rows if r['class_label'] == 'gen']
+          with open('manifest.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
+          print('genuine photos in manifest:', len(rows))
+          PY
+      - name: Base code (before Alpha103)
+        env:
+          JAVA_TOOL_OPTIONS: ${{ matrix.opts }}
+        run: |
+          git worktree add ../base "$BASE"
+          mkdir -p ../base/tools/desktop-harness/.cache && cp tools/desktop-harness/.cache/opencv-4.9.0-0.jar ../base/tools/desktop-harness/.cache/ 2>/dev/null || true
+          (cd ../base && tools/desktop-harness/run.sh Alpha99Preview "$GITHUB_WORKSPACE/manifest.csv" "$GITHUB_WORKSPACE/$IMG" "$GITHUB_WORKSPACE/out_base" --no-images > "$GITHUB_WORKSPACE/out_base/log.txt")
+      - name: This commit (Alpha103)
+        env:
+          JAVA_TOOL_OPTIONS: ${{ matrix.opts }}
+        run: tools/desktop-harness/run.sh Alpha99Preview manifest.csv "$IMG" out_head --no-images > out_head/log.txt
+      - name: Compare (fails on any more severe genuine status)
+        run: |
+          python3 - <<'PY'
+          import csv, collections, sys
+          def load(p): return {(r['photo_id'], r['feature']): r for r in csv.DictReader(open(p))}
+          b, h = load('out_base/findings.csv'), load('out_head/findings.csv')
+          sev = {'WITHIN': 0, 'MINOR': 1, 'NOT_ASSESSED': 0, 'WORTH': 2, 'CLEAR': 3}
+          trans = collections.Counter(); worse = []
+          for k in sorted(set(b) | set(h)):
+              sb = b.get(k, {}).get('alpha99_status', 'missing'); sh = h.get(k, {}).get('alpha99_status', 'missing')
+              if sb != sh:
+                  trans[(sb, sh)] += 1
+                  print(f'{k[0]:<42} {k[1]:<12} {sb:>12} -> {sh:<12} {h.get(k, {}).get("short_line", "")}')
+                  if sev.get(sh, 9) > sev.get(sb, 9) or (sb == 'NOT_ASSESSED') != (sh == 'NOT_ASSESSED'):
+                      worse.append(k)
+          for name, d in (('before', b), ('after', h)):
+              c = collections.Counter(r['alpha99_status'] for r in d.values())
+              photos = {s: len({k[0] for k, r in d.items() if r['alpha99_status'] == s}) for s in ('CLEAR', 'WORTH', 'MINOR')}
+              print(f'{name}: features {dict(c)}; genuine photos with a clear finding {photos["CLEAR"]}, worth a look {photos["WORTH"]}, too small to see {photos["MINOR"]}')
+          print('transitions:', dict(trans))
+          if worse:
+              print('MORE SEVERE OR NEWLY (UN)ASSESSED:', worse); sys.exit(1)
+          print('OK: every change is a downgrade')
+          PY
+      - name: Upload CSVs (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha103-regression-${{ matrix.model }}-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            out_base/findings.csv
+            out_head/findings.csv

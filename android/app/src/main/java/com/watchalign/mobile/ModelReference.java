@@ -111,6 +111,13 @@ final class ModelReference {
         for(int i=0;i<f.length;i++)if(matches(feature,i,R))m=Math.max(m,f[i]);
         return m;
     }
+    /** True when rows from shrunk genuine photos (finite max_photo_r) are used at this photo's R: the photo is below the
+     *  feature's full-resolution coverage. */
+    boolean usesShrunkRows(String feature,double R){
+        double[] mp=maxPhoto.get(feature);if(mp==null)return false;
+        for(int i=0;i<mp.length;i++)if(Double.isFinite(mp[i])&&matches(feature,i,R))return true;
+        return false;
+    }
     private boolean matches(String feature,int i,double R){
         double rr=radius(feature)[i];double[] mp=maxPhoto.get(feature);
         return Double.isFinite(rr)&&rr<=Alpha98Findings.RES_MATCH*R&&(mp==null||R<=mp[i]);
