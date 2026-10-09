@@ -52,3 +52,30 @@ Five more 40 mm two-tone watches (116613 192315, 192398, 192653; 116613LB 192106
 0 clear, 0 worth a look. 40 mm date group now 24 watches: 6 baton -2.6 sd, round size +2.2 sd from the 124060; 6 baton
 below the 124060 5th percentile on 11 of 15 watches (41 mm date: 0 of 7). One 3/4 view passed harvester 1.4.1 (ellipse
 0.9507, parallax 0.0288); harvester 1.4.2 tightens both limits.
+
+## Result: CI harvest run 1 (2026-10-09) - three families
+
+Harvest-ci run 37900999332 (Bob's Rolex Harvester on an emulator, 11 searches): 1040 straight-on photos, 860 listings;
+on the app (date on GMT 126710, no-date on 124060): 0 clear, 36 worth a look on 1004 assessed photos. Re-measured by
+harvest-lists run 37919395438 (462 photos byte-verified; 606 re-downloads differed from the harvested bytes, the CDN
+re-encodes, so those were dropped). Photos >= 250 px, per-watch medians, effect size d = median difference / pooled
+per-watch sd:
+
+| per reference group (watches) | ring scale | round size | 6 baton radial | 9 baton radial | 12 radial |
+|---|---|---|---|---|---|
+| 124060 reference (106) | -0.00 | -0.04 | +0.03 | +0.01 | -0.18 |
+| 41 mm date: 126610/LN/LV, 126613/LB/LN, 126618/LB, 126619/LB (136) | +0.02 | -0.02 | -0.01 | +0.00 | -0.20 |
+| 40 mm Sub: 114060, 116610/LN/LV, 116613/LB/LN, 116618/LB, 116619 (139) | -0.06..-0.16 | -0.10..+0.08 | -0.08..-0.33 | -0.04..-0.12 | -0.27..-0.50 |
+| GMT 116710 / BLNR / LN (40) | -0.05 | -0.04 | -0.18 | -0.09 | -0.30 |
+| GMT 126710 BLRO / BLNR / GRNR (91) | -0.17 | +0.09 | -0.10 | -0.04 | -0.24 |
+
+- **41 mm (2020 on): one family.** 41 mm date Subs vs the 124060: |d| <= 0.52 on every metric except round size
+  (d +0.70, a 0.02% R difference). Per-reference medians are near-identical across all nine 41 mm references.
+- **40 mm Subs + GMT 116710: one family.** B date vs B no-date vs GMT 116710 on the baton and 12 positions: |d| <= 0.5.
+  Against the 124060: 6 baton d -1.7, 9 baton d -1.1, 12 d -1.0, ring scale d -1.1 -> must not share the 124060 reference.
+- **GMT 126710: its own family** (the existing GMT reference). Ring scale d -2.6 and round size d +3.6 vs the 124060;
+  vs GMT 116710 ring scale d -1.9, round size d +3.0. Consistent across BLRO / BLNR / GRNR.
+- **Round size depends on dial finish within a family** (40 mm: 116610LV and 116613LN -0.07/-0.09, 116610LN / 116613LB
+  +0.07/+0.08): it is a measurement of the metal surround's edge, not only geometry. It already has no uncertainty
+  allowance (never clear); a pooled family reference would keep it that way.
+- Kermit maxi (16610LV/V) and pre-maxi dials (14060, 16610, 16610T): not supported (too few, or not measurable).
