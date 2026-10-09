@@ -48,7 +48,7 @@ public class Alpha99ResultsActivity extends Activity {
     }
 
     static int colour(Alpha99Findings.Status s){
-        switch(s){case CLEAR:return RED;case WORTH:return AMBER;case MINOR:return SLATE;case WITHIN:return GREEN;default:return GREY;}
+        switch(s){case CLEAR:return RED;case WORTH:return AMBER;case MINOR:case WITHIN:return GREEN;default:return GREY;}
     }
 
     private View build(){
@@ -68,7 +68,7 @@ public class Alpha99ResultsActivity extends Activity {
             ImageView hero=new ImageView(this);hero.setImageBitmap(Store.overview);hero.setAdjustViewBounds(true);hero.setScaleType(ImageView.ScaleType.FIT_CENTER);
             hero.setOnClickListener(v->openOverlay());
             root.addView(hero,lp(-1,-2,12));
-            root.addView(text("✓ within   • too small to see   ! worth a look   !! clear finding   – not assessed   ·   tap for the full overlay",12,MUTED,false),lp(-1,-2,4));
+            root.addView(text("✓ within   ! worth a look   !! clear finding   – not assessed   ·   tap for the full overlay",12,MUTED,false),lp(-1,-2,4));
         }
 
         // evidence grid

@@ -162,10 +162,11 @@ final class Alpha99Findings {
         List<Finding> minor(){return with(Status.MINOR);}
         List<Finding> within(){return with(Status.WITHIN);}
         List<Finding> notAssessed(){return with(Status.NOT_ASSESSED);}
-        /** Tiles: clear findings, then worth a look, then too small to see, then not-assessed markers whose close-up shows
-         *  the reason. */
+        /** Tiles: clear findings, then worth a look, then not-assessed markers whose close-up shows the reason. Alpha105:
+         *  differences too small to see are shown as within (owner, 2026-10-09: "if it's too small to see make it a pass");
+         *  their measured values stay in the technical details. */
         List<Finding> tiles(){
-            List<Finding> o=new ArrayList<>(clear());o.addAll(worth());o.addAll(minor());
+            List<Finding> o=new ArrayList<>(clear());o.addAll(worth());
             for(Finding f:notAssessed())if(f.visual)o.add(f);
             return o;
         }
@@ -174,7 +175,6 @@ final class Alpha99Findings {
             if(c>0)h.add(c+" clear alignment finding"+(c==1?"":"s")+": "+names(clear()));
             if(w>0)h.add(w+(c>0?" other":"")+(w==1?" measurement is":" measurements are")+" worth a look: "+names(worth()));
             if(c==0&&w==0)h.add(mi>0?"No visible deviation from the genuine watches measured":"No measured feature is outside the measured genuine range");
-            if(mi>0)h.add("Too small to see: "+names(minor())+" ("+(mi==1?"differs":"differ")+" from genuine by less than the eye can pick out)");
             // QC guardrails 4: borderline readings alone are not escalated; a repeat on another photo is the stronger evidence
             if(c==0&&w>0)h.add("Another clean, straight-on photo would show whether "+(w==1?"it repeats":"these repeat"));
             if(na>0)h.add(na+(na==1?" feature":" features")+" could not be assessed");
@@ -195,7 +195,11 @@ final class Alpha99Findings {
         String withinLine(){
             StringBuilder b=new StringBuilder();
             for(Finding f:within()){if(b.length()>0)b.append(", ");b.append(f.shortName);if(f.partNotAssessed!=null)b.append(" ").append(f.partAssessed!=null?f.partAssessed:"rotation");}
-            return b.length()==0?"":"Within measured genuine range: "+b;
+            String out=b.length()==0?"":"Within measured genuine range: "+b;
+            List<Finding> mi=minor();
+            if(!mi.isEmpty())out+=(out.isEmpty()?"":"\n")+"Within what the eye can see: "+names(mi)
+                    +" (measured differences smaller than the eye can pick out; see Technical details)";
+            return out;
         }
         /** Not-assessed features without a tile, grouped by reason. */
         String notAssessedLine(){
@@ -265,7 +269,9 @@ final class Alpha99Findings {
         // the outline does not match cleanly). That can be a hand the hand check missed, glare, a reflection or the photo,
         // so no cause is named; the close-up shows it. A hand is named only when the hand check detects one (guardrails 3/10).
         if(s.contains("hand")||s.contains("occlu")){f.reason="part of the marker's outline could not be measured cleanly (see the close-up)";f.shortReason="outline not clear";f.visual=true;}
-        else{f.shortReason="edge not clear";f.visual=false;}
+        // Alpha105: the close-up is shown here too, so a withheld marker is visibly not scored (owner's NecoClock frame 4:
+        // the 10's outline gave clean edge on 6 of 8 sections and was withheld with no tile)
+        else{f.shortReason="edge not clear";f.visual=true;}
     }
 
     static double sigmaR(double sR,double sPx,double R){return Double.isFinite(R)&&R>0&&Double.isFinite(sPx)?Math.max(sR,sPx/R):sR;}

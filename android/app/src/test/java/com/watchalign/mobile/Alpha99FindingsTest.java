@@ -239,8 +239,11 @@ public class Alpha99FindingsTest {
         // Alpha103: just past the genuine maximum is far below what the eye can see (5% of the marker's width)
         assertEquals(Alpha99Findings.Status.MINOR,find(s,"round8").status);
         assertEquals(Alpha99Findings.Status.MINOR,find(s,"round11").status);
-        assertTrue(s.headline(),s.headline().contains("Too small to see: 8, 11"));
         assertTrue(s.headline(),s.headline().startsWith("No visible deviation"));
+        // Alpha105: shown as within (green, no tile), named in the within line
+        assertFalse(s.headline(),s.headline().contains("Too small"));
+        assertTrue(s.withinLine(),s.withinLine().contains("Within what the eye can see: 8, 11"));
+        for(Alpha99Findings.Finding f:s.tiles())assertNotEquals(Alpha99Findings.Status.MINOR,f.status);
         for(Alpha94MarkerMeasurement.Marker m:r.markers)if(m.hour==8||m.hour==11)m.localOffsetPx=0.012*r.dialRadiusPx;
         s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         assertNotEquals(Alpha99Findings.Status.MINOR,find(s,"round8").status);

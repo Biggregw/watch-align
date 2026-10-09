@@ -58,16 +58,15 @@ final class Alpha99Overview {
 
     static void badge(Mat m,Point c,Alpha99Findings.Status st,String label){
         int rad=SIZE/38,th=Math.max(2,SIZE/240);
-        Scalar fill=st==Alpha99Findings.Status.CLEAR?RED:st==Alpha99Findings.Status.WORTH?AMBER:st==Alpha99Findings.Status.WITHIN?GREEN:st==Alpha99Findings.Status.MINOR?SLATE:GREY;
+        Scalar fill=st==Alpha99Findings.Status.CLEAR?RED:st==Alpha99Findings.Status.WORTH?AMBER:st==Alpha99Findings.Status.WITHIN||st==Alpha99Findings.Status.MINOR?GREEN:GREY;
         Imgproc.circle(m,c,rad+th,new Scalar(0,0,0,255),-1,Imgproc.LINE_AA);
         Imgproc.circle(m,c,rad,fill,-1,Imgproc.LINE_AA);
         double x=c.x,y=c.y,u=rad*0.5;
         switch(st){
-            case WITHIN:
+            case WITHIN:case MINOR:   // Alpha105: too small to see is shown as within
                 Imgproc.line(m,new Point(x-u,y),new Point(x-u*0.25,y+u*0.7),WHITE,th+1,Imgproc.LINE_AA);
                 Imgproc.line(m,new Point(x-u*0.25,y+u*0.7),new Point(x+u,y-u*0.7),WHITE,th+1,Imgproc.LINE_AA);break;
             case WORTH:bang(m,x,y,u,th);break;
-            case MINOR:Imgproc.circle(m,c,Math.max(2,(int)Math.round(u*0.45)),WHITE,-1,Imgproc.LINE_AA);break;
             case CLEAR:bang(m,x-u*0.45,y,u,th);bang(m,x+u*0.45,y,u,th);break;
             default:Imgproc.line(m,new Point(x-u,y),new Point(x+u,y),WHITE,th+1,Imgproc.LINE_AA);
         }
