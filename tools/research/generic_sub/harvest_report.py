@@ -49,9 +49,11 @@ def manifest(lists_dir, out):
             s = (r.get('sha256') or '').lower()
             if len(s) != 64 or not r.get('image_url'):
                 continue
+            ref, sku = r.get('reference', ''), r.get('sku', '')
             rows.setdefault(s, {'photo_id': s[:16], 'local_path': f'images/{s[:2]}/{s}.jpg', 'image_url': r['image_url'],
-                                'sha256': s, 'ref': r.get('reference', ''), 'sku': r.get('sku', '')})
-    fields = ['photo_id', 'local_path', 'image_url', 'sha256', 'ref', 'sku']
+                                'sha256': s, 'ref': ref, 'sku': sku, 'physical_watch_id': f'bobs_{ref}_{sku}',
+                                'model': ref, 'provenance': 'established_dealer'})
+    fields = ['photo_id', 'local_path', 'image_url', 'sha256', 'ref', 'sku', 'physical_watch_id', 'model', 'provenance']
     for name, keep in (('all', lambda r: True), ('date', lambda r: r['ref'].upper() not in NO_DATE),
                        ('nodate', lambda r: r['ref'].upper() in NO_DATE)):
         sel = [r for r in rows.values() if keep(r)]
