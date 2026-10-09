@@ -14,6 +14,9 @@ for run in sorted(os.listdir(out)):
     print(f"\n##### RUN {run}: image decisions {dict(Counter((r['stage'], r['outcome']) for r in dec))}; accepted rows {len(acc)}")
     for r in dec:
         if r['outcome'] != 'ACCEPTED': print('   ', r['outcome'], r['sku'], r['image_url'].split('/')[-1], '|', r['reason'])
+    log = open(os.path.join(d, 'run_log.txt')).read() if os.path.exists(os.path.join(d, 'run_log.txt')) else ''
+    if 'Export summary' not in log and 'ZIP export: nothing to export' not in log:
+        ok = False; print('  INCOMPLETE: the run did not reach the ZIP export within the polling limit')
     zips = sorted(glob.glob(os.path.join(d, 'zips', '*.zip')))
     print(f"  ZIPs: {len(zips)}")
     nimg = 0

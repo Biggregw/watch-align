@@ -7,7 +7,9 @@ NAME="$1"; FILTER="$2"; MAXP="$3"; OUT="${OUT:-e2e_out}"; PKG=com.watchalign.bob
 D="$OUT/$NAME"; mkdir -p "$D/zips" "$D/files"
 adb shell pm clear "$PKG" >/dev/null
 adb shell rm -rf /sdcard/Download/WatchAlign_Bobs_Harvest
-adb shell am start -n "$PKG/.MainActivity" --es filter "$FILTER" --ei max_products "$MAXP" --ez auto_zip true >/dev/null
+# adb shell joins its arguments into one device-shell command line, so a multi-word filter must be quoted for that shell
+# (run 37858978707: "submariner 124060" arrived as "submariner" and the stray word dropped --ei max_products)
+adb shell "am start -n $PKG/.MainActivity --es filter '$FILTER' --ei max_products $MAXP --ez auto_zip true" >/dev/null
 BASE=/sdcard/Android/data/$PKG/files/Bobs_Rolex_Harvest
 # Android 14 refuses shell reads of Android/data; the google_apis emulator allows adb root (set up by the workflow)
 fetch(){ adb exec-out cat "$BASE/$1" 2>&1; }
