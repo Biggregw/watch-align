@@ -57,6 +57,12 @@ public class HarvestLogicTest {
         assertTrue(HarvestLogic.matchesFilter("Submariner",t,u));
         assertFalse(HarvestLogic.matchesFilter("Daytona",t,u));
         assertTrue(HarvestLogic.matchesFilter("GMT-Master II","Rolex GMT-Master II 126710BLRO Pepsi","https://www.bobswatches.com/rolex-gmt-master-ii-126710.html"));
+        // several searches, comma- or semicolon-separated: any one may match
+        assertTrue(HarvestLogic.matchesFilter("116610, 124060",t,u));
+        assertTrue(HarvestLogic.matchesFilter("daytona; submariner 124060",t,u));
+        assertFalse(HarvestLogic.matchesFilter("116610, 116613, gmt master",t,u));
+        assertTrue(HarvestLogic.matchesFilter(" , ",t,u));                                  // no real search = everything
+        assertEquals(java.util.Arrays.asList("116610","GMT-Master II"),HarvestLogic.searches("116610, ,GMT-Master II;"));
         assertTrue(HarvestLogic.matchesFilter("","anything",""));
     }
 

@@ -49,12 +49,24 @@ public final class HarvestLogic {
     public static String skuFrom(String text){Matcher m=SKU.matcher(text==null?"":text);return m.find()?m.group(1):"";}
 
     // ------------------------------------------------------------------ keyword filter
-    /** every word of the filter must appear in the listing title or URL (case and punctuation ignored) */
+    /** Several searches separated by commas or semicolons ("116610, 116613, gmt master"): a listing matches when ANY search
+     *  matches; within one search every word must appear in the listing title or URL (case and punctuation ignored). */
     public static boolean matchesFilter(String filter,String title,String url){
         if(filter==null||filter.trim().isEmpty())return true;
-        String hay=searchText((title==null?"":title)+" "+(url==null?"":url));
-        for(String part:searchText(filter).split(" "))if(!part.isEmpty()&&!hay.contains(part))return false;
-        return true;
+        String hay=" "+searchText((title==null?"":title)+" "+(url==null?"":url))+" ";
+        boolean any=false;
+        for(String search:filter.split("[,;]")){
+            String words=searchText(search);if(words.isEmpty())continue;any=true;
+            boolean all=true;for(String part:words.split(" "))if(!hay.contains(part)){all=false;break;}
+            if(all)return true;
+        }
+        return !any;
+    }
+    /** The searches of a filter, cleaned, for the log ("116610 | 116613"). */
+    public static List<String> searches(String filter){
+        List<String> o=new ArrayList<>();if(filter==null)return o;
+        for(String s:filter.split("[,;]")){String c=clean(s);if(!c.isEmpty())o.add(c);}
+        return o;
     }
     static String searchText(String s){return clean(s==null?"":s).toLowerCase(Locale.US).replaceAll("[^a-z0-9]+"," ").trim();}
 

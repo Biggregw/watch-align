@@ -67,7 +67,7 @@ public class MainActivity extends Activity {
     static final String[] ROOTS={"https://www.bobswatches.com/rolex/","https://www.bobswatches.com/rolex/?waitlist=1"};
 
     enum Mode{IDLE,CATALOG,PRODUCT}
-    WebView web; TextView status,log; ProgressBar bar; Button start,stop,zip; EditText filter;
+    WebView web; TextView status,log; ProgressBar bar; Button start,stop,zip,list; EditText filter;
     final ExecutorService io=Executors.newSingleThreadExecutor();
     final LinkedHashMap<String,Product> products=new LinkedHashMap<>();
     final ArrayDeque<Product> queue=new ArrayDeque<>();
@@ -93,16 +93,16 @@ public class MainActivity extends Activity {
     void buildUi(){
         LinearLayout r=new LinearLayout(this); r.setOrientation(LinearLayout.VERTICAL); r.setPadding(dp(10),dp(10),dp(10),dp(10));
         TextView t=new TextView(this); t.setText("Bob's Rolex Harvester"); t.setTextSize(22); t.setGravity(Gravity.CENTER); r.addView(t);
-        TextView h=new TextView(this); h.setText("One-off run. Leave the app open. Product photographs are downloaded from each listing, checked for a face-on dial, then packed into model/reference ZIPs below 30 MB."); h.setPadding(0,dp(4),0,dp(6)); r.addView(h);
-        filter=new EditText(this);filter.setSingleLine(true);filter.setHint("Keyword filter: e.g. Submariner, 124060, GMT-Master II");filter.setTextSize(16);filter.setPadding(dp(10),dp(4),dp(10),dp(6));r.addView(filter,new LinearLayout.LayoutParams(-1,-2));
+        TextView h=new TextView(this); h.setText("One-off run. Leave the app open. Product photographs are downloaded from each listing, checked for a face-on dial, then packed into model/reference ZIPs below 30 MB. "Photo list" saves just the list of accepted photos (links and fingerprints, no images) - a small file to send instead of the ZIPs."); h.setPadding(0,dp(4),0,dp(6)); r.addView(h);
+        filter=new EditText(this);filter.setSingleLine(true);filter.setHint("Searches, comma-separated: e.g. 116610, 116613, 126610, GMT-Master II");filter.setTextSize(16);filter.setPadding(dp(10),dp(4),dp(10),dp(6));r.addView(filter,new LinearLayout.LayoutParams(-1,-2));
         LinearLayout row=new LinearLayout(this);
-        start=new Button(this);start.setText("Start / Resume"); stop=new Button(this);stop.setText("Stop");stop.setEnabled(false); zip=new Button(this);zip.setText("Build ZIPs");
-        row.addView(start,new LinearLayout.LayoutParams(0,-2,1));row.addView(stop,new LinearLayout.LayoutParams(0,-2,.55f));row.addView(zip,new LinearLayout.LayoutParams(0,-2,.7f));r.addView(row);
+        start=new Button(this);start.setText("Start / Resume"); stop=new Button(this);stop.setText("Stop");stop.setEnabled(false); zip=new Button(this);zip.setText("Build ZIPs");list=new Button(this);list.setText("Photo list");
+        row.addView(start,new LinearLayout.LayoutParams(0,-2,1));row.addView(stop,new LinearLayout.LayoutParams(0,-2,.55f));row.addView(zip,new LinearLayout.LayoutParams(0,-2,.7f));row.addView(list,new LinearLayout.LayoutParams(0,-2,.7f));r.addView(row);
         bar=new ProgressBar(this);bar.setVisibility(View.GONE);r.addView(bar,new LinearLayout.LayoutParams(-1,dp(4)));
         status=new TextView(this);status.setTextSize(15);status.setPadding(0,dp(7),0,dp(4));r.addView(status);
         ScrollView sc=new ScrollView(this);log=new TextView(this);log.setTextSize(12);log.setTextIsSelectable(true);sc.addView(log);r.addView(sc,new LinearLayout.LayoutParams(-1,0,.40f));
         web=new WebView(this);r.addView(web,new LinearLayout.LayoutParams(-1,0,.60f));setContentView(r);
-        start.setOnClickListener(v->begin());stop.setOnClickListener(v->halt());zip.setOnClickListener(v->buildZips());
+        start.setOnClickListener(v->begin());stop.setOnClickListener(v->halt());zip.setOnClickListener(v->buildZips());list.setOnClickListener(v->exportList());
     }
 
     void files(){
@@ -111,7 +111,7 @@ public class MainActivity extends Activity {
         doneFile=new File(work,"done_products.txt"); hashFile=new File(work,"hashes.txt"); manifest=new File(work,"accepted.csv"); decisions=new File(work,"image_decisions.csv"); runLog=new File(work,"run_log.txt");
         String header=MANIFEST_HEADER;
         if(manifest.exists()&&!header.equals(firstLine(manifest)))manifest.renameTo(new File(work,"accepted_old_format_"+System.currentTimeMillis()+".csv"));
-        if(!manifest.exists())line(manifest,"reference,sku,title,product_url,image_url,file,sha256,width,height,acquisition,dial_radius_px,axis_ratio,ring_support,sharpness");
+        if(!manifest.exists())line(manifest,header);
         if(!decisions.exists())line(decisions,"time,reference,sku,product_url,image_url,stage,outcome,reason");
     }
     void loadState(){readSet(doneFile,done);readSet(hashFile,hashes);}
@@ -145,7 +145,7 @@ public class MainActivity extends Activity {
         activeFilter=clean(filter.getText().toString());filter.setEnabled(false);stats=new HarvestStats();
         running=true;stopping=false;products.clear();queue.clear();rootLinks.clear();root=0;page=1;empty=0;doneRun=0;returnToCatalog=false;catalogPageEnd=false;
         start.setEnabled(false);stop.setEnabled(true);bar.setVisibility(View.VISIBLE);mode=Mode.CATALOG;
-        msg("Starting catalogue crawl"+(activeFilter.isEmpty()?".":" with keyword filter: "+activeFilter)+(maxProducts>0?" (at most "+maxProducts+" listings)":""));loadCatalog();
+        msg("Starting catalogue crawl"+(activeFilter.isEmpty()?".":" with "+HarvestLogic.searches(activeFilter).size()+" search(es): "+String.join(" | ",HarvestLogic.searches(activeFilter)))+(maxProducts>0?" (at most "+maxProducts+" listings)":""));loadCatalog();
     }
     void halt(){
         stopping=true;running=false;mode=Mode.IDLE;loadToken++;web.stopLoading();start.setEnabled(true);stop.setEnabled(false);bar.setVisibility(View.GONE);
@@ -392,12 +392,32 @@ public class MainActivity extends Activity {
             runOnUiThread(()->{bar.setVisibility(View.GONE);zip.setEnabled(true);
                 status.setText((ff==0?"Export finished. ":"Export finished with "+ff+" FAILURE(S). ")+fr+" Rolex references, "+imageCount()+" images, "+fz+" ZIP files saved in Downloads/WatchAlign_Bobs_Harvest (each below 30 MB).");
                 Toast.makeText(this,ff==0?"ZIPs saved in Downloads/WatchAlign_Bobs_Harvest":"Some ZIPs failed: see the log",Toast.LENGTH_LONG).show();
-                msg("Export summary: "+fz+" ZIP(s), "+ff+" failure(s)"+(failures.isEmpty()?"":" "+failures));});
+                msg("Export summary: "+fz+" ZIP(s), "+ff+" failure(s)"+(failures.isEmpty()?"":" "+failures));exportList();});
         });
     }
-    void toDownloads(File src,String name)throws Exception{
+    /** The photo list: one CSV (no images) with every accepted photo's listing, image URL and sha256, small enough to
+     *  attach anywhere; Watch Align's CI re-downloads the originals and keeps only byte-identical files. Also written
+     *  after every ZIP export. */
+    void exportList(){
+        if(imageCount()==0){Toast.makeText(this,"No accepted images yet.",Toast.LENGTH_LONG).show();return;}
+        io.submit(()->{
+            try{
+                File out=new File(getCacheDir(),"list.csv");out.delete();
+                List<String> rows=new ArrayList<>();java.util.Set<String> seen=new java.util.HashSet<>();
+                try(BufferedReader r=new BufferedReader(new FileReader(manifest))){String x;boolean first=true;
+                    while((x=r.readLine())!=null){if(first){first=false;continue;}if(!x.trim().isEmpty()&&seen.add(x))rows.add(x);}}
+                try(FileWriter w=new FileWriter(out)){w.write(MANIFEST_HEADER+"\n");for(String x:rows)w.write(x+"\n");}
+                String name="Bobs_Photo_List_"+new SimpleDateFormat("yyyyMMdd-HHmm",Locale.US).format(new Date())+".csv";
+                toDownloads(out,name,"text/csv");out.delete();
+                msgUi("Photo list saved: Downloads/WatchAlign_Bobs_Harvest/"+name+" ("+rows.size()+" photos, no images)");
+                runOnUiThread(()->Toast.makeText(this,"Photo list saved in Downloads/WatchAlign_Bobs_Harvest",Toast.LENGTH_LONG).show());
+            }catch(Exception e){msgUi("Photo list FAILED: "+e.getMessage());}
+        });
+    }
+    void toDownloads(File src,String name)throws Exception{toDownloads(src,name,"application/zip");}
+    void toDownloads(File src,String name,String mime)throws Exception{
         ContentResolver cr=getContentResolver();ContentValues v=new ContentValues();
-        v.put(MediaStore.Downloads.DISPLAY_NAME,name);v.put(MediaStore.Downloads.MIME_TYPE,"application/zip");
+        v.put(MediaStore.Downloads.DISPLAY_NAME,name);v.put(MediaStore.Downloads.MIME_TYPE,mime);
         v.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS+"/WatchAlign_Bobs_Harvest");v.put(MediaStore.Downloads.IS_PENDING,1);
         Uri u=cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,v);if(u==null)throw new IOException("Downloads refused the new file");
         try{
