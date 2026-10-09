@@ -93,7 +93,7 @@ public class MainActivity extends Activity {
     void buildUi(){
         LinearLayout r=new LinearLayout(this); r.setOrientation(LinearLayout.VERTICAL); r.setPadding(dp(10),dp(10),dp(10),dp(10));
         TextView t=new TextView(this); t.setText("Bob's Rolex Harvester"); t.setTextSize(22); t.setGravity(Gravity.CENTER); r.addView(t);
-        TextView h=new TextView(this); h.setText("One-off run. Leave the app open. Product photographs are downloaded from each listing, checked for a face-on dial, then packed into model/reference ZIPs below 30 MB. "Photo list" saves just the list of accepted photos (links and fingerprints, no images) - a small file to send instead of the ZIPs."); h.setPadding(0,dp(4),0,dp(6)); r.addView(h);
+        TextView h=new TextView(this); h.setText("One-off run. Leave the app open. Product photographs are downloaded from each listing, checked for a face-on dial, then packed into model/reference ZIPs below 30 MB. \"Photo list\" saves just the list of accepted photos (links and fingerprints, no images) - a small file to send instead of the ZIPs."); h.setPadding(0,dp(4),0,dp(6)); r.addView(h);
         filter=new EditText(this);filter.setSingleLine(true);filter.setHint("Searches, comma-separated: e.g. 116610, 116613, 126610, GMT-Master II");filter.setTextSize(16);filter.setPadding(dp(10),dp(4),dp(10),dp(6));r.addView(filter,new LinearLayout.LayoutParams(-1,-2));
         LinearLayout row=new LinearLayout(this);
         start=new Button(this);start.setText("Start / Resume"); stop=new Button(this);stop.setText("Stop");stop.setEnabled(false); zip=new Button(this);zip.setText("Build ZIPs");list=new Button(this);list.setText("Photo list");
