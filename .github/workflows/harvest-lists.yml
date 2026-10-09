@@ -20,7 +20,7 @@ permissions:
 jobs:
   measure:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 240
     env:
       OUT: hl_out
       IMG: hl_images
@@ -48,15 +48,9 @@ jobs:
         env:
           JAVA_TOOL_OPTIONS: -Dwatchalign.model=submariner_124060 -Dwatchalign.models_root=tools/research/sub124060
         run: tools/desktop-harness/run.sh Alpha96Calib "$OUT/manifest_all.csv" "$IMG" "$OUT/per_photo.csv" 2> "$OUT/runner_progress.txt"
-      - name: App findings (date on GMT 126710, no-date on 124060)
-        run: |
-          JAVA_TOOL_OPTIONS=-Dwatchalign.model=gmt_126710 tools/desktop-harness/run.sh Alpha99Preview "$OUT/manifest_date.csv" "$IMG" "$OUT/date" --no-images > "$OUT/findings_date.txt" || true
-          JAVA_TOOL_OPTIONS=-Dwatchalign.model=submariner_124060 tools/desktop-harness/run.sh Alpha99Preview "$OUT/manifest_nodate.csv" "$IMG" "$OUT/nodate" --no-images > "$OUT/findings_nodate.txt" || true
       - name: Report
         run: |
           python3 tools/research/generic_sub/harvest_report.py report "$OUT" "$OUT/per_photo.csv" "$OUT/fetch_log.csv" tools/research/sub124060/results/runner/per_photo.csv
-          echo; echo "=== findings headlines"
-          grep -hE "^==|clear|worth a look" "$OUT"/findings_*.txt || true
       - name: Upload CSVs (no images)
         if: always()
         uses: actions/upload-artifact@v4

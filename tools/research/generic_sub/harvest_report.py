@@ -92,6 +92,62 @@ def report(out, per_photo, fetch_log, reference):
             cells.append((f'{st.median(vals):+.2f} ({(st.median(vals) - st.median(v[k])) / st.pstdev(v[k]):+.1f})' if vals else '-').rjust(16))
         b6 = [d['b6_radial_%R'] for d in pw.values() if 'b6_radial_%R' in d]
         print(fam.ljust(22) + str(len(pw)).rjust(8) + ''.join(cells) + f'   6 baton below 124060 p5: {sum(x < p5 for x in b6)}/{len(b6)}')
+    pairwise(g, W, ks)
+    by_ref(rows, ks)
+
+
+def per_watch_sharp(rs, min_r=250):
+    return per_watch([r for r in rs if r.get('status') == 'accepted' and float(r.get('dial_radius_px') or 0) >= min_r], lambda r: r['sku'])
+
+
+def ranksum_z(a, b):
+    """Mann-Whitney U as a z score (normal approximation, ties averaged)."""
+    allv = sorted((x, i) for i, x in enumerate(a + b)); ranks = [0.0] * len(allv); i = 0
+    while i < len(allv):
+        j = i
+        while j + 1 < len(allv) and allv[j + 1][0] == allv[i][0]:
+            j += 1
+        for k in range(i, j + 1):
+            ranks[allv[k][1]] = (i + j) / 2 + 1
+        i = j + 1
+    n1, n2 = len(a), len(b); r1 = sum(ranks[:n1]); u = r1 - n1 * (n1 + 1) / 2
+    return (u - n1 * n2 / 2) / ((n1 * n2 * (n1 + n2 + 1) / 12) ** .5)
+
+
+def pairwise(g, W, ks):
+    """Can two groups share one reference? Per metric: median difference / pooled per-watch sd (effect size) and the
+    rank-sum z. Photos with dial radius >= 250 px only (small photos add measurement noise to the spread)."""
+    groups = {'124060 reference': list(W.values())}
+    for fam in sorted(g):
+        groups[fam] = list(per_watch_sharp(g[fam]).values())
+    names = list(groups)
+    print('\nPairwise (photos >= 250 px): effect size d = median difference / pooled per-watch sd, |z| rank-sum; d >= 0.8 or '
+          '|z| >= 4 marked *')
+    for k in ks:
+        print(f'  {k}: within-group sd ' + ', '.join(f'{n.split(" (")[0]} {st.pstdev([x[k] for x in groups[n] if k in x]):.3f}' for n in names if sum(k in x for x in groups[n]) > 5))
+        for i in range(len(names)):
+            for j in range(i + 1, len(names)):
+                a = [x[k] for x in groups[names[i]] if k in x]; b = [x[k] for x in groups[names[j]] if k in x]
+                if len(a) < 8 or len(b) < 8:
+                    continue
+                sd = ((st.pvariance(a) * len(a) + st.pvariance(b) * len(b)) / (len(a) + len(b))) ** .5
+                d = (st.median(b) - st.median(a)) / sd if sd else 0; z = ranksum_z(a, b)
+                flag = '*' if abs(d) >= .8 or abs(z) >= 4 else ' '
+                print(f'    {names[i][:20]:20s} vs {names[j][:20]:20s} n {len(a):4d}/{len(b):4d}  d {d:+.2f}  z {z:+6.1f} {flag}')
+
+
+def by_ref(rows, ks):
+    g = defaultdict(list)
+    for r in rows:
+        g[r['ref']].append(r)
+    print('\nPer reference (photos >= 250 px; per-watch medians):')
+    print('reference'.ljust(14) + 'watches'.rjust(8) + ''.join(k.rjust(16) for k in ks))
+    for ref in sorted(g):
+        pw = per_watch_sharp(g[ref])
+        if len(pw) < 3:
+            continue
+        print(ref.ljust(14) + str(len(pw)).rjust(8) + ''.join(
+            (f'{st.median([d[k] for d in pw.values() if k in d]):+.2f}' if any(k in d for d in pw.values()) else '-').rjust(16) for k in ks))
 
 
 if __name__ == '__main__':
