@@ -13,7 +13,8 @@ adb shell "am start -n $PKG/.MainActivity --es filter '$FILTER' --ei max_product
 BASE=/sdcard/Android/data/$PKG/files/Bobs_Rolex_Harvest
 # Android 14 refuses shell reads of Android/data; the google_apis emulator allows adb root (set up by the workflow)
 fetch(){ adb exec-out cat "$BASE/$1" 2>&1; }
-for i in $(seq 1 72); do
+# POLL: number of 10 s polls (default 72 = 12 min; the CI harvest job sets more)
+for i in $(seq 1 ${POLL:-72}); do
   sleep 10
   fetch run_log.txt > "$D/run_log.txt"
   if grep -q "Export summary\|ZIP export: nothing to export" "$D/run_log.txt"; then break; fi
