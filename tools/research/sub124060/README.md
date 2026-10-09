@@ -262,3 +262,11 @@ were held out first against the 90-watch reference: all within on every assessed
 Rebuilt in the section-14 order: 96 watches (12 triangle 95). Genuine maxima move by at most 0.004 deg; allowances
 unchanged (never shrink); leave-one-watch-out 0 clear (27 worth a look); low-resolution held-out 0 clear; no status
 change on any owner photo.
+
+## 16. One more harvester photo: a relisted watch (2026-10-09)
+
+The owner's next harvester run (pack made by app 1.4) had one face-on photo of a listing not yet catalogued, SKU 187822
+(sha256 verified; held out first: within on every assessed feature). Measured dedup: it agrees with catalogued listing
+187502 within 0.00025 R on 8+ markers, closer than two photos of one watch usually do: the same watch relisted. Both
+photos now share `physical_watch_id` `bobs_124060_187502_187822` (one watch, two photos), as with the EWC trio in §14.
+Still 96 watches; genuine maxima and allowances unchanged; leave-one-watch-out 0 clear (27 worth a look).

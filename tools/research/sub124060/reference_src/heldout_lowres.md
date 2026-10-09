@@ -1,12 +1,12 @@
 | band | feature | within | worth a look | clear | not assessed |
 |---|---|---:|---:|---:|---:|
-| full | nine_off | 132 | 4 | 0 | 0 |
-| full | ring_shift | 145 | 0 | 0 | 0 |
-| full | round_size_rel | 122 | 5 | 0 | 0 |
-| full | rounds_off | 122 | 5 | 0 | 0 |
-| full | rounds_size | 123 | 4 | 0 | 0 |
-| full | six_off | 121 | 0 | 0 | 0 |
-| full | three_off | 135 | 1 | 0 | 0 |
+| full | nine_off | 133 | 4 | 0 | 0 |
+| full | ring_shift | 146 | 0 | 0 | 0 |
+| full | round_size_rel | 123 | 5 | 0 | 0 |
+| full | rounds_off | 123 | 5 | 0 | 0 |
+| full | rounds_size | 124 | 4 | 0 | 0 |
+| full | six_off | 122 | 0 | 0 | 0 |
+| full | three_off | 136 | 1 | 0 | 0 |
 | low (R<181) | nine_off | 1 | 4 | 0 | 8 |
 | low (R<181) | ring_shift | 9 | 3 | 0 | 1 |
 | low (R<181) | round_size_rel | 11 | 1 | 0 | 1 |

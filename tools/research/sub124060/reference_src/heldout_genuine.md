@@ -11,17 +11,17 @@
 | external | six_rot | 7 | 1 | 12 | 0 |
 | external | three_off | 22 | 0 | 0 | 1 |
 | external | three_rot | 22 | 2 | 0 | 0 |
-| lowo | nine_off | 125 | 3 | 0 | 7 |
-| lowo | nine_rot | 132 | 3 | 0 | 0 |
-| lowo | ring_rot | 134 | 1 | 0 | 0 |
-| lowo | ring_shift | 128 | 0 | 0 | 7 |
-| lowo | round_size_rel | 121 | 5 | 0 | 7 |
-| lowo | rounds_off | 123 | 3 | 0 | 7 |
-| lowo | rounds_size | 121 | 5 | 0 | 7 |
-| lowo | six_off | 120 | 0 | 0 | 7 |
-| lowo | six_rot | 125 | 2 | 0 | 0 |
-| lowo | three_off | 124 | 3 | 0 | 6 |
-| lowo | three_rot | 131 | 2 | 0 | 0 |
+| lowo | nine_off | 126 | 3 | 0 | 7 |
+| lowo | nine_rot | 133 | 3 | 0 | 0 |
+| lowo | ring_rot | 135 | 1 | 0 | 0 |
+| lowo | ring_shift | 129 | 0 | 0 | 7 |
+| lowo | round_size_rel | 122 | 5 | 0 | 7 |
+| lowo | rounds_off | 124 | 3 | 0 | 7 |
+| lowo | rounds_size | 122 | 5 | 0 | 7 |
+| lowo | six_off | 121 | 0 | 0 | 7 |
+| lowo | six_rot | 126 | 2 | 0 | 0 |
+| lowo | three_off | 125 | 3 | 0 | 6 |
+| lowo | three_rot | 132 | 2 | 0 | 0 |
 CLEAR on held-out genuine: external 5986c5a3258ae9ec auto_swe_124060_3a43ecd6a5fa six_rot 715 CLEAR 2.001130 0.861740
 CLEAR on held-out genuine: external 5986c5a3258ae9ec auto_swe_124060_3a43ecd6a5fa six_off 715 CLEAR 0.007617 0.003526
 CLEAR on held-out genuine: external cb5175ff2c02a6b1 auto_swe_124060_3a43ecd6a5fa six_rot 260 CLEAR 1.887380 0.861740

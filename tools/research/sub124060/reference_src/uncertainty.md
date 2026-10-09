@@ -6,36 +6,36 @@ beyond the genuine maximum exceeds K = 3 sigma.
 
 | family | unit | sigma | K x sigma | watches | photos | dof |
 |---|---|---:|---:|---:|---:|---:|
-| nine_off | R | 0.000433 | 0.001298 | 32 | 142 | 78 |
-| nine_off | px | 0.099466 | 0.298399 | 32 | 142 | 78 |
-| nine_rot | deg | 0.101463 | 0.304390 | 32 | 71 | 39 |
-| nine_rot | degR | 38.348226 | 115.044677 | 32 | 71 | 39 |
-| ring_rot | deg | 0.010999 | 0.032996 | 32 | 71 | 39 |
-| ring_rot | degR | 4.375977 | 13.127930 | 32 | 71 | 39 |
-| ring_shift | R | 0.001268 | 0.003804 | 32 | 142 | 78 |
-| ring_shift | px | 0.244663 | 0.733988 | 32 | 142 | 78 |
-| round_size_rel | R | withheld (downgraded: at most worth a look) | | 31 | 69 | 38 |
-| round_size_rel | px | withheld (downgraded: at most worth a look) | | 31 | 69 | 38 |
-| rounds_off | R | 0.000262 | 0.000787 | 31 | 1010 | 556 |
-| rounds_off | px | 0.074610 | 0.223829 | 31 | 1010 | 556 |
-| rounds_size | R | withheld (downgraded: at most worth a look) | | 31 | 69 | 38 |
-| rounds_size | px | withheld (downgraded: at most worth a look) | | 31 | 69 | 38 |
-| six_off | R | 0.000520 | 0.001560 | 32 | 142 | 78 |
-| six_off | px | 0.123616 | 0.370847 | 32 | 142 | 78 |
-| six_rot | deg | 0.109865 | 0.329596 | 32 | 71 | 39 |
-| six_rot | degR | 31.432390 | 94.297169 | 32 | 71 | 39 |
-| three_off | R | 0.000431 | 0.001293 | 31 | 138 | 76 |
-| three_off | px | 0.096028 | 0.288084 | 31 | 138 | 76 |
-| three_rot | deg | 0.107972 | 0.323916 | 31 | 69 | 38 |
-| three_rot | degR | 39.565820 | 118.697461 | 31 | 69 | 38 |
-| twelve_centreline | deg | 0.099346 | 0.298039 | 31 | 69 | 38 |
-| twelve_centreline | degR | 35.753717 | 107.261151 | 31 | 69 | 38 |
-| twelve_lateral | R | 0.000684 | 0.002051 | 31 | 69 | 38 |
-| twelve_lateral | px | 0.134965 | 0.404894 | 31 | 69 | 38 |
-| twelve_sides | deg | 0.110285 | 0.330854 | 31 | 138 | 76 |
-| twelve_sides | degR | 36.264931 | 108.794792 | 31 | 138 | 76 |
+| nine_off | R | 0.000427 | 0.001282 | 33 | 146 | 80 |
+| nine_off | px | 0.098231 | 0.294694 | 33 | 146 | 80 |
+| nine_rot | deg | 0.100213 | 0.300640 | 33 | 73 | 40 |
+| nine_rot | degR | 37.879405 | 113.638215 | 33 | 73 | 40 |
+| ring_rot | deg | 0.010861 | 0.032583 | 33 | 73 | 40 |
+| ring_rot | degR | 4.321250 | 12.963750 | 33 | 73 | 40 |
+| ring_shift | R | 0.001252 | 0.003756 | 33 | 146 | 80 |
+| ring_shift | px | 0.241586 | 0.724759 | 33 | 146 | 80 |
+| round_size_rel | R | withheld (downgraded: at most worth a look) | | 32 | 71 | 39 |
+| round_size_rel | px | withheld (downgraded: at most worth a look) | | 32 | 71 | 39 |
+| rounds_off | R | 0.000259 | 0.000777 | 32 | 1038 | 570 |
+| rounds_off | px | 0.073724 | 0.221171 | 32 | 1038 | 570 |
+| rounds_size | R | withheld (downgraded: at most worth a look) | | 32 | 71 | 39 |
+| rounds_size | px | withheld (downgraded: at most worth a look) | | 32 | 71 | 39 |
+| six_off | R | 0.000513 | 0.001540 | 33 | 146 | 80 |
+| six_off | px | 0.122111 | 0.366332 | 33 | 146 | 80 |
+| six_rot | deg | 0.108498 | 0.325494 | 33 | 73 | 40 |
+| six_rot | degR | 31.047022 | 93.141065 | 33 | 73 | 40 |
+| three_off | R | 0.000426 | 0.001277 | 32 | 142 | 78 |
+| three_off | px | 0.094849 | 0.284547 | 32 | 142 | 78 |
+| three_rot | deg | 0.106631 | 0.319894 | 32 | 71 | 39 |
+| three_rot | degR | 39.082930 | 117.248790 | 32 | 71 | 39 |
+| twelve_centreline | deg | 0.098075 | 0.294226 | 32 | 71 | 39 |
+| twelve_centreline | degR | 35.298359 | 105.895077 | 32 | 71 | 39 |
+| twelve_lateral | R | 0.000675 | 0.002024 | 32 | 71 | 39 |
+| twelve_lateral | px | 0.133224 | 0.399672 | 32 | 71 | 39 |
+| twelve_sides | deg | 0.109090 | 0.327271 | 32 | 142 | 78 |
+| twelve_sides | degR | 35.931120 | 107.793360 | 32 | 142 | 78 |
 
-12 side agreement: 37 watches with 2+ photos; max per-watch median |left - right| 0.659 deg; robust spread 0.073 deg; limit 0.878 deg.
+12 side agreement: 38 watches with 2+ photos; max per-watch median |left - right| 0.659 deg; robust spread 0.083 deg; limit 0.908 deg.
 
 ## Genuine reference
 
