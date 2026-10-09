@@ -45,3 +45,10 @@ other photos in these packs were repeats or wrist shots). On the GMT reference: 
 
 6 baton radial per 40 mm date watch: 9 of 12 below the 124060 5th percentile (-0.15); 41 mm date watches all within
 the 124060 5-95% range. The 41 mm / 40 mm split holds with twice the 40 mm sample.
+
+## Update: 116613 packs (owner, harvester 1.4.1, 08:20)
+
+Five more 40 mm two-tone watches (116613 192315, 192398, 192653; 116613LB 192106; 116613LN 193279): on the GMT reference
+0 clear, 0 worth a look. 40 mm date group now 24 watches: 6 baton -2.6 sd, round size +2.2 sd from the 124060; 6 baton
+below the 124060 5th percentile on 11 of 15 watches (41 mm date: 0 of 7). One 3/4 view passed harvester 1.4.1 (ellipse
+0.9507, parallax 0.0288); harvester 1.4.2 tightens both limits.
