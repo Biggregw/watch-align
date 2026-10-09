@@ -28,3 +28,20 @@ model name: (A) 41 mm, 2020 on: 124060 and 126610/126618 (date window instead of
 114060, 116610, 116613 and the GMT 126710; (C) 16610LV maxi Kermit: its own; (D) pre-maxi dials (14060, 16610): need
 their own master. The Bob's photos come from one studio, and Bob's 41 mm photos match the multi-source 124060
 reference while Bob's 40 mm photos do not, so the split is not a source effect.
+
+## Update: more 40 mm watches (owner packs 08:13-08:14)
+
+Seven more straight-on 116610 / 116610LN watches (SKUs 193076, 192290, 189508, 142346, 193767, 193258, 191928, 193924;
+other photos in these packs were repeats or wrist shots). On the GMT reference: 0 clear, 0 worth a look. Updated table
+(all with the 124060 model; median, and distance from the 124060 median in 124060 per-watch sd):
+
+| group | watches | ring scale | round size | 6 baton radial | 9 baton radial | 12 radial |
+|---|---|---|---|---|---|---|
+| 124060 reference | 106 | -0.00 ± 0.06 | -0.04 ± 0.05 | +0.03 ± 0.12 | +0.01 ± 0.08 | -0.18 ± 0.13 |
+| 41 mm date (126610/126618) | 9 | +0.4 sd | +0.9 sd | -0.2 sd | -0.5 sd | -0.7 sd |
+| 40 mm date (116610/116613) | 19 | -1.8 sd | +2.5 sd | **-2.8 sd** | -1.3 sd | -1.3 sd |
+| 40 mm no-date (114060) | 4 | -1.9 sd | +2.9 sd | -2.3 sd | -0.9 sd | -1.0 sd |
+| Kermit maxi | 4 | -3.8 sd | -1.5 sd | -2.2 sd | -3.2 sd | -2.7 sd |
+
+6 baton radial per 40 mm date watch: 9 of 12 below the 124060 5th percentile (-0.15); 41 mm date watches all within
+the 124060 5-95% range. The 41 mm / 40 mm split holds with twice the 40 mm sample.
