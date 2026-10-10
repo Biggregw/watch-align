@@ -44,6 +44,26 @@ def main(pp, manifest, model):
         for d, s, t, pid, wid, R in D[:8]:
             print(f'      {d:.3f}  {s:+.3f}  {t:.3f}  R {R:.0f}  {wid}')
 
+    # 12 triangle: lateral position = (right - left) / 2; a real lateral shift keeps the two sides' sum (width)
+    W, J = [], []
+    for r in rows:
+        try:
+            R = float(r['dial_radius_px'])
+            rt, bs, lf = float(r['m12_side_right_px']), float(r['m12_side_base_px']), float(r['m12_side_left_px'])
+            lat = float(r['m12_local_tangential_px'])
+        except (ValueError, KeyError):
+            continue
+        w = 100 * (rt + lf) / R
+        W.append(w); J.append((abs(100 * lat / R), w, 100 * bs / R, man.get(r['photo_id'], {}).get('physical_watch_id', ''), R))
+    if W:
+        med = st.median(W)
+        dev = [abs(x - med) for x in W]
+        print(f'  triangle 12: n {len(W)}  sides-sum %R median {med:+.3f}  |dev| p50 {q(dev,.5):.3f} p90 {q(dev,.9):.3f} '
+              f'p95 {q(dev,.95):.3f} p99 {q(dev,.99):.3f} max {max(dev):.3f}  base offset %R median {st.median(x[2] for x in J):+.3f}')
+        J.sort(reverse=True)
+        for t, w, bs, wid, R in J[:6]:
+            print(f'      |lateral| {t:.3f}  sides-sum {w:+.3f} ({w-med:+.3f})  base {bs:+.3f}  R {R:.0f}  {wid}')
+
 
 if __name__ == '__main__':
     main(*sys.argv[1:4])

@@ -78,6 +78,9 @@ public class Alpha96Calib {
                     // Alpha105g diagnostics: baton long sides' offsets from the master (px, + = outward)
                     for(int h:batonHours()){Alpha94MarkerMeasurement.Marker bm=r.atHour(h);boolean ok=bm!=null&&bm.sideOffR!=null;
                         row.add(ok?n(bm.sideOffR[0]*r.dialRadiusPx):"");row.add(ok?n(bm.sideOffR[2]*r.dialRadiusPx):"");}
+                    // 12 triangle: right side (apex -> right base), base, left side (+ = outward)
+                    {Alpha94MarkerMeasurement.Marker tm=r.triangle;boolean ok=tm!=null&&tm.sideOffR!=null&&tm.sideOffR.length==3;
+                        for(int i=0;i<3;i++)row.add(ok?n(tm.sideOffR[i]*r.dialRadiusPx):"");}
                     out.println(String.join(",",row));
                 }catch(Throwable t){
                     List<String> e=new ArrayList<>();e.add(csv(id));e.add(csv(rel));e.add("error");e.add("");e.add("");
@@ -116,6 +119,7 @@ public class Alpha96Calib {
         for(int r:ROUNDS)for(String f:MF)h.add("m"+r+"_"+f);
         h.add("ms");
         for(int b:batonHours()){h.add("m"+b+"_side_ccw_px");h.add("m"+b+"_side_cw_px");}
+        h.add("m12_side_right_px");h.add("m12_side_base_px");h.add("m12_side_left_px");
         return h;
     }
 

@@ -46,6 +46,13 @@ public class BatonDiag {
             Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(b,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
             Alpha99MarkerInterference.Sampler pix=Alpha99MarkerInterference.sampler(gray,q.homography);final double[] Hh=q.homography;
             Alpha99MarkerInterference.Sampler img=(x,y)->{double w=Hh[6]*x+Hh[7]*y+Hh[8];return pix.at((Hh[0]*x+Hh[1]*y+Hh[2])/w,(Hh[3]*x+Hh[4]*y+Hh[5])/w);};
+            Alpha94MarkerMeasurement.Marker tm=r.triangle;
+            if(tm!=null&&tm.sideOffR!=null&&tm.sideOffR.length==3)
+                System.out.printf(Locale.US,"   triangle 12: usable %s | lateral %+.2f px radial %+.2f px | sides px: right %+.2f base %+.2f left %+.2f | sides-sum %+.2f px%n",
+                        tm.usable,tm.localTangentialPx,tm.localRadialPx,tm.sideOffR[0]*R,tm.sideOffR[1]*R,tm.sideOffR[2]*R,(tm.sideOffR[0]+tm.sideOffR[2])*R);
+            StringBuilder rr=new StringBuilder("   rounds radius err px / edge coverage:");
+            for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind))rr.append(String.format(Locale.US," %d:%s",m.hour,m.usable?String.format(Locale.US,"%+.2f/%.2f",m.radiusErrPx,m.fitSupport):("- "+m.reason)));
+            System.out.println(rr);
             for(Alpha94MarkerMeasurement.Marker m:r.markers){
                 if(!"baton".equals(m.kind))continue;ModelSpec.Marker sp=m.spec;
                 Alpha99Findings.Finding fd=null;for(Alpha99Findings.Finding x:o.summary.all)if(x.hour==m.hour&&x.shape==Alpha99Findings.Shape.BATON)fd=x;
