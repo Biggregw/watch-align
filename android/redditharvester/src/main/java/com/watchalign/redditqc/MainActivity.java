@@ -35,6 +35,8 @@ public final class MainActivity extends Activity {
     private static final String OUTPUT_FOLDER = "WatchAlign_Reddit_QC";
     private TextView status, logView;
     private Button testButton, allButton, stopButton;
+    private RedditBrowser browser;
+    private volatile boolean testPassed = false;
     private final AtomicBoolean stop = new AtomicBoolean(false);
     private volatile boolean busy = false;
 
@@ -81,8 +83,10 @@ public final class MainActivity extends Activity {
         expl.setText("\nOne-off research download for the 49 saved Reddit QC posts. Saves model-specific ZIPs smaller than 28 MB to Downloads/"+OUTPUT_FOLDER+".\n\nTest one thread first. Photos are not yet validated as face-on or suitable for calibration.\n");
         expl.setTextSize(15); expl.setTextColor(Color.DKGRAY);
         inner.addView(expl);
+        Button browserButton = button("OPEN REDDIT BROWSER / SIGN IN", inner, v -> browser.openLogin());
         testButton = button("TEST FIRST REDDIT THREAD", inner, v -> start(true));
         allButton = button("COLLECT ALL 49 THREADS", inner, v -> start(false));
+        allButton.setEnabled(false);
         stopButton = button("STOP AFTER CURRENT DOWNLOAD", inner, v -> {
             stop.set(true);
             status.setText("Stopping after current transfer...");
@@ -99,6 +103,7 @@ public final class MainActivity extends Activity {
         logView.setText("No collection started.");
         logView.setMovementMethod(new ScrollingMovementMethod());
         inner.addView(logView);
+        browser = new RedditBrowser(this, inner, this::ui);
         scroll.addView(inner);
         layout.addView(scroll);
         setContentView(layout);
@@ -127,7 +132,7 @@ public final class MainActivity extends Activity {
             catch(Exception ex){ ui("FAILED: "+ex.getClass().getSimpleName()+": "+ex.getMessage()); }
             finally {
                 busy=false;
-                runOnUiThread(()->{testButton.setEnabled(true);allButton.setEnabled(true);stopButton.setEnabled(false);});
+                runOnUiThread(()->{testButton.setEnabled(true);allButton.setEnabled(testPassed);stopButton.setEnabled(false);});
             }
         }, "reddit-qc-harvest").start();
     }
@@ -188,7 +193,10 @@ public final class MainActivity extends Activity {
         HttpURLConnection c=(HttpURLConnection)u.openConnection();
         c.setConnectTimeout(16000);c.setReadTimeout(35000);
         c.setInstanceFollowRedirects(true);
-        c.setRequestProperty("User-Agent","Mozilla/5.0 (Linux; Android 17; Mobile) AppleWebKit/537.36 Chrome/131.0.0.0 Mobile Safari/537.36");
+        c.setRequestProperty("User-Agent", RedditBrowser.userAgent());
+        c.setRequestProperty("Referer","https://www.reddit.com/");
+        String cookies = android.webkit.CookieManager.getInstance().getCookie(url);
+        if(cookies!=null && !cookies.isEmpty()) c.setRequestProperty("Cookie",cookies);
         c.setRequestProperty("Accept","application/json,image/avif,image/webp,image/*,*/*;q=0.7");
         c.setRequestProperty("Accept-Language","en-GB,en;q=0.9");
         try {
@@ -300,7 +308,14 @@ public final class MainActivity extends Activity {
                 String json;
                 JSONObject post;
                 try {
-                    byte[] b=fetch("https://www.reddit.com/comments/"+pid+"/.json?raw_json=1&limit=200",10*1024*1024);
+                    String postJsonUrl=first.url.replaceAll("/+$","") + ".json?raw_json=1&limit=200";
+                    byte[] b;
+                    try { b=fetch(postJsonUrl, 10*1024*1024); }
+                    catch(IOException directError) {
+                        if(!directError.getMessage().contains("HTTP 403") && !directError.getMessage().contains("HTTP 429")) throw directError;
+                        ui("Direct Reddit request denied; attempting in-app browser session...");
+                        b=browser.fetchJson(postJsonUrl,45);
+                    }
                     json=new String(b,StandardCharsets.UTF_8);
                     JSONArray payload=new JSONArray(json);
                     post=payload.getJSONObject(0).getJSONObject("data")
@@ -310,7 +325,13 @@ public final class MainActivity extends Activity {
                     try(FileOutputStream out=new FileOutputStream(saved)){out.write(b);}
                 }catch(Exception ex){
                     postsFailed++;fail(ids,pid,model,"post_metadata_failed",ex.toString());
-                    ui("Post failed: "+pid+" "+ex.getMessage());continue;
+                    ui("Post failed: "+pid+" "+ex.getMessage());
+                    if(ex.getMessage()!=null && (ex.getMessage().contains("403") ||
+                       ex.getMessage().contains("BROWSER_DENIED") || ex.getMessage().contains("HTTP 429"))) {
+                       stop.set(true); ui("STOPPED EARLY: Reddit access denied. Open Reddit Browser / Sign In; do not run all 49 yet.");
+                    }
+                    if(stop.get())break;
+                    continue;
                 }
                 ArrayList<Media> media=photos(post);
                 if(media.isEmpty()){
@@ -331,6 +352,10 @@ public final class MainActivity extends Activity {
                     if(found==null){
                         imagesFailed++;
                         fail(ids,pid,model,"image_download_failed",m.name+" "+errors);
+                        if(errors.toString().contains("HTTP 403") || errors.toString().contains("HTTP 429")){
+                            stop.set(true);
+                            ui("STOPPED EARLY: Reddit image host denied downloads. Check browser session first.");
+                        }
                         continue;
                     }
                     String fingerprint=sha(found.bytes);
@@ -364,6 +389,10 @@ public final class MainActivity extends Activity {
                 archives+=exportModel(root,e.getKey(),e.getValue(),seed);
             }
             exportReport(root, seed, one);
+            if(one && postsDone==1 && downloaded>0 && !stop.get()){
+                testPassed=true;
+                ui("TEST PASSED. You can now collect the complete 49-thread dataset.");
+            }
             ui("DONE: "+postsDone+" threads; "+downloaded+" usable-resolution images; "+
                 imagesFailed+" failed downloads; "+duplicates+" duplicates; "+archives+
                 " image ZIPs. Check Downloads/"+OUTPUT_FOLDER);
