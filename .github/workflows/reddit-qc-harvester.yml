@@ -27,9 +27,9 @@ jobs:
           ./gradlew :redditharvester:assembleDebug --stacktrace
       - name: Rename APK
         run: |
-          cp android/redditharvester/build/outputs/apk/debug/redditharvester-debug.apk WatchAlign-Reddit-QC-Collector-1.0.apk
+          cp android/redditharvester/build/outputs/apk/debug/redditharvester-debug.apk WatchAlign-Reddit-QC-Collector-1.1.apk
       - uses: actions/upload-artifact@v4
         with:
           name: WatchAlign-Reddit-QC-Collector-APK
-          path: WatchAlign-Reddit-QC-Collector-1.0.apk
+          path: WatchAlign-Reddit-QC-Collector-1.1.apk
           retention-days: 30
