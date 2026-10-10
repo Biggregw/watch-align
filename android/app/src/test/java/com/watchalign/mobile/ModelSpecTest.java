@@ -25,6 +25,24 @@ import org.junit.Test;
 public class ModelSpecTest {
     private static final double[] LEGACY_HOURS={1,2,4,5,6,7,8,9,10,11};
 
+    /** Alpha105: every shipped model with a 12 triangle has the signed radial reference, so the 12's distance from the
+     *  minute track is assessed on every watch (owner, 2026-10-10: "ensure this rule applies for all watches"). */
+    @Test public void everyModelWithATriangleAssessesTheTwelvesDistanceFromTheMinuteTrack()throws Exception{
+        File[] dirs=new File(TestModels.assets(),"models").listFiles(File::isDirectory);
+        assertTrue(dirs!=null&&dirs.length>=3);
+        for(File d:dirs){
+            ModelSpec m=ModelSpec.load(ModelSpec.directory(TestModels.assets()),d.getName());
+            boolean tri=false;for(ModelSpec.Marker mk:m.markers)if(mk.shape==ModelSpec.Shape.TRIANGLE)tri=true;
+            if(!tri)continue;
+            ModelReference r=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
+            assertNotNull(d.getName()+": no triangle reference",r.triangle);
+            assertNotNull(d.getName()+": triangle_reference.csv lacks radial_signed_R (re-run calibrate_m12_nominal.py)",r.triangle.radialSignedR);
+            assertEquals(d.getName(),r.triangle.nWatches,r.triangle.radialSignedR.length);
+            assertTrue(d.getName(),r.triangle.radialMax(true)>0&&r.triangle.radialMax(false)>0);
+            assertTrue(d.getName()+": minute track",m.minuteTrackInnerR>m.atHour(12).baseR);
+        }
+    }
+
     @Test public void gmtSpecReproducesTheFrozenConstants(){
         ModelSpec m=TestModels.gmt();
         assertEquals("gmt_126710",m.id);
