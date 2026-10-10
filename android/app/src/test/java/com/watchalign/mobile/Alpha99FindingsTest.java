@@ -213,6 +213,44 @@ public class Alpha99FindingsTest {
         assertTrue(find(s,"nine").shortLine(),find(s,"nine").shortLine().startsWith("rotated 1.6° anticlockwise; genuine up to 0.6°"));
     }
 
+    /** Product decision 2026-10-10: a measurable borderline issue deserves a close-up.
+     *  Preserve the genuine reference and the existing too-small-to-see safeguard.
+     *  These are synthetic measurement-contract checks, not claims about the detector
+     *  processing the actual Reddit photographs. */
+    @Test public void visibleBorderlineMustBeOfferedForHumanReview(){
+        double n6=TestModels.gmtRef().nominal("six_rot");
+        double n9=TestModels.gmtRef().nominal("nine_rot");
+        Alpha99Findings.Summary borderline=Alpha99Findings.build(
+                report(6,n6+1.1,9,n9),null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        Alpha99Findings.Finding six=find(borderline,"six");
+        assertEquals(Alpha99Findings.Status.WORTH,six.status);
+        assertEquals("WORTH A LOOK",six.statusLabel());
+        assertTrue("A visible borderline deviation must produce an inspectable close-up tile",
+                borderline.tiles().contains(six));
+        assertTrue("Headline must draw attention to the borderline marker",
+                borderline.headline().contains("worth a look: 6"));
+
+        Alpha99Findings.Summary strong=Alpha99Findings.build(
+                report(6,n6,9,n9-1.6),null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        Alpha99Findings.Finding nine=find(strong,"nine");
+        assertEquals(Alpha99Findings.Status.CLEAR,nine.status);
+        assertTrue("A clear deviation must have a close-up",strong.tiles().contains(nine));
+
+        Alpha99Findings.Summary microscopic=Alpha99Findings.build(
+                report(6,n6+0.9,9,n9),null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        Alpha99Findings.Finding tinySix=find(microscopic,"six");
+        assertEquals("Sub-1-degree rotation remains below the documented visibility bar",
+                Alpha99Findings.Status.MINOR,tinySix.status);
+        assertFalse("Do not create a close-up for an objectively too-small-to-see difference",
+                microscopic.tiles().contains(tinySix));
+
+        assertEquals("Photo validity and confidence must not be bypassed",
+                Alpha99Findings.Status.NOT_ASSESSED,
+                find(Alpha99Findings.build(report(6,n6+3,9,n9),null,
+                        new LinkedHashMap<Integer,Alpha99MarkerInterference.Check>(),
+                        TestModels.gmt(),TestModels.gmtRef()),"six").status);
+    }
+
     // ---------------------------------------------------------------- interference gate
     @Test public void contaminatedMarkersAreNeverFindings(){
         Alpha94MarkerMeasurement.Report r=report(6,3.0,9,-3.0);
