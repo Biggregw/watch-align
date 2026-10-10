@@ -190,6 +190,28 @@ def run(out_dir):
     with (out_dir/"visibility_gates.csv").open("w",newline="") as h:
         w=csv.DictWriter(h,fieldnames=["model","feature","metric","production_visibility_bar","dimension_R","derivation","basis"])
         w.writeheader();w.writerows(sig_rows)
+    # Convert each live visibility bar to *retinal visual-angle units*, only as an
+    # illustration. Dial diameter has never been proven per supported model, so this
+    # cannot be used as a manufacturing or visual detection threshold.
+    dial_diameter_mm=28.0
+    viewing_distance_mm=400.0
+    eye_rows=[]
+    for row in sig_rows:
+        val=row["production_visibility_bar"]
+        dimension=row["dimension_R"]
+        if row["metric"]=="R":
+            physical_mm=val*(dial_diameter_mm/2.0)
+        else:
+            physical_mm=dimension*(dial_diameter_mm/2.0)*math.tan(math.radians(val)) if dimension is not None else None
+        arcmin=(math.degrees(math.atan(physical_mm/viewing_distance_mm))*60.0) if physical_mm is not None else None
+        eye_rows.append({**row,"assumed_dial_diameter_mm":dial_diameter_mm,
+                         "assumed_viewing_distance_cm":viewing_distance_mm/10.0,
+                         "physical_delta_mm":round(physical_mm,5) if physical_mm is not None else "",
+                         "retinal_arcmin":round(arcmin,4) if arcmin is not None else "",
+                         "status":"illustration_not_visibility_threshold"})
+    with (out_dir/"retinal_scale_illustration.csv").open("w",newline="") as h:
+        w=csv.DictWriter(h,fieldnames=list(eye_rows[0]))
+        w.writeheader();w.writerows(eye_rows)
     with (out_dir/"summary.md").open("w") as o:
         o.write("# Watch Align: all-supported-model tolerance audit\n\n")
         o.write("This is a **read-only** measurement and scientific-evidence audit, not new genuine reference calibration.\n\n")
@@ -207,6 +229,9 @@ def run(out_dir):
         o.write("- 126610 photo-to-photo uncertainties are borrowed from 124060 because its source contains no repeated watches.\n")
         o.write("- Scientifically measured visibility thresholds depend on viewing distance, stimulus length, contrast, context and observers. No validated dial-specific psychometric function or measured dial diameter is stored in the current specs.\n")
         o.write("- Recomputing a reference maximum from unchanged genuine images and unchanged detector code does not produce evidence of a different genuine manufacturing tolerance.\n")
+        o.write("\n## Illustrative angular size at the eye (NOT a threshold)\n\n")
+        o.write("The accompanying retinal_scale_illustration.csv converts each current rule to arcminutes, assuming a **hypothetical 28 mm dial diameter** and **40 cm viewing distance**. Neither parameter is yet independently documented in each model. This is a physical angle conversion, not an estimate of detection probability.\n")
+        o.write("Vernier discrimination experiments have measured a few **arcseconds** under ideal conditions, whereas classical visual-acuity resolution is nearer 1 **arcminute**. These are distinct tasks and **cannot** be swapped in as a single watch-marker threshold.\n")
         o.write("\n## Recommendation\n\n")
         o.write("**Keep current production thresholds unchanged until a controlled visibility validation justifies a feature-specific change.**\n")
         o.write("Add new reviewed genuine watches only through the calibration protocol, recompute nominals and distributions on a separate branch, validate with leave-one-watch-out and independent genuine holdouts; then apply approved results.\n")
