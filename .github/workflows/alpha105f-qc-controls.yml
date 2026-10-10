@@ -1,0 +1,89 @@
+name: Alpha105f public Reddit QC control photos
+on:
+  push:
+    branches: [feature/android-alpha105f-qc-validation]
+    paths: ['.github/workflows/alpha105f-qc-controls.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests opencv-python-headless
+      - name: Fetch original source images and validate hashes
+        run: |
+          mkdir -p qc_public_inputs qc_public_out
+          python3 - <<'PY'
+          import requests,hashlib,pathlib,csv
+          cases=[
+          ('GMT_crooked6_1s4cszq','gmt_126710','https://i.redd.it/zsgyaaky0frg1.jpg','c36f1af94be604ec9153e77b42322d0396634af0eb955c2ab7d3841dce4bb6cd'),
+          ('GMT_accepted6_18vdgh0','gmt_126710','https://i.redd.it/tqmt3k1f8o9c1.jpg','a041d20d14d7c9f105991496b539bb73d63182d75e3b61b6d5a8f0590ecd6c13'),
+          ('SUB_rejected12_1wgfy7k','submariner_124060','https://i.redd.it/0rx4t01hujph1.jpg','7c9f2b50f8e89b860bf567cebdc7a86f3268c5c5e04397f44314bbf5f3f2e0ba'),
+          ('SUB_accepted12_1w848xb','submariner_124060','https://i.redd.it/wdaw7dp93qnh1.jpg','2fe59ac6f06f8effed25c288075ee931b608c874c66d536c6255524ae7a7f91f'),
+          ('SUB_control12_1kqn8ub','submariner_124060','https://i.redd.it/o3xibqc50t1f1.jpg','471e927748db033d97e3a0087f3cf66dbe2a374246185c72852488c18157a3b2')]
+          sess=requests.Session();sess.headers.update({'User-Agent':'Mozilla/5.0 WatchAlignResearch/1.0','Referer':'https://www.reddit.com/'})
+          with open('qc_public_out/access.csv','w',newline='') as fh:
+            w=csv.writer(fh);w.writerow(['photo_id','model','access','error'])
+            for name,model,url,expected in cases:
+              directory=pathlib.Path('qc_public_inputs')/model;directory.mkdir(parents=True,exist_ok=True)
+              try:
+                response=sess.get(url,timeout=15);response.raise_for_status()
+                data=response.content
+                if hashlib.sha256(data).hexdigest()!=expected:raise ValueError('source SHA-256 changed')
+                if not data.startswith(bytes((255,216))):raise ValueError('not JPEG')
+                (directory/(name+'.jpg')).write_bytes(data)
+                w.writerow([name,model,'verified',''])
+                print('verified',name,len(data))
+              except Exception as e:
+                print('unavailable',name,repr(e)[:160])
+                w.writerow([name,model,'unavailable',str(e)[:160]])
+          PY
+      - name: Run Alpha105f analyser for accessible images only
+        run: |
+          for model in gmt_126710 submariner_124060; do
+            mkdir -p "qc_public_out/$model"
+            if find "qc_public_inputs/$model" -maxdepth 1 -name '*.jpg' | grep -q .; then
+              echo "photo_id,local_path" > "qc_public_out/$model/manifest.csv"
+              for f in "qc_public_inputs/$model"/*.jpg; do
+                b=$(basename "$f")
+                id=$(basename "$b" .jpg)
+                echo "$id,$model/$b" >> "qc_public_out/$model/manifest.csv"
+              done
+              JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh Alpha99Preview "qc_public_out/$model/manifest.csv" qc_public_inputs "qc_public_out/$model" --no-images > "qc_public_out/$model/run.log" 2>&1
+              cat "qc_public_out/$model/run.log"
+              cat "qc_public_out/$model/findings.csv"
+            else
+              echo "No images downloadable for $model: real-photo validation is UNTESTED"
+            fi
+          done
+      - name: Print acceptance comparison
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import csv,pathlib
+          cases={'GMT_crooked6_1s4cszq':('six',{'WORTH','CLEAR'}),
+          'GMT_accepted6_18vdgh0':('six',{'WITHIN','MINOR'}),
+          'SUB_rejected12_1wgfy7k':('twelve',{'WORTH','CLEAR'}),
+          'SUB_accepted12_1w848xb':('twelve',{'WORTH','CLEAR'}),
+          'SUB_control12_1kqn8ub':('twelve',{'WITHIN','MINOR'})}
+          for model in ('gmt_126710','submariner_124060'):
+            file=pathlib.Path('qc_public_out')/model/'findings.csv'
+            if not file.exists():continue
+            got={(x['photo_id'],x['feature']):x['alpha99_status'] for x in csv.DictReader(open(file))}
+            for ident,(feat,want) in cases.items():
+              if (ident,feat) in got:
+                status=got[ident,feat]
+                print(ident,status,'MATCH' if status in want else 'REQUIRES_REVIEW')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: alpha105f-public-qc-control-results
+          path: qc_public_out/
+          retention-days: 30
