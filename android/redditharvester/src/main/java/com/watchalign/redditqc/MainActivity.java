@@ -33,16 +33,17 @@ public final class MainActivity extends Activity {
     private static final long PART_PAYLOAD = 25L * 1024 * 1024;
     private static final long MAX_ZIP = 28L * 1024 * 1024;
     private static final String OUTPUT_FOLDER = "WatchAlign_Reddit_QC";
+    private static final int IMPORT_CSV_REQUEST = 241;
     private TextView status, logView;
-    private Button testButton, allButton, stopButton;
+    private Button testButton, allButton, stopButton, importButton;
+    private TextView selectionView;
+    private volatile byte[] selectedCsv;
+    private ThreadManifest.Selection selectedManifest;
     private RedditBrowser browser;
     private volatile boolean testPassed = false;
     private final AtomicBoolean stop = new AtomicBoolean(false);
     private volatile boolean busy = false;
 
-    private static final class CaseRow {
-        String id, model, family, factory, url, album, feature, review, label;
-    }
     private static final class Media {
         String name;
         final ArrayList<String> urls = new ArrayList<>();
@@ -80,9 +81,15 @@ public final class MainActivity extends Activity {
         heading.setTextSize(22); heading.setTextColor(Color.BLACK);
         inner.addView(heading);
         TextView expl = new TextView(this);
-        expl.setText("\nOne-off research download for the 49 saved Reddit QC posts. Saves model-specific ZIPs smaller than 28 MB to Downloads/"+OUTPUT_FOLDER+".\n\nTest one thread first. Photos are not yet validated as face-on or suitable for calibration.\n");
+        expl.setText("\nImport a CSV thread list, then collect original Reddit QC photos and comments. Model-specific ZIPs stay smaller than 28 MB and are saved to Downloads/"+OUTPUT_FOLDER+".\n\nTest one thread first. Photos are not yet validated as face-on or suitable for calibration.\n");
         expl.setTextSize(15); expl.setTextColor(Color.DKGRAY);
         inner.addView(expl);
+        importButton = button("IMPORT THREAD LIST (.CSV)", inner, v -> chooseCsv());
+        selectionView = new TextView(this);
+        selectionView.setText("Using built-in research list (49 threads). Choose a CSV to run a targeted search.");
+        selectionView.setTextSize(14); selectionView.setTextColor(Color.DKGRAY);
+        selectionView.setPadding(0, dp(6), 0, dp(12));
+        inner.addView(selectionView);
         Button browserButton = button("OPEN REDDIT BROWSER / SIGN IN", inner, v -> browser.openLogin());
         testButton = button("TEST FIRST REDDIT THREAD", inner, v -> start(true));
         allButton = button("COLLECT ALL 49 THREADS", inner, v -> start(false));
@@ -108,6 +115,45 @@ public final class MainActivity extends Activity {
         layout.addView(scroll);
         setContentView(layout);
     }
+    private void chooseCsv() {
+        if(busy)return;
+        Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.setType("*/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivityForResult(intent, IMPORT_CSV_REQUEST);
+    }
+
+    @Override protected void onActivityResult(int requestCode,int resultCode,Intent data) {
+        super.onActivityResult(requestCode,resultCode,data);
+        if(requestCode!=IMPORT_CSV_REQUEST||resultCode!=RESULT_OK||data==null||data.getData()==null||busy)return;
+        Uri uri=data.getData();
+        try(InputStream in=getContentResolver().openInputStream(uri);
+            ByteArrayOutputStream out=new ByteArrayOutputStream()){
+            if(in==null)throw new IOException("Selected file could not be opened");
+            byte[] buf=new byte[8192];int n;
+            while((n=in.read(buf))!=-1){
+                if(out.size()+n>ThreadManifest.MAX_BYTES)throw new IOException("CSV larger than 2 MB");
+                out.write(buf,0,n);
+            }
+            byte[] bytes=out.toByteArray();
+            ThreadManifest.Selection parsed=ThreadManifest.parse(bytes);
+            selectedManifest=parsed;selectedCsv=bytes;
+            testPassed=false;
+            allButton.setEnabled(false);
+            allButton.setText("COLLECT ALL "+parsed.threads+" THREADS");
+            selectionView.setText("Imported list: "+parsed.summary()+
+                "\nReady. Test the first thread before collecting all.");
+            ui("Imported "+parsed.threads+" unique Reddit threads. No network requests have been made.");
+        }catch(Exception ex){
+            ui("CSV NOT IMPORTED: "+ex.getMessage()+". Previous list remains selected.");
+        }
+    }
+
+    private byte[] activeCsvBytes() throws IOException {
+        byte[] copy=selectedCsv;
+        return copy==null?assetBytes("cases.csv"):copy;
+    }
     private int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+0.5f);}
     private Button button(String text, LinearLayout parent, View.OnClickListener action) {
         Button b=new Button(this); b.setText(text); b.setOnClickListener(action); parent.addView(b); return b;
@@ -125,43 +171,19 @@ public final class MainActivity extends Activity {
         busy=true; stop.set(false);
         downloaded=0; imagesFailed=0; postsFailed=0; duplicates=0; postsDone=0;
         allErrors.setLength(0); allErrors.append("case_ids,post_id,model,status,details\n");
-        testButton.setEnabled(false); allButton.setEnabled(false); stopButton.setEnabled(true);
+        testButton.setEnabled(false); allButton.setEnabled(false); importButton.setEnabled(false); stopButton.setEnabled(true);
         logView.setText("");
         new Thread(() -> {
             try { collect(test); }
             catch(Exception ex){ ui("FAILED: "+ex.getClass().getSimpleName()+": "+ex.getMessage()); }
             finally {
                 busy=false;
-                runOnUiThread(()->{testButton.setEnabled(true);allButton.setEnabled(testPassed);stopButton.setEnabled(false);});
+                runOnUiThread(()->{testButton.setEnabled(true);allButton.setEnabled(testPassed);importButton.setEnabled(true);stopButton.setEnabled(false);});
             }
         }, "reddit-qc-harvest").start();
     }
-    private ArrayList<CaseRow> readSeed() throws Exception {
-        ArrayList<CaseRow> rows=new ArrayList<>();
-        try(BufferedReader in=new BufferedReader(new InputStreamReader(getAssets().open("cases.csv"), StandardCharsets.UTF_8))){
-            String header=in.readLine();
-            if(header==null)throw new IOException("Research CSV empty");
-            List<String> cols=csvSplit(header);
-            String line;
-            while((line=in.readLine())!=null){
-                if(line.isEmpty()) continue;
-                List<String> vals=csvSplit(line);
-                HashMap<String,String> m=new HashMap<>();
-                for(int i=0;i<cols.size() && i<vals.size();i++)m.put(cols.get(i),vals.get(i));
-                CaseRow c=new CaseRow();
-                c.id=m.getOrDefault("case_id","");
-                c.family=m.getOrDefault("watch_family","Unknown");
-                c.model=m.getOrDefault("reference",c.family);
-                c.factory=m.getOrDefault("factory","");
-                c.url=m.getOrDefault("reddit_url","");
-                c.album=m.getOrDefault("reported_album_url","");
-                c.feature=m.getOrDefault("primary_feature","");
-                c.review=m.getOrDefault("paraphrased_evidence","");
-                c.label=m.getOrDefault("provisional_label","");
-                if(c.url.contains("/comments/"))rows.add(c);
-            }
-        }
-        return rows;
+    private ArrayList<ThreadManifest.CaseRow> readSeed() throws Exception {
+        return ThreadManifest.parse(activeCsvBytes()).rows;
     }
     static List<String> csvSplit(String line) {
         ArrayList<String> a=new ArrayList<>();StringBuilder s=new StringBuilder();boolean quote=false;
@@ -180,8 +202,8 @@ public final class MainActivity extends Activity {
         String z=url.substring(p+10);
         int e=z.indexOf('/');return (e<0?z:z.substring(0,e)).replaceAll("[^a-zA-Z0-9]","");
     }
-    private static String caseIds(List<CaseRow> rows) {
-        StringJoiner j=new StringJoiner("|");for(CaseRow r:rows)j.add(r.id);return j.toString();
+    private static String caseIds(List<ThreadManifest.CaseRow> rows) {
+        StringJoiner j=new StringJoiner("|");for(ThreadManifest.CaseRow r:rows)j.add(r.id);return j.toString();
     }
     private void fail(String ids,String pid,String model,String kind,String detail) {
         allErrors.append(q(ids)).append(',').append(q(pid)).append(',').append(q(model)).append(',')
@@ -281,27 +303,27 @@ public final class MainActivity extends Activity {
         for(byte v:m.digest(b))s.append(String.format(Locale.US,"%02x",v&255));
         return s.toString();
     }
-    private static String joinFeature(List<CaseRow> cases,boolean labels) {
+    private static String joinFeature(List<ThreadManifest.CaseRow> cases,boolean labels) {
         StringJoiner j=new StringJoiner(" | ");
-        for(CaseRow c:cases)j.add(labels?c.label:c.feature);
+        for(ThreadManifest.CaseRow c:cases)j.add(labels?c.label:c.feature);
         return j.toString();
     }
     private void collect(boolean one) throws Exception {
-        ArrayList<CaseRow> seed=readSeed();
-        LinkedHashMap<String,ArrayList<CaseRow>> posts=new LinkedHashMap<>();
-        for(CaseRow c:seed) posts.computeIfAbsent(c.url,k->new ArrayList<>()).add(c);
-        if(posts.size()!=49)ui("WARNING: Expected 49 distinct threads; seed has "+posts.size());
+        ArrayList<ThreadManifest.CaseRow> seed=readSeed();
+        LinkedHashMap<String,ArrayList<ThreadManifest.CaseRow>> posts=new LinkedHashMap<>();
+        for(ThreadManifest.CaseRow c:seed) posts.computeIfAbsent(idFromUrl(c.url),k->new ArrayList<>()).add(c);
+        if(selectedCsv==null && posts.size()!=49)ui("WARNING: Expected 49 bundled threads; found "+posts.size());
         File root=new File(getCacheDir(),"RedditQC_"+System.currentTimeMillis());
         if(!root.mkdirs())throw new IOException("Cannot create temporary folder");
         LinkedHashMap<String,ArrayList<Photo>> grouped=new LinkedHashMap<>();
         HashSet<String> hashes=new HashSet<>();
         int idx=0,limit=one?1:posts.size();
         try {
-            for(Map.Entry<String,ArrayList<CaseRow>> e: posts.entrySet()){
+            for(Map.Entry<String,ArrayList<ThreadManifest.CaseRow>> e: posts.entrySet()){
                 if(stop.get() || idx>=limit)break;
                 idx++;
-                ArrayList<CaseRow> cases=e.getValue();
-                CaseRow first=cases.get(0);
+                ArrayList<ThreadManifest.CaseRow> cases=e.getValue();
+                ThreadManifest.CaseRow first=cases.get(0);
                 String model=safe(first.model), pid=idFromUrl(first.url), ids=caseIds(cases);
                 ui("Thread "+idx+"/"+limit+": "+pid+" ("+model+")");
                 if(!first.album.isEmpty())fail(ids,pid,model,"external_album_not_collected",first.album);
@@ -391,7 +413,7 @@ public final class MainActivity extends Activity {
             exportReport(root, seed, one);
             if(one && postsDone==1 && downloaded>0 && !stop.get()){
                 testPassed=true;
-                ui("TEST PASSED. You can now collect the complete 49-thread dataset.");
+                ui("TEST PASSED. You can now collect all "+posts.size()+" threads.");
             }
             ui("DONE: "+postsDone+" threads; "+downloaded+" usable-resolution images; "+
                 imagesFailed+" failed downloads; "+duplicates+" duplicates; "+archives+
@@ -409,7 +431,7 @@ public final class MainActivity extends Activity {
             q(p.features)+","+q(p.label)+","+q(p.sourceUrl)+","+q(p.imageUrl)+","+
             q(p.sha)+","+p.width+","+p.height+","+q("unreviewed_photo_not_calibration_eligible")+"\n";
     }
-    private int exportModel(File root,String model,List<Photo> images,List<CaseRow> seed) throws Exception {
+    private int exportModel(File root,String model,List<Photo> images,List<ThreadManifest.CaseRow> seed) throws Exception {
         List<List<Photo>> parts=new ArrayList<>();
         List<Photo> now=new ArrayList<>();long bytes=0;
         for(Photo p:images) {
@@ -434,7 +456,7 @@ public final class MainActivity extends Activity {
                     postIds.add(p.postId);
                 }
                 put(out,"manifest.csv",manifest.toString());
-                put(out,"research_cases.csv",assetBytes("cases.csv"));
+                put(out,"research_cases.csv",activeCsvBytes());
                 for(String pid:postIds){
                     File json=new File(root,"comments_"+pid+".json");
                     if(json.exists() && json.length()<2*1024*1024)
@@ -451,11 +473,11 @@ public final class MainActivity extends Activity {
         }
         return count;
     }
-    private void exportReport(File root,List<CaseRow> seed,boolean test) throws Exception {
+    private void exportReport(File root,List<ThreadManifest.CaseRow> seed,boolean test) throws Exception {
         String name=(test?"Reddit_QC_TEST_Report.zip":"Reddit_QC_Collection_Report.zip");
         File f=new File(root,name);
         try(ZipOutputStream out=new ZipOutputStream(new FileOutputStream(f))){
-            put(out,"source_research_cases.csv",assetBytes("cases.csv"));
+            put(out,"source_research_cases.csv",activeCsvBytes());
             put(out,"collection_errors.csv",allErrors.toString());
             put(out,"README.txt","Threads completed: "+postsDone+"\nImages downloaded: "+downloaded+
                     "\nImages failed: "+imagesFailed+"\nMetadata failures: "+postsFailed+
