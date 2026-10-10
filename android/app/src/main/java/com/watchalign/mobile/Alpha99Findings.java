@@ -308,7 +308,11 @@ final class Alpha99Findings {
                 sigmaAng(ref,fam+"_sides",R),k,n,"deg",
                 String.format(Locale.US,"%s side angled %.1f° %s",left?"left":"right",Math.abs(sd),Alpha98Findings.cw(sd)),
                 String.format(Locale.US,"Its %s side is angled %.1f° %s",left?"left":"right",Math.abs(sd),Alpha98Findings.cw(sd))));
-        f.measures.add(new Measure("lateral",Math.abs(t.lateralR),Alpha98Findings.max(ref.triangle.lateralR),
+        // Alpha105g: left/right position only when the triangle's two long sides sit on the same edge (oneSidedEdge)
+        String oneSided=r==null||r.triangle==null?null:oneSidedEdge(r.triangle,ref,fam,0,2,R);
+        if(oneSided!=null){f.notes.add(oneSided.replace("Its position","Its left/right position").replace("long edges","sides"));
+            f.partAssessed="angles";f.partNotAssessed="left/right position";f.partReason="one edge hidden by a reflection";}
+        else f.measures.add(new Measure("lateral",Math.abs(t.lateralR),Alpha98Findings.max(ref.triangle.lateralR),
                 sigmaPos(ref,fam+"_lateral",R),k,n,"R",
                 String.format(Locale.US,"shifted %s by %.2f%% of the dial",t.lateralPx<0?"left":"right",100*Math.abs(t.lateralR)),
                 String.format(Locale.US,"It sits %.1f px to the %s (%.2f%% of the dial radius)",Math.abs(t.lateralPx),t.lateralPx<0?"left":"right",100*Math.abs(t.lateralR))));
@@ -385,6 +389,13 @@ final class Alpha99Findings {
                 String.format(Locale.US,"rotated %.1f° %s",Math.abs(rot),Alpha98Findings.cw(rot)),
                 String.format(Locale.US,"It is rotated %.1f° %s",Math.abs(rot),Alpha98Findings.cw(rot))));
         f.measures.get(0).visibleBar=VISIBLE_DEG;
+        // Alpha105g edge consistency: the position needs both long sides on the same (outer) edge
+        String oneSided=oneSidedEdge(m,ref,key,0,2,R);
+        if(oneSided!=null){
+            f.notes.add(oneSided);
+            f.partNotAssessed="position";f.partReason="one edge hidden by a reflection";
+            settle(f);return f;
+        }
         double off=m.localOffsetPx/R;
         int nOff=resMatched?ref.matchedWatches(key+"_off",R):offRef.length;
         double offMax=resMatched?ref.matchedMax(key+"_off",R):Alpha98Findings.max(offRef);
@@ -400,6 +411,29 @@ final class Alpha99Findings {
         Measure pos=f.measures.get(f.measures.size()-1);pos.visibleBar=VISIBLE_FRACTION*2*spec.tangentialHalf;
         if(resMatched)smallPhoto(pos,ref,key+"_off",R);
         settle(f);return f;
+    }
+
+    /**
+     * Alpha105g edge consistency for polygon markers (batons, the 12). Each side is fitted to the outermost bright-to-dark
+     * edge; when lighting darkens one side's polished bevel, that side lands on the lume edge about one rim width inside,
+     * and the marker's centre moves by half a rim width towards the other side, with no change in angle (owner's Reddit
+     * QC controls 18vdgh0, 1w848xb, 1kqn8ub: 9 read 0.65-0.81% "towards the 10" with the lower side 2.6-6.7 px inside
+     * and the lume centred). A real displacement moves both opposite sides together and keeps the width. So the width
+     * across the two sides (sideA + sideB offsets) is compared with its genuine nominal; beyond the genuine limit
+     * (3 x the robust photo-to-photo spread, uncertainty.properties "<family>_width_agreement") the position is not
+     * assessed. Missing limits withhold the position (fail closed). Returns the reason sentence, or null when consistent.
+     */
+    static String oneSidedEdge(Alpha94MarkerMeasurement.Marker m,ModelReference ref,String family,int sideA,int sideB,double R){
+        String fam=family+"_width_agreement";
+        double nom=ref.sigma(fam,"nominal"),lim=ref.limit(fam);
+        if(!Double.isFinite(nom)||!Double.isFinite(lim))
+            return "Its position is not assessed: no genuine edge-consistency limit exists for this marker yet.";
+        if(m.sideOffR==null||m.sideOffR.length<=Math.max(sideA,sideB))return null;   // not a polygon fit (tests building markers by hand)
+        double dev=m.sideOffR[sideA]+m.sideOffR[sideB]-nom;
+        if(Math.abs(dev)<=lim)return null;
+        return String.format(Locale.US,"Its position is not assessed: one of its long edges reads %.1f px %s than on genuine watches while the opposite edge does not move, "
+                +"the sign of a polished bevel reflecting dark (the outline is then traced on the lume, not the marker's edge). A marker that is really out of place moves both edges together. "
+                +"Genuine photos stay within %.1f px; compare the marker with its neighbours in the close-up.",Math.abs(dev)*R,dev<0?"narrower":"wider",lim*R);
     }
 
     static List<Finding> rounds(Alpha94MarkerMeasurement.Report r,double R,Map<Integer,Alpha99MarkerInterference.Check> checks,
