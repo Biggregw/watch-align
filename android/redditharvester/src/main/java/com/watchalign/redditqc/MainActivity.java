@@ -81,7 +81,7 @@ public final class MainActivity extends Activity {
         heading.setTextSize(22); heading.setTextColor(Color.BLACK);
         inner.addView(heading);
         TextView expl = new TextView(this);
-        expl.setText("\nImport a CSV thread list, then collect original Reddit QC photos and comments. Model-specific ZIPs stay smaller than 28 MB and are saved to Downloads/"+OUTPUT_FOLDER+".\n\nTest one thread first. Photos are not yet validated as face-on or suitable for calibration.\n");
+        expl.setText("\nImport a CSV thread list, then collect original Reddit QC photos and comments. Model-specific ZIPs stay smaller than 28 MB and are saved to Downloads/"+OUTPUT_FOLDER+".\n\nTest one thread first to verify Reddit access. Some threads contain comments but no direct Reddit photographs; the list can still be collected. Photos are not yet validated for calibration.\n");
         expl.setTextSize(15); expl.setTextColor(Color.DKGRAY);
         inner.addView(expl);
         importButton = button("IMPORT THREAD LIST (.CSV)", inner, v -> chooseCsv());
@@ -411,13 +411,19 @@ public final class MainActivity extends Activity {
                 archives+=exportModel(root,e.getKey(),e.getValue(),seed);
             }
             exportReport(root, seed, one);
-            if(one && postsDone==1 && downloaded>0 && !stop.get()){
+            int commentArchives=exportComments(root, one);
+            if(one && CollectorTestGate.canCollect(postsDone,stop.get())){
                 testPassed=true;
-                ui("TEST PASSED. You can now collect all "+posts.size()+" threads.");
+                if(downloaded>0)
+                    ui("TEST PASSED: Reddit metadata and images are accessible. Collect all "+posts.size()+" threads.");
+                else
+                    ui("METADATA TEST PASSED: First thread has no usable direct image. "+
+                       "Its comments are saved, and you may collect all "+posts.size()+
+                       " threads. Some posts need external albums.");
             }
             ui("DONE: "+postsDone+" threads; "+downloaded+" usable-resolution images; "+
                 imagesFailed+" failed downloads; "+duplicates+" duplicates; "+archives+
-                " image ZIPs. Check Downloads/"+OUTPUT_FOLDER);
+                " image ZIPs; "+commentArchives+" comments ZIPs. Check Downloads/"+OUTPUT_FOLDER);
             if(stop.get())ui("Partial run: stopped at your request.");
         } finally {
             deleteRecursive(root);
@@ -472,6 +478,44 @@ public final class MainActivity extends Activity {
             saveDownloads(zip,name);count++;ui("Saved "+name+" ("+(zip.length()/1048576)+" MiB)");
         }
         return count;
+    }
+    /** Export every accessible Reddit thread's original JSON, even when it has no images.
+     *  This keeps comments from linked-album/metadata-only posts available for QC review.
+     *  Parts are limited by uncompressed size, so archives remain under 28 MiB. */
+    private int exportComments(File root,boolean test) throws Exception {
+        File[] originals=root.listFiles((dir,name)->name.startsWith("comments_")&&name.endsWith(".json"));
+        if(originals==null||originals.length==0)return 0;
+        Arrays.sort(originals,Comparator.comparing(File::getName));
+        ArrayList<ArrayList<File>> parts=new ArrayList<>();
+        ArrayList<File> current=new ArrayList<>();
+        long sum=0;
+        for(File file: originals){
+            if(file.length()>PART_PAYLOAD)throw new IOException("Reddit comments JSON exceeds ZIP part budget");
+            if(!current.isEmpty() && sum+file.length()>PART_PAYLOAD){
+                parts.add(current);current=new ArrayList<>();sum=0;
+            }
+            current.add(file);sum+=file.length();
+        }
+        if(!current.isEmpty())parts.add(current);
+        for(int i=0;i<parts.size();i++){
+            String name=(test?"Reddit_QC_TEST_Comments_part":"Reddit_QC_Comments_part")+
+                    String.format(Locale.US,"%02d_of%02d.zip",i+1,parts.size());
+            File zip=new File(root,name);
+            try(ZipOutputStream out=new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zip)))){
+                out.setLevel(1);
+                put(out,"source_research_cases.csv",activeCsvBytes());
+                for(File file:parts.get(i)){
+                    put(out,"reddit_json/"+file.getName().substring("comments_".length()),file);
+                }
+                put(out,"README.txt","Original accessible Reddit post and comment JSON, "+
+                    "including threads without native images. Reviewer classifications "+
+                    "are provisional and are not numerical calibration limits.\n");
+            }
+            if(zip.length()>=MAX_ZIP)throw new IOException("Comments ZIP >=28 MB: "+name);
+            saveDownloads(zip,name);
+            ui("Saved "+name+" ("+parts.get(i).size()+" threads)");
+        }
+        return parts.size();
     }
     private void exportReport(File root,List<ThreadManifest.CaseRow> seed,boolean test) throws Exception {
         String name=(test?"Reddit_QC_TEST_Report.zip":"Reddit_QC_Collection_Report.zip");
