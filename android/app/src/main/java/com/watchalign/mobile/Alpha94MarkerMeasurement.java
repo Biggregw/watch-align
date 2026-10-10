@@ -47,6 +47,8 @@ final class Alpha94MarkerMeasurement {
         /** Alpha105, round markers: the widest arc of outline without a fitted edge (deg) and its middle direction
          *  (canonical atan2(y,x) deg, 0..360), set when the coverage test fails; NaN otherwise. */
         double edgeGapDeg=Double.NaN,edgeGapDirDeg=Double.NaN;
+        /** Alpha105g: free-fit radius error (px) of a round fit that failed the coverage test; NaN otherwise. */
+        double failedRadiusErrPx=Double.NaN;
         /** Polygon markers (batons, 12): per side, the fitted line's offset from the master side along its outward normal
          *  (canonical units, + = outward), its edge coverage, and the fitted vertices. Diagnostics; null otherwise. */
         double[] sideOffR,sideCov;double[][] fitVertices;
@@ -356,6 +358,7 @@ final class Alpha94MarkerMeasurement {
             java.util.Collections.sort(ang);
             for(int i=0;i<ang.size();i++){double a0=ang.get(i),a1=i+1<ang.size()?ang.get(i+1):ang.get(0)+360,gap=a1-a0;
                 if(!(gap<=m.edgeGapDeg)){m.edgeGapDeg=gap;m.edgeGapDirDeg=((a0+gap/2)%360+360)%360;}}
+            if(!Double.isFinite(fixedRadius))m.failedRadiusErrPx=(radius-r0)*rpx;
             m.reason=String.format(Locale.US,"outline coverage %.2f, %d/8 octants",cov,octants);return null;}
         if(Math.abs(radius-r0)>0.15*r0){m.reason="implausible radius";return null;}
         m.usable=true;m.rotationDeg=0.0;m.radiusErrPx=Double.isFinite(fixedRadius)?Double.NaN:(radius-r0)*rpx;

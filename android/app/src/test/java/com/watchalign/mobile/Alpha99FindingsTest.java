@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -525,5 +526,29 @@ public class Alpha99FindingsTest {
         assertEquals(Alpha99Findings.Status.WITHIN,in.status);
         assertTrue(String.join(" ",in.detail()),String.join(" ",in.detail()).contains("further from the minute track"));
         assertEquals(Alpha99Findings.Status.WITHIN,find(Alpha99Findings.build(twelveAt(0.001),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
+    }
+
+    /** Alpha105g root cause, recorded values of the Reddit QC photo 18vdgh0 gallery 01 (GMT, R 230.6): the 9's lower long
+     *  side was traced on the lume (-2.56 px) while the upper side sat on the outer edge (+0.87 px), so the centre read 1.38 px
+     *  "towards the 10" (CLEAR) although the lume was centred; gallery 02 of the same watch (both sides on the outer edge)
+     *  read within range. */
+    @Test public void oneSidedEdgeWithholdsTheBatonPositionAndKeepsItsRotation(){
+        double R=230.6;
+        Alpha94MarkerMeasurement.Report r=report(6,TestModels.gmtRef().nominal("six_rot"),9,TestModels.gmtRef().nominal("nine_rot"));
+        r=new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,r.triangle);
+        Alpha94MarkerMeasurement.Marker nine=r.atHour(9);
+        nine.localTangentialPx=1.38;nine.localRadialPx=0.68;nine.localOffsetPx=Math.hypot(1.38,0.68);
+        nine.sideOffR=new double[]{-2.56/R,2.50/R,0.87/R,-1.38/R};nine.sideCov=new double[]{1,1,1,1};
+        Alpha99Findings.Finding f=find(Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"nine");
+        assertEquals(Alpha99Findings.Status.WITHIN,f.status);                 // rotation within, position not assessed
+        assertEquals("position",f.partNotAssessed);
+        assertEquals("one edge hidden by a reflection",f.partReason);
+        for(Alpha99Findings.Measure x:f.measures)assertNotEquals("position",x.name);
+        assertTrue(String.join(" ",f.detail()),String.join(" ",f.detail()).contains("polished bevel"));
+        // a real displacement moves both long sides the same way and keeps the width: still measured and still flagged
+        nine.sideOffR=new double[]{-1.38/R+0.00172,2.50/R,1.38/R,-1.38/R};
+        f=find(Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"nine");
+        assertNull(f.partNotAssessed);
+        assertTrue(f.status.toString(),f.status==Alpha99Findings.Status.CLEAR||f.status==Alpha99Findings.Status.WORTH);
     }
 }

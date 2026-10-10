@@ -6,7 +6,9 @@ import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -71,7 +73,7 @@ final class Alpha99Pipeline {
         for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.ROUND)){
             Alpha99MarkerInterference.Check c=checks.get(mk.hour);
             Alpha94MarkerMeasurement.Marker fm=r.atHour(mk.hour);
-            if(c!=null&&c.clean&&fm!=null&&edgeGapOnly(fm)){
+            if(c!=null&&c.clean&&fm!=null&&edgeGapOnly(fm)&&arcIsOuterEdge(fm,r)){
                 // Alpha105: clean marker whose outline edge vanishes on one side only (its polished surround reflecting
                 // the dark, NecoClock frame 4's 10): position from the rest of the outline, the edgeless arc ignored
                 double half=Math.max(PARTIAL_HALF_DEG,fm.edgeGapDeg/2+5);
@@ -96,6 +98,20 @@ final class Alpha99Pipeline {
     static boolean edgeGapOnly(Alpha94MarkerMeasurement.Marker m){
         return !m.usable&&m.reason!=null&&m.reason.startsWith("outline coverage")&&Double.isFinite(m.fitScorePx)&&m.fitScorePx<=0.05
                 &&Double.isFinite(m.edgeGapDeg)&&m.edgeGapDeg<=MAX_EDGE_GAP_DEG;
+    }
+
+    /** Alpha105g: the polished surround reads about 0.016 R wide (alpha96 README, inner-lume-edge study). A visible arc
+     *  traced on the lume edge fits a circle about that much smaller than the dial's round markers, and fixing it to their
+     *  size would pull the centre sideways; so the lighting-gap fit is used only when the arc's own (free) radius matches
+     *  the dial's round-marker size to within half the surround width. */
+    static final double HALF_SURROUND_R=0.008;
+    static boolean arcIsOuterEdge(Alpha94MarkerMeasurement.Marker fm,Alpha94MarkerMeasurement.Report r){
+        if(!Double.isFinite(fm.failedRadiusErrPx)||r==null||!(r.dialRadiusPx>0))return false;
+        List<Double> sz=new ArrayList<>();
+        for(Alpha94MarkerMeasurement.Marker o:r.markers)if("round".equals(o.kind)&&o.usable&&Double.isFinite(o.radiusErrPx))sz.add(o.radiusErrPx);
+        if(sz.size()<3)return false;
+        java.util.Collections.sort(sz);int n=sz.size();double med=n%2==1?sz.get(n/2):0.5*(sz.get(n/2-1)+sz.get(n/2));
+        return Math.abs(fm.failedRadiusErrPx-med)<=HALF_SURROUND_R*r.dialRadiusPx;
     }
 
     /** Technical numbers for the collapsed "Technical details" section. */

@@ -43,6 +43,24 @@ public class ModelSpecTest {
         }
     }
 
+    /** Alpha105g: every shipped model has a genuine edge-consistency limit for each baton and its 12 triangle, so a
+     *  marker traced on its lume on one side has its position withheld on every watch (owner: "make sure it applies for
+     *  all watches"). Without one, those positions are not assessed at all (fail closed). */
+    @Test public void everyModelHasEdgeConsistencyLimitsForItsBatonsAndTwelve()throws Exception{
+        File[] dirs=new File(TestModels.assets(),"models").listFiles(File::isDirectory);
+        assertTrue(dirs!=null&&dirs.length>=3);
+        for(File d:dirs){
+            ModelSpec m=ModelSpec.load(ModelSpec.directory(TestModels.assets()),d.getName());
+            ModelReference r=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
+            for(ModelSpec.Marker mk:m.markers){
+                if(mk.shape==ModelSpec.Shape.ROUND)continue;
+                String fam=mk.key+"_width_agreement";
+                assertTrue(d.getName()+" "+fam+".nominal",Double.isFinite(r.sigma(fam,"nominal")));
+                assertTrue(d.getName()+" "+fam+".limit",r.limit(fam)>0&&r.limit(fam)<0.02);
+            }
+        }
+    }
+
     @Test public void gmtSpecReproducesTheFrozenConstants(){
         ModelSpec m=TestModels.gmt();
         assertEquals("gmt_126710",m.id);
