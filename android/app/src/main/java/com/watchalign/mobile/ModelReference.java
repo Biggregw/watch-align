@@ -33,9 +33,19 @@ final class ModelReference {
         final int nWatches;
         final double nominalRadialR,nominalTangentialR,nominalLeftSideDeg,nominalRightSideDeg,nominalRotationDeg;
         final double[] lateralR,centrelineDeg,sidesDeg;
+        /** Alpha105: per-watch signed radial offset from the leave-one-watch-out nominal (+ = outward, towards the minute
+         *  track); null when the reference predates the radial_signed_R column (the 12's track distance is then not assessed). */
+        double[] radialSignedR;
         Triangle(int n,double radial,double tangential,double left,double right,double rotation,double[] lateral,double[] centreline,double[] sides){
             nWatches=n;nominalRadialR=radial;nominalTangentialR=tangential;nominalLeftSideDeg=left;nominalRightSideDeg=right;
             nominalRotationDeg=rotation;lateralR=lateral;centrelineDeg=centreline;sidesDeg=sides;
+        }
+        /** Furthest genuine reading towards (outward = true) or away from the minute track, as a positive number; NaN
+         *  without the signed column. */
+        double radialMax(boolean outward){
+            if(radialSignedR==null)return Double.NaN;double m=0;
+            for(double v:radialSignedR)if(Double.isFinite(v))m=Math.max(m,outward?v:-v);
+            return m;
         }
     }
 
@@ -68,6 +78,8 @@ final class ModelReference {
             for(int i=0;i<tr.size();i++){lat[i]=d(tr.get(i).get("lateral_R"));cen[i]=d(tr.get(i).get("centreline_deg"));sid[i]=d(tr.get(i).get("sides_deg"));}
             t=new Triangle((int)Math.round(d(tn.getProperty("n_watches"))),d(tn.getProperty("radial_R")),d(tn.getProperty("tangential_R")),
                     d(tn.getProperty("left_side_deg")),d(tn.getProperty("right_side_deg")),d(tn.getProperty("rotation_deg")),lat,cen,sid);
+            if(tr.get(0).containsKey("radial_signed_R")){double[] rs=new double[tr.size()];
+                for(int i=0;i<tr.size();i++)rs[i]=d(tr.get(i).get("radial_signed_R"));t.radialSignedR=rs;}
         }
         ModelReference r=new ModelReference(t,k);
         List<Map<String,String>> g=csv(assets,dir+GENUINE);

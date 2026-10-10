@@ -26,8 +26,8 @@ final class Alpha97TwelveReadout {
         double centrelineDeg=Double.NaN,leftSideDeg=Double.NaN,rightSideDeg=Double.NaN,sidesDeg=Double.NaN;
         /** + = right in the upright dial frame. */
         double lateralPx=Double.NaN,lateralR=Double.NaN;
-        /** Not assessed (lighting-sensitive); kept for research logs only, never displayed as a value. */
-        double radialPx=Double.NaN;
+        /** + = outward (towards the minute track). Alpha105: assessed by Alpha99Findings (worth a look at most). */
+        double radialPx=Double.NaN,radialR=Double.NaN;
         int atLeastCentreline,atLeastSides,atLeastLateral;
     }
 
@@ -50,6 +50,7 @@ final class Alpha97TwelveReadout {
         o.lateralPx=m.localTangentialPx-t.nominalTangentialR*rpx;   // 12: tangential + = right
         o.lateralR=o.lateralPx/rpx;
         o.radialPx=m.localRadialPx-t.nominalRadialR*rpx;
+        o.radialR=o.radialPx/rpx;
         o.atLeastCentreline=atLeast(t.centrelineDeg,Math.abs(o.centrelineDeg));
         o.atLeastSides=atLeast(t.sidesDeg,o.sidesDeg);
         o.atLeastLateral=atLeast(t.lateralR,Math.abs(o.lateralR));

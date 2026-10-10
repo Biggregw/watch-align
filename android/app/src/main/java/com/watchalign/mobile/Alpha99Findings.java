@@ -42,6 +42,9 @@ final class Alpha99Findings {
      *  At 0.75 it sat below the genuine angle maxima (batons 0.8-0.9 deg) and never applied: a 0.9 deg baton (each end
      *  0.4 px off at R 216, owner's 124060 QC photo 2026-10-09) was listed as worth a look. */
     static final double VISIBLE_FRACTION=0.05,VISIBLE_DEG=1.0;
+    /** Alpha105: the 12's distance from the minute track is judged against the gap itself (base to track, 0.03 R on the
+     *  supported dials): a change below this fraction of the gap is too small to see. */
+    static final double TRACK_GAP_VISIBLE_FRACTION=0.15;
     enum Shape{BATON,TRIANGLE,ROUND,RING,DATE}
 
     static final String DISCLAIMER="These results compare this photo's measurements with genuine watches. They are not an authenticity verdict.";
@@ -230,7 +233,7 @@ final class Alpha99Findings {
                          Map<Integer,Alpha94MarkerMeasurement.Marker> partial,ModelSpec model,ModelReference ref){
         Summary s=new Summary();
         double R=r==null?Double.NaN:r.dialRadiusPx;
-        for(ModelSpec.Marker mk:model.markers)if(mk.shape==ModelSpec.Shape.TRIANGLE)s.all.add(twelve(r,check(checks,mk.hour),R,mk,ref));
+        for(ModelSpec.Marker mk:model.markers)if(mk.shape==ModelSpec.Shape.TRIANGLE)s.all.add(twelve(r,check(checks,mk.hour),R,mk,ref,model.minuteTrackInnerR));
         for(ModelSpec.Marker mk:model.withShape(ModelSpec.Shape.BATON))s.all.add(baton(r,mk,R,check(checks,mk.hour),ref,model.resolutionMatched.contains(mk.key+"_off")));
         s.all.addAll(rounds(r,R,checks,partial,model,ref));
         if(!model.withShape(ModelSpec.Shape.ROUND).isEmpty())s.all.add(roundsSize(r,R,checks,model,ref));
@@ -281,6 +284,10 @@ final class Alpha99Findings {
 
     // ------------------------------------------------------------------ features
     static Finding twelve(Alpha94MarkerMeasurement.Report r,Alpha99MarkerInterference.Check c,double R,ModelSpec.Marker spec,ModelReference ref){
+        return twelve(r,c,R,spec,ref,Double.NaN);
+    }
+    /** @param trackInnerR the model's minute-track inner radius (canonical); NaN = the 12's track distance is not assessed */
+    static Finding twelve(Alpha94MarkerMeasurement.Report r,Alpha99MarkerInterference.Check c,double R,ModelSpec.Marker spec,ModelReference ref,double trackInnerR){
         int hour=spec.hour;
         Finding f=new Finding(spec.key,hour+" o'clock",""+hour);
         double a=Math.toRadians(hour*30.0);f.cx=hour%12==0?0:Math.sin(a)*0.75;f.cy=hour%12==0?-0.75:-Math.cos(a)*0.75;
@@ -304,6 +311,22 @@ final class Alpha99Findings {
                 String.format(Locale.US,"shifted %s by %.2f%% of the dial",t.lateralPx<0?"left":"right",100*Math.abs(t.lateralR)),
                 String.format(Locale.US,"It sits %.1f px to the %s (%.2f%% of the dial radius)",Math.abs(t.lateralPx),t.lateralPx<0?"left":"right",100*Math.abs(t.lateralR))));
         for(Measure x:f.measures)x.visibleBar=x.unit.equals("deg")?VISIBLE_DEG:VISIBLE_FRACTION*2*spec.halfBase;
+        // Alpha105: distance from the minute track (owner, 2026-10-10: "ensure 12 triangle proximity to the minute markers is
+        // tested"). The radial reading depends on which facet of the polished surround the lighting shows (alpha96 README:
+        // studio lighting moved it 0.0025 R on genuine watches), and no photo-to-photo allowance exists for it, so it is
+        // compared with the genuine readings in the same direction and shown as worth a look at most.
+        double gap=trackInnerR-spec.baseR;
+        if(Double.isFinite(t.radialR)&&Double.isFinite(gap)&&gap>0&&ref.triangle.radialSignedR!=null){
+            boolean out=t.radialR>=0;double v=Math.abs(t.radialR);
+            Measure x=new Measure("track",v,ref.triangle.radialMax(out),Double.NaN,k,n,"R",
+                    String.format(Locale.US,"%s the minute track by %.2f%% of the dial",out?"closer to":"further from",100*v),
+                    String.format(Locale.US,"It sits %.1f px %s the minute track than on genuine watches (%.2f%% of the dial radius; the genuine gap between its base and the track is about %.1f%%)",
+                            Math.abs(t.radialPx),out?"closer to":"further from",100*v,100*gap));
+            x.visibleBar=TRACK_GAP_VISIBLE_FRACTION*gap;
+            x.capAtWorth=true;
+            x.capReason="How far the 12 sits from the minute track depends partly on which edge of its polished surround the lighting shows, so it is shown as worth a look at most; compare the gap with the minute marks in the close-up.";
+            f.measures.add(x);
+        }else if(Double.isFinite(gap))f.notes.add("Its distance from the minute track is not assessed: no genuine reference for it yet.");
         // Alpha98 rule for the 12: outside when no genuine watch reads at least as far (Alpha97TwelveReadout counts)
         if(t.atLeastCentreline>0)neutralise(f,"centreline");
         if(t.atLeastSides>0)neutralise(f,"sides");

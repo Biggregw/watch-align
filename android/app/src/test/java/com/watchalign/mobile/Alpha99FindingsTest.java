@@ -458,4 +458,32 @@ public class Alpha99FindingsTest {
         m.fitScorePx=0.0;m.reason="hand/occluder crosses outline (clean 0.40)";assertFalse(Alpha99Pipeline.edgeGapOnly(m));
         m.reason="outline coverage 0.61, 6/8 octants";m.usable=true;assertFalse(Alpha99Pipeline.edgeGapOnly(m));
     }
+
+    /** Alpha105: the 12 at the genuine nominal, moved outward (towards the minute track) by dr R. */
+    static Alpha94MarkerMeasurement.Report twelveAt(double dr){
+        Alpha94MarkerMeasurement.Report r=report(6,TestModels.gmtRef().nominal("six_rot"),9,TestModels.gmtRef().nominal("nine_rot"));
+        ModelReference.Triangle tr=TestModels.gmtRef().triangle;double R=r.dialRadiusPx;
+        r.triangle.usable=true;r.triangle.reason="";r.triangle.rotationDeg=tr.nominalRotationDeg;
+        r.triangle.leftSideErrDeg=tr.nominalLeftSideDeg;r.triangle.rightSideErrDeg=tr.nominalRightSideDeg;
+        r.triangle.localTangentialPx=tr.nominalTangentialR*R;r.triangle.localRadialPx=(tr.nominalRadialR+dr)*R;
+        return r;
+    }
+
+    @Test public void twelveCloseToTheMinuteTrackIsWorthALookNeverClear(){
+        Map<Integer,Alpha99MarkerInterference.Check> clean=allClean();
+        assertNotNull(TestModels.gmtRef().triangle.radialSignedR);
+        double closest=TestModels.gmtRef().triangle.radialMax(true);
+        assertEquals(0.0032,closest,0.0001);                                   // genuine GMT: at most 0.32% closer
+        // owner's GMT photo 2026-10-10: 0.71% of the dial closer to the track
+        Alpha99Findings.Finding f=find(Alpha99Findings.build(twelveAt(0.0071),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve");
+        assertEquals(Alpha99Findings.Status.WORTH,f.status);
+        assertTrue(f.shortLine(),f.shortLine().startsWith("closer to the minute track by 0.71% of the dial; genuine up to 0.32%"));
+        // further out than any genuine watch by a lot: still never clear (lighting moves this edge)
+        assertEquals(Alpha99Findings.Status.WORTH,find(Alpha99Findings.build(twelveAt(0.02),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
+        // past the genuine range but under 15% of the gap (0.0045 R): too small to see
+        assertEquals(Alpha99Findings.Status.MINOR,find(Alpha99Findings.build(twelveAt(0.004),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
+        // inward: compared with the genuine inward readings (an official photo read 0.83% further from the track)
+        assertEquals(Alpha99Findings.Status.WITHIN,find(Alpha99Findings.build(twelveAt(-0.006),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
+        assertEquals(Alpha99Findings.Status.WITHIN,find(Alpha99Findings.build(twelveAt(0.001),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
+    }
 }
