@@ -1,0 +1,5 @@
+# CI harvest plan (harvest-ci.yml). Line 1: comma-separated searches for Bob's Rolex Harvester. Line 2: max listings (0 = all).
+# Plan 1 (2026-10-09): build the 40 mm maxi group (B: 114060, 116610, 116613, 116618, 116619), test whether the 40 mm GMTs
+# (116710, 126710) belong to it, and grow the 41 mm date group (A: 126610, 126613, 126618, 126619).
+114060, 116610, 116613, 116618, 116619, 116710, 126710, 126610, 126613, 126618, 126619
+0

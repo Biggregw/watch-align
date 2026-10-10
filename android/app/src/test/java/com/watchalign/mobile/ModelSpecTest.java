@@ -3,6 +3,7 @@ package com.watchalign.mobile;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -23,6 +24,42 @@ import org.junit.Test;
  */
 public class ModelSpecTest {
     private static final double[] LEGACY_HOURS={1,2,4,5,6,7,8,9,10,11};
+
+    /** Alpha105: every shipped model with a 12 triangle has the signed radial reference, so the 12's distance from the
+     *  minute track is assessed on every watch (owner, 2026-10-10: "ensure this rule applies for all watches"). */
+    @Test public void everyModelWithATriangleAssessesTheTwelvesDistanceFromTheMinuteTrack()throws Exception{
+        File[] dirs=new File(TestModels.assets(),"models").listFiles(File::isDirectory);
+        assertTrue(dirs!=null&&dirs.length>=3);
+        for(File d:dirs){
+            ModelSpec m=ModelSpec.load(ModelSpec.directory(TestModels.assets()),d.getName());
+            boolean tri=false;for(ModelSpec.Marker mk:m.markers)if(mk.shape==ModelSpec.Shape.TRIANGLE)tri=true;
+            if(!tri)continue;
+            ModelReference r=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
+            assertNotNull(d.getName()+": no triangle reference",r.triangle);
+            assertNotNull(d.getName()+": triangle_reference.csv lacks radial_signed_R (re-run calibrate_m12_nominal.py)",r.triangle.radialSignedR);
+            assertEquals(d.getName(),r.triangle.nWatches,r.triangle.radialSignedR.length);
+            assertTrue(d.getName(),r.triangle.radialMax(true)>0&&r.triangle.radialMax(false)>0);
+            assertTrue(d.getName()+": minute track",m.minuteTrackInnerR>m.atHour(12).baseR);
+        }
+    }
+
+    /** Alpha105g: every shipped model has a genuine edge-consistency limit for each baton and its 12 triangle, so a
+     *  marker traced on its lume on one side has its position withheld on every watch (owner: "make sure it applies for
+     *  all watches"). Without one, those positions are not assessed at all (fail closed). */
+    @Test public void everyModelHasEdgeConsistencyLimitsForItsBatonsAndTwelve()throws Exception{
+        File[] dirs=new File(TestModels.assets(),"models").listFiles(File::isDirectory);
+        assertTrue(dirs!=null&&dirs.length>=3);
+        for(File d:dirs){
+            ModelSpec m=ModelSpec.load(ModelSpec.directory(TestModels.assets()),d.getName());
+            ModelReference r=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
+            for(ModelSpec.Marker mk:m.markers){
+                if(mk.shape==ModelSpec.Shape.ROUND)continue;
+                String fam=mk.key+"_width_agreement";
+                assertTrue(d.getName()+" "+fam+".nominal",Double.isFinite(r.sigma(fam,"nominal")));
+                assertTrue(d.getName()+" "+fam+".limit",r.limit(fam)>0&&r.limit(fam)<0.02);
+            }
+        }
+    }
 
     @Test public void gmtSpecReproducesTheFrozenConstants(){
         ModelSpec m=TestModels.gmt();
@@ -86,12 +123,36 @@ public class ModelSpecTest {
         assertNull(m.date);
         assertEquals(12,m.markers.size());assertEquals("three",m.atHour(3).key);assertEquals(0.7591,m.atHour(6).centreR,0);
         ModelReference r=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
-        assertEquals(24,r.triangle.nWatches);assertEquals(3.0,r.kSigma,0);
+        assertEquals(93,r.triangle.nWatches);   // 24 catalogue + 31 EWC + 37 Bob's packs + 6 from the harvester run (one EWC listing trio merged, one 12 edge-filtered); Alpha105g: two DavidSW watches whose only 12 reading is one-sided
+        assertEquals(3.0,r.kSigma,0);
         for(String f:new String[]{"three_rot","three_off","six_rot","six_off","nine_rot","nine_off","rounds_off","ring_rot","ring_shift","rounds_size","round_size_rel"})assertTrue(f,r.has(f));
         assertFalse(r.has("date_tilt"));
         // QC guardrails 11: held-out genuine conflict on round-plot size -> no allowance, so at most worth a look
         assertTrue(Double.isNaN(r.sigma("rounds_size","R")));assertTrue(Double.isNaN(r.sigma("round_size_rel","R")));
         assertTrue(r.sigma("six_rot","deg")>0);
+    }
+
+    @Test public void submarinerDate126610IsThe124060DialWithADateWindowAndItsOwnGenuineReference()throws Exception{
+        String[][] map={{"alpha98_reference.csv",ModelReference.GENUINE},{"alpha98_nominal.properties",ModelReference.NOMINAL},
+                {"m12_nominal.properties",ModelReference.TRI_NOMINAL},{"m12_genuine_reference.csv",ModelReference.TRI_REFERENCE},
+                {"alpha99_uncertainty.properties",ModelReference.UNCERTAINTY}};
+        File research=new File(researchDir(),"../sub126610/reference_src"),ref=new File(TestModels.assets(),"models/submariner_126610/reference");
+        for(String[] p:map)assertArrayEquals(p[0]+" -> "+p[1]+" (re-run export_model_reference.py --model submariner_126610 --source-dir tools/research/sub126610/reference_src)",
+                Files.readAllBytes(new File(research,p[0]).toPath()),Files.readAllBytes(new File(ref,p[1]).toPath()));
+        ModelSpec m=ModelSpec.load(ModelSpec.directory(TestModels.assets()),"submariner_126610");
+        ModelSpec sub=ModelSpec.load(ModelSpec.directory(TestModels.assets()),"submariner_124060");
+        assertNotNull(m.date);assertNull(m.atHour(3));assertEquals(11,m.markers.size());
+        for(ModelSpec.Marker x:m.markers){ModelSpec.Marker y=sub.atHour(x.hour);       // the 124060 dial master, unchanged
+            assertEquals(x.shape,y.shape);assertEquals(y.centreR,x.centreR,0);assertEquals(y.outerR,x.outerR,0);}
+        ModelReference r=ModelReference.load(ModelSpec.directory(TestModels.assets()),m);
+        assertTrue(r.triangle.nWatches>=100);
+        for(String f:new String[]{"six_rot","six_off","nine_rot","nine_off","rounds_off","ring_rot","ring_shift"})assertTrue(f,r.has(f));
+        assertFalse(r.has("three_rot"));
+        assertFalse(r.has("date_tilt"));                                         // date window: no genuine reference yet -> not assessed
+        assertTrue(Double.isNaN(r.sigma("rounds_size","R")));assertTrue(Double.isNaN(r.sigma("round_size_rel","R")));
+        // no repeat photos in the 126610 catalogue: the 124060 photo-to-photo allowances are used
+        ModelReference rs=ModelReference.load(ModelSpec.directory(TestModels.assets()),sub);
+        assertEquals(rs.sigma("six_rot","deg"),r.sigma("six_rot","deg"),0);
     }
 
     @Test public void submarinerBatonPositionIsResolutionMatched()throws Exception{

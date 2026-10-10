@@ -26,7 +26,8 @@ import java.util.Map;
  */
 public class Alpha99ResultsActivity extends Activity {
     static final int BG=Color.rgb(8,17,31),CARD=Color.rgb(17,30,50),MUTED=Color.rgb(158,176,201),
-            RED=Color.rgb(255,99,88),AMBER=Color.rgb(255,176,50),GREEN=Color.rgb(72,209,108),GREY=Color.rgb(160,160,168);
+            RED=Color.rgb(255,99,88),AMBER=Color.rgb(255,176,50),GREEN=Color.rgb(72,209,108),GREY=Color.rgb(160,160,168),
+            SLATE=Color.rgb(120,170,220);
 
     /** Process-local handoff from the measuring activity. */
     static final class Store {
@@ -47,7 +48,7 @@ public class Alpha99ResultsActivity extends Activity {
     }
 
     static int colour(Alpha99Findings.Status s){
-        switch(s){case CLEAR:return RED;case WORTH:return AMBER;case WITHIN:return GREEN;default:return GREY;}
+        switch(s){case CLEAR:return RED;case WORTH:return AMBER;case MINOR:case WITHIN:return GREEN;default:return GREY;}
     }
 
     private View build(){
@@ -94,8 +95,8 @@ public class Alpha99ResultsActivity extends Activity {
             root.addView(ov,lp(-1,dp(48),18));
         }
         TextView tech=text(Store.technical==null?"":Store.technical,12,MUTED,false);tech.setTextIsSelectable(true);tech.setVisibility(View.GONE);
-        Button details=new Button(this);details.setText("Technical details  ▸");details.setAllCaps(false);
-        details.setOnClickListener(v->{boolean show=tech.getVisibility()!=View.VISIBLE;tech.setVisibility(show?View.VISIBLE:View.GONE);details.setText(show?"Technical details  ▾":"Technical details  ▸");});
+        Button details=new Button(this);details.setText("Exact measurements  ▸");details.setAllCaps(false);
+        details.setOnClickListener(v->{boolean show=tech.getVisibility()!=View.VISIBLE;tech.setVisibility(show?View.VISIBLE:View.GONE);details.setText(show?"Exact measurements  ▾":"Exact measurements  ▸");});
         root.addView(details,lp(-1,dp(48),8));root.addView(tech,lp(-1,-2,6));
         return scroll;
     }

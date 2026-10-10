@@ -133,6 +133,8 @@ def main():
     loso = defaultdict(list); loso_nom = {}
     for s in sorted({w['src'] for w in W}):
         rest = [x for x in W if x['src'] != s]
+        if not rest:                      # single-source catalogue (e.g. 126610: Bob's only): no leave-one-source-out
+            continue
         loso_nom[s] = nominal(rest)
         loso[s] = [offset(w, loso_nom[s]) for w in W if w['src'] == s]
     rnd = random.Random(12)
@@ -142,12 +144,13 @@ def main():
     # computed without that watch (no self-grading). Used only to report how many genuine watches read at least as far.
     with open(a.reference, 'w', newline='') as fh:
         wr = csv.writer(fh)
-        wr.writerow(['physical_watch_id', 'source', 'lateral_R', 'radial_R', 'centreline_deg', 'sides_deg'])
+        wr.writerow(['physical_watch_id', 'source', 'lateral_R', 'radial_R', 'centreline_deg', 'sides_deg', 'radial_signed_R'])
         for w in W:
             n = nominal([x for x in W if x is not w])
             wr.writerow([w['watch'], w['src'], f"{abs(w['tangential_R'] - n['tangential_R']):.6f}",
                          f"{abs(w['radial_R'] - n['radial_R']):.6f}", f"{abs(w['rotation_deg'] - n['rotation_deg']):.6f}",
-                         f"{max(abs(w['left_side_deg'] - n['left_side_deg']), abs(w['right_side_deg'] - n['right_side_deg'])):.6f}"])
+                         f"{max(abs(w['left_side_deg'] - n['left_side_deg']), abs(w['right_side_deg'] - n['right_side_deg'])):.6f}",
+                         f"{w['radial_R'] - n['radial_R']:.6f}"])
     with open(a.properties, 'w') as fh:
         fh.write('# RESEARCH ONLY. Genuine-calibrated 12-triangle nominal, relative to the Alpha92 master.\n'
                  f'# Written by calibrate_m12_nominal.py from {os.path.relpath(a.per_photo, HERE)}; dedup level {a.level}; '

@@ -17,7 +17,7 @@ import org.opencv.imgproc.Imgproc;
 final class Alpha99Overview {
     static final int SIZE=720;
     static final double HALF=1.12;
-    static final Scalar GREEN=new Scalar(52,199,89,255),AMBER=new Scalar(255,159,10,255),RED=new Scalar(255,59,48,255),
+    static final Scalar GREEN=new Scalar(52,199,89,255),AMBER=new Scalar(255,159,10,255),RED=new Scalar(255,59,48,255),SLATE=new Scalar(120,170,220,255),
             GREY=new Scalar(142,142,147,255),WHITE=new Scalar(255,255,255,255),YELLOW=new Scalar(255,214,10,255);
 
     private Alpha99Overview(){}
@@ -58,12 +58,12 @@ final class Alpha99Overview {
 
     static void badge(Mat m,Point c,Alpha99Findings.Status st,String label){
         int rad=SIZE/38,th=Math.max(2,SIZE/240);
-        Scalar fill=st==Alpha99Findings.Status.CLEAR?RED:st==Alpha99Findings.Status.WORTH?AMBER:st==Alpha99Findings.Status.WITHIN?GREEN:GREY;
+        Scalar fill=st==Alpha99Findings.Status.CLEAR?RED:st==Alpha99Findings.Status.WORTH?AMBER:st==Alpha99Findings.Status.WITHIN||st==Alpha99Findings.Status.MINOR?GREEN:GREY;
         Imgproc.circle(m,c,rad+th,new Scalar(0,0,0,255),-1,Imgproc.LINE_AA);
         Imgproc.circle(m,c,rad,fill,-1,Imgproc.LINE_AA);
         double x=c.x,y=c.y,u=rad*0.5;
         switch(st){
-            case WITHIN:
+            case WITHIN:case MINOR:   // Alpha105: too small to see is shown as within
                 Imgproc.line(m,new Point(x-u,y),new Point(x-u*0.25,y+u*0.7),WHITE,th+1,Imgproc.LINE_AA);
                 Imgproc.line(m,new Point(x-u*0.25,y+u*0.7),new Point(x+u,y-u*0.7),WHITE,th+1,Imgproc.LINE_AA);break;
             case WORTH:bang(m,x,y,u,th);break;

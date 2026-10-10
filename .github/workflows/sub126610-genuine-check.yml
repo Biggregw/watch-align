@@ -1,0 +1,97 @@
+name: Submariner Date 126610 (41 mm) genuine check (research)
+
+# RESEARCH ONLY. Runs the app's full analysis (Alpha99Pipeline: pose, measurement, per-marker hand/glare check,
+# evidence states) with the research 124060 spec and its genuine reference (tools/research/sub126610/models) on every
+# sha256-verified genuine 124060 photo, plus the per-marker interference table. Then prints a lower-dial close-up of
+# the SwissWatchExpo photos (external held-out set) as base64 JPEG in the LOG ONLY, to see what moves their 6 o'clock.
+# CSVs are uploaded; images are never committed, cached or uploaded.
+on:
+  push:
+    branches:
+      - feature/android-alpha102-submariner
+    paths:
+      - '.github/workflows/sub126610-genuine-check.yml'
+      - 'tools/research/sub126610/models/**'
+      - 'tools/desktop-harness/drivers/SubPeek.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99MarkerInterference.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Findings.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Pipeline.java'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SUB: tools/research/sub126610
+      IMG: sub_images
+      OUT: sub_results
+      JAVA_TOOL_OPTIONS: -Dwatchalign.model=submariner_126610 -Dwatchalign.models_root=tools/research/sub126610
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests opencv-python-headless
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Fetch catalogued photos (sha256-verified)
+        env:
+          JAVA_TOOL_OPTIONS: ''
+        run: |
+          mkdir -p "$IMG" "$OUT"
+          python3 tools/research/alpha96_calibration/fetch_verified.py "$SUB/catalogue_126610.csv" "$IMG" "$OUT/fetch_log.csv"
+          python3 - <<'PY'
+          import csv
+          rows = [r for r in csv.DictReader(open('tools/research/sub126610/catalogue_126610.csv')) if r['class_label'] == 'gen']
+          with open('gen_manifest.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
+          swe = [r for r in rows if 'swisswatchexpo' in r['image_url']]
+          with open('swe_manifest.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(swe)
+          PY
+      - name: Interference check
+        run: tools/desktop-harness/run.sh Alpha99Interference gen_manifest.csv "$IMG" "$OUT" --no-images > "$OUT/interference_log.txt" 2>/dev/null
+      - name: Full analysis (app pipeline)
+        run: tools/desktop-harness/run.sh Alpha99Preview gen_manifest.csv "$IMG" "$OUT" --no-images > "$OUT/preview_log.txt" 2>/dev/null
+      - name: Upload CSVs (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sub126610-genuine-check-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            sub_results/*.csv
+            sub_results/*.txt
+      - name: Print results to log
+        if: always()
+        run: |
+          python3 -c "import csv,collections;print('fetch:',collections.Counter(r['status'] for r in csv.DictReader(open('sub_results/fetch_log.csv'))))"
+          for f in findings.csv interference.csv preview_log.txt interference_log.txt; do echo "=== $f BEGIN"; cat "$OUT/$f"; echo "=== $f END"; done
+      - name: Photos with a clear / worth-a-look finding, and the 6 o'clock outlier, as base64 JPEG (log-only, LAST STEP)
+        if: always()
+        run: |
+          JAVA_TOOL_OPTIONS= python3 - <<'PY'
+          import base64, csv, os, cv2
+          f = list(csv.DictReader(open('sub_results/findings.csv')))
+          ids = [r['photo_id'] for r in f if r['alpha99_status'] == 'CLEAR'] + [r['photo_id'] for r in f if r['alpha99_status'] == 'WORTH']
+          cat = {r['photo_id']: r for r in csv.DictReader(open('gen_manifest.csv'))}
+          ids = ['aae59db4a70ab5e9'] + [i for i in dict.fromkeys(ids) if i != 'aae59db4a70ab5e9']
+          for pid in ids[:10]:
+              p = os.path.join(os.environ['IMG'], cat[pid]['local_path'])
+              im = cv2.imread(p)
+              if im is None: print('=== not fetched', pid); continue
+              k = 900 / max(im.shape[:2]); im = cv2.resize(im, (int(im.shape[1] * k), int(im.shape[0] * k)))
+              ok, buf = cv2.imencode('.jpg', im, [cv2.IMWRITE_JPEG_QUALITY, 70])
+              print('=== ' + pid + ' ' + cat[pid]['physical_watch_id'] + ' BASE64 JPEG BEGIN'); print(base64.b64encode(buf.tobytes()).decode()); print('=== END')
+          PY

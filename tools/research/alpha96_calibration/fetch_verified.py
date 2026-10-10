@@ -20,6 +20,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 from harvester.http import FetchError, Http  # noqa: E402
 
 
+# Bob's image CDN re-encodes to WebP/AVIF unless JPEG is asked for; the harvester (and the owner's phone runs) request
+# JPEG, so the catalogued bytes are the JPEG originals (harvest-lists run 37919395438: 606 of 1068 differed without it).
+BOBS_ACCEPT = {'Accept': 'image/jpeg,image/png;q=0.9,image/*;q=0.5'}
+
+
+def accept_for(url):
+    return BOBS_ACCEPT if 'bobswatches.com' in url else None
+
+
 def main(catalogue, root, log_path):
     rows = list(csv.DictReader(open(catalogue)))
     http = Http()
@@ -37,7 +46,7 @@ def main(catalogue, root, log_path):
             url = r['image_url']
             if url not in by_url:
                 try:
-                    by_url[url] = ('ok', http.get(url).content)
+                    by_url[url] = ('ok', http.get(url, headers=accept_for(url)).content)
                 except FetchError as e:
                     by_url[url] = (e.args[0] if e.args else 'fetch_error', None)
             st, data = by_url[url]

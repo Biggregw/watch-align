@@ -2,7 +2,9 @@ package com.watchalign.mobile;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -165,6 +167,9 @@ public class Alpha99FindingsTest {
         assertEquals(Alpha99Findings.Status.WITHIN,find(s,"round5").status);
         assertEquals(Alpha99Findings.Status.WITHIN,find(s,"rounds_size").status);  // dial median unchanged
         for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind))m.radiusErrPx=0.005*R;
+        // Alpha103: outside the genuine range but under the visibility bar (5% of the marker's radius): too small to see
+        assertEquals(Alpha99Findings.Status.MINOR,find(Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"rounds_size").status);
+        for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind))m.radiusErrPx=0.008*R;
         Alpha99Findings.Summary big=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         Alpha99Findings.Finding all=find(big,"rounds_size");
         assertTrue(all.status==Alpha99Findings.Status.CLEAR||all.status==Alpha99Findings.Status.WORTH);
@@ -200,13 +205,51 @@ public class Alpha99FindingsTest {
     }
 
     @Test public void batonExamplesFromTheBrief(){
-        // 6 rotation ~0.8 deg vs genuine max ~0.7 -> worth a look; 9 rotation ~1.6 deg vs max ~0.65 -> clear
-        Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
+        // 6 rotation ~1.1 deg vs genuine max ~0.7 -> worth a look (Alpha105: 0.8 deg is now under the 1.0 deg visibility bar); 9 rotation ~1.6 deg vs max ~0.65 -> clear
+        Alpha94MarkerMeasurement.Report r=report(6,1.1+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         assertEquals(Alpha99Findings.Status.WORTH,find(s,"six").status);
         assertEquals(Alpha99Findings.Status.CLEAR,find(s,"nine").status);
         assertEquals("9 o'clock",s.tiles().get(0).title);                                 // clear first
         assertTrue(find(s,"nine").shortLine(),find(s,"nine").shortLine().startsWith("rotated 1.6° anticlockwise; genuine up to 0.6°"));
+    }
+
+    /** Product decision 2026-10-10: a measurable borderline issue deserves a close-up.
+     *  Preserve the genuine reference and the existing too-small-to-see safeguard.
+     *  These are synthetic measurement-contract checks, not claims about the detector
+     *  processing the actual Reddit photographs. */
+    @Test public void visibleBorderlineMustBeOfferedForHumanReview(){
+        double n6=TestModels.gmtRef().nominal("six_rot");
+        double n9=TestModels.gmtRef().nominal("nine_rot");
+        Alpha99Findings.Summary borderline=Alpha99Findings.build(
+                report(6,n6+1.1,9,n9),null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        Alpha99Findings.Finding six=find(borderline,"six");
+        assertEquals(Alpha99Findings.Status.WORTH,six.status);
+        assertEquals("WORTH A LOOK",six.statusLabel());
+        assertTrue("A visible borderline deviation must produce an inspectable close-up tile",
+                borderline.tiles().contains(six));
+        assertTrue("Headline must draw attention to the borderline marker",
+                borderline.headline().contains("worth a look: 6"));
+
+        Alpha99Findings.Summary strong=Alpha99Findings.build(
+                report(6,n6,9,n9-1.6),null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        Alpha99Findings.Finding nine=find(strong,"nine");
+        assertEquals(Alpha99Findings.Status.CLEAR,nine.status);
+        assertTrue("A clear deviation must have a close-up",strong.tiles().contains(nine));
+
+        Alpha99Findings.Summary microscopic=Alpha99Findings.build(
+                report(6,n6+0.9,9,n9),null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        Alpha99Findings.Finding tinySix=find(microscopic,"six");
+        assertEquals("Sub-1-degree rotation remains below the documented visibility bar",
+                Alpha99Findings.Status.MINOR,tinySix.status);
+        assertFalse("Do not create a close-up for an objectively too-small-to-see difference",
+                microscopic.tiles().contains(tinySix));
+
+        assertEquals("Photo validity and confidence must not be bypassed",
+                Alpha99Findings.Status.NOT_ASSESSED,
+                find(Alpha99Findings.build(report(6,n6+3,9,n9),null,
+                        new LinkedHashMap<Integer,Alpha99MarkerInterference.Check>(),
+                        TestModels.gmt(),TestModels.gmtRef()),"six").status);
     }
 
     // ---------------------------------------------------------------- interference gate
@@ -232,10 +275,67 @@ public class Alpha99FindingsTest {
         double lim=Alpha98Findings.matchedMax(TestModels.gmtRef().far("rounds_off"),TestModels.gmtRef().radius("rounds_off"),r.dialRadiusPx);
         for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind))m.localOffsetPx=(m.hour==8||m.hour==11?lim*1.2:lim*0.5)*r.dialRadiusPx;
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
-        assertEquals(Alpha99Findings.Status.WORTH,find(s,"round8").status);
-        assertEquals(Alpha99Findings.Status.WORTH,find(s,"round11").status);
+        // Alpha103: just past the genuine maximum is far below what the eye can see (5% of the marker's width)
+        assertEquals(Alpha99Findings.Status.MINOR,find(s,"round8").status);
+        assertEquals(Alpha99Findings.Status.MINOR,find(s,"round11").status);
+        assertTrue(s.headline(),s.headline().startsWith("No visible deviation"));
+        // Alpha105: shown as within (green, no tile), named in the within line
+        assertFalse(s.headline(),s.headline().contains("Too small"));
+        assertTrue(s.withinLine(),s.withinLine().contains("8")&&s.withinLine().contains("11"));
+        for(Alpha99Findings.Finding f:s.tiles())assertNotEquals(Alpha99Findings.Status.MINOR,f.status);
+        for(Alpha94MarkerMeasurement.Marker m:r.markers)if(m.hour==8||m.hour==11)m.localOffsetPx=0.012*r.dialRadiusPx;
+        s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        assertNotEquals(Alpha99Findings.Status.MINOR,find(s,"round8").status);
+        assertNotEquals(Alpha99Findings.Status.WITHIN,find(s,"round8").status);
         assertEquals(Alpha99Findings.Status.WITHIN,find(s,"round1").status);
         assertTrue(s.withinLine().contains("1, 2, 4, 5, 7, 10"));
+    }
+
+    // ---------------------------------------------------------------- Alpha103 photo trust
+    /** Sets a marker's local offset to a picture-direction vector (x right, y down) of the given length in px. */
+    static void picture(Alpha94MarkerMeasurement.Marker m,double x,double y){
+        double a=Math.toRadians(m.hour*30.0);
+        m.localRadialPx=x*Math.sin(a)-y*Math.cos(a);m.localTangentialPx=x*Math.cos(a)+y*Math.sin(a);m.localOffsetPx=Math.hypot(x,y);
+    }
+
+    @Test public void oppositeMarkersDisplacedTheSameWayInThePictureAreNeverClear(){
+        Alpha94MarkerMeasurement.Report r=report(6,0,9,0);double px=0.012*r.dialRadiusPx;     // well past the visibility bar
+        picture(r.atHour(1),px,0);picture(r.atHour(7),px*0.9,px*0.2);                       // both to the right in the picture
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(Alpha99Findings.Status.WORTH,find(s,"round1").status);
+        assertEquals(Alpha99Findings.Status.WORTH,find(s,"round7").status);
+        assertTrue(String.join(" ",find(s,"round1").detail()).contains("opposite 7 o'clock marker is displaced the same way"));
+        // one marker alone out of place (its opposite one in place) is still a clear finding
+        picture(r.atHour(7),0.1,0);
+        s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(Alpha99Findings.Status.CLEAR,find(s,"round1").status);
+        // opposite displacements (one each way) are two separate deviations, not a shared photo shift
+        picture(r.atHour(7),-px,0);
+        s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(Alpha99Findings.Status.CLEAR,find(s,"round7").status);
+    }
+
+    @Test public void aRoundWhoseSizeMovesWithItsPositionIsGlareNotClear(){
+        Alpha94MarkerMeasurement.Report r=report(6,0,9,0);double R=r.dialRadiusPx;
+        for(Alpha94MarkerMeasurement.Marker m:r.markers)if("round".equals(m.kind))m.radiusErrPx=0.001*R;
+        picture(r.atHour(4),0.012*R,0);
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(Alpha99Findings.Status.CLEAR,find(s,"round4").status);
+        r.atHour(4).radiusErrPx=0.008*R;                                               // 0.7% larger as well
+        s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(Alpha99Findings.Status.WORTH,find(s,"round4").status);
+        assertTrue(String.join(" ",find(s,"round4").detail()).contains("Glare or a bright edge"));
+    }
+
+    @Test public void aPhotoBelowFullResolutionCoverageGetsNoClearRoundFinding(){
+        Alpha94MarkerMeasurement.Report big=report(6,0,9,0);
+        Alpha94MarkerMeasurement.Report r=new Alpha94MarkerMeasurement.Report(big.markers,big.ring,160,big.triangle);
+        assertTrue(TestModels.gmtRef().usesShrunkRows("rounds_off",160));
+        assertFalse(TestModels.gmtRef().usesShrunkRows("rounds_off",250));
+        picture(r.atHour(4),0.012*160,0);
+        Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
+        assertEquals(Alpha99Findings.Status.WORTH,find(s,"round4").status);
+        assertTrue(String.join(" ",find(s,"round4").detail()).contains("This photo is small"));
     }
 
     @Test public void resolutionLimitedRoundsGetNoOverviewBadge(){
@@ -272,8 +372,9 @@ public class Alpha99FindingsTest {
             // and every Alpha98 finding is still outside (clear or worth a look) when nothing interferes
             for(Alpha98Findings.Finding o:old.outside()){
                 boolean any=false;
+                // Alpha103: still listed - as clear, worth a look, or too small to see
                 for(Alpha99Findings.Finding f:now.all)if((f.key.startsWith("round")?"rounds":f.key).equals(o.key)
-                        &&(f.status==Alpha99Findings.Status.CLEAR||f.status==Alpha99Findings.Status.WORTH))any=true;
+                        &&(f.status==Alpha99Findings.Status.CLEAR||f.status==Alpha99Findings.Status.WORTH||f.status==Alpha99Findings.Status.MINOR))any=true;
                 assertTrue(row.get("photo_id")+" "+o.key,any);
             }
             n++;
@@ -298,7 +399,7 @@ public class Alpha99FindingsTest {
     }
 
     @Test public void headlineCountsByEvidenceStrength(){
-        Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
+        Alpha94MarkerMeasurement.Report r=report(6,1.1+TestModels.gmtRef().nominal("six_rot"),9,-1.6+TestModels.gmtRef().nominal("nine_rot"));
         Map<Integer,Alpha99MarkerInterference.Check> c=allClean();c.get(12).clean=false;c.get(12).reason=Alpha99MarkerInterference.HAND;
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,c,TestModels.gmt(),TestModels.gmtRef());
         assertEquals("1 clear alignment finding: 9",s.headlineLines().get(0));
@@ -308,7 +409,7 @@ public class Alpha99FindingsTest {
 
     @Test public void borderlineAloneSuggestsAnotherPhoto(){
         // QC guardrails 4: a worth-a-look reading on its own is not escalated; the headline asks for a repeat instead
-        Alpha94MarkerMeasurement.Report r=report(6,0.8+TestModels.gmtRef().nominal("six_rot"),9,TestModels.gmtRef().nominal("nine_rot"));
+        Alpha94MarkerMeasurement.Report r=report(6,1.1+TestModels.gmtRef().nominal("six_rot"),9,TestModels.gmtRef().nominal("nine_rot"));
         Alpha99Findings.Summary s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
         assertEquals(0,s.clear().size());
         assertEquals("1 measurement is worth a look: 6",s.headlineLines().get(0));
@@ -386,4 +487,68 @@ public class Alpha99FindingsTest {
         return new Alpha94MarkerMeasurement.Report(ms,g,250,t);
     }
     static Alpha99Findings.Finding find(Alpha99Findings.Summary s,String key){for(Alpha99Findings.Finding f:s.all)if(f.key.equals(key))return f;throw new AssertionError(key);}
+
+    @Test public void onlyACleanOutlineWithOneModestEdgelessArcGetsTheLightingGapFit(){
+        Alpha94MarkerMeasurement.Marker m=new Alpha94MarkerMeasurement.Marker(10,"round");
+        m.usable=false;m.reason="outline coverage 0.61, 6/8 octants";m.fitScorePx=0.0;m.edgeGapDeg=120;m.edgeGapDirDeg=140;
+        assertTrue(Alpha99Pipeline.edgeGapOnly(m));
+        m.edgeGapDeg=140;assertFalse(Alpha99Pipeline.edgeGapOnly(m));                      // too much outline missing
+        m.edgeGapDeg=120;m.fitScorePx=0.2;assertFalse(Alpha99Pipeline.edgeGapOnly(m));      // outline not clean: hand / glare
+        m.fitScorePx=0.0;m.reason="hand/occluder crosses outline (clean 0.40)";assertFalse(Alpha99Pipeline.edgeGapOnly(m));
+        m.reason="outline coverage 0.61, 6/8 octants";m.usable=true;assertFalse(Alpha99Pipeline.edgeGapOnly(m));
+    }
+
+    /** Alpha105: the 12 at the genuine nominal, moved outward (towards the minute track) by dr R. */
+    static Alpha94MarkerMeasurement.Report twelveAt(double dr){
+        Alpha94MarkerMeasurement.Report r=report(6,TestModels.gmtRef().nominal("six_rot"),9,TestModels.gmtRef().nominal("nine_rot"));
+        ModelReference.Triangle tr=TestModels.gmtRef().triangle;double R=r.dialRadiusPx;
+        r.triangle.usable=true;r.triangle.reason="";r.triangle.rotationDeg=tr.nominalRotationDeg;
+        r.triangle.leftSideErrDeg=tr.nominalLeftSideDeg;r.triangle.rightSideErrDeg=tr.nominalRightSideDeg;
+        r.triangle.localTangentialPx=tr.nominalTangentialR*R;r.triangle.localRadialPx=(tr.nominalRadialR+dr)*R;
+        return r;
+    }
+
+    @Test public void twelveCloseToTheMinuteTrackIsWorthALookNeverClear(){
+        Map<Integer,Alpha99MarkerInterference.Check> clean=allClean();
+        assertNotNull(TestModels.gmtRef().triangle.radialSignedR);
+        double closest=TestModels.gmtRef().triangle.radialMax(true);
+        assertEquals(0.0032,closest,0.0001);                                   // genuine GMT: at most 0.32% closer
+        // owner's GMT photo 2026-10-10: 0.71% of the dial closer to the track
+        Alpha99Findings.Finding f=find(Alpha99Findings.build(twelveAt(0.0071),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve");
+        assertEquals(Alpha99Findings.Status.WORTH,f.status);
+        assertTrue(f.shortLine(),f.shortLine().startsWith("closer to the minute track by 0.71% of the dial; genuine up to 0.32%"));
+        // further out than any genuine watch by a lot: still never clear (lighting moves this edge)
+        assertEquals(Alpha99Findings.Status.WORTH,find(Alpha99Findings.build(twelveAt(0.02),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
+        // past the genuine range but under 20% of the gap (0.006 R): too small to see (a genuine GMT photo read 0.46%)
+        assertEquals(Alpha99Findings.Status.MINOR,find(Alpha99Findings.build(twelveAt(0.0046),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
+        // further from the track is never judged (lighting: genuine photos read up to 1.22% further), only noted
+        Alpha99Findings.Finding in=find(Alpha99Findings.build(twelveAt(-0.02),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve");
+        assertEquals(Alpha99Findings.Status.WITHIN,in.status);
+        assertTrue(String.join(" ",in.detail()),String.join(" ",in.detail()).contains("further from the minute track"));
+        assertEquals(Alpha99Findings.Status.WITHIN,find(Alpha99Findings.build(twelveAt(0.001),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
+    }
+
+    /** Alpha105g root cause, recorded values of the Reddit QC photo 18vdgh0 gallery 01 (GMT, R 230.6): the 9's lower long
+     *  side was traced on the lume (-2.56 px) while the upper side sat on the outer edge (+0.87 px), so the centre read 1.38 px
+     *  "towards the 10" (CLEAR) although the lume was centred; gallery 02 of the same watch (both sides on the outer edge)
+     *  read within range. */
+    @Test public void oneSidedEdgeWithholdsTheBatonPositionAndKeepsItsRotation(){
+        double R=230.6;
+        Alpha94MarkerMeasurement.Report r=report(6,TestModels.gmtRef().nominal("six_rot"),9,TestModels.gmtRef().nominal("nine_rot"));
+        r=new Alpha94MarkerMeasurement.Report(r.markers,r.ring,R,r.triangle);
+        Alpha94MarkerMeasurement.Marker nine=r.atHour(9);
+        nine.localTangentialPx=1.38;nine.localRadialPx=0.68;nine.localOffsetPx=Math.hypot(1.38,0.68);
+        nine.sideOffR=new double[]{-2.56/R,2.50/R,0.87/R,-1.38/R};nine.sideCov=new double[]{1,1,1,1};
+        Alpha99Findings.Finding f=find(Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"nine");
+        assertEquals(Alpha99Findings.Status.WITHIN,f.status);                 // rotation within, position not assessed
+        assertEquals("position",f.partNotAssessed);
+        assertEquals("one edge hidden by a reflection",f.partReason);
+        for(Alpha99Findings.Measure x:f.measures)assertNotEquals("position",x.name);
+        assertTrue(String.join(" ",f.detail()),String.join(" ",f.detail()).contains("polished bevel"));
+        // a real displacement moves both long sides the same way and keeps the width: still measured and still flagged
+        nine.sideOffR=new double[]{-1.38/R+0.00172,2.50/R,1.38/R,-1.38/R};
+        f=find(Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"nine");
+        assertNull(f.partNotAssessed);
+        assertTrue(f.status.toString(),f.status==Alpha99Findings.Status.CLEAR||f.status==Alpha99Findings.Status.WORTH);
+    }
 }

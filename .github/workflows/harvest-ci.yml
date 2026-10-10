@@ -1,0 +1,93 @@
+# RESEARCH ONLY. Runs Bob's Rolex Harvester itself (built from tool/bobs-rolex-harvester-fix) on an Android emulator with
+# the searches in tools/research/generic_sub/harvest_plan.txt, then measures every accepted photo with Watch Align on the
+# same runner: the per-family geometry report and the app's findings (date references on the GMT 126710 model, no-date on
+# the 124060 model). The photo list (links + sha256) and a contact sheet are printed to the log; images never leave the
+# runner.
+name: CI harvest (generic Submariner research)
+
+on:
+  push:
+    branches:
+      - feature/android-alpha102-submariner
+    paths:
+      - 'tools/research/generic_sub/harvest_plan.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      OUT: harvest_out
+      IMG: harvest_images
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: tool/bobs-rolex-harvester-fix
+          path: hv
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests opencv-python-headless numpy
+      - name: Build the harvester
+        working-directory: hv/android
+        run: |
+          chmod +x gradlew
+          ./gradlew :bobsharvester:assembleDebug --stacktrace -q
+          cp bobsharvester/build/outputs/apk/debug/bobsharvester-debug.apk "$GITHUB_WORKSPACE/harvester.apk"
+      - name: Plan
+        run: |
+          grep -v '^#' tools/research/generic_sub/harvest_plan.txt | sed -n 1p > searches.txt
+          grep -v '^#' tools/research/generic_sub/harvest_plan.txt | sed -n 2p > max.txt
+          echo "searches: $(cat searches.txt); max listings: $(cat max.txt)"
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Harvest on an emulator (live site)
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          POLL: '720'
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            adb root; sleep 5; adb wait-for-device
+            adb install -r harvester.apk
+            OUT=harvest_out hv/tools/bobs_harvester_probe/e2e_run.sh run "$(cat searches.txt)" "$(cat max.txt)" | grep -v "^.*KEEP\|reject" | tail -60
+      - name: Photo list, contact sheet, measurement
+        if: always()
+        run: |
+          mkdir -p "$OUT/lists" "$OUT/m"
+          python3 tools/research/generic_sub/harvest_ci_prepare.py "$OUT/run" "$OUT/lists" "$IMG"
+          python3 tools/research/generic_sub/harvest_report.py manifest "$OUT/lists" "$OUT/m"
+          echo "photo_id,status" > "$OUT/m/fetch_log.csv"
+          JAVA_TOOL_OPTIONS="-Dwatchalign.model=submariner_124060 -Dwatchalign.models_root=tools/research/sub124060" tools/desktop-harness/run.sh Alpha96Calib "$OUT/m/manifest_all.csv" "$IMG" "$OUT/m/per_photo.csv" 2> "$OUT/m/runner_progress.txt"
+          JAVA_TOOL_OPTIONS=-Dwatchalign.model=gmt_126710 tools/desktop-harness/run.sh Alpha99Preview "$OUT/m/manifest_date.csv" "$IMG" "$OUT/m/date" --no-images > "$OUT/m/findings_date.txt" || true
+          JAVA_TOOL_OPTIONS=-Dwatchalign.model=submariner_124060 tools/desktop-harness/run.sh Alpha99Preview "$OUT/m/manifest_nodate.csv" "$IMG" "$OUT/m/nodate" --no-images > "$OUT/m/findings_nodate.txt" || true
+          python3 tools/research/generic_sub/harvest_report.py report "$OUT/m" "$OUT/m/per_photo.csv" "$OUT/m/fetch_log.csv" tools/research/sub124060/results/runner/per_photo.csv
+          echo; echo "=== findings headlines"
+          grep -hE "^==|clear|worth a look" "$OUT"/m/findings_*.txt || true
+      - name: Upload text results (no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-harvest-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            harvest_out/run/run_log.txt
+            harvest_out/run/image_decisions.csv
+            harvest_out/run/accepted.csv
+            harvest_out/m/*.csv
+            harvest_out/m/*.txt

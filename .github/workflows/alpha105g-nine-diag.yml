@@ -1,0 +1,110 @@
+# RESEARCH (Alpha105g, 9 o'clock reliability). The nine sha256-verified public Reddit QC photos (same inputs as
+# alpha105f-qc-controls.yml) and the genuine catalogues of every model through the app's own pipeline, with the baton
+# diagnostics: per-side offsets of the two long sides (a real shift moves both sides the same way; an edge picked on the
+# wrong facet of the polished surround moves one side and changes the width). Prints numbers and, for the QC photos only,
+# base64 close-ups of each baton to the log. Images are never committed or uploaded.
+name: Alpha105g 9 marker diagnostics
+on:
+  push:
+    branches: [feature/android-alpha105g-nine-fix]
+    paths:
+      - '.github/workflows/alpha105g-nine-diag.yml'
+      - 'tools/desktop-harness/drivers/BatonDiag.java'
+      - 'tools/research/alpha105g/**'
+      - 'android/app/src/main/java/**'
+      - 'android/app/src/main/assets/models/**'
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  qc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests opencv-python-headless
+      - name: Fetch the nine QC photos (sha256-verified)
+        run: python3 tools/research/alpha105g/fetch_qc.py qc_in
+      - name: Baton diagnostics
+        run: |
+          mkdir -p qc_out
+          for model in gmt_126710 submariner_124060; do
+            [ -f "qc_in/$model/manifest.csv" ] || continue
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh BatonDiag "qc_in/$model/manifest.csv" qc_in "qc_out/$model" 2>/dev/null | grep -v '^Picked'
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh Alpha99Preview "qc_in/$model/manifest.csv" qc_in "qc_out/$model/preview" --no-images 2>/dev/null | grep -v '^Picked'
+          done
+      - name: Known positives and 9 results
+        run: |
+          python3 - <<'PY2'
+          import csv, pathlib, sys
+          want = {('GMT_crooked6_1s4cszq', 'six'): {'WORTH', 'CLEAR'},
+                  ('SUB_rejected12_1wgfy7k', 'twelve'): {'WORTH', 'CLEAR'},
+                  ('SUB_accepted12_1w848xb', 'twelve'): {'WORTH', 'CLEAR'},
+                  ('SUB_accepted12_1w848xb_photo5', 'twelve'): {'WORTH', 'CLEAR'},
+                  ('SUB_control12_1kqn8ub', 'twelve'): {'WITHIN', 'MINOR'}}
+          got = {}
+          for f in pathlib.Path('qc_out').glob('*/preview/findings.csv'):
+              for r in csv.DictReader(open(f)):
+                  got[(r['photo_id'], r['feature'])] = (r['alpha99_status'], r['short_line'])
+          bad = 0
+          for k, ok in want.items():
+              st = got.get(k, ('missing', ''))
+              print('POSITIVE' if 'WITHIN' not in ok else 'CONTROL', k, st, 'OK' if st[0] in ok else 'LOST'); bad += st[0] not in ok
+          for k in sorted(got):
+              if k[1] in ('nine', 'three', 'six', 'twelve'):
+                  print('MARKER', k, got[k])
+          sys.exit(1 if bad else 0)
+          PY2
+      - name: Close-ups (base64 PNG, log only)
+        run: |
+          for f in qc_out/*/*_baton9.png qc_out/*/*_baton3.png qc_out/*/*_baton6.png; do
+            [ -f "$f" ] || continue
+            echo "BEGIN_PNG $(basename "$f")"; base64 -w 0 "$f"; echo; echo "END_PNG"
+          done
+  genuine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - model: gmt_126710
+            catalogue: tools/research/alpha96_calibration/catalogue_provenance_strong.csv
+          - model: submariner_124060
+            catalogue: tools/research/sub124060/catalogue_124060.csv
+          - model: submariner_126610
+            catalogue: tools/research/sub126610/catalogue_126610.csv
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests opencv-python-headless
+      - name: OpenCV jar cache
+        uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Fetch genuine photos (sha256-verified)
+        run: |
+          mkdir -p img
+          python3 tools/research/alpha96_calibration/fetch_verified.py "${{ matrix.catalogue }}" img fetch_log.csv > /dev/null
+          python3 - <<'PY'
+          import csv
+          rows = list(csv.DictReader(open('${{ matrix.catalogue }}')))
+          if 'class_label' in rows[0]:
+              rows = [r for r in rows if r['class_label'] == 'gen']
+          with open('manifest.csv', 'w', newline='') as fh:
+              w = csv.DictWriter(fh, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
+          print('genuine photos in manifest:', len(rows))
+          PY
+      - name: Per-photo runner with baton side columns
+        env:
+          JAVA_TOOL_OPTIONS: -Dwatchalign.model=${{ matrix.model }}
+        run: tools/desktop-harness/run.sh Alpha96Calib manifest.csv img per_photo.csv 2> /dev/null
+      - name: Genuine baton side statistics
+        run: python3 tools/research/alpha105g/side_stats.py per_photo.csv manifest.csv ${{ matrix.model }}

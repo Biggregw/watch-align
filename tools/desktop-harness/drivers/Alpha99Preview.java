@@ -98,7 +98,7 @@ public class Alpha99Preview {
         String within=s.withinLine();if(!within.isEmpty())y=text(g,within,PAD,y+16,W-2*PAD,font(false,38),MUTED)+10;
         String na=s.notAssessedLine();if(!na.isEmpty())y=text(g,na,PAD,y+6,W-2*PAD,font(false,38),MUTED)+10;
         y=button(g,"Open full overlay",y+30);
-        y=button(g,"Technical details  ▸",y+20);
+        y=button(g,"Exact measurements  ▸",y+20);
         g.dispose();
         return img.getSubimage(0,0,W,Math.min(6000,y+PAD));
     }

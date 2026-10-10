@@ -64,6 +64,9 @@ from one photo. Units: canonical, dial radius 1, 12 at the top.
    triangle sides disagree beyond the edge-consistency limit (lighting or blur on one edge). The limit comes from the
    unfiltered data, in one pass. Every other marker is untouched.
 3. `alpha96_calibration/calibrate_m12_nominal.py` (triangle nominal and per-watch 12 reference), on the filtered file.
+   Its `triangle_reference.csv` includes `radial_signed_R` (+ = towards the minute track), which the app needs to assess
+   the 12's distance from the minute track; `ModelSpecTest.everyModelWithATriangleAssessesTheTwelvesDistanceFromTheMinuteTrack`
+   fails for a model without it. The spec's `minute_track_inner_r` and the triangle's `base_r` set the gap.
 4. `sub124060/build_sub_reference.py --per-photo … --dedup … --spec model.json --out-dir reference_src` (marker reference,
    nominals and single-photo uncertainty, model-generic: batons come from the spec).
 5. Export: `python3 tools/research/alpha96_calibration/export_model_reference.py --model <id> --source-dir <dir>`.
@@ -114,6 +117,20 @@ only when that model's genuine evidence supports it; otherwise the reason is rec
 - **No uncertainty allowance for a feature** (e.g. the 124060's round size, too few repeat-photographed watches): a
   reading beyond the genuine range is at most "worth a look", never "clear".
 - **Too few resolution-matched genuine watches:** "not assessed - resolution too low".
+
+## Practical significance and photo trust (Alpha103, every model)
+
+Applied by the findings layer to every model from its `model.json`, with no per-model data:
+
+- **Too small to see:** a reading outside the genuine range by less than 5% of the marker's own width (positions,
+  sizes) or 0.75° (angles) is listed as "too small to see", never as a deviation (QC guardrails §4). It cannot be clear.
+- **Small photos:** a feature judged against shrunk-genuine rows (`max_photo_r`) is at most worth a look.
+- **Opposite markers** (3/9, 1/7, 2/8, 4/10, 5/11) displaced the same way in the picture: at most worth a look (photo
+  angle or lighting, not two misplaced markers).
+- **Glare:** a round marker whose size reads off by at least half its position offset: its position is at most worth a look.
+
+Origin: a replica QC video (4 frames of one watch) gave clear findings that changed from frame to frame, all about one
+pixel; `.github/workflows/alpha103-regression.yml` checks that the genuine catalogues only ever get less severe.
 
 ## When code is still needed
 

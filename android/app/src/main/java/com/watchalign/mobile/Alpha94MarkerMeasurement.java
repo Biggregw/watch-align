@@ -44,6 +44,14 @@ final class Alpha94MarkerMeasurement {
         /** fitScorePx = 1 - outline integrity (0 = perfectly clean outline); fitSupport = edge coverage. */
         double fitScorePx=Double.NaN,fitSupport=Double.NaN;
         double radiusErrPx=Double.NaN;
+        /** Alpha105, round markers: the widest arc of outline without a fitted edge (deg) and its middle direction
+         *  (canonical atan2(y,x) deg, 0..360), set when the coverage test fails; NaN otherwise. */
+        double edgeGapDeg=Double.NaN,edgeGapDirDeg=Double.NaN;
+        /** Alpha105g: free-fit radius error (px) of a round fit that failed the coverage test; NaN otherwise. */
+        double failedRadiusErrPx=Double.NaN;
+        /** Polygon markers (batons, 12): per side, the fitted line's offset from the master side along its outward normal
+         *  (canonical units, + = outward), its edge coverage, and the fitted vertices. Diagnostics; null otherwise. */
+        double[] sideOffR,sideCov;double[][] fitVertices;
         double canonDx=Double.NaN,canonDy=Double.NaN;
         /** 12 triangle only (research-only display): side angle errors and base tilt, + = clockwise. */
         double leftSideErrDeg=Double.NaN,rightSideErrDeg=Double.NaN,baseTiltDeg=Double.NaN;
@@ -344,7 +352,14 @@ final class Alpha94MarkerMeasurement {
         double integ=outlineIntegrity(s,op,nr,rpx,0.035);
         m.fitSupport=cov;m.fitScorePx=1.0-integ;
         if(integ<MIN_INTEGRITY){m.reason=String.format(Locale.US,"hand/occluder crosses outline (clean %.2f)",integ);return null;}
-        if(cov<0.60||octants<7-lostOct){m.reason=String.format(Locale.US,"outline coverage %.2f, %d/8 octants",cov,octants);return null;}
+        if(cov<0.60||octants<7-lostOct){
+            List<Double> ang=new ArrayList<>();
+            for(int i=0;i<P.size();i++)if(inl[i]){double a=Math.toDegrees(Math.atan2(P.get(i)[1]-cy,P.get(i)[0]-cx));ang.add(((a%360)+360)%360);}
+            java.util.Collections.sort(ang);
+            for(int i=0;i<ang.size();i++){double a0=ang.get(i),a1=i+1<ang.size()?ang.get(i+1):ang.get(0)+360,gap=a1-a0;
+                if(!(gap<=m.edgeGapDeg)){m.edgeGapDeg=gap;m.edgeGapDirDeg=((a0+gap/2)%360+360)%360;}}
+            if(!Double.isFinite(fixedRadius))m.failedRadiusErrPx=(radius-r0)*rpx;
+            m.reason=String.format(Locale.US,"outline coverage %.2f, %d/8 octants",cov,octants);return null;}
         if(Math.abs(radius-r0)>0.15*r0){m.reason="implausible radius";return null;}
         m.usable=true;m.rotationDeg=0.0;m.radiusErrPx=Double.isFinite(fixedRadius)?Double.NaN:(radius-r0)*rpx;
         return new double[]{cx,cy};
@@ -425,8 +440,13 @@ final class Alpha94MarkerMeasurement {
         for(int i=0;i<k;i++){V[i]=intersect(lp[(i+k-1)%k],ld[(i+k-1)%k],lp[i],ld[i]);if(V[i]==null){m.reason="degenerate marker fit";return null;}}
         double[] centre=polygonCentroid(V);
         double[] angErr=new double[k];double maxAng=0,maxOff=0,minCov=1;
+        m.sideOffR=new double[k];m.sideCov=cov.clone();m.fitVertices=V;
         for(int i=0;i<k;i++){
             angErr[i]=wrap90(Math.toDegrees(Math.atan2(ld[i][1],ld[i][0])-Math.atan2(dm[i][1],dm[i][0])));
+            // offset of the fitted line at the master side's midpoint (independent of the side's tilt)
+            double mx=a[i][0]+0.5*L[i]*dm[i][0],my=a[i][1]+0.5*L[i]*dm[i][1];
+            double tt=(mx-lp[i][0])*ld[i][0]+(my-lp[i][1])*ld[i][1];
+            m.sideOffR[i]=(lp[i][0]+tt*ld[i][0]-mx)*nm[i][0]+(lp[i][1]+tt*ld[i][1]-my)*nm[i][1];
             double off=(lp[i][0]-a[i][0])*nm[i][0]+(lp[i][1]-a[i][1])*nm[i][1];
             maxAng=Math.max(maxAng,Math.abs(angErr[i]));maxOff=Math.max(maxOff,Math.abs(off));minCov=Math.min(minCov,cov[i]);
         }
