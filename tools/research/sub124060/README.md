@@ -270,3 +270,37 @@ The owner's next harvester run (pack made by app 1.4) had one face-on photo of a
 187502 within 0.00025 R on 8+ markers, closer than two photos of one watch usually do: the same watch relisted. Both
 photos now share `physical_watch_id` `bobs_124060_187502_187822` (one watch, two photos), as with the EWC trio in §14.
 Still 96 watches; genuine maxima and allowances unchanged; leave-one-watch-out 0 clear (27 worth a look).
+
+## 17. Alpha105g: one-sided edge readings excluded (2026-10-10)
+
+The app fits each baton's long sides and the 12 triangle's sides to the outermost edge. When lighting darkens one side's
+polished bevel, that side lands on the lume edge and the marker centre shifts. The Alpha105g genuine-photo study (CI
+38054695092, `../alpha105g/side_stats.py`) flags a genuine reading whose two-side width deviates from the model median by
+more than 3 x robust spread. Those readings set the top of the 6 position and 12 lateral references (DavidSW).
+
+**Rule (QC guardrails 1: documented measurement-quality exclusion):** `../alpha105g/apply_edge_consistency.py` marks the
+flagged marker of each flagged photo unusable (`m<h>_usable=false`); for the 12 that removes the photo's whole 12 reading,
+as `edge_filter.py` does. Flags: `../alpha105g/edge_flags.csv` (here: 15 photos at the 6, of which 11 are SwissWatchExpo
+external photos that never enter the reference; 1 at the 3; 5 at the 12). Every other marker and photo is untouched.
+Output: `results/runner/per_photo_edge_consistent.csv`. Rebuild order (section 14) gains one step: ... `edge_filter.py` ->
+`apply_edge_consistency.py` -> `calibrate_m12_nominal.py` + `build_sub_reference.py` on `per_photo_edge_consistent.csv`
+(same arguments as before). The committed reference was first reproduced byte for byte from `per_photo_edge.csv`.
+Allowances (`alpha99_uncertainty.properties`) are not rebuilt and stay unchanged.
+
+| Feature | before (n, max) | after (n, max) |
+|---|---|---|
+| six_off | 88, 0.353% R (DavidSW 5c3a5b60da5d) | 86, 0.267% R (Bob's 185853) |
+| six_rot | 88, 0.86 deg | 86, 0.86 deg |
+| three_off | 95, 0.254% R | 94, 0.254% R |
+| three_rot | 95, 0.855 deg | 94, 0.859 deg (nominal -0.128 -> -0.132 deg: the Phillips watch's 3 left) |
+| 12 lateral | 95, 0.409% R (DavidSW 5c3a5b60da5d) | 93, 0.258% R (Bob's 189892) |
+| 12 radial | 95, 0.403% R | 93, 0.407% R (triangle nominal re-centred) |
+| 12 centreline / sides | 95, 1.24 / 1.40 deg | 93, 1.24 / 1.40 deg |
+| 9, rounds, ring | unchanged | unchanged |
+
+DavidSW watches 5c3a5b60da5d and dc4ee2d322fd had only the flagged photo, so they leave the 6 and 12 references.
+
+**Held-out:** leave-one-watch-out 0 clear on every feature, before and after; 6 position worth a look 0 -> 3 (EWC 62097,
+EWC 58030, Bob's 185853: 0.204 / 0.195 / 0.267% R against leave-one-out maxima 0.191 / 0.191 / 0.213% R). External SWE: the 6's clears (seconds hand, section 4)
+drop from 10 / 12 (position / rotation) to 0 / 1, because 11 of those readings are now flagged; the remaining one
+(`87da4af1942b938d`, rotation 2.48 deg) is the same seconds-hand case. Low-resolution held-out: 0 clear.

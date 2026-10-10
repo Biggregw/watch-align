@@ -5,12 +5,12 @@
 | full | round_size_rel | 123 | 5 | 0 | 0 |
 | full | rounds_off | 123 | 5 | 0 | 0 |
 | full | rounds_size | 124 | 4 | 0 | 0 |
-| full | six_off | 122 | 0 | 0 | 0 |
-| full | three_off | 136 | 1 | 0 | 0 |
+| full | six_off | 119 | 3 | 0 | 0 |
+| full | three_off | 135 | 1 | 0 | 0 |
 | low (R<181) | nine_off | 1 | 4 | 0 | 8 |
 | low (R<181) | ring_shift | 9 | 3 | 0 | 1 |
 | low (R<181) | round_size_rel | 11 | 1 | 0 | 1 |
 | low (R<181) | rounds_off | 11 | 1 | 0 | 1 |
 | low (R<181) | rounds_size | 12 | 0 | 0 | 1 |
-| low (R<181) | six_off | 1 | 0 | 0 | 7 |
+| low (R<181) | six_off | 1 | 0 | 0 | 3 |
 | low (R<181) | three_off | 5 | 0 | 0 | 7 |

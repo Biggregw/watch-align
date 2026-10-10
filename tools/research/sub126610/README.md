@@ -39,3 +39,22 @@ watch. `../sub124060/apply_interference.py` now marks every marker the app withh
 the reference is built (116 markers on 104 photos), so the reference holds only readings the app would trust.
 Result: 6 baton genuine max 2.04 -> 0.75 deg (124060: 0.86), 108-118 watches per feature; leave-one-watch-out 0 clear
 (10 worth a look). The 124060 reference was built without this step; adopting it there needs its own regression run.
+
+## Alpha105g: one-sided edge readings excluded (2026-10-10)
+
+Same rule as `../sub124060/README.md` section 17: genuine readings whose two-side width deviates from the model median
+by more than 3 x robust spread (CI 38054695092) are lighting on one polished bevel, not the watch.
+`../alpha105g/apply_edge_consistency.py` with `../alpha105g/edge_flags.csv` marks them unusable in
+`results/runner/per_photo_edge_consistent.csv` (6 baton: b08abca874101115, 5cc54f9348e6fc46, and aae59db4a70ab5e9,
+already withheld by the hand check; 9 baton: b08abca874101115; 12: none). The reference is rebuilt with the same
+recipe (`calibrate_m12_nominal.py --no-priority`, `build_sub_reference.py`) on that file, after the committed reference
+was reproduced byte for byte from `per_photo_edge.csv`. Allowances unchanged.
+
+| Feature | before (n, max) | after (n, max) |
+|---|---|---|
+| six_rot / six_off | 108, 0.754 deg / 0.356% R | 106, unchanged |
+| nine_rot | 115, 0.799 deg | 114, 0.802 deg (nominal 0.057 -> 0.054 deg) |
+| nine_off | 115, 0.222% R | 114, unchanged |
+| 12 triangle, rounds, ring | unchanged (triangle files byte-identical) | |
+
+Leave-one-watch-out: 0 clear before and after; worth a look unchanged (6: 1 / 2, 9: 1 / 1).
