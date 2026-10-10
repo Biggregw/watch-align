@@ -31,7 +31,7 @@ public class ThreadManifestTest {
 
     @Test public void acceptsQuotedMultilineReviewAndCommas()throws Exception {
         String csv=HEADER+"QC-003,GMT,126710BLNR,Clean,"+GMT+
-                ",,9 rotation,\"One commenter says ""GL"",\nother says fine\",mild,9\n";
+                ",,9 rotation,\"One commenter says \"\"GL\"\",\nother says fine\",mild,9\n";
         ThreadManifest.Selection s=ThreadManifest.parse(bytes(csv));
         assertEquals(1,s.threads);
         assertTrue(s.rows.get(0).review.contains("\nother says fine"));
