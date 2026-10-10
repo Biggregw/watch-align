@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - feature/android-alpha102-submariner
+      - feature/android-alpha105g-nine-fix
     paths:
       - '.github/workflows/alpha103-regression.yml'
       - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Findings.java'
@@ -16,6 +17,7 @@ on:
       - 'android/app/src/main/java/com/watchalign/mobile/Alpha104MarkerBranch.java'
       - 'android/app/src/main/java/com/watchalign/mobile/Alpha94MarkerMeasurement.java'
       - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Pipeline.java'
+      - 'android/app/src/main/assets/models/**'
   workflow_dispatch:
 
 permissions:
@@ -39,7 +41,7 @@ jobs:
             catalogue: tools/research/sub126610/catalogue_126610.csv
             opts: -Dwatchalign.model=submariner_126610
     env:
-      BASE: '1425e849128e5af996f21019c42cabc7bc03164c'   # Alpha105d 12 distance from the minute track vs the commit before it
+      BASE: 'ab9cd4bc031a8399634b0c72c59b98f91fedbb19'   # Alpha105f baseline vs Alpha105g (one-sided edge consistency, rebuilt Sub references)
       IMG: reg_images
     steps:
       - uses: actions/checkout@v4

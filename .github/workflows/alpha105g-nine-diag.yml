@@ -11,6 +11,8 @@ on:
       - '.github/workflows/alpha105g-nine-diag.yml'
       - 'tools/desktop-harness/drivers/BatonDiag.java'
       - 'tools/research/alpha105g/**'
+      - 'android/app/src/main/java/**'
+      - 'android/app/src/main/assets/models/**'
   workflow_dispatch:
 permissions: {contents: read}
 jobs:
@@ -34,6 +36,28 @@ jobs:
             JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh BatonDiag "qc_in/$model/manifest.csv" qc_in "qc_out/$model" 2>/dev/null | grep -v '^Picked'
             JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh Alpha99Preview "qc_in/$model/manifest.csv" qc_in "qc_out/$model/preview" --no-images 2>/dev/null | grep -v '^Picked'
           done
+      - name: Known positives and 9 results
+        run: |
+          python3 - <<'PY2'
+          import csv, pathlib, sys
+          want = {('GMT_crooked6_1s4cszq', 'six'): {'WORTH', 'CLEAR'},
+                  ('SUB_rejected12_1wgfy7k', 'twelve'): {'WORTH', 'CLEAR'},
+                  ('SUB_accepted12_1w848xb', 'twelve'): {'WORTH', 'CLEAR'},
+                  ('SUB_accepted12_1w848xb_photo5', 'twelve'): {'WORTH', 'CLEAR'},
+                  ('SUB_control12_1kqn8ub', 'twelve'): {'WITHIN', 'MINOR'}}
+          got = {}
+          for f in pathlib.Path('qc_out').glob('*/preview/findings.csv'):
+              for r in csv.DictReader(open(f)):
+                  got[(r['photo_id'], r['feature'])] = (r['alpha99_status'], r['short_line'])
+          bad = 0
+          for k, ok in want.items():
+              st = got.get(k, ('missing', ''))
+              print('POSITIVE' if 'WITHIN' not in ok else 'CONTROL', k, st, 'OK' if st[0] in ok else 'LOST'); bad += st[0] not in ok
+          for k in sorted(got):
+              if k[1] in ('nine', 'three', 'six', 'twelve'):
+                  print('MARKER', k, got[k])
+          sys.exit(1 if bad else 0)
+          PY2
       - name: Close-ups (base64 PNG, log only)
         run: |
           for f in qc_out/*/*_baton9.png qc_out/*/*_baton3.png qc_out/*/*_baton6.png; do
