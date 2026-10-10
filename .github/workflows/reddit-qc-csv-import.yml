@@ -1,4 +1,4 @@
-name: Reddit QC Collector CSV Import APK
+name: Reddit QC Collector CSV Import 1.2.1 APK
 on:
   push:
     branches:
@@ -29,12 +29,12 @@ jobs:
         run: ./gradlew :redditharvester:assembleDebug --stacktrace
       - name: Prepare and checksum APK
         run: |
-          cp android/redditharvester/build/outputs/apk/debug/redditharvester-debug.apk WatchAlign-Reddit-QC-Collector-1.2-CSV-Import.apk
-          sha256sum WatchAlign-Reddit-QC-Collector-1.2-CSV-Import.apk | tee SHA256SUMS.txt
+          cp android/redditharvester/build/outputs/apk/debug/redditharvester-debug.apk WatchAlign-Reddit-QC-Collector-1.2.1-CSV-Import.apk
+          sha256sum WatchAlign-Reddit-QC-Collector-1.2.1-CSV-Import.apk | tee SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: WatchAlign-Reddit-QC-Collector-1.2-CSV-Import
+          name: WatchAlign-Reddit-QC-Collector-1.2.1-CSV-Import
           path: |
-            WatchAlign-Reddit-QC-Collector-1.2-CSV-Import.apk
+            WatchAlign-Reddit-QC-Collector-1.2.1-CSV-Import.apk
             SHA256SUMS.txt
           retention-days: 30
