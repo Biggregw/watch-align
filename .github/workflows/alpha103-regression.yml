@@ -90,7 +90,7 @@ jobs:
           import csv, collections, sys
           def load(p): return {(r['photo_id'], r['feature']): r for r in csv.DictReader(open(p))}
           b, h = load('out_base/findings.csv'), load('out_head/findings.csv')
-          sev = {'WITHIN': 0, 'MINOR': 1, 'NOT_ASSESSED': 0, 'WORTH': 2, 'CLEAR': 3}
+          sev = {'WITHIN': 0, 'MINOR': 0, 'NOT_ASSESSED': 0, 'WORTH': 2, 'CLEAR': 3}  # MINOR ('too small to see') and WITHIN both display as green/pass; still fail on new WORTH/CLEAR
           trans = collections.Counter(); worse = []
           for k in sorted(set(b) | set(h)):
               sb = b.get(k, {}).get('alpha99_status', 'missing'); sh = h.get(k, {}).get('alpha99_status', 'missing')
