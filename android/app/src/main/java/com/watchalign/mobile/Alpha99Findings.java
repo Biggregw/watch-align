@@ -43,8 +43,10 @@ final class Alpha99Findings {
      *  0.4 px off at R 216, owner's 124060 QC photo 2026-10-09) was listed as worth a look. */
     static final double VISIBLE_FRACTION=0.05,VISIBLE_DEG=1.0;
     /** Alpha105: the 12's distance from the minute track is judged against the gap itself (base to track, 0.03 R on the
-     *  supported dials): a change below this fraction of the gap is too small to see. */
-    static final double TRACK_GAP_VISIBLE_FRACTION=0.15;
+     *  supported dials): a change below this fraction of the gap is too small to see. 0.15 -> 0.20 after the genuine
+     *  regression (CI 38047390583): one genuine GMT photo read 0.46% of the dial closer (bar 0.45%); 0.20 gives 0.60%.
+     *  The owner's close-12 GMT photo reads 0.71%. */
+    static final double TRACK_GAP_VISIBLE_FRACTION=0.20;
     enum Shape{BATON,TRIANGLE,ROUND,RING,DATE}
 
     static final String DISCLAIMER="These results compare this photo's measurements with genuine watches. They are not an authenticity verdict.";

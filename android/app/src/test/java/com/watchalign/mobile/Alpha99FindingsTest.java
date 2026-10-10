@@ -480,8 +480,8 @@ public class Alpha99FindingsTest {
         assertTrue(f.shortLine(),f.shortLine().startsWith("closer to the minute track by 0.71% of the dial; genuine up to 0.32%"));
         // further out than any genuine watch by a lot: still never clear (lighting moves this edge)
         assertEquals(Alpha99Findings.Status.WORTH,find(Alpha99Findings.build(twelveAt(0.02),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
-        // past the genuine range but under 15% of the gap (0.0045 R): too small to see
-        assertEquals(Alpha99Findings.Status.MINOR,find(Alpha99Findings.build(twelveAt(0.004),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
+        // past the genuine range but under 20% of the gap (0.006 R): too small to see (a genuine GMT photo read 0.46%)
+        assertEquals(Alpha99Findings.Status.MINOR,find(Alpha99Findings.build(twelveAt(0.0046),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
         // inward: compared with the genuine inward readings (an official photo read 0.83% further from the track)
         assertEquals(Alpha99Findings.Status.WITHIN,find(Alpha99Findings.build(twelveAt(-0.006),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
         assertEquals(Alpha99Findings.Status.WITHIN,find(Alpha99Findings.build(twelveAt(0.001),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
