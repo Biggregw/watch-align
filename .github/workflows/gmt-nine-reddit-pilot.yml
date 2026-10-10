@@ -1,0 +1,83 @@
+name: GMT 9 Reddit QC rotation research (Alpha105g)
+on:
+  push:
+    branches: [research/gmt-nine-reddit-qc-2026-10-10]
+    paths:
+      - 'tools/research/gmt9_reddit_pilot_2026_10_10/**'
+      - 'tools/desktop-harness/drivers/GmtNineRedditQc.java'
+      - '.github/workflows/gmt-nine-reddit-pilot.yml'
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests opencv-python-headless
+      - name: Fetch exact originals by SHA-256, record inaccessible photos
+        run: |
+          mkdir -p reddit_gmt9_in/photos reddit_gmt9_results
+          python3 - <<'PY'
+          import pathlib,requests,hashlib,csv
+          rows=list(csv.DictReader(open('tools/research/gmt9_reddit_pilot_2026_10_10/photos.csv')))
+          session=requests.Session()
+          session.headers.update({'User-Agent':'Mozilla/5.0 (compatible; WatchAlignResearch/1.0; QC analysis)','Referer':'https://www.reddit.com/'})
+          with open('reddit_gmt9_in/manifest.csv','w',newline='') as m,open('reddit_gmt9_results/fetch_log.csv','w',newline='') as a:
+            manifest=csv.writer(m);manifest.writerow(['photo_id','local_path'])
+            audit=csv.writer(a);audit.writerow(['photo_id','post_id','status','reason'])
+            for row in rows:
+              id,url,digest=row['photo_id'],row['image_url'],row['sha256']
+              try:
+                response=session.get(url,timeout=30)
+                response.raise_for_status()
+                blob=response.content
+                if hashlib.sha256(blob).hexdigest()!=digest:raise ValueError('source SHA256 mismatch')
+                if len(blob)<1000:raise ValueError('image too small')
+                suffix='.png' if blob.startswith(bytes([137,80,78,71])) else '.jpg'
+                fn=id+suffix
+                (pathlib.Path('reddit_gmt9_in/photos')/fn).write_bytes(blob)
+                manifest.writerow([id,'photos/'+fn])
+                audit.writerow([id,id.split('_')[0],'sha256_verified',''])
+                print('VERIFIED',id,len(blob))
+              except Exception as e:
+                audit.writerow([id,id.split('_')[0],'unavailable',str(e)[:250]])
+                print('UNAVAILABLE',id,repr(e)[:180])
+          PY
+      - name: Run the real Alpha105g 9-marker measurement path
+        env:
+          JAVA_TOOL_OPTIONS: -Dwatchalign.model=gmt_126710
+        run: |
+          if [ "$(wc -l < reddit_gmt9_in/manifest.csv)" -lt 2 ]; then
+            echo 'No original photo accessible to CI. No numerical analysis claimed.' > reddit_gmt9_results/NO_MEASUREMENTS.txt
+          else
+            tools/desktop-harness/run.sh GmtNineRedditQc reddit_gmt9_in/manifest.csv reddit_gmt9_in reddit_gmt9_results/angles.csv | tee reddit_gmt9_results/angles.log
+            mkdir -p reddit_gmt9_results/app_preview
+            tools/desktop-harness/run.sh Alpha99Preview reddit_gmt9_in/manifest.csv reddit_gmt9_in reddit_gmt9_results/app_preview --no-images > reddit_gmt9_results/app_preview/preview.log 2>&1
+            cp reddit_gmt9_results/app_preview/findings.csv reddit_gmt9_results/app_findings.csv
+          fi
+      - name: Summary without inferring rejection limits
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import csv,pathlib,collections
+          a=pathlib.Path('reddit_gmt9_results/angles.csv')
+          if not a.exists():
+            print('No run results, not calibrated')
+          else:
+            d=list(csv.DictReader(a.open()))
+            ok=[x for x in d if x['rotation_assessed']=='true']
+            by=collections.Counter(x['post_id'] for x in ok)
+            print('Input samples:',len(d),'Assessed rotations:',len(ok),'Independent post IDs:',len(by))
+            print('DO NOT set a Reddit QC tolerance from unreviewed, mixed or occluded photos.')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: GMT9-Reddit-Alpha105g-Pilot-Measurements
+          path: reddit_gmt9_results/
+          retention-days: 30
