@@ -98,9 +98,17 @@ def run(out_dir):
             ids=[r["physical_watch_id"] for r in rows]
             duplications=len(ids)-len(set(ids))
             if duplications>0:
-                # intentionally duplicated low-res shrunk rows can be separate resolution conditions for the same watch.
-                if not all(r.get("max_photo_r","") for r in rows):
-                    problems.append(f"{model_name}/{feature}: {duplications} duplicate physical-watch rows (inspect resolution matching)")
+                # One normal-resolution reading plus deliberately shrunk reference readings are allowed
+                # for the *same* watch. The shrunk row must have finite max_photo_r and the normal
+                # row must have none. Both share one watch ID and are never independent samples.
+                groups=defaultdict(list)
+                for r in rows: groups[r["physical_watch_id"]].append(r)
+                for watch,variants in groups.items():
+                    if len(variants)<2:continue
+                    main=[r for r in variants if not r.get("max_photo_r","").strip()]
+                    scaled=[r for r in variants if r.get("max_photo_r","").strip()]
+                    if len(main)!=1 or len(scaled)!=len(variants)-1 or any(f(r["max_photo_r"]) is None for r in scaled):
+                        problems.append(f"{model_name}/{feature}/{watch}: ambiguous duplicated reference evidence")
             vals=[f(r["far"]) for r in rows]
             if any(x is None or x<0 for x in vals):problems.append(f"{model_name}/{feature}: non-finite or negative 'far'")
             sigkind="angle" if feature.endswith("_rot") or feature=="date_tilt" else "position_or_size"
