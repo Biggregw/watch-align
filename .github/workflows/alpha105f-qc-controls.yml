@@ -55,7 +55,7 @@ jobs:
                 id=$(basename "$b" .jpg)
                 echo "$id,$model/$b" >> "qc_public_out/$model/manifest.csv"
               done
-              JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh Alpha99Preview "qc_public_out/$model/manifest.csv" qc_public_inputs "qc_public_out/$model" --no-images > "qc_public_out/$model/run.log" 2>&1
+              JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh Alpha99Preview "qc_public_out/$model/manifest.csv" qc_public_inputs "qc_public_out/$model" > "qc_public_out/$model/run.log" 2>&1
               cat "qc_public_out/$model/run.log"
               cat "qc_public_out/$model/findings.csv"
             else
