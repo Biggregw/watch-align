@@ -39,7 +39,7 @@ jobs:
             catalogue: tools/research/sub126610/catalogue_126610.csv
             opts: -Dwatchalign.model=submariner_126610
     env:
-      BASE: 1425e84   # Alpha105d 12 distance from the minute track vs the commit before it
+      BASE: '1425e849128e5af996f21019c42cabc7bc03164c'   # Alpha105d 12 distance from the minute track vs the commit before it
       IMG: reg_images
     steps:
       - uses: actions/checkout@v4
