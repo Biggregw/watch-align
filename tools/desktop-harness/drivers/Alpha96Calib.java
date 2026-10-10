@@ -75,6 +75,9 @@ public class Alpha96Calib {
                     for(int h:batonHours())marker(row,r.atHour(h),false);
                     for(int h:ROUNDS)marker(row,r.atHour(h),false);
                     row.add(Long.toString((System.nanoTime()-t0)/1000000));
+                    // Alpha105g diagnostics: baton long sides' offsets from the master (px, + = outward)
+                    for(int h:batonHours()){Alpha94MarkerMeasurement.Marker bm=r.atHour(h);boolean ok=bm!=null&&bm.sideOffR!=null;
+                        row.add(ok?n(bm.sideOffR[0]*r.dialRadiusPx):"");row.add(ok?n(bm.sideOffR[2]*r.dialRadiusPx):"");}
                     out.println(String.join(",",row));
                 }catch(Throwable t){
                     List<String> e=new ArrayList<>();e.add(csv(id));e.add(csv(rel));e.add("error");e.add("");e.add("");
@@ -112,6 +115,7 @@ public class Alpha96Calib {
         for(int b:batonHours())for(String f:MF)h.add("m"+b+"_"+f);
         for(int r:ROUNDS)for(String f:MF)h.add("m"+r+"_"+f);
         h.add("ms");
+        for(int b:batonHours()){h.add("m"+b+"_side_ccw_px");h.add("m"+b+"_side_cw_px");}
         return h;
     }
 
