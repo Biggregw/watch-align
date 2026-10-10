@@ -482,8 +482,10 @@ public class Alpha99FindingsTest {
         assertEquals(Alpha99Findings.Status.WORTH,find(Alpha99Findings.build(twelveAt(0.02),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
         // past the genuine range but under 20% of the gap (0.006 R): too small to see (a genuine GMT photo read 0.46%)
         assertEquals(Alpha99Findings.Status.MINOR,find(Alpha99Findings.build(twelveAt(0.0046),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
-        // inward: compared with the genuine inward readings (an official photo read 0.83% further from the track)
-        assertEquals(Alpha99Findings.Status.WITHIN,find(Alpha99Findings.build(twelveAt(-0.006),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
+        // further from the track is never judged (lighting: genuine photos read up to 1.22% further), only noted
+        Alpha99Findings.Finding in=find(Alpha99Findings.build(twelveAt(-0.02),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve");
+        assertEquals(Alpha99Findings.Status.WITHIN,in.status);
+        assertTrue(String.join(" ",in.detail()),String.join(" ",in.detail()).contains("further from the minute track"));
         assertEquals(Alpha99Findings.Status.WITHIN,find(Alpha99Findings.build(twelveAt(0.001),null,clean,TestModels.gmt(),TestModels.gmtRef()),"twelve").status);
     }
 }

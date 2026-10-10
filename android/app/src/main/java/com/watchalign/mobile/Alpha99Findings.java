@@ -318,8 +318,12 @@ final class Alpha99Findings {
         // studio lighting moved it 0.0025 R on genuine watches), and no photo-to-photo allowance exists for it, so it is
         // compared with the genuine readings in the same direction and shown as worth a look at most.
         double gap=trackInnerR-spec.baseR;
-        if(Double.isFinite(t.radialR)&&Double.isFinite(gap)&&gap>0&&ref.triangle.radialSignedR!=null){
-            boolean out=t.radialR>=0;double v=Math.abs(t.radialR);
+        // Only "closer to the track" is judged: genuine photos read the 12 further from the track by lighting alone (an
+        // official GMT photo 0.83%, a genuine 126610 photo 1.22% of the dial, CI 38048633998), never closer than 0.46%.
+        if(Double.isFinite(t.radialR)&&t.radialR<0&&Double.isFinite(gap))
+            f.notes.add(String.format(Locale.US,"It reads %.2f%% of the dial further from the minute track than on genuine watches. Not assessed: lighting on the polished surround makes genuine 12s read further from the track by up to 1.2%%.",-100*t.radialR));
+        else if(Double.isFinite(t.radialR)&&Double.isFinite(gap)&&gap>0&&ref.triangle.radialSignedR!=null){
+            boolean out=true;double v=t.radialR;
             Measure x=new Measure("track",v,ref.triangle.radialMax(out),Double.NaN,k,n,"R",
                     String.format(Locale.US,"%s the minute track by %.2f%% of the dial",out?"closer to":"further from",100*v),
                     String.format(Locale.US,"It sits %.1f px %s the minute track than on genuine watches (%.2f%% of the dial radius; the genuine gap between its base and the track is about %.1f%%)",
