@@ -1,0 +1,35 @@
+name: Reddit QC Collector APK
+on:
+  push:
+    branches:
+      - tool/reddit-qc-harvester-android
+    paths:
+      - 'android/redditharvester/**'
+      - 'android/settings.gradle'
+      - '.github/workflows/reddit-qc-harvester.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Assemble Reddit QC APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew :redditharvester:assembleDebug --stacktrace
+      - name: Rename APK
+        run: |
+          cp android/redditharvester/build/outputs/apk/debug/redditharvester-debug.apk WatchAlign-Reddit-QC-Collector-1.0.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WatchAlign-Reddit-QC-Collector-APK
+          path: WatchAlign-Reddit-QC-Collector-1.0.apk
+          retention-days: 30
