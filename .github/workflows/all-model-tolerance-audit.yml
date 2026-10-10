@@ -1,0 +1,31 @@
+name: All current watch tolerance audit (read only)
+on:
+  push:
+    branches: [research/all-model-tolerance-audit-2026-10-10]
+    paths:
+      - "tools/research/tolerance_audit/**"
+      - ".github/workflows/all-model-tolerance-audit.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Audit every supported genuine reference and QC visibility gate
+        run: python3 tools/research/tolerance_audit/audit.py --out tolerance_audit_results
+      - name: Verify compiled app's threshold regressions
+        run: |
+          set -o pipefail
+          cd android
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest --stacktrace
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WatchAlign-All-Model-Tolerance-Audit
+          path: tolerance_audit_results/
+          retention-days: 30
