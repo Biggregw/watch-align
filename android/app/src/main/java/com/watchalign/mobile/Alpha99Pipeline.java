@@ -28,6 +28,8 @@ final class Alpha99Pipeline {
         Map<Integer,Alpha94MarkerMeasurement.Marker> partial;
         Alpha99Findings.Summary summary;
         Bitmap overview;
+        /** Transparent full-photo overlay: yellow expected geometry + cyan actual fitted baton edges. */
+        Bitmap diagnosticOverlay;
         final Map<String,Bitmap> closeups=new LinkedHashMap<>();
         String technical;
         ModelSpec model;ModelReference reference;
@@ -42,6 +44,8 @@ final class Alpha99Pipeline {
         if(o.pose==null||!o.pose.valid||o.pose.homography==null)return o;
         double[] H=o.pose.homography;
         o.measurement=Alpha94MarkerMeasurement.analyse(photo,H,model);
+        try{o.diagnosticOverlay=BatonFitDiagnosticOverlay.render(o.pose.overlay,o.measurement,H);}
+        catch(Throwable t){o.diagnosticOverlay=o.pose.overlay;}
         Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(photo,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
         try{o.date=model.date==null?null:Alpha98DateWindow.analyse(gray,H,model.date);}catch(Throwable t){o.date=null;}
         try{o.checks=Alpha99MarkerInterference.analyse(gray,H,model);}catch(Throwable t){o.checks=null;}
