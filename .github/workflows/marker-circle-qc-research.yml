@@ -1,0 +1,42 @@
+# Research-only: evaluate enclosing-circle normalization on original public replica QC inputs.
+# Does not modify app thresholds, references, markers, pose or detector.
+name: Enclosing-circle research on Reddit QC controls
+on:
+  push:
+    branches: [feature/android-alpha106-marker-mismatch-research]
+    paths: ['.github/workflows/marker-circle-qc-research.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  qc-circle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests opencv-python-headless
+      - uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Restore original SHA-256-verified Reddit QC photos
+        run: python3 tools/research/alpha105g/fetch_qc.py qc_in | tee qc_fetch.log
+      - name: Compare real marker outlines with unmodified existing reference
+        run: |
+          mkdir -p qc_circle_out
+          for model in gmt_126710 submariner_124060; do
+            if [ -s "qc_in/$model/manifest.csv" ]; then
+              JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh MarkerMismatchBatch "qc_in/$model/manifest.csv" qc_in "qc_circle_out/$model.csv" 2> "qc_circle_out/$model.log"
+            fi
+          done
+          cp qc_fetch.log qc_circle_out/
+      - name: Preserve numeric measurements only
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: enclosing-circle-reddit-qc-numbers
+          path: qc_circle_out/
+          retention-days: 30
