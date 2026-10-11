@@ -108,6 +108,8 @@ public class Alpha99ResultsActivity extends Activity {
         t.addView(text(f.title,15,Color.WHITE,true),lp(-1,-2,6));
         t.addView(text(f.statusLabel(),12,colour(f.status),true),lp(-1,-2,2));
         t.addView(text(f.shortLine(),13,Color.WHITE,false),lp(-1,-2,2));
+        if(f.edgeDiagnostic!=null)
+            t.addView(text(f.edgeDiagnostic,11,MUTED,false),lp(-1,-2,5));
         t.setOnClickListener(v->{Intent i=new Intent(this,Alpha99DetailActivity.class);i.putExtra(Alpha99DetailActivity.EXTRA_INDEX,index);startActivity(i);});
         return t;
     }
