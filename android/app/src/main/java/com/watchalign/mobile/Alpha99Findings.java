@@ -431,9 +431,10 @@ final class Alpha99Findings {
         if(m.sideOffR==null||m.sideOffR.length<=Math.max(sideA,sideB))return null;   // not a polygon fit (tests building markers by hand)
         double dev=m.sideOffR[sideA]+m.sideOffR[sideB]-nom;
         if(Math.abs(dev)<=lim)return null;
-        return String.format(Locale.US,"Its position is not assessed: one of its long edges reads %.1f px %s than on genuine watches while the opposite edge does not move, "
-                +"the sign of a polished bevel reflecting dark (the outline is then traced on the lume, not the marker's edge). A marker that is really out of place moves both edges together. "
-                +"Genuine photos stay within %.1f px; compare the marker with its neighbours in the close-up.",Math.abs(dev)*R,dev<0?"narrower":"wider",lim*R);
+        return String.format(Locale.US,"Its position is not assessed: it reads %.1f px %s across its long edges than on genuine watches (genuine photos stay within %.1f px), "
+                +"so one edge was traced on %s rather than the marker's own edge. A marker that is really out of place moves both edges together and keeps its width; "
+                +"compare the marker with its neighbours in the close-up.",Math.abs(dev)*R,dev<0?"narrower":"wider",lim*R,
+                dev<0?"the lume (its polished bevel reflecting dark)":"a bright reflection beyond it");
     }
 
     static List<Finding> rounds(Alpha94MarkerMeasurement.Report r,double R,Map<Integer,Alpha99MarkerInterference.Check> checks,

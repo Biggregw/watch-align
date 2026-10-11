@@ -63,6 +63,7 @@ public class BatonDiag {
                     double w=m.sideOffR[0]+m.sideOffR[2],sh=(m.sideOffR[2]-m.sideOffR[0])/2,len=m.sideOffR[1]+m.sideOffR[3];
                     System.out.printf(Locale.US,"      sides px: ccw-long %+.2f  outer-end %+.2f  cw-long %+.2f  inner-end %+.2f | cov %.2f %.2f %.2f %.2f%n",
                             m.sideOffR[0]*R,m.sideOffR[1]*R,m.sideOffR[2]*R,m.sideOffR[3]*R,m.sideCov[0],m.sideCov[1],m.sideCov[2],m.sideCov[3]);
+                    System.out.printf(Locale.US,"      side angles deg: ccw-long %+.2f  cw-long %+.2f (rotation = their mean)%n",m.sideAngDeg[0],m.sideAngDeg[2]);
                     System.out.printf(Locale.US,"      width change %+.2f px (%+.3f%%R) | shift from long sides %+.2f px | length change %+.2f px%n",w*R,100*w,sh*R,len*R);
                 }
                 if(fd!=null)System.out.println("      finding: "+fd.status+" "+(fd.status==Alpha99Findings.Status.NOT_ASSESSED?fd.shortReason:fd.shortLine()));
