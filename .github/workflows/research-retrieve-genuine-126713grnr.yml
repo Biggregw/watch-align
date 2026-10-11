@@ -1,0 +1,36 @@
+name: Research retrieve one verified genuine GMT 126713GRNR photo
+on:
+  push:
+    branches: [feature/android-alpha106-marker-mismatch-research]
+    paths: ['.github/workflows/research-retrieve-genuine-126713grnr.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  verified-original:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests
+      - name: Download exact research original and verify sha256
+        run: |
+          mkdir -p research_original
+          python3 - <<'PY'
+          import requests,hashlib,pathlib
+          url='https://content.thewosgroup.com/productimage/17305525/17305525_2.png?impolicy=hero-rolex'
+          expected='b93685d799ec9f84922f15b567e62629577f8ff76b7c23b7087eb63a05128546'
+          r=requests.get(url,timeout=30,headers={'User-Agent':'Mozilla/5.0','Accept':'image/avif,image/webp,image/apng,image/*,*/*;q=0.8'})
+          r.raise_for_status()
+          digest=hashlib.sha256(r.content).hexdigest()
+          print('HTTP',r.status_code,'bytes',len(r.content),'SHA',digest)
+          if digest!=expected:raise ValueError('Image no longer matches provenance-controlled original; do not substitute!')
+          (pathlib.Path('research_original')/'126713GRNR_original_verified.jpg').write_bytes(r.content)
+          (pathlib.Path('research_original')/'provenance.txt').write_text('Model: Rolex GMT 126713GRNR (gold-surround variant)\nPhoto ID: b93685d799ec9f84\nWatch ID: hv_page_b64df841ae\nSource: '+url+'\nSHA256: '+digest+'\nMarker 9 calibrated expected-area mismatch: 6.61085917565546%\nDial radius from original research: 142.516px\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: one-verified-genuine-126713grnr-photo
+          path: research_original/
+          retention-days: 7
