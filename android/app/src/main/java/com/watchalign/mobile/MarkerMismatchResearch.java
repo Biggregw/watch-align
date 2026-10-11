@@ -27,7 +27,7 @@ final class MarkerMismatchResearch {
         boolean trusted(){return score!=null && "measured".equals(reason);}
         String display(){
             if(!trusted())return "Outline mismatch withheld: "+reason+".";
-            return String.format(Locale.US,"Measured outline mismatch: %.3f%% (extra %.3f%% + missing %.3f%% of filled yellow template). No severity assigned; detector edge uncertainty remains.",
+            return String.format(Locale.US,"Measured outline mismatch: %.3f%% (extra %.3f%% + missing %.3f%% of filled yellow template). Geometric fit area; no severity assigned. Photographic edge uncertainty remains.",
                     score.mismatchPct,score.extraPct,score.missingPct);
         }
     }

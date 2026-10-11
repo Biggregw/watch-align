@@ -69,7 +69,7 @@ public class Alpha99ResultsActivity extends Activity {
             ImageView hero=new ImageView(this);hero.setImageBitmap(Store.overview);hero.setAdjustViewBounds(true);hero.setScaleType(ImageView.ScaleType.FIT_CENTER);
             hero.setOnClickListener(v->openOverlay());
             root.addView(hero,lp(-1,-2,12));
-            root.addView(text("✓ within   ! worth a look   !! clear finding   – not assessed   ·   tap for the full overlay",12,MUTED,false),lp(-1,-2,4));
+            root.addView(text("✓ no highlighted finding   ! worth a look   !! clear finding   – not assessed   ·   tap for the full overlay",12,MUTED,false),lp(-1,-2,4));
         }
 
         // evidence grid
@@ -88,6 +88,8 @@ public class Alpha99ResultsActivity extends Activity {
 
         String within=s.withinLine();
         if(!within.isEmpty())root.addView(text(within,14,MUTED,false),lp(-1,-2,16));
+        String below=s.belowVisibilityLine();
+        if(!below.isEmpty())root.addView(text(below,14,MUTED,false),lp(-1,-2,6));
         String na=s.notAssessedLine();
         if(!na.isEmpty())root.addView(text(na,14,MUTED,false),lp(-1,-2,6));
 

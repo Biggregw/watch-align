@@ -52,6 +52,13 @@ public class MarkerMismatchRegionsTest {
         consistent(MarkerPolygonMismatch.compare(e,a));
         consistent(MarkerPolygonMismatch.compare(MarkerPolygonMismatch.circle(.3,.6,.08,128),MarkerPolygonMismatch.circle(.302,.599,.081,128)));
     }
+    @Test public void smallCornerDifferencesRetainTheirUnpaddedArea(){
+        double[][] expected=box(0,0,1,1),actual={{0,0},{1.00001,0},{1,1},{.00002,1}};
+        MarkerPolygonMismatch.Score q=MarkerPolygonMismatch.compare(expected,actual);
+        consistent(q);
+        assertEquals(.000005,q.extraArea,1e-12);assertEquals(.00001,q.missingArea,1e-12);
+        assertEquals(.0015,q.mismatchPct,1e-9);
+    }
     @Test public void genuineFixturesAndPerturbationsMatchTheirColouredAreaSums()throws Exception{
         int count=0;
         for(String name:new String[]{"pepsi_alpha106.csv","wos_alpha106.csv"})

@@ -3,6 +3,8 @@
 Starting source: `dff381b0`, branch `feature/android-alpha106-marker-mismatch-research`.
 Implementation: separate task branch `feature/marker-mismatch-overlay-consistency`.
 Protocol v0.3. This follows the [completed investigation](alpha106-yellow-template-parity-2026-10-11.md).
+The subsequent [real-world inspection review](inspection-reliability-review-2026-10-11.md)
+records preserved measurements, reporting corrections and the latest tests.
 
 ## Root cause and bounded change
 

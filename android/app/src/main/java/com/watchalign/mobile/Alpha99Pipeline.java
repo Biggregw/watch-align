@@ -149,12 +149,12 @@ final class Alpha99Pipeline {
             for(Alpha99Findings.Measure x:f.measures)
                 s.append(String.format(Locale.US,"\n  %s %s: %s / %s / %s -> %s",f.title,x.name,Alpha99Findings.fmt(x.value,x.unit),Alpha99Findings.fmt(x.genuineMax,x.unit),
                         x.hasAllowance()?Alpha99Findings.fmt(x.allowance(),x.unit):"none",
-                        x.status()==Alpha99Findings.Status.MINOR?"WITHIN (too small to see: under "+Alpha99Findings.fmt(x.visibleBar,x.unit)+")":x.status()));
+                        x.status()==Alpha99Findings.Status.MINOR?"OUTSIDE GENUINE RANGE (below visibility guideline: under "+Alpha99Findings.fmt(x.visibleBar,x.unit)+")":x.status()));
             if(o.partial!=null&&o.partial.containsKey(f.hour)&&f.shape==Alpha99Findings.Shape.ROUND&&o.checks!=null&&o.checks.get(f.hour)!=null&&o.checks.get(f.hour).clean)
                 s.append(String.format(Locale.US,"\n    (outline edge not visible over %.0f° of the %d marker; position measured from the rest)",o.partial.get(f.hour).edgeGapDeg,f.hour));
         }
         s.append("\n\nMeasurement only - comparisons with genuine watches, not a verdict. Directions in the upright dial frame (12 at top).");
-        s.append("\n\nIndividual marker outline mismatch: ring-adjusted nominal outer metal; denominator = filled yellow template area. No QC severity limits. Full-photo yellow is the fixed master. Global ring placement and minute-track gaps are separate.");
+        s.append("\n\nIndividual marker outline mismatch: ring-adjusted nominal outer metal; denominator = filled yellow template area. Continuous geometric area of fitted polygons; photographic boundary uncertainty is separate. No QC severity limits. Full-photo inspection offers the scoring reference and a separate fixed master. Global ring placement and minute-track gaps are separate.");
         for(Map.Entry<Integer,MarkerMismatchResearch.Result> entry:o.mismatch.entrySet())
             s.append("\n  ").append(entry.getKey()).append(": ").append(entry.getValue().display());
         return s.toString();
