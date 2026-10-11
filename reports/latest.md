@@ -1,6 +1,6 @@
 # Dataset harvester
 
-Run 20261010T095613Z · 2026-10-10T09:56:13Z → 2026-10-10T09:56:43Z
+Run 20261011T100531Z · 2026-10-11T10:05:31Z → 2026-10-11T10:06:32Z
 
 ## Adapters
 
@@ -9,27 +9,30 @@ Run 20261010T095613Z · 2026-10-10T09:56:13Z → 2026-10-10T09:56:43Z
 - **search**: enabled (brave)
 - **reddit**: disabled: REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not set
 
-Search results filtered before storing: not_gmt 11
+Search results filtered before storing: not_gmt 10
 
 ## This run
 
-- 2 new sources discovered (178 already known)
-- 2 sources examined (0 deferred, 0 failed)
-- 7 images downloaded, 0 used from local copies
-- 0 exact and 0 near duplicates
-- 7 images rejected, 0 inconclusive
+- 3 new sources discovered (177 already known)
+- 3 sources examined (0 deferred, 0 failed)
+- 24 images downloaded, 0 used from local copies
+- 19 exact and 1 near duplicates (48 possible, not confirmable)
+- 21 images rejected, 0 inconclusive
 - 0 measurement-quality images
 - 0 physical watches accepted
-- 0 quarantined
-- 2 rejected
+- 2 quarantined
+- 1 rejected
 
 Images rejected or inconclusive, by reason:
 
-- reject_no_dial: 7
+- reject_no_dial: 15
+- reject_low_resolution: 6
+- reject_blur: 2
 
 Watch decisions, by reason:
 
-- reject_no_images: 1
+- quarantine_possible_same_watch: 2
+- quarantine_inconclusive_images: 2
 - reject_unusable_imagery: 1
 - reject_no_dial: 1
 
@@ -38,7 +41,7 @@ Watch decisions, by reason:
 - Genuine: 13 independent watches
 - Replica: 28 independent watches
 - Usable images in accepted watches: 78 (images are views, not independent samples)
-- Quarantined watches: 161 · rejected watches: 162
+- Quarantined watches: 163 · rejected watches: 163
 - Reference-only (not counted as population): official_catalogue_2026
 
 Replica watches by factory:
