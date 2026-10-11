@@ -34,6 +34,7 @@ public class Alpha99ResultsActivity extends Activity {
         static Alpha99Findings.Summary summary;
         static Bitmap overview;
         static final Map<String,Bitmap> closeups=new HashMap<>();
+        static final Map<Integer,MarkerMismatchResearch.Result> mismatch=new HashMap<>();
         static String technical;
         /** the model the photo was checked as, and an optional hint that a different model may fit the photo. */
         static String modelLabel,modelHint;
@@ -89,9 +90,25 @@ public class Alpha99ResultsActivity extends Activity {
         String na=s.notAssessedLine();
         if(!na.isEmpty())root.addView(text(na,14,MUTED,false),lp(-1,-2,6));
 
+        // Every individual marker can be inspected, including markers within the existing QC range.
+        LinearLayout inspections=new LinearLayout(this);inspections.setOrientation(LinearLayout.VERTICAL);inspections.setVisibility(View.GONE);
+        inspections.addView(text("Yellow: ring-adjusted nominal outer metal, used for the filled-template percentage. Global ring placement and minute-track gaps are separate measurements.",13,MUTED,false));
+        for(Alpha99Findings.Finding f:s.all){
+            MarkerMismatchResearch.Result q=f.dialWide?null:Store.mismatch.get(f.hour);
+            if(q==null)continue;
+            final int index=s.all.indexOf(f);
+            Button inspect=new Button(this);inspect.setAllCaps(false);
+            inspect.setText(f.title+" · "+(q.trusted()?String.format(java.util.Locale.US,"%.3f%% outline mismatch",q.score.mismatchPct):"outline mismatch withheld"));
+            inspect.setOnClickListener(v->{Intent i=new Intent(this,Alpha99DetailActivity.class);i.putExtra(Alpha99DetailActivity.EXTRA_INDEX,index);startActivity(i);});
+            inspections.addView(inspect,lp(-1,-2,4));
+        }
+        Button markerDetails=new Button(this);markerDetails.setAllCaps(false);markerDetails.setText("Inspect marker outlines  ▸");
+        markerDetails.setOnClickListener(v->{boolean show=inspections.getVisibility()!=View.VISIBLE;inspections.setVisibility(show?View.VISIBLE:View.GONE);markerDetails.setText(show?"Inspect marker outlines  ▾":"Inspect marker outlines  ▸");});
+        root.addView(markerDetails,lp(-1,dp(48),12));root.addView(inspections,lp(-1,-2,6));
+
         // secondary
         if(Store.photo!=null&&Store.overlay!=null){
-            Button ov=new Button(this);ov.setText("Open full overlay");ov.setAllCaps(false);ov.setOnClickListener(v->openOverlay());
+            Button ov=new Button(this);ov.setText("Open fixed-master full overlay");ov.setAllCaps(false);ov.setOnClickListener(v->openOverlay());
             root.addView(ov,lp(-1,dp(48),18));
         }
         TextView tech=text(Store.technical==null?"":Store.technical,12,MUTED,false);tech.setTextIsSelectable(true);tech.setVisibility(View.GONE);

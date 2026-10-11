@@ -31,9 +31,10 @@ final class Alpha98Closeups {
         double s=2*half/SIZE;
         Mat T=new Mat(3,3,CvType.CV_64F);T.put(0,0,s,0,cx-half+0.5*s, 0,s,cy-half+0.5*s, 0,0,1);
         Mat Hm=new Mat(3,3,CvType.CV_64F);Hm.put(0,0,H);
-        Mat M=new Mat();Core.gemm(Hm,T,1,new Mat(),0,M);
+        Mat M=new Mat(),empty=new Mat();Core.gemm(Hm,T,1,empty,0,M);
         Mat out=new Mat();
         Imgproc.warpPerspective(rgba,out,M,new Size(SIZE,SIZE),Imgproc.INTER_CUBIC|Imgproc.WARP_INVERSE_MAP,Core.BORDER_CONSTANT,new Scalar(0,0,0,255));
+        T.release();Hm.release();M.release();empty.release();
         return out;
     }
 
@@ -66,16 +67,15 @@ final class Alpha98Closeups {
         switch(f.shape){
             case BATON:
                 if(spec!=null){
-                    poly(m,f,moved(spec.batonPolygon(),ring),th);
+                    poly(m,f,ExpectedMarkerOutline.polygon(spec,ref,ring),th);
                     // Actual detector polygon, measured independently after the frozen perspective fit.
                     // Draw cyan last so even a near-perfect fit remains visible inside the yellow line.
                     if(fitted!=null&&fitted.usable&&fitted.fitVertices!=null&&fitted.fitVertices.length==4)
                         poly(m,f,fitted.fitVertices,2,CYAN);
                 }
                 break;
-            case TRIANGLE:if(spec!=null)poly(m,f,moved(nominalTriangle(spec,ref),ring),th);break;
-            case ROUND:{if(spec==null)break;double[][] c=moved(new double[][]{{f.cx,f.cy}},ring);double sc=ring==null?1:1+ring[2];
-                circle(m,f,c[0][0],c[0][1],spec.outerR*sc,th);break;}
+            case TRIANGLE:if(spec!=null)poly(m,f,ExpectedMarkerOutline.polygon(spec,ref,ring),th);break;
+            case ROUND:if(spec!=null)poly(m,f,ExpectedMarkerOutline.polygon(spec,ref,ring),th);break;
             case RING:
                 for(ModelSpec.Marker mk:model.markers){
                     if(mk.shape==ModelSpec.Shape.BATON)poly(m,f,mk.batonPolygon(),th);
@@ -95,28 +95,19 @@ final class Alpha98Closeups {
                 }
                 break;
         }
-        Bitmap b=Bitmap.createBitmap(SIZE,SIZE,Bitmap.Config.ARGB_8888);Utils.matToBitmap(m,b);return b;
+        Bitmap b=Bitmap.createBitmap(SIZE,SIZE,Bitmap.Config.ARGB_8888);Utils.matToBitmap(m,b);m.release();return b;
     }
 
     /** Apply the ring similarity model (as Alpha94 setLocal does) to canonical points; identity when ring is null. */
     static double[][] moved(double[][] v,double[] x){
-        if(x==null||x.length<4)return v;
-        double[][] o=new double[v.length][];
-        for(int i=0;i<v.length;i++){double px=v[i][0],py=v[i][1];o[i]=new double[]{px+x[0]+x[2]*px-x[3]*py,py+x[1]+x[2]*py+x[3]*px};}
-        return o;
+        return ExpectedMarkerOutline.moved(v,x);
     }
 
     // ------------------------------------------------------------------ outlines (canonical dial units)
     /** Master triangle moved to the genuine-calibrated nominal position (the model's triangle reference); the master
      *  itself when the model has no triangle reference. Nominal offsets are radial (+ = outward) / tangential. */
     static double[][] nominalTriangle(ModelSpec.Marker spec,ModelReference ref){
-        double[][] v=spec.trianglePolygon();
-        if(ref==null||ref.triangle==null)return v;
-        double a=Math.toRadians(spec.hour*30.0),er0=spec.hour%12==0?0:Math.sin(a),er1=spec.hour%12==0?-1:-Math.cos(a),et0=spec.hour%12==0?1:Math.cos(a),et1=spec.hour%12==0?0:Math.sin(a);
-        double dr=ref.triangle.nominalRadialR,dt=ref.triangle.nominalTangentialR;
-        double dx=dr*er0+dt*et0,dy=dr*er1+dt*et1;
-        double[][] o=new double[v.length][];for(int i=0;i<v.length;i++)o[i]=new double[]{v[i][0]+dx,v[i][1]+dy};
-        return o;
+        return ExpectedMarkerOutline.nominalTriangle(spec,ref);
     }
 
     private static Point px(Alpha98Findings.Finding f,double x,double y){

@@ -5,8 +5,9 @@ import java.util.List;
 
 /**
  * Exact area comparison of two CONVEX filled marker boundaries in the same
- * canonical, perspective-corrected dial plane. The 0..100 mismatch score is
- * the area of the symmetric difference divided by the area of the union.
+ * canonical, perspective-corrected dial plane. Mismatch is 100 times the
+ * symmetric difference divided by the FILLED EXPECTED area, including metal.
+ * It can exceed 100%; it is not an IoU score or a severity classification.
  *
  * Unlike raw raster counts, this is independent of photo resolution; it is
  * the limit of counting extra and missing pixels on a fine canonical grid.
@@ -18,12 +19,13 @@ final class MarkerPolygonMismatch {
 
     static final class Score {
         final double expectedArea,actualArea,overlapArea,unionArea;
-        final double extraPct,missingPct,mismatchPct;
+        final double extraArea,missingArea,extraPct,missingPct,mismatchPct;
         Score(double e,double a,double i) {
             expectedArea=e;actualArea=a;overlapArea=i;
             unionArea=e+a-i;
-            extraPct=100.0*(a-i)/unionArea;
-            missingPct=100.0*(e-i)/unionArea;
+            extraArea=a-i;missingArea=e-i;
+            extraPct=100.0*extraArea/e;
+            missingPct=100.0*missingArea/e;
             mismatchPct=extraPct+missingPct;
         }
     }
@@ -60,7 +62,9 @@ final class MarkerPolygonMismatch {
     }
 
     private static boolean isConvex(double[][] p) {
-        if(p==null||p.length<3||!Double.isFinite(signedArea(p))||area(p)<EPS)return false;
+        if(p==null||p.length<3)return false;
+        for(double[] point:p)if(point==null||point.length<2||!Double.isFinite(point[0])||!Double.isFinite(point[1]))return false;
+        if(!Double.isFinite(signedArea(p))||area(p)<EPS)return false;
         double sign=Math.signum(signedArea(p));
         for(int i=0;i<p.length;i++){
             if(p[i]==null||p[i].length<2||!Double.isFinite(p[i][0])||!Double.isFinite(p[i][1]))return false;

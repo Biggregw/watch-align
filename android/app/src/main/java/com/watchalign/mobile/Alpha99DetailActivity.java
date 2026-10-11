@@ -45,6 +45,8 @@ public class Alpha99DetailActivity extends Activity {
             if(f.edgeDiagnostic!=null)
                 root.addView(text(f.edgeDiagnostic+" Diagnostic only: the reported QC rotation remains unchanged.",13,Color.WHITE,false),lp(-1,-2,8));
         }
+        MarkerMismatchResearch.Result q=f.dialWide?null:Alpha99ResultsActivity.Store.mismatch.get(f.hour);
+        if(q!=null)root.addView(text(q.display(),14,Color.WHITE,false),lp(-1,-2,10));
         for(String line:f.detail())root.addView(text(line,15,Color.WHITE,false),lp(-1,-2,10));
         root.addView(text(Alpha99Findings.INTERFERENCE_NOTE,13,Alpha99ResultsActivity.MUTED,false),lp(-1,-2,14));
         root.addView(text(Alpha99Findings.DISCLAIMER,13,Alpha99ResultsActivity.MUTED,false),lp(-1,-2,6));
@@ -55,8 +57,8 @@ public class Alpha99DetailActivity extends Activity {
         switch(f.shape){
             case DATE:return "Yellow: the date window's edges as measured. Blue: a level line along the dial.";
             case RING:return "Yellow: where genuine markers sit on this dial's printed minute track.";
-            case BATON:return "Yellow: expected marker outline, adjusted for the marker ring. Cyan: the four actual detector-fitted edges (not a lume-only trace).";
-            default:return "Yellow outline: where a genuine marker would sit, judged from the other markers on this dial.";
+            case BATON:return "Yellow: ring-adjusted nominal outer-metal polygon used for outline mismatch. Cyan: actual detector-fitted edges. If the ring is unavailable, yellow shows the fixed master and mismatch is withheld.";
+            default:return "Yellow: ring-adjusted nominal outer-metal polygon used for outline comparison. Uncertain edges have no reported mismatch percentage. If the ring is unavailable, yellow shows the fixed nominal.";
         }
     }
 

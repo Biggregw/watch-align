@@ -28,7 +28,7 @@ public class PhotographicOverlayInspectActivity extends Activity {
 
         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(10),dp(8),dp(10),dp(8));top.setBackgroundColor(0xAA08111F);
         Button back=new Button(this);back.setText("Back");back.setAllCaps(false);back.setOnClickListener(v->finish());top.addView(back,new LinearLayout.LayoutParams(dp(78),dp(46)));
-        TextView title=new TextView(this);title.setText("Bright perspective outline");title.setTextColor(Color.WHITE);title.setTextSize(17);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
+        TextView title=new TextView(this);title.setText("Fixed-master perspective outline");title.setTextColor(Color.WHITE);title.setTextSize(17);title.setPadding(dp(10),0,0,0);top.addView(title,new LinearLayout.LayoutParams(0,dp(46),1));
         Button reset=new Button(this);reset.setText("Reset");reset.setAllCaps(false);reset.setOnClickListener(v->{image.resetZoom();alpha=.75f;refresh();});top.addView(reset,new LinearLayout.LayoutParams(dp(78),dp(46)));root.addView(top,new FrameLayout.LayoutParams(-1,dp(62),Gravity.TOP));
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setPadding(dp(10),dp(5),dp(10),dp(8));bottom.setBackgroundColor(0xC008111F);
@@ -36,7 +36,7 @@ public class PhotographicOverlayInspectActivity extends Activity {
         TextView label=new TextView(this);label.setText("Outline");label.setTextColor(Color.WHITE);label.setTextSize(12);controls.addView(label,new LinearLayout.LayoutParams(dp(72),dp(42)));
         SeekBar seek=new SeekBar(this);seek.setMax(100);seek.setProgress(75);seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean f){alpha=p/100f;refresh();}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});controls.addView(seek,new LinearLayout.LayoutParams(0,dp(42),1));
         Button blink=new Button(this);blink.setText("Hold to blink");blink.setAllCaps(false);blink.setTextSize(11);blink.setOnTouchListener((v,e)->{if(e.getActionMasked()==MotionEvent.ACTION_DOWN){image.setImageBitmapPreserveZoom(base);return true;}if(e.getActionMasked()==MotionEvent.ACTION_UP||e.getActionMasked()==MotionEvent.ACTION_CANCEL){refresh();return true;}return false;});controls.addView(blink,new LinearLayout.LayoutParams(dp(118),dp(42)));bottom.addView(controls);
-        TextView hint=new TextView(this);hint.setText("Yellow: expected. Cyan: detector-fitted baton edges. No nudge. Measurements only.");hint.setTextColor(Color.WHITE);hint.setTextSize(11);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(30)));
+        TextView hint=new TextView(this);hint.setText("Yellow: fixed model master. Cyan: fitted baton edges. Marker mismatch uses the ring-adjusted yellow in marker close-ups.");hint.setTextColor(Color.WHITE);hint.setTextSize(11);hint.setGravity(Gravity.CENTER);bottom.addView(hint,new LinearLayout.LayoutParams(-1,dp(30)));
         String diagnostics=InspectionImageStore.diagnosticsText;
         if(diagnostics!=null&&!diagnostics.isEmpty()){
             TextView metrics=new TextView(this);metrics.setText(diagnostics);metrics.setTextColor(Color.WHITE);metrics.setTextSize(10);metrics.setPadding(dp(4),0,dp(4),0);

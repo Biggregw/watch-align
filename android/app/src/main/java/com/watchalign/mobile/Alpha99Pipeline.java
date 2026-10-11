@@ -31,6 +31,7 @@ final class Alpha99Pipeline {
         /** Transparent full-photo overlay: yellow expected geometry + cyan actual fitted baton edges. */
         Bitmap diagnosticOverlay;
         final Map<String,Bitmap> closeups=new LinkedHashMap<>();
+        final Map<Integer,MarkerMismatchResearch.Result> mismatch=new LinkedHashMap<>();
         String technical;
         ModelSpec model;ModelReference reference;
         boolean ok(){return pose!=null&&pose.valid&&pose.homography!=null&&summary!=null;}
@@ -53,7 +54,11 @@ final class Alpha99Pipeline {
         o.summary=Alpha99Findings.build(o.measurement,o.date,o.checks,o.partial,model,ref);
         try{o.overview=Alpha99Overview.render(rgba,H,o.summary,model);}catch(Throwable t){o.overview=null;}
         double[] ring=o.measurement.ring!=null&&o.measurement.ring.usable?o.measurement.ring.model:null;
-        for(Alpha99Findings.Finding f:o.summary.tiles()){
+        List<Alpha99Findings.Finding> tiles=o.summary.tiles();
+        for(Alpha99Findings.Finding f:o.summary.all){
+            if(!f.dialWide&&model.atHour(f.hour)!=null)
+                o.mismatch.put(f.hour,MarkerMismatchResearch.score(o.measurement,model.atHour(f.hour),ref,f,o.checks==null?null:o.checks.get(f.hour)));
+            if(!tiles.contains(f)&&(f.dialWide||model.atHour(f.hour)==null))continue;
             // Use the existing detector result. This is a display-only diagnostic: no rerun or changed measurement.
             Alpha94MarkerMeasurement.Marker measured=f.shape==Alpha99Findings.Shape.BATON?o.measurement.atHour(f.hour):null;
             Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref,measured);}catch(Throwable t){c=null;}
@@ -145,6 +150,9 @@ final class Alpha99Pipeline {
                 s.append(String.format(Locale.US,"\n    (outline edge not visible over %.0f° of the %d marker; position measured from the rest)",o.partial.get(f.hour).edgeGapDeg,f.hour));
         }
         s.append("\n\nMeasurement only - comparisons with genuine watches, not a verdict. Directions in the upright dial frame (12 at top).");
+        s.append("\n\nIndividual marker outline mismatch: ring-adjusted nominal outer metal; denominator = filled yellow template area. No QC severity limits. Full-photo yellow is the fixed master. Global ring placement and minute-track gaps are separate.");
+        for(Map.Entry<Integer,MarkerMismatchResearch.Result> entry:o.mismatch.entrySet())
+            s.append("\n  ").append(entry.getKey()).append(": ").append(entry.getValue().display());
         return s.toString();
     }
 }
