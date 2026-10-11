@@ -1,0 +1,50 @@
+# Research ONLY: Synthetic copies of single source photograph, never multi-photo voting.
+# No production QC thresholds, genuine references, pose or detector modifications.
+name: Single-photo marker pixel repeatability
+on:
+  push:
+    branches: [feature/android-alpha106-marker-mismatch-research]
+    paths: ['.github/workflows/single-photo-marker-stress.yml',
+            'tools/research/marker_mismatch/single_photo_stress.py']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  single-photo-stress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests opencv-python-headless
+      - uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Fetch and hash-verify public original Reddit photographs
+        run: |
+          mkdir -p source_qc stress_out
+          python3 tools/research/alpha105g/fetch_qc.py source_qc | tee stress_out/photo_access.log
+      - name: Produce photometric changes from the SAME image, no alternative source photographs
+        run: |
+          python3 tools/research/marker_mismatch/single_photo_stress.py prepare source_qc stress_inputs
+      - name: Rerun UNMODIFIED production pose and marker fit on image variants
+        run: |
+          for model in gmt_126710 submariner_124060; do
+            if [ -s "stress_inputs/$model/manifest.csv" ]; then
+              JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh MarkerMismatchBatch "stress_inputs/$model/manifest.csv" stress_inputs/images "stress_out/$model.csv" 2> "stress_out/$model.log"
+            fi
+          done
+      - name: Compare each single original with its own perturbations
+        run: |
+          python3 tools/research/marker_mismatch/single_photo_stress.py analyse stress_out unused | tee stress_out/summary.txt
+          test -s stress_out/summary.csv
+      - name: Upload ONLY numbers, reasons and access log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: single-photo-marker-stress-numerical-results
+          path: stress_out/
+          retention-days: 30
