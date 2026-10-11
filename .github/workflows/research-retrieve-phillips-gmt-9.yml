@@ -1,0 +1,47 @@
+name: Research retrieve genuine GMT BLRO 9 baton ranked photo
+on:
+  push:
+    branches: [feature/android-alpha106-marker-mismatch-research]
+    paths: ['.github/workflows/research-retrieve-phillips-gmt-9.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  original-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests pillow
+      - name: Restore SHA-256-verified original Phillips QC comparison image
+        run: |
+          mkdir -p original
+          python3 - <<'PY'
+          import hashlib,pathlib,requests,io
+          from PIL import Image
+          u='https://dist.phillips.com/auction-assets/CH080120/75_001.jpg?bg-color=0&pad=0&fit=bounds&disable-upscale&height=4000&optimize=medium&width=2000'
+          want='3cf5442ab9c87b9c0b9481fd0eb2b92316a0287581635c49fc9cf6cdc4f31a00'
+          agent='WatchAlignDatasetHarvester/1.0 (+https://github.com/Biggregw/watch-align; research test set)'
+          r=requests.get(u,timeout=30,headers={'User-Agent':agent,'Accept':'image/jpeg,image/png;q=0.9,image/*;q=0.5'})
+          r.raise_for_status()
+          b=r.content;actual=hashlib.sha256(b).hexdigest()
+          print('EXPECTED',want,'GOT',actual,'BYTES',len(b),'HTTP',r.status_code)
+          if actual!=want:raise ValueError('Original photograph unavailable or bytes changed; refusing substitute')
+          im=Image.open(io.BytesIO(b))
+          print('IMAGE_SIZE',im.size,'FORMAT',im.format)
+          pathlib.Path('original/126710BLRO_Phillips_CH080120_75_photo_3cf5442a.jpg').write_bytes(b)
+          pathlib.Path('original/source.txt').write_text(
+            'Genuine Rolex GMT 126710BLRO, Phillips auction CH080120 lot 75\n'
+            'Photo ID: 3cf5442ab9c87b9c\n'
+            'Physical watch ID: gen_126710BLRO_phillips_CH080120_75\n'
+            'Measured calibrated filled-template 9 baton XOR error: 3.9970693173751672%\n'
+            'Verified SHA256: '+want+'\n'
+            'Original: '+u+'\n'
+            'NOTE: Research polygon fit is not necessarily the current Android app QC outcome.\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: original-genuine-pepsi-9-4pct
+          path: original/
+          retention-days: 7
