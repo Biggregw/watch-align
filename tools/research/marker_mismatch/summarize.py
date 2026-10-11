@@ -33,6 +33,7 @@ def pct(vals,p):
     if not a:return math.nan
     x=(len(a)-1)*p
     lo=int(math.floor(x));hi=int(math.ceil(x))
+    if lo==hi:return a[lo]
     return a[lo]*(hi-x)+a[hi]*(x-lo)
 
 print('\nONE PHOTO/WATCH (repeat photos consolidated):')
