@@ -38,8 +38,9 @@ public class MarkerMismatchBatch {
                     n++;
                     if(n%10==0)System.err.printf(Locale.US,"processed %d: %s%n",n,id);
                     if(out==null||!out.ok()){
-                        csv.printf("%s,%s,%s,,,,pose_failed,%s,,,,,,,,,,,,,,,,,%n",safe(id),safe(watch),model.id,
-                                safe(out==null||out.pose==null?"no pose":out.pose.reason));
+                        csv.println(safe(id)+","+safe(watch)+","+model.id+",,,pose_failed,"+
+                                safe(out==null||out.pose==null?"no pose":out.pose.reason)+
+                                ",,,,,,,,,,,,,,,,,");
                         continue;
                     }
                     Alpha94MarkerMeasurement.Report mr=out.measurement;
