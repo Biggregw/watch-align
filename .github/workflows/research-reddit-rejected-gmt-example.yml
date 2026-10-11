@@ -1,0 +1,86 @@
+name: One-off public Reddit rejected GMT original photo retrieval
+on:
+  push:
+    branches: [tool/reddit-qc-example-photos-20261011]
+    paths: ['.github/workflows/research-reddit-rejected-gmt-example.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  fetch-originals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests pillow
+      - name: Download public original Reddit QC gallery images with provenance and size filters
+        shell: bash
+        run: |
+          python - <<'PY'
+          import requests,html,os,json,csv,re,hashlib,time,io
+          from pathlib import Path
+          from PIL import Image
+          root=Path('out');root.mkdir(exist_ok=True)
+          s=requests.Session();s.headers.update({'User-Agent':'WatchAlignQCResearch/0.1 (public Reddit QC gallery images for single-photo visual verification)','Accept':'application/json, text/html, */*'})
+          rows=[];log=[];ids=['1ur0ic4','1vav4qa','1ttphnt','1uu665w','1s92k6q']
+          for postid in ids:
+            p=None
+            sources=[f'https://www.reddit.com/comments/{postid}.json?raw_json=1',
+                     f'https://old.reddit.com/comments/{postid}.json?raw_json=1',
+                     f'https://api.reddit.com/comments/{postid}?raw_json=1']
+            for u in sources:
+              try:
+                r=s.get(u,timeout=15);log.append(f'{postid} {r.status_code} {r.url} {len(r.content)}')
+                if r.ok and 'json' in r.headers.get('content-type',''):
+                  data=r.json();p=data[0]['data']['children'][0]['data'];break
+              except Exception as e:log.append(f'{postid} {u} {repr(e)[:200]}')
+            if not p:continue
+            meta=p.get('media_metadata') or {}
+            gallery=p.get('gallery_data') or {}
+            ordered=[x.get('media_id') for x in gallery.get('items',[]) if x.get('media_id')]
+            if not ordered:ordered=list(meta)
+            candidates=[]
+            for mid in ordered:
+              m=meta.get(mid,{})
+              url=html.unescape((m.get('s') or {}).get('u',''))
+              if url.startswith('https://preview.redd.it/'):
+                candidate=url.replace('https://preview.redd.it/','https://i.redd.it/').split('?')[0]
+                candidates.append(candidate)
+              if url:candidates.append(url)
+            if p.get('url_overridden_by_dest','').startswith('https://i.redd.it/'):
+              candidates.insert(0,p['url_overridden_by_dest'])
+            if p.get('url','').startswith('https://i.redd.it/'):
+              candidates.insert(0,p['url'])
+            dedup=[];seen=set()
+            for x in candidates:
+              if x and x not in seen:dedup.append(x);seen.add(x)
+            log.append(f'{postid} gallery {len(ordered)} candidates {len(dedup)}')
+            n=0
+            for u in dedup:
+              if n>=7:break
+              try:
+                r=s.get(u,timeout=20,headers={'User-Agent':'Mozilla/5.0 WatchAlignResearch'})
+                log.append(f'{postid} image {r.status_code} {len(r.content)} {u[:150]}')
+                if not r.ok or len(r.content)<18000 or len(r.content)>8000000:continue
+                im=Image.open(io.BytesIO(r.content));im.load();w,h=im.size
+                if min(w,h)<500:continue
+                if im.mode not in ('RGB','RGBA'):im=im.convert('RGB')
+                dest=root/f'{postid}_{n+1:02d}.jpg'
+                im.convert('RGB').save(dest,quality=95,subsampling=0,optimize=True)
+                sha=hashlib.sha256(dest.read_bytes()).hexdigest()
+                rows.append([postid,p.get('title',''),p.get('permalink',''),u,str(dest),w,h,sha])
+                n+=1
+              except Exception as e:log.append(f'{postid} image exception {repr(e)[:220]}')
+          with open(root/'index.csv','w',newline='') as f:
+            wr=csv.writer(f);wr.writerow(['reddit_id','title','permalink','original_url','local_path','width','height','sha256_of_saved_file']);wr.writerows(rows)
+          (root/'retrieval_log.txt').write_text('\n'.join(log)+'\n')
+          print('\n'.join(log));print('IMAGES',len(rows))
+          PY
+      - name: Upload images and audit log (research, do not commit photos)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rejected-gmt-qc-original-photo-candidates
+          path: out/
+          retention-days: 7
