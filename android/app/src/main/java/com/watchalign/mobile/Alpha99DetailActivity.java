@@ -42,6 +42,8 @@ public class Alpha99DetailActivity extends Activity {
             iv.setOnClickListener(v->{InspectionImageStore.set(c,title);startActivity(new Intent(this,FullscreenInspectActivity.class));});
             root.addView(iv,lp(-1,-2,10));
             root.addView(text(caption(f)+" Tap the picture to zoom.",12,Alpha99ResultsActivity.MUTED,false),lp(-1,-2,4));
+            if(f.edgeDiagnostic!=null)
+                root.addView(text(f.edgeDiagnostic+" Diagnostic only: the reported QC rotation remains unchanged.",13,Color.WHITE,false),lp(-1,-2,8));
         }
         for(String line:f.detail())root.addView(text(line,15,Color.WHITE,false),lp(-1,-2,10));
         root.addView(text(Alpha99Findings.INTERFERENCE_NOTE,13,Alpha99ResultsActivity.MUTED,false),lp(-1,-2,14));
@@ -53,6 +55,7 @@ public class Alpha99DetailActivity extends Activity {
         switch(f.shape){
             case DATE:return "Yellow: the date window's edges as measured. Blue: a level line along the dial.";
             case RING:return "Yellow: where genuine markers sit on this dial's printed minute track.";
+            case BATON:return "Yellow: expected marker outline, adjusted for the marker ring. Cyan: the four actual detector-fitted edges (not a lume-only trace).";
             default:return "Yellow outline: where a genuine marker would sit, judged from the other markers on this dial.";
         }
     }
