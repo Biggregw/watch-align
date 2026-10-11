@@ -83,7 +83,7 @@ public class Alpha99Preview {
         for(int i=0;i<head.size();i++)y=text(g,head.get(i),PAD,y,W-2*PAD,font(i==0,i==0?52:44),Color.WHITE)+6;
         y=text(g,Alpha99Findings.DISCLAIMER,PAD,y+8,W-2*PAD,font(false,36),MUTED)+28;
         if(o.overview!=null){int sz=W-2*PAD;g.drawImage(o.overview.img,PAD,y,sz,sz,null);y+=sz+10;
-            y=text(g,"✓ within   ! worth a look   !! clear finding   – not assessed   ·   tap for the full overlay",PAD,y,W-2*PAD,font(false,32),MUTED)+28;}
+            y=text(g,"✓ no highlighted finding   ! worth a look   !! clear finding   – not assessed   ·   tap for the full overlay",PAD,y,W-2*PAD,font(false,32),MUTED)+28;}
         List<Alpha99Findings.Finding> tiles=s.tiles();
         if(!tiles.isEmpty()){
             y=text(g,Alpha99Findings.INTERFERENCE_NOTE,PAD,y,W-2*PAD,font(false,36),MUTED)+24;
@@ -96,6 +96,7 @@ public class Alpha99Preview {
             }
         }
         String within=s.withinLine();if(!within.isEmpty())y=text(g,within,PAD,y+16,W-2*PAD,font(false,38),MUTED)+10;
+        String below=s.belowVisibilityLine();if(!below.isEmpty())y=text(g,below,PAD,y+6,W-2*PAD,font(false,38),MUTED)+10;
         String na=s.notAssessedLine();if(!na.isEmpty())y=text(g,na,PAD,y+6,W-2*PAD,font(false,38),MUTED)+10;
         y=button(g,"Open full overlay",y+30);
         y=button(g,"Exact measurements  ▸",y+20);

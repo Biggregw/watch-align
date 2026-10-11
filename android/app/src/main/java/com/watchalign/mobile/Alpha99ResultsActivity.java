@@ -34,10 +34,11 @@ public class Alpha99ResultsActivity extends Activity {
         static Alpha99Findings.Summary summary;
         static Bitmap overview;
         static final Map<String,Bitmap> closeups=new HashMap<>();
+        static final Map<Integer,MarkerMismatchResearch.Result> mismatch=new HashMap<>();
         static String technical;
         /** the model the photo was checked as, and an optional hint that a different model may fit the photo. */
         static String modelLabel,modelHint;
-        static Bitmap photo,overlay;
+        static Bitmap photo,overlay,scoringOverlay;
         private Store(){}
     }
 
@@ -68,13 +69,14 @@ public class Alpha99ResultsActivity extends Activity {
             ImageView hero=new ImageView(this);hero.setImageBitmap(Store.overview);hero.setAdjustViewBounds(true);hero.setScaleType(ImageView.ScaleType.FIT_CENTER);
             hero.setOnClickListener(v->openOverlay());
             root.addView(hero,lp(-1,-2,12));
-            root.addView(text("✓ within   ! worth a look   !! clear finding   – not assessed   ·   tap for the full overlay",12,MUTED,false),lp(-1,-2,4));
+            root.addView(text("✓ no highlighted finding   ! worth a look   !! clear finding   – not assessed   ·   tap for the full overlay",12,MUTED,false),lp(-1,-2,4));
         }
 
         // evidence grid
         List<Alpha99Findings.Finding> tiles=s.tiles();
         if(!tiles.isEmpty()){
             root.addView(text(Alpha99Findings.INTERFERENCE_NOTE,13,MUTED,false),lp(-1,-2,14));
+            root.addView(text("Area colours where assessed: orange = extra, magenta = missing. These colours do not indicate defect severity.",12,MUTED,false),lp(-1,-2,4));
             LinearLayout row=null;
             for(int i=0;i<tiles.size();i++){
                 if(i%2==0){row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);root.addView(row,lp(-1,-2,10));}
@@ -86,12 +88,30 @@ public class Alpha99ResultsActivity extends Activity {
 
         String within=s.withinLine();
         if(!within.isEmpty())root.addView(text(within,14,MUTED,false),lp(-1,-2,16));
+        String below=s.belowVisibilityLine();
+        if(!below.isEmpty())root.addView(text(below,14,MUTED,false),lp(-1,-2,6));
         String na=s.notAssessedLine();
         if(!na.isEmpty())root.addView(text(na,14,MUTED,false),lp(-1,-2,6));
 
+        // Every individual marker can be inspected, including markers within the existing QC range.
+        LinearLayout inspections=new LinearLayout(this);inspections.setOrientation(LinearLayout.VERTICAL);inspections.setVisibility(View.GONE);
+        inspections.addView(text("Yellow: ring-adjusted nominal outer metal, used for the filled-template percentage. Global ring placement and minute-track gaps are separate measurements.",13,MUTED,false));
+        for(Alpha99Findings.Finding f:s.all){
+            MarkerMismatchResearch.Result q=f.dialWide?null:Store.mismatch.get(f.hour);
+            if(q==null)continue;
+            final int index=s.all.indexOf(f);
+            Button inspect=new Button(this);inspect.setAllCaps(false);
+            inspect.setText(f.title+" · "+(q.trusted()?String.format(java.util.Locale.US,"%.3f%% outline mismatch",q.score.mismatchPct):"outline mismatch withheld"));
+            inspect.setOnClickListener(v->{Intent i=new Intent(this,Alpha99DetailActivity.class);i.putExtra(Alpha99DetailActivity.EXTRA_INDEX,index);startActivity(i);});
+            inspections.addView(inspect,lp(-1,-2,4));
+        }
+        Button markerDetails=new Button(this);markerDetails.setAllCaps(false);markerDetails.setText("Inspect marker outlines  ▸");
+        markerDetails.setOnClickListener(v->{boolean show=inspections.getVisibility()!=View.VISIBLE;inspections.setVisibility(show?View.VISIBLE:View.GONE);markerDetails.setText(show?"Inspect marker outlines  ▾":"Inspect marker outlines  ▸");});
+        root.addView(markerDetails,lp(-1,dp(48),12));root.addView(inspections,lp(-1,-2,6));
+
         // secondary
         if(Store.photo!=null&&Store.overlay!=null){
-            Button ov=new Button(this);ov.setText("Open full overlay");ov.setAllCaps(false);ov.setOnClickListener(v->openOverlay());
+            Button ov=new Button(this);ov.setText("Open scoring / fixed-master overlays");ov.setAllCaps(false);ov.setOnClickListener(v->openOverlay());
             root.addView(ov,lp(-1,dp(48),18));
         }
         TextView tech=text(Store.technical==null?"":Store.technical,12,MUTED,false);tech.setTextIsSelectable(true);tech.setVisibility(View.GONE);
@@ -116,7 +136,7 @@ public class Alpha99ResultsActivity extends Activity {
 
     private void openOverlay(){
         if(Store.photo==null||Store.overlay==null)return;
-        InspectionImageStore.setOverlay(Store.photo,Store.overlay,"Full overlay",null);startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
+        InspectionImageStore.setMarkerOverlays(Store.photo,Store.overlay,Store.scoringOverlay);startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
     }
 
     private TextView text(String s,int sp,int color,boolean bold){TextView v=new TextView(this);v.setText(s);v.setTextSize(sp);v.setTextColor(color);if(bold)v.setTypeface(Typeface.DEFAULT_BOLD);return v;}

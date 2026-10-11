@@ -67,11 +67,11 @@ final class BatonFitDiagnostic {
         // For a 9 marker present upper first, so it reads naturally against the photograph.
         if(spec.hour==9)
             return String.format(Locale.US,
-                    "Cyan fitted edges vs yellow: upper %.2f° %s; lower %.2f° %s.",
+                    "Fitted long-edge angles vs scoring reference: upper %.2f° %s; lower %.2f° %s.",
                     Math.abs(a.side2Deg),direction(a.side2Deg),
                     Math.abs(a.side0Deg),direction(a.side0Deg));
         return String.format(Locale.US,
-                "Cyan fitted edges vs yellow: %s %.2f° %s; %s %.2f° %s.",
+                "Fitted long-edge angles vs scoring reference: %s %.2f° %s; %s %.2f° %s.",
                 first,Math.abs(a.side0Deg),direction(a.side0Deg),
                 second,Math.abs(a.side2Deg),direction(a.side2Deg));
     }

@@ -5,8 +5,9 @@ import java.util.List;
 
 /**
  * Exact area comparison of two CONVEX filled marker boundaries in the same
- * canonical, perspective-corrected dial plane. The 0..100 mismatch score is
- * the area of the symmetric difference divided by the area of the union.
+ * canonical, perspective-corrected dial plane. Mismatch is 100 times the
+ * symmetric difference divided by the FILLED EXPECTED area, including metal.
+ * It can exceed 100%; it is not an IoU score or a severity classification.
  *
  * Unlike raw raster counts, this is independent of photo resolution; it is
  * the limit of counting extra and missing pixels on a fine canonical grid.
@@ -17,26 +18,41 @@ final class MarkerPolygonMismatch {
     private MarkerPolygonMismatch() {}
 
     static final class Score {
+        /** Snapshots of the exact polygons whose areas were compared; renderers never refit them. */
+        final double[][] expectedPolygon,actualPolygon;
         final double expectedArea,actualArea,overlapArea,unionArea;
-        final double extraPct,missingPct,mismatchPct;
-        Score(double e,double a,double i) {
+        final double extraArea,missingArea,extraPct,missingPct,mismatchPct;
+        Score(double e,double a,double i,double[][] expected,double[][] actual) {
+            expectedPolygon=expected;actualPolygon=actual;
             expectedArea=e;actualArea=a;overlapArea=i;
             unionArea=e+a-i;
-            extraPct=100.0*(a-i)/unionArea;
-            missingPct=100.0*(e-i)/unionArea;
+            extraArea=a-i;missingArea=e-i;
+            extraPct=100.0*extraArea/e;
+            missingPct=100.0*missingArea/e;
             mismatchPct=extraPct+missingPct;
         }
+        /** Disjoint convex pieces of A minus E and E minus A, in the same canonical plane. */
+        List<double[][]> extraRegions(){return difference(actualPolygon,expectedPolygon);}
+        List<double[][]> missingRegions(){return difference(expectedPolygon,actualPolygon);}
     }
 
     /** null means an invalid, unmeasurable or non-convex outline. */
     static Score compare(double[][] expected,double[][] actual) {
         if(!isConvex(expected)||!isConvex(actual))return null;
+        expected=copyPolygon(expected);actual=copyPolygon(actual);
         double e=area(expected),a=area(actual);
         if(e<EPS||a<EPS)return null;
         double intersection=area(clip(expected,actual));
         intersection=Math.min(Math.min(e,a),Math.max(0,intersection));
         if(e+a-intersection<EPS)return null;
-        return new Score(e,a,intersection);
+        return new Score(e,a,intersection,expected,actual);
+    }
+
+    static double[][] copyPolygon(double[][] polygon){
+        if(polygon==null)return null;
+        double[][] copy=new double[polygon.length][];
+        for(int i=0;i<copy.length;i++)copy[i]=polygon[i].clone();
+        return copy;
     }
 
     static double area(double[][] p) {
@@ -60,7 +76,9 @@ final class MarkerPolygonMismatch {
     }
 
     private static boolean isConvex(double[][] p) {
-        if(p==null||p.length<3||!Double.isFinite(signedArea(p))||area(p)<EPS)return false;
+        if(p==null||p.length<3)return false;
+        for(double[] point:p)if(point==null||point.length<2||!Double.isFinite(point[0])||!Double.isFinite(point[1]))return false;
+        if(!Double.isFinite(signedArea(p))||area(p)<EPS)return false;
         double sign=Math.signum(signedArea(p));
         for(int i=0;i<p.length;i++){
             if(p[i]==null||p[i].length<2||!Double.isFinite(p[i][0])||!Double.isFinite(p[i][1]))return false;
@@ -104,6 +122,36 @@ final class MarkerPolygonMismatch {
             points=next;
         }
         return points.toArray(new double[0][]);
+    }
+
+    /** Partition a convex subtraction by peeling off the exterior of each clipping half-plane.
+     * Each exterior piece is removed before the next cut, so coloured pieces do not overlap.
+     * Uses the same inside test and intersection arithmetic as the overlap calculation above.
+     */
+    private static List<double[][]> difference(double[][] subject,double[][] clipping){
+        List<double[][]> pieces=new ArrayList<>();
+        double[][] remaining=subject;
+        double orientation=Math.signum(signedArea(clipping));
+        for(int k=0;k<clipping.length&&remaining.length>=3;k++){
+            double[] a=clipping[k],b=clipping[(k+1)%clipping.length];
+            double[][] outside=halfPlane(remaining,a,b,orientation,false);
+            if(area(outside)>EPS)pieces.add(outside);
+            remaining=halfPlane(remaining,a,b,orientation,true);
+        }
+        return pieces;
+    }
+
+    private static double[][] halfPlane(double[][] polygon,double[] a,double[] b,double orientation,boolean keepInside){
+        List<double[]> result=new ArrayList<>();
+        double[] prev=polygon[polygon.length-1];double sp=inside(prev,a,b,orientation);
+        for(double[] cur:polygon){
+            double sc=inside(cur,a,b,orientation);
+            boolean was=(sp>=-EPS)==keepInside,now=(sc>=-EPS)==keepInside;
+            if(was!=now)result.add(intersect(prev,cur,sp,sc));
+            if(now)result.add(cur);
+            prev=cur;sp=sc;
+        }
+        return result.toArray(new double[0][]);
     }
 
     static double[][] circle(double cx,double cy,double r,int segments) {

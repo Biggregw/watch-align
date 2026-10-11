@@ -1,0 +1,37 @@
+{
+  "source_sha256": "c50e0845ddb6c50701a4ba8ab6b396092e67988a747206f77743c02e7c7e54eb",
+  "dimensions": [
+    1152,
+    1536
+  ],
+  "exif_orientation": null,
+  "icc_description": "Display P3 Gamut with sRGB Transfer",
+  "pillow": "12.3.0",
+  "littlecms": "2.19",
+  "input_sha256": {
+    "native_opencv": "c50e0845ddb6c50701a4ba8ab6b396092e67988a747206f77743c02e7c7e54eb",
+    "native_imageio": "c50e0845ddb6c50701a4ba8ab6b396092e67988a747206f77743c02e7c7e54eb",
+    "encoded_p3_1152_native": "730f9571b6ea40a8ad9307bf7250544adc6dd7fec639285dbb288781b39c248b",
+    "encoded_p3_1152_native_q95": "ef3c37cc4e9639d731eac56b88e77060665ff577d094b2d5628ae6677faa5bab",
+    "encoded_p3_1152_native_q85": "1c5e7ea9ebe7c79b34cf134cd033983d8cec65f7332586495ed6aa082a4e50db",
+    "encoded_p3_960_box": "e492b28b3b78e2bf9338909b83ac009e962f567fc3ca8f66a0f3489446212aa7",
+    "encoded_p3_960_bilinear": "4ec4bc9f834d361c4392479da733c8eb3f13de30af5e8137ccb71791efd473a6",
+    "encoded_p3_960_bilinear_q95": "136ffd30c74323da97c99b565a5d98a0bf0bb5d7e97de4065e2902e4e1e34f14",
+    "encoded_p3_960_bilinear_q85": "6093b29594fbb176331ef8c21b8bc70448155733d405ceec14f22c0cc65d4701",
+    "encoded_p3_960_bicubic": "5da9cc147475b2fa87545965b81d067c0935f1f73fb08ae2a0d6e61a311265e7",
+    "encoded_p3_960_lanczos": "b6755f6f63599233f94c8d81c6c86df0c6bb74256e1954a42c05c00534b17c7c",
+    "encoded_p3_936_bilinear": "53f6312bdec331edca5438276b48bd7e4ecd852e5f2b05093656b5eba6dcd313",
+    "encoded_p3_984_bilinear": "4afc256500cec1b58bcbf439fb7332db33876ba6173697f6b0f80fa87ff4be2c",
+    "converted_srgb_1152_native": "b661d4b62bcca24136277ced8fc84dda4c81775523b333e3c862ea5e2d8f9af0",
+    "converted_srgb_1152_native_q95": "971da5e6b52b63842dc3549dd3fbbd731c2b1d358f2ff735ccf9b103ef98efa4",
+    "converted_srgb_1152_native_q85": "b6d59222822e5b90336ae637940b937b3731c83a83d389b65229947ded2e4d93",
+    "converted_srgb_960_box": "0d390e1b75fb6534cf3d89d72ad071299d34214df1d6bbde6d625c6cd70a64f0",
+    "converted_srgb_960_bilinear": "d1a0516199d57bb0a3479ab8dbbb62019a54dad90a5c4d39be24f9742cbe226a",
+    "converted_srgb_960_bilinear_q95": "e39a8e48a6ea9c26b2f56d3480e8e1bb19a8ce103d63422bd640ffaa06582957",
+    "converted_srgb_960_bilinear_q85": "bfc03b252b994c1520e583db07c17f71eb1bdc888f09d37da9be88370cfb6145",
+    "converted_srgb_960_bicubic": "325c77f21858b92e0218833d5e261747437f19af9285e2b2bb502886c69c0591",
+    "converted_srgb_960_lanczos": "7be19ac2eef7d8bfb6e25e239ba531cb740161f3a753d19325472cc49c70c3f2",
+    "converted_srgb_936_bilinear": "d1394b7e16d59829a496373824572bb8a38c22fd5e1bd8d075e795a4b3fce12a",
+    "converted_srgb_984_bilinear": "b9d283e7857edd4a0d150c7345b1ade1bc226fd4e448ad4260f69bb4259e5933"
+  }
+}

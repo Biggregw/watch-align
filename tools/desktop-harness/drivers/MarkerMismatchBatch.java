@@ -79,25 +79,11 @@ public class MarkerMismatchBatch {
 
     static double[][] expected(ModelSpec.Marker sp,double[] ring,ModelReference ref){
         if(ring==null||ring.length<4)return null;
-        if(sp.shape==ModelSpec.Shape.TRIANGLE)
-            return Alpha98Closeups.moved(Alpha98Closeups.nominalTriangle(sp,ref),ring);
-        if(sp.shape==ModelSpec.Shape.BATON)
-            return Alpha98Closeups.moved(sp.batonPolygon(),ring);
-        double[] master=sp.masterPoint();
-        double x=master[0]+ring[0]+ring[2]*master[0]-ring[3]*master[1];
-        double y=master[1]+ring[1]+ring[2]*master[1]+ring[3]*master[0];
-        return MarkerPolygonMismatch.circle(x,y,sp.outerR*(1+ring[2]),128);
+        return ExpectedMarkerOutline.polygon(sp,ref,ring);
     }
 
     static double[][] actual(ModelSpec.Marker sp,Alpha94MarkerMeasurement.Marker m,double R){
-        if(m==null||!m.usable)return null;
-        if(sp.shape!=ModelSpec.Shape.ROUND)return m.fitVertices;
-        if(!Double.isFinite(m.canonDx)||!Double.isFinite(m.canonDy)
-           ||!Double.isFinite(m.radiusErrPx)||!(R>0))return null;
-        double r=sp.outerR+m.radiusErrPx/R;
-        if(!(r>0))return null;
-        double[] master=sp.masterPoint();
-        return MarkerPolygonMismatch.circle(master[0]+m.canonDx,master[1]+m.canonDy,r,128);
+        return MarkerMismatchResearch.actual(sp,m,R);
     }
 
     static String vertices(double[][] v){
