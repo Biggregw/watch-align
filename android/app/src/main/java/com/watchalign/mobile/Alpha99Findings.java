@@ -112,6 +112,8 @@ final class Alpha99Findings {
         String partNotAssessed,partReason;
         /** the part that was assessed, named in the "within" line (default "rotation", the baton case). */
         String partAssessed;
+        /** Display-only: angles of the ACTUAL two fitted long edges relative to the yellow, ring-adjusted outline. */
+        String edgeDiagnostic;
         /** short name used in the "within" line, e.g. "4" or "date window". */
         final String shortName;
         Finding(String key,String title,String shortName){this.key=key;this.title=title;this.shortName=shortName;}
@@ -379,6 +381,9 @@ final class Alpha99Findings {
         if(!gate(f,c))return f;
         Alpha94MarkerMeasurement.Marker m=r==null?null:r.atHour(hour);
         if(m==null||!m.usable){withheldByMeasurement(f,m==null?"unavailable":m.reason);return f;}
+        // Diagnostics do not participate in the evidence calculation and do not change the verdict.
+        double[] ring=r.ring!=null&&r.ring.usable?r.ring.model:null;
+        f.edgeDiagnostic=BatonFitDiagnostic.describe(spec,m,ring);
         double[] rotRef=ref.far(key+"_rot");
         double[] offRef=ref.far(key+"_off");
         double nom=ref.nominal(key+"_rot");
