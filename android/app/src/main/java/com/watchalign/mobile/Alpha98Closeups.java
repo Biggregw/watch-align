@@ -46,19 +46,33 @@ final class Alpha98Closeups {
         return forRegion(rgba,H,f,date,ring,model,ref);
     }
 
-    /** Alpha99 findings: same close-up and outline as Alpha98 for the same region and shape. */
-    static Bitmap forFinding(Mat rgba,double[] H,Alpha99Findings.Finding g,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref){
+    /** Alpha99 findings: optionally show the precise four detector-fitted edges in cyan, separate from yellow. */
+    static Bitmap forFinding(Mat rgba,double[] H,Alpha99Findings.Finding g,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref,
+                             Alpha94MarkerMeasurement.Marker fitted){
         Alpha98Findings.Finding f=new Alpha98Findings.Finding(g.key,g.title);
         f.cx=g.cx;f.cy=g.cy;f.half=g.half;f.hour=g.hour;f.shape=Alpha98Findings.Shape.valueOf(g.shape.name());
-        return forRegion(rgba,H,f,date,ring,model,ref);
+        return forRegion(rgba,H,f,date,ring,model,ref,fitted);
     }
 
     private static Bitmap forRegion(Mat rgba,double[] H,Alpha98Findings.Finding f,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref){
+        return forRegion(rgba,H,f,date,ring,model,ref,null);
+    }
+
+    private static Bitmap forRegion(Mat rgba,double[] H,Alpha98Findings.Finding f,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref,
+                                    Alpha94MarkerMeasurement.Marker fitted){
         ModelSpec.Marker spec=model.atHour(f.hour);
         Mat m=render(rgba,H,f.cx,f.cy,f.half);
         int th=Math.max(2,SIZE/160);
         switch(f.shape){
-            case BATON:if(spec!=null)poly(m,f,moved(spec.batonPolygon(),ring),th);break;
+            case BATON:
+                if(spec!=null){
+                    poly(m,f,moved(spec.batonPolygon(),ring),th);
+                    // Actual detector polygon, measured independently after the frozen perspective fit.
+                    // Draw cyan last so even a near-perfect fit remains visible inside the yellow line.
+                    if(fitted!=null&&fitted.usable&&fitted.fitVertices!=null&&fitted.fitVertices.length==4)
+                        poly(m,f,fitted.fitVertices,2,CYAN);
+                }
+                break;
             case TRIANGLE:if(spec!=null)poly(m,f,moved(nominalTriangle(spec,ref),ring),th);break;
             case ROUND:{if(spec==null)break;double[][] c=moved(new double[][]{{f.cx,f.cy}},ring);double sc=ring==null?1:1+ring[2];
                 circle(m,f,c[0][0],c[0][1],spec.outerR*sc,th);break;}
@@ -109,8 +123,11 @@ final class Alpha98Closeups {
         double s=2*f.half/SIZE;return new Point((x-(f.cx-f.half))/s-0.5,(y-(f.cy-f.half))/s-0.5);
     }
     private static void poly(Mat m,Alpha98Findings.Finding f,double[][] v,int th){
+        poly(m,f,v,th,YELLOW);
+    }
+    private static void poly(Mat m,Alpha98Findings.Finding f,double[][] v,int th,Scalar colour){
         Point[] p=new Point[v.length];for(int i=0;i<v.length;i++)p[i]=px(f,v[i][0],v[i][1]);
-        List<MatOfPoint> l=new ArrayList<>();l.add(new MatOfPoint(p));Imgproc.polylines(m,l,true,YELLOW,th,Imgproc.LINE_AA);
+        List<MatOfPoint> l=new ArrayList<>();l.add(new MatOfPoint(p));Imgproc.polylines(m,l,true,colour,th,Imgproc.LINE_AA);
     }
     private static void circle(Mat m,Alpha98Findings.Finding f,double x,double y,double r,int th){
         double s=2*f.half/SIZE;Imgproc.circle(m,px(f,x,y),(int)Math.round(r/s),YELLOW,th,Imgproc.LINE_AA);
