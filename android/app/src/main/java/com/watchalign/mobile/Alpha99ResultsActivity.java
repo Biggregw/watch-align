@@ -38,7 +38,7 @@ public class Alpha99ResultsActivity extends Activity {
         static String technical;
         /** the model the photo was checked as, and an optional hint that a different model may fit the photo. */
         static String modelLabel,modelHint;
-        static Bitmap photo,overlay;
+        static Bitmap photo,overlay,scoringOverlay;
         private Store(){}
     }
 
@@ -76,6 +76,7 @@ public class Alpha99ResultsActivity extends Activity {
         List<Alpha99Findings.Finding> tiles=s.tiles();
         if(!tiles.isEmpty()){
             root.addView(text(Alpha99Findings.INTERFERENCE_NOTE,13,MUTED,false),lp(-1,-2,14));
+            root.addView(text("Area colours where assessed: orange = extra, magenta = missing. These colours do not indicate defect severity.",12,MUTED,false),lp(-1,-2,4));
             LinearLayout row=null;
             for(int i=0;i<tiles.size();i++){
                 if(i%2==0){row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);root.addView(row,lp(-1,-2,10));}
@@ -108,7 +109,7 @@ public class Alpha99ResultsActivity extends Activity {
 
         // secondary
         if(Store.photo!=null&&Store.overlay!=null){
-            Button ov=new Button(this);ov.setText("Open fixed-master full overlay");ov.setAllCaps(false);ov.setOnClickListener(v->openOverlay());
+            Button ov=new Button(this);ov.setText("Open scoring / fixed-master overlays");ov.setAllCaps(false);ov.setOnClickListener(v->openOverlay());
             root.addView(ov,lp(-1,dp(48),18));
         }
         TextView tech=text(Store.technical==null?"":Store.technical,12,MUTED,false);tech.setTextIsSelectable(true);tech.setVisibility(View.GONE);
@@ -133,7 +134,7 @@ public class Alpha99ResultsActivity extends Activity {
 
     private void openOverlay(){
         if(Store.photo==null||Store.overlay==null)return;
-        InspectionImageStore.setOverlay(Store.photo,Store.overlay,"Full overlay",null);startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
+        InspectionImageStore.setMarkerOverlays(Store.photo,Store.overlay,Store.scoringOverlay);startActivity(new Intent(this,PhotographicOverlayInspectActivity.class));
     }
 
     private TextView text(String s,int sp,int color,boolean bold){TextView v=new TextView(this);v.setText(s);v.setTextSize(sp);v.setTextColor(color);if(bold)v.setTypeface(Typeface.DEFAULT_BOLD);return v;}

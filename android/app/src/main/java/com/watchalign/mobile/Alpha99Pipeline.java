@@ -30,6 +30,8 @@ final class Alpha99Pipeline {
         Bitmap overview;
         /** Transparent full-photo overlay: yellow expected geometry + cyan actual fitted baton edges. */
         Bitmap diagnosticOverlay;
+        /** Full-photo ring-adjusted scoring reference, kept separate from the fixed-master overlay. */
+        Bitmap scoringOverlay;
         final Map<String,Bitmap> closeups=new LinkedHashMap<>();
         final Map<Integer,MarkerMismatchResearch.Result> mismatch=new LinkedHashMap<>();
         String technical;
@@ -61,9 +63,11 @@ final class Alpha99Pipeline {
             if(!tiles.contains(f)&&(f.dialWide||model.atHour(f.hour)==null))continue;
             // Use the existing detector result. This is a display-only diagnostic: no rerun or changed measurement.
             Alpha94MarkerMeasurement.Marker measured=f.shape==Alpha99Findings.Shape.BATON?o.measurement.atHour(f.hour):null;
-            Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref,measured);}catch(Throwable t){c=null;}
+            MarkerMismatchResearch.Result comparison=f.dialWide?null:o.mismatch.get(f.hour);
+            Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref,measured,comparison);}catch(Throwable t){c=null;}
             if(c!=null)o.closeups.put(f.key,c);
         }
+        try{o.scoringOverlay=MarkerMismatchOverlay.fullWatch(photo.getWidth(),photo.getHeight(),H,o.mismatch);}catch(Throwable t){o.scoringOverlay=null;}
         o.technical=technical(o);
         rgba.release();gray.release();
         return o;

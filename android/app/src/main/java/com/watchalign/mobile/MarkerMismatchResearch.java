@@ -17,7 +17,12 @@ final class MarkerMismatchResearch {
     static final class Result {
         final MarkerPolygonMismatch.Score score;
         final String reason;
-        Result(MarkerPolygonMismatch.Score score,String reason){this.score=score;this.reason=reason;}
+        final double[][] expected;
+        Result(MarkerPolygonMismatch.Score score,String reason){this(score,reason,null);}
+        Result(MarkerPolygonMismatch.Score score,String reason,double[][] expected){
+            this.score=score;this.reason=reason;
+            this.expected=score==null?MarkerPolygonMismatch.copyPolygon(expected):score.expectedPolygon;
+        }
         /** Existing photo/edge checks cleared; this does not establish physical edge accuracy. */
         boolean trusted(){return score!=null && "measured".equals(reason);}
         String display(){
@@ -31,12 +36,12 @@ final class MarkerMismatchResearch {
                         Alpha99Findings.Finding finding,Alpha99MarkerInterference.Check interference) {
         if(r==null||spec==null||r.ring==null||!r.ring.usable||r.ring.model==null||r.ring.model.length<4)
             return new Result(null,"marker ring unavailable");
-        Alpha94MarkerMeasurement.Marker m=spec.shape==ModelSpec.Shape.TRIANGLE?r.triangle:r.atHour(spec.hour);
-        if(m==null||!m.usable)return new Result(null,m==null?"unmeasured":m.reason);
         double[][] expected=ExpectedMarkerOutline.polygon(spec,ref,r.ring.model);
+        Alpha94MarkerMeasurement.Marker m=spec.shape==ModelSpec.Shape.TRIANGLE?r.triangle:r.atHour(spec.hour);
+        if(m==null||!m.usable)return new Result(null,m==null?"unmeasured":m.reason,expected);
         double[][] actual=actual(spec,m,r.dialRadiusPx);
         MarkerPolygonMismatch.Score s=MarkerPolygonMismatch.compare(expected,actual);
-        if(s==null)return new Result(null,"invalid or incomplete polygon");
+        if(s==null)return new Result(null,"invalid or incomplete polygon",expected);
         // We do not silently score unreliable photo edges as genuine defects.
         if(interference==null||!interference.clean)
             return new Result(s,"hand/glare or interference not cleared");

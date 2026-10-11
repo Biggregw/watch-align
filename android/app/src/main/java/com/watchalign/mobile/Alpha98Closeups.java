@@ -50,9 +50,14 @@ final class Alpha98Closeups {
     /** Alpha99 findings: optionally show the precise four detector-fitted edges in cyan, separate from yellow. */
     static Bitmap forFinding(Mat rgba,double[] H,Alpha99Findings.Finding g,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref,
                              Alpha94MarkerMeasurement.Marker fitted){
+        return forFinding(rgba,H,g,date,ring,model,ref,fitted,null);
+    }
+
+    static Bitmap forFinding(Mat rgba,double[] H,Alpha99Findings.Finding g,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref,
+                             Alpha94MarkerMeasurement.Marker fitted,MarkerMismatchResearch.Result comparison){
         Alpha98Findings.Finding f=new Alpha98Findings.Finding(g.key,g.title);
         f.cx=g.cx;f.cy=g.cy;f.half=g.half;f.hour=g.hour;f.shape=Alpha98Findings.Shape.valueOf(g.shape.name());
-        return forRegion(rgba,H,f,date,ring,model,ref,fitted);
+        return forRegion(rgba,H,f,date,ring,model,ref,fitted,comparison);
     }
 
     private static Bitmap forRegion(Mat rgba,double[] H,Alpha98Findings.Finding f,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref){
@@ -61,8 +66,17 @@ final class Alpha98Closeups {
 
     private static Bitmap forRegion(Mat rgba,double[] H,Alpha98Findings.Finding f,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref,
                                     Alpha94MarkerMeasurement.Marker fitted){
+        return forRegion(rgba,H,f,date,ring,model,ref,fitted,null);
+    }
+
+    private static Bitmap forRegion(Mat rgba,double[] H,Alpha98Findings.Finding f,Alpha98DateWindow.Result date,double[] ring,ModelSpec model,ModelReference ref,
+                                    Alpha94MarkerMeasurement.Marker fitted,MarkerMismatchResearch.Result comparison){
         ModelSpec.Marker spec=model.atHour(f.hour);
         Mat m=render(rgba,H,f.cx,f.cy,f.half);
+        if(comparison!=null&&comparison.expected!=null){
+            Bitmap b=Bitmap.createBitmap(SIZE,SIZE,Bitmap.Config.ARGB_8888);Utils.matToBitmap(m,b);m.release();
+            return MarkerMismatchOverlay.closeup(b,f.cx,f.cy,f.half,comparison);
+        }
         int th=Math.max(2,SIZE/160);
         switch(f.shape){
             case BATON:

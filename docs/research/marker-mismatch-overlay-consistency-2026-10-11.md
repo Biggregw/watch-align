@@ -30,9 +30,22 @@ denominator. A line-fit polygon remains an approximation to a physical rim.
 
 Every individual marker, including WITHIN markers, is accessible through
 **Inspect marker outlines**. Its detail shows the yellow scoring reference and
-the extra/missing/total percentages when reportable. The **fixed-master full
-overlay** stays available with explicit labels distinguishing it from the
-ring-adjusted scoring close-up. There is no added photo requirement.
+the extra/missing/total percentages when reportable. The full-watch inspector now
+offers **Scoring (ring adjusted)** and **Fixed master** as separate labelled
+options, with scoring selected initially when available. Scoring yellow uses the
+same saved expected polygon as its close-up and percentage; it is projected once
+through the frozen H. The original fixed-master bitmap is retained unchanged.
+When the ring is unavailable the scoring option is disabled, with no silent
+fixed-master substitution. There is no added photo requirement.
+
+Close-ups fill **orange = extra (A minus E)** and **magenta = missing (E minus A)**
+with a text legend; yellow is expected and cyan is detected. Calculation retains
+snapshots of its exact expected/detected polygons, used by both renderers. Convex
+polygon subtraction partitions those polygons into non-overlapping pieces; their
+summed areas match the numerical extra/missing areas. The crop transform preserves
+the existing half-pixel origin. Each colour uses a single vector fill path to avoid
+alpha seams along internal partition boundaries. Thin residuals are not expanded
+or padded; antialias coverage on screen does not change the calculated percentage.
 
 The original pose, detector, marker fits, ring fit, model files, calibration data,
 QC thresholds and findings are unchanged. Global marker-ring placement remains
@@ -48,6 +61,10 @@ percentage when the ring/fit is unavailable, the polygon is invalid, interferenc
 is not cleared, the existing finding is NOT_ASSESSED/partial, or an existing
 photo/edge reliability cap is active. Missing reliability checks fail closed.
 Partial round position fits are never used for an area score.
+Coloured regions and the scoring view's detected outline are withheld by the same
+checks. The nominal scoring outline remains inspectable wherever the ring is
+available, including at an unmeasured marker. Colours indicate area contributions,
+not defect severity. Triangle region fills remain withheld with their percentage.
 
 Triangle raw area comparisons remain available in offline CSVs only. Their radial
 edges and reference-shape parity are unresolved, so the area percentage is withheld
@@ -111,8 +128,10 @@ The experimental trained 3.997% result is not adopted.
 
 Before/after reruns agree exactly at exported precision on all expected/actual
 vertices and areas, overlaps, dial radius, fitted rotation/position and marker
-usability for both watches. The Pepsi's 14 original QC findings/short lines are
-byte-identical before/after; the 9 remains WITHIN. A third restored genuine image,
+usability for both watches. All 28 original QC findings/short lines across Pepsi
+and WOS are byte-identical before/after; the Pepsi 9 remains WITHIN. The final
+visualization update also leaves all fields in the 22 exported marker rows
+identical to the preceding PR version. A third restored genuine image,
 Phillips photo `641dc405c27149d0` (CH080218 lot 1), was excluded in both versions:
 `minute-lattice median residual too high (wrong local fit)`. No pose rescue or
 measurement was invented.
@@ -160,19 +179,34 @@ parity warning is still unresolved.
 ## Validation and reproduction
 
 - JDK 17, committed wrapper: `cd android && bash ./gradlew :app:testDebugUnitTest`:
-  **344 tests, zero failures/errors**. Android activity code compiled; no APK built.
+  **353 tests, zero failures/errors** after the final visualization improvement.
+  Android activity code compiled; no APK built.
   Device/emulator navigation was not exercised in this run.
 - Focused regressions: filled expected denominator, extra/missing areas, >100%
   results, malformed polygons, Pepsi fixed/ring parity, same-photo perturbations,
   WOS polygon overlaps, shared round geometry, missing/partial/interference/capped
-  checks and triangle withholding.
+  checks and triangle withholding. Nine additional consistency tests cover coloured
+  region area sums and containment, non-overlapping partitions, identical/nested/
+  separated shapes, opposite winding, 128-point rounds, all 12 frozen polygon
+  comparisons, snapshot retention, frozen full-watch projection, crop half-pixel
+  alignment and absence of a scoring fallback without a ring.
 - Desktop `MarkerMismatchBatch`: local before/after runs against both SHA-verified
   originals; unchanged geometry, changed denominator only for numeric scores.
-- Desktop `Alpha99Preview --no-images`: unchanged Pepsi QC outputs. `MarkerEdgeAudit`
+- Desktop `Alpha99Preview --no-images`: all 28 Pepsi/WOS QC rows byte-identical
+  to the starting source. `MarkerEdgeAudit`
   also renders the actual scoring close-up; it was visually inspected.
+- Desktop `MarkerMismatchVisualCheck`: **12 renderer/store assertions passed** for
+  region colours, clear overlap/background, projected expected/detected boundaries,
+  withholding, both full-view options' handoff and clearing stale scoring overlays.
+  It uses the production renderer via the desktop Canvas shim, not Android device
+  navigation. Real Pepsi and WOS scoring overlays and coloured close-ups were
+  rendered locally. The Pepsi full-watch view and 9 close-up were visually inspected.
+  Local per-marker numbers stay identical to the tables above.
 - Reproduce edge profiles with
   `tools/desktop-harness/run.sh MarkerEdgeAudit <verified-original.jpg> <local-outdir>`.
   Regenerate percentages with `MarkerMismatchBatch <manifest.csv> <image-root> <out.csv>`.
+- Reproduce the rendering checks and local previews with
+  `tools/desktop-harness/run.sh MarkerMismatchVisualCheck <local-outdir> [verified-original.jpg]`.
 - Frozen fixtures cite [stress run 38155286452](https://github.com/Biggregw/watch-align/actions/runs/38155286452)
   and [genuine run 38145439812](https://github.com/Biggregw/watch-align/actions/runs/38145439812)
   in their [README](../../android/app/src/test/resources/marker_mismatch/README.md).

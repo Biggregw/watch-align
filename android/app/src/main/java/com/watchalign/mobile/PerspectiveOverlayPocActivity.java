@@ -147,6 +147,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 Alpha99ResultsActivity.Store.closeups.clear();Alpha99ResultsActivity.Store.closeups.putAll(fo.closeups);
                 Alpha99ResultsActivity.Store.mismatch.clear();Alpha99ResultsActivity.Store.mismatch.putAll(fo.mismatch);
                 Alpha99ResultsActivity.Store.photo=photo;Alpha99ResultsActivity.Store.overlay=lastOverlay;
+                Alpha99ResultsActivity.Store.scoringOverlay=fo.scoringOverlay;
                 Alpha99ResultsActivity.Store.technical=fo.technical;
                 Alpha99ResultsActivity.Store.modelLabel=fo.model==null?null:fo.model.label;
                 Alpha99ResultsActivity.Store.modelHint=modelHint(fo);
