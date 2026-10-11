@@ -50,7 +50,9 @@ final class Alpha99Pipeline {
         try{o.overview=Alpha99Overview.render(rgba,H,o.summary,model);}catch(Throwable t){o.overview=null;}
         double[] ring=o.measurement.ring!=null&&o.measurement.ring.usable?o.measurement.ring.model:null;
         for(Alpha99Findings.Finding f:o.summary.tiles()){
-            Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref);}catch(Throwable t){c=null;}
+            // Use the existing detector result. This is a display-only diagnostic: no rerun or changed measurement.
+            Alpha94MarkerMeasurement.Marker measured=f.shape==Alpha99Findings.Shape.BATON?o.measurement.atHour(f.hour):null;
+            Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref,measured);}catch(Throwable t){c=null;}
             if(c!=null)o.closeups.put(f.key,c);
         }
         o.technical=technical(o);
