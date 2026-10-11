@@ -1,0 +1,90 @@
+# RESEARCH ONLY. One original SHA-verified Phillips photo; all variants derive from this one photo.
+# Use the existing Java pose, ring, yellow reference and detector. No product modifications.
+name: Genuine Pepsi single-photo yellow-template stability
+on:
+  push:
+    branches: [feature/android-alpha106-marker-mismatch-research]
+    paths: ['.github/workflows/research-pepsi9-yellow-stress.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests opencv-python-headless numpy
+      - uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Retrieve exact existing research original, fail closed on SHA change
+        run: |
+          mkdir -p source/gmt_126710 out
+          python3 - <<'PY'
+          import csv,requests,hashlib,pathlib
+          u='https://dist.phillips.com/auction-assets/CH080120/75_001.jpg?bg-color=0&pad=0&fit=bounds&disable-upscale&height=4000&optimize=medium&width=2000'
+          sha='3cf5442ab9c87b9c0b9481fd0eb2b92316a0287581635c49fc9cf6cdc4f31a00'
+          ua='WatchAlignDatasetHarvester/1.0 (+https://github.com/Biggregw/watch-align; research test set)'
+          r=requests.get(u,headers={'User-Agent':ua,'Accept':'image/jpeg,image/png;q=0.9,image/*;q=0.5'},timeout=30)
+          r.raise_for_status();b=r.content
+          got=hashlib.sha256(b).hexdigest()
+          print('SHA MATCH',got==sha,'original photo bytes',len(b))
+          if got!=sha:raise ValueError('Original image changed; no substitute or claims')
+          pathlib.Path('source/gmt_126710/pepsi_original.jpg').write_bytes(b)
+          with open('source/gmt_126710/manifest.csv','w',newline='') as f:
+            wr=csv.writer(f);wr.writerow(['photo_id','local_path']);wr.writerow(['pepsi_Phillips_3cf5442a','gmt_126710/pepsi_original.jpg'])
+          PY
+      - name: Stress same original photo (brightness, compression, resampling)
+        run: |
+          python3 tools/research/marker_mismatch/single_photo_stress.py prepare source stress
+          mkdir -p out
+          JAVA_TOOL_OPTIONS="-Dwatchalign.model=gmt_126710" tools/desktop-harness/run.sh MarkerMismatchBatch stress/gmt_126710/manifest.csv stress/images out/per_marker.csv 2>out/runner.log
+      - name: Compare 9 baton using only original YELLOW expected polygon
+        run: |
+          python3 - <<'PY'
+          import csv,math,pathlib,statistics
+          rows=list(csv.DictReader(open('out/per_marker.csv')))
+          out=[]
+          for r in rows:
+            if r.get('hour')!='9' or r.get('model_shape')!='baton':continue
+            e=float(r['expected_area']) if r['expected_area'] else math.nan
+            a=float(r['actual_area']) if r['actual_area'] else math.nan
+            i=float(r['overlap_area']) if r['overlap_area'] else math.nan
+            valid=(r['pose_status']=='accepted' and r['polygon_usable']=='true' and r['confidence']=='measured' and e>0 and a>0 and math.isfinite(i))
+            score=100*(e+a-2*i)/e if valid else math.nan
+            out.append({'variant':r['photo_id'].split('__var__')[-1],'usable':valid,'reason':r['confidence'],
+                'dial_radius_px':r['dial_R_px'],'yellow_expected_area_R2':e,
+                'detected_marker_area_R2':a,'extra_percent_of_template':100*(a-i)/e if valid else math.nan,
+                'missing_percent_of_template':100*(e-i)/e if valid else math.nan,
+                'total_percent_of_template':score,'rotation_deg':r['rotation_deg'],'position_R':r['position_R'],
+                'side_agreement_px':r['side_agreement_px']})
+          if not out:raise RuntimeError('No GMT9 results')
+          with open('out/pepsi_9_yellow_template_stability.csv','w',newline='') as f:
+            wr=csv.DictWriter(f,fieldnames=list(out[0]));wr.writeheader();wr.writerows(out)
+          baseline=next((r for r in out if r['variant']=='original'),None)
+          if not baseline or not baseline['usable']:raise RuntimeError('Baseline is not measurable')
+          delta=[abs(r['total_percent_of_template']-baseline['total_percent_of_template']) for r in out if r['variant']!='original' and r['usable']]
+          print('BASELINE TEMPLATE %',baseline['total_percent_of_template'])
+          print('BASELINE EXTRA %',baseline['extra_percent_of_template'],'MISSING %',baseline['missing_percent_of_template'])
+          print('SUCCESSFUL VARIANTS',len(delta),'OF',len(out)-1)
+          print('MAX ABSOLUTE CHANGE PERCENTAGE POINTS',max(delta) if delta else 'UNAVAILABLE')
+          print('MEDIAN ABSOLUTE CHANGE PP',statistics.median(delta) if delta else 'UNAVAILABLE')
+          for x in out:print('VARIANT',x['variant'],'score',x['total_percent_of_template'],'measured',x['usable'],'fit',x['reason'])
+          with open('out/pepsi_9_summary.txt','w') as f:
+            f.write('BASELINE '+str(baseline)+'\n')
+            f.write('Valid perturbations: '+str(len(delta))+'\n')
+            f.write('Maximum score spread (percentage points): '+str(max(delta) if delta else None)+'\n')
+            f.write('Photometric stability measures precision, NOT edge accuracy. No manufacturing tolerance inferred.\n')
+          PY
+      - name: Upload numeric only, no original image
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: genuine-pepsi-9-yellow-template-sensitivity-numbers
+          path: out/
+          retention-days: 30
