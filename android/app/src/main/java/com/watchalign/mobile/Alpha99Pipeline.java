@@ -11,6 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Arrays;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Alpha99 analysis of one photo of a given model (ModelSpec + its ModelReference), shared by the app and the desktop
@@ -35,6 +38,8 @@ final class Alpha99Pipeline {
         final Map<String,Bitmap> closeups=new LinkedHashMap<>();
         final Map<Integer,MarkerMismatchResearch.Result> mismatch=new LinkedHashMap<>();
         String technical;
+        /** Fingerprints of the actual OpenCV input, not display pixels or a re-encoded photo. */
+        String inputEvidence;
         ModelSpec model;ModelReference reference;
         boolean ok(){return pose!=null&&pose.valid&&pose.homography!=null&&summary!=null;}
     }
@@ -50,6 +55,8 @@ final class Alpha99Pipeline {
         try{o.diagnosticOverlay=BatonFitDiagnosticOverlay.render(o.pose.overlay,o.measurement,H);}
         catch(Throwable t){o.diagnosticOverlay=o.pose.overlay;}
         Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(photo,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
+        try{o.inputEvidence="Processed input: "+rgba.cols()+" × "+rgba.rows()+" px\n  RGBA SHA256: "+pixelSha256(rgba)+"\n  Gray SHA256: "+pixelSha256(gray);}
+        catch(RuntimeException e){o.inputEvidence="Processed input fingerprints unavailable";}
         try{o.date=model.date==null?null:Alpha98DateWindow.analyse(gray,H,model.date);}catch(Throwable t){o.date=null;}
         try{o.checks=Alpha99MarkerInterference.analyse(gray,H,model);}catch(Throwable t){o.checks=null;}
         try{o.partial=partialRounds(photo,H,o.measurement,o.checks,model);}catch(Throwable t){o.partial=null;}
@@ -157,6 +164,42 @@ final class Alpha99Pipeline {
         s.append("\n\nIndividual marker outline mismatch: ring-adjusted nominal outer metal; denominator = filled yellow template area. Continuous geometric area of fitted polygons; photographic boundary uncertainty is separate. No QC severity limits. Full-photo inspection offers the scoring reference and a separate fixed master. Global ring placement and minute-track gaps are separate.");
         for(Map.Entry<Integer,MarkerMismatchResearch.Result> entry:o.mismatch.entrySet())
             s.append("\n  ").append(entry.getKey()).append(": ").append(entry.getValue().display());
+        if(o.inputEvidence!=null){
+            s.append("\n\nReproduction diagnostics (+ angles = clockwise):\n").append(o.inputEvidence);
+            s.append("\n  Frozen pose H (row-major): ").append(Arrays.toString(q.homography));
+            s.append(String.format(Locale.US,"\n  Dial radius: %.9f px; tick RMS: %.9f px",m.dialRadiusPx,q.fitAfter));
+            s.append("\n  Ring [tx; ty; scale delta; rotation coefficient]: ").append(m.ring==null?"unavailable":Arrays.toString(m.ring.model));
+            for(ModelSpec.Marker spec:o.model.withShape(ModelSpec.Shape.BATON)){
+                Alpha94MarkerMeasurement.Marker marker=m.atHour(spec.hour);
+                if(marker==null||!marker.usable)continue;
+                s.append(String.format(Locale.US,"\n  %d raw rotation: %+.9f°; genuine-nominal-adjusted: %+.9f°",spec.hour,
+                        marker.rotationDeg,marker.rotationDeg-o.reference.nominal(spec.key+"_rot")));
+                double[] ring=m.ring!=null&&m.ring.usable?m.ring.model:null;
+                BatonFitDiagnostic.Angles angles=BatonFitDiagnostic.angles(ExpectedMarkerOutline.polygon(spec,o.reference,ring),marker.fitVertices);
+                if(angles!=null)s.append(String.format(Locale.US,"; scoring-relative long edges (sides 0 / 2): %+.9f° / %+.9f°",angles.side0Deg,angles.side2Deg));
+            }
+            for(Alpha99Findings.Finding f:o.summary.all)for(Alpha99Findings.Measure x:f.measures)
+                if("rotation".equals(x.name)&&x.hasAllowance())s.append(String.format(Locale.US,
+                        "\n  %s rotation comparison: value %.9f°; genuine max %.9f°; sigma %.9f°; allowance %.9f°; margin above max + allowance %+.9f°; %s",
+                        f.title,x.value,x.genuineMax,x.sigma,x.allowance(),x.value-x.genuineMax-x.allowance(),x.status()));
+        }
         return s.toString();
+    }
+
+    /** Hash exact 8-bit matrix bytes in row order, including alpha for RGBA. Row reads also handle non-contiguous Mats.
+     * Dimensions and channel interpretation are reported separately. No Bitmap.getPixels colour conversion occurs.
+     */
+    static String pixelSha256(Mat pixels){
+        try{
+            MessageDigest digest=MessageDigest.getInstance("SHA-256");
+            byte[] row=new byte[pixels.cols()*pixels.channels()];
+            for(int y=0;y<pixels.rows();y++){
+                if(pixels.get(y,0,row)!=row.length)throw new IllegalArgumentException("Incomplete pixel row");
+                digest.update(row);
+            }
+            StringBuilder hex=new StringBuilder(64);
+            for(byte b:digest.digest())hex.append(String.format(Locale.US,"%02x",b&255));
+            return hex.toString();
+        }catch(NoSuchAlgorithmException e){throw new IllegalStateException(e);}
     }
 }

@@ -36,6 +36,32 @@ public class InspectionReportingTest {
         assertEquals(Alpha99Findings.Status.CLEAR,f.status);assertEquals("CLEAR FINDING",f.statusLabel());
         assertTrue(Alpha99Findings.DISCLAIMER.contains("not a decision"));
     }
+    @Test public void recordedResamplingResultsRetainTheirExistingUnroundedClassification(){
+        // Controlled copies of the same original, not independent watches or tolerance calibration.
+        double[] values={1.174605321737,1.197444409131,1.265000541685,1.610219459235,1.261024982468};
+        Alpha99Findings.Status[] status={Alpha99Findings.Status.WORTH,Alpha99Findings.Status.WORTH,
+                Alpha99Findings.Status.CLEAR,Alpha99Findings.Status.CLEAR,Alpha99Findings.Status.WORTH};
+        for(int i=0;i<values.length;i++)assertEquals(status[i],rotation(values[i]).status());
+        assertEquals(.64543+3*.205383,1.261579,1e-12);
+        // The uncertainty floor is identical at the screenshot and original radii.
+        ModelReference ref=TestModels.gmtRef();
+        assertEquals(Alpha99Findings.sigmaAng(ref,"nine_rot",225),Alpha99Findings.sigmaAng(ref,"nine_rot",269.635814259098),0);
+    }
+    @Test public void reproductionDetailsPreserveFingerprintsAndDistinguishRotationFrames(){
+        Alpha99Pipeline.Output o=new Alpha99Pipeline.Output();o.model=TestModels.gmt();o.reference=TestModels.gmtRef();
+        o.pose=new AutomaticDialOverlay.Result("diagnostic fixture (no native pose)");
+        Alpha94MarkerMeasurement.Marker marker=new Alpha94MarkerMeasurement.Marker(9,"baton");marker.usable=true;marker.rotationDeg=-1.116635321737;
+        o.measurement=new Alpha94MarkerMeasurement.Report(Arrays.asList(marker),null,269.635814259098,null);
+        o.summary=new Alpha99Findings.Summary();Alpha99Findings.Finding f=new Alpha99Findings.Finding("nine","9 o'clock","9");
+        f.measures.add(rotation(1.174605321737));Alpha99Findings.settle(f);o.summary.all.add(f);
+        o.inputEvidence="Processed input: 1152 × 1536 px\n  RGBA SHA256: fixture-rgba\n  Gray SHA256: fixture-gray";
+        String text=Alpha99Pipeline.technical(o);
+        assertTrue(text.contains(o.inputEvidence));assertTrue(text.contains("Frozen pose H (row-major): null"));
+        assertTrue(text.contains("9 raw rotation: -1.116635322°; genuine-nominal-adjusted: -1.174605322°"));
+        assertTrue(text.contains("margin above max + allowance -0.086973678°; WORTH"));
+        assertEquals(Alpha99Findings.Status.WORTH,f.status);
+        assertEquals(-1.116635321737,marker.rotationDeg,0);
+    }
     @Test public void suppliedOriginalRetainsRotationAndWithholdsBoundaryDependentMetrics(){
         // Exact frozen fit of 37828.jpg (c50e0845...), R differs from the screenshot's input.
         double R=269.63581425909763;
