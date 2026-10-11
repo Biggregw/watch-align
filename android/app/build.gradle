@@ -5,7 +5,7 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId 'com.watchalign.mobile.poc'
+        applicationId 'com.watchalign.mobile.poc.edgefit'
         minSdk 28
         targetSdk 35
         versionCode 13114
