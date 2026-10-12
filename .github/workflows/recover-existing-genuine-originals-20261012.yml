@@ -1,0 +1,31 @@
+name: Research recover existing genuine photo catalogue (no product changes)
+on:
+  push:
+    branches:
+      - tool/recover-existing-genuine-catalogue-20261012
+    paths:
+      - .github/workflows/recover-existing-genuine-originals-20261012.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install recovery dependencies
+        run: python -m pip install requests pillow
+      - name: Retrieve only previously catalogued source URLs, verify original hashes
+        run: python tools/research/recover_existing_genuine_originals_20261012.py
+      - name: Upload original files and source verification audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: genuine-originals-catalogue-recovery
+          path: genuine-recovery-out/
+          retention-days: 28
+          compression-level: 0
