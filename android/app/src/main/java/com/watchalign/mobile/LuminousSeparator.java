@@ -42,7 +42,7 @@ final class LuminousSeparator {
             options.add(edges);if(!edges.isEmpty())result.supportedRays++;
         }
         if(result.supportedRays<RAYS){
-            List<double[]> visible=new ArrayList<>();for(int k=0;k<RAYS;k++)if(!options.get(k).isEmpty()){double a=k*2*Math.PI/RAYS,r=options.get(k).get(0).radius;visible.add(new double[]{seed+r*Math.cos(a),seed+r*Math.sin(a)});}
+            List<double[]> visible=new ArrayList<>();for(int k=0;k<RAYS;k++)if(!options.get(k).isEmpty()&&options.get(k).get(0).metal){double a=k*2*Math.PI/RAYS,r=options.get(k).get(0).radius;visible.add(new double[]{seed+r*Math.cos(a),seed+r*Math.sin(a)});}
             result.visible=visible.toArray(new double[0][]);result.reason="separator not closed: observed exit gradients on "+result.supportedRays+" of "+RAYS+" rays";return result;
         }
         int[] chosen=closedPath(options);double[][][] contours=new double[3][RAYS][2];double floor=Double.POSITIVE_INFINITY;
@@ -50,7 +50,9 @@ final class LuminousSeparator {
             Edge edge=options.get(k).get(chosen[k]);if(edge.metal)result.metalRecoveryRays++;floor=Math.min(floor,edge.floor);
             double a=k*2*Math.PI/RAYS;for(int level=0;level<3;level++)contours[level][k]=new double[]{seed+edge.levels[level]*Math.cos(a),seed+edge.levels[level]*Math.sin(a)};
         }
-        result.observed=contours;result.visible=contours[1];
+        result.observed=contours;
+        List<double[]> supported=new ArrayList<>();for(int k=0;k<RAYS;k++)if(options.get(k).get(chosen[k]).metal)supported.add(contours[1][k]);
+        result.visible=supported.toArray(new double[0][]);
         if(result.metalRecoveryRays<.80*RAYS){result.reason="insufficient luminous-to-metal evidence: bright surround recovery on "+result.metalRecoveryRays+" of "+RAYS+" rays";return result;}
         for(double[][] contour:contours){
             double[][] hull=LuminousGeometry.hull(contour);if(hull==null){result.code="SEPARATOR_INVALID";result.reason="separator polygon invalid";return result;}

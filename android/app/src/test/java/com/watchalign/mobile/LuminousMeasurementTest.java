@@ -14,4 +14,27 @@ public class LuminousMeasurementTest {
     @Test public void deepNotchIsWithheldInsteadOfConvexFilling(){int n=50;byte[] p=new byte[n*n];for(int y=10;y<40;y++)for(int x=10;x<40;x++)p[y*n+x]=(byte)180;for(int y=10;y<15;y++)for(int x=14;x<17;x++)p[y*n+x]=0;assertNull(LuminousMarkerDetector.component(p,n,30,100));}
     @Test public void uncertainBoundaryNeverProducesPercentage(){ModelSpec.Marker m=new ModelSpec.Marker(6,ModelSpec.Shape.BATON,"six",.75,0,.15,.06,0,0,0,0,0);LuminousMarkerDetector.Detection d=new LuminousMarkerDetector.Detection(6);d.reason="uncertain polished reflection";LuminousMeasurement.Marker q=new LuminousMeasurement.Marker(m,d,rect(0));assertFalse(q.assessed());assertNull(q.score);assertTrue(q.description().contains("Area mismatch withheld"));assertFalse(q.displayPolygon().trusted());}
     @Test public void absentIndependentReferenceCannotBeScored(){ModelSpec.Marker m=new ModelSpec.Marker(6,ModelSpec.Shape.BATON,"six",.75,0,.15,.06,0,0,0,0,0);LuminousMarkerDetector.Detection d=new LuminousMarkerDetector.Detection(6);d.reason="measured";d.polygon=rect(0);LuminousMeasurement.Marker q=new LuminousMeasurement.Marker(m,d,null);assertFalse(q.assessed());assertTrue(q.reason.contains("reference"));}
+    @Test public void rejectedComponentsHaveDistinctDiagnosticReasons(){
+        int n=50;byte[] p=new byte[n*n];
+        assertEquals("SEED_BELOW_CUT",LuminousMarkerDetector.componentResult(p,n,25,100).code);
+        Arrays.fill(p,(byte)180);
+        assertEquals("CROP_BOUNDARY",LuminousMarkerDetector.componentResult(p,n,25,100).code);
+        Arrays.fill(p,(byte)0);for(int y=10;y<40;y++)for(int x=10;x<40;x++)p[y*n+x]=(byte)180;
+        p[15*n+15]=0;
+        assertEquals("ENCLOSED_HOLES",LuminousMarkerDetector.componentResult(p,n,25,100).code);
+        p[15*n+15]=(byte)180;for(int y=10;y<18;y++)for(int x=14;x<20;x++)p[y*n+x]=0;
+        assertEquals("CONVEXITY_REJECTION",LuminousMarkerDetector.componentResult(p,n,25,100).code);
+    }
+    @Test public void acceptedComponentRetainsActualContourSamplesForIndependentFitting(){
+        int n=50;byte[] p=new byte[n*n];for(int y=10;y<40;y++)for(int x=14;x<36;x++)p[y*n+x]=(byte)180;
+        LuminousMarkerDetector.Component c=LuminousMarkerDetector.componentResult(p,n,25,100);
+        assertNotNull(c.observed);assertTrue(c.observed.length>c.polygon.length);
+        LuminousPartialFit.Fit f=LuminousPartialFit.fit(c.observed,ModelSpec.Shape.BATON,12,1);
+        assertNotNull(f.ideal);assertNotNull(f.center);
+    }
+    @Test public void oneWayBrightExitDoesNotSupplyUnverifiedPartialSeparatorPoints(){
+        int n=80;byte[] p=new byte[n*n];for(int y=0;y<n;y++)for(int x=0;x<n;x++)if(Math.hypot(x-40,y-40)<20)p[y*n+x]=(byte)180;
+        LuminousSeparator.Result s=LuminousSeparator.trace(p,n,40);
+        assertEquals(0,s.metalRecoveryRays);assertNotNull(s.visible);assertEquals(0,s.visible.length);
+    }
 }

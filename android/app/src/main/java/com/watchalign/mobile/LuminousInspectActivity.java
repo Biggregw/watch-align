@@ -35,7 +35,7 @@ public class LuminousInspectActivity extends Activity {
         String[] labels={"FITTED GEOMETRIC shape", "FITTED alignment only", "Observed full footprint"};
         for(int option=0;option<3;option++){RadioButton b=new RadioButton(this);b.setId(option+100);b.setText(labels[option]);b.setTextColor(Color.WHITE);modes.addView(b);}
         modes.check(mode+100);modes.setOnCheckedChangeListener((group,id)->{mode=id-100;show(result);});root.addView(modes);
-        text(mode==0?"Idealised independent edge fits; corners/tips may be reconstructed. Orange/magenta measure fitted geometry.":mode==1?"Expected template moved and rotated by measured alignment; size/shape retained.":"Physical outline where reliable. Partial cyan sections provide alignment evidence without an observed area percentage.",13);
+        text(mode==0?"Idealised independent edge fits; corners/tips may be reconstructed. Orange/magenta measure fitted geometry.":mode==1?"Cyan is the expected template at the measured position and orientation; size/shape retained. Yellow is its nominal placement.":"Physical outline where reliable. Partial cyan sections provide alignment evidence without an observed area percentage.",13);
         if(hour==0){
             Bitmap base=crop(0,0,1.06);for(LuminousMeasurement.Marker m:result.markers.values())LuminousAlignmentOverlay.draw(base,0,0,1.06,m,mode);
             ImageView dial=image(base);text("Tap a marker to inspect it, or use its button below.",14);

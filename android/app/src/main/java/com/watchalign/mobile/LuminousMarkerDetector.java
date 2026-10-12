@@ -16,6 +16,7 @@ final class LuminousMarkerDetector {
         String method="none",failureCode="UNASSESSED";
         LuminousPartialFit.Fit alignment;
         final List<String> attempts=new ArrayList<>();
+        String diagnosticSummary(){Map<String,Integer> counts=new LinkedHashMap<>();for(String attempt:attempts){String code=attempt.split(":",2)[0];counts.put(code,counts.getOrDefault(code,0)+1);}return failureCode+"; attempted stages "+counts;}
         void fail(String code,String message){failureCode=code;reason=message;attempts.add(code+": "+message);}
         double boundarySpreadPx=Double.NaN,rotationSpreadDeg=Double.NaN,contrast=Double.NaN,edgeCoverage=Double.NaN;
         Detection(int h){hour=h;} boolean usable(){return polygon!=null&&"measured".equals(reason);}
@@ -57,21 +58,21 @@ final class LuminousMarkerDetector {
             // contrast ladder; accept only a complete stable triplet with the same separator checks.
             // Neither a reference score nor expected inner size selects the cut.
             for(double cut:new double[]{.57,.67,.77,.47,.37}){
-            List<double[][]> candidates=new ArrayList<>();double mid=background+cut*d.contrast;boolean isolated=true;
+            List<double[][]> candidates=new ArrayList<>();double[][] observed=null;double mid=background+cut*d.contrast;boolean isolated=true;
             for(double fraction:new double[]{-.08,0,.08}){
                 Component result=componentResult(pixels,n,seed,mid+fraction*d.contrast);
                 if(result.polygon==null){d.fail(result.code,String.format(Locale.US,"Local cut %.1f: %s",mid+fraction*d.contrast,result.reason));isolated=false;}
-                candidates.add(result.polygon);
+                candidates.add(result.polygon);if(fraction==0)observed=result.observed;
             }
             if(!isolated)continue;
-            if(accept(d,candidates,m,step,R,center,half,pixels,n,"local_component"))return d;
+            if(accept(d,candidates,m,step,R,center,half,pixels,n,"local_component",observed))return d;
             }
             if(!"NONE".equals(fallback.code)){d.fail(fallback.code,fallback.reason);return d;}
-            if(accept(d,fallback.candidates,m,step,R,center,half,pixels,n,"separator"))return d;
+            if(accept(d,fallback.candidates,m,step,R,center,half,pixels,n,"separator",fallback.observed[1]))return d;
             return d;
         }finally{T.release();hm.release();M.release();empty.release();crop.release();}
     }
-    private static boolean accept(Detection d,List<double[][]> candidates,ModelSpec.Marker m,double step,double R,double[] center,double half,byte[] pixels,int n,String method){
+    private static boolean accept(Detection d,List<double[][]> candidates,ModelSpec.Marker m,double step,double R,double[] center,double half,byte[] pixels,int n,String method,double[][] observed){
             double[][] selected=candidates.get(1);double area=MarkerPolygonMismatch.area(selected),outerArea=MarkerPolygonMismatch.area(m.shape==ModelSpec.Shape.ROUND?MarkerPolygonMismatch.circle(0,0,m.outerR,64):m.shape==ModelSpec.Shape.BATON?m.batonPolygon():m.trianglePolygon());
             double ratio=area*step*step/outerArea;
             if(ratio<.12||ratio>.88){d.fail("THRESHOLD_LEAKAGE","bright component occupies too much or too little of the marker search region; metal/printing leakage possible");return false;}
@@ -89,12 +90,20 @@ final class LuminousMarkerDetector {
             double minAngle=0,maxAngle=0;for(double[][] p:candidates){double diff=LuminousGeometry.angleDifference(LuminousGeometry.angle(p),LuminousGeometry.angle(selected));minAngle=Math.min(minAngle,diff);maxAngle=Math.max(maxAngle,diff);}d.rotationSpreadDeg=maxAngle-minAngle;
             if(!Double.isFinite(spread)||d.boundarySpreadPx>1.25||d.edgeCoverage<.80){d.fail(d.boundarySpreadPx>1.25?"UNSTABLE_CONTOUR":"INCOMPLETE_SEPARATOR",String.format(Locale.US,"contour movement %.2f source px; dark-separator coverage %.0f%%",d.boundarySpreadPx,100*d.edgeCoverage));return false;}
             double[][] canonical=new double[selected.length][];for(int i=0;i<selected.length;i++)canonical[i]=new double[]{center[0]-half+(selected[i][0]+.5)*step,center[1]-half+(selected[i][1]+.5)*step};
+            // A footprint accepted by the unchanged full-boundary gates can supply its
+            // actual contour points even where polished recovery is not visible. For a
+            // withheld footprint, only individually evidenced separator points are used.
+            if(observed!=null){double[][] points=new double[observed.length][];
+                for(int i=0;i<points.length;i++)points[i]=new double[]{center[0]-half+(observed[i][0]+.5)*step,center[1]-half+(observed[i][1]+.5)*step};
+                d.alignment=LuminousPartialFit.fit(points,m.shape,m.hour,R);
+            }
             d.polygon=canonical;d.reason="measured";d.failureCode="NONE";d.method=method;return true;
     }
     /** Seed-connected mask only: nearby print/metal islands never get combined with the luminous face. */
     static final class Component {
-        final double[][] polygon;final String code,reason;
-        Component(double[][] p,String c,String r){polygon=p;code=c;reason=r;}
+        final double[][] polygon,observed;final String code,reason;
+        Component(double[][] p,String c,String r){this(p,null,c,r);}
+        Component(double[][] p,double[][] o,String c,String r){polygon=p;observed=o;code=c;reason=r;}
     }
     static double[][] component(byte[] p,int n,int seed,double threshold){return componentResult(p,n,seed,threshold).polygon;}
     static Component rejected(String code,String reason){return new Component(null,code,reason);}
@@ -125,7 +134,7 @@ final class LuminousMarkerDetector {
                 nearest=Math.min(nearest,Math.hypot(point[0]-a[0]-t*vx,point[1]-a[1]-t*vy));}
             if(nearest>1.25)return rejected("CONVEXITY_REJECTION",String.format(Locale.US,"observed contour departs %.2f crop px from convex boundary",nearest));
         }
-        return new Component(hull,"NONE","measured");
+        return new Component(hull,edge.toArray(new double[0][]),"NONE","measured");
     }
     static double sample(byte[] p,int n,double x,double y){int ix=(int)Math.round(x),iy=(int)Math.round(y);return ix<0||iy<0||ix>=n||iy>=n?0:p[iy*n+ix]&255;}
 }

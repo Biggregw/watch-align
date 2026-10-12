@@ -20,6 +20,7 @@ public class LuminousSyntheticChecks {
    if(!d.usable())throw new AssertionError(shape+" R="+R+" "+d.reason);
    double ratio=MarkerPolygonMismatch.area(d.polygon)/MarkerPolygonMismatch.area(inner);
    if(Math.abs(ratio-1)>.08)throw new AssertionError("Wrong luminous footprint "+shape+" ratio="+ratio);checks++;
+   if(d.alignment==null||d.alignment.ideal==null)throw new AssertionError("Accepted physical contour lost independently measurable geometry "+shape+" R="+R);checks++;
    double[] master=m.masterPoint(),center={R*master[0]+size/2.0,R*master[1]+size/2.0};
    Imgproc.line(image,new Point(0,center[1]),new Point(size-1,center[1]),new Scalar(230),4);
    if(LuminousMarkerDetector.detectOne(image,H,m,ring,R).usable())throw new AssertionError("Hand-connected mask accepted "+shape);checks++;image.release();

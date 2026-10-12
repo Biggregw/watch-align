@@ -42,8 +42,11 @@ final class LuminousMeasurement {
             else if(Double.isFinite(alignment.crossC)&&expectedAlignment!=null&&expectedAlignment.center!=null)b.append(String.format(Locale.US,"Transverse centreline displacement %+.3f%% R; along-axis centre not assessed\n",100*(alignment.crossC-alignment.crossNormal[0]*expectedAlignment.center[0]-alignment.crossNormal[1]*expectedAlignment.center[1])));
             else b.append("Centre position not assessed\n");
             if(Double.isFinite(alignment.radius)&&expectedAlignment!=null&&Double.isFinite(expectedAlignment.radius))b.append(String.format(Locale.US,"Circle radius %.3f%% R (%+.3f%% size difference); rotation not applicable\n",100*alignment.radius,100*(alignment.radius/expectedAlignment.radius-1)));
-            if(Double.isFinite(alignment.width))b.append(String.format(Locale.US,"Fitted width %.3f%% R\n",100*alignment.width));
-            if(Double.isFinite(alignment.height))b.append(String.format(Locale.US,"Fitted length/height %.3f%% R\n",100*alignment.height));
+            if(Double.isFinite(alignment.width)){b.append(String.format(Locale.US,"Fitted width %.3f%% R",100*alignment.width));
+                if(expectedAlignment!=null&&Double.isFinite(expectedAlignment.width))b.append(String.format(Locale.US," (%+.3f%% width difference)",100*(alignment.width/expectedAlignment.width-1)));b.append("\n");}
+            if(Double.isFinite(alignment.height)){b.append(String.format(Locale.US,"Fitted length/height %.3f%% R",100*alignment.height));
+                if(expectedAlignment!=null&&Double.isFinite(expectedAlignment.height))b.append(String.format(Locale.US," (%+.3f%% length/height difference)",100*(alignment.height/expectedAlignment.height-1)));b.append("\n");}
+            if(fittedScore!=null)b.append(String.format(Locale.US,"Fitted filled-area size difference %+.3f%%\n",100*(fittedScore.actualArea/fittedScore.expectedArea-1)));
             if(Double.isFinite(alignment.symmetry))b.append(String.format(Locale.US,"Triangle apex offset from base midpoint %+.3f%% of base width\n",alignment.symmetry));
             b.append(String.format(Locale.US,"Fit residual %.2f source px",alignment.rmsPx));
             if(Double.isFinite(alignment.angleSpanDeg))b.append(String.format(Locale.US,"; alternating-edge angle span %.3f°",alignment.angleSpanDeg));
@@ -52,7 +55,7 @@ final class LuminousMeasurement {
         }
         String description(){
             String alignmentText=alignmentDescription()+"\n\n"+scoreDescription("FITTED GEOMETRIC mismatch",fittedScore,"independent edges do not establish a complete stable shape")+"\n"+scoreDescription("FITTED alignment-only mismatch",alignmentScore,"position and orientation are not both established")+"\nThe alignment-only comparison moves/rotates the expected template without resizing it. Fitted ideal intersections/circles are geometric measurements, not observed corners. The three percentages are separate and are never added.\n\nObserved full physical luminous footprint:\n";
-            if(!assessed())return alignmentText+"Area mismatch withheld: "+reason+". Fitted geometric percentages above remain independent.\nDiagnostics: "+detection.failureCode;
+            if(!assessed())return alignmentText+"Area mismatch withheld: "+reason+". Fitted geometric percentages above remain independent.\nDiagnostics: "+detection.diagnosticSummary();
             return alignmentText+String.format(Locale.US,"Mismatch %.3f%% = extra %.3f%% + missing %.3f%%\nHorizontal displacement %+.3f%% R · vertical %+.3f%% R\nArea size difference %+.3f%% · major span %+.3f%% · minor span %+.3f%%\n%s\nFootprint boundary movement across local edge levels: %.2f source px. This is a stability diagnostic, not a calibrated confidence interval. No pass/fail threshold.",score.mismatchPct,score.extraPct,score.missingPct,100*dxR,100*dyR,sizePct,lengthPct,widthPct,
                 spec.shape==ModelSpec.Shape.ROUND?"Rotation: not applicable to a round":Double.isFinite(rotationDeg)?String.format(Locale.US,"Rotation %+.3f° (+ clockwise); contrast-level angle span %.3f°",rotationDeg,detection.rotationSpreadDeg):"Rotation withheld: inner orientation varies across contrast levels",detection.boundarySpreadPx);
         }
