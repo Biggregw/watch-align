@@ -1,0 +1,46 @@
+{
+  "validation_passed": true,
+  "originals": 132,
+  "processing_variants": 18,
+  "batgirl_original_verified": true,
+  "exact_original_repeats": 3,
+  "noncircular_and_outer_unchanged": true,
+  "circular_geometry_changes": {
+    "withheld": 188,
+    "unchanged_geometry": 593,
+    "still_withheld": 113,
+    "changed_geometry_requires_visual_review": 153,
+    "newly_supported": 9
+  },
+  "by_family": {
+    "gmt_126710": {
+      "withheld": 55,
+      "unchanged_geometry": 102,
+      "still_withheld": 56,
+      "changed_geometry_requires_visual_review": 31,
+      "newly_supported": 4
+    },
+    "submariner_124060": {
+      "unchanged_geometry": 265,
+      "still_withheld": 46,
+      "withheld": 44,
+      "changed_geometry_requires_visual_review": 10,
+      "newly_supported": 3
+    },
+    "submariner_126610": {
+      "unchanged_geometry": 226,
+      "withheld": 89,
+      "changed_geometry_requires_visual_review": 112,
+      "still_withheld": 11,
+      "newly_supported": 2
+    }
+  },
+  "observed_withheld_after_validation": 113,
+  "old_resize_delta_pp": 9.6165090286,
+  "corrected_resize_delta_pp": 1.0424935084,
+  "contradictory_processing_circle_withheld_in_all_7_cases": true,
+  "source_hashes": {
+    "android/app/src/main/java/com/watchalign/mobile/LuminousCircularBoundary.java": "cf41499f4178326452fbe933175aea293e9ab2aad3bdfee1e78385d70dc7ccfc",
+    "android/app/src/main/java/com/watchalign/mobile/LuminousMarkerDetector.java": "eda17dc4626d4a4a53337f4b2c3d0820c45c77c7937ca37fa98ea072a426184b"
+  }
+}

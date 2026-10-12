@@ -5,11 +5,11 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId 'com.watchalign.mobile.poc.edgefit.luminousfit'
+        applicationId 'com.watchalign.mobile.poc.edgefit.luminousboundary'
         minSdk 28
         targetSdk 35
-        versionCode 13116
-        versionName '1.4.0-alpha107.2-luminous-fit-arm64'
+        versionCode 13117
+        versionName '1.4.0-alpha107.3-luminous-boundary-arm64'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         ndk { abiFilters 'arm64-v8a' }
     }

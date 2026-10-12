@@ -1,0 +1,46 @@
+{
+  "validation_passed": false,
+  "originals": 132,
+  "processing_variants": 18,
+  "batgirl_original_verified": true,
+  "exact_original_repeats": 3,
+  "noncircular_and_outer_unchanged": true,
+  "circular_geometry_changes": {
+    "unchanged_geometry": 668,
+    "withheld": 50,
+    "still_withheld": 93,
+    "changed_geometry_requires_visual_review": 216,
+    "newly_supported": 29
+  },
+  "by_family": {
+    "gmt_126710": {
+      "unchanged_geometry": 125,
+      "withheld": 8,
+      "still_withheld": 47,
+      "changed_geometry_requires_visual_review": 55,
+      "newly_supported": 13
+    },
+    "submariner_124060": {
+      "unchanged_geometry": 276,
+      "still_withheld": 38,
+      "changed_geometry_requires_visual_review": 16,
+      "withheld": 27,
+      "newly_supported": 11
+    },
+    "submariner_126610": {
+      "unchanged_geometry": 267,
+      "changed_geometry_requires_visual_review": 145,
+      "withheld": 15,
+      "newly_supported": 5,
+      "still_withheld": 8
+    }
+  },
+  "observed_withheld_after_validation": 90,
+  "old_resize_delta_pp": 9.6165090286,
+  "corrected_resize_delta_pp": 1.0424935084,
+  "source_hashes": {
+    "android/app/src/main/java/com/watchalign/mobile/LuminousCircularBoundary.java": "558d1ea1ca3f4ac2e303c28fc6a0678b885ab4d8578e732e1e96bd5245e6f164",
+    "android/app/src/main/java/com/watchalign/mobile/LuminousMarkerDetector.java": "eda17dc4626d4a4a53337f4b2c3d0820c45c77c7937ca37fa98ea072a426184b"
+  },
+  "blocker": "Newly supported 124060 / 4 switches boundary under processing (6.6892 percentage points); candidate rejected before build."
+}

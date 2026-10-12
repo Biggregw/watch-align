@@ -1,0 +1,100 @@
+name: Build validated luminous boundary arm64 APK
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Require photographic validation and isolated implementation
+        run: python tools/luminous/boundary/verify_build.py
+      - name: Verify Android toolchain
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Android unit tests and native negative controls
+        run: |
+          cd android
+          bash ./gradlew :app:testDebugUnitTest --stacktrace
+          cd ..
+          bash tools/desktop-harness/run.sh LuminousSyntheticChecks
+      - uses: actions/download-artifact@v4
+        with:
+          repository: Biggregw/watch-align
+          run-id: '38222239457'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: WatchAlign-genuine-faceon-132-originals-Codex-ready
+          path: curated-artifact
+      - uses: actions/download-artifact@v4
+        with:
+          repository: Biggregw/watch-align
+          run-id: '38295283386'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: luminous-partial-calibration-reproducible-results
+          path: saved-calibration
+      - name: Replay exact photographic boundary regressions without calibration
+        run: |
+          python -m pip install pillow==12.3.0
+          python tools/luminous/boundary/replay.py --focused --originals curated-artifact --saved saved-calibration/luminous-calibration-work --work focused-replay
+      - name: Prepare existing shared signing key
+        env:
+          WATCHALIGN_KEYSTORE_B64: ${{ secrets.WATCHALIGN_KEYSTORE_B64 }}
+        run: |
+          test -n "$WATCHALIGN_KEYSTORE_B64"
+          echo "$WATCHALIGN_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/watchalign-release.p12"
+          echo "WATCHALIGN_KEYSTORE_FILE=$RUNNER_TEMP/watchalign-release.p12" >> "$GITHUB_ENV"
+      - name: Build separately installable arm64 APK
+        working-directory: android
+        env:
+          WATCHALIGN_KEYSTORE_PASSWORD: ${{ secrets.WATCHALIGN_KEYSTORE_PASSWORD }}
+        run: bash ./gradlew :app:assembleDebug --stacktrace
+      - name: Verify package, ABI and existing signing certificate
+        working-directory: android
+        run: |
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$apk" > apk-package.txt
+          grep -q "package: name='com.watchalign.mobile.poc.edgefit.luminousboundary'" apk-package.txt
+          unzip -l "$apk" | awk '/lib\/.*\.so/ {print $4}' > apk-native-libraries.txt
+          test -s apk-native-libraries.txt
+          if grep -v '^lib/arm64-v8a/' apk-native-libraries.txt; then exit 1; fi
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$apk" > apk-signing.txt
+          want=$(tr -d ':\n ' < signing/watchalign-cert-sha256.txt | tr 'A-F' 'a-f')
+          got=$(awk '/certificate SHA-256 digest/ {print $NF; exit}' apk-signing.txt)
+          test "$got" = "$want"
+          cp "$apk" WatchAlign-alpha107.3-luminous-boundary-arm64.apk
+          sha256sum WatchAlign-alpha107.3-luminous-boundary-arm64.apk > SHA256SUMS.txt
+          git rev-parse HEAD > APK_COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WatchAlign-alpha107.3-luminous-boundary-arm64
+          path: |
+            android/WatchAlign-alpha107.3-luminous-boundary-arm64.apk
+            android/SHA256SUMS.txt
+            android/APK_COMMIT.txt
+            android/apk-package.txt
+            android/apk-native-libraries.txt
+            android/apk-signing.txt
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: luminous-boundary-regression-reports
+          path: |
+            android/app/build/test-results/
+            focused-replay/*corrected*jsonl
+          retention-days: 30
