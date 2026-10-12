@@ -57,5 +57,16 @@ public class LuminousCalibrationStudy {
    }if(rgba!=null)rgba.release();
   }
  }
- public static void main(String[] a)throws Exception{nu.pattern.OpenCV.loadLocally();switch(a[0]){case "extract":extract(Path.of(a[1]),Path.of(a[2]));break;case "score":score(Path.of(a[1]),Path.of(a[2]),Path.of(a[3]));break;case "gallery":gallery(Path.of(a[1]),Path.of(a[2]),Path.of(a[3]),Path.of(a[4]));break;default:throw new IllegalArgumentException("extract/score/gallery");}}
+ static void referenceSelfCheck(Path refs,Path output)throws Exception{
+  Map<String,Object> root=obj(MiniJson.parse(Files.readString(refs))),positions=obj(obj(obj(root.get("models")).get(HarnessModel.spec().id)).get("positions"));
+  try(PrintWriter csv=new PrintWriter(Files.newBufferedWriter(output))){csv.println("family,hour,shape,ideal_self_fitted_pct,ideal_self_alignment_pct,reference_refit_dx_R,reference_refit_dy_R,reference_refit_direction_deg");
+   for(ModelSpec.Marker spec:HarnessModel.spec().markers){double[][] local=poly(obj(positions.get(String.valueOf(spec.hour))).get("geometric_polygon"));if(local==null)continue;double[][] e=LuminousGeometry.placed(local,spec,new double[]{0,0,0,0});LuminousPartialFit.Fit truth=new LuminousPartialFit.Fit();truth.ideal=e;truth.center=LuminousGeometry.centroid(e);truth.orientation=spec.shape!=ModelSpec.Shape.ROUND;
+    if(spec.shape==ModelSpec.Shape.TRIANGLE){double mx=(e[1][0]+e[2][0])/2,my=(e[1][1]+e[2][1])/2;truth.angle=Math.atan2(e[0][1]-my,e[0][0]-mx);}
+    else if(spec.shape==ModelSpec.Shape.BATON){double a=Math.atan2(e[3][1]-e[0][1],e[3][0]-e[0][0]),b=Math.atan2(e[2][1]-e[1][1],e[2][0]-e[1][0]);truth.angle=a+Math.toRadians(LuminousGeometry.angleDifference(b,a))/2;}
+    LuminousMarkerDetector.Detection d=new LuminousMarkerDetector.Detection(spec.hour);d.alignment=truth;LuminousMeasurement.Marker m=new LuminousMeasurement.Marker(spec,d,e);if(m.fittedScore==null||Math.abs(m.fittedScore.mismatchPct)>1e-9)throw new AssertionError("Identical fitted polygons");
+    LuminousValidation.emit(csv,new Object[]{HarnessModel.spec().id,spec.hour,spec.kind(),m.fittedScore.mismatchPct,m.alignmentScore==null?"":m.alignmentScore.mismatchPct,m.expectedAlignment.center==null?"":m.expectedAlignment.center[0]-truth.center[0],m.expectedAlignment.center==null?"":m.expectedAlignment.center[1]-truth.center[1],truth.orientation&&m.expectedAlignment.orientation?LuminousGeometry.angleDifference(m.expectedAlignment.angle,truth.angle):""});
+   }
+  }
+ }
+ public static void main(String[] a)throws Exception{nu.pattern.OpenCV.loadLocally();switch(a[0]){case "selfcheck":referenceSelfCheck(Path.of(a[1]),Path.of(a[2]));break;case "extract":extract(Path.of(a[1]),Path.of(a[2]));break;case "score":score(Path.of(a[1]),Path.of(a[2]),Path.of(a[3]));break;case "gallery":gallery(Path.of(a[1]),Path.of(a[2]),Path.of(a[3]),Path.of(a[4]));break;default:throw new IllegalArgumentException("extract/score/gallery");}}
 }

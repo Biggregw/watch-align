@@ -95,10 +95,15 @@ jobs:
           done
       - name: Publish scalar audit, distributions, sensitivity and exact scored polygons
         run: python tools/research/luminous_partial_calibration/analyze.py luminous-calibration-work "$RESEARCH_OUT"
+      - name: Preserve separately identifiable parameter references and uncertainty summaries
+        run: python tools/research/luminous_partial_calibration/supplement.py "$RESEARCH_OUT"
       - name: Render original crops and exact scored polygon regions for held-out extremes
         run: |
           for model in gmt_126710 submariner_124060 submariner_126610; do
             JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousCalibrationStudy gallery "luminous-calibration-work/${model}_scored.jsonl" "luminous-calibration-work/${model}_extract.csv" "luminous-calibration-work/${model}_gallery_select.txt" "$RESEARCH_OUT/gallery"
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousCalibrationStudy gallery "luminous-calibration-work/${model}_processing_scored.jsonl" "luminous-calibration-work/${model}_processing.csv" "luminous-calibration-work/${model}_processing_gallery_select.txt" "$RESEARCH_OUT/processing_gallery"
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousCalibrationStudy gallery "luminous-calibration-work/${model}_scored.jsonl" "luminous-calibration-work/${model}_extract.csv" "luminous-calibration-work/${model}_processing_baseline_select.txt" "$RESEARCH_OUT/processing_gallery"
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousCalibrationStudy selfcheck luminous-calibration-work/calibrated_references.json "$RESEARCH_OUT/${model}_reference_pose_selfcheck.csv"
           done
       - name: Require every selected comparison image
         run: |
