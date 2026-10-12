@@ -3,6 +3,11 @@
 Base: PR52 `593966433079d04816e98f78da5b66abd1f4553d`.
 Separate branch: `feature/luminous-marker-experiment`. No merge or PR52 change.
 
+The shared signing secret is unavailable in CI. This test APK therefore installs
+as **Watch Align Luminous Test**, package `com.watchalign.mobile.poc.edgefit.luminous`,
+alongside the existing PR52 app rather than replacing it. Both outer and inner
+views are available in this experimental APK. APK size is approximately25 MB.
+
 Upload one QC photograph and select the same model as usual. Existing results are
 unchanged. Open **Inspect luminous markers** explicitly to run the experiment.
 Tap a marker on the full dial (or its button) for the close-up. Toggle the outline

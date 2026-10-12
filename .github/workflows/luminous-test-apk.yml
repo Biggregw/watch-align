@@ -61,6 +61,8 @@ jobs:
           HAS_KEY: ${{ secrets.WATCHALIGN_KEYSTORE_B64 != '' }}
         run: |
           apk=app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$apk" > apk-package.txt
+          grep -q "package: name='com.watchalign.mobile.poc.edgefit.luminous'" apk-package.txt
           unzip -l "$apk" | awk '/lib\/.*\.so/ {print $4}' > apk-native-libraries.txt
           test -s apk-native-libraries.txt
           if grep -v '^lib/arm64-v8a/' apk-native-libraries.txt; then exit 1; fi
@@ -85,6 +87,7 @@ jobs:
             android/APK_COMMIT.txt
             android/apk-signing.txt
             android/apk-native-libraries.txt
+            android/apk-package.txt
           if-no-files-found: error
           retention-days: 30
       - uses: actions/upload-artifact@v4
