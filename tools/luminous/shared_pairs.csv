@@ -1,0 +1,3 @@
+family,photo_a,photo_b,watch_a,watch_b,common_markers,max_offset_difference_R,reason
+submariner_124060,39d163d48710cb5a,d04c99024b491471,auto_bobs_124060_0831b5e1a2b9,auto_bobs_124060_acb8dd97ca70,11,0.0001871596181404529,"Existing measured shared-dial test; identity/stock-image warning, not independently proven physical-watch equality"
+submariner_124060,63dc466faad01512,a873cd649dee3d36,auto_bobs_124060_7f1b144ca515,auto_bobs_124060_03e9c7f833e7,11,0.0003366812839731047,"Existing measured shared-dial test; identity/stock-image warning, not independently proven physical-watch equality"

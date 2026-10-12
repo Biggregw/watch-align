@@ -32,6 +32,7 @@ public class Alpha99ResultsActivity extends Activity {
     /** Process-local handoff from the measuring activity. */
     static final class Store {
         static Alpha99Findings.Summary summary;
+        static Alpha99Pipeline.Output outer;
         static Bitmap overview;
         static final Map<String,Bitmap> closeups=new HashMap<>();
         static final Map<Integer,MarkerMismatchResearch.Result> mismatch=new HashMap<>();
@@ -108,6 +109,12 @@ public class Alpha99ResultsActivity extends Activity {
         Button markerDetails=new Button(this);markerDetails.setAllCaps(false);markerDetails.setText("Inspect marker outlines  ▸");
         markerDetails.setOnClickListener(v->{boolean show=inspections.getVisibility()!=View.VISIBLE;inspections.setVisibility(show?View.VISIBLE:View.GONE);markerDetails.setText(show?"Inspect marker outlines  ▾":"Inspect marker outlines  ▸");});
         root.addView(markerDetails,lp(-1,dp(48),12));root.addView(inspections,lp(-1,-2,6));
+
+        if(Store.outer!=null){
+            Button luminous=new Button(this);luminous.setAllCaps(false);luminous.setText("Inspect luminous markers");
+            luminous.setOnClickListener(v->startActivity(new Intent(this,LuminousInspectActivity.class)));
+            root.addView(luminous,lp(-1,dp(48),12));
+        }
 
         // secondary
         if(Store.photo!=null&&Store.overlay!=null){

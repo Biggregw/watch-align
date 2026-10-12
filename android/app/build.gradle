@@ -8,8 +8,8 @@ android {
         applicationId 'com.watchalign.mobile.poc.edgefit'
         minSdk 28
         targetSdk 35
-        versionCode 13114
-        versionName '1.4.0-alpha105h-edgefit-arm64'
+        versionCode 13115
+        versionName '1.4.0-alpha107-luminous-experimental-arm64'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         ndk { abiFilters 'arm64-v8a' }
     }

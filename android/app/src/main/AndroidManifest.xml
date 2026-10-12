@@ -5,6 +5,7 @@
         <activity android:name=".PhotographicOverlayInspectActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".Alpha98ResultsActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".Alpha99ResultsActivity" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".LuminousInspectActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".Alpha99DetailActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".ManualSeedActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="false" />
