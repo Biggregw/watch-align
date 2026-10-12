@@ -182,6 +182,17 @@ apart from the detector, its tests and the separate experimental package metadat
 
 The new package is `com.watchalign.mobile.poc.edgefit.luminousboundary`, labelled
 **Watch Align Luminous Boundary**, arm64 only. It installs alongside existing builds.
+[Download the APK](https://github.com/Biggregw/watch-align/releases/download/v1.4.0-alpha107.3-luminous-boundary-arm64/WatchAlign-alpha107.3-luminous-boundary-arm64.apk)
+from the [separate prerelease](https://github.com/Biggregw/watch-align/releases/tag/v1.4.0-alpha107.3-luminous-boundary-arm64).
+[Build and photographic checks](https://github.com/Biggregw/watch-align/actions/runs/38308367983)
+and [verified artifact publication](https://github.com/Biggregw/watch-align/actions/runs/38308971958)
+passed. APK source is `de29c0be1facb11ade0de6fcff933275ef70dda2`; SHA256 is
+`25c2edad78add4d7b0391dd1edf7cb4d4be59c263120701e092b310969ee07eb`.
+The 25,036,245-byte APK has only arm64 native libraries and a verified signature.
+The shared signing secret was unavailable, so the existing debug-signing fallback
+was used for this separate package. Samsung on-device execution is still untested
+here; the desktop/native photographic replay and Android build checks passed.
+
 All genuine and experimental reference assets remain byte-identical to `8a53c1e5`;
 the completed calibration's research shapes are **not integrated into this APK**.
 Consequently the app's existing-reference fitted readouts for the three documented
