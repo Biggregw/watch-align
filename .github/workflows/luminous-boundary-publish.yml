@@ -1,0 +1,62 @@
+name: Publish verified luminous boundary APK
+on:
+  push:
+    branches:
+      - fix/luminous-boundary-validation-20261012
+    paths:
+      - .github/workflows/luminous-boundary-publish.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          repository: Biggregw/watch-align
+          run-id: '38308367983'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: WatchAlign-alpha107.3-luminous-boundary-arm64
+          path: verified-apk
+      - name: Require exact validated binary and source
+        working-directory: verified-apk
+        run: |
+          sha256sum -c SHA256SUMS.txt
+          test "$(cat APK_COMMIT.txt)" = de29c0be1facb11ade0de6fcff933275ef70dda2
+          test "$(sha256sum WatchAlign-alpha107.3-luminous-boundary-arm64.apk | cut -d' ' -f1)" = 25c2edad78add4d7b0391dd1edf7cb4d4be59c263120701e092b310969ee07eb
+          cd ..
+          python tools/luminous/boundary/verify_build.py
+      - name: Publish separate prerelease with existing releases preserved
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > "$RUNNER_TEMP/release-notes.md" <<'EOF'
+          Separately installable Samsung arm64 experiment, labelled **Watch Align Luminous Boundary** (`com.watchalign.mobile.poc.edgefit.luminousboundary`).
+
+          The detector checks photographed luminous-to-surround separators, competing boundaries and contradictory arc regions before reporting a circle. Independent partial arcs remain supported; ambiguous measurements are withheld.
+
+          - Documented 124060 false interior circle: 60.569% → 3.829% against the unchanged completed-study reference.
+          - Documented 126610 resizing difference: 9.6165 → 1.0425 percentage points.
+          - 397 unit tests, 18 native checks, 132 genuine originals, 18 archived processing variants and the exact Batgirl original were validated. Batgirl 9/12, straight-edge measurements, outer QC, perspective and reference assets remain unchanged.
+          - 188 previously fitted genuine circles are withheld where their boundary identity cannot be supported. OBSERVED footprint remains separate.
+
+          [Report, labelled before/after close-ups, comparisons and reproduction](https://github.com/Biggregw/watch-align/blob/fix/luminous-boundary-validation-20261012/docs/research/luminous-boundary-fix-2026-10-12/REPORT.md) · [Successful build and exact-photo tests](https://github.com/Biggregw/watch-align/actions/runs/38308367983).
+
+          The APK retains the existing app reference assets; its percentages differ from the report's completed-study reference table. No research references were integrated and no QC thresholds were added.
+
+          Source: `de29c0be1facb11ade0de6fcff933275ef70dda2`. Arm64 only, Android 9/API 28 or later. The shared signing secret was unavailable, so this separate package uses the existing debug-signing fallback. Signature and ABI were verified. Samsung on-device execution has not been independently tested here.
+
+          PR #52 and existing releases are untouched. This prerelease does not replace the latest stable release.
+          EOF
+          gh release create v1.4.0-alpha107.3-luminous-boundary-arm64 \
+            verified-apk/WatchAlign-alpha107.3-luminous-boundary-arm64.apk \
+            verified-apk/SHA256SUMS.txt verified-apk/APK_COMMIT.txt verified-apk/apk-signing.txt \
+            --repo Biggregw/watch-align --target de29c0be1facb11ade0de6fcff933275ef70dda2 \
+            --title 'Watch Align alpha107.3 luminous boundary experiment (arm64)' \
+            --prerelease --latest=false --notes-file "$RUNNER_TEMP/release-notes.md"
