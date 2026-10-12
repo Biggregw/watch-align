@@ -12,7 +12,7 @@ import java.util.concurrent.*;
 
 /** Explicitly opened experimental inspection, independent of production QC. */
 public class LuminousInspectActivity extends Activity {
-    private static Alpha99Pipeline.Output cachedOuter;
+    private static java.lang.ref.WeakReference<Alpha99Pipeline.Output> cachedOuter=new java.lang.ref.WeakReference<>(null);
     private static LuminousMeasurement cached;
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private LinearLayout root;private Bitmap photo;private Alpha99Pipeline.Output outer;private int hour;
@@ -20,10 +20,10 @@ public class LuminousInspectActivity extends Activity {
         photo=Alpha99ResultsActivity.Store.photo;outer=Alpha99ResultsActivity.Store.outer;
         if(photo==null||outer==null||!outer.ok()){finish();return;}
         hour=getIntent().getIntExtra("hour",0);buildRoot();
-        if(cachedOuter==outer&&cached!=null){show(cached);return;}
+        if(cachedOuter.get()==outer&&cached!=null){show(cached);return;}
         text("Measuring inner boundaries…",16);worker.submit(()->{
             try{LuminousReference ref=LuminousReference.load(getAssets()::open,outer.model.id);LuminousMeasurement result=LuminousMeasurement.run(photo,outer,ref);
-                runOnUiThread(()->{if(isFinishing()||isDestroyed())return;cachedOuter=outer;cached=result;show(result);});
+                runOnUiThread(()->{if(isFinishing()||isDestroyed())return;cachedOuter=new java.lang.ref.WeakReference<>(outer);cached=result;show(result);});
             }catch(Exception e){runOnUiThread(()->{if(!isFinishing()&&!isDestroyed())text("Not assessed: experimental inner references or image measurement unavailable. Existing outer-metal results are unchanged.",16);});}
         });
     }
