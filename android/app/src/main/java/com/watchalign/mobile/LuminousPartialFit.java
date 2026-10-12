@@ -76,14 +76,23 @@ final class LuminousPartialFit {
         if(a==null){out.reason="no reliable long straight section";return;}
         out.orientation=true;out.angle=a.angle;out.reason="one long edge supports direction; position and dimensions withheld";
         if(b==null)return;double delta=LuminousGeometry.angleDifference(b.angle,a.angle);out.angle=a.angle+Math.toRadians(delta)/2;
-        if(Math.abs(delta)>2){out.reason="opposing long-edge directions differ; fixed rectangle width/centre withheld";return;}
+        // Four independent edges establish geometry even when opposing sides are not parallel.
+        // Do not force a rectangular nominal onto a real trapezoid/skewed luminous insert.
+        if(top!=null&&bottom!=null){
+            double[] at=intersection(a,top),bt=intersection(b,top),bb=intersection(b,bottom),ab=intersection(a,bottom);
+            if(at!=null&&bt!=null&&bb!=null&&ab!=null){double[][] quad={at,bt,bb,ab};
+                double height=(Math.hypot(at[0]-ab[0],at[1]-ab[1])+Math.hypot(bt[0]-bb[0],bt[1]-bb[1]))/2;
+                if(height>=4&&height<=2*Math.max(a.span,b.span)&&MarkerPolygonMismatch.compare(quad,quad)!=null){
+                    out.ideal=quad;out.center=LuminousGeometry.centroid(quad);out.height=height;
+                    out.width=(Math.hypot(at[0]-bt[0],at[1]-bt[1])+Math.hypot(ab[0]-bb[0],ab[1]-bb[1]))/2;
+                    out.reason="four independent straight sections establish free quadrilateral geometry; fitted corners and geometric area are separate from the physical footprint";return;
+                }
+            }
+        }
+        if(Math.abs(delta)>2){out.reason="opposing long-edge directions differ; complete ends are unavailable, so a single width/centre is withheld";return;}
         double sign=a.nx*b.nx+a.ny*b.ny>=0?1:-1;out.crossNormal=new double[]{a.nx,a.ny};out.crossC=(a.c+sign*b.c)/2;out.width=Math.abs(a.c-sign*b.c);
         if(out.width<4){out.crossNormal=null;out.crossC=Double.NaN;out.width=Double.NaN;return;}
         out.reason="two long sections support direction, width and transverse centreline; length/along-axis centre withheld";
-        if(top==null||bottom==null)return;double[] at=intersection(a,top),bt=intersection(b,top),bb=intersection(b,bottom),ab=intersection(a,bottom);if(at==null||bt==null||bb==null||ab==null)return;
-        double height=(Math.hypot(at[0]-ab[0],at[1]-ab[1])+Math.hypot(bt[0]-bb[0],bt[1]-bb[1]))/2;
-        if(height<4||height>2*Math.max(a.span,b.span))return;
-        out.ideal=new double[][]{at,bt,bb,ab};out.center=LuminousGeometry.centroid(out.ideal);out.height=height;out.reason="four visible straight sections support idealised orientation, centre, width and length; corners are idealised; fitted geometric area is separate from observed footprint area";
     }
     static void round(List<double[]> p,Fit out){
         Random rng=new Random(108);List<double[]> best=null;double[] bestCircle=null;
