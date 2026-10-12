@@ -30,7 +30,7 @@ public class LuminousInspectActivity extends Activity {
     private void buildRoot(){ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Alpha99ResultsActivity.BG);
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(16),dp(16),dp(16),dp(16));scroll.addView(root);setContentView(scroll);}
     private void show(LuminousMeasurement result){root.removeAllViews();text(hour==0?"Luminous markers · experimental":hour+" o’clock luminous marker",24);
-        text("Provisional genuine inner references. No replica pass/fail classifications. Outer-metal inspection remains separate. Yellow expected · cyan detected · orange extra · magenta missing.",14);
+        text("Provisional genuine inner references. No replica pass/fail classifications. Outer-metal inspection remains separate. Yellow expected · "+(mode==1?"cyan reference at fitted pose":mode==0?"cyan fitted geometry":"cyan detected boundary")+" · orange extra · magenta missing.",14);
         RadioGroup modes=new RadioGroup(this);modes.setOrientation(LinearLayout.VERTICAL);
         String[] labels={"FITTED GEOMETRIC shape", "FITTED alignment only", "Observed full footprint"};
         for(int option=0;option<3;option++){RadioButton b=new RadioButton(this);b.setId(option+100);b.setText(labels[option]);b.setTextColor(Color.WHITE);modes.addView(b);}

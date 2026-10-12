@@ -40,6 +40,7 @@ jobs:
         run: |
           bash tools/desktop-harness/run.sh LuminousSyntheticChecks
           python3 tools/luminous/verify_controls.py
+          python3 tools/luminous/fix/verify_published.py
       - name: Prepare existing shared signing key
         env:
           WATCHALIGN_KEYSTORE_B64: ${{ secrets.WATCHALIGN_KEYSTORE_B64 }}

@@ -1,0 +1,32 @@
+[
+  {
+    "photo_id": "user_37891",
+    "physical_watch_id": "user_claimed_genuine_37891",
+    "filename": "37891.jpg",
+    "sha256": "18e22bf35bb5584e8674a35d443567101b7f4165d61b8b26e3c2260870cf1fb4",
+    "width": 1187,
+    "height": 1280,
+    "exif_orientation": null,
+    "source": "Uploaded by user; genuine identity not independently verified. Regression only; not a reference contributor."
+  },
+  {
+    "photo_id": "batgirl_37828",
+    "physical_watch_id": "owner_batgirl",
+    "filename": "04_batgirl_original_37828.jpg",
+    "sha256": "c50e0845ddb6c50701a4ba8ab6b396092e67988a747206f77743c02e7c7e54eb",
+    "width": 1152,
+    "height": 1536,
+    "exif_orientation": null,
+    "source": "Owner supplied original replica QC, evidence pack 2026-10-11."
+  },
+  {
+    "photo_id": "pepsi_3cf5442a",
+    "physical_watch_id": "phillips_CH080120_75",
+    "filename": "01_genuine_pepsi_original_Phillips_3cf5442a.jpg",
+    "sha256": "3cf5442ab9c87b9c0b9481fd0eb2b92316a0287581635c49fc9cf6cdc4f31a00",
+    "width": 1500,
+    "height": 1748,
+    "exif_orientation": null,
+    "source": "Phillips CH080120 lot 75, original photo 3cf5442ab9c87b9c, historical regression control, not a new baseline sample."
+  }
+]

@@ -2,6 +2,11 @@ import csv,json,sys,shutil
 from pathlib import Path
 from PIL import Image,ImageDraw
 work=Path(sys.argv[1]);out=Path(sys.argv[2]);rows=list(csv.DictReader(open(out/'recovered_markers.csv'))) if (out/'recovered_markers.csv').exists() else []
+# Remove previously generated selections so stale, rejected recoveries cannot
+# remain discoverable alongside the current report. Local control evidence lives
+# in its own subdirectory and is preserved.
+for pattern in ('*_recoveries_*.jpg','*.png'):
+ for old in out.glob(pattern):old.unlink()
 summary=json.loads((out/'comparison.json').read_text());text=['# Frozen luminous fit regression','', 'Same forty Alpha107 originals and frozen reference polygons. Every previous usable physical polygon and recorded outer value is asserted unchanged. No reference derivation, harvesting or acceptance thresholds. Listing identities remain provisional.','', '| Model | Before observed | After observed | Fitted geometry | Alignment only | Partial alignment supported | Newly measurable from previous withholding |','|---|---:|---:|---:|---:|---:|---:|']
 for model,s in summary.items():text.append(f"| {model} | {s['before_assessed']} | {s['after_assessed']} | {s['fitted_assessed']} | {s['alignment_percentage_assessed']} | {s['partial_alignment_supported']} | {s['recovered']} |")
 text+=['','Fitted geometry reconstructs independently determined sides/intersections or circle centre/radius. Alignment-only rigidly transforms the unchanged expected template. Observed physical footprint is separate. All three use the same filled expected area denominator and saved polygons/regions; percentages are never added. Unsupported dimensions and percentages remain withheld.','', '## Recovered comparison contact sheets','']
