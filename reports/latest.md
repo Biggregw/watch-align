@@ -1,6 +1,6 @@
 # Dataset harvester
 
-Run 20261011T100531Z · 2026-10-11T10:05:31Z → 2026-10-11T10:06:32Z
+Run 20261012T105802Z · 2026-10-12T10:58:02Z → 2026-10-12T10:58:08Z
 
 ## Adapters
 
@@ -9,32 +9,23 @@ Run 20261011T100531Z · 2026-10-11T10:05:31Z → 2026-10-11T10:06:32Z
 - **search**: enabled (brave)
 - **reddit**: disabled: REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not set
 
-Search results filtered before storing: not_gmt 10
+Search results filtered before storing: not_gmt 11
 
 ## This run
 
-- 3 new sources discovered (177 already known)
-- 3 sources examined (0 deferred, 0 failed)
-- 24 images downloaded, 0 used from local copies
-- 19 exact and 1 near duplicates (48 possible, not confirmable)
-- 21 images rejected, 0 inconclusive
+- 1 new sources discovered (178 already known)
+- 1 sources examined (0 deferred, 1 failed)
+- 0 images downloaded, 0 used from local copies
+- 0 exact and 0 near duplicates
+- 0 images rejected, 0 inconclusive
 - 0 measurement-quality images
 - 0 physical watches accepted
-- 2 quarantined
-- 1 rejected
+- 0 quarantined
+- 0 rejected
 
-Images rejected or inconclusive, by reason:
+Errors / retries:
 
-- reject_no_dial: 15
-- reject_low_resolution: 6
-- reject_blur: 2
-
-Watch decisions, by reason:
-
-- quarantine_possible_same_watch: 2
-- quarantine_inconclusive_images: 2
-- reject_unusable_imagery: 1
-- reject_no_dial: 1
+- https://imgur.com/a/ykyBp9S: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/ykyBp9S?include=media%2Ctags%2Caccount' (final)
 
 ## Dataset now (accepted, independent physical watches)
 
