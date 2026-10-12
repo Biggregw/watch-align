@@ -1,0 +1,46 @@
+{
+  "gmt_126710": {
+    "markers": 176,
+    "before_assessed": 59,
+    "after_assessed": 77,
+    "fitted_assessed": 138,
+    "alignment_percentage_assessed": 138,
+    "partial_alignment_supported": 145,
+    "recovered": 79,
+    "remaining_reasons": {
+      "INTERFERENCE": 47,
+      "SEPARATOR_CONVEXITY": 34,
+      "LOW_CONTRAST": 1,
+      "SEPARATOR_NOT_CLOSED": 6,
+      "RING_UNAVAILABLE": 11
+    }
+  },
+  "submariner_124060": {
+    "markers": 144,
+    "before_assessed": 120,
+    "after_assessed": 120,
+    "fitted_assessed": 126,
+    "alignment_percentage_assessed": 126,
+    "partial_alignment_supported": 141,
+    "recovered": 21,
+    "remaining_reasons": {
+      "LOW_CONTRAST": 1,
+      "INTERFERENCE": 15,
+      "SEPARATOR_NOT_CLOSED": 8
+    }
+  },
+  "submariner_126610": {
+    "markers": 132,
+    "before_assessed": 63,
+    "after_assessed": 76,
+    "fitted_assessed": 130,
+    "alignment_percentage_assessed": 130,
+    "partial_alignment_supported": 132,
+    "recovered": 68,
+    "remaining_reasons": {
+      "INTERFERENCE": 16,
+      "SEPARATOR_CONVEXITY": 38,
+      "SEPARATOR_NOT_CLOSED": 2
+    }
+  }
+}
