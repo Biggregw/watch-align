@@ -1,8 +1,5 @@
 name: Build experimental luminous arm64 test APK
 on:
-  push:
-    branches: [feature/luminous-marker-experiment]
-    paths: [.github/workflows/luminous-test-apk.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,6 +27,7 @@ jobs:
             test -s "android/app/src/main/assets/experimental/luminous/$model.json"
             test -s "docs/research/luminous-experiment-2026-10-12/${model}_heldout.csv"
           done
+          git diff --exit-code b8acf22ce7b6afab768d89349a87d514a20b78c9 -- android/app/src/main/assets/experimental/luminous
           git diff --exit-code 593966433079d04816e98f78da5b66abd1f4553d -- android/app/src/main/assets/models android/app/src/main/java/com/watchalign/mobile/Alpha99Pipeline.java android/app/src/main/java/com/watchalign/mobile/Alpha94MarkerMeasurement.java android/app/src/main/java/com/watchalign/mobile/Alpha99Findings.java android/app/src/main/java/com/watchalign/mobile/ExpectedMarkerOutline.java android/app/src/main/java/com/watchalign/mobile/MarkerPolygonMismatch.java android/app/src/main/java/com/watchalign/mobile/MarkerMismatchOverlay.java
       - name: Install existing Android toolchain
         run: |
@@ -62,7 +60,7 @@ jobs:
         run: |
           apk=app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$apk" > apk-package.txt
-          grep -q "package: name='com.watchalign.mobile.poc.edgefit.luminous'" apk-package.txt
+          grep -q "package: name='com.watchalign.mobile.poc.edgefit.luminousfit'" apk-package.txt
           unzip -l "$apk" | awk '/lib\/.*\.so/ {print $4}' > apk-native-libraries.txt
           test -s apk-native-libraries.txt
           if grep -v '^lib/arm64-v8a/' apk-native-libraries.txt; then exit 1; fi
@@ -75,14 +73,14 @@ jobs:
           size=$(stat -c %s "$apk")
           echo "APK bytes: $size"
           if [ "$size" -gt 30000000 ]; then echo '::warning::APK exceeds preferred 30 MB.'; fi
-          cp "$apk" WatchAlign-alpha107-luminous-experimental-arm64.apk
-          sha256sum WatchAlign-alpha107-luminous-experimental-arm64.apk > SHA256SUMS.txt
+          cp "$apk" WatchAlign-alpha107.2-luminous-fit-arm64.apk
+          sha256sum WatchAlign-alpha107.2-luminous-fit-arm64.apk > SHA256SUMS.txt
           git rev-parse HEAD > APK_COMMIT.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: WatchAlign-alpha107-luminous-experimental-arm64
+          name: WatchAlign-alpha107.2-luminous-fit-arm64
           path: |
-            android/WatchAlign-alpha107-luminous-experimental-arm64.apk
+            android/WatchAlign-alpha107.2-luminous-fit-arm64.apk
             android/SHA256SUMS.txt
             android/APK_COMMIT.txt
             android/apk-signing.txt

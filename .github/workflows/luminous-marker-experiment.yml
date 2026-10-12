@@ -1,9 +1,9 @@
-name: Experimental luminous marker validation
+name: Frozen luminous fit regression
 on:
   push:
     branches: [feature/luminous-marker-experiment]
     paths:
-      - tools/luminous/**
+      - tools/luminous/fix/**
       - tools/desktop-harness/drivers/Luminous*.java
       - android/app/src/main/java/com/watchalign/mobile/Luminous*.java
       - android/app/src/test/java/com/watchalign/mobile/Luminous*.java
@@ -20,9 +20,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Preserve existing measurement implementation
+      - name: Freeze outer implementation and BOTH reference collections
         run: |
           git diff --exit-code 593966433079d04816e98f78da5b66abd1f4553d -- android/app/src/main/assets/models android/app/src/main/java/com/watchalign/mobile/Alpha99Pipeline.java android/app/src/main/java/com/watchalign/mobile/Alpha94MarkerMeasurement.java android/app/src/main/java/com/watchalign/mobile/Alpha99Findings.java android/app/src/main/java/com/watchalign/mobile/ExpectedMarkerOutline.java android/app/src/main/java/com/watchalign/mobile/MarkerPolygonMismatch.java android/app/src/main/java/com/watchalign/mobile/MarkerMismatchOverlay.java
+          git diff --exit-code b8acf22ce7b6afab768d89349a87d514a20b78c9 -- android/app/src/main/assets/experimental/luminous
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -31,9 +32,12 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install pillow==12.3.0
-      - name: Android unit tests before photographic validation
-        working-directory: android
-        run: bash ./gradlew :app:testDebugUnitTest --stacktrace
+      - name: Unit and native negative controls
+        run: |
+          cd android
+          bash ./gradlew :app:testDebugUnitTest --stacktrace
+          cd ..
+          bash tools/desktop-harness/run.sh LuminousSyntheticChecks
       - uses: actions/download-artifact@v4
         with:
           repository: Biggregw/watch-align
@@ -41,36 +45,36 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           name: WatchAlign-genuine-faceon-132-originals-Codex-ready
           path: curated-artifact
-      - name: Verify curated originals and choose bounded disjoint subset
+      - name: Verify original hashes and reuse exact Alpha107 subset and saved baseline
         run: |
           python tools/luminous/prepare_curated.py curated-artifact luminous-work .
-          python tools/luminous/select_subset.py luminous-work
-      - name: Measure development photographs only
+          python tools/luminous/fix/inputs.py luminous-work
+          python tools/luminous/fix/baselines.py luminous-work
+      - name: Measure with frozen references; no derivation or calibration
         run: |
           for model in gmt_126710 submariner_124060 submariner_126610; do
-            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousValidation "luminous-work/${model}_development.csv" "luminous-work/$model/development"
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousValidation "luminous-work/${model}_regression.csv" "luminous-work/after/$model" score --no-gallery
           done
-      - name: Derive provisional inner polygons from multiple genuine groups
-        run: python tools/luminous/derive_references.py luminous-work
-      - name: Validate held-out originals using frozen inner references
+      - name: Verify unchanged outer results and all previously usable physical outlines
+        run: python tools/luminous/fix/compare.py luminous-work docs/research/luminous-fit-fix-2026-10-12
+      - name: Render exact fitted, alignment-only and observed comparison polygons
         run: |
           for model in gmt_126710 submariner_124060 submariner_126610; do
-            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousValidation "luminous-work/${model}_heldout.csv" "luminous-work/$model/heldout" score
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousValidation "luminous-work/${model}_recoveries.csv" "luminous-work/gallery/$model" score
           done
-      - name: Publish bounded reference provenance and held-out evidence
+          python tools/luminous/fix/publish.py luminous-work docs/research/luminous-fit-fix-2026-10-12
+      - name: Publish reports and derived evidence only
         run: |
-          python tools/luminous/publish_validation.py luminous-work docs/research/luminous-experiment-2026-10-12
-          git add android/app/src/main/assets/experimental/luminous docs/research/luminous-experiment-2026-10-12
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Add experimentally measured inner references and held-out evidence [skip ci]'
+          git add docs/research/luminous-fit-fix-2026-10-12
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Publish frozen luminous fit regression and recovered evidence [skip ci]'
           git push origin HEAD:feature/luminous-marker-experiment
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: luminous-reference-validation
+          name: luminous-fit-fix-validation
           path: |
-            luminous-work/*/development/markers.csv
-            luminous-work/*/heldout/
+            luminous-work/after/
+            luminous-work/gallery/
             android/app/build/test-results/
-            android/app/src/main/assets/experimental/luminous/
-            docs/research/luminous-experiment-2026-10-12/
+            docs/research/luminous-fit-fix-2026-10-12/
           retention-days: 30
