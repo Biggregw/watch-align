@@ -1,0 +1,30 @@
+name: Review frozen genuine results and provenance (research only)
+on:
+  push:
+    branches: [research/genuine-marker-study-curated-20261012]
+    paths:
+      - .github/workflows/genuine-marker-curated-review-20261012.yml
+      - tools/research/genuine_marker_curated_review.py
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pillow==12.3.0
+      - name: Confirm unchanged production and review the already measured CSVs
+        run: |
+          git diff --exit-code 593966433079d04816e98f78da5b66abd1f4553d -- android/app/src/main
+          python tools/research/genuine_marker_curated_review.py docs/research/genuine-marker-curated-2026-10-12 .
+      - name: Publish small research tables and source conflict audit
+        run: |
+          git add docs/research/genuine-marker-curated-2026-10-12
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Quarantine conflicting model provenance; publish compact research tables [skip ci]'
+          git push origin HEAD:research/genuine-marker-study-curated-20261012
