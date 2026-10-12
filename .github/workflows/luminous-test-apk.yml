@@ -1,5 +1,8 @@
 name: Build experimental luminous arm64 test APK
 on:
+  push:
+    branches: [feature/luminous-marker-experiment]
+    paths: [.github/workflows/luminous-test-apk.yml]
   workflow_dispatch:
 permissions:
   contents: read
