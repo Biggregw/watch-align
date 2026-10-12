@@ -9,7 +9,7 @@ One original per recorded watch, chosen before measurement by highest minimum so
 | Family | Original photos | Recorded groups selected | Reliable area groups (any marker) | Partially assessed groups |
 |---|---:|---:|---:|---:|
 | submariner_124060 | 46 | 44 | 38 | 43 |
-| gmt_126710 | 31 | 31 | 28 | 29 |
+| gmt_126710 | 31 | 31 | 26 | 29 |
 | submariner_126610 | 55 | 55 | 55 | 52 |
 
 ## Filled-template distributions
@@ -19,8 +19,8 @@ Every marker remains an individual observation. Equal total weight per recorded 
 | Family / shape | Usable groups | Usable markers | Median total % | P90 % | P95 % | Maximum % |
 |---|---:|---:|---:|---:|---:|---:|
 | gmt_126710 / triangle | 0 | 0 | — | — | — | — |
-| gmt_126710 / baton | 28 | 45 | 3.154632 | 4.145689 | — | 5.149409 |
-| gmt_126710 / round | 24 | 147 | 2.149490 | 2.702265 | — | 3.222077 |
+| gmt_126710 / baton | 26 | 41 | 3.059967 | 4.015634 | — | 4.711614 |
+| gmt_126710 / round | 22 | 135 | 2.173007 | 2.724122 | — | 3.222077 |
 | submariner_124060 / triangle | 0 | 0 | — | — | — | — |
 | submariner_124060 / baton | 37 | 106 | 2.746568 | 5.145011 | — | 6.931386 |
 | submariner_124060 / round | 36 | 229 | 1.582947 | 2.923736 | — | 4.041513 |
@@ -47,3 +47,13 @@ Provenance and original access must precede measurement. Photographic curation d
 [Per-marker results](per_marker.csv) · [Watch/marker summaries](physical_watch_marker_summary.csv) · [Distributions](model_shape_distributions.csv) · [Outlier index](outlier_index.csv) · [Provenance](provenance_verified.csv) · [Identity warnings](identity_shared_dial_pairs.csv)
 
 Measurement run: https://github.com/Biggregw/watch-align/actions/runs/38235551437
+
+## Post-run provenance review
+
+Two curated entries (`b0a1a6ff0bf6db97`, `7888550a54853ebb`) claim 126710BLNR but both their recorded listing URLs and original image filenames say 116710. This is an unresolved source-model contradiction, not proof of a newly identified physical reference. They remain in the measured CSV as comparisons against the declared 126710 template, but are quarantined from the genuine 126710 baseline. All 1,474 numerical rows and app statuses are unchanged. The original claimed-model aggregate is preserved separately; the displayed table and current distribution CSV use the conservative reviewed subset. No exclusion was based on obtaining smaller percentages.
+
+`auto_*` and `hv_page_*` identifiers are explicitly marked provisional inferred listing groups. Other IDs are still listing/lot groups, not serial-verified watch independence. Four 124060 photos trigger the existing shared-dial test (two pairs); a GMT photo has a historical shared-image flag. All remain inspectable but do not enter the independent-group distributions. Counts of partially assessed groups overlap counts with at least one usable area; these are not mutually exclusive whole-watch categories.
+
+The curated archive therefore contains 130 measured recorded groups, 128 with no detected source-model contradiction. There are 978 baseline-eligible marker observations after current reliability, shared-image and model-consistency exclusions. Those are conditional photographed-sample statistics, not 978 independent physical watches.
+
+Small model-specific scalar CSVs are available as `gmt_126710_markers_compact.csv`, `submariner_124060_markers_compact.csv`, and `submariner_126610_markers_compact.csv`. The detailed CSV retains the exact polygons and all uncertainty/interference fields.

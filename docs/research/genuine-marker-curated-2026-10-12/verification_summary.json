@@ -21,5 +21,9 @@
   "measured_shared_dial_warning_pairs": 2,
   "polygon_area_checks": 1329,
   "production_unchanged": true,
-  "outlier_images": 24
+  "outlier_images": 24,
+  "model_provenance_conflicts": 2,
+  "reviewed_baseline_marker_count": 978,
+  "numeric_measurement_rows_preserved": 1474,
+  "source_model_note": "Both recorded source URLs and image filenames reference 116710 for two curated 126710BLNR-labelled entries. Kept as diagnostics; excluded pending identity resolution."
 }

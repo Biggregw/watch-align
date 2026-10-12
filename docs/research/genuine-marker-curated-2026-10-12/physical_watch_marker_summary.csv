@@ -1,268 +1,268 @@
 family,physical_watch_id,hour,shape,photos,usable_area_photos,mismatch_pct,maximum_observed_mismatch_pct,area_reasons,identity_status
-gmt_126710,hv_page_1696f9915b,1,round,1,1,2.064208494162219,2.064208494162219,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1696f9915b,10,round,1,1,2.486604259041098,2.486604259041098,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1696f9915b,11,round,1,1,3.0104962434437645,3.0104962434437645,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1696f9915b,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_1696f9915b,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_1696f9915b,4,round,1,1,1.8711495564328842,1.8711495564328842,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1696f9915b,5,round,1,0,,,hand/occluder crosses outline (clean 0.71),recorded_listing_or_lot_group
-gmt_126710,hv_page_1696f9915b,6,baton,1,1,1.9369454528520034,1.9369454528520034,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1696f9915b,7,round,1,1,1.959862813970775,1.959862813970775,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1696f9915b,8,round,1,1,2.1330299567689592,2.1330299567689592,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1696f9915b,9,baton,1,1,3.45697768923628,3.45697768923628,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1771d3c66d,1,round,1,1,2.623307169968877,2.623307169968877,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1771d3c66d,10,round,1,1,2.134221891907145,2.134221891907145,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1771d3c66d,11,round,1,1,2.300657904283236,2.300657904283236,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1771d3c66d,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_1771d3c66d,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_1771d3c66d,4,round,1,1,2.334188773224966,2.334188773224966,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1771d3c66d,5,round,1,1,2.1243060430750353,2.1243060430750353,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1771d3c66d,6,baton,1,1,2.4321554717123925,2.4321554717123925,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1771d3c66d,7,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_1771d3c66d,8,round,1,1,2.0511697202736214,2.0511697202736214,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1771d3c66d,9,baton,1,1,2.170053586139445,2.170053586139445,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1ad4986148,1,round,1,1,1.4445139457440817,1.4445139457440817,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1ad4986148,10,round,1,1,2.1996599713927427,2.1996599713927427,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1ad4986148,11,round,1,1,2.588303429536662,2.588303429536662,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1ad4986148,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_1ad4986148,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_1ad4986148,4,round,1,1,2.0809696587168385,2.0809696587168385,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1ad4986148,5,round,1,0,,,hand/occluder crosses outline (clean 0.72),recorded_listing_or_lot_group
-gmt_126710,hv_page_1ad4986148,6,baton,1,1,3.98298273658697,3.98298273658697,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1ad4986148,7,round,1,1,2.2911388665533403,2.2911388665533403,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1ad4986148,8,round,1,1,2.254852205688294,2.254852205688294,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_1ad4986148,9,baton,1,1,4.3510631676491345,4.3510631676491345,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_284b4c6ca7,1,round,1,1,1.5952258593336717,1.5952258593336717,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_284b4c6ca7,10,round,1,1,2.6882981198932265,2.6882981198932265,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_284b4c6ca7,11,round,1,0,,,hand/occluder crosses outline (clean 0.61),recorded_listing_or_lot_group
-gmt_126710,hv_page_284b4c6ca7,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_284b4c6ca7,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_284b4c6ca7,4,round,1,1,2.160597276173408,2.160597276173408,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_284b4c6ca7,5,round,1,1,2.420982433678002,2.420982433678002,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_284b4c6ca7,6,baton,1,1,3.4532685650658177,3.4532685650658177,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_284b4c6ca7,7,round,1,1,2.7741436649975446,2.7741436649975446,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_284b4c6ca7,8,round,1,1,2.5409922176124344,2.5409922176124344,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_284b4c6ca7,9,baton,1,1,4.379935248772356,4.379935248772356,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_353f1de4ef,1,round,1,1,2.1494904142377673,2.1494904142377673,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_353f1de4ef,10,round,1,1,3.22207705067337,3.22207705067337,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_353f1de4ef,11,round,1,0,,,hand/occluder crosses outline (clean 0.59),recorded_listing_or_lot_group
-gmt_126710,hv_page_353f1de4ef,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_353f1de4ef,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_353f1de4ef,4,round,1,1,2.702264880724705,2.702264880724705,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_353f1de4ef,5,round,1,1,2.742059111422089,2.742059111422089,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_353f1de4ef,6,baton,1,1,3.3045348008224162,3.3045348008224162,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_353f1de4ef,7,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_353f1de4ef,8,round,1,1,2.444395883225651,2.444395883225651,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_353f1de4ef,9,baton,1,1,4.6333206131187215,4.6333206131187215,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_3d5c6dde16,1,round,1,1,2.3984121652927604,2.3984121652927604,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_3d5c6dde16,10,round,1,1,2.100976880072089,2.100976880072089,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_3d5c6dde16,11,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_3d5c6dde16,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_3d5c6dde16,2,round,1,1,2.530912695919153,2.530912695919153,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_3d5c6dde16,4,round,1,1,2.013530433521187,2.013530433521187,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_3d5c6dde16,5,round,1,1,2.2727481253507733,2.2727481253507733,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_3d5c6dde16,6,baton,1,1,2.2470132803722898,2.2470132803722898,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_3d5c6dde16,7,round,1,1,1.7573496062563958,1.7573496062563958,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_3d5c6dde16,8,round,1,1,1.7248676407998123,1.7248676407998123,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_3d5c6dde16,9,baton,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_48ba112426,1,round,1,1,2.0152404558363917,2.0152404558363917,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_48ba112426,10,round,1,1,1.7638981847907538,1.7638981847907538,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_48ba112426,11,round,1,1,1.7640777231131142,1.7640777231131142,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_48ba112426,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_48ba112426,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_48ba112426,4,round,1,1,2.169536963250053,2.169536963250053,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_48ba112426,5,round,1,1,1.7139837120155488,1.7139837120155488,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_48ba112426,6,baton,1,1,2.923283144214723,2.923283144214723,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_48ba112426,7,round,1,1,2.1078790934361438,2.1078790934361438,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_48ba112426,8,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_48ba112426,9,baton,1,1,3.3580059027651177,3.3580059027651177,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_4cffae5ac4,1,round,1,1,1.6333368039474834,1.6333368039474834,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_4cffae5ac4,10,round,1,1,1.9003182663449973,1.9003182663449973,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_4cffae5ac4,11,round,1,0,,,hand/occluder crosses outline (clean 0.48),recorded_listing_or_lot_group
-gmt_126710,hv_page_4cffae5ac4,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_4cffae5ac4,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_4cffae5ac4,4,round,1,1,1.3753682043780295,1.3753682043780295,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_4cffae5ac4,5,round,1,1,0.7090401344375047,0.7090401344375047,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_4cffae5ac4,6,baton,1,1,4.0124623531497985,4.0124623531497985,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_4cffae5ac4,7,round,1,1,0.9885003361574094,0.9885003361574094,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_4cffae5ac4,8,round,1,1,0.723070822933458,0.723070822933458,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_4cffae5ac4,9,baton,1,1,5.14940901703591,5.14940901703591,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_5459c91797,1,round,1,1,1.9547014948462125,1.9547014948462125,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_5459c91797,10,round,1,1,1.288759677784341,1.288759677784341,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_5459c91797,11,round,1,0,,,hand/occluder crosses outline (clean 0.62),recorded_listing_or_lot_group
-gmt_126710,hv_page_5459c91797,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_5459c91797,2,round,1,0,,,"outline coverage 0.64, 6/8 octants",recorded_listing_or_lot_group
-gmt_126710,hv_page_5459c91797,4,round,1,1,1.3961497626619122,1.3961497626619122,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_5459c91797,5,round,1,1,1.9192383726577962,1.9192383726577962,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_5459c91797,6,baton,1,1,1.4312763048552068,1.4312763048552068,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_5459c91797,7,round,1,1,1.6903633146924673,1.6903633146924673,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_5459c91797,8,round,1,1,1.7898526174795157,1.7898526174795157,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_5459c91797,9,baton,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_57d486cff3,1,round,1,1,2.173007087798043,2.173007087798043,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_57d486cff3,10,round,1,1,2.390142335245308,2.390142335245308,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_57d486cff3,11,round,1,1,1.9490661069613813,1.9490661069613813,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_57d486cff3,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_57d486cff3,2,round,1,0,,,hand/occluder crosses outline (clean 0.56),recorded_listing_or_lot_group
-gmt_126710,hv_page_57d486cff3,4,round,1,1,2.153991933452708,2.153991933452708,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_57d486cff3,5,round,1,1,1.9681850816708228,1.9681850816708228,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_57d486cff3,6,baton,1,1,2.539869094231718,2.539869094231718,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_57d486cff3,7,round,1,1,2.582153971102698,2.582153971102698,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_57d486cff3,8,round,1,1,1.904137903625398,1.904137903625398,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_57d486cff3,9,baton,1,1,2.676709756953573,2.676709756953573,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_58aba667cf,1,round,1,0,,,hand/occluder crosses outline (clean 0.61),recorded_listing_or_lot_group
-gmt_126710,hv_page_58aba667cf,10,round,1,1,2.6039037754808683,2.6039037754808683,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_58aba667cf,11,round,1,1,2.497825627785843,2.497825627785843,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_58aba667cf,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_58aba667cf,2,round,1,1,1.9229100899378673,1.9229100899378673,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_58aba667cf,4,round,1,1,2.512821987057807,2.512821987057807,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_58aba667cf,5,round,1,1,2.815441411755893,2.815441411755893,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_58aba667cf,6,baton,1,1,2.7387297325067195,2.7387297325067195,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_58aba667cf,7,round,1,1,2.5404248584310607,2.5404248584310607,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_58aba667cf,8,round,1,1,2.795324952305394,2.795324952305394,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_58aba667cf,9,baton,1,1,4.711613977712448,4.711613977712448,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_7a187edba5,1,round,1,1,1.2724072741012928,1.2724072741012928,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_7a187edba5,10,round,1,1,1.7311536028251933,1.7311536028251933,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_7a187edba5,11,round,1,0,,,hand/occluder crosses outline (clean 0.57),recorded_listing_or_lot_group
-gmt_126710,hv_page_7a187edba5,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_7a187edba5,2,round,1,1,1.6321704822412761,1.6321704822412761,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_7a187edba5,4,round,1,1,2.286645579034456,2.286645579034456,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_7a187edba5,5,round,1,1,2.2944345257268695,2.2944345257268695,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_7a187edba5,6,baton,1,1,2.2009739340649994,2.2009739340649994,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_7a187edba5,7,round,1,1,1.285980929740565,1.285980929740565,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_7a187edba5,8,round,1,1,1.7435933245882738,1.7435933245882738,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_7a187edba5,9,baton,1,1,2.7895579538349775,2.7895579538349775,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_814c8db017,1,round,1,1,2.767055053201832,2.767055053201832,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_814c8db017,10,round,1,1,2.6942122870373457,2.6942122870373457,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_814c8db017,11,round,1,1,1.814307755183496,1.814307755183496,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_814c8db017,12,triangle,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_814c8db017,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_814c8db017,4,round,1,1,2.3258430896757845,2.3258430896757845,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_814c8db017,5,round,1,1,1.752272487280936,1.752272487280936,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_814c8db017,6,baton,1,0,,,side edge coverage 0.48,recorded_listing_or_lot_group
-gmt_126710,hv_page_814c8db017,7,round,1,1,2.0899455940018403,2.0899455940018403,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_814c8db017,8,round,1,1,1.9308863637955216,1.9308863637955216,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_814c8db017,9,baton,1,1,3.605109860931476,3.605109860931476,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_942a7f5f12,1,round,1,1,2.239804140486965,2.239804140486965,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_942a7f5f12,10,round,1,1,2.4986185200255147,2.4986185200255147,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_942a7f5f12,11,round,1,1,2.031055755480874,2.031055755480874,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_942a7f5f12,12,triangle,1,0,,,hand/occluder crosses outline (clean 0.77),recorded_listing_or_lot_group
-gmt_126710,hv_page_942a7f5f12,2,round,1,1,1.8147240522417878,1.8147240522417878,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_942a7f5f12,4,round,1,1,2.034904686926021,2.034904686926021,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_942a7f5f12,5,round,1,1,1.6004357317684217,1.6004357317684217,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_942a7f5f12,6,baton,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_942a7f5f12,7,round,1,1,2.582765491653674,2.582765491653674,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_942a7f5f12,8,round,1,1,2.0055824072383697,2.0055824072383697,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_942a7f5f12,9,baton,1,1,3.1546318202933734,3.1546318202933734,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a13e399a8f,1,round,1,1,2.8314169085831273,2.8314169085831273,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a13e399a8f,10,round,1,1,2.7930887144652723,2.7930887144652723,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a13e399a8f,11,round,1,1,2.6412110171504524,2.6412110171504524,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a13e399a8f,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_a13e399a8f,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_a13e399a8f,4,round,1,1,2.698268229443963,2.698268229443963,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a13e399a8f,5,round,1,1,2.403441565492203,2.403441565492203,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a13e399a8f,6,baton,1,1,3.2360286856862364,3.2360286856862364,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a13e399a8f,7,round,1,1,2.539852979018846,2.539852979018846,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a13e399a8f,8,round,1,1,2.6579923925478366,2.6579923925478366,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a13e399a8f,9,baton,1,0,,,hand/occluder crosses outline (clean 0.27),recorded_listing_or_lot_group
-gmt_126710,hv_page_a94c777d6c,1,round,1,0,,,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a94c777d6c,10,round,1,0,,,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a94c777d6c,11,round,1,0,,,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a94c777d6c,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_a94c777d6c,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_a94c777d6c,4,round,1,0,,,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a94c777d6c,5,round,1,0,,,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a94c777d6c,6,baton,1,0,,,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a94c777d6c,7,round,1,0,,,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a94c777d6c,8,round,1,0,,,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_a94c777d6c,9,baton,1,0,,,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b0bc85b625,1,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_b0bc85b625,10,round,1,1,2.852710932019325,2.852710932019325,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b0bc85b625,11,round,1,1,2.2258458616167074,2.2258458616167074,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b0bc85b625,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_b0bc85b625,2,round,1,1,2.2561913635162294,2.2561913635162294,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b0bc85b625,4,round,1,1,2.2070433297881573,2.2070433297881573,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b0bc85b625,5,round,1,1,2.3018054988368446,2.3018054988368446,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b0bc85b625,6,baton,1,1,2.2825376904230743,2.2825376904230743,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b0bc85b625,7,round,1,1,2.3415413832854313,2.3415413832854313,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b0bc85b625,8,round,1,1,2.1753528810856686,2.1753528810856686,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b0bc85b625,9,baton,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_b25aaeffa2,1,round,1,1,1.8198934351502403,1.8198934351502403,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b25aaeffa2,10,round,1,1,2.4364704322777295,2.4364704322777295,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b25aaeffa2,11,round,1,1,2.757465733921342,2.757465733921342,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b25aaeffa2,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_b25aaeffa2,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_b25aaeffa2,4,round,1,1,1.7723144887810438,1.7723144887810438,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b25aaeffa2,5,round,1,0,,,hand/occluder crosses outline (clean 0.63),recorded_listing_or_lot_group
-gmt_126710,hv_page_b25aaeffa2,6,baton,1,1,3.4188332077543118,3.4188332077543118,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b25aaeffa2,7,round,1,1,2.4753897899732316,2.4753897899732316,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b25aaeffa2,8,round,1,1,1.8900947954499567,1.8900947954499567,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b25aaeffa2,9,baton,1,1,3.505943743653707,3.505943743653707,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4498e472c,1,round,1,0,,,hand/occluder crosses outline (clean 0.51),recorded_listing_or_lot_group
-gmt_126710,hv_page_b4498e472c,10,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4498e472c,11,round,1,1,2.232045533804962,2.232045533804962,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4498e472c,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_b4498e472c,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4498e472c,4,round,1,1,2.0851659105269076,2.0851659105269076,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4498e472c,5,round,1,1,1.89119681697212,1.89119681697212,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4498e472c,6,baton,1,1,2.2140631959684494,2.2140631959684494,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4498e472c,7,round,1,1,2.485866917798143,2.485866917798143,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4498e472c,8,round,1,1,1.6200141051381873,1.6200141051381873,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4498e472c,9,baton,1,1,3.317644731026107,3.317644731026107,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4a5b2d850,1,round,1,1,1.7207274602226896,1.7207274602226896,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4a5b2d850,10,round,1,1,1.5044509585288839,1.5044509585288839,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4a5b2d850,11,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4a5b2d850,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_b4a5b2d850,2,round,1,1,2.3886148527479127,2.3886148527479127,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4a5b2d850,4,round,1,1,1.9078161047804416,1.9078161047804416,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4a5b2d850,5,round,1,1,1.9007495442045026,1.9007495442045026,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4a5b2d850,6,baton,1,1,3.529387391249688,3.529387391249688,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4a5b2d850,7,round,1,1,1.4809003469239128,1.4809003469239128,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4a5b2d850,8,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_b4a5b2d850,9,baton,1,1,4.01872170568278,4.01872170568278,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c4adad3dc7,1,round,1,0,,,hand/occluder crosses outline (clean 0.54),recorded_listing_or_lot_group
-gmt_126710,hv_page_c4adad3dc7,10,round,1,1,2.170436227834628,2.170436227834628,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c4adad3dc7,11,round,1,1,1.8556609506808304,1.8556609506808304,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c4adad3dc7,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_c4adad3dc7,2,round,1,0,,,hand/occluder crosses outline (clean 0.62),recorded_listing_or_lot_group
-gmt_126710,hv_page_c4adad3dc7,4,round,1,1,2.1284131915627142,2.1284131915627142,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c4adad3dc7,5,round,1,1,1.6494143699500403,1.6494143699500403,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c4adad3dc7,6,baton,1,1,3.16133240698424,3.16133240698424,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c4adad3dc7,7,round,1,1,1.5922913747730723,1.5922913747730723,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c4adad3dc7,8,round,1,1,1.4219752726766965,1.4219752726766965,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c4adad3dc7,9,baton,1,1,2.5178976938601494,2.5178976938601494,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c80c027742,1,round,1,1,1.4879305439982877,1.4879305439982877,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c80c027742,10,round,1,1,1.9367033772812463,1.9367033772812463,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c80c027742,11,round,1,0,,,hand/occluder crosses outline (clean 0.61),recorded_listing_or_lot_group
-gmt_126710,hv_page_c80c027742,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_c80c027742,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_c80c027742,4,round,1,1,1.4104889803382783,1.4104889803382783,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c80c027742,5,round,1,1,2.72412176081584,2.72412176081584,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c80c027742,6,baton,1,1,4.145688501337865,4.145688501337865,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c80c027742,7,round,1,1,2.125061401095275,2.125061401095275,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c80c027742,8,round,1,1,1.0918771293784963,1.0918771293784963,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_c80c027742,9,baton,1,1,2.215428854634623,2.215428854634623,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_d197aa1d9b,1,round,1,1,1.939104021533867,1.939104021533867,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_d197aa1d9b,10,round,1,1,2.5911003149772847,2.5911003149772847,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_d197aa1d9b,11,round,1,1,1.9389207584364612,1.9389207584364612,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_d197aa1d9b,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_d197aa1d9b,2,round,1,0,,,"outline coverage 0.69, 6/8 octants",recorded_listing_or_lot_group
-gmt_126710,hv_page_d197aa1d9b,4,round,1,1,2.5046280859457757,2.5046280859457757,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_d197aa1d9b,5,round,1,1,2.8445037438653764,2.8445037438653764,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_d197aa1d9b,6,baton,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_d197aa1d9b,7,round,1,1,2.39877562861831,2.39877562861831,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_d197aa1d9b,8,round,1,1,2.0798102401649903,2.0798102401649903,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_d197aa1d9b,9,baton,1,1,3.0599668884638778,3.0599668884638778,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_e7c7828487,1,round,1,1,2.0628261646178108,2.0628261646178108,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_e7c7828487,10,round,1,0,,,hand/occluder crosses outline (clean 0.60),recorded_listing_or_lot_group
-gmt_126710,hv_page_e7c7828487,11,round,1,1,2.7745113535611328,2.7745113535611328,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_e7c7828487,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",recorded_listing_or_lot_group
-gmt_126710,hv_page_e7c7828487,2,round,1,0,,,hand/glare or interference not cleared,recorded_listing_or_lot_group
-gmt_126710,hv_page_e7c7828487,4,round,1,1,2.3153762653140317,2.3153762653140317,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_e7c7828487,5,round,1,1,2.2626926368130356,2.2626926368130356,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_e7c7828487,6,baton,1,1,3.795051014224408,3.795051014224408,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_e7c7828487,7,round,1,1,1.9803921898678989,1.9803921898678989,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_e7c7828487,8,round,1,1,2.3271259828724857,2.3271259828724857,measured,recorded_listing_or_lot_group
-gmt_126710,hv_page_e7c7828487,9,baton,1,1,4.015634037679894,4.015634037679894,measured,recorded_listing_or_lot_group
+gmt_126710,hv_page_1696f9915b,1,round,1,1,2.064208494162219,2.064208494162219,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1696f9915b,10,round,1,1,2.486604259041098,2.486604259041098,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1696f9915b,11,round,1,1,3.0104962434437645,3.0104962434437645,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1696f9915b,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_1696f9915b,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_1696f9915b,4,round,1,1,1.8711495564328842,1.8711495564328842,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1696f9915b,5,round,1,0,,,hand/occluder crosses outline (clean 0.71),provisional_inferred_listing_group
+gmt_126710,hv_page_1696f9915b,6,baton,1,1,1.9369454528520034,1.9369454528520034,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1696f9915b,7,round,1,1,1.959862813970775,1.959862813970775,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1696f9915b,8,round,1,1,2.1330299567689592,2.1330299567689592,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1696f9915b,9,baton,1,1,3.45697768923628,3.45697768923628,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1771d3c66d,1,round,1,1,2.623307169968877,2.623307169968877,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1771d3c66d,10,round,1,1,2.134221891907145,2.134221891907145,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1771d3c66d,11,round,1,1,2.300657904283236,2.300657904283236,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1771d3c66d,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_1771d3c66d,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_1771d3c66d,4,round,1,1,2.334188773224966,2.334188773224966,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1771d3c66d,5,round,1,1,2.1243060430750353,2.1243060430750353,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1771d3c66d,6,baton,1,1,2.4321554717123925,2.4321554717123925,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1771d3c66d,7,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_1771d3c66d,8,round,1,1,2.0511697202736214,2.0511697202736214,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1771d3c66d,9,baton,1,1,2.170053586139445,2.170053586139445,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1ad4986148,1,round,1,1,1.4445139457440817,1.4445139457440817,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1ad4986148,10,round,1,1,2.1996599713927427,2.1996599713927427,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1ad4986148,11,round,1,1,2.588303429536662,2.588303429536662,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1ad4986148,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_1ad4986148,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_1ad4986148,4,round,1,1,2.0809696587168385,2.0809696587168385,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1ad4986148,5,round,1,0,,,hand/occluder crosses outline (clean 0.72),provisional_inferred_listing_group
+gmt_126710,hv_page_1ad4986148,6,baton,1,1,3.98298273658697,3.98298273658697,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1ad4986148,7,round,1,1,2.2911388665533403,2.2911388665533403,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1ad4986148,8,round,1,1,2.254852205688294,2.254852205688294,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_1ad4986148,9,baton,1,1,4.3510631676491345,4.3510631676491345,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_284b4c6ca7,1,round,1,1,1.5952258593336717,1.5952258593336717,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_284b4c6ca7,10,round,1,1,2.6882981198932265,2.6882981198932265,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_284b4c6ca7,11,round,1,0,,,hand/occluder crosses outline (clean 0.61),provisional_inferred_listing_group
+gmt_126710,hv_page_284b4c6ca7,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_284b4c6ca7,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_284b4c6ca7,4,round,1,1,2.160597276173408,2.160597276173408,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_284b4c6ca7,5,round,1,1,2.420982433678002,2.420982433678002,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_284b4c6ca7,6,baton,1,1,3.4532685650658177,3.4532685650658177,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_284b4c6ca7,7,round,1,1,2.7741436649975446,2.7741436649975446,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_284b4c6ca7,8,round,1,1,2.5409922176124344,2.5409922176124344,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_284b4c6ca7,9,baton,1,1,4.379935248772356,4.379935248772356,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_353f1de4ef,1,round,1,1,2.1494904142377673,2.1494904142377673,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_353f1de4ef,10,round,1,1,3.22207705067337,3.22207705067337,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_353f1de4ef,11,round,1,0,,,hand/occluder crosses outline (clean 0.59),provisional_inferred_listing_group
+gmt_126710,hv_page_353f1de4ef,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_353f1de4ef,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_353f1de4ef,4,round,1,1,2.702264880724705,2.702264880724705,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_353f1de4ef,5,round,1,1,2.742059111422089,2.742059111422089,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_353f1de4ef,6,baton,1,1,3.3045348008224162,3.3045348008224162,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_353f1de4ef,7,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_353f1de4ef,8,round,1,1,2.444395883225651,2.444395883225651,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_353f1de4ef,9,baton,1,1,4.6333206131187215,4.6333206131187215,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_3d5c6dde16,1,round,1,1,2.3984121652927604,2.3984121652927604,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_3d5c6dde16,10,round,1,1,2.100976880072089,2.100976880072089,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_3d5c6dde16,11,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_3d5c6dde16,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_3d5c6dde16,2,round,1,1,2.530912695919153,2.530912695919153,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_3d5c6dde16,4,round,1,1,2.013530433521187,2.013530433521187,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_3d5c6dde16,5,round,1,1,2.2727481253507733,2.2727481253507733,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_3d5c6dde16,6,baton,1,1,2.2470132803722898,2.2470132803722898,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_3d5c6dde16,7,round,1,1,1.7573496062563958,1.7573496062563958,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_3d5c6dde16,8,round,1,1,1.7248676407998123,1.7248676407998123,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_3d5c6dde16,9,baton,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_48ba112426,1,round,1,1,2.0152404558363917,2.0152404558363917,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_48ba112426,10,round,1,1,1.7638981847907538,1.7638981847907538,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_48ba112426,11,round,1,1,1.7640777231131142,1.7640777231131142,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_48ba112426,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_48ba112426,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_48ba112426,4,round,1,1,2.169536963250053,2.169536963250053,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_48ba112426,5,round,1,1,1.7139837120155488,1.7139837120155488,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_48ba112426,6,baton,1,1,2.923283144214723,2.923283144214723,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_48ba112426,7,round,1,1,2.1078790934361438,2.1078790934361438,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_48ba112426,8,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_48ba112426,9,baton,1,1,3.3580059027651177,3.3580059027651177,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_4cffae5ac4,1,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_4cffae5ac4,10,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_4cffae5ac4,11,round,1,0,,,hand/occluder crosses outline (clean 0.48),provisional_inferred_listing_group
+gmt_126710,hv_page_4cffae5ac4,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_4cffae5ac4,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_4cffae5ac4,4,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_4cffae5ac4,5,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_4cffae5ac4,6,baton,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_4cffae5ac4,7,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_4cffae5ac4,8,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_4cffae5ac4,9,baton,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_5459c91797,1,round,1,1,1.9547014948462125,1.9547014948462125,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_5459c91797,10,round,1,1,1.288759677784341,1.288759677784341,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_5459c91797,11,round,1,0,,,hand/occluder crosses outline (clean 0.62),provisional_inferred_listing_group
+gmt_126710,hv_page_5459c91797,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_5459c91797,2,round,1,0,,,"outline coverage 0.64, 6/8 octants",provisional_inferred_listing_group
+gmt_126710,hv_page_5459c91797,4,round,1,1,1.3961497626619122,1.3961497626619122,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_5459c91797,5,round,1,1,1.9192383726577962,1.9192383726577962,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_5459c91797,6,baton,1,1,1.4312763048552068,1.4312763048552068,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_5459c91797,7,round,1,1,1.6903633146924673,1.6903633146924673,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_5459c91797,8,round,1,1,1.7898526174795157,1.7898526174795157,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_5459c91797,9,baton,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_57d486cff3,1,round,1,1,2.173007087798043,2.173007087798043,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_57d486cff3,10,round,1,1,2.390142335245308,2.390142335245308,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_57d486cff3,11,round,1,1,1.9490661069613813,1.9490661069613813,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_57d486cff3,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_57d486cff3,2,round,1,0,,,hand/occluder crosses outline (clean 0.56),provisional_inferred_listing_group
+gmt_126710,hv_page_57d486cff3,4,round,1,1,2.153991933452708,2.153991933452708,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_57d486cff3,5,round,1,1,1.9681850816708228,1.9681850816708228,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_57d486cff3,6,baton,1,1,2.539869094231718,2.539869094231718,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_57d486cff3,7,round,1,1,2.582153971102698,2.582153971102698,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_57d486cff3,8,round,1,1,1.904137903625398,1.904137903625398,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_57d486cff3,9,baton,1,1,2.676709756953573,2.676709756953573,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_58aba667cf,1,round,1,0,,,hand/occluder crosses outline (clean 0.61),provisional_inferred_listing_group
+gmt_126710,hv_page_58aba667cf,10,round,1,1,2.6039037754808683,2.6039037754808683,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_58aba667cf,11,round,1,1,2.497825627785843,2.497825627785843,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_58aba667cf,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_58aba667cf,2,round,1,1,1.9229100899378673,1.9229100899378673,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_58aba667cf,4,round,1,1,2.512821987057807,2.512821987057807,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_58aba667cf,5,round,1,1,2.815441411755893,2.815441411755893,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_58aba667cf,6,baton,1,1,2.7387297325067195,2.7387297325067195,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_58aba667cf,7,round,1,1,2.5404248584310607,2.5404248584310607,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_58aba667cf,8,round,1,1,2.795324952305394,2.795324952305394,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_58aba667cf,9,baton,1,1,4.711613977712448,4.711613977712448,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_7a187edba5,1,round,1,1,1.2724072741012928,1.2724072741012928,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_7a187edba5,10,round,1,1,1.7311536028251933,1.7311536028251933,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_7a187edba5,11,round,1,0,,,hand/occluder crosses outline (clean 0.57),provisional_inferred_listing_group
+gmt_126710,hv_page_7a187edba5,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_7a187edba5,2,round,1,1,1.6321704822412761,1.6321704822412761,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_7a187edba5,4,round,1,1,2.286645579034456,2.286645579034456,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_7a187edba5,5,round,1,1,2.2944345257268695,2.2944345257268695,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_7a187edba5,6,baton,1,1,2.2009739340649994,2.2009739340649994,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_7a187edba5,7,round,1,1,1.285980929740565,1.285980929740565,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_7a187edba5,8,round,1,1,1.7435933245882738,1.7435933245882738,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_7a187edba5,9,baton,1,1,2.7895579538349775,2.7895579538349775,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_814c8db017,1,round,1,1,2.767055053201832,2.767055053201832,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_814c8db017,10,round,1,1,2.6942122870373457,2.6942122870373457,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_814c8db017,11,round,1,1,1.814307755183496,1.814307755183496,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_814c8db017,12,triangle,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_814c8db017,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_814c8db017,4,round,1,1,2.3258430896757845,2.3258430896757845,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_814c8db017,5,round,1,1,1.752272487280936,1.752272487280936,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_814c8db017,6,baton,1,0,,,side edge coverage 0.48,provisional_inferred_listing_group
+gmt_126710,hv_page_814c8db017,7,round,1,1,2.0899455940018403,2.0899455940018403,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_814c8db017,8,round,1,1,1.9308863637955216,1.9308863637955216,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_814c8db017,9,baton,1,1,3.605109860931476,3.605109860931476,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_942a7f5f12,1,round,1,1,2.239804140486965,2.239804140486965,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_942a7f5f12,10,round,1,1,2.4986185200255147,2.4986185200255147,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_942a7f5f12,11,round,1,1,2.031055755480874,2.031055755480874,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_942a7f5f12,12,triangle,1,0,,,hand/occluder crosses outline (clean 0.77),provisional_inferred_listing_group
+gmt_126710,hv_page_942a7f5f12,2,round,1,1,1.8147240522417878,1.8147240522417878,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_942a7f5f12,4,round,1,1,2.034904686926021,2.034904686926021,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_942a7f5f12,5,round,1,1,1.6004357317684217,1.6004357317684217,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_942a7f5f12,6,baton,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_942a7f5f12,7,round,1,1,2.582765491653674,2.582765491653674,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_942a7f5f12,8,round,1,1,2.0055824072383697,2.0055824072383697,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_942a7f5f12,9,baton,1,1,3.1546318202933734,3.1546318202933734,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a13e399a8f,1,round,1,1,2.8314169085831273,2.8314169085831273,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a13e399a8f,10,round,1,1,2.7930887144652723,2.7930887144652723,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a13e399a8f,11,round,1,1,2.6412110171504524,2.6412110171504524,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a13e399a8f,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_a13e399a8f,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_a13e399a8f,4,round,1,1,2.698268229443963,2.698268229443963,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a13e399a8f,5,round,1,1,2.403441565492203,2.403441565492203,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a13e399a8f,6,baton,1,1,3.2360286856862364,3.2360286856862364,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a13e399a8f,7,round,1,1,2.539852979018846,2.539852979018846,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a13e399a8f,8,round,1,1,2.6579923925478366,2.6579923925478366,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a13e399a8f,9,baton,1,0,,,hand/occluder crosses outline (clean 0.27),provisional_inferred_listing_group
+gmt_126710,hv_page_a94c777d6c,1,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a94c777d6c,10,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a94c777d6c,11,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a94c777d6c,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_a94c777d6c,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_a94c777d6c,4,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a94c777d6c,5,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a94c777d6c,6,baton,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a94c777d6c,7,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a94c777d6c,8,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_a94c777d6c,9,baton,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b0bc85b625,1,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_b0bc85b625,10,round,1,1,2.852710932019325,2.852710932019325,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b0bc85b625,11,round,1,1,2.2258458616167074,2.2258458616167074,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b0bc85b625,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_b0bc85b625,2,round,1,1,2.2561913635162294,2.2561913635162294,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b0bc85b625,4,round,1,1,2.2070433297881573,2.2070433297881573,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b0bc85b625,5,round,1,1,2.3018054988368446,2.3018054988368446,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b0bc85b625,6,baton,1,1,2.2825376904230743,2.2825376904230743,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b0bc85b625,7,round,1,1,2.3415413832854313,2.3415413832854313,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b0bc85b625,8,round,1,1,2.1753528810856686,2.1753528810856686,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b0bc85b625,9,baton,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_b25aaeffa2,1,round,1,1,1.8198934351502403,1.8198934351502403,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b25aaeffa2,10,round,1,1,2.4364704322777295,2.4364704322777295,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b25aaeffa2,11,round,1,1,2.757465733921342,2.757465733921342,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b25aaeffa2,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_b25aaeffa2,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_b25aaeffa2,4,round,1,1,1.7723144887810438,1.7723144887810438,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b25aaeffa2,5,round,1,0,,,hand/occluder crosses outline (clean 0.63),provisional_inferred_listing_group
+gmt_126710,hv_page_b25aaeffa2,6,baton,1,1,3.4188332077543118,3.4188332077543118,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b25aaeffa2,7,round,1,1,2.4753897899732316,2.4753897899732316,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b25aaeffa2,8,round,1,1,1.8900947954499567,1.8900947954499567,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b25aaeffa2,9,baton,1,1,3.505943743653707,3.505943743653707,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4498e472c,1,round,1,0,,,hand/occluder crosses outline (clean 0.51),provisional_inferred_listing_group
+gmt_126710,hv_page_b4498e472c,10,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_b4498e472c,11,round,1,1,2.232045533804962,2.232045533804962,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4498e472c,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_b4498e472c,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_b4498e472c,4,round,1,1,2.0851659105269076,2.0851659105269076,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4498e472c,5,round,1,1,1.89119681697212,1.89119681697212,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4498e472c,6,baton,1,1,2.2140631959684494,2.2140631959684494,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4498e472c,7,round,1,1,2.485866917798143,2.485866917798143,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4498e472c,8,round,1,1,1.6200141051381873,1.6200141051381873,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4498e472c,9,baton,1,1,3.317644731026107,3.317644731026107,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4a5b2d850,1,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4a5b2d850,10,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4a5b2d850,11,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_b4a5b2d850,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_b4a5b2d850,2,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4a5b2d850,4,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4a5b2d850,5,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4a5b2d850,6,baton,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4a5b2d850,7,round,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_b4a5b2d850,8,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_b4a5b2d850,9,baton,1,0,,,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c4adad3dc7,1,round,1,0,,,hand/occluder crosses outline (clean 0.54),provisional_inferred_listing_group
+gmt_126710,hv_page_c4adad3dc7,10,round,1,1,2.170436227834628,2.170436227834628,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c4adad3dc7,11,round,1,1,1.8556609506808304,1.8556609506808304,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c4adad3dc7,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_c4adad3dc7,2,round,1,0,,,hand/occluder crosses outline (clean 0.62),provisional_inferred_listing_group
+gmt_126710,hv_page_c4adad3dc7,4,round,1,1,2.1284131915627142,2.1284131915627142,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c4adad3dc7,5,round,1,1,1.6494143699500403,1.6494143699500403,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c4adad3dc7,6,baton,1,1,3.16133240698424,3.16133240698424,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c4adad3dc7,7,round,1,1,1.5922913747730723,1.5922913747730723,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c4adad3dc7,8,round,1,1,1.4219752726766965,1.4219752726766965,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c4adad3dc7,9,baton,1,1,2.5178976938601494,2.5178976938601494,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c80c027742,1,round,1,1,1.4879305439982877,1.4879305439982877,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c80c027742,10,round,1,1,1.9367033772812463,1.9367033772812463,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c80c027742,11,round,1,0,,,hand/occluder crosses outline (clean 0.61),provisional_inferred_listing_group
+gmt_126710,hv_page_c80c027742,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_c80c027742,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_c80c027742,4,round,1,1,1.4104889803382783,1.4104889803382783,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c80c027742,5,round,1,1,2.72412176081584,2.72412176081584,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c80c027742,6,baton,1,1,4.145688501337865,4.145688501337865,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c80c027742,7,round,1,1,2.125061401095275,2.125061401095275,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c80c027742,8,round,1,1,1.0918771293784963,1.0918771293784963,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_c80c027742,9,baton,1,1,2.215428854634623,2.215428854634623,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_d197aa1d9b,1,round,1,1,1.939104021533867,1.939104021533867,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_d197aa1d9b,10,round,1,1,2.5911003149772847,2.5911003149772847,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_d197aa1d9b,11,round,1,1,1.9389207584364612,1.9389207584364612,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_d197aa1d9b,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_d197aa1d9b,2,round,1,0,,,"outline coverage 0.69, 6/8 octants",provisional_inferred_listing_group
+gmt_126710,hv_page_d197aa1d9b,4,round,1,1,2.5046280859457757,2.5046280859457757,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_d197aa1d9b,5,round,1,1,2.8445037438653764,2.8445037438653764,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_d197aa1d9b,6,baton,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_d197aa1d9b,7,round,1,1,2.39877562861831,2.39877562861831,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_d197aa1d9b,8,round,1,1,2.0798102401649903,2.0798102401649903,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_d197aa1d9b,9,baton,1,1,3.0599668884638778,3.0599668884638778,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_e7c7828487,1,round,1,1,2.0628261646178108,2.0628261646178108,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_e7c7828487,10,round,1,0,,,hand/occluder crosses outline (clean 0.60),provisional_inferred_listing_group
+gmt_126710,hv_page_e7c7828487,11,round,1,1,2.7745113535611328,2.7745113535611328,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_e7c7828487,12,triangle,1,0,,,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",provisional_inferred_listing_group
+gmt_126710,hv_page_e7c7828487,2,round,1,0,,,hand/glare or interference not cleared,provisional_inferred_listing_group
+gmt_126710,hv_page_e7c7828487,4,round,1,1,2.3153762653140317,2.3153762653140317,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_e7c7828487,5,round,1,1,2.2626926368130356,2.2626926368130356,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_e7c7828487,6,baton,1,1,3.795051014224408,3.795051014224408,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_e7c7828487,7,round,1,1,1.9803921898678989,1.9803921898678989,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_e7c7828487,8,round,1,1,2.3271259828724857,2.3271259828724857,measured,provisional_inferred_listing_group
+gmt_126710,hv_page_e7c7828487,9,baton,1,1,4.015634037679894,4.015634037679894,measured,provisional_inferred_listing_group
 gmt_126710,swe_42335,1,round,1,0,,,marker ring unavailable,recorded_listing_or_lot_group
 gmt_126710,swe_42335,10,round,1,0,,,marker ring unavailable,recorded_listing_or_lot_group
 gmt_126710,swe_42335,11,round,1,0,,,marker ring unavailable,recorded_listing_or_lot_group
