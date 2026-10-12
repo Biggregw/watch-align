@@ -69,13 +69,28 @@ final class LuminousMarkerDetector {
     static double[][] component(byte[] p,int n,int seed,double threshold){
         int start=seed*n+seed;if((p[start]&255)<threshold)return null;
         boolean[] seen=new boolean[p.length];int[] queue=new int[p.length];int head=0,tail=0;queue[tail++]=start;seen[start]=true;List<double[]> edge=new ArrayList<>();
-        while(head<tail){int i=queue[head++],x=i%n,y=i/n;if(x==0||y==0||x==n-1||y==n-1)return null;boolean boundary=false;
-            for(int j:new int[]{i-1,i+1,i-n,i+n}){if((p[j]&255)<threshold){boundary=true;double f=(threshold-(p[i]&255))/((p[j]&255)-(p[i]&255));edge.add(new double[]{x+f*(j%n-x),y+f*(j/n-y)});continue;}if(!seen[j]){seen[j]=true;queue[tail++]=j;}}
+        while(head<tail){int i=queue[head++],x=i%n,y=i/n;if(x==0||y==0||x==n-1||y==n-1)return null;
+            for(int j:new int[]{i-1,i+1,i-n,i+n}){if((p[j]&255)<threshold){double f=(threshold-(p[i]&255))/((p[j]&255)-(p[i]&255));edge.add(new double[]{x+f*(j%n-x),y+f*(j/n-y)});continue;}if(!seen[j]){seen[j]=true;queue[tail++]=j;}}
             
         }
         double[][] hull=LuminousGeometry.hull(edge.toArray(new double[0][]));
-        // Concavities/holes are withheld, not repaired into a fabricated precise convex outline.
+        // A separate background flood detects even small enclosed holes. Never fill them into an area score.
+        boolean[] outside=new boolean[p.length];int[] background=new int[p.length];int bh=0,bt=0;
+        background[bt++]=0;outside[0]=true;
+        while(bh<bt){int i=background[bh++],x=i%n,y=i/n;
+            for(int j:new int[]{x>0?i-1:-1,x<n-1?i+1:-1,y>0?i-n:-1,y<n-1?i+n:-1})
+                if(j>=0&&!seen[j]&&!outside[j]){outside[j]=true;background[bt++]=j;}
+        }
+        for(int i=0;i<p.length;i++)if(!seen[i]&&!outside[i])return null;
+        // A convex footprint is supported only when observed contour points lie within local pixel uncertainty.
+        // Deep notches/hand cuts are withheld, never silently replaced by a filled convex hull.
         if(hull==null||tail<20||MarkerPolygonMismatch.area(hull)/tail>1.06)return null;
+        for(double[] point:edge){double nearest=Double.POSITIVE_INFINITY;
+            for(int k=0;k<hull.length;k++){double[] a=hull[k],b=hull[(k+1)%hull.length];double vx=b[0]-a[0],vy=b[1]-a[1];
+                double t=Math.max(0,Math.min(1,((point[0]-a[0])*vx+(point[1]-a[1])*vy)/(vx*vx+vy*vy)));
+                nearest=Math.min(nearest,Math.hypot(point[0]-a[0]-t*vx,point[1]-a[1]-t*vy));}
+            if(nearest>1.25)return null;
+        }
         return hull;
     }
     static double sample(byte[] p,int n,double x,double y){int ix=(int)Math.round(x),iy=(int)Math.round(y);return ix<0||iy<0||ix>=n||iy>=n?0:p[iy*n+ix]&255;}
