@@ -1,0 +1,15 @@
+# Frozen partial-edge reference calibration
+
+Research only, based on Android commit 8a53c1e5. No Android source/assets, APK or production QC changes.
+
+`protocol.json` declares the split, estimator, statistical sample-size reporting and temporary processing tests before measurement. Download only the curated artifact (run 38222239457) inside Actions. Existing `prepare_curated.py` verifies 132 hashes and model counts; `prepare.py` conservatively links recorded groups/SKUs/image URLs/shared-image pairs, quarantines the two 116710 conflicts and pre-existing shared-image suspects, chooses one resolution-ranked original per cluster, and assigns a dealer-stratified 70/30 split before any marker extraction. All 132 originals still receive audit measurements; repeat and identity-quarantined photos never contribute as extra independent watches.
+
+`LuminousCalibrationStudy` is a desktop-only adapter calling the frozen detector, fitter, perspective and comparison code. Raw observed edges/partial geometry/withholding remain independent of references. `calibrate.py` takes only eligible development groups and estimates each model/hour independently. Triangle/quad corresponding vertices use watch-level coordinate medians; circles use median free centre/radius. Full physical boundaries use independent median radial-profile references; ideal intersections never supply physical footprint. No sample is excluded by mismatch. At least three development clusters permit only a provisional shape. There are no QC bands.
+
+A/B compare with the genuine fitted shape, with B rigidly translating/rotating without resizing. C compares a reliable actual full physical boundary with its independently estimated physical footprint reference. All use the frozen filled expected area denominator, with matching polygons/regions. No percentages are combined. New reference shapes are JSON under docs/research, never Android assets.
+
+Five development-grouped folds, 250 watch bootstraps, dealer leave-out, repeated originals and three preselected held-out processing controls expose different uncertainty sources. Held-out groups never select settings or parameters. Temporary JPEG/resolution/brightness variants do not alter originals or become independent watches. Native resolution associations remain source/watch confounded. Percentile minimum sample sizes concern statistical reporting, not product thresholds.
+
+Run `.github/workflows/luminous-partial-calibration.yml` on the separate research branch. Reproducibility requires the preserved curated artifact, catalogue/provenance CSVs and frozen commit. Local scalar tests: `python tools/research/luminous_partial_calibration/test_calibration.py`. Images are native crops and frozen rectified display comparisons, not new measurement thumbnails.
+
+Source/identity independence is provisional. Held-out means held out of this reference estimator; the collection previously informed detector development. The 126610 source is entirely Bob's Watches. Frozen gate clearance does not prove physical luminous edge correctness. Review worst genuine examples before integration; do not describe sample maxima as Rolex tolerances.
