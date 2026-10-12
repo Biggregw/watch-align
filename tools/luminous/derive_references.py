@@ -44,5 +44,5 @@ for family in ('gmt_126710','submariner_124060','submariner_126610'):
         shapes[key]=dict(polygon=polygon,recorded_groups=len(watches),photo_ids=photos,provenance=[{k:metadata[id][k] for k in ('photo_id','physical_watch_id','sha256','model','source_url','image_url','identity_status')} for id in photos])
     expected={'rounds','twelve','six','nine'}|({'three'} if family=='submariner_124060' else set())
     # Unsupported reference keys stay absent; do not silently infer a metal inset.
-    report=dict(experimental=True,model=family,method='Median 64-ray inner contour profiles; one equal contribution per recorded group; minimum 3 groups; ring removed; no metal inset; no manufacturing tolerances',development_groups=8,heldout_groups=4,unsupported_keys=sorted(expected-shapes.keys()),shapes=shapes)
+    report=dict(experimental=True,model=family,method='Median 64-ray inner contour profiles; one equal contribution per recorded group; minimum 3 groups; ring removed; no metal inset; no manufacturing tolerances',development_groups=sum(r["family"]==family and r["split"]=="development" for r in subset),heldout_groups=4,unsupported_keys=sorted(expected-shapes.keys()),shapes=shapes)
     (dest/(family+'.json')).write_text(json.dumps(report,indent=2)+'\n');print(family,{k:v['recorded_groups'] for k,v in shapes.items()},'unsupported',report['unsupported_keys'])

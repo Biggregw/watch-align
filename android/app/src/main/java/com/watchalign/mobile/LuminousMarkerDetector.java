@@ -39,16 +39,21 @@ final class LuminousMarkerDetector {
             for(int y=seed-2;y<=seed+2;y++)for(int x=seed-2;x<=seed+2;x++)central.add((double)(pixels[y*n+x]&255));Collections.sort(central);double face=central.get(central.size()/2);
             int[] sorted=new int[pixels.length];for(int i=0;i<sorted.length;i++)sorted[i]=pixels[i]&255;Arrays.sort(sorted);double background=sorted[sorted.length/5];d.contrast=face-background;
             if(d.contrast<35){d.reason="inner material has insufficient local contrast";return d;}
-            List<double[][]> candidates=new ArrayList<>();double mid=background+.57*d.contrast;
+            // A polished bevel can bridge the seed island at one cut. Search a bounded local
+            // contrast ladder; accept only a complete stable triplet with the same separator checks.
+            // Neither a reference score nor expected inner size selects the cut.
+            for(double cut:new double[]{.57,.67,.77,.47,.37}){
+            List<double[][]> candidates=new ArrayList<>();double mid=background+cut*d.contrast;boolean isolated=true;
             for(double fraction:new double[]{-.08,0,.08}){
                 double[][] p=component(pixels,n,seed,mid+fraction*d.contrast);
-                if(p==null){d.reason="no isolated, closed luminous component at all local contrast levels";return d;}
+                if(p==null){d.reason="no isolated, closed luminous component at all local contrast levels";isolated=false;break;}
                 candidates.add(p);
             }
+            if(!isolated)continue;
             double[][] selected=candidates.get(1);double area=MarkerPolygonMismatch.area(selected),outerArea=MarkerPolygonMismatch.area(m.shape==ModelSpec.Shape.ROUND?MarkerPolygonMismatch.circle(0,0,m.outerR,64):m.shape==ModelSpec.Shape.BATON?m.batonPolygon():m.trianglePolygon());
             double ratio=area*step*step/outerArea;
-            if(ratio<.12||ratio>.88){d.reason="component cannot be separated confidently from metal or printing";return d;}
-            double[] c=LuminousGeometry.centroid(selected),bounds=LuminousGeometry.extent(selected,0);if(Math.min(bounds[0],bounds[1])*step*R<8){d.reason="inner boundary is too small in the source photograph";return d;}
+            if(ratio<.12||ratio>.88){d.reason="component cannot be separated confidently from metal or printing";continue;}
+            double[] c=LuminousGeometry.centroid(selected),bounds=LuminousGeometry.extent(selected,0);if(Math.min(bounds[0],bounds[1])*step*R<8){d.reason="inner boundary is too small in the source photograph";continue;}
             double spread=0;int supported=0;
             for(int k=0;k<64;k++){
                 double a=k*2*Math.PI/64,r=LuminousGeometry.radius(selected,c,a);
@@ -60,9 +65,10 @@ final class LuminousMarkerDetector {
             }
             d.boundarySpreadPx=spread*step*R;d.edgeCoverage=supported/64.0;
             double minAngle=0,maxAngle=0;for(double[][] p:candidates){double diff=LuminousGeometry.angleDifference(LuminousGeometry.angle(p),LuminousGeometry.angle(selected));minAngle=Math.min(minAngle,diff);maxAngle=Math.max(maxAngle,diff);}d.rotationSpreadDeg=maxAngle-minAngle;
-            if(!Double.isFinite(spread)||d.boundarySpreadPx>1.25||d.edgeCoverage<.80){d.reason="inner edge is ambiguous across local contrast levels or has an incomplete dark separator";return d;}
+            if(!Double.isFinite(spread)||d.boundarySpreadPx>1.25||d.edgeCoverage<.80){d.reason="inner edge is ambiguous across local contrast levels or has an incomplete dark separator";continue;}
             double[][] canonical=new double[selected.length][];for(int i=0;i<selected.length;i++)canonical[i]=new double[]{center[0]-half+(selected[i][0]+.5)*step,center[1]-half+(selected[i][1]+.5)*step};
             d.polygon=canonical;d.reason="measured";return d;
+            }return d;
         }finally{T.release();hm.release();M.release();empty.release();crop.release();}
     }
     /** Seed-connected mask only: nearby print/metal islands never get combined with the luminous face. */
