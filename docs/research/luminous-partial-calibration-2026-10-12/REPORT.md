@@ -1,6 +1,6 @@
 # Frozen partial-edge genuine calibration
 
-Measurement: `8a53c1e5ccb71d927a654a265572d34d9a5c3397`. [Actions](https://github.com/Biggregw/watch-align/actions/runs/38292226101). Research only; Android, both existing reference collections, production QC and PR #52 unchanged.
+Measurement: `8a53c1e5ccb71d927a654a265572d34d9a5c3397`. [Actions](https://github.com/Biggregw/watch-align/actions/runs/38295283386). Research only; Android, both existing reference collections, production QC and PR #52 unchanged.
 
 ## Independent input and leakage audit
 
@@ -21,7 +21,7 @@ Observed physical luminous footprints have a separate development-only median ra
 ## Held-out per-position fitted results
 
 | Family | Hour / shape | Held-out measured / attempted | Old median fitted % | New median fitted % | New median alignment % | Largest new fitted % |
-|---|---|---:|---:|---:|---:|
+|---|---|---|---:|---:|---:|---:|
 | gmt_126710 | 1 / round | 6 / 10 | 4.438733 | 3.212252 | 2.034734 | 13.740871 |
 | gmt_126710 | 2 / round | 3 / 10 | 3.639217 | 3.250773 | 1.980988 | 3.690194 |
 | gmt_126710 | 4 / round | 8 / 10 | 6.323136 | 5.725451 | 2.595243 | 12.183562 |
@@ -75,6 +75,10 @@ The gallery preserves largest held-out mismatches by model/shape and comparison,
 [Original source](https://bobswatches.com/used-rolex-gmt-master-ii-pepsi-ref-126710blro.html) · Highest held-out score · new_fitted_total_pct
 ![Exact comparison](gallery/a71df6c06e554d7b_12.png)
 
+### gmt_126710 12 — 6da5df4eb2ac6ff5
+[Original source](https://swisswatchexpo.com/watches/rolex-gmt-master-ii-steel-black-blue-batgirl-bezel-mens-watch-126710-75910) · Largest across all eligible primary groups; training/held-out partition retained · new_fitted_total_pct
+![Exact comparison](gallery/6da5df4eb2ac6ff5_12.png)
+
 ### gmt_126710 12 — 709160117d0d8944
 [Original source](https://swisswatchexpo.com/watches/rolex-gmt-master-ii-black-blue-batman-bezel-steel-mens-watch-126710-68408) · Withheld evidence retained · withheld_example
 ![Exact comparison](gallery/709160117d0d8944_12.png)
@@ -90,6 +94,14 @@ The gallery preserves largest held-out mismatches by model/shape and comparison,
 ### gmt_126710 6 — a71df6c06e554d7b
 [Original source](https://bobswatches.com/used-rolex-gmt-master-ii-pepsi-ref-126710blro.html) · Highest held-out score · new_observed_total_pct
 ![Exact comparison](gallery/a71df6c06e554d7b_6.png)
+
+### gmt_126710 9 — 4f60c0e0ce1d3f49
+[Original source](https://bobswatches.com/mens-rolex-gmt-master-ii-ref-126710grnr-stainless-steel.html) · Largest across all eligible primary groups; training/held-out partition retained · new_fitted_total_pct
+![Exact comparison](gallery/4f60c0e0ce1d3f49_9.png)
+
+### gmt_126710 6 — b5a3712a20ede636
+[Original source](https://bobswatches.com/used-rolex-gmt-master-ii-batman-ref-126710blnr-oyster-bracelet.html) · Largest across all eligible primary groups; training/held-out partition retained · new_observed_total_pct
+![Exact comparison](gallery/b5a3712a20ede636_6.png)
 
 ### gmt_126710 6 — 972c2f9279ee489c
 [Original source](https://swisswatchexpo.com/watches/rolex-gmt-master-ii-batgirl-black-blue-bezel-steel-mens-watch-126710-unworn-59259) · Withheld evidence retained · withheld_example
@@ -111,6 +123,14 @@ The gallery preserves largest held-out mismatches by model/shape and comparison,
 [Original source](https://bobswatches.com/mens-rolex-gmt-master-ii-ref-126710-pepsi.html) · Highest held-out score · new_observed_total_pct
 ![Exact comparison](gallery/c68ad7934502cfb2_4.png)
 
+### gmt_126710 5 — 6da5df4eb2ac6ff5
+[Original source](https://swisswatchexpo.com/watches/rolex-gmt-master-ii-steel-black-blue-batgirl-bezel-mens-watch-126710-75910) · Largest across all eligible primary groups; training/held-out partition retained · new_fitted_total_pct
+![Exact comparison](gallery/6da5df4eb2ac6ff5_5.png)
+
+### gmt_126710 4 — 27e9b4708fcb9eaf
+[Original source](https://bobswatches.com/mens-rolex-gmt-master-ii-ref-126710blnr-batman.html) · Largest across all eligible primary groups; training/held-out partition retained · new_observed_total_pct
+![Exact comparison](gallery/27e9b4708fcb9eaf_4.png)
+
 ### gmt_126710 2 — 212c6d510bdfa0c6
 [Original source](https://swisswatchexpo.com/watches/rolex-gmt-master-ii-batgirl-black-blue-bezel-steel-mens-watch-126710-unworn-68784) · Withheld evidence retained · withheld_example
 ![Exact comparison](gallery/212c6d510bdfa0c6_2.png)
@@ -124,15 +144,19 @@ The gallery preserves largest held-out mismatches by model/shape and comparison,
 ![Exact comparison](gallery/f27a64f84579f41b_12.png)
 
 ### submariner_124060 12 — 57baf569cec2a1fa
-[Original source](European Watch Company) · Highest held-out score · new_alignment_total_pct
+[Original source](https://images.europeanwatch.com/images/48/48227-1.jpg) · Highest held-out score · new_alignment_total_pct
 ![Exact comparison](gallery/57baf569cec2a1fa_12.png)
 
 ### submariner_124060 12 — 3cce6d1b709364b0
 [Original source](https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-156) · Highest held-out score · new_observed_total_pct
 ![Exact comparison](gallery/3cce6d1b709364b0_12.png)
 
+### submariner_124060 12 — cb9df048dfd43767
+[Original source](https://www.bobswatches.com/used-rolex-submariner-ref-124060-black-cerachrom-bezel.html) · Largest across all eligible primary groups; training/held-out partition retained · new_observed_total_pct
+![Exact comparison](gallery/cb9df048dfd43767_12.png)
+
 ### submariner_124060 12 — 80d288dcc8689345
-[Original source](European Watch Company) · Withheld evidence retained · withheld_example
+[Original source](https://images.europeanwatch.com/images/42/42174-1.jpg) · Withheld evidence retained · withheld_example
 ![Exact comparison](gallery/80d288dcc8689345_12.png)
 
 ### submariner_124060 3 — d2d17532532ec40b
@@ -143,8 +167,16 @@ The gallery preserves largest held-out mismatches by model/shape and comparison,
 [Original source](https://www.bobswatches.com/used-stainless-steel-rolex-submariner-ref-124060-no-date-black-dial.html) · Highest held-out score · new_fitted_total_pct
 ![Exact comparison](gallery/e4ea736606798ecd_3.png)
 
+### submariner_124060 3 — 5986c5a3258ae9ec
+[Original source](https://www.swisswatchexpo.com/watches/rolex-submariner-no-date-steel-ceramic-bezel-mens-watch-124060-box-card-83537) · Largest across all eligible primary groups; training/held-out partition retained · new_fitted_total_pct
+![Exact comparison](gallery/5986c5a3258ae9ec_3.png)
+
+### submariner_124060 3 — 937808e420a1e00b
+[Original source](https://www.bobswatches.com/used-rolex-submariner-ref-124060-black-chromalight-dial.html) · Largest across all eligible primary groups; training/held-out partition retained · new_alignment_total_pct
+![Exact comparison](gallery/937808e420a1e00b_3.png)
+
 ### submariner_124060 2 — 80d288dcc8689345
-[Original source](European Watch Company) · Highest held-out score · new_fitted_total_pct
+[Original source](https://images.europeanwatch.com/images/42/42174-1.jpg) · Highest held-out score · new_fitted_total_pct
 ![Exact comparison](gallery/80d288dcc8689345_2.png)
 
 ### submariner_124060 5 — d2d17532532ec40b
@@ -167,6 +199,14 @@ The gallery preserves largest held-out mismatches by model/shape and comparison,
 [Original source](https://www.bobswatches.com/pre-owned-rolex-submariner-black-chromalight-dial-ref-126610ln.html) · Highest held-out score · new_observed_total_pct
 ![Exact comparison](gallery/fc58318fbc25608f_12.png)
 
+### submariner_126610 12 — 1ef3415e37d6fbf7
+[Original source](https://www.bobswatches.com/pre-owned-rolex-submariner-date-starbucks-ref-126610lv-stainless-steel.html) · Largest across all eligible primary groups; training/held-out partition retained · new_fitted_total_pct
+![Exact comparison](gallery/1ef3415e37d6fbf7_12.png)
+
+### submariner_126610 12 — 0e62df651a8d3087
+[Original source](https://www.bobswatches.com/pre-owned-oyster-rolex-submariner-black-chromalight-dial-ref-126610.html) · Largest across all eligible primary groups; training/held-out partition retained · new_alignment_total_pct
+![Exact comparison](gallery/0e62df651a8d3087_12.png)
+
 ### submariner_126610 12 — 581fb930196aa829
 [Original source](https://www.bobswatches.com/used-starbucks-rolex-submariner-ref-126610lv.html) · Withheld evidence retained · withheld_example
 ![Exact comparison](gallery/581fb930196aa829_12.png)
@@ -183,6 +223,10 @@ The gallery preserves largest held-out mismatches by model/shape and comparison,
 [Original source](https://www.bobswatches.com/used-rolex-submariner-ref-126610-black-dial.html) · Highest held-out score · new_observed_total_pct
 ![Exact comparison](gallery/5d345c84b7a33a84_9.png)
 
+### submariner_126610 9 — a4e2235125ec8276
+[Original source](https://www.bobswatches.com/mens-rolex-submariner-ref-126610-black-dial.html) · Largest across all eligible primary groups; training/held-out partition retained · new_observed_total_pct
+![Exact comparison](gallery/a4e2235125ec8276_9.png)
+
 ### submariner_126610 8 — 1b2741bc0119257c
 [Original source](https://www.bobswatches.com/pre-owned-rolex-submariner-chromalight-dial-ref-126610ln-stainless-steel.html) · Highest held-out score · new_fitted_total_pct
 ![Exact comparison](gallery/1b2741bc0119257c_8.png)
@@ -198,6 +242,18 @@ The gallery preserves largest held-out mismatches by model/shape and comparison,
 ### submariner_126610 8 — fc58318fbc25608f
 [Original source](https://www.bobswatches.com/pre-owned-rolex-submariner-black-chromalight-dial-ref-126610ln.html) · Highest held-out score · new_observed_total_pct
 ![Exact comparison](gallery/fc58318fbc25608f_8.png)
+
+### submariner_126610 8 — f83fbdbf9ae78eb5
+[Original source](https://www.bobswatches.com/used-rolex-submariner-ref-126610ln-black-dial.html) · Largest across all eligible primary groups; training/held-out partition retained · new_fitted_total_pct
+![Exact comparison](gallery/f83fbdbf9ae78eb5_8.png)
+
+### submariner_126610 8 — a79badff3a588871
+[Original source](https://www.bobswatches.com/rolex-submariner-starbucks-ref-126610lv-black-dial.html) · Largest across all eligible primary groups; training/held-out partition retained · new_alignment_total_pct
+![Exact comparison](gallery/a79badff3a588871_8.png)
+
+### submariner_126610 7 — 2affaf42fac18dc6
+[Original source](https://www.bobswatches.com/used-rolex-submariner-starbucks-green-bezel-ref-126610lv.html) · Largest across all eligible primary groups; training/held-out partition retained · new_observed_total_pct
+![Exact comparison](gallery/2affaf42fac18dc6_7.png)
 
 ### submariner_126610 2 — 1b2741bc0119257c
 [Original source](https://www.bobswatches.com/pre-owned-rolex-submariner-chromalight-dial-ref-126610ln-stainless-steel.html) · Withheld evidence retained · withheld_example

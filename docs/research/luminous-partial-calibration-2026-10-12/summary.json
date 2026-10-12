@@ -1,5 +1,5 @@
 {
-  "actions_run": "https://github.com/Biggregw/watch-align/actions/runs/38292226101",
+  "actions_run": "https://github.com/Biggregw/watch-align/actions/runs/38295283386",
   "frozen_measurement_commit": "8a53c1e5ccb71d927a654a265572d34d9a5c3397",
   "marker_rows_all_originals": 1498,
   "primary_marker_rows": 1450,
@@ -33,7 +33,7 @@
       "heldout_fitted_markers": 178
     }
   },
-  "outlier_images": 34,
+  "outlier_images": 48,
   "phone_input_identity": "unverified; attachment 37891.jpg vs user text 37991.jpg; do not infer identical-pixel failure",
   "limitations": [
     "Groups are provisional listing/identity clusters, not serial-authenticated independent watches.",
