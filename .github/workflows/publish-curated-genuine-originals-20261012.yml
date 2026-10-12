@@ -1,0 +1,46 @@
+name: Publish curated original genuine QC photos for Codex
+on:
+  push:
+    branches:
+      - tool/recover-existing-genuine-catalogue-20261012
+    paths:
+      - .github/workflows/publish-curated-genuine-originals-20261012.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  curate-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          repository: Biggregw/watch-align
+          run-id: '38220410538'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: genuine-originals-catalogue-recovery
+          path: curation_inputs/catalogued
+      - uses: actions/download-artifact@v4
+        with:
+          repository: Biggregw/watch-align
+          run-id: '37194686346'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: watch-calibrator-124060-37194686346
+          path: curation_inputs/old_calibrator
+      - uses: actions/download-artifact@v4
+        with:
+          repository: Biggregw/watch-align
+          run-id: '37831647255'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: Rolex-124060-extra-genuine-QC-images
+          path: curation_inputs/old_ewc
+      - name: Assemble only visually screened original bytes
+        run: python tools/research/package_verified_genuine_faceon_20261012.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WatchAlign-genuine-faceon-132-originals-Codex-ready
+          path: curated_genuine/
+          retention-days: 28
+          compression-level: 0
