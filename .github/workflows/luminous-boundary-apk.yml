@@ -1,5 +1,10 @@
 name: Build validated luminous boundary arm64 APK
 on:
+  push:
+    branches:
+      - fix/luminous-boundary-validation-20261012
+    paths:
+      - .github/workflows/luminous-boundary-apk.yml
   workflow_dispatch:
 permissions:
   contents: read
