@@ -1,0 +1,105 @@
+family,shape,reason,markers
+gmt_126710,baton,hand/glare or interference not cleared,9
+gmt_126710,baton,hand/occluder crosses outline (clean 0.27),1
+gmt_126710,baton,marker ring unavailable,4
+gmt_126710,baton,side edge coverage 0.48,1
+gmt_126710,round,hand/glare or interference not cleared,36
+gmt_126710,round,hand/occluder crosses outline (clean 0.48),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.50),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.51),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.52),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.54),3
+gmt_126710,round,hand/occluder crosses outline (clean 0.56),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.57),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.59),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.60),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.61),3
+gmt_126710,round,hand/occluder crosses outline (clean 0.62),4
+gmt_126710,round,hand/occluder crosses outline (clean 0.63),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.64),2
+gmt_126710,round,hand/occluder crosses outline (clean 0.65),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.71),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.72),1
+gmt_126710,round,hand/occluder crosses outline (clean 0.73),1
+gmt_126710,round,marker ring unavailable,16
+gmt_126710,round,measurement was not assessed,6
+gmt_126710,round,"outline coverage 0.46, 5/8 octants",1
+gmt_126710,round,"outline coverage 0.51, 6/8 octants",1
+gmt_126710,round,"outline coverage 0.53, 7/8 octants",1
+gmt_126710,round,"outline coverage 0.54, 6/8 octants",1
+gmt_126710,round,"outline coverage 0.56, 6/8 octants",1
+gmt_126710,round,"outline coverage 0.57, 6/8 octants",1
+gmt_126710,round,"outline coverage 0.57, 7/8 octants",1
+gmt_126710,round,"outline coverage 0.61, 6/8 octants",1
+gmt_126710,round,"outline coverage 0.64, 6/8 octants",2
+gmt_126710,round,"outline coverage 0.69, 6/8 octants",1
+gmt_126710,triangle,hand/glare or interference not cleared,1
+gmt_126710,triangle,hand/occluder crosses outline (clean 0.77),1
+gmt_126710,triangle,marker ring unavailable,2
+gmt_126710,triangle,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",27
+submariner_124060,baton,hand/glare or interference not cleared,10
+submariner_124060,baton,hand/occluder crosses outline (clean 0.50),1
+submariner_124060,baton,marker ring unavailable,3
+submariner_124060,round,hand/glare or interference not cleared,46
+submariner_124060,round,hand/occluder crosses outline (clean 0.51),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.52),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.56),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.58),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.59),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.60),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.61),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.64),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.65),2
+submariner_124060,round,hand/occluder crosses outline (clean 0.66),2
+submariner_124060,round,hand/occluder crosses outline (clean 0.68),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.69),2
+submariner_124060,round,hand/occluder crosses outline (clean 0.71),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.72),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.74),1
+submariner_124060,round,hand/occluder crosses outline (clean 0.75),1
+submariner_124060,round,marker ring unavailable,8
+submariner_124060,round,measurement was not assessed,3
+submariner_124060,round,"outline coverage 0.46, 5/8 octants",1
+submariner_124060,round,"outline coverage 0.50, 7/8 octants",2
+submariner_124060,round,"outline coverage 0.53, 6/8 octants",1
+submariner_124060,round,"outline coverage 0.57, 6/8 octants",1
+submariner_124060,round,"outline coverage 0.57, 8/8 octants",1
+submariner_124060,round,"outline coverage 0.58, 5/8 octants",1
+submariner_124060,round,"outline coverage 0.58, 6/8 octants",1
+submariner_124060,round,"outline coverage 0.58, 7/8 octants",1
+submariner_124060,round,"outline coverage 0.58, 8/8 octants",1
+submariner_124060,round,"outline coverage 0.60, 6/8 octants",1
+submariner_124060,round,"outline coverage 0.60, 7/8 octants",2
+submariner_124060,round,"outline coverage 0.63, 6/8 octants",2
+submariner_124060,round,"outline coverage 0.64, 6/8 octants",1
+submariner_124060,round,"outline coverage 0.67, 6/8 octants",1
+submariner_124060,round,"outline coverage 0.69, 6/8 octants",2
+submariner_124060,round,"outline coverage 0.71, 6/8 octants",1
+submariner_124060,round,"outline coverage 0.72, 6/8 octants",1
+submariner_124060,triangle,hand/glare or interference not cleared,1
+submariner_124060,triangle,marker ring unavailable,1
+submariner_124060,triangle,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",42
+submariner_126610,baton,hand/glare or interference not cleared,4
+submariner_126610,baton,hand/occluder crosses outline (clean 0.73),2
+submariner_126610,baton,side edge coverage 0.43,1
+submariner_126610,baton,side edge coverage 0.48,5
+submariner_126610,round,hand/glare or interference not cleared,48
+submariner_126610,round,hand/occluder crosses outline (clean 0.55),1
+submariner_126610,round,hand/occluder crosses outline (clean 0.62),1
+submariner_126610,round,hand/occluder crosses outline (clean 0.64),2
+submariner_126610,round,hand/occluder crosses outline (clean 0.66),1
+submariner_126610,round,hand/occluder crosses outline (clean 0.67),1
+submariner_126610,round,hand/occluder crosses outline (clean 0.71),1
+submariner_126610,round,hand/occluder crosses outline (clean 0.72),2
+submariner_126610,round,hand/occluder crosses outline (clean 0.74),2
+submariner_126610,round,hand/occluder crosses outline (clean 0.77),1
+submariner_126610,round,hand/occluder crosses outline (clean 0.78),1
+submariner_126610,round,hand/occluder crosses outline (clean 0.79),2
+submariner_126610,round,"outline coverage 0.60, 6/8 octants",2
+submariner_126610,round,"outline coverage 0.63, 6/8 octants",1
+submariner_126610,round,"outline coverage 0.67, 6/8 octants",1
+submariner_126610,round,"outline coverage 0.68, 6/8 octants",2
+submariner_126610,round,"outline coverage 0.69, 6/8 octants",1
+submariner_126610,round,"outline coverage 0.72, 6/8 octants",1
+submariner_126610,triangle,hand/glare or interference not cleared,3
+submariner_126610,triangle,"photo/edge reliability limited: Only the side angle reads outside: the triangle's direction and position are within the genuine range. Studio lighting can move a side edge without the marker moving, so a side angle on its own is shown as worth a look, not a clear finding.",52

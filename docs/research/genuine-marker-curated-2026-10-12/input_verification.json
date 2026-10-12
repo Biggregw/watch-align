@@ -1,0 +1,18 @@
+{
+  "originals_verified": 132,
+  "family_photos": {
+    "submariner_124060": 46,
+    "gmt_126710": 31,
+    "submariner_126610": 55
+  },
+  "recorded_watch_groups_by_family": {
+    "submariner_124060": 44,
+    "gmt_126710": 31,
+    "submariner_126610": 55
+  },
+  "measured_photo_selection_count": 130,
+  "source_run": 38222239457,
+  "artifact": "WatchAlign-genuine-faceon-132-originals-Codex-ready",
+  "curated_readme": "Watch Align genuine marker reference, 2026-10-12. 132 SHA256-verified unmodified photographic candidates: 46 124060, 31 steel GMT 126710, 55 steel 126610. These are not independent Rolex tolerance samples yet. Do not resize, crop, retouch, or adjust sources. Reject any individual marker measurement contaminated by hands/glare. Keep current PR52 detector/geometry/thresholds unchanged. Source catalogues live in repo and listed in Photo_Provenance_And_SHA256.csv. Source run IDs: 37194686346 (124060 main), 37831647255 (124060 EWC), 38220410538 (GMT and Sub Date exact hash recovery). Human QC frontal selection is a photographic candidate screen, not final pose/edge reliability validation. Cross-vendor physical-watch identity and overlap remain unproven.\n",
+  "selection": "one original per recorded watch; largest min side then pixel count then SHA; no measurement-dependent choice"
+}
