@@ -1,10 +1,12 @@
 # Experimental inner luminous-marker validation
 
-Frozen outer implementation: PR52 `593966433079d04816e98f78da5b66abd1f4553d`. Eight development and four disjoint held-out recorded genuine groups per family. Listing identity remains provisional. No manufactured tolerance or QC thresholds. Actual seed-connected inner contours, no metal inset. Local contrast levels and closed separator must agree; uncertain boundaries withheld.
+Frozen outer implementation: PR52 `593966433079d04816e98f78da5b66abd1f4553d`. Twelve GMT / eight Submariner development groups and four disjoint held-out recorded genuine groups per family. Listing identity remains provisional. No manufactured tolerance or QC thresholds. Actual seed-connected inner contours, no metal inset. Local contrast levels and closed separator must agree; uncertain boundaries withheld.
 
 | Model | Reference key/group count | Held-out assessed / total |
 |---|---|---:|
-| gmt_126710 | rounds: 5, six: 3, twelve: 4 | 7 / 44 |
+| gmt_126710 | twelve: 9, rounds: 9, six: 3, nine: 5 | 12 / 44 |
+| submariner_124060 | twelve: 7, rounds: 8, three: 8, six: 8, nine: 8 | 36 / 48 |
+| submariner_126610 | twelve: 8, six: 4, rounds: 7, nine: 6 | 23 / 44 |
 
 ## gmt_126710 held-out close-ups
 
@@ -16,7 +18,6 @@ Frozen outer implementation: PR52 `593966433079d04816e98f78da5b66abd1f4553d`. Ei
 ![Original rectified crop and exact scoring polygons](6da5df4eb2ac6ff5_2.png)
 ![Original rectified crop and exact scoring polygons](6da5df4eb2ac6ff5_6.png)
 ![Original rectified crop and exact scoring polygons](6da5df4eb2ac6ff5_9.png)
-| submariner_124060 | twelve: 7, rounds: 8, three: 8, six: 6, nine: 8 | 26 / 48 |
 
 ## submariner_124060 held-out close-ups
 
@@ -28,7 +29,6 @@ Frozen outer implementation: PR52 `593966433079d04816e98f78da5b66abd1f4553d`. Ei
 ![Original rectified crop and exact scoring polygons](448814812e7079fd_2.png)
 ![Original rectified crop and exact scoring polygons](448814812e7079fd_6.png)
 ![Original rectified crop and exact scoring polygons](448814812e7079fd_9.png)
-| submariner_126610 | six: 3, rounds: 6, twelve: 6, nine: 3 | 17 / 44 |
 
 ## submariner_126610 held-out close-ups
 
