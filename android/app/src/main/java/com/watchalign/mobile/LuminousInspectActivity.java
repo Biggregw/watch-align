@@ -37,13 +37,13 @@ public class LuminousInspectActivity extends Activity {
             dial.setOnTouchListener((v,event)->{if(event.getAction()!=MotionEvent.ACTION_UP)return true;
                 float scale=Math.min(dial.getWidth()/480f,dial.getHeight()/480f);if(scale<=0)return true;double x=(event.getX()-(dial.getWidth()-480*scale)/2)/scale,y=(event.getY()-(dial.getHeight()-480*scale)/2)/scale;
                 double cx=(x+.5)/480*2.12-1.06,cy=(y+.5)/480*2.12-1.06;LuminousMeasurement.Marker best=null;double distance=.16;
-                for(LuminousMeasurement.Marker m:result.markers.values()){double[] c=ExpectedMarkerOutline.moved(new double[][]{m.spec.masterPoint()},outer.measurement.ring.model)[0];double r=Math.hypot(cx-c[0],cy-c[1]);if(r<distance){distance=r;best=m;}}
+                for(LuminousMeasurement.Marker m:result.markers.values()){double[] c=ExpectedMarkerOutline.moved(new double[][]{m.spec.masterPoint()},ring())[0];double r=Math.hypot(cx-c[0],cy-c[1]);if(r<distance){distance=r;best=m;}}
                 if(best!=null)open(best.spec.hour);return true;
             });
             for(LuminousMeasurement.Marker m:result.markers.values())button(m.spec.hour+" o’clock · "+(m.assessed()?String.format(java.util.Locale.US,"%.3f%% mismatch",m.score.mismatchPct):"not assessed"),()->open(m.spec.hour));
         }else{
             LuminousMeasurement.Marker m=result.markers.get(hour);if(m==null){text("No luminous marker at this hour for the selected model.",16);return;}
-            double[] center=ExpectedMarkerOutline.moved(new double[][]{m.spec.masterPoint()},outer.measurement.ring.model)[0];double half=.19;
+            double[] center=ExpectedMarkerOutline.moved(new double[][]{m.spec.masterPoint()},ring())[0];double half=.19;
             Bitmap plain=crop(center[0],center[1],half),marked=plain.copy(Bitmap.Config.ARGB_8888,true);MarkerMismatchOverlay.closeup(marked,center[0],center[1],half,m.displayPolygon());ImageView close=image(marked);
             CheckBox outline=new CheckBox(this);outline.setText("Show reference and measured regions");outline.setTextColor(Color.WHITE);outline.setChecked(true);outline.setOnCheckedChangeListener((v,on)->close.setImageBitmap(on?marked:plain));root.addView(outline);
             text(m.description(),16);text("Displacement uses dial radius R, right/down positive. Rotation uses area moments of the visible inner footprint; rounds have no measurable orientation. Filled-template area compares the entire inner footprint, including size and position differences.",13);
@@ -52,8 +52,9 @@ public class LuminousInspectActivity extends Activity {
         text("Single-photo measurements can depend on lighting and edge localisation. Experimental references are not Rolex manufacturing tolerances.",13);
     }
     private Bitmap crop(double x,double y,double half){Mat rgba=new Mat();Utils.bitmapToMat(photo,rgba);Mat c=Alpha98Closeups.render(rgba,outer.pose.homography,x,y,half);Bitmap b=Bitmap.createBitmap(480,480,Bitmap.Config.ARGB_8888);Utils.matToBitmap(c,b);c.release();rgba.release();return b;}
+    private double[] ring(){return outer.measurement.ring!=null&&outer.measurement.ring.usable?outer.measurement.ring.model:null;}
     private void open(int h){Intent i=new Intent(this,LuminousInspectActivity.class);i.putExtra("hour",h);startActivity(i);}
-    private ImageView image(Bitmap b){ImageView iv=new ImageView(this);iv.setImageBitmap(b);iv.setScaleType(ImageView.ScaleType.FIT_CENTER);root.addView(iv,new LinearLayout.LayoutParams(-1,dp(340)));return iv;}
+    private ImageView image(Bitmap b){ImageView iv=new ImageView(this);iv.setContentDescription("Luminous marker comparison image");iv.setImageBitmap(b);iv.setScaleType(ImageView.ScaleType.FIT_CENTER);root.addView(iv,new LinearLayout.LayoutParams(-1,dp(340)));return iv;}
     private void text(String s,int size){TextView t=new TextView(this);t.setText(s);t.setTextColor(Color.WHITE);t.setTextSize(size);t.setPadding(0,dp(8),0,dp(8));root.addView(t);}
     private void button(String s,Runnable action){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setOnClickListener(v->action.run());root.addView(b,new LinearLayout.LayoutParams(-1,-2));}
     private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}

@@ -34,6 +34,11 @@ jobs:
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Run all Android unit tests
         run: bash ./gradlew :app:testDebugUnitTest --stacktrace
+      - name: Native shape/resolution/hand and recorded control checks
+        working-directory: .
+        run: |
+          bash tools/desktop-harness/run.sh LuminousSyntheticChecks
+          python3 tools/luminous/verify_controls.py
       - name: Prepare existing shared signing key
         env:
           WATCHALIGN_KEYSTORE_B64: ${{ secrets.WATCHALIGN_KEYSTORE_B64 }}
