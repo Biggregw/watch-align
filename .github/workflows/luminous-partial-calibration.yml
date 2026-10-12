@@ -1,12 +1,12 @@
 name: Frozen partial-edge genuine calibration
 on:
-  push:
-    branches: [research/luminous-partial-calibration-20261012]
-    paths:
-      - tools/research/luminous_partial_calibration/**
-      - tools/desktop-harness/drivers/LuminousCalibrationStudy.java
-      - .github/workflows/luminous-partial-calibration.yml
   workflow_dispatch:
+    inputs:
+      resume_run:
+        description: 'Reuse completed frozen measurements from this run; empty runs full extraction'
+        default: '38290192157'
+        required: false
+        type: string
 permissions:
   contents: write
   actions: read
@@ -45,15 +45,46 @@ jobs:
         run: |
           python tools/luminous/prepare_curated.py curated-artifact luminous-calibration-work .
           python tools/research/luminous_partial_calibration/prepare.py luminous-calibration-work
+      - uses: actions/download-artifact@v4
+        if: inputs.resume_run != ''
+        with:
+          repository: Biggregw/watch-align
+          run-id: ${{ inputs.resume_run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: luminous-partial-calibration-reproducible-results
+          path: saved-results
+      - name: Resume previously frozen measured geometry, references and CV; no detector rerun
+        if: inputs.resume_run != ''
+        run: |
+          cp saved-results/luminous-calibration-work/*jsonl luminous-calibration-work/
+          cp saved-results/luminous-calibration-work/calibrated_references.json luminous-calibration-work/
+          cp saved-results/luminous-calibration-work/reference_bootstrap.csv luminous-calibration-work/
+          cp saved-results/luminous-calibration-work/source_leaveout.csv luminous-calibration-work/
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          work=Path('luminous-calibration-work')
+          old={r['photo_id']:r for r in csv.DictReader(open('saved-results/luminous-calibration-work/split_manifest.csv'))}
+          new={r['photo_id']:r for r in csv.DictReader(open(work/'split_manifest.csv'))}
+          for id,r in new.items():
+            for k in ('sha256','group_id','split','cv_fold','primary_eligible','primary_photo'):assert r[k]==old[id][k],(id,k)
+          for family in ('gmt_126710','submariner_124060','submariner_126610'):
+            for line in (work/f'{family}_raw.jsonl').read_text().splitlines():
+              p=json.loads(line);assert p['source_sha256']==new[p['photo_id']]['sha256']
+          print('Saved hashes, identity groups and split unchanged; only export/rendering resumes')
+          PY
       - name: Extract independent partial fits and full-boundary evidence using frozen method
+        if: inputs.resume_run == ''
         run: |
           for model in gmt_126710 submariner_124060 submariner_126610; do
             JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousCalibrationStudy extract "luminous-calibration-work/${model}_extract.csv" "luminous-calibration-work/${model}_raw.jsonl"
             JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousCalibrationStudy extract "luminous-calibration-work/${model}_processing.csv" "luminous-calibration-work/${model}_processing_raw.jsonl"
           done
       - name: Estimate development-only position references, bootstrap and grouped CV
+        if: inputs.resume_run == ''
         run: python tools/research/luminous_partial_calibration/calibrate.py luminous-calibration-work
       - name: Score fixed genuine references; held-out and OOF evidence never tune parameters
+        if: inputs.resume_run == ''
         run: |
           for model in gmt_126710 submariner_124060 submariner_126610; do
             JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousCalibrationStudy score "luminous-calibration-work/${model}_raw.jsonl" luminous-calibration-work/calibrated_references.json "luminous-calibration-work/${model}_scored.jsonl"
@@ -69,6 +100,16 @@ jobs:
           for model in gmt_126710 submariner_124060 submariner_126610; do
             JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" bash tools/desktop-harness/run.sh LuminousCalibrationStudy gallery "luminous-calibration-work/${model}_scored.jsonl" "luminous-calibration-work/${model}_extract.csv" "luminous-calibration-work/${model}_gallery_select.txt" "$RESEARCH_OUT/gallery"
           done
+      - name: Require every selected comparison image
+        run: |
+          python - <<'PY'
+          import csv
+          from pathlib import Path
+          out=Path('docs/research/luminous-partial-calibration-2026-10-12')
+          rows=list(csv.DictReader(open(out/'outlier_index.csv')))
+          for r in rows:assert (out/r['image']).is_file(),r['image']
+          print(f'{len(rows)} selected outlier/withheld images present')
+          PY
       - name: Publish research outputs only
         run: |
           git diff --exit-code 8a53c1e5ccb71d927a654a265572d34d9a5c3397 -- android

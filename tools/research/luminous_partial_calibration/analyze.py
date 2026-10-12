@@ -16,6 +16,7 @@ def flatten(p,m,meta):
  f=m.get('fit') or {};r={k:p.get(k,'') for k in ('photo_id','family','source_sha256','working_width','working_height','pose_valid','pose_reason','dial_radius_px','ellipse_ratio','edge_rms_px','tick_rms_px','ticks','complete_pairs','marker_branch_turn','input_evidence','outer_snapshot_sha256')}
  r.update({k:meta.get(k,'') for k in ('model','physical_watch_id','group_id','split','cv_fold','primary_eligible','primary_photo','primary_exclusion','dealer','source_url','image_url','source_width','source_height','exif_orientation','identity_status')})
  r.update({k:m.get(k,'') for k in ('hour','shape','key','observed_usable','reason','failure_code','method','boundary_spread_px','rotation_spread_deg','edge_coverage','contrast','interference_clean','interference_reason','reference_geometric_groups','reference_observed_groups','reference_status','new_dx_R','new_dy_R','new_direction_deg','old_dx_R','old_dy_R','old_direction_deg','outer_status','outer_rotation_deg','outer_calibrated_rotation_deg','outer_area_reason','outer_total_pct')})
+ r['hour']=int(m['hour'])
  r.update({'fit_'+k:f.get(k,'') for k in ('supported','orientation','angle_rad','radius_R','width_R','height_R','symmetry_pct','rms_px','angle_span_deg','center_span_px','radius_span_px','cross_c_R','reason')})
  r['fit_sample_count']=len(f.get('observed') or []);r['fit_segment_count']=len(f.get('segments') or [])
  if f.get('center'):r['fit_centre_x_R'],r['fit_centre_y_R']=f['center']
