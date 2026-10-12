@@ -34,6 +34,16 @@ selected derived crops can be reviewed through Git without downloading the
 150 MB original archive. The workflow uses `actions: read` for source retrieval
 and `contents: write` only to publish these research outputs on this branch.
 
+The post-run source review quarantines two curated 126710BLNR claims whose
+recorded listing URLs AND original image filenames reference 116710. It retains
+all frozen measurements and app statuses, but excludes these unresolved models
+from the genuine 126710 distribution. The original claimed-model distribution
+is separately preserved. Generated `auto_*` / `hv_page_*` identities are flagged
+as provisional. This is a provenance correction, not a detector/geometry change.
+The standalone review workflow can reprocess already-published numerical results
+without downloading images or repeating the measurement. Compact per-model CSVs
+are small enough to inspect directly through GitHub.
+
 Local isolated checks (Pillow needed for the input-selection module):
 
 ```sh

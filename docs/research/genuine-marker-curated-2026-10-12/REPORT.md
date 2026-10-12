@@ -1,5 +1,7 @@
 # Curated genuine marker measurements — 12 October 2026
 
+[Detailed evidence review and limitations](EVIDENCE_REVIEW.md) · [View genuine outlier images](GALLERY.md)
+
 Research only. Frozen PR #52 production source `593966433079d04816e98f78da5b66abd1f4553d`. No production, geometry, calibration, QC, perspective or denominator changes. No new photos/APK/merge.
 
 Source: curated run [38222239457](https://github.com/Biggregw/watch-align/actions/runs/38222239457), artifact `WatchAlign-genuine-faceon-132-originals-Codex-ready`. All 132 original SHA256 values verified before analysis. Only this archive was downloaded; 124060 placeholder identities were resolved against the frozen catalogue by exact SHA.

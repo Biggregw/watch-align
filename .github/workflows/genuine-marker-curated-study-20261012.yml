@@ -60,6 +60,8 @@ jobs:
           done
       - name: Verify filled-area arithmetic, input integrity and frozen production; stage derived evidence
         run: python tools/research/genuine_marker_curated/finish.py "$STUDY_WORK" "$STUDY_REPORT" .
+      - name: Review source-model consistency and publish compact scalar tables
+        run: python tools/research/genuine_marker_curated_review.py "$STUDY_REPORT" .
       - name: Publish only reports and selected derived crops on this research branch
         run: |
           git add "$STUDY_REPORT"
