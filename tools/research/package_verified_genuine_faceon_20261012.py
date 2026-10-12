@@ -72,7 +72,7 @@ records=list(meta.values());parts=[]
 for grp in ["submariner_124060","gmt_126710","submariner_126610"]:
     chunk=[];sz=0;chunks=[]
     for r in (x for x in records if x["model_group"]==grp):
-        data=images[r["photo_sha256"]]
+        data=images[r["photo_sha256"][:16] if grp=="submariner_124060" else r["photo_sha256"]]
         if chunk and sz+len(data)>22*1024*1024:
             chunks.append(chunk);chunk=[];sz=0
         chunk.append((r,data));sz+=len(data)
