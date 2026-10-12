@@ -1,0 +1,67 @@
+{
+  "verified_originals": 132,
+  "recorded_watch_groups": 130,
+  "conservative_identity_clusters": 128,
+  "eligible_clusters": 123,
+  "family_photo_counts": {
+    "submariner_124060": 46,
+    "gmt_126710": 31,
+    "submariner_126610": 55
+  },
+  "family_split_counts": {
+    "gmt_126710": {
+      "development": 18,
+      "heldout": 10,
+      "identity_quarantine": 3
+    },
+    "submariner_124060": {
+      "heldout": 14,
+      "identity_quarantine": 2,
+      "development": 26
+    },
+    "submariner_126610": {
+      "development": 38,
+      "heldout": 17
+    }
+  },
+  "source_counts": {
+    "submariner_124060 / davidsw.com": 5,
+    "submariner_124060 / bobswatches.com": 9,
+    "submariner_124060 / cdn.swisswatchexpo.com": 6,
+    "submariner_124060 / images.europeanwatch.com": 22,
+    "gmt_126710 / bobswatches.com": 24,
+    "gmt_126710 / cdn.swisswatchexpo.com": 7,
+    "submariner_126610 / bobswatches.com": 55
+  },
+  "processing_originals": [
+    "212c6d510bdfa0c6",
+    "c58f78ef6c1cd5b7",
+    "0114716639829db3"
+  ],
+  "protocol": {
+    "version": "partial-calibration-v1-20261012",
+    "frozen_commit": "8a53c1e5ccb71d927a654a265572d34d9a5c3397",
+    "original_artifact_run": "38222239457",
+    "original_artifact": "WatchAlign-genuine-faceon-132-originals-Codex-ready",
+    "split_seed": "luminous-partial-calibration-v1",
+    "heldout_fraction": 0.3,
+    "minimum_development_groups_for_provisional_geometry": 3,
+    "bootstrap_repetitions": 250,
+    "cross_validation_folds": 5,
+    "percentiles": {
+      "p90_min_groups": 20,
+      "p95_min_groups": 40
+    },
+    "estimator": "equal weight per eligible development watch cluster, coordinate-wise median corresponding ideal vertices or circle centre/radius; independent physical footprint median radial profile",
+    "identity_rule": "Union recorded watch IDs, same model/dealer SKU or original URL, and existing shared-image pairs. Quarantine conflicting models and pre-existing shared-image suspects from primary reference and variation. No mismatch-dependent exclusion.",
+    "processing_checks": [
+      "identical_original_repeat",
+      "jpeg_quality95",
+      "jpeg_quality85",
+      "resize_5of6_png",
+      "gain_098_png",
+      "gain_102_png"
+    ],
+    "sensitivity_selection": "one eligible held-out original per model, highest minimum native side then SHA, before measurement; temporary variants never baseline watches"
+  }
+}

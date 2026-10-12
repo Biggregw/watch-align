@@ -1,0 +1,480 @@
+family,hour,split,primary_eligible,geometry_reason,physical_reason,markers
+gmt_126710,1.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,1.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,3
+gmt_126710,1.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 76 of 96 rays,1
+gmt_126710,1.0,development,true,measured,separator has unresolved notch or discontinuity (1.55 crop px),1
+gmt_126710,1.0,development,true,measured,separator has unresolved notch or discontinuity (1.63 crop px),1
+gmt_126710,1.0,development,true,measured,separator has unresolved notch or discontinuity (1.78 crop px),1
+gmt_126710,1.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,1.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,1.0,heldout,true,insufficient distributed visible edges,insufficient luminous-to-metal evidence: bright surround recovery on 0 of 96 rays,1
+gmt_126710,1.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,1.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.41 crop px),1
+gmt_126710,1.0,heldout,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,2.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,3
+gmt_126710,2.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,insufficient luminous-to-metal evidence: bright surround recovery on 69 of 96 rays,1
+gmt_126710,2.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,11
+gmt_126710,2.0,development,true,measured,insufficient development physical-footprint reference,1
+gmt_126710,2.0,development,true,measured,separator has unresolved notch or discontinuity (1.70 crop px),1
+gmt_126710,2.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,2.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,5
+gmt_126710,2.0,heldout,true,insufficient distributed visible edges,separator not closed: observed exit gradients on 15 of 96 rays,1
+gmt_126710,2.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,2.0,heldout,true,measured,insufficient development physical-footprint reference,2
+gmt_126710,2.0,heldout,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,2.0,identity_quarantine,false,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,2.0,identity_quarantine,false,measured,insufficient development physical-footprint reference,1
+gmt_126710,4.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,insufficient luminous-to-metal evidence: bright surround recovery on 45 of 96 rays,1
+gmt_126710,4.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 68 of 96 rays,1
+gmt_126710,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.27 crop px),2
+gmt_126710,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.41 crop px),1
+gmt_126710,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.74 crop px),1
+gmt_126710,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.84 crop px),1
+gmt_126710,4.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,4.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.41 crop px),1
+gmt_126710,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.54 crop px),1
+gmt_126710,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.12 crop px),1
+gmt_126710,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.14 crop px),1
+gmt_126710,4.0,heldout,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,4.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (1.41 crop px),1
+gmt_126710,5.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,5.0,development,true,insufficient distributed visible edges,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,5.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,5.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 72 of 96 rays,1
+gmt_126710,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.28 crop px),1
+gmt_126710,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.58 crop px),1
+gmt_126710,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.71 crop px),1
+gmt_126710,5.0,development,true,measured,separator has unresolved notch or discontinuity (2.41 crop px),1
+gmt_126710,5.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,5.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,5.0,heldout,true,insufficient distributed visible edges,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,5.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.37 crop px),1
+gmt_126710,5.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.65 crop px),1
+gmt_126710,5.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.26 crop px),1
+gmt_126710,5.0,heldout,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,5.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (1.53 crop px),1
+gmt_126710,5.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (2.11 crop px),1
+gmt_126710,6.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,6.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,6.0,development,true,"opposing long-edge directions differ; complete ends are unavailable, so a single width/centre is withheld",separator has unresolved notch or discontinuity (3.50 crop px),1
+gmt_126710,6.0,development,true,"opposing long-edge directions differ; complete ends are unavailable, so a single width/centre is withheld",separator has unresolved notch or discontinuity (3.91 crop px),1
+gmt_126710,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.38 crop px),1
+gmt_126710,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.42 crop px),1
+gmt_126710,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.87 crop px),1
+gmt_126710,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (2.11 crop px),1
+gmt_126710,6.0,heldout,true,measured,separator has unresolved notch or discontinuity (3.86 crop px),1
+gmt_126710,6.0,heldout,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,6.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",insufficient luminous-to-metal evidence: bright surround recovery on 49 of 96 rays,1
+gmt_126710,6.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",measured,1
+gmt_126710,6.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.53 crop px),1
+gmt_126710,6.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.56 crop px),1
+gmt_126710,6.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (3.85 crop px),1
+gmt_126710,6.0,identity_quarantine,false,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",insufficient luminous-to-metal evidence: bright surround recovery on 69 of 96 rays,1
+gmt_126710,6.0,identity_quarantine,false,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (3.17 crop px),1
+gmt_126710,7.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,7.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,7.0,development,true,measured,separator has unresolved notch or discontinuity (1.41 crop px),1
+gmt_126710,7.0,development,true,measured,separator has unresolved notch or discontinuity (1.56 crop px),1
+gmt_126710,7.0,development,true,measured,separator has unresolved notch or discontinuity (4.87 crop px),1
+gmt_126710,7.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,7.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,7.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.61 crop px),1
+gmt_126710,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.71 crop px),1
+gmt_126710,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.93 crop px),1
+gmt_126710,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.23 crop px),1
+gmt_126710,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.52 crop px),1
+gmt_126710,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.98 crop px),1
+gmt_126710,7.0,heldout,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,7.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (2.31 crop px),1
+gmt_126710,8.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,8.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,8.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 50 of 96 rays,1
+gmt_126710,8.0,development,true,measured,separator has unresolved notch or discontinuity (1.38 crop px),1
+gmt_126710,8.0,development,true,measured,separator has unresolved notch or discontinuity (1.66 crop px),1
+gmt_126710,8.0,development,true,measured,separator has unresolved notch or discontinuity (2.05 crop px),1
+gmt_126710,8.0,development,true,measured,separator has unresolved notch or discontinuity (2.73 crop px),1
+gmt_126710,8.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,8.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,8.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.65 crop px),1
+gmt_126710,8.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.74 crop px),1
+gmt_126710,8.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.80 crop px),1
+gmt_126710,8.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.87 crop px),1
+gmt_126710,8.0,heldout,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,8.0,identity_quarantine,false,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,8.0,identity_quarantine,false,measured,insufficient luminous-to-metal evidence: bright surround recovery on 76 of 96 rays,1
+gmt_126710,8.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (1.75 crop px),1
+gmt_126710,9.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,9.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 75 of 96 rays,1
+gmt_126710,9.0,development,true,measured,separator has unresolved notch or discontinuity (3.90 crop px),1
+gmt_126710,9.0,development,true,no reliable partial fit,inner material has insufficient local contrast,1
+gmt_126710,9.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,9.0,development,true,one long edge supports direction; position and dimensions withheld,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,9.0,development,true,one long edge supports direction; position and dimensions withheld,insufficient luminous-to-metal evidence: bright surround recovery on 55 of 96 rays,1
+gmt_126710,9.0,development,true,one long edge supports direction; position and dimensions withheld,separator has unresolved notch or discontinuity (1.39 crop px),1
+gmt_126710,9.0,heldout,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,9.0,heldout,true,one long edge supports direction; position and dimensions withheld,hand-contaminated samples excluded from partial fit; observed full area withheld,3
+gmt_126710,9.0,heldout,true,one long edge supports direction; position and dimensions withheld,separator has unresolved notch or discontinuity (1.34 crop px),1
+gmt_126710,10.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,10.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,insufficient luminous-to-metal evidence: bright surround recovery on 27 of 96 rays,1
+gmt_126710,10.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,10.0,development,true,measured,separator has unresolved notch or discontinuity (1.59 crop px),1
+gmt_126710,10.0,development,true,measured,separator has unresolved notch or discontinuity (1.72 crop px),1
+gmt_126710,10.0,development,true,measured,separator has unresolved notch or discontinuity (2.22 crop px),1
+gmt_126710,10.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,10.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,10.0,heldout,true,insufficient distributed visible edges,insufficient luminous-to-metal evidence: bright surround recovery on 0 of 96 rays,1
+gmt_126710,10.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.83 crop px),1
+gmt_126710,10.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.73 crop px),1
+gmt_126710,10.0,heldout,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,10.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (2.55 crop px),1
+gmt_126710,11.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,3
+gmt_126710,11.0,development,true,insufficient distributed visible edges,insufficient luminous-to-metal evidence: bright surround recovery on 0 of 96 rays,1
+gmt_126710,11.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,3
+gmt_126710,11.0,development,true,measured,separator has unresolved notch or discontinuity (2.69 crop px),1
+gmt_126710,11.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,11.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,11.0,heldout,true,insufficient distributed visible edges,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,11.0,heldout,true,insufficient distributed visible edges,insufficient luminous-to-metal evidence: bright surround recovery on 0 of 96 rays,1
+gmt_126710,11.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,11.0,heldout,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,11.0,identity_quarantine,false,insufficient distributed visible edges,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,11.0,identity_quarantine,false,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+gmt_126710,12.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+gmt_126710,12.0,development,true,measured,separator has unresolved notch or discontinuity (1.33 crop px),1
+gmt_126710,12.0,development,true,measured,separator has unresolved notch or discontinuity (1.46 crop px),1
+gmt_126710,12.0,development,true,measured,separator has unresolved notch or discontinuity (3.08 crop px),1
+gmt_126710,12.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,12.0,development,true,side direction supported; base/centre/size withheld unless the base is also visible,insufficient luminous-to-metal evidence: bright surround recovery on 71 of 96 rays,1
+gmt_126710,12.0,development,true,triangle needs independently supported left and right straight sections,insufficient luminous-to-metal evidence: bright surround recovery on 44 of 96 rays,1
+gmt_126710,12.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.84 crop px),1
+gmt_126710,12.0,heldout,true,no reliable partial fit,marker-ring placement unavailable,1
+gmt_126710,12.0,heldout,true,side direction supported; base/centre/size withheld unless the base is also visible,insufficient luminous-to-metal evidence: bright surround recovery on 71 of 96 rays,1
+gmt_126710,12.0,heldout,true,triangle needs independently supported left and right straight sections,insufficient luminous-to-metal evidence: bright surround recovery on 58 of 96 rays,1
+submariner_124060,1.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,1.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 26 of 96 rays,1
+submariner_124060,1.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 42 of 96 rays,1
+submariner_124060,1.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,1.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,3
+submariner_124060,1.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,1.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 53 of 96 rays,1
+submariner_124060,1.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.70 crop px),1
+submariner_124060,2.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,4
+submariner_124060,2.0,development,true,insufficient distributed visible edges,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,2.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,15
+submariner_124060,2.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 36 of 96 rays,1
+submariner_124060,2.0,development,true,no reliable partial fit,inner material has insufficient local contrast,1
+submariner_124060,2.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,2.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,4
+submariner_124060,2.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,7
+submariner_124060,2.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.37 crop px),1
+submariner_124060,2.0,identity_quarantine,false,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,2.0,identity_quarantine,false,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,3.0,development,true,measured,separator has unresolved notch or discontinuity (1.28 crop px),1
+submariner_124060,3.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,3.0,development,true,one long edge supports direction; position and dimensions withheld,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,3.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",measured,6
+submariner_124060,3.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (4.90 crop px),1
+submariner_124060,3.0,heldout,true,one long edge supports direction; position and dimensions withheld,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,3.0,heldout,true,one long edge supports direction; position and dimensions withheld,insufficient luminous-to-metal evidence: bright surround recovery on 47 of 96 rays,1
+submariner_124060,3.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",measured,5
+submariner_124060,3.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (1.91 crop px),1
+submariner_124060,3.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (1.92 crop px),1
+submariner_124060,4.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,4.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,4
+submariner_124060,4.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 33 of 96 rays,1
+submariner_124060,4.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 35 of 96 rays,1
+submariner_124060,4.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 36 of 96 rays,1
+submariner_124060,4.0,development,true,measured,separator has unresolved notch or discontinuity (2.55 crop px),1
+submariner_124060,4.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,4.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,4.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,insufficient luminous-to-metal evidence: bright surround recovery on 37 of 96 rays,1
+submariner_124060,4.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 73 of 96 rays,1
+submariner_124060,4.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 75 of 96 rays,1
+submariner_124060,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.82 crop px),1
+submariner_124060,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.14 crop px),1
+submariner_124060,4.0,heldout,true,no reliable partial fit,inner material has insufficient local contrast,1
+submariner_124060,4.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (1.65 crop px),1
+submariner_124060,4.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (1.70 crop px),1
+submariner_124060,5.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,5.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,5.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 47 of 96 rays,1
+submariner_124060,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.32 crop px),1
+submariner_124060,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.37 crop px),1
+submariner_124060,5.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,5.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,5.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 68 of 96 rays,1
+submariner_124060,5.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 74 of 96 rays,1
+submariner_124060,6.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 69 of 96 rays,1
+submariner_124060,6.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,6.0,development,true,one long edge supports direction; position and dimensions withheld,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,6.0,development,true,one long edge supports direction; position and dimensions withheld,insufficient luminous-to-metal evidence: bright surround recovery on 23 of 96 rays,1
+submariner_124060,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",insufficient luminous-to-metal evidence: bright surround recovery on 53 of 96 rays,1
+submariner_124060,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",measured,4
+submariner_124060,6.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.01 crop px),1
+submariner_124060,6.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,6.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",measured,3
+submariner_124060,7.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,3
+submariner_124060,7.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 56 of 96 rays,1
+submariner_124060,7.0,development,true,measured,separator has unresolved notch or discontinuity (2.86 crop px),1
+submariner_124060,7.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,7.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,7.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,7.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 60 of 96 rays,1
+submariner_124060,7.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (1.26 crop px),1
+submariner_124060,7.0,identity_quarantine,false,measured,separator has unresolved notch or discontinuity (1.52 crop px),1
+submariner_124060,8.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,3
+submariner_124060,8.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,8.0,development,true,measured,separator has unresolved notch or discontinuity (2.47 crop px),1
+submariner_124060,8.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,8.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,8.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,8.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 56 of 96 rays,1
+submariner_124060,8.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 69 of 96 rays,1
+submariner_124060,8.0,identity_quarantine,false,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,9.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 74 of 96 rays,1
+submariner_124060,9.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,9.0,development,true,one long edge supports direction; position and dimensions withheld,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,9.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",measured,9
+submariner_124060,9.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.26 crop px),1
+submariner_124060,9.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.66 crop px),1
+submariner_124060,9.0,heldout,true,one long edge supports direction; position and dimensions withheld,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,9.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",insufficient luminous-to-metal evidence: bright surround recovery on 61 of 96 rays,1
+submariner_124060,9.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",measured,3
+submariner_124060,10.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,10.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,10.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 24 of 96 rays,1
+submariner_124060,10.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,10.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,10.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,10.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 35 of 96 rays,1
+submariner_124060,11.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,11.0,development,true,insufficient distributed visible edges,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,11.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_124060,11.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 31 of 96 rays,1
+submariner_124060,11.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 33 of 96 rays,1
+submariner_124060,11.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,11.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 64 of 96 rays,1
+submariner_124060,11.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 65 of 96 rays,1
+submariner_124060,11.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.88 crop px),1
+submariner_124060,11.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.01 crop px),1
+submariner_124060,12.0,development,true,measured,separator has unresolved notch or discontinuity (1.31 crop px),1
+submariner_124060,12.0,development,true,measured,separator has unresolved notch or discontinuity (1.32 crop px),1
+submariner_124060,12.0,development,true,measured,separator has unresolved notch or discontinuity (1.58 crop px),1
+submariner_124060,12.0,development,true,no reliable partial fit,marker-ring placement unavailable,1
+submariner_124060,12.0,development,true,side direction supported; base/centre/size withheld unless the base is also visible,insufficient luminous-to-metal evidence: bright surround recovery on 49 of 96 rays,1
+submariner_124060,12.0,development,true,triangle needs independently supported left and right straight sections,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_124060,12.0,development,true,triangle needs independently supported left and right straight sections,insufficient luminous-to-metal evidence: bright surround recovery on 14 of 96 rays,1
+submariner_124060,12.0,development,true,triangle needs independently supported left and right straight sections,insufficient luminous-to-metal evidence: bright surround recovery on 21 of 96 rays,1
+submariner_124060,12.0,development,true,triangle needs independently supported left and right straight sections,insufficient luminous-to-metal evidence: bright surround recovery on 22 of 96 rays,1
+submariner_124060,12.0,development,true,triangle needs independently supported left and right straight sections,insufficient luminous-to-metal evidence: bright surround recovery on 25 of 96 rays,1
+submariner_124060,12.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.90 crop px),1
+submariner_124060,12.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.36 crop px),1
+submariner_124060,12.0,heldout,true,triangle needs independently supported left and right straight sections,insufficient luminous-to-metal evidence: bright surround recovery on 44 of 96 rays,1
+submariner_124060,12.0,heldout,true,triangle needs independently supported left and right straight sections,insufficient luminous-to-metal evidence: bright surround recovery on 60 of 96 rays,1
+submariner_126610,1.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_126610,1.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 73 of 96 rays,1
+submariner_126610,1.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 75 of 96 rays,1
+submariner_126610,1.0,development,true,measured,separator has unresolved notch or discontinuity (1.26 crop px),1
+submariner_126610,1.0,development,true,measured,separator has unresolved notch or discontinuity (1.39 crop px),1
+submariner_126610,1.0,development,true,measured,separator has unresolved notch or discontinuity (1.53 crop px),2
+submariner_126610,1.0,development,true,measured,separator has unresolved notch or discontinuity (1.54 crop px),1
+submariner_126610,1.0,development,true,measured,separator has unresolved notch or discontinuity (1.64 crop px),1
+submariner_126610,1.0,development,true,measured,separator has unresolved notch or discontinuity (1.76 crop px),1
+submariner_126610,1.0,development,true,measured,separator has unresolved notch or discontinuity (1.83 crop px),1
+submariner_126610,1.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_126610,1.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 74 of 96 rays,1
+submariner_126610,1.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.35 crop px),1
+submariner_126610,1.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.53 crop px),1
+submariner_126610,1.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.55 crop px),1
+submariner_126610,1.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.93 crop px),1
+submariner_126610,1.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.00 crop px),1
+submariner_126610,2.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,4
+submariner_126610,2.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,22
+submariner_126610,2.0,development,true,measured,separator has unresolved notch or discontinuity (1.27 crop px),1
+submariner_126610,2.0,development,true,measured,separator has unresolved notch or discontinuity (1.32 crop px),1
+submariner_126610,2.0,development,true,measured,separator has unresolved notch or discontinuity (1.36 crop px),1
+submariner_126610,2.0,development,true,measured,separator has unresolved notch or discontinuity (1.47 crop px),1
+submariner_126610,2.0,development,true,measured,separator has unresolved notch or discontinuity (1.52 crop px),1
+submariner_126610,2.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,3
+submariner_126610,2.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,12
+submariner_126610,2.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.96 crop px),1
+submariner_126610,4.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.28 crop px),2
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.35 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.36 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.37 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.42 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.43 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.52 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.58 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.62 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.63 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.65 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.67 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.69 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.70 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.87 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.96 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (1.97 crop px),1
+submariner_126610,4.0,development,true,measured,separator has unresolved notch or discontinuity (2.05 crop px),1
+submariner_126610,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.27 crop px),1
+submariner_126610,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.35 crop px),1
+submariner_126610,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.36 crop px),1
+submariner_126610,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.38 crop px),2
+submariner_126610,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.45 crop px),1
+submariner_126610,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.72 crop px),1
+submariner_126610,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.77 crop px),1
+submariner_126610,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.83 crop px),1
+submariner_126610,4.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.00 crop px),1
+submariner_126610,5.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_126610,5.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,5
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.26 crop px),1
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.41 crop px),1
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.44 crop px),1
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.55 crop px),1
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.57 crop px),1
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.64 crop px),1
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.78 crop px),1
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.81 crop px),2
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (1.88 crop px),1
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (2.35 crop px),1
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (2.57 crop px),1
+submariner_126610,5.0,development,true,measured,separator has unresolved notch or discontinuity (2.64 crop px),1
+submariner_126610,5.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,3
+submariner_126610,5.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 73 of 96 rays,1
+submariner_126610,5.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.33 crop px),1
+submariner_126610,5.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.47 crop px),1
+submariner_126610,5.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.55 crop px),1
+submariner_126610,5.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.09 crop px),1
+submariner_126610,5.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.14 crop px),1
+submariner_126610,5.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.97 crop px),1
+submariner_126610,6.0,development,true,measured,separator has unresolved notch or discontinuity (1.88 crop px),1
+submariner_126610,6.0,development,true,measured,separator has unresolved notch or discontinuity (4.70 crop px),1
+submariner_126610,6.0,development,true,one long edge supports direction; position and dimensions withheld,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_126610,6.0,development,true,one long edge supports direction; position and dimensions withheld,separator has unresolved notch or discontinuity (4.49 crop px),1
+submariner_126610,6.0,development,true,"opposing long-edge directions differ; complete ends are unavailable, so a single width/centre is withheld",hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_126610,6.0,development,true,"opposing long-edge directions differ; complete ends are unavailable, so a single width/centre is withheld",separator has unresolved notch or discontinuity (3.27 crop px),1
+submariner_126610,6.0,development,true,"opposing long-edge directions differ; complete ends are unavailable, so a single width/centre is withheld",separator has unresolved notch or discontinuity (3.39 crop px),1
+submariner_126610,6.0,development,true,"opposing long-edge directions differ; complete ends are unavailable, so a single width/centre is withheld",separator has unresolved notch or discontinuity (3.58 crop px),1
+submariner_126610,6.0,development,true,"opposing long-edge directions differ; complete ends are unavailable, so a single width/centre is withheld",separator has unresolved notch or discontinuity (7.57 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",measured,3
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.49 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.56 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.64 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.67 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (2.05 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (2.23 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (2.42 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (2.50 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (3.09 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (3.17 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (3.50 crop px),1
+submariner_126610,6.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (3.93 crop px),1
+submariner_126610,6.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.27 crop px),1
+submariner_126610,6.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.43 crop px),1
+submariner_126610,6.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.71 crop px),1
+submariner_126610,6.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.37 crop px),1
+submariner_126610,6.0,heldout,true,"opposing long-edge directions differ; complete ends are unavailable, so a single width/centre is withheld",separator has unresolved notch or discontinuity (3.53 crop px),1
+submariner_126610,6.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.39 crop px),1
+submariner_126610,6.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.70 crop px),1
+submariner_126610,6.0,heldout,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (1.87 crop px),1
+submariner_126610,7.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,4
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (1.26 crop px),2
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (1.27 crop px),1
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (1.38 crop px),1
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (1.41 crop px),2
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (1.54 crop px),1
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (1.73 crop px),1
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (1.74 crop px),1
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (1.78 crop px),1
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (1.79 crop px),1
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (2.09 crop px),1
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (2.32 crop px),1
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (2.44 crop px),1
+submariner_126610,7.0,development,true,measured,separator has unresolved notch or discontinuity (2.75 crop px),1
+submariner_126610,7.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_126610,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.26 crop px),1
+submariner_126610,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.38 crop px),1
+submariner_126610,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.55 crop px),1
+submariner_126610,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.78 crop px),1
+submariner_126610,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.88 crop px),1
+submariner_126610,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.94 crop px),1
+submariner_126610,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.07 crop px),1
+submariner_126610,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.19 crop px),1
+submariner_126610,7.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.74 crop px),1
+submariner_126610,8.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_126610,8.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_126610,8.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 68 of 96 rays,1
+submariner_126610,8.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 69 of 96 rays,1
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (1.50 crop px),1
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (1.54 crop px),1
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (1.62 crop px),1
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (1.64 crop px),2
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (1.65 crop px),1
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (2.01 crop px),1
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (2.06 crop px),2
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (2.29 crop px),1
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (2.30 crop px),1
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (2.42 crop px),1
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (2.52 crop px),1
+submariner_126610,8.0,development,true,measured,separator has unresolved notch or discontinuity (2.87 crop px),1
+submariner_126610,8.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_126610,8.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.63 crop px),1
+submariner_126610,8.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.64 crop px),1
+submariner_126610,8.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.79 crop px),1
+submariner_126610,8.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.88 crop px),1
+submariner_126610,9.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,3
+submariner_126610,9.0,development,true,measured,separator has unresolved notch or discontinuity (1.76 crop px),1
+submariner_126610,9.0,development,true,measured,separator has unresolved notch or discontinuity (1.79 crop px),1
+submariner_126610,9.0,development,true,measured,separator has unresolved notch or discontinuity (1.81 crop px),1
+submariner_126610,9.0,development,true,measured,separator has unresolved notch or discontinuity (3.06 crop px),1
+submariner_126610,9.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",measured,1
+submariner_126610,9.0,development,true,"two long sections support direction, width and transverse centreline; length/along-axis centre withheld",separator has unresolved notch or discontinuity (2.09 crop px),1
+submariner_126610,9.0,heldout,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_126610,9.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.69 crop px),1
+submariner_126610,9.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.84 crop px),1
+submariner_126610,10.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_126610,10.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_126610,10.0,development,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 75 of 96 rays,1
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (1.75 crop px),1
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (1.79 crop px),1
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (1.91 crop px),1
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (1.93 crop px),1
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (1.95 crop px),1
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (1.98 crop px),2
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (2.00 crop px),1
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (2.31 crop px),1
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (2.32 crop px),1
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (2.44 crop px),1
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (2.64 crop px),1
+submariner_126610,10.0,development,true,measured,separator has unresolved notch or discontinuity (3.08 crop px),1
+submariner_126610,10.0,heldout,true,measured,insufficient luminous-to-metal evidence: bright surround recovery on 76 of 96 rays,1
+submariner_126610,10.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.31 crop px),1
+submariner_126610,10.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.57 crop px),1
+submariner_126610,10.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.60 crop px),1
+submariner_126610,10.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.75 crop px),1
+submariner_126610,10.0,heldout,true,measured,separator has unresolved notch or discontinuity (2.14 crop px),1
+submariner_126610,10.0,heldout,true,measured,separator has unresolved notch or discontinuity (3.15 crop px),1
+submariner_126610,10.0,heldout,true,measured,separator has unresolved notch or discontinuity (3.16 crop px),1
+submariner_126610,11.0,development,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_126610,11.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_126610,11.0,development,true,measured,separator has unresolved notch or discontinuity (1.27 crop px),1
+submariner_126610,11.0,development,true,measured,separator has unresolved notch or discontinuity (1.39 crop px),1
+submariner_126610,11.0,development,true,measured,separator has unresolved notch or discontinuity (1.45 crop px),1
+submariner_126610,11.0,development,true,measured,separator has unresolved notch or discontinuity (1.55 crop px),1
+submariner_126610,11.0,development,true,measured,separator has unresolved notch or discontinuity (1.57 crop px),1
+submariner_126610,11.0,development,true,measured,separator has unresolved notch or discontinuity (2.22 crop px),1
+submariner_126610,11.0,heldout,true,circle arcs insufficiently distributed; centre/radius not identifiable,hand-contaminated samples excluded from partial fit; observed full area withheld,1
+submariner_126610,11.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.29 crop px),1
+submariner_126610,11.0,heldout,true,measured,separator has unresolved notch or discontinuity (1.89 crop px),1
+submariner_126610,12.0,development,true,measured,hand-contaminated samples excluded from partial fit; observed full area withheld,2
+submariner_126610,12.0,development,true,measured,separator has unresolved notch or discontinuity (2.37 crop px),1
+submariner_126610,12.0,development,true,side direction supported; base/centre/size withheld unless the base is also visible,insufficient luminous-to-metal evidence: bright surround recovery on 66 of 96 rays,1
+submariner_126610,12.0,development,true,side direction supported; base/centre/size withheld unless the base is also visible,insufficient luminous-to-metal evidence: bright surround recovery on 71 of 96 rays,1
+submariner_126610,12.0,development,true,side direction supported; base/centre/size withheld unless the base is also visible,insufficient luminous-to-metal evidence: bright surround recovery on 72 of 96 rays,2
+submariner_126610,12.0,development,true,side direction supported; base/centre/size withheld unless the base is also visible,separator has unresolved notch or discontinuity (3.78 crop px),1
+submariner_126610,12.0,heldout,true,triangle needs independently supported left and right straight sections,hand-contaminated samples excluded from partial fit; observed full area withheld,1

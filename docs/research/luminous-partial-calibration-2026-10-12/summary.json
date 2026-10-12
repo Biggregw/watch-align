@@ -1,0 +1,46 @@
+{
+  "actions_run": "https://github.com/Biggregw/watch-align/actions/runs/38290192157",
+  "frozen_measurement_commit": "8a53c1e5ccb71d927a654a265572d34d9a5c3397",
+  "marker_rows_all_originals": 1498,
+  "primary_marker_rows": 1450,
+  "eligible_marker_rows": 1393,
+  "by_family": {
+    "gmt_126710": {
+      "eligible_clusters": 28,
+      "groups_with_fitted_geometry": 26,
+      "groups_with_supported_alignment": 26,
+      "fitted_markers": 218,
+      "observed_markers": 130,
+      "heldout_groups": 10,
+      "heldout_fitted_markers": 66
+    },
+    "submariner_124060": {
+      "eligible_clusters": 40,
+      "groups_with_fitted_geometry": 38,
+      "groups_with_supported_alignment": 39,
+      "fitted_markers": 379,
+      "observed_markers": 331,
+      "heldout_groups": 14,
+      "heldout_fitted_markers": 133
+    },
+    "submariner_126610": {
+      "eligible_clusters": 55,
+      "groups_with_fitted_geometry": 55,
+      "groups_with_supported_alignment": 55,
+      "fitted_markers": 558,
+      "observed_markers": 340,
+      "heldout_groups": 17,
+      "heldout_fitted_markers": 178
+    }
+  },
+  "outlier_images": 34,
+  "phone_input_identity": "unverified; attachment 37891.jpg vs user text 37991.jpg; do not infer identical-pixel failure",
+  "limitations": [
+    "Groups are provisional listing/identity clusters, not serial-authenticated independent watches.",
+    "Held-out is for new reference estimation; this collection previously informed detector development.",
+    "126610 entirely Bobs Watches: no independent source validation.",
+    "Frozen gate clearance and low residual do not prove the correct physical luminous edge.",
+    "Processing changes and source/lighting can alter geometry; observed variation is not factory tolerance.",
+    "No independent metrology or human replica-acceptance labels support thresholds."
+  ]
+}
