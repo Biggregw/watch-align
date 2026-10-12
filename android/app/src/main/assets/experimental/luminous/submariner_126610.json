@@ -1,0 +1,774 @@
+{
+  "experimental": true,
+  "model": "submariner_126610",
+  "method": "Median 64-ray inner contour profiles; one equal contribution per recorded group; minimum 3 groups; ring removed; no metal inset; no manufacturing tolerances",
+  "development_groups": 8,
+  "heldout_groups": 4,
+  "unsupported_keys": [],
+  "shapes": {
+    "six": {
+      "polygon": [
+        [
+          -0.04512027405303009,
+          -0.08324265905970817
+        ],
+        [
+          -0.04504225016948143,
+          -0.10750465687672212
+        ],
+        [
+          -0.041395290346087944,
+          -0.13511863443786568
+        ],
+        [
+          -0.027353399551336817,
+          -0.13596277395668796
+        ],
+        [
+          0.013422786299052544,
+          -0.13656228969931244
+        ],
+        [
+          0.027271987846592714,
+          -0.13676590889952386
+        ],
+        [
+          0.041185036377152165,
+          -0.13522053503636758
+        ],
+        [
+          0.044290151237180386,
+          -0.1062711536765253
+        ],
+        [
+          0.04443383755427819,
+          -0.08240961501019375
+        ],
+        [
+          0.04443240419400198,
+          -0.05334212922925125
+        ],
+        [
+          0.04442825934079722,
+          0.030712426762419646
+        ],
+        [
+          0.0444275304419875,
+          0.04549395527179824
+        ],
+        [
+          0.04442705047699398,
+          0.05522729018827464
+        ],
+        [
+          0.04431932147348078,
+          0.06745485875290892
+        ],
+        [
+          0.0439207118253106,
+          0.1072709325199868
+        ],
+        [
+          0.041332596621377914,
+          0.13759866045285538
+        ],
+        [
+          0.027310596987564547,
+          0.1388516946407612
+        ],
+        [
+          0.013473503068457833,
+          0.13896891018266505
+        ],
+        [
+          -0.00012058258877442615,
+          0.1389369960403747
+        ],
+        [
+          -0.013705807563075944,
+          0.13887894615911867
+        ],
+        [
+          -0.027473231667891583,
+          0.13845689517074172
+        ],
+        [
+          -0.041228113303784744,
+          0.1364592100687878
+        ],
+        [
+          -0.044225132066148386,
+          0.10742364375166771
+        ],
+        [
+          -0.04446050137231011,
+          0.08389999567446021
+        ],
+        [
+          -0.044545853286007034,
+          0.06743295837448895
+        ],
+        [
+          -0.0446946083850604,
+          0.037526799833897784
+        ],
+        [
+          -0.04489850116038444,
+          -0.003464397798494387
+        ],
+        [
+          -0.04506001193387675,
+          -0.03593499429443225
+        ],
+        [
+          -0.045100296254179856,
+          -0.0440338714243691
+        ],
+        [
+          -0.0451172495472035,
+          -0.053882755087517456
+        ]
+      ],
+      "recorded_groups": 3,
+      "photo_ids": [
+        "0114716639829db3",
+        "0e62df651a8d3087",
+        "1a5705dcb625d490"
+      ],
+      "provenance": [
+        {
+          "photo_id": "0114716639829db3",
+          "physical_watch_id": "bobs_126610_191335",
+          "sha256": "0114716639829db316273d2089e0f652bda93e36874ec804a01aa8351a7644de",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/pre-owned-rolex-submariner-chromalight-dial-ref-126610.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-SKU191335.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "0e62df651a8d3087",
+          "physical_watch_id": "bobs_126610_192114",
+          "sha256": "0e62df651a8d3087b7a726b6b7546666d35059c2a9e2b3aec23f1d928b8220f6",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/pre-owned-oyster-rolex-submariner-black-chromalight-dial-ref-126610.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-SKU192114.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1a5705dcb625d490",
+          "physical_watch_id": "bobs_126610_193168",
+          "sha256": "1a5705dcb625d4908d87c6765d8748e56128e19383be8cbd9df4f6734e034382",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/used-rolex-submariner-steel-ref-126610-black-chromalight-dial.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-SKU193168.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        }
+      ]
+    },
+    "rounds": {
+      "polygon": [
+        [
+          -0.07536676077882488,
+          -0.0015310195823992582
+        ],
+        [
+          -0.07523379471905553,
+          -0.008991556114936882
+        ],
+        [
+          -0.0740927246411955,
+          -0.016371280248469164
+        ],
+        [
+          -0.07242458185993284,
+          -0.02365678867725251
+        ],
+        [
+          -0.06965384396212823,
+          -0.030595618064703643
+        ],
+        [
+          -0.06672694163853317,
+          -0.03747221410660413
+        ],
+        [
+          -0.06329409297886836,
+          -0.044166427282556445
+        ],
+        [
+          -0.058781967624824516,
+          -0.05019421198062492
+        ],
+        [
+          -0.05363289908913461,
+          -0.05567822255031334
+        ],
+        [
+          -0.04804640670894581,
+          -0.06070241663859984
+        ],
+        [
+          -0.04194126877125019,
+          -0.065070274267697
+        ],
+        [
+          -0.035515166841068466,
+          -0.06893741824565346
+        ],
+        [
+          -0.02872780803276191,
+          -0.0721277227516742
+        ],
+        [
+          -0.02165851876345574,
+          -0.07462502007899323
+        ],
+        [
+          -0.014409239377188124,
+          -0.07655673795557343
+        ],
+        [
+          -0.006991791895139651,
+          -0.07774168892071115
+        ],
+        [
+          0.0005143038787794697,
+          -0.07831592871530646
+        ],
+        [
+          0.008053036793240266,
+          -0.07807305936959512
+        ],
+        [
+          0.015517570340996269,
+          -0.07695753357878896
+        ],
+        [
+          0.022829972301926862,
+          -0.0750959195106715
+        ],
+        [
+          0.029914014974214743,
+          -0.07250820083884978
+        ],
+        [
+          0.0365946279880843,
+          -0.06903255824562081
+        ],
+        [
+          0.04282438733094177,
+          -0.06485253429576315
+        ],
+        [
+          0.04867009132599413,
+          -0.06020901636429552
+        ],
+        [
+          0.054224138332257595,
+          -0.05524085403587741
+        ],
+        [
+          0.05925385266074637,
+          -0.04973732145060502
+        ],
+        [
+          0.06374180943816116,
+          -0.043778288126101815
+        ],
+        [
+          0.06768294909042114,
+          -0.03743340843474957
+        ],
+        [
+          0.07099953367880342,
+          -0.030726957712553474
+        ],
+        [
+          0.0735402524959492,
+          -0.023683198912697906
+        ],
+        [
+          0.07535552108741649,
+          -0.01641786327494449
+        ],
+        [
+          0.07649963169919939,
+          -0.009014921153986591
+        ],
+        [
+          0.07693607204206442,
+          -0.0015310195823992675
+        ],
+        [
+          0.07664948714136276,
+          0.005967641461987442
+        ],
+        [
+          0.07553180080328935,
+          0.013390888325751202
+        ],
+        [
+          0.07364614748156934,
+          0.02065328264059787
+        ],
+        [
+          0.07107139416929355,
+          0.027694684137514677
+        ],
+        [
+          0.06781503012736269,
+          0.034441968055044195
+        ],
+        [
+          0.06393776275764658,
+          0.04084718078341281
+        ],
+        [
+          0.059495727000724426,
+          0.046873783426672096
+        ],
+        [
+          0.05436006234927005,
+          0.052314738888091294
+        ],
+        [
+          0.048745741749240006,
+          0.05723915750693433
+        ],
+        [
+          0.042780110502081546,
+          0.061724230173739784
+        ],
+        [
+          0.03641576391905875,
+          0.06563588794407822
+        ],
+        [
+          0.029722670095431357,
+          0.0689842142726018
+        ],
+        [
+          0.022665551325016655,
+          0.07149185702471791
+        ],
+        [
+          0.015427614801907725,
+          0.07344325737979511
+        ],
+        [
+          0.00800350067064541,
+          0.07450807151174899
+        ],
+        [
+          0.0005143038787794884,
+          0.07492478117067583
+        ],
+        [
+          -0.0069931474955837606,
+          0.07469341339819904
+        ],
+        [
+          -0.014455787063127683,
+          0.0737287098105661
+        ],
+        [
+          -0.021777326264538113,
+          0.07195463675717133
+        ],
+        [
+          -0.02884286400995895,
+          0.06934345328745699
+        ],
+        [
+          -0.035657185965389776,
+          0.06614107817441771
+        ],
+        [
+          -0.04215415859188002,
+          0.06232684723526594
+        ],
+        [
+          -0.048123267328010054,
+          0.05773403240911005
+        ],
+        [
+          -0.05366579694828819,
+          0.05264908124466841
+        ],
+        [
+          -0.058597911902492895,
+          0.04698112218817819
+        ],
+        [
+          -0.06310096351050117,
+          0.04097534313264226
+        ],
+        [
+          -0.06678295853172517,
+          0.03444011659501811
+        ],
+        [
+          -0.06975711411673867,
+          0.02757635479853314
+        ],
+        [
+          -0.0720863624196571,
+          0.020492151766914823
+        ],
+        [
+          -0.0736845694167401,
+          0.013228053961715848
+        ],
+        [
+          -0.07479195974928206,
+          0.0058860000039131066
+        ]
+      ],
+      "recorded_groups": 6,
+      "photo_ids": [
+        "0114716639829db3",
+        "02fb7b0f8dcd09b0",
+        "105beb1ad609aa54",
+        "1a5705dcb625d490",
+        "1b2741bc0119257c",
+        "1fb794f0783c0568"
+      ],
+      "provenance": [
+        {
+          "photo_id": "0114716639829db3",
+          "physical_watch_id": "bobs_126610_191335",
+          "sha256": "0114716639829db316273d2089e0f652bda93e36874ec804a01aa8351a7644de",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/pre-owned-rolex-submariner-chromalight-dial-ref-126610.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-SKU191335.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "02fb7b0f8dcd09b0",
+          "physical_watch_id": "bobs_126610_181553",
+          "sha256": "02fb7b0f8dcd09b0e4ae480c828469bd040aade3f2d625a4bc8255cdbc19966a",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/rolex-submariner-126610-black-dial.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-Black-Chromalight-Dial-SKU181553.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "105beb1ad609aa54",
+          "physical_watch_id": "bobs_126610_190919",
+          "sha256": "105beb1ad609aa545a7410088e684beb5c0c9dbc3b8686f22c2270bd32e47192",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/pre-owned-rolex-submariner-ref-126610-chromalight-dial.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-SKU190919.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1a5705dcb625d490",
+          "physical_watch_id": "bobs_126610_193168",
+          "sha256": "1a5705dcb625d4908d87c6765d8748e56128e19383be8cbd9df4f6734e034382",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/used-rolex-submariner-steel-ref-126610-black-chromalight-dial.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-SKU193168.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1b2741bc0119257c",
+          "physical_watch_id": "bobs_126610LN_189923",
+          "sha256": "1b2741bc0119257caf1750a206dee0ab0b132b9432286874732d311b1a2dbd2c",
+          "model": "126610LN",
+          "source_url": "https://www.bobswatches.com/pre-owned-rolex-submariner-chromalight-dial-ref-126610ln-stainless-steel.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-SKU189923.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1fb794f0783c0568",
+          "physical_watch_id": "bobs_126610LV_184297",
+          "sha256": "1fb794f0783c0568c52d46dc511040942b0be8eed259128d566bddd3a45de432",
+          "model": "126610LV",
+          "source_url": "https://www.bobswatches.com/rolex-submariner-starbucks-green-bezel-126610lv-starbucks.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-Black-Dial-SKU184297.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        }
+      ]
+    },
+    "twelve": {
+      "polygon": [
+        [
+          -0.1043698406291237,
+          -0.08663148231934309
+        ],
+        [
+          -0.0906854803114721,
+          -0.09170684259117022
+        ],
+        [
+          -0.07456000841382271,
+          -0.09192660293461663
+        ],
+        [
+          -0.03758375363292753,
+          -0.09210353240287686
+        ],
+        [
+          0.03822207251694764,
+          -0.09245996685430209
+        ],
+        [
+          0.04922037946817588,
+          -0.09240187816561969
+        ],
+        [
+          0.07532635948160737,
+          -0.09226251044279479
+        ],
+        [
+          0.09134144287375237,
+          -0.09187212625330778
+        ],
+        [
+          0.10511873713358563,
+          -0.08684339603062655
+        ],
+        [
+          0.09940086626268083,
+          -0.06702962767744665
+        ],
+        [
+          0.0766861351565812,
+          -0.008304784072499197
+        ],
+        [
+          0.07373819844479125,
+          -0.0007760228296267587
+        ],
+        [
+          0.05839698676881461,
+          0.03807966566857453
+        ],
+        [
+          0.0557505208780051,
+          0.04477590234937528
+        ],
+        [
+          0.05290425875801622,
+          0.05188289647831806
+        ],
+        [
+          0.04978980651955015,
+          0.0595940849679105
+        ],
+        [
+          0.024529709662502338,
+          0.12130975058073185
+        ],
+        [
+          0.014559490287409365,
+          0.1445579895757994
+        ],
+        [
+          0.00024533945007140773,
+          0.16555706678593016
+        ],
+        [
+          -0.014332769984802754,
+          0.14723800619185873
+        ],
+        [
+          -0.02441183585027705,
+          0.12318396832208506
+        ],
+        [
+          -0.06311519498870269,
+          0.02546876985412104
+        ],
+        [
+          -0.06557691735146212,
+          0.019190940478669274
+        ],
+        [
+          -0.06804508302892763,
+          0.012807786775027974
+        ],
+        [
+          -0.07052887030842345,
+          0.006194628410981723
+        ],
+        [
+          -0.09749483350306706,
+          -0.06608391846345146
+        ]
+      ],
+      "recorded_groups": 6,
+      "photo_ids": [
+        "02fb7b0f8dcd09b0",
+        "0e62df651a8d3087",
+        "105beb1ad609aa54",
+        "1a5705dcb625d490",
+        "1ef3415e37d6fbf7",
+        "1fb794f0783c0568"
+      ],
+      "provenance": [
+        {
+          "photo_id": "02fb7b0f8dcd09b0",
+          "physical_watch_id": "bobs_126610_181553",
+          "sha256": "02fb7b0f8dcd09b0e4ae480c828469bd040aade3f2d625a4bc8255cdbc19966a",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/rolex-submariner-126610-black-dial.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-Black-Chromalight-Dial-SKU181553.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "0e62df651a8d3087",
+          "physical_watch_id": "bobs_126610_192114",
+          "sha256": "0e62df651a8d3087b7a726b6b7546666d35059c2a9e2b3aec23f1d928b8220f6",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/pre-owned-oyster-rolex-submariner-black-chromalight-dial-ref-126610.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-SKU192114.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "105beb1ad609aa54",
+          "physical_watch_id": "bobs_126610_190919",
+          "sha256": "105beb1ad609aa545a7410088e684beb5c0c9dbc3b8686f22c2270bd32e47192",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/pre-owned-rolex-submariner-ref-126610-chromalight-dial.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-SKU190919.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1a5705dcb625d490",
+          "physical_watch_id": "bobs_126610_193168",
+          "sha256": "1a5705dcb625d4908d87c6765d8748e56128e19383be8cbd9df4f6734e034382",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/used-rolex-submariner-steel-ref-126610-black-chromalight-dial.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-SKU193168.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1ef3415e37d6fbf7",
+          "physical_watch_id": "bobs_126610LV_189937",
+          "sha256": "1ef3415e37d6fbf7328254a0f0e9c1d2569baa22207fe2eceb2bf27f663a37a2",
+          "model": "126610LV",
+          "source_url": "https://www.bobswatches.com/pre-owned-rolex-submariner-date-starbucks-ref-126610lv-stainless-steel.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Master-Rolex-Submariner-126610-SKU189937.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1fb794f0783c0568",
+          "physical_watch_id": "bobs_126610LV_184297",
+          "sha256": "1fb794f0783c0568c52d46dc511040942b0be8eed259128d566bddd3a45de432",
+          "model": "126610LV",
+          "source_url": "https://www.bobswatches.com/rolex-submariner-starbucks-green-bezel-126610lv-starbucks.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-Black-Dial-SKU184297.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        }
+      ]
+    },
+    "nine": {
+      "polygon": [
+        [
+          -0.04230613783671488,
+          0.10808182751960276
+        ],
+        [
+          -0.041642646015218894,
+          -0.1055500096124891
+        ],
+        [
+          -0.03947252156853265,
+          -0.137142341669143
+        ],
+        [
+          -0.025352402229970886,
+          -0.1384032469760447
+        ],
+        [
+          0.015946371809094268,
+          -0.13839139537146583
+        ],
+        [
+          0.029889669326034936,
+          -0.1383873940311708
+        ],
+        [
+          0.04406086368173884,
+          -0.13730031824491257
+        ],
+        [
+          0.046320396554430314,
+          -0.10588155379362545
+        ],
+        [
+          0.046487550740244674,
+          -0.0534139818377333
+        ],
+        [
+          0.046769004403582254,
+          0.06706215528124251
+        ],
+        [
+          0.04677518610951304,
+          0.0837279570330311
+        ],
+        [
+          0.04670340597535082,
+          0.10773622728526268
+        ],
+        [
+          0.044120464374713834,
+          0.1384268023517318
+        ],
+        [
+          0.029774734197725063,
+          0.13873958307472026
+        ],
+        [
+          -0.011338553082225701,
+          0.1386370960632167
+        ],
+        [
+          -0.025207051156173783,
+          0.1386025247356562
+        ],
+        [
+          -0.03949568616731634,
+          0.1381487120705545
+        ]
+      ],
+      "recorded_groups": 3,
+      "photo_ids": [
+        "02fb7b0f8dcd09b0",
+        "1a5705dcb625d490",
+        "1ef3415e37d6fbf7"
+      ],
+      "provenance": [
+        {
+          "photo_id": "02fb7b0f8dcd09b0",
+          "physical_watch_id": "bobs_126610_181553",
+          "sha256": "02fb7b0f8dcd09b0e4ae480c828469bd040aade3f2d625a4bc8255cdbc19966a",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/rolex-submariner-126610-black-dial.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-Black-Chromalight-Dial-SKU181553.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1a5705dcb625d490",
+          "physical_watch_id": "bobs_126610_193168",
+          "sha256": "1a5705dcb625d4908d87c6765d8748e56128e19383be8cbd9df4f6734e034382",
+          "model": "126610",
+          "source_url": "https://www.bobswatches.com/used-rolex-submariner-steel-ref-126610-black-chromalight-dial.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-SKU193168.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1ef3415e37d6fbf7",
+          "physical_watch_id": "bobs_126610LV_189937",
+          "sha256": "1ef3415e37d6fbf7328254a0f0e9c1d2569baa22207fe2eceb2bf27f663a37a2",
+          "model": "126610LV",
+          "source_url": "https://www.bobswatches.com/pre-owned-rolex-submariner-date-starbucks-ref-126610lv-stainless-steel.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Master-Rolex-Submariner-126610-SKU189937.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        }
+      ]
+    }
+  }
+}

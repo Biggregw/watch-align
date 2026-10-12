@@ -1,0 +1,611 @@
+{
+  "experimental": true,
+  "model": "gmt_126710",
+  "method": "Median 64-ray inner contour profiles; one equal contribution per recorded group; minimum 3 groups; ring removed; no metal inset; no manufacturing tolerances",
+  "development_groups": 8,
+  "heldout_groups": 4,
+  "unsupported_keys": [
+    "nine"
+  ],
+  "shapes": {
+    "rounds": {
+      "polygon": [
+        [
+          -0.07800192357646434,
+          -2.2780025886649383e-06
+        ],
+        [
+          -0.0777191304473221,
+          -0.007646517857856084
+        ],
+        [
+          -0.07671244612001894,
+          -0.01524027526276251
+        ],
+        [
+          -0.07491000767956775,
+          -0.02269386790496061
+        ],
+        [
+          -0.07221687369473201,
+          -0.02987163757606716
+        ],
+        [
+          -0.06910068828895966,
+          -0.036880781664921654
+        ],
+        [
+          -0.0651484324963591,
+          -0.04346233502353397
+        ],
+        [
+          -0.06066371189259919,
+          -0.04970082208380996
+        ],
+        [
+          -0.05554677036217991,
+          -0.055443187651727004
+        ],
+        [
+          -0.04982220896819019,
+          -0.06058182363084683
+        ],
+        [
+          -0.04360654012744923,
+          -0.06510564549405519
+        ],
+        [
+          -0.03697273634843809,
+          -0.06897535107021986
+        ],
+        [
+          -0.029859400374454257,
+          -0.07183367698177684
+        ],
+        [
+          -0.02267383351895447,
+          -0.07439891401501761
+        ],
+        [
+          -0.015285122206142131,
+          -0.07631357876815813
+        ],
+        [
+          -0.00774048460477618,
+          -0.07751791522067975
+        ],
+        [
+          -0.00010586071304158466,
+          -0.07778194751842933
+        ],
+        [
+          0.007533804573131178,
+          -0.0775691013574016
+        ],
+        [
+          0.015089659656862915,
+          -0.07639531766161224
+        ],
+        [
+          0.0225865334864047,
+          -0.07480907638123768
+        ],
+        [
+          0.029824363790377596,
+          -0.0722602319236147
+        ],
+        [
+          0.036732854762076134,
+          -0.06892266711588335
+        ],
+        [
+          0.04335806915081284,
+          -0.06505064590492188
+        ],
+        [
+          0.04953521125869873,
+          -0.06049009921412069
+        ],
+        [
+          0.055081933404785496,
+          -0.05519007212041577
+        ],
+        [
+          0.06018023207794722,
+          -0.04947779573808182
+        ],
+        [
+          0.06469897763219092,
+          -0.043303486618686465
+        ],
+        [
+          0.06878225815147303,
+          -0.03682374467037356
+        ],
+        [
+          0.07223920051988296,
+          -0.029968583535978095
+        ],
+        [
+          0.07484743535845365,
+          -0.022739111791316
+        ],
+        [
+          0.07657252882663115,
+          -0.015254557992784617
+        ],
+        [
+          0.07755752861445706,
+          -0.007651454206927819
+        ],
+        [
+          0.07802598638824511,
+          -2.278002588674478e-06
+        ],
+        [
+          0.07764248075659694,
+          0.007655265257448032
+        ],
+        [
+          0.07660350161441104,
+          0.015256162858148877
+        ],
+        [
+          0.07460793990065814,
+          0.022661905633277357
+        ],
+        [
+          0.07164944792455442,
+          0.029719744007370884
+        ],
+        [
+          0.06831357731278088,
+          0.03656867353770847
+        ],
+        [
+          0.06458664027265228,
+          0.04322386918962514
+        ],
+        [
+          0.060125402595305535,
+          0.04942824233938828
+        ],
+        [
+          0.054959289500331944,
+          0.055062872210784826
+        ],
+        [
+          0.04926147956918552,
+          0.06015200018020637
+        ],
+        [
+          0.04315150710176554,
+          0.06473694794679229
+        ],
+        [
+          0.03656086210431895,
+          0.06859633548024834
+        ],
+        [
+          0.0296660893856113,
+          0.07187356770387407
+        ],
+        [
+          0.022442589942532853,
+          0.07433000210488586
+        ],
+        [
+          0.015029826026607263,
+          0.07608995768409339
+        ],
+        [
+          0.007517207895623341,
+          0.07739603645761844
+        ],
+        [
+          -0.00010586071304156562,
+          0.07764934901388482
+        ],
+        [
+          -0.007719902300985757,
+          0.07730438357814855
+        ],
+        [
+          -0.01527697980564906,
+          0.07626808815142144
+        ],
+        [
+          -0.02277660895803994,
+          0.07473316322723478
+        ],
+        [
+          -0.029967117347136217,
+          0.07208917275294618
+        ],
+        [
+          -0.0370433521016385,
+          0.06910290784707991
+        ],
+        [
+          -0.04358265176982909,
+          0.06506533803520298
+        ],
+        [
+          -0.04961252134555215,
+          0.06032176251821297
+        ],
+        [
+          -0.05532376961407304,
+          0.0552156308984428
+        ],
+        [
+          -0.0604946802154605,
+          0.04955754536622671
+        ],
+        [
+          -0.06498480977747181,
+          0.0433484498129179
+        ],
+        [
+          -0.0689340067723215,
+          0.03678713253294407
+        ],
+        [
+          -0.07220015291350708,
+          0.029860155596533
+        ],
+        [
+          -0.07487958460977243,
+          0.02268008316245572
+        ],
+        [
+          -0.07659941654106622,
+          0.015213236276451773
+        ],
+        [
+          -0.07769198713588675,
+          0.007639288469843728
+        ]
+      ],
+      "recorded_groups": 5,
+      "photo_ids": [
+        "0556ad9173b440ec",
+        "2347fbd181eb8847",
+        "3108248748f8ed97",
+        "4f60c0e0ce1d3f49",
+        "5350069ae2e623e9"
+      ],
+      "provenance": [
+        {
+          "photo_id": "0556ad9173b440ec",
+          "physical_watch_id": "hv_page_b25aaeffa2",
+          "sha256": "0556ad9173b440ec9c8e36268bd77e23215de4f940ac383113f89535dc49ab97",
+          "model": "126710GRNR",
+          "source_url": "https://bobswatches.com/pre-owned-rolex-gmt-master-ii-ref-126710grnr-steel-bruce-wayne.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-GMT-Master-II-126710-SKU188819.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "2347fbd181eb8847",
+          "physical_watch_id": "hv_page_a13e399a8f",
+          "sha256": "2347fbd181eb8847f2d4e4c152985826cf24e47918969cfa0b1a9e022e96f90f",
+          "model": "126710GRNR",
+          "source_url": "https://bobswatches.com/pre-owned-black-and-grey-bruce-wayne-rolex-gmt-master-ii-ref-126710grnr.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-GMT-Master-II-126710-SKU194364-PL.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "3108248748f8ed97",
+          "physical_watch_id": "hv_page_b4498e472c",
+          "sha256": "3108248748f8ed974cf6be94a7c4a06ae3cafa6eddb86decf72c9f0544974758",
+          "model": "126710BLRO",
+          "source_url": "https://bobswatches.com/used-rolex-gmt-master-ii-jubilee-bracelet-ref-126710blro-pepsi.html",
+          "image_url": "https://www.bobswatches.com/images/z192480-Used-Rolex-GMT-Master-II-126710-SKU192480.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "4f60c0e0ce1d3f49",
+          "physical_watch_id": "hv_page_48ba112426",
+          "sha256": "4f60c0e0ce1d3f49cc053674e82cf3dab8e6d1ae917b75252b8c49ebeb8f5a9c",
+          "model": "126710GRNR",
+          "source_url": "https://bobswatches.com/mens-rolex-gmt-master-ii-ref-126710grnr-stainless-steel.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-GMT-Master-II-126710-Bruce-Wayne-SKU183041-PL.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "5350069ae2e623e9",
+          "physical_watch_id": "hv_page_1ad4986148",
+          "sha256": "5350069ae2e623e97c96cbadb8d66300affe1df6a501fc106eafe6bcac96213a",
+          "model": "126710GRNR",
+          "source_url": "https://bobswatches.com/used-rolex-gmt-master-ii-ref-126710grnr-bruce-wayne.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-GMT-Master-II-126710-Black-Dial-SKU182460.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        }
+      ]
+    },
+    "six": {
+      "polygon": [
+        [
+          -0.04612412667010326,
+          0.08596995084211587
+        ],
+        [
+          -0.04606105633110823,
+          0.013428419773479106
+        ],
+        [
+          -0.046032242129521374,
+          -0.019712773582010634
+        ],
+        [
+          -0.0459521198997344,
+          -0.1118668560555063
+        ],
+        [
+          -0.04181756738847888,
+          -0.13890753520003943
+        ],
+        [
+          -0.027570266850408243,
+          -0.13990351334250348
+        ],
+        [
+          -0.013617246537228792,
+          -0.14028202925379157
+        ],
+        [
+          0.027916407771376685,
+          -0.1402207914159962
+        ],
+        [
+          0.042176580954885814,
+          -0.13915801816972617
+        ],
+        [
+          0.045995835943518935,
+          -0.11128910011942166
+        ],
+        [
+          0.04620547877255871,
+          -0.009749669119108165
+        ],
+        [
+          0.046455246936086075,
+          0.11122426222271703
+        ],
+        [
+          0.042058274166160085,
+          0.13759405880851552
+        ],
+        [
+          0.0278876062352409,
+          0.13890204217028326
+        ],
+        [
+          0.013900231377875853,
+          0.1391076126555297
+        ],
+        [
+          0.0001415151941262116,
+          0.13911379005072083
+        ],
+        [
+          -0.01360770646255042,
+          0.1390112131044077
+        ],
+        [
+          -0.02750526560864306,
+          0.13840277588707695
+        ],
+        [
+          -0.04142746003362766,
+          0.136447569451374
+        ],
+        [
+          -0.04611216381078414,
+          0.11107928209047445
+        ]
+      ],
+      "recorded_groups": 3,
+      "photo_ids": [
+        "0556ad9173b440ec",
+        "2347fbd181eb8847",
+        "3108248748f8ed97"
+      ],
+      "provenance": [
+        {
+          "photo_id": "0556ad9173b440ec",
+          "physical_watch_id": "hv_page_b25aaeffa2",
+          "sha256": "0556ad9173b440ec9c8e36268bd77e23215de4f940ac383113f89535dc49ab97",
+          "model": "126710GRNR",
+          "source_url": "https://bobswatches.com/pre-owned-rolex-gmt-master-ii-ref-126710grnr-steel-bruce-wayne.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-GMT-Master-II-126710-SKU188819.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "2347fbd181eb8847",
+          "physical_watch_id": "hv_page_a13e399a8f",
+          "sha256": "2347fbd181eb8847f2d4e4c152985826cf24e47918969cfa0b1a9e022e96f90f",
+          "model": "126710GRNR",
+          "source_url": "https://bobswatches.com/pre-owned-black-and-grey-bruce-wayne-rolex-gmt-master-ii-ref-126710grnr.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-GMT-Master-II-126710-SKU194364-PL.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "3108248748f8ed97",
+          "physical_watch_id": "hv_page_b4498e472c",
+          "sha256": "3108248748f8ed974cf6be94a7c4a06ae3cafa6eddb86decf72c9f0544974758",
+          "model": "126710BLRO",
+          "source_url": "https://bobswatches.com/used-rolex-gmt-master-ii-jubilee-bracelet-ref-126710blro-pepsi.html",
+          "image_url": "https://www.bobswatches.com/images/z192480-Used-Rolex-GMT-Master-II-126710-SKU192480.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        }
+      ]
+    },
+    "twelve": {
+      "polygon": [
+        [
+          -0.1072088590262271,
+          -0.08651372217726057
+        ],
+        [
+          -0.0933749631853655,
+          -0.09170375072135993
+        ],
+        [
+          -0.07705123794998943,
+          -0.09197119789107357
+        ],
+        [
+          -0.06308235751234897,
+          -0.09218184797045699
+        ],
+        [
+          -0.05076643865194601,
+          -0.09233045922990897
+        ],
+        [
+          -0.03960004914562127,
+          -0.09234738589712752
+        ],
+        [
+          -0.019594661679190238,
+          -0.09232587905019855
+        ],
+        [
+          -0.010266374183985337,
+          -0.09231051767476488
+        ],
+        [
+          -0.001120323972998905,
+          -0.09229458926483337
+        ],
+        [
+          0.008022158411547943,
+          -0.09227429292501035
+        ],
+        [
+          0.02702465218511143,
+          -0.09223066370338533
+        ],
+        [
+          0.037291638818212826,
+          -0.09218379303690728
+        ],
+        [
+          0.07478889137178132,
+          -0.0919447580312249
+        ],
+        [
+          0.09108157193112103,
+          -0.09165100741311329
+        ],
+        [
+          0.1050183826736248,
+          -0.08655489693986244
+        ],
+        [
+          0.09966700929811405,
+          -0.066793054573604
+        ],
+        [
+          0.05758861677155708,
+          0.0397789485513889
+        ],
+        [
+          0.04549395533374456,
+          0.07031408752397757
+        ],
+        [
+          0.041495225647307364,
+          0.0802789741266809
+        ],
+        [
+          0.023532721959471474,
+          0.12449011990850738
+        ],
+        [
+          0.013465019302217924,
+          0.1486383639260478
+        ],
+        [
+          -0.0011203239729988775,
+          0.16894428066429587
+        ],
+        [
+          -0.016007587312713664,
+          0.15170380978433365
+        ],
+        [
+          -0.02627544229630851,
+          0.12701420826687973
+        ],
+        [
+          -0.06516707459602455,
+          0.027079921224991386
+        ],
+        [
+          -0.08542186543350652,
+          -0.025021704534025174
+        ],
+        [
+          -0.08973471605758383,
+          -0.03615439453187544
+        ],
+        [
+          -0.09491103043599196,
+          -0.049581288562155004
+        ],
+        [
+          -0.10120499608416277,
+          -0.06632355139683041
+        ]
+      ],
+      "recorded_groups": 4,
+      "photo_ids": [
+        "2347fbd181eb8847",
+        "27e9b4708fcb9eaf",
+        "3108248748f8ed97",
+        "5350069ae2e623e9"
+      ],
+      "provenance": [
+        {
+          "photo_id": "2347fbd181eb8847",
+          "physical_watch_id": "hv_page_a13e399a8f",
+          "sha256": "2347fbd181eb8847f2d4e4c152985826cf24e47918969cfa0b1a9e022e96f90f",
+          "model": "126710GRNR",
+          "source_url": "https://bobswatches.com/pre-owned-black-and-grey-bruce-wayne-rolex-gmt-master-ii-ref-126710grnr.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-GMT-Master-II-126710-SKU194364-PL.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "27e9b4708fcb9eaf",
+          "physical_watch_id": "hv_page_284b4c6ca7",
+          "sha256": "27e9b4708fcb9eaf975b162690616e828c930b020689bf10be5e1510626fdcb4",
+          "model": "126710BLNR",
+          "source_url": "https://bobswatches.com/mens-rolex-gmt-master-ii-ref-126710blnr-batman.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-GMT-Master-II-126710-Black-Dial-SKU182607.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "3108248748f8ed97",
+          "physical_watch_id": "hv_page_b4498e472c",
+          "sha256": "3108248748f8ed974cf6be94a7c4a06ae3cafa6eddb86decf72c9f0544974758",
+          "model": "126710BLRO",
+          "source_url": "https://bobswatches.com/used-rolex-gmt-master-ii-jubilee-bracelet-ref-126710blro-pepsi.html",
+          "image_url": "https://www.bobswatches.com/images/z192480-Used-Rolex-GMT-Master-II-126710-SKU192480.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "5350069ae2e623e9",
+          "physical_watch_id": "hv_page_1ad4986148",
+          "sha256": "5350069ae2e623e97c96cbadb8d66300affe1df6a501fc106eafe6bcac96213a",
+          "model": "126710GRNR",
+          "source_url": "https://bobswatches.com/used-rolex-gmt-master-ii-ref-126710grnr-bruce-wayne.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-GMT-Master-II-126710-Black-Dial-SKU182460.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        }
+      ]
+    }
+  }
+}

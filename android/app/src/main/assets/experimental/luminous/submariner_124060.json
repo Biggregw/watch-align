@@ -1,0 +1,1129 @@
+{
+  "experimental": true,
+  "model": "submariner_124060",
+  "method": "Median 64-ray inner contour profiles; one equal contribution per recorded group; minimum 3 groups; ring removed; no metal inset; no manufacturing tolerances",
+  "development_groups": 8,
+  "heldout_groups": 4,
+  "unsupported_keys": [],
+  "shapes": {
+    "twelve": {
+      "polygon": [
+        [
+          -0.10098317293786283,
+          -0.08513415267673428
+        ],
+        [
+          -0.08756007334196772,
+          -0.08977269356107562
+        ],
+        [
+          -0.07236681431160387,
+          -0.09033483188445482
+        ],
+        [
+          -0.05910910897649737,
+          -0.0905460908525246
+        ],
+        [
+          -0.04737682978026438,
+          -0.09062122836834996
+        ],
+        [
+          -0.03678520563590558,
+          -0.09065099981363246
+        ],
+        [
+          0.07142389767561978,
+          -0.08982169017691347
+        ],
+        [
+          0.08694527845842166,
+          -0.08967969079744487
+        ],
+        [
+          0.10059317420659357,
+          -0.0852423127155676
+        ],
+        [
+          0.09727952345037373,
+          -0.06764794092955574
+        ],
+        [
+          0.07789079308414931,
+          -0.018018853781439005
+        ],
+        [
+          0.07464619385609159,
+          -0.009851220686298505
+        ],
+        [
+          0.06622594134027542,
+          0.0107515379478012
+        ],
+        [
+          0.05354636079599288,
+          0.041684958215283056
+        ],
+        [
+          0.023048010630387968,
+          0.11470827084358519
+        ],
+        [
+          0.013483967124650423,
+          0.13708042158863182
+        ],
+        [
+          -0.00026089605995760956,
+          0.15983981058641106
+        ],
+        [
+          -0.014126852021366557,
+          0.13830989718420017
+        ],
+        [
+          -0.02374111248158868,
+          0.1155695030210622
+        ],
+        [
+          -0.030916667725594527,
+          0.09858501945662866
+        ],
+        [
+          -0.03657401801462575,
+          0.08519411523600247
+        ],
+        [
+          -0.04847422587896221,
+          0.05627459608572749
+        ],
+        [
+          -0.08593452564438392,
+          -0.03796069559066373
+        ],
+        [
+          -0.09100410986604758,
+          -0.05097677457038424
+        ],
+        [
+          -0.0968074463224353,
+          -0.06698385872925497
+        ]
+      ],
+      "recorded_groups": 7,
+      "photo_ids": [
+        "033133202cf757da",
+        "077c7533c2846cb2",
+        "14a800efc5982cf7",
+        "17484cbe61baaa1a",
+        "22b6183aa899f82a",
+        "2fdf38169ee1b57a",
+        "300443c8ae84ff63"
+      ],
+      "provenance": [
+        {
+          "photo_id": "033133202cf757da",
+          "physical_watch_id": "auto_davidsw_124060_5f3e76a1ef3e",
+          "sha256": "033133202cf757dad919a76e72c9bc3635981192c4c31f103d6808defcc1dadb",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-53",
+          "image_url": "https://davidsw.com/wp-content/uploads/2025/07/25.07.07-10.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "077c7533c2846cb2",
+          "physical_watch_id": "auto_bobs_124060_2905d2d5bc5c",
+          "sha256": "077c7533c2846cb2a8726d9977f9f97e4bff6cf2a896b86cf3d8c1d7e5bb059f",
+          "model": "124060",
+          "source_url": "https://www.bobswatches.com/used-rolex-submariner-ref-124060-stainless-steel.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU191878.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "14a800efc5982cf7",
+          "physical_watch_id": "auto_ewc_124060_7761710b6ccf",
+          "sha256": "14a800efc5982cf7acaaf0219fc2accb0a7da3a3332a8a9304867efa9d8d851c",
+          "model": "124060",
+          "source_url": "https://www.europeanwatch.com/watch/rolex-124060-124060-submariner-no-date-41mm-ss-black-dial-71758",
+          "image_url": "https://images.europeanwatch.com/images/71/71758-1.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "17484cbe61baaa1a",
+          "physical_watch_id": "ewc_124060_67830",
+          "sha256": "17484cbe61baaa1ac6f5c09a8f5a40504042bd53b47dd1bafe7a69d8fe6f9ed5",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/67/67830-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "22b6183aa899f82a",
+          "physical_watch_id": "ewc_124060_58030",
+          "sha256": "22b6183aa899f82aa6f71cb3e474d18f4781df28ac15ee3c5ddfb69790647fb8",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/58/58030-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "2fdf38169ee1b57a",
+          "physical_watch_id": "auto_davidsw_124060_e840fd0e1afd",
+          "sha256": "2fdf38169ee1b57a6b148d3ede7788b2614fb6ef4628e78272568cf387907832",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-14",
+          "image_url": "https://davidsw.com/wp-content/uploads/2024/04/24.04.26-39.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "300443c8ae84ff63",
+          "physical_watch_id": "auto_davidsw_124060_36185ea2c96c",
+          "sha256": "300443c8ae84ff637ee9cc6070aa5763a8525e624bec6a602741a8dc734c2a2d",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-155",
+          "image_url": "https://davidsw.com/wp-content/uploads/2026/01/26.01.12-121.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        }
+      ]
+    },
+    "rounds": {
+      "polygon": [
+        [
+          -0.07451631575601413,
+          -8.365819658363666e-05
+        ],
+        [
+          -0.07412026920794408,
+          -0.007357416233549845
+        ],
+        [
+          -0.0730937966282289,
+          -0.014569497524105834
+        ],
+        [
+          -0.0713156513536497,
+          -0.021635556373483713
+        ],
+        [
+          -0.06890256407015441,
+          -0.028512791658290508
+        ],
+        [
+          -0.0657190497012538,
+          -0.0350676713898295
+        ],
+        [
+          -0.0619802580355461,
+          -0.04131809352659949
+        ],
+        [
+          -0.05765413878936607,
+          -0.047178781915071306
+        ],
+        [
+          -0.05275787090741814,
+          -0.05257296460361487
+        ],
+        [
+          -0.04732623499398507,
+          -0.05742359559899025
+        ],
+        [
+          -0.0414412890625605,
+          -0.06170299504097158
+        ],
+        [
+          -0.03524146468214221,
+          -0.06551335241529303
+        ],
+        [
+          -0.028665661177843638,
+          -0.06864031412731957
+        ],
+        [
+          -0.021762113838130287,
+          -0.07093839470514242
+        ],
+        [
+          -0.014708414913307915,
+          -0.07267768843785108
+        ],
+        [
+          -0.007529396764657093,
+          -0.07380412533156694
+        ],
+        [
+          -0.0002685645003869084,
+          -0.0742711769270544
+        ],
+        [
+          0.007004756573763012,
+          -0.07393092634621434
+        ],
+        [
+          0.014195019345272156,
+          -0.07279700446153883
+        ],
+        [
+          0.021204008953860643,
+          -0.07086924648421453
+        ],
+        [
+          0.028084889683715964,
+          -0.0685349518279689
+        ],
+        [
+          0.03463874835384619,
+          -0.06539064715601807
+        ],
+        [
+          0.040821070943696074,
+          -0.06157864338802241
+        ],
+        [
+          0.04666195714221267,
+          -0.05726866427577403
+        ],
+        [
+          0.05220812722466918,
+          -0.05256034992163975
+        ],
+        [
+          0.05704771480205808,
+          -0.047121912989312016
+        ],
+        [
+          0.06139194854019868,
+          -0.04128389581344728
+        ],
+        [
+          0.06520612997003968,
+          -0.035080611514002394
+        ],
+        [
+          0.06833467404172308,
+          -0.02850005002344229
+        ],
+        [
+          0.07090174499758815,
+          -0.02167293555410253
+        ],
+        [
+          0.072669454317837,
+          -0.014591932191698642
+        ],
+        [
+          0.07368215597586666,
+          -0.007367168435563233
+        ],
+        [
+          0.07400076789107353,
+          -8.365819658364576e-05
+        ],
+        [
+          0.07372929270867626,
+          0.007204494605360039
+        ],
+        [
+          0.0725855179534688,
+          0.014407919817585595
+        ],
+        [
+          0.07088524098902187,
+          0.021500612724670413
+        ],
+        [
+          0.06827893245988206,
+          0.028309644711088267
+        ],
+        [
+          0.06514881707726898,
+          0.034882660741415585
+        ],
+        [
+          0.06124729335737188,
+          0.04101992391725082
+        ],
+        [
+          0.05693182757644198,
+          0.046859490407953557
+        ],
+        [
+          0.05206718946170141,
+          0.05225209576550466
+        ],
+        [
+          0.04662300476230946,
+          0.05705388427036466
+        ],
+        [
+          0.040878446842826995,
+          0.0614971960961325
+        ],
+        [
+          0.03466449563543318,
+          0.06527150053866126
+        ],
+        [
+          0.028154061605591356,
+          0.06853463122672862
+        ],
+        [
+          0.02127275411619942,
+          0.07092855252027984
+        ],
+        [
+          0.014206391922794423,
+          0.07268686187647647
+        ],
+        [
+          0.007005853997160114,
+          0.07377475227978465
+        ],
+        [
+          -0.00026856450038689023,
+          0.07404098742191563
+        ],
+        [
+          -0.007526578354023828,
+          0.07360819313501771
+        ],
+        [
+          -0.014718366372781077,
+          0.07256040140989768
+        ],
+        [
+          -0.021788701266167592,
+          0.07085872531612612
+        ],
+        [
+          -0.028608237956186798,
+          0.06833436581363328
+        ],
+        [
+          -0.03517637128167735,
+          0.06522425483538011
+        ],
+        [
+          -0.04146466122090557,
+          0.0615706575546695
+        ],
+        [
+          -0.04732052509187335,
+          0.05724932166996914
+        ],
+        [
+          -0.05277502089706869,
+          0.05242279820009815
+        ],
+        [
+          -0.05765353144928217,
+          0.047010967090778365
+        ],
+        [
+          -0.06196297821021771,
+          0.04113923112328082
+        ],
+        [
+          -0.06568231004239163,
+          0.03488071723986935
+        ],
+        [
+          -0.06883166074337749,
+          0.028316106145554864
+        ],
+        [
+          -0.07126987620626425,
+          0.02145435424116543
+        ],
+        [
+          -0.07299775228104267,
+          0.014383076722466316
+        ],
+        [
+          -0.07406672355362748,
+          0.007184826053745253
+        ]
+      ],
+      "recorded_groups": 8,
+      "photo_ids": [
+        "033133202cf757da",
+        "077c7533c2846cb2",
+        "14a800efc5982cf7",
+        "17484cbe61baaa1a",
+        "1b33b3c613d20838",
+        "22b6183aa899f82a",
+        "2fdf38169ee1b57a",
+        "300443c8ae84ff63"
+      ],
+      "provenance": [
+        {
+          "photo_id": "033133202cf757da",
+          "physical_watch_id": "auto_davidsw_124060_5f3e76a1ef3e",
+          "sha256": "033133202cf757dad919a76e72c9bc3635981192c4c31f103d6808defcc1dadb",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-53",
+          "image_url": "https://davidsw.com/wp-content/uploads/2025/07/25.07.07-10.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "077c7533c2846cb2",
+          "physical_watch_id": "auto_bobs_124060_2905d2d5bc5c",
+          "sha256": "077c7533c2846cb2a8726d9977f9f97e4bff6cf2a896b86cf3d8c1d7e5bb059f",
+          "model": "124060",
+          "source_url": "https://www.bobswatches.com/used-rolex-submariner-ref-124060-stainless-steel.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU191878.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "14a800efc5982cf7",
+          "physical_watch_id": "auto_ewc_124060_7761710b6ccf",
+          "sha256": "14a800efc5982cf7acaaf0219fc2accb0a7da3a3332a8a9304867efa9d8d851c",
+          "model": "124060",
+          "source_url": "https://www.europeanwatch.com/watch/rolex-124060-124060-submariner-no-date-41mm-ss-black-dial-71758",
+          "image_url": "https://images.europeanwatch.com/images/71/71758-1.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "17484cbe61baaa1a",
+          "physical_watch_id": "ewc_124060_67830",
+          "sha256": "17484cbe61baaa1ac6f5c09a8f5a40504042bd53b47dd1bafe7a69d8fe6f9ed5",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/67/67830-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1b33b3c613d20838",
+          "physical_watch_id": "ewc_124060_59112_59921_62175",
+          "sha256": "1b33b3c613d20838d3bca2590c977f7dd361637c81424fd93665a9f711fe85fe",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/59/59112-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "22b6183aa899f82a",
+          "physical_watch_id": "ewc_124060_58030",
+          "sha256": "22b6183aa899f82aa6f71cb3e474d18f4781df28ac15ee3c5ddfb69790647fb8",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/58/58030-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "2fdf38169ee1b57a",
+          "physical_watch_id": "auto_davidsw_124060_e840fd0e1afd",
+          "sha256": "2fdf38169ee1b57a6b148d3ede7788b2614fb6ef4628e78272568cf387907832",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-14",
+          "image_url": "https://davidsw.com/wp-content/uploads/2024/04/24.04.26-39.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "300443c8ae84ff63",
+          "physical_watch_id": "auto_davidsw_124060_36185ea2c96c",
+          "sha256": "300443c8ae84ff637ee9cc6070aa5763a8525e624bec6a602741a8dc734c2a2d",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-155",
+          "image_url": "https://davidsw.com/wp-content/uploads/2026/01/26.01.12-121.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        }
+      ]
+    },
+    "three": {
+      "polygon": [
+        [
+          -0.043216129506576356,
+          -0.0667989577078527
+        ],
+        [
+          -0.04321103813149126,
+          -0.0834819637721143
+        ],
+        [
+          -0.04291758513949626,
+          -0.10700453861044985
+        ],
+        [
+          -0.03948902509920257,
+          -0.13479222666384386
+        ],
+        [
+          -0.02577133367902944,
+          -0.136572706901753
+        ],
+        [
+          -0.01210768739157247,
+          -0.13704207652657271
+        ],
+        [
+          0.0013849852350521206,
+          -0.13709618118804812
+        ],
+        [
+          0.014885618602388474,
+          -0.13712290328343082
+        ],
+        [
+          0.028630176981254384,
+          -0.13701950080045047
+        ],
+        [
+          0.04188137526861117,
+          -0.13354737936172395
+        ],
+        [
+          0.04530031108129132,
+          -0.10606964761825104
+        ],
+        [
+          0.04598219528530794,
+          0.023789033039971496
+        ],
+        [
+          0.046155982311604324,
+          0.06695585986082096
+        ],
+        [
+          0.04607824419106077,
+          0.08356653403649295
+        ],
+        [
+          0.04561687996700831,
+          0.10673656778712083
+        ],
+        [
+          0.04225713839196141,
+          0.13468875964216676
+        ],
+        [
+          0.028530270008748002,
+          0.1364198898035768
+        ],
+        [
+          0.01487195759912116,
+          0.13688685606113754
+        ],
+        [
+          0.0013849852350521542,
+          0.13696208247723424
+        ],
+        [
+          -0.01210717412728254,
+          0.13693952053832933
+        ],
+        [
+          -0.025841888450707118,
+          0.13683006496331285
+        ],
+        [
+          -0.039326653925834544,
+          0.13415961591092912
+        ],
+        [
+          -0.042713643735906255,
+          0.10641483577952007
+        ],
+        [
+          -0.042909032228440516,
+          0.0828196057394692
+        ]
+      ],
+      "recorded_groups": 8,
+      "photo_ids": [
+        "033133202cf757da",
+        "077c7533c2846cb2",
+        "14a800efc5982cf7",
+        "17484cbe61baaa1a",
+        "1b33b3c613d20838",
+        "22b6183aa899f82a",
+        "2fdf38169ee1b57a",
+        "300443c8ae84ff63"
+      ],
+      "provenance": [
+        {
+          "photo_id": "033133202cf757da",
+          "physical_watch_id": "auto_davidsw_124060_5f3e76a1ef3e",
+          "sha256": "033133202cf757dad919a76e72c9bc3635981192c4c31f103d6808defcc1dadb",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-53",
+          "image_url": "https://davidsw.com/wp-content/uploads/2025/07/25.07.07-10.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "077c7533c2846cb2",
+          "physical_watch_id": "auto_bobs_124060_2905d2d5bc5c",
+          "sha256": "077c7533c2846cb2a8726d9977f9f97e4bff6cf2a896b86cf3d8c1d7e5bb059f",
+          "model": "124060",
+          "source_url": "https://www.bobswatches.com/used-rolex-submariner-ref-124060-stainless-steel.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU191878.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "14a800efc5982cf7",
+          "physical_watch_id": "auto_ewc_124060_7761710b6ccf",
+          "sha256": "14a800efc5982cf7acaaf0219fc2accb0a7da3a3332a8a9304867efa9d8d851c",
+          "model": "124060",
+          "source_url": "https://www.europeanwatch.com/watch/rolex-124060-124060-submariner-no-date-41mm-ss-black-dial-71758",
+          "image_url": "https://images.europeanwatch.com/images/71/71758-1.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "17484cbe61baaa1a",
+          "physical_watch_id": "ewc_124060_67830",
+          "sha256": "17484cbe61baaa1ac6f5c09a8f5a40504042bd53b47dd1bafe7a69d8fe6f9ed5",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/67/67830-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1b33b3c613d20838",
+          "physical_watch_id": "ewc_124060_59112_59921_62175",
+          "sha256": "1b33b3c613d20838d3bca2590c977f7dd361637c81424fd93665a9f711fe85fe",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/59/59112-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "22b6183aa899f82a",
+          "physical_watch_id": "ewc_124060_58030",
+          "sha256": "22b6183aa899f82aa6f71cb3e474d18f4781df28ac15ee3c5ddfb69790647fb8",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/58/58030-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "2fdf38169ee1b57a",
+          "physical_watch_id": "auto_davidsw_124060_e840fd0e1afd",
+          "sha256": "2fdf38169ee1b57a6b148d3ede7788b2614fb6ef4628e78272568cf387907832",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-14",
+          "image_url": "https://davidsw.com/wp-content/uploads/2024/04/24.04.26-39.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "300443c8ae84ff63",
+          "physical_watch_id": "auto_davidsw_124060_36185ea2c96c",
+          "sha256": "300443c8ae84ff637ee9cc6070aa5763a8525e624bec6a602741a8dc734c2a2d",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-155",
+          "image_url": "https://davidsw.com/wp-content/uploads/2026/01/26.01.12-121.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        }
+      ]
+    },
+    "six": {
+      "polygon": [
+        [
+          -0.043938228475612455,
+          -0.06642659972228561
+        ],
+        [
+          -0.04368705151117345,
+          -0.08237301612513247
+        ],
+        [
+          -0.043210733636841275,
+          -0.10491943236690589
+        ],
+        [
+          -0.04044825070116327,
+          -0.13387325327480606
+        ],
+        [
+          -0.027129187770626895,
+          -0.13679091793078219
+        ],
+        [
+          -0.013528972645241132,
+          -0.13738036099092887
+        ],
+        [
+          -7.508720353133056e-05,
+          -0.13776460039500246
+        ],
+        [
+          0.013399115501139314,
+          -0.13758664562358017
+        ],
+        [
+          0.027012371111478955,
+          -0.13695861865424225
+        ],
+        [
+          0.040179714460737086,
+          -0.1334830666014066
+        ],
+        [
+          0.04319874480449036,
+          -0.10525304185549929
+        ],
+        [
+          0.04354953012841482,
+          -0.08239668826861644
+        ],
+        [
+          0.043591013483897816,
+          -0.06613170764781647
+        ],
+        [
+          0.04361860900155027,
+          -0.05402169259774039
+        ],
+        [
+          0.04363645075676762,
+          -0.044492307686177464
+        ],
+        [
+          0.04368969102207006,
+          -0.005091224150933055
+        ],
+        [
+          0.04369466311785749,
+          -0.000780769725878517
+        ],
+        [
+          0.04370000702373176,
+          0.007926637899133978
+        ],
+        [
+          0.04368462106325003,
+          0.012493592652474404
+        ],
+        [
+          0.043194676259096995,
+          0.10368168006627453
+        ],
+        [
+          0.04039319727469601,
+          0.13262528567247298
+        ],
+        [
+          0.02704539974364925,
+          0.13556312534936582
+        ],
+        [
+          0.013378649861613476,
+          0.13581731504662498
+        ],
+        [
+          -7.508720353129704e-05,
+          0.13585847053731667
+        ],
+        [
+          -0.013530507824859357,
+          0.135834408479411
+        ],
+        [
+          -0.027188246784358286,
+          0.13552628819112333
+        ],
+        [
+          -0.040443244043398226,
+          0.1322952090842945
+        ],
+        [
+          -0.04354259531923423,
+          0.10415907788961408
+        ],
+        [
+          -0.043810850232982194,
+          0.08104308779142737
+        ],
+        [
+          -0.043882768409514626,
+          0.06478205841600881
+        ]
+      ],
+      "recorded_groups": 6,
+      "photo_ids": [
+        "033133202cf757da",
+        "14a800efc5982cf7",
+        "17484cbe61baaa1a",
+        "22b6183aa899f82a",
+        "2fdf38169ee1b57a",
+        "300443c8ae84ff63"
+      ],
+      "provenance": [
+        {
+          "photo_id": "033133202cf757da",
+          "physical_watch_id": "auto_davidsw_124060_5f3e76a1ef3e",
+          "sha256": "033133202cf757dad919a76e72c9bc3635981192c4c31f103d6808defcc1dadb",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-53",
+          "image_url": "https://davidsw.com/wp-content/uploads/2025/07/25.07.07-10.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "14a800efc5982cf7",
+          "physical_watch_id": "auto_ewc_124060_7761710b6ccf",
+          "sha256": "14a800efc5982cf7acaaf0219fc2accb0a7da3a3332a8a9304867efa9d8d851c",
+          "model": "124060",
+          "source_url": "https://www.europeanwatch.com/watch/rolex-124060-124060-submariner-no-date-41mm-ss-black-dial-71758",
+          "image_url": "https://images.europeanwatch.com/images/71/71758-1.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "17484cbe61baaa1a",
+          "physical_watch_id": "ewc_124060_67830",
+          "sha256": "17484cbe61baaa1ac6f5c09a8f5a40504042bd53b47dd1bafe7a69d8fe6f9ed5",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/67/67830-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "22b6183aa899f82a",
+          "physical_watch_id": "ewc_124060_58030",
+          "sha256": "22b6183aa899f82aa6f71cb3e474d18f4781df28ac15ee3c5ddfb69790647fb8",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/58/58030-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "2fdf38169ee1b57a",
+          "physical_watch_id": "auto_davidsw_124060_e840fd0e1afd",
+          "sha256": "2fdf38169ee1b57a6b148d3ede7788b2614fb6ef4628e78272568cf387907832",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-14",
+          "image_url": "https://davidsw.com/wp-content/uploads/2024/04/24.04.26-39.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "300443c8ae84ff63",
+          "physical_watch_id": "auto_davidsw_124060_36185ea2c96c",
+          "sha256": "300443c8ae84ff637ee9cc6070aa5763a8525e624bec6a602741a8dc734c2a2d",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-155",
+          "image_url": "https://davidsw.com/wp-content/uploads/2026/01/26.01.12-121.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        }
+      ]
+    },
+    "nine": {
+      "polygon": [
+        [
+          -0.04550608853732185,
+          -0.01409123132515567
+        ],
+        [
+          -0.0452660321082704,
+          -0.06679530452334818
+        ],
+        [
+          -0.04517684124407589,
+          -0.08318177741881695
+        ],
+        [
+          -0.04487889397529545,
+          -0.10644572856444791
+        ],
+        [
+          -0.04168670914133287,
+          -0.13460631333353207
+        ],
+        [
+          -0.028166703548862457,
+          -0.13699270025450522
+        ],
+        [
+          -0.014495153156937288,
+          -0.13724624884674413
+        ],
+        [
+          -0.0010368328957395653,
+          -0.13735182895649167
+        ],
+        [
+          0.01243287012108056,
+          -0.13736181990405888
+        ],
+        [
+          0.026144354510934557,
+          -0.137250686996241
+        ],
+        [
+          0.03962111311734326,
+          -0.13463291579179393
+        ],
+        [
+          0.04267058348264526,
+          -0.10612066750077905
+        ],
+        [
+          0.04284384095881201,
+          -0.08269659670630765
+        ],
+        [
+          0.042930238201351126,
+          -0.0664030020752238
+        ],
+        [
+          0.042986709877275694,
+          -0.05424447218158672
+        ],
+        [
+          0.04322145258446271,
+          -0.0006016301037945898
+        ],
+        [
+          0.043239994743901604,
+          0.0037592567866369447
+        ],
+        [
+          0.0432567918017279,
+          0.008208919644604747
+        ],
+        [
+          0.043371137832484544,
+          0.043806340624429486
+        ],
+        [
+          0.04339622780020381,
+          0.05354021100687693
+        ],
+        [
+          0.043395067175827945,
+          0.10666646565098971
+        ],
+        [
+          0.03968380305559915,
+          0.13363631661477987
+        ],
+        [
+          0.02605560532846382,
+          0.1356012545187228
+        ],
+        [
+          0.012391114403282603,
+          0.13573460677900917
+        ],
+        [
+          -0.0010368328957395317,
+          0.1358243724443754
+        ],
+        [
+          -0.014480266109353997,
+          0.1358918379084731
+        ],
+        [
+          -0.02817777197705746,
+          0.13584508479309687
+        ],
+        [
+          -0.04151520131504339,
+          0.1328376675932913
+        ],
+        [
+          -0.04485532461766943,
+          0.10518556689402177
+        ],
+        [
+          -0.04523080525729258,
+          0.08207947677892832
+        ],
+        [
+          -0.045336748160645715,
+          0.0656978783672569
+        ],
+        [
+          -0.04537344767029344,
+          0.05342269131163532
+        ],
+        [
+          -0.045504849453824235,
+          -0.009446868550041052
+        ]
+      ],
+      "recorded_groups": 8,
+      "photo_ids": [
+        "033133202cf757da",
+        "077c7533c2846cb2",
+        "14a800efc5982cf7",
+        "17484cbe61baaa1a",
+        "1b33b3c613d20838",
+        "22b6183aa899f82a",
+        "2fdf38169ee1b57a",
+        "300443c8ae84ff63"
+      ],
+      "provenance": [
+        {
+          "photo_id": "033133202cf757da",
+          "physical_watch_id": "auto_davidsw_124060_5f3e76a1ef3e",
+          "sha256": "033133202cf757dad919a76e72c9bc3635981192c4c31f103d6808defcc1dadb",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-53",
+          "image_url": "https://davidsw.com/wp-content/uploads/2025/07/25.07.07-10.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "077c7533c2846cb2",
+          "physical_watch_id": "auto_bobs_124060_2905d2d5bc5c",
+          "sha256": "077c7533c2846cb2a8726d9977f9f97e4bff6cf2a896b86cf3d8c1d7e5bb059f",
+          "model": "124060",
+          "source_url": "https://www.bobswatches.com/used-rolex-submariner-ref-124060-stainless-steel.html",
+          "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU191878.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "14a800efc5982cf7",
+          "physical_watch_id": "auto_ewc_124060_7761710b6ccf",
+          "sha256": "14a800efc5982cf7acaaf0219fc2accb0a7da3a3332a8a9304867efa9d8d851c",
+          "model": "124060",
+          "source_url": "https://www.europeanwatch.com/watch/rolex-124060-124060-submariner-no-date-41mm-ss-black-dial-71758",
+          "image_url": "https://images.europeanwatch.com/images/71/71758-1.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "17484cbe61baaa1a",
+          "physical_watch_id": "ewc_124060_67830",
+          "sha256": "17484cbe61baaa1ac6f5c09a8f5a40504042bd53b47dd1bafe7a69d8fe6f9ed5",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/67/67830-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "1b33b3c613d20838",
+          "physical_watch_id": "ewc_124060_59112_59921_62175",
+          "sha256": "1b33b3c613d20838d3bca2590c977f7dd361637c81424fd93665a9f711fe85fe",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/59/59112-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "22b6183aa899f82a",
+          "physical_watch_id": "ewc_124060_58030",
+          "sha256": "22b6183aa899f82aa6f71cb3e474d18f4781df28ac15ee3c5ddfb69790647fb8",
+          "model": "124060",
+          "source_url": "European Watch Company",
+          "image_url": "https://images.europeanwatch.com/images/58/58030-1.jpg",
+          "identity_status": "recorded_listing_or_lot_group"
+        },
+        {
+          "photo_id": "2fdf38169ee1b57a",
+          "physical_watch_id": "auto_davidsw_124060_e840fd0e1afd",
+          "sha256": "2fdf38169ee1b57a6b148d3ede7788b2614fb6ef4628e78272568cf387907832",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-14",
+          "image_url": "https://davidsw.com/wp-content/uploads/2024/04/24.04.26-39.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        },
+        {
+          "photo_id": "300443c8ae84ff63",
+          "physical_watch_id": "auto_davidsw_124060_36185ea2c96c",
+          "sha256": "300443c8ae84ff637ee9cc6070aa5763a8525e624bec6a602741a8dc734c2a2d",
+          "model": "124060",
+          "source_url": "https://davidsw.com/shop/watch/rolex/rolex-124060-submariner-41-no-date-155",
+          "image_url": "https://davidsw.com/wp-content/uploads/2026/01/26.01.12-121.jpg",
+          "identity_status": "provisional_inferred_listing_group"
+        }
+      ]
+    }
+  }
+}
