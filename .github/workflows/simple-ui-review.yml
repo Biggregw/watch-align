@@ -1,0 +1,80 @@
+# REVIEW ONLY: compile the simplified UI with Gradle and run the unit tests (no APK assemble), render the simplified
+# screens from the real pipeline (desktop layout preview), and reprint the 92 per-marker QC area results.
+name: Simple UI review
+on:
+  push:
+    branches: [outer-metal/inspection-20261013]
+    paths: ['.github/workflows/simple-ui-review.yml', 'tools/desktop-harness/drivers/SimpleUiRender.java']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  gradle-unit-tests:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: android}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - name: Android platform
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" > /dev/null
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile and unit tests (no assemble)
+        run: |
+          bash ./gradlew :app:compileDebugJavaWithJavac :app:testDebugUnitTest --stacktrace > g.log 2>&1 || { tail -80 g.log; exit 1; }
+          python3 - <<'PY'
+          import glob, re
+          t=f=e=s=0
+          for p in glob.glob('app/build/test-results/testDebugUnitTest/*.xml'):
+              h=open(p).read(2000); m=re.search(r'tests="(\d+)" skipped="(\d+)" failures="(\d+)" errors="(\d+)"',h)
+              if m: t+=int(m[1]); s+=int(m[2]); f+=int(m[3]); e+=int(m[4])
+          print(f'GRADLE UNIT TESTS: {t} run, {f} failures, {e} errors, {s} skipped')
+          PY
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests opencv-python-headless pillow==12.3.0
+      - name: QC photos and one genuine photo per model (sha256-verified, existing catalogues)
+        run: |
+          python3 tools/research/alpha105g/fetch_qc.py qc_in
+          for spec in gmt_126710:tools/research/alpha96_calibration/catalogue_provenance_strong.csv:3cf5442ab9c87b9c submariner_124060:tools/research/sub124060/catalogue_124060.csv:d2d17532532ec40b submariner_126610:tools/research/sub126610/catalogue_126610.csv:0ee361e5864530b3; do
+            IFS=: read m cat id <<< "$spec"; mkdir -p gen/$m
+            python3 -c "import csv,sys;r=[x for x in csv.DictReader(open('$cat')) if x['photo_id']=='$id'];w=csv.DictWriter(open('gen/$m/manifest.csv','w',newline=''),fieldnames=list(r[0]));w.writeheader();w.writerows(r)"
+            python3 tools/research/alpha96_calibration/fetch_verified.py gen/$m/manifest.csv gen/$m/img gen/$m/log.csv > /dev/null
+          done
+      - name: Render screens; QC area numbers
+        run: |
+          mkdir -p out/ui
+          for m in gmt_126710 submariner_124060 submariner_126610; do
+            if [ -f "qc_in/$m/manifest.csv" ]; then
+              JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m" tools/desktop-harness/run.sh SimpleUiRender "qc_in/$m/manifest.csv" qc_in out/ui 2>/dev/null | grep -v '^Picked' | tee -a out/uistate.txt
+              JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m" tools/desktop-harness/run.sh MarkerMismatchBatch "qc_in/$m/manifest.csv" qc_in "out/qc_$m.csv" 2>/dev/null
+            fi
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m" tools/desktop-harness/run.sh SimpleUiRender gen/$m/manifest.csv gen/$m/img out/ui 2>/dev/null | grep -v '^Picked' | tee -a out/uistate.txt
+          done
+          python3 - <<'PY'
+          import csv, glob
+          for f in sorted(glob.glob('out/qc_*.csv')):
+              for r in csv.DictReader(open(f)):
+                  print('QCNUM', r['photo_id'], r['hour'], r['confidence'][:40], r['mismatch_pct'][:8])
+          PY
+      - name: Images (JPEG, base64, log only)
+        run: |
+          python3 - <<'PY'
+          import base64, io
+          from pathlib import Path
+          from PIL import Image
+          files = sorted(Path('out/ui').glob('*.png'))
+          for f in files:
+              im = Image.open(f).convert('RGB'); im = im.resize((540, round(im.height * 540 / im.width)))
+              b = io.BytesIO(); im.save(b, 'JPEG', quality=80)
+              print(f'BEGIN_IMG {f.stem}.jpg'); print(base64.b64encode(b.getvalue()).decode()); print('END_IMG')
+          print('IMAGES', len(files))
+          PY
