@@ -41,6 +41,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: python -m pip install -q requests opencv-python-headless pillow==12.3.0
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
       - name: QC photos and one genuine photo per model (sha256-verified, existing catalogues)
         run: |
           python3 tools/research/alpha105g/fetch_qc.py qc_in
@@ -51,13 +53,14 @@ jobs:
           done
       - name: Render screens; QC area numbers
         run: |
+          set -o pipefail
           mkdir -p out/ui
           for m in gmt_126710 submariner_124060 submariner_126610; do
             if [ -f "qc_in/$m/manifest.csv" ]; then
-              JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m" tools/desktop-harness/run.sh SimpleUiRender "qc_in/$m/manifest.csv" qc_in out/ui 2>/dev/null | grep -v '^Picked' | tee -a out/uistate.txt
+              JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m" tools/desktop-harness/run.sh SimpleUiRender "qc_in/$m/manifest.csv" qc_in out/ui 2> >(grep -v '^Picked' | tail -5 >&2) | grep -v '^Picked' | tee -a out/uistate.txt
               JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m" tools/desktop-harness/run.sh MarkerMismatchBatch "qc_in/$m/manifest.csv" qc_in "out/qc_$m.csv" 2>/dev/null
             fi
-            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m" tools/desktop-harness/run.sh SimpleUiRender gen/$m/manifest.csv gen/$m/img out/ui 2>/dev/null | grep -v '^Picked' | tee -a out/uistate.txt
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m" tools/desktop-harness/run.sh SimpleUiRender gen/$m/manifest.csv gen/$m/img out/ui 2> >(grep -v '^Picked' | tail -5 >&2) | grep -v '^Picked' | tee -a out/uistate.txt
           done
           python3 - <<'PY'
           import csv, glob
