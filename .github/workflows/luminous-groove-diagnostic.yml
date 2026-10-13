@@ -1,0 +1,93 @@
+# DIAGNOSTIC ONLY. One run on the existing artifacts (132 verified originals, run 38222239457; frozen calibration work,
+# run 38295283386). No detector, reference, threshold or APK change. For all 46 genuine 124060 photos: the unchanged
+# candidate detector (this commit = e0b0b651), the exact rectified crops of every round marker (LuminousCircleEvidence,
+# archived pose), the first-outward-fall analysis (tools/luminous/diagnostic/groove_diag.py) and labelled before/after
+# close-ups of c14f8b3abb49c038 1-11, 80d288dcc8689345 / 2 and 855041528fc1ac79 / 5.
+name: Luminous groove diagnostic (124060)
+on:
+  push:
+    branches: [diag/luminous-groove-20261013]
+    paths: ['.github/workflows/luminous-groove-diagnostic.yml', 'tools/luminous/diagnostic/**']
+  workflow_dispatch:
+permissions: {contents: read, actions: read}
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q pillow==12.3.0 numpy matplotlib
+      - name: Existing originals (run 38222239457)
+        uses: actions/download-artifact@v4
+        with: {name: WatchAlign-genuine-faceon-132-originals-Codex-ready, path: art/originals, run-id: 38222239457, github-token: '${{ secrets.GITHUB_TOKEN }}'}
+      - name: Existing frozen calibration work (run 38295283386)
+        uses: actions/download-artifact@v4
+        with: {name: luminous-partial-calibration-reproducible-results, path: art/calib, run-id: 38295283386, github-token: '${{ secrets.GITHUB_TOKEN }}'}
+      - name: Verify originals and build classes
+        run: |
+          SAVED=$(dirname "$(find art/calib -name calibrated_references.json | head -1)"); echo "SAVED=$SAVED" >> $GITHUB_ENV
+          ls "$SAVED" | head -40
+          mkdir -p work
+          python tools/luminous/prepare_curated.py art/originals work . > work/hash-verification.log
+          tail -3 work/hash-verification.log
+          bash tools/desktop-harness/run.sh LuminousSyntheticChecks > /dev/null
+      - name: Candidate detector (unchanged e0b0b651) on the 46 genuine 124060 originals
+        run: |
+          python - <<'PY'
+          import csv, os
+          saved = os.environ['SAVED']
+          paths = {r['photo_id']: r['path'] for r in csv.DictReader(open('work/verified_inputs.csv'))}
+          rows = list(csv.DictReader(open(f'{saved}/submariner_124060_extract.csv')))
+          for r in rows: r['path'] = paths[r['photo_id']]
+          with open('work/m124060.csv', 'w', newline='') as f:
+              w = csv.DictWriter(f, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+          with open('work/m124060_gallery.csv', 'w', newline='') as f:
+              w = csv.writer(f); w.writerow(['photo_id', 'group_id', 'split', 'path'])
+              for r in rows: w.writerow([r['photo_id'], r.get('group_id', ''), r.get('split', ''), r['path']])
+          print('124060 photos', len(rows))
+          PY
+          CP=tools/desktop-harness/.cache/opencv-4.9.0-0.jar:tools/desktop-harness/.cache/classes; echo "CP=$CP" >> $GITHUB_ENV
+          J="java -Xmx2g -Dwatchalign.model=submariner_124060 -cp $CP com.watchalign.mobile.LuminousCalibrationStudy"
+          $J extract work/m124060.csv work/cand_raw.jsonl 2> work/extract.log
+          $J score work/cand_raw.jsonl "$SAVED/calibrated_references.json" work/cand_scored.jsonl
+          wc -l work/cand_raw.jsonl work/cand_scored.jsonl
+      - name: Exact rectified crops of every round marker (archived pose)
+        run: |
+          mkdir -p work/ev
+          python - <<'PY' > work/ev_jobs.txt
+          import csv
+          paths = {r['photo_id']: r['path'] for r in csv.DictReader(open('work/m124060.csv'))}
+          for pid, p in paths.items():
+              for h in (1, 2, 4, 5, 7, 8, 10, 11): print(p, pid, h)
+          PY
+          wc -l work/ev_jobs.txt
+          cat work/ev_jobs.txt | xargs -P 4 -L 1 sh -c 'java -Xmx1g -Dwatchalign.model=submariner_124060 -cp "$CP" com.watchalign.mobile.LuminousCircleEvidence "$0" work/cand_raw.jsonl "$1" "$2" work/ev 2>>work/ev.log || echo "evidence failed $1 $2"'
+          ls work/ev/*.json | wc -l
+      - name: First-outward-fall analysis (all observations)
+        run: |
+          mkdir -p work/out
+          python tools/luminous/diagnostic/groove_diag.py "$SAVED/submariner_124060_scored.jsonl" work/cand_scored.jsonl "$SAVED/calibrated_references.json" work/ev work/out
+      - name: Labelled close-ups, frozen (before) and candidate (after)
+        run: |
+          printf 'c14f8b3abb49c038,1\nc14f8b3abb49c038,2\nc14f8b3abb49c038,4\nc14f8b3abb49c038,5\nc14f8b3abb49c038,7\nc14f8b3abb49c038,8\nc14f8b3abb49c038,10\nc14f8b3abb49c038,11\n80d288dcc8689345,2\n855041528fc1ac79,5\n' > work/select.csv
+          java -Xmx2g -Dwatchalign.model=submariner_124060 -Dwatchalign.study.stage=BEFORE -cp "$CP" com.watchalign.mobile.LuminousCalibrationStudy gallery "$SAVED/submariner_124060_scored.jsonl" work/m124060_gallery.csv work/select.csv work/out/before
+          java -Xmx2g -Dwatchalign.model=submariner_124060 -Dwatchalign.study.stage=AFTER -cp "$CP" com.watchalign.mobile.LuminousCalibrationStudy gallery work/cand_scored.jsonl work/m124060_gallery.csv work/select.csv work/out/after
+          ls work/out/before work/out/after
+      - name: Images (base64, log)
+        run: |
+          for f in work/out/profile_*.png work/out/before/*.png work/out/after/*.png; do
+            [ -f "$f" ] || continue
+            echo "BEGIN_PNG $(echo "$f" | sed 's#work/out/##; s#/#__#g')"; base64 -w 0 "$f"; echo; echo "END_PNG"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: luminous-groove-diagnostic-124060
+          retention-days: 30
+          path: |
+            work/out/
+            work/extract.log
