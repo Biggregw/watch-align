@@ -10,8 +10,8 @@ import java.util.Collections;
 
 /** Display only. Paths come from the stored scoring polygons, never a raster mask or a new fit. */
 final class MarkerMismatchOverlay {
-    static final int YELLOW=0xffffd60a,CYAN=0xff32d5f2,EXTRA=0xe6ff801f,MISSING=0xe6e64bdc;
-    static final String LEGEND="Orange: extra detected area. Magenta: missing expected area. Yellow: scoring reference. Cyan: detected outline.";
+    static final int YELLOW=0xffffd60a,CYAN=0xff32d5f2,EXTRA=0xe6ff801f,MISSING=0xe6e64bdc,INFERRED=0xffff3b30;
+    static final String LEGEND="Orange: extra detected area. Magenta: missing expected area. Yellow: scoring reference. Cyan: directly sampled edge. Red: corner or end inferred from the fitted edges.";
     private MarkerMismatchOverlay(){}
 
     static Bitmap fullWatch(int width,int height,double[] H,Map<Integer,MarkerMismatchResearch.Result> results){
@@ -22,7 +22,7 @@ final class MarkerMismatchOverlay {
         Canvas canvas=new Canvas(image);
         for(MarkerMismatchResearch.Result q:results.values()){
             draw(canvas,q.expected,H,YELLOW,false,1.5f);
-            if(q.trusted())draw(canvas,q.score.actualPolygon,H,CYAN,false,1f);
+            if(q.trusted())actual(canvas,q,H,1f);
         }
         return image;
     }
@@ -32,12 +32,24 @@ final class MarkerMismatchOverlay {
         double[] T=closeupTransform(base.getWidth(),cx,cy,half);
         draw(canvas,q.expected,T,YELLOW,false,1f);
         if(q.trusted()){
-            draw(canvas,q.score.actualPolygon,T,CYAN,false,1f);
+            actual(canvas,q,T,1f);
             // Fill last: thin genuine residual regions remain visible beneath no thick outline.
             drawRegions(canvas,q.score.extraRegions(),T,EXTRA,true,0);
             drawRegions(canvas,q.score.missingRegions(),T,MISSING,true,0);
         }
         return base;
+    }
+
+    /** The exact scored polygon. With known sampled spans: thin red for the whole (inferred) shape, cyan over the
+     *  stretches the detector actually sampled, so an inferred corner is never shown as an observed boundary. */
+    private static void actual(Canvas canvas,MarkerMismatchResearch.Result q,double[] T,float width){
+        if(q.observedSpans==null){draw(canvas,q.score.actualPolygon,T,CYAN,false,width);return;}
+        draw(canvas,q.score.actualPolygon,T,INFERRED,false,width);
+        Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);paint.setColor(CYAN);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2*width);
+        Path path=new Path();
+        for(double[][] span:q.observedSpans){double[][] p=project(new double[][]{span[0],span[1],span[1]},T);if(p==null)continue;
+            path.moveTo((float)p[0][0],(float)p[0][1]);path.lineTo((float)p[1][0],(float)p[1][1]);}
+        canvas.drawPath(path,paint);
     }
 
     /** Same half-pixel origin used by Alpha98Closeups.render and its canonical crop. */

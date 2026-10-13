@@ -18,6 +18,11 @@ final class MarkerMismatchResearch {
         final MarkerPolygonMismatch.Score score;
         final String reason;
         final double[][] expected;
+        /** Display only: the span of each independently fitted side that the detector actually sampled
+         *  (Alpha94 measurePolygon, u = SAMPLED_FROM..SAMPLED_TO of the master side). Everything else on the
+         *  scored polygon (corners, apex, side ends) is inferred by intersecting adjacent fitted lines.
+         *  Null for rounds (one fitted circle) and when unavailable. */
+        double[][][] observedSpans;
         Result(MarkerPolygonMismatch.Score score,String reason){this(score,reason,null);}
         Result(MarkerPolygonMismatch.Score score,String reason,double[][] expected){
             this.score=score;this.reason=reason;
@@ -28,7 +33,8 @@ final class MarkerMismatchResearch {
         String display(){
             if(!trusted())return "Outline mismatch withheld: "+reason+".";
             return String.format(Locale.US,"Measured outline mismatch: %.3f%% (extra %.3f%% + missing %.3f%% of filled yellow template). Geometric fit area; no severity assigned. Photographic edge uncertainty remains.",
-                    score.mismatchPct,score.extraPct,score.missingPct);
+                    score.mismatchPct,score.extraPct,score.missingPct)
+                    +(observedSpans==null?"":" Each edge is fitted independently from the middle of its length (cyan); corners are inferred where the fitted edges meet (red) and are not directly observed.");
         }
     }
 
@@ -54,7 +60,28 @@ final class MarkerMismatchResearch {
             if(measure.capAtWorth)return new Result(s,"photo/edge reliability limited: "+measure.capReason);
         if(spec.shape==ModelSpec.Shape.TRIANGLE)
             return new Result(s,"provisional: radial edges of 12 vary with polished-surround lighting");
-        return new Result(s,"measured");
+        Result measured=new Result(s,"measured");measured.observedSpans=observedSpans(spec,actual);
+        return measured;
+    }
+
+    static final double SAMPLED_FROM=0.12,SAMPLED_TO=0.88;
+    /** Sampled stretch of each fitted side: the master side's sampled range projected onto the fitted line.
+     *  Side i of the fitted polygon runs actual[i] -> actual[i+1] and was fitted to master side i. */
+    static double[][][] observedSpans(ModelSpec.Marker spec,double[][] actual){
+        if(spec==null||actual==null||spec.shape==ModelSpec.Shape.ROUND)return null;
+        double[][] master=spec.shape==ModelSpec.Shape.TRIANGLE?spec.trianglePolygon():spec.batonPolygon();
+        int k=actual.length;if(master==null||master.length!=k)return null;
+        double[][][] spans=new double[k][][];
+        for(int i=0;i<k;i++){
+            double[] a=actual[i],b=actual[(i+1)%k],m0=master[i],m1=master[(i+1)%k];
+            spans[i]=new double[][]{onLine(a,b,m0,m1,SAMPLED_FROM),onLine(a,b,m0,m1,SAMPLED_TO)};
+        }
+        return spans;
+    }
+    private static double[] onLine(double[] a,double[] b,double[] m0,double[] m1,double u){
+        double px=m0[0]+u*(m1[0]-m0[0]),py=m0[1]+u*(m1[1]-m0[1]),dx=b[0]-a[0],dy=b[1]-a[1];
+        double t=((px-a[0])*dx+(py-a[1])*dy)/(dx*dx+dy*dy);
+        return new double[]{a[0]+t*dx,a[1]+t*dy};
     }
 
     static double[][] actual(ModelSpec.Marker spec,Alpha94MarkerMeasurement.Marker m,double R){

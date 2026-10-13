@@ -31,6 +31,12 @@ public class MarkerMismatchVisualCheck {
         check(noRegions.getPixel(200,160)==0&&noRegions.getPixel(136,160)==0,"unreliable regions must stay unfilled");
         Bitmap noActual=MarkerMismatchOverlay.fullWatch(400,400,H,Collections.singletonMap(9,withheld));
         check(yellow(noActual.getPixel(90,150))&&!cyan(noActual.getPixel(230,150)),"withheld full-watch comparison shows reference only");
+        // Sampled edge spans (cyan) vs inferred corners (red) on the exact scored polygon.
+        MarkerMismatchResearch.Result spans=new MarkerMismatchResearch.Result(score,"measured");
+        spans.observedSpans=new double[][][]{{{.04,-.2},{.36,-.2}},{{.4,-.16},{.4,.16}},{{.36,.2},{.04,.2}},{{0,.16},{0,-.16}}};
+        Bitmap marked=MarkerMismatchOverlay.closeup(Bitmap.createBitmap(320,320,Bitmap.Config.ARGB_8888),0,0,1,spans);
+        check(cyan(marked.getPixel(170,127)),"sampled middle stretch of a fitted side must be cyan");
+        check(red(marked.getPixel(162,127)),"inferred corner stretch must be red, not cyan");
         InspectionImageStore.setMarkerOverlays(crop,noActual,overlay);
         check(InspectionImageStore.scoringOverlay==overlay&&InspectionImageStore.bitmap==noActual,"both inspection options must reach the image store");
         InspectionImageStore.setOverlay(crop,noActual,"legacy fixed view");
@@ -40,7 +46,7 @@ public class MarkerMismatchVisualCheck {
         InspectionImageStore.setMarkerOverlays(crop,noActual,overlay);InspectionImageStore.clear();
         check(InspectionImageStore.scoringOverlay==null&&InspectionImageStore.bitmap==null,"clearing inspection must clear both options");
         ImageIO.write(crop.img,"png",dir.resolve("synthetic-regions.png").toFile());
-        System.out.println("PASS: 12 renderer/store checks (extra/missing, overlap/background, exact reference/actual, withholding, option handoff/clearing)");
+        System.out.println("PASS: 14 renderer/store checks (extra/missing, overlap/background, exact reference/actual, withholding, option handoff/clearing)");
         if(args.length<2)return;
         nu.pattern.OpenCV.loadLocally();
         Bitmap photo=Alpha96Calib.loadAlpha96(args[1]);
@@ -60,5 +66,6 @@ public class MarkerMismatchVisualCheck {
     private static boolean extra(int c){return (c>>>24)>0&&(c>>16&255)>200&&(c>>8&255)<180&&(c&255)<100;}
     private static boolean missing(int c){return (c>>>24)>0&&(c>>16&255)>150&&(c>>8&255)<140&&(c&255)>150;}
     private static boolean yellow(int c){return (c>>>24)>0&&(c>>16&255)>200&&(c>>8&255)>160&&(c&255)<80;}
+    private static boolean red(int c){return (c>>>24)>0&&(c>>16&255)>200&&(c>>8&255)<100&&(c&255)<100;}
     private static boolean cyan(int c){return (c>>>24)>0&&(c>>16&255)<100&&(c>>8&255)>160&&(c&255)>180;}
 }

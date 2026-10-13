@@ -42,6 +42,22 @@ public class MarkerMismatchReferenceTest {
     private static Alpha99MarkerInterference.Check clean(int hour){
         Alpha99MarkerInterference.Check c=new Alpha99MarkerInterference.Check(hour);c.clean=true;return c;
     }
+    /** Inferred corners are never presented as observed: only each fitted side's sampled middle is an observed span. */
+    @Test public void sampledEdgeSpansStayOnTheirOwnFittedSidesAndExcludeCorners()throws Exception{
+        ModelSpec.Marker spec=TestModels.gmt().atHour(9);Alpha94MarkerMeasurement.Marker m=pepsiNine();
+        double[][] V=m.fitVertices;double[][][] spans=MarkerMismatchResearch.observedSpans(spec,V);
+        assertEquals(4,spans.length);
+        for(int i=0;i<4;i++){
+            double[] a=V[i],b=V[(i+1)%4];double L=Math.hypot(b[0]-a[0],b[1]-a[1]);
+            for(double[] p:spans[i]){
+                double cross=((b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]))/L;
+                assertEquals("span leaves its own fitted side",0,cross,1e-12);
+                double u=((p[0]-a[0])*(b[0]-a[0])+(p[1]-a[1])*(b[1]-a[1]))/(L*L);
+                assertTrue("span reaches an inferred corner: u="+u,u>0.05&&u<0.95);
+            }
+        }
+        assertNull(MarkerMismatchResearch.observedSpans(TestModels.gmt().atHour(4),MarkerPolygonMismatch.circle(0,0,.1,128)));
+    }
     @Test public void pepsiNineUsesTheDisplayedRingAdjustedNominal()throws Exception{
         ModelSpec.Marker spec=TestModels.gmt().atHour(9);
         Alpha94MarkerMeasurement.Marker m=pepsiNine();

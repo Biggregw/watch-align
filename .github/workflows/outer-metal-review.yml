@@ -57,6 +57,8 @@ jobs:
           python3 - <<'PY'
           import csv
           rows = [r for r in csv.DictReader(open('${{ matrix.catalogue }}')) if r.get('class_label', 'gen') == 'gen']
+          if ${{ contains(github.event.head_commit.message, '[sheets-only]') && 'True' || 'False' }}:
+              rows = [r for r in rows if r['photo_id'] in '${{ matrix.sheets }}'.split(',')]
           with open('manifest.csv', 'w', newline='') as fh:
               w = csv.DictWriter(fh, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
           print('genuine photos', len(rows))
@@ -66,7 +68,9 @@ jobs:
         env: {JAVA_TOOL_OPTIONS: '-Dwatchalign.model=${{ matrix.model }}'}
         run: |
           mkdir -p out/sheets
-          tools/desktop-harness/run.sh MarkerMismatchBatch manifest.csv img out/genuine_${{ matrix.model }}.csv 2>/dev/null
+          if [ "${{ contains(github.event.head_commit.message, '[sheets-only]') }}" != "true" ]; then
+            tools/desktop-harness/run.sh MarkerMismatchBatch manifest.csv img out/genuine_${{ matrix.model }}.csv 2>/dev/null
+          fi
           tools/desktop-harness/run.sh OuterMetalReview manifest.csv img out/sheets '${{ matrix.sheets }}' 2>/dev/null | grep -v '^Picked'
       - uses: actions/upload-artifact@v4
         with: {name: 'outer-metal-genuine-${{ matrix.model }}', path: out/, retention-days: 14}
@@ -93,6 +97,14 @@ jobs:
               b = io.BytesIO(); im.save(b, 'JPEG', quality=85)
               print(f'BEGIN_IMG {f.stem}.jpg'); print(base64.b64encode(b.getvalue()).decode()); print('END_IMG')
           print('IMAGES', len(files))
+          PY
+      - name: QC numbers (photo hour cleared mismatch)
+        run: |
+          python3 - <<'PY'
+          import csv, glob
+          for f in sorted(glob.glob('all/qc_*.csv')):
+              for r in csv.DictReader(open(f)):
+                  print('QCNUM', r['photo_id'], r['hour'], r['confidence'][:40], r['mismatch_pct'][:8])
           PY
       - name: Per-marker comparison with genuine (summary last)
         run: python3 tools/research/outer_metal/compare.py all
