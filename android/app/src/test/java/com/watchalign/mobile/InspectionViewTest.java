@@ -37,6 +37,20 @@ public class InspectionViewTest {
         assertEquals(InspectionView.State.WITHIN,InspectionView.state(ring,null));
         assertNull(InspectionView.area(ring,null));
     }
+    @Test public void dialFeaturesNeverBorrowAMarkersAreaResult(){
+        Map<Integer,MarkerMismatchResearch.Result> mm=new HashMap<>();mm.put(12,new MarkerMismatchResearch.Result(score(),"provisional"));
+        for(Alpha99Findings.Shape sh:new Alpha99Findings.Shape[]{Alpha99Findings.Shape.RING,Alpha99Findings.Shape.DATE}){
+            Alpha99Findings.Finding f=finding(Alpha99Findings.Status.WITHIN);f.shape=sh;f.hour=12;
+            assertNull(InspectionView.result(f,mm));
+            assertEquals(InspectionView.State.WITHIN,InspectionView.state(f,InspectionView.result(f,mm)));
+            assertNull(InspectionView.area(f,InspectionView.result(f,mm)));
+        }
+    }
+    @Test public void longMeasureSentencesKeepOnlyTheirFirstSentence(){
+        Alpha99Findings.Finding f=finding(Alpha99Findings.Status.WORTH);
+        f.measures.add(new Alpha99Findings.Measure("track",0.01,0.005,0.001,3,40,"R","x","Its fitted radial position reads 2.2 px closer to the minute track. This is a position-based estimate"));
+        assertEquals("Its fitted radial position reads 2.2 px closer to the minute track (clear deviation)",InspectionView.findings(f).get(0));
+    }
     @Test public void percentageOnlyForAClearedComparison(){
         MarkerPolygonMismatch.Score s=score();
         String shown=InspectionView.area(finding(Alpha99Findings.Status.WITHIN),new MarkerMismatchResearch.Result(s,"measured"));
