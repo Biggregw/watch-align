@@ -38,10 +38,34 @@ python tools/luminous/boundary/replay.py --focused \
   --work /tmp/watchalign-boundary-focused
 ```
 
-The focused mode asserts three reviewed fitted-circle outputs and seven
-contradictory-boundary abstentions. It is required by the separate APK workflow.
-Golden numerical assertions are regression checks on the frozen photographs,
-not new QC thresholds or inputs used by the detector.
+The focused mode checks the complete reconstructed circle, centre, radius, fitted
+and alignment-only scores, and OBSERVED withholding for the documented failures
+and a previously retained HAND-filtered circle. It also checks nine unchanged
+genuine circle/triangle/baton controls, three reviewed outer-metal selection
+regressions, three exact-original repeats, and seven contradictory-boundary
+abstentions. Batgirl / 9 and / 12 are required by the full audit.
+
+Golden numerical assertions are regression checks on frozen photographs, never
+QC thresholds or inputs used by the detector. The three additional boundary
+regressions must retain their reviewed correct baseline boundary or safely abstain.
+A smaller reported percentage cannot satisfy these checks.
+
+Focused replay verifies the archived measurements/references against the full
+audit's frozen input hashes. Its default validation file is
+`docs/research/luminous-boundary-review-2026-10-13/validation.json`; pass
+`--validation-report` to use a different full audit. Full replay writes all
+comparisons and a failed validation record before exiting if photographic gates
+fail. Preserve these artifacts and the existing APK when validation fails.
+
+```bash
+python tools/luminous/boundary/test_validation.py
+python tools/luminous/boundary/verify_build.py \
+  --report docs/research/luminous-boundary-review-2026-10-13
+```
+
+The build gate requires the full source/test/replay hash contract and evidence
+checksums, cross-checks CSV coverage and summaries, and rejects old Boolean-only
+reports. Validation checks also remain active when Python runs with `-O`.
 
 To reproduce the *old* failures, check out `8a53c1e5` in a separate worktree, copy
 the completed research branch's `LuminousCalibrationStudy.java` into its desktop

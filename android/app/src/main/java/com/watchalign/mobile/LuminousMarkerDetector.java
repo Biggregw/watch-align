@@ -15,7 +15,7 @@ final class LuminousMarkerDetector {
         final int hour; double[][] polygon; String reason="not assessed";
         String method="none",failureCode="UNASSESSED";
         LuminousPartialFit.Fit alignment;
-        double[][] circularEvidence;
+        double[][] circularEvidence,circularAlternatives;
         final List<String> attempts=new ArrayList<>();
         String diagnosticSummary(){Map<String,Integer> counts=new LinkedHashMap<>();for(String attempt:attempts){String code=attempt.split(":",2)[0];counts.put(code,counts.getOrDefault(code,0)+1);}return failureCode+"; attempted stages "+counts;}
         void fail(String code,String message){failureCode=code;reason=message;attempts.add(code+": "+message);}
@@ -29,17 +29,23 @@ final class LuminousMarkerDetector {
             Alpha99MarkerInterference.Check check=outer.checks==null?null:outer.checks.get(m.hour);
             if(check==null||(!check.clean&&!Alpha99MarkerInterference.HAND.equals(check.reason))){d=new Detection(m.hour);d.fail("INTERFERENCE",check==null?"interference evidence unavailable":"existing interference check: "+check.reason);}
             else if(outer.measurement.ring==null||!outer.measurement.ring.usable){d=new Detection(m.hour);d.fail("RING_UNAVAILABLE","marker-ring placement unavailable");}
-            else d=detectOne(gray,outer.pose.homography,m,outer.measurement.ring.model,outer.measurement.dialRadiusPx);
-            if(check!=null&&!check.clean&&Alpha99MarkerInterference.HAND.equals(check.reason)&&d.alignment!=null&&d.alignment.observed!=null){
-                double[][] clean=withoutHand(d.alignment.observed,m,check,outer.pose.homography);
-                d.alignment=LuminousPartialFit.fit(clean,m.shape,m.hour,outer.measurement.dialRadiusPx);d.polygon=null;d.method="none";d.fail("INTERFERENCE","hand-contaminated samples excluded from partial fit; observed full area withheld");
-                if(m.shape==ModelSpec.Shape.ROUND&&d.circularEvidence!=null){
-                    d.circularEvidence=withoutHand(d.circularEvidence,m,check,outer.pose.homography);
-                    LuminousCircularBoundary.validate(d,m.hour,outer.measurement.dialRadiusPx);
-                }
-            }
+            else d=detectOne(gray,outer.pose.homography,m,outer.measurement.ring.model,outer.measurement.dialRadiusPx,!check.clean&&Alpha99MarkerInterference.HAND.equals(check.reason));
+            if(check!=null&&!check.clean&&Alpha99MarkerInterference.HAND.equals(check.reason))
+                excludeHand(d,m,check,outer.pose.homography,outer.measurement.dialRadiusPx);
             results.put(m.hour,d);
         }}finally{rgba.release();gray.release();}return results;
+    }
+    /** Preserve provisional contour samples until both circular evidence sets have been masked.
+     * Unmasked contrary hand observations must not erase a previously supported clean fit. */
+    static void excludeHand(Detection d,ModelSpec.Marker m,Alpha99MarkerInterference.Check check,double[] H,double R){
+        boolean observed=d.alignment!=null&&d.alignment.observed!=null,circular=m.shape==ModelSpec.Shape.ROUND&&d.circularEvidence!=null;
+        if(observed)d.alignment=LuminousPartialFit.fit(withoutHand(d.alignment.observed,m,check,H),m.shape,m.hour,R);
+        if(observed||circular){d.polygon=null;d.method="none";d.fail("INTERFERENCE","hand-contaminated samples excluded from partial fit; observed full area withheld");}
+        if(circular){
+            d.circularEvidence=withoutHand(d.circularEvidence,m,check,H);
+            if(d.circularAlternatives!=null)d.circularAlternatives=withoutHand(d.circularAlternatives,m,check,H);
+            LuminousCircularBoundary.validate(d,m.hour,R);
+        }
     }
     /** Existing hand-grid exclusion, applied separately to each source of observed samples. */
     private static double[][] withoutHand(double[][] points,ModelSpec.Marker m,Alpha99MarkerInterference.Check check,double[] H){
@@ -51,6 +57,9 @@ final class LuminousMarkerDetector {
         return clean.toArray(new double[0][]);
     }
     static Detection detectOne(Mat gray,double[] H,ModelSpec.Marker m,double[] ring,double R){
+        return detectOne(gray,H,m,ring,R,false);
+    }
+    static Detection detectOne(Mat gray,double[] H,ModelSpec.Marker m,double[] ring,double R,boolean deferCircularValidation){
         Detection d=new Detection(m.hour);double[] center=ExpectedMarkerOutline.moved(new double[][]{m.masterPoint()},ring)[0];
         double half=Math.max(m.halfWidth(),(m.outerEdgeR()-m.innerR())*.65)+.025;
         int n=Math.max(24,Math.min(240,(int)Math.ceil(2*half*R)));double step=2*half/n;
@@ -63,8 +72,11 @@ final class LuminousMarkerDetector {
             int[] sorted=new int[pixels.length];for(int i=0;i<sorted.length;i++)sorted[i]=pixels[i]&255;Arrays.sort(sorted);double background=sorted[sorted.length/5];d.contrast=face-background;
             if(d.contrast<35){d.fail("LOW_CONTRAST","inner material has insufficient local contrast");return d;}
             if(m.shape==ModelSpec.Shape.ROUND){
-                double[][] samples=LuminousCircularBoundary.samples(pixels,n,seed);d.circularEvidence=new double[samples.length][];
+                LuminousCircularBoundary.Evidence evidence=LuminousCircularBoundary.evidence(pixels,n,seed);
+                double[][] samples=evidence.primary;d.circularEvidence=new double[samples.length][];
                 for(int i=0;i<samples.length;i++)d.circularEvidence[i]=new double[]{center[0]-half+(samples[i][0]+.5)*step,center[1]-half+(samples[i][1]+.5)*step};
+                d.circularAlternatives=new double[evidence.alternatives.length][];
+                for(int i=0;i<evidence.alternatives.length;i++)d.circularAlternatives[i]=new double[]{center[0]-half+(evidence.alternatives[i][0]+.5)*step,center[1]-half+(evidence.alternatives[i][1]+.5)*step};
             }
             LuminousSeparator.Result fallback=LuminousSeparator.trace(pixels,n,seed);
             if(fallback.visible!=null){double[][] points=new double[fallback.visible.length][];for(int i=0;i<points.length;i++)points[i]=new double[]{center[0]-half+(fallback.visible[i][0]+.5)*step,center[1]-half+(fallback.visible[i][1]+.5)*step};d.alignment=LuminousPartialFit.fit(points,m.shape,m.hour,R);}
@@ -84,7 +96,7 @@ final class LuminousMarkerDetector {
             if(!"NONE".equals(fallback.code)){d.fail(fallback.code,fallback.reason);return d;}
             if(accept(d,fallback.candidates,m,step,R,center,half,pixels,n,"separator",fallback.observed[1]))return d;
             return d;
-        }finally{if(m.shape==ModelSpec.Shape.ROUND)LuminousCircularBoundary.validate(d,m.hour,R);T.release();hm.release();M.release();empty.release();crop.release();}
+        }finally{if(m.shape==ModelSpec.Shape.ROUND&&!deferCircularValidation)LuminousCircularBoundary.validate(d,m.hour,R);T.release();hm.release();M.release();empty.release();crop.release();}
     }
     private static boolean accept(Detection d,List<double[][]> candidates,ModelSpec.Marker m,double step,double R,double[] center,double half,byte[] pixels,int n,String method,double[][] observed){
             double[][] selected=candidates.get(1);double area=MarkerPolygonMismatch.area(selected),outerArea=MarkerPolygonMismatch.area(m.shape==ModelSpec.Shape.ROUND?MarkerPolygonMismatch.circle(0,0,m.outerR,64):m.shape==ModelSpec.Shape.BATON?m.batonPolygon():m.trianglePolygon());

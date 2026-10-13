@@ -8,8 +8,17 @@ import java.util.*;
  * All numeric gates below reuse the experimental separator/fit pixel-evidence gates; no QC bands.
  */
 final class LuminousCircularBoundary {
+    static final class Evidence {
+        final double[][] primary,alternatives;
+        Evidence(List<double[]> primary,List<double[]> alternatives){
+            this.primary=primary.toArray(new double[0][]);this.alternatives=alternatives.toArray(new double[0][]);
+        }
+    }
     static double[][] samples(byte[] pixels,int n,int seed){
-        List<double[]> points=new ArrayList<>();
+        return evidence(pixels,n,seed).primary;
+    }
+    static Evidence evidence(byte[] pixels,int n,int seed){
+        List<double[]> points=new ArrayList<>(),alternatives=new ArrayList<>();
         for(int k=0;k<LuminousSeparator.RAYS;k++){
             double a=k*2*Math.PI/LuminousSeparator.RAYS,dx=Math.cos(a),dy=Math.sin(a);
             int count=(int)(((n/2.0-2)/Math.max(Math.abs(dx),Math.abs(dy)))/.25);
@@ -23,22 +32,29 @@ final class LuminousCircularBoundary {
                 // an interior texture edge, or a hand/shadow followed by more luminous material.
                 if(v[recovery]-v[trough]<12||v[j+4]-v[trough]>12)continue;
                 int bright=0;for(int i=0;i<j-4;i++)if(v[i]>=v[j+4]+.6*drop)bright++;
-                if(bright<.90*(j-4))continue;
                 double target=v[j+4]+.50*drop;int crossing=-1;
                 for(int i=j-4;i<j+4;i++)if(v[i]>=target&&v[i+1]<target)crossing=i;
                 if(crossing<0)continue;
                 double r=.25*(crossing+(target-v[crossing])/(v[crossing+1]-v[crossing]));
-                points.add(new double[]{seed+r*dx,seed+r*dy});
+                // A dark interior ring can hide the true outer boundary from the bright-prefix
+                // gate. Keep other directly observed troughs as contrary evidence, without
+                // allowing an unsupported seed-to-edge path to supply the selected fit.
+                (bright<.90*(j-4)?alternatives:points).add(new double[]{seed+r*dx,seed+r*dy});
             }
         }
-        return points.toArray(new double[0][]);
+        return new Evidence(points,alternatives);
     }
 
     static LuminousPartialFit.Fit fit(double[][] points,int hour,double R){
+        return fit(points,null,hour,R);
+    }
+    static LuminousPartialFit.Fit fit(double[][] points,double[][] alternatives,int hour,double R){
         LuminousPartialFit.Fit f=LuminousPartialFit.fit(points,ModelSpec.Shape.ROUND,hour,R);
         if(f.ideal==null)return f;
         List<double[]> in=new ArrayList<>(),other=new ArrayList<>();
         for(double[] p:points)(Math.abs(Math.hypot(p[0]-f.center[0],p[1]-f.center[1])-f.radius)*R<=.8?in:other).add(p);
+        if(alternatives!=null)for(double[] p:alternatives)
+            if(Math.abs(Math.hypot(p[0]-f.center[0],p[1]-f.center[1])-f.radius)*R>.8)other.add(p);
         Set<Integer> contradictoryRegions=new HashSet<>();
         for(double[] p:other)if(Math.abs(Math.hypot(p[0]-f.center[0],p[1]-f.center[1])-f.radius)*R>1.25){
             double a=Math.atan2(p[1]-f.center[1],p[0]-f.center[0]);if(a<0)a+=2*Math.PI;
@@ -65,7 +81,7 @@ final class LuminousCircularBoundary {
     static void validate(LuminousMarkerDetector.Detection d,int hour,double R){
         double[][] evidence=d.circularEvidence;
         if(evidence==null)return;
-        LuminousPartialFit.Fit verified=fit(evidence,hour,R),old=d.alignment;
+        LuminousPartialFit.Fit verified=fit(evidence,d.circularAlternatives,hour,R),old=d.alignment;
         if(verified.ideal==null){
             d.alignment=verified;
             if(d.polygon!=null){d.polygon=null;d.method="none";d.fail("CIRCULAR_BOUNDARY_UNRESOLVED",verified.reason);}
@@ -78,11 +94,17 @@ final class LuminousCircularBoundary {
         if(agrees){old.reason=verified.reason+"; previous geometry independently confirmed within contour-localisation allowance";}
         else {d.alignment=verified;d.attempts.add("CIRCULAR_BOUNDARY_CORRECTED: prior arc samples did not follow the independently evidenced separator");}
         if(d.polygon!=null){
-            // Full observed contours are never replaced by the fitted circle. Contradictory
-            // physical-area evidence is withheld, while independent arcs may still measure.
+            // A fitted circle never replaces observed area. An accepted physical contour
+            // supporting a different stable circle is independent contradictory evidence;
+            // an isolated noncircular contour departure can still leave partial arcs usable.
             double[][] contour=d.polygon;double maximum=0;
             for(double[] p:contour)maximum=Math.max(maximum,R*Math.abs(Math.hypot(p[0]-verified.center[0],p[1]-verified.center[1])-verified.radius));
-            if(maximum>1.25){d.polygon=null;d.method="none";d.fail("CIRCULAR_BOUNDARY_UNRESOLVED","observed contour disagrees with independently supported luminous boundary");}
+            if(maximum>1.25){
+                LuminousPartialFit.Fit observed=LuminousPartialFit.fit(contour,ModelSpec.Shape.ROUND,hour,R);
+                if(observed.ideal!=null&&R*(Math.hypot(observed.center[0]-verified.center[0],observed.center[1]-verified.center[1])+Math.abs(observed.radius-verified.radius))>1.25)
+                    d.alignment=withheld(evidence,"accepted observed boundary and photographic arcs support competing circle geometry; luminous-to-surround identity unresolved");
+                d.polygon=null;d.method="none";d.fail("CIRCULAR_BOUNDARY_UNRESOLVED",d.alignment.ideal==null?d.alignment.reason:"observed contour disagrees with independently supported luminous boundary");
+            }
         }
     }
 }

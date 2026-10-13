@@ -30,9 +30,19 @@ final class LuminousMeasurement {
         }
         boolean assessed(){return score!=null;}
         MarkerPolygonMismatch.Score comparison(int mode){return mode==0?fittedScore:mode==1?alignmentScore:score;}
-        MarkerMismatchResearch.Result displayPolygon(int mode){MarkerPolygonMismatch.Score q=comparison(mode);return new MarkerMismatchResearch.Result(q,q!=null?"measured":reason,expected);}
+        String comparisonReason(int mode){
+            if(comparison(mode)!=null)return "measured";
+            if(mode==2)return reason;
+            if(expected==null)return "insufficient genuine inner-reference evidence";
+            if(alignment==null)return "measured".equals(reason)?"independent luminous edge evidence unavailable":reason;
+            if(mode==0&&alignment.ideal==null)return alignment.reason;
+            if(mode==1&&(alignment.center==null||spec.shape!=ModelSpec.Shape.ROUND&&!alignment.orientation))return alignment.reason;
+            if(mode==1&&(expectedAlignment==null||expectedAlignment.center==null||spec.shape!=ModelSpec.Shape.ROUND&&!expectedAlignment.orientation))return "reference position or direction could not be established";
+            return mode==0?"invalid fitted geometric comparison":"invalid alignment-only comparison";
+        }
+        MarkerMismatchResearch.Result displayPolygon(int mode){MarkerPolygonMismatch.Score q=comparison(mode);return new MarkerMismatchResearch.Result(q,comparisonReason(mode),expected);}
         static String scoreDescription(String title,MarkerPolygonMismatch.Score q,String withheld){return title+": "+(q==null?"withheld — "+withheld:String.format(Locale.US,"%.3f%% (extra %.3f%% + missing %.3f%%; displayed values rounded)",q.mismatchPct,q.extraPct,q.missingPct));}
-        MarkerMismatchResearch.Result displayPolygon(){return new MarkerMismatchResearch.Result(score,assessed()?"measured":reason,expected);}
+        MarkerMismatchResearch.Result displayPolygon(){return displayPolygon(2);}
         boolean alignmentUsable(){return alignment!=null&&alignment.usable();}
         String alignmentDescription(){
             if(!alignmentUsable())return "Alignment not assessed: "+(alignment==null?reason:alignment.reason)+".";
@@ -54,7 +64,7 @@ final class LuminousMeasurement {
             return b.append("\n").append(alignment.reason).append(". These are fit stability diagnostics, not calibrated confidence intervals.").toString();
         }
         String description(){
-            String alignmentText=alignmentDescription()+"\n\n"+scoreDescription("FITTED GEOMETRIC mismatch",fittedScore,"independent edges do not establish a complete stable shape")+"\n"+scoreDescription("FITTED alignment-only mismatch",alignmentScore,"position and orientation are not both established")+"\nThe alignment-only comparison moves/rotates the expected template without resizing it. Fitted ideal intersections/circles are geometric measurements, not observed corners. The three percentages are separate and are never added.\n\nObserved full physical luminous footprint:\n";
+            String alignmentText=alignmentDescription()+"\n\n"+scoreDescription("FITTED GEOMETRIC mismatch",fittedScore,comparisonReason(0))+"\n"+scoreDescription("FITTED alignment-only mismatch",alignmentScore,comparisonReason(1))+"\nThe alignment-only comparison moves/rotates the expected template without resizing it. Fitted ideal intersections/circles are geometric measurements, not observed corners. The three percentages are separate and are never added.\n\nObserved full physical luminous footprint:\n";
             if(!assessed())return alignmentText+"Area mismatch withheld: "+reason+". Fitted geometric percentages above remain independent.\nDiagnostics: "+detection.diagnosticSummary();
             return alignmentText+String.format(Locale.US,"Mismatch %.3f%% = extra %.3f%% + missing %.3f%%\nHorizontal displacement %+.3f%% R · vertical %+.3f%% R\nArea size difference %+.3f%% · major span %+.3f%% · minor span %+.3f%%\n%s\nFootprint boundary movement across local edge levels: %.2f source px. This is a stability diagnostic, not a calibrated confidence interval. No pass/fail threshold.",score.mismatchPct,score.extraPct,score.missingPct,100*dxR,100*dyR,sizePct,lengthPct,widthPct,
                 spec.shape==ModelSpec.Shape.ROUND?"Rotation: not applicable to a round":Double.isFinite(rotationDeg)?String.format(Locale.US,"Rotation %+.3f° (+ clockwise); contrast-level angle span %.3f°",rotationDeg,detection.rotationSpreadDeg):"Rotation withheld: inner orientation varies across contrast levels",detection.boundarySpreadPx);

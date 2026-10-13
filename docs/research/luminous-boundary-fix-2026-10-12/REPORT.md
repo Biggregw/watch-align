@@ -1,5 +1,7 @@
 # Partial-edge luminous boundary correction
 
+> Review update (2026-10-13): the stronger [photographic review](../luminous-boundary-review-2026-10-13/REPORT.md) found additional false metal-edge circles in alpha107.3. That review remains blocked by a genuine 124060 / 8 boundary error. Treat the circular measurements in this historical release as provisional; no replacement APK was built. The historical measurements below are preserved.
+
 Baseline: `8a53c1e5`, isolated branch `fix/luminous-boundary-validation-20261012`.
 The two documented false-circle cases are corrected. The additional processing
 failure found during validation is withheld. No reference calibration, new

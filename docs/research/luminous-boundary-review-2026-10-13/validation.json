@@ -1,0 +1,100 @@
+{
+  "validation_schema": 2,
+  "validation_passed": false,
+  "validation_failures": [
+    "c14f8b3abb49c038/8: reviewed fit new_fitted changed"
+  ],
+  "originals": 132,
+  "processing_variants": 18,
+  "reviewed_circles_checked": 4,
+  "unchanged_reviewed_controls_checked": 9,
+  "metal_boundary_regressions_checked": 3,
+  "batgirl_markers_checked": [
+    9,
+    12
+  ],
+  "batgirl_original_verified": true,
+  "exact_original_repeats": 3,
+  "noncircular_and_outer_unchanged": true,
+  "circular_geometry_changes": {
+    "withheld": 242,
+    "unchanged_geometry": 579,
+    "still_withheld": 116,
+    "changed_geometry_requires_visual_review": 113,
+    "newly_supported": 6
+  },
+  "by_family": {
+    "gmt_126710": {
+      "withheld": 65,
+      "unchanged_geometry": 100,
+      "still_withheld": 58,
+      "changed_geometry_requires_visual_review": 23,
+      "newly_supported": 2
+    },
+    "submariner_124060": {
+      "unchanged_geometry": 265,
+      "still_withheld": 46,
+      "withheld": 47,
+      "changed_geometry_requires_visual_review": 7,
+      "newly_supported": 3
+    },
+    "submariner_126610": {
+      "unchanged_geometry": 214,
+      "withheld": 130,
+      "changed_geometry_requires_visual_review": 83,
+      "still_withheld": 12,
+      "newly_supported": 1
+    }
+  },
+  "observed_withheld_after_validation": 122,
+  "old_resize_delta_pp": 9.616509028563977,
+  "corrected_resize_delta_pp": 1.0424935083627087,
+  "contradictory_processing_circle_withheld_in_all_7_cases": true,
+  "source_hashes": {
+    "android/app/src/main/java/com/watchalign/mobile/LuminousCircularBoundary.java": "ebe65937220c4852a575220d19d79341ee697daa66acdc0b60a3dba096ed4075",
+    "android/app/src/main/java/com/watchalign/mobile/LuminousGeometry.java": "17b8d86e500a916a2b9e536ba29a6ad9274fcde63bc445f3e5049b18874011af",
+    "android/app/src/main/java/com/watchalign/mobile/LuminousMarkerDetector.java": "84609d04668843a976d7a749a6dac509d09feca8d438b3389afe5909d34f9cff",
+    "android/app/src/main/java/com/watchalign/mobile/LuminousMeasurement.java": "9e1462f375902f67d362ce781fd4dc4e9adfe541d094aa1602b99b7ed4456e44",
+    "android/app/src/main/java/com/watchalign/mobile/LuminousPartialFit.java": "c8e31cbef21950fe9c523c6095471a4965779a2dad7a62ea26c6a5b15a02a9ba",
+    "android/app/src/main/java/com/watchalign/mobile/LuminousReference.java": "0a2b0f79bfabd23c13034ee080efdb4e77494055ddda838b380673f0af23205a",
+    "android/app/src/main/java/com/watchalign/mobile/LuminousSeparator.java": "ef4c970134b63cdb761e4bd6a401ddd57b151b8e75ebffd8dfe9848341f9f943",
+    "android/app/src/main/java/com/watchalign/mobile/MarkerPolygonMismatch.java": "508872b1df1788d1f493319f1fa38cbdbfc2257eabd28df7785d62411b31333a",
+    "android/app/src/test/java/com/watchalign/mobile/LuminousCircularBoundaryTest.java": "cde3b9b0b6b2cfe0a687fd9591244a47df11b8d27f9c92dd07431d2936d79407",
+    "android/app/src/test/java/com/watchalign/mobile/LuminousMeasurementTest.java": "d75a12d9aae3fe408c6e7c08a58e2bbe96f3706c390a7016673edcfb41604c90",
+    "android/app/src/test/java/com/watchalign/mobile/LuminousPartialFitTest.java": "b1528164f74579230511f2ef51c7a2e756fd43721de43dbea07c678e4987ffe7",
+    "android/app/src/test/java/com/watchalign/mobile/LuminousReferenceTest.java": "deb80e66380c5d8cf48c222eeb5fa87ba768da282c724c4f813b4db1c2c2ef8a",
+    "android/app/src/test/java/com/watchalign/mobile/MarkerPolygonMismatchTest.java": "2f16be6f75b5027be8bcae252e5b24b2a92ff9f45c2beb2b2b5266d2f62f6078",
+    "tools/desktop-harness/drivers/Alpha96Calib.java": "34b5b217ad0b04ab1854697b290a5aa84a8e19b26cb239dba27db6e823e70f02",
+    "tools/desktop-harness/drivers/HarnessModel.java": "55bec04bb48c9733919f779c581388805e8c256d3dacc35bf53d428db9f0117d",
+    "tools/desktop-harness/drivers/LuminousCalibrationStudy.java": "61cf39adc7533d0af85c5e56bbcaab4a9a15037856f9006cbcbc0b3abc076680",
+    "tools/desktop-harness/drivers/LuminousSyntheticChecks.java": "b6181901b3ac9f69c8fc6ff470a38525d6e71fed4c30a58672f773177590a2b4",
+    "tools/desktop-harness/drivers/LuminousValidation.java": "dca920ba83eb2b34fccdbb470079eb411f70f8a91a9c2db480c2fd0e82b32a65",
+    "tools/desktop-harness/run.sh": "b7377c37f1f85d45edbd0094523b89d0480130b7c7600b34cbba39d1bd7a63b7",
+    "tools/luminous/boundary/checks.py": "1acf8fd416e7f74ea30bec45af58220089651e14e742e22486863ac78946d094",
+    "tools/luminous/boundary/compare.py": "60117d585dcae5b8cbfc313b0c8268f763a2508f261c675939fe254da974d7a6",
+    "tools/luminous/boundary/replay.py": "b256b98c764f93395d960e25373c9b315adbea990b476b47c0d433fffc2cbc02",
+    "tools/luminous/boundary/test_validation.py": "45ef7acb94f5df85f3b865ac0cc59d5fcfdcd825286218e6df6277e5207bb749",
+    "tools/luminous/boundary/verify_build.py": "9fe2f0fe455d6a13bf16bc9ca7dbccd023eda9ee86a0a6d591a11209034b968e",
+    "tools/luminous/prepare_curated.py": "6ac0b8db597cfd8bb59dbf2371e0a28934c3a4fcb8c7f13c74ee2bf903bfc1e1"
+  },
+  "evidence_hashes": {
+    "original_comparison.csv": "5a7ef85c99bafc8f58e141020b96ab4bf82728447d7f4f2df456c69dab2c21da",
+    "processing_comparison.csv": "e33d65c38395dfb1aed81e644fe68648569dedb4447fb3cae7cc18cbe97e088a",
+    "batgirl_comparison.csv": "a04ba994fbf55a29eac98818be783e468f6daf729c6fff9db20f14873dc5b0b1",
+    "original_hashes.csv": "7a5db19af46a10d11ad868eb6b1e997307d81882b1646686a08973c69e9a5a1e"
+  },
+  "frozen_input_hashes": {
+    "calibrated_references.json": "0ef0548bb71a34bb3a3d6e8e01289b3efef1fc5b061e95eb7b04389e65cea44b",
+    "processing_manifest.csv": "51ead5c726c81717ed6975e857512800ffebb5e82b37a008ed8fcac51577ccea",
+    "gmt_126710_scored.jsonl": "f378a47c3bc96538a5a570b6bf23eae562145d18e3e0e8974b6c459cf5fd5c6b",
+    "gmt_126710_processing_scored.jsonl": "eaf413f1ef7e01ec1622d61cf21aa77555f63100d60df596fdeef1aa08f70055",
+    "gmt_126710_extract.csv": "62cbf6adc5831273cd2cffc01d20fa3da1b126ac6ca21f7a03440d40680b35b6",
+    "submariner_124060_scored.jsonl": "b6ec9fc74d69334f6d11e7bab938f030216b842da26092a591261bef8a61903c",
+    "submariner_124060_processing_scored.jsonl": "42bd97a36ed1242056b76dc846ac1794ece4eb2ef304362f84357d63d49a79f3",
+    "submariner_124060_extract.csv": "67ee7724ecbf597bfc5420add0de4121bdae214f9a00aa9cefa9b18cccbbf202",
+    "submariner_126610_scored.jsonl": "94f7dc415abb8cd18450b8a61b71ef93a518480487bf2fee13549c26ee974cca",
+    "submariner_126610_processing_scored.jsonl": "436368f38883781ba768a209678d6ff523f1f84fcf896a6f638402e0ccccd850",
+    "submariner_126610_extract.csv": "9e6a48633a9ea104bd0b97fab02171946c855d5320f653dbdf8032d2265e8e17"
+  },
+  "batgirl_baseline_sha256": "b28ec5be21b85545f29904440e006bc2930ab4b9a951174e0904b9cb70b4e004"
+}

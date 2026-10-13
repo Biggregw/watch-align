@@ -37,4 +37,24 @@ public class LuminousMeasurementTest {
         LuminousSeparator.Result s=LuminousSeparator.trace(p,n,40);
         assertEquals(0,s.metalRecoveryRays);assertNotNull(s.visible);assertEquals(0,s.visible.length);
     }
+    @Test public void fittedWithholdingReasonDoesNotBorrowObservedMeasuredStatus(){
+        ModelSpec.Marker spec=new ModelSpec.Marker(6,ModelSpec.Shape.BATON,"six",.75,0,.15,.06,0,0,0,0,0);
+        LuminousMarkerDetector.Detection d=new LuminousMarkerDetector.Detection(6);d.reason="measured";d.polygon=rect(0);
+        d.alignment=new LuminousPartialFit.Fit();d.alignment.reason="independent end edges unavailable";
+        LuminousMeasurement.Marker m=new LuminousMeasurement.Marker(spec,d,rect(0));
+        assertNotNull(m.score);assertNull(m.fittedScore);assertNull(m.alignmentScore);
+        assertEquals("independent end edges unavailable",m.displayPolygon(0).reason);
+        assertEquals("independent end edges unavailable",m.displayPolygon(1).reason);
+        assertEquals("measured",m.displayPolygon(2).reason);
+        assertTrue(m.description().contains("FITTED GEOMETRIC mismatch: withheld — independent end edges unavailable"));
+    }
+    @Test public void missingReferenceReasonIsSeparateFromMissingPhysicalFootprint(){
+        ModelSpec.Marker spec=new ModelSpec.Marker(12,ModelSpec.Shape.ROUND,"rounds",.7,.06,0,0,0,0,0,0,0);
+        LuminousMarkerDetector.Detection d=new LuminousMarkerDetector.Detection(12);d.reason="physical boundary interrupted by hand";
+        d.alignment=LuminousPartialFit.fit(MarkerPolygonMismatch.circle(0,0,.04,96),ModelSpec.Shape.ROUND,12,500);
+        LuminousMeasurement.Marker m=new LuminousMeasurement.Marker(spec,d,null);
+        assertEquals("insufficient genuine inner-reference evidence",m.comparisonReason(0));
+        assertEquals("insufficient genuine inner-reference evidence",m.comparisonReason(1));
+        assertEquals("physical boundary interrupted by hand",m.comparisonReason(2));
+    }
 }
