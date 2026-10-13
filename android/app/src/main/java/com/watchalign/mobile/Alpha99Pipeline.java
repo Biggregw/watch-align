@@ -54,7 +54,6 @@ final class Alpha99Pipeline {
         try{o.checks=Alpha99MarkerInterference.analyse(gray,H,model);}catch(Throwable t){o.checks=null;}
         try{o.partial=partialRounds(photo,H,o.measurement,o.checks,model);}catch(Throwable t){o.partial=null;}
         o.summary=Alpha99Findings.build(o.measurement,o.date,o.checks,o.partial,model,ref);
-        try{o.overview=Alpha99Overview.render(rgba,H,o.summary,model);}catch(Throwable t){o.overview=null;}
         double[] ring=o.measurement.ring!=null&&o.measurement.ring.usable?o.measurement.ring.model:null;
         List<Alpha99Findings.Finding> tiles=o.summary.tiles();
         for(Alpha99Findings.Finding f:o.summary.all){
@@ -67,6 +66,7 @@ final class Alpha99Pipeline {
             Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref,measured,comparison);}catch(Throwable t){c=null;}
             if(c!=null)o.closeups.put(f.key,c);
         }
+        try{o.overview=Alpha99Overview.render(rgba,H,o.summary,model,o.mismatch);}catch(Throwable t){o.overview=null;}
         try{o.scoringOverlay=MarkerMismatchOverlay.fullWatch(photo.getWidth(),photo.getHeight(),H,o.mismatch);}catch(Throwable t){o.scoringOverlay=null;}
         o.technical=technical(o);
         rgba.release();gray.release();

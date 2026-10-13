@@ -19,10 +19,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Alpha99 results: headline by evidence strength, the disclaimer, the whole-dial overview with status badges (tap for
- * the full overlay), a two-column grid of close-ups for clear findings, then worth-a-look findings, then not-assessed
- * markers whose close-up shows why (tap a tile for the detail view), one line for everything within range, and the
- * full overlay / technical details as secondary, collapsed items.
+ * Results, simple first: how many markers are flagged, the corrected dial with one badge per marker (tap a marker for
+ * its close-up), close-ups of the flagged markers and of markers that could not be assessed, then collapsed lists:
+ * every marker, and the technical details (overlays, exact measurements). Display only; findings are unchanged.
  */
 public class Alpha99ResultsActivity extends Activity {
     static final int BG=Color.rgb(8,17,31),CARD=Color.rgb(17,30,50),MUTED=Color.rgb(158,176,201),
@@ -39,6 +38,8 @@ public class Alpha99ResultsActivity extends Activity {
         /** the model the photo was checked as, and an optional hint that a different model may fit the photo. */
         static String modelLabel,modelHint;
         static Bitmap photo,overlay,scoringOverlay;
+        /** the model the photo was measured with (marker positions for tapping the overview). */
+        static ModelSpec model;
         private Store(){}
     }
 
@@ -57,80 +58,102 @@ public class Alpha99ResultsActivity extends Activity {
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-2));
         Alpha99Findings.Summary s=Store.summary;
-        root.addView(text("Results",28,Color.WHITE,true));
-        if(Store.modelLabel!=null)root.addView(text("Checked as: "+Store.modelLabel,14,MUTED,false),lp(-1,-2,2));
-        if(Store.modelHint!=null)root.addView(text(Store.modelHint,14,Color.rgb(255,176,50),false),lp(-1,-2,4));
-        List<String> head=s.headlineLines();
-        for(int i=0;i<head.size();i++)root.addView(text(head.get(i),i==0?19:16,Color.WHITE,i==0),lp(-1,-2,i==0?8:2));
-        root.addView(text(Alpha99Findings.DISCLAIMER,13,MUTED,false),lp(-1,-2,6));
+        // 1. the answer: how many markers are flagged, and the other counts in one line
+        root.addView(text(InspectionView.headline(s,Store.mismatch),26,Color.WHITE,true));
+        root.addView(text(InspectionView.counts(s,Store.mismatch),14,MUTED,false),lp(-1,-2,4));
+        if(Store.modelLabel!=null)root.addView(text(Store.modelLabel,13,MUTED,false),lp(-1,-2,2));
+        if(Store.modelHint!=null)root.addView(text(Store.modelHint,13,AMBER,false),lp(-1,-2,4));
 
-        // overview hero
+        // 2. the watch, each marker badged; tap a marker for its close-up
         if(Store.overview!=null){
             ImageView hero=new ImageView(this);hero.setImageBitmap(Store.overview);hero.setAdjustViewBounds(true);hero.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            hero.setOnClickListener(v->openOverlay());
+            hero.setOnTouchListener((v,e)->{
+                if(e.getAction()!=android.view.MotionEvent.ACTION_UP)return true;
+                double k=Alpha99Overview.SIZE/(double)Math.max(1,v.getWidth());
+                Alpha99Findings.Finding hit=Store.model==null?null:Alpha99Overview.at(s,Store.model,e.getX()*k,e.getY()*k);
+                if(hit!=null)openDetail(s.all.indexOf(hit));else openOverlay();
+                return true;
+            });
             root.addView(hero,lp(-1,-2,12));
-            root.addView(text("✓ no highlighted finding   ! worth a look   !! clear finding   – not assessed   ·   tap for the full overlay",12,MUTED,false),lp(-1,-2,4));
+            root.addView(text("!! clear   ! worth a look   – not assessed   ✓ within (grey: partly assessed)   ·   tap a marker",12,MUTED,false),lp(-1,-2,4));
         }
 
-        // evidence grid
-        List<Alpha99Findings.Finding> tiles=s.tiles();
-        if(!tiles.isEmpty()){
-            root.addView(text(Alpha99Findings.INTERFERENCE_NOTE,13,MUTED,false),lp(-1,-2,14));
-            root.addView(text("Area colours where assessed: orange = extra, magenta = missing. These colours do not indicate defect severity.",12,MUTED,false),lp(-1,-2,4));
-            LinearLayout row=null;
-            for(int i=0;i<tiles.size();i++){
-                if(i%2==0){row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);root.addView(row,lp(-1,-2,10));}
-                LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(0,-2,1f);if(i%2==1)tp.leftMargin=dp(10);
-                row.addView(tile(s.all.indexOf(tiles.get(i)),tiles.get(i)),tp);
-            }
-            if(tiles.size()%2==1){LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(0,-2,1f);tp.leftMargin=dp(10);row.addView(new View(this),tp);}
-        }
-
-        String within=s.withinLine();
-        if(!within.isEmpty())root.addView(text(within,14,MUTED,false),lp(-1,-2,16));
-        String below=s.belowVisibilityLine();
-        if(!below.isEmpty())root.addView(text(below,14,MUTED,false),lp(-1,-2,6));
-        String na=s.notAssessedLine();
-        if(!na.isEmpty())root.addView(text(na,14,MUTED,false),lp(-1,-2,6));
-
-        // Every individual marker can be inspected, including markers within the existing QC range.
-        LinearLayout inspections=new LinearLayout(this);inspections.setOrientation(LinearLayout.VERTICAL);inspections.setVisibility(View.GONE);
-        inspections.addView(text("Yellow: ring-adjusted nominal outer metal, used for the filled-template percentage. Global ring placement and minute-track gaps are separate measurements.",13,MUTED,false));
+        // 3. flagged markers, then markers that could not be assessed (each with its close-up)
+        List<Alpha99Findings.Finding> flagged=new java.util.ArrayList<>(),unassessed=new java.util.ArrayList<>();
         for(Alpha99Findings.Finding f:s.all){
-            MarkerMismatchResearch.Result q=f.dialWide?null:Store.mismatch.get(f.hour);
-            if(q==null)continue;
-            final int index=s.all.indexOf(f);
-            Button inspect=new Button(this);inspect.setAllCaps(false);
-            inspect.setText(f.title+" · "+(q.trusted()?String.format(java.util.Locale.US,"%.3f%% outline mismatch",q.score.mismatchPct):"outline mismatch withheld"));
-            inspect.setOnClickListener(v->{Intent i=new Intent(this,Alpha99DetailActivity.class);i.putExtra(Alpha99DetailActivity.EXTRA_INDEX,index);startActivity(i);});
-            inspections.addView(inspect,lp(-1,-2,4));
+            InspectionView.State st=InspectionView.state(f,Store.mismatch.get(f.hour));
+            if(st==InspectionView.State.CLEAR||st==InspectionView.State.WORTH)flagged.add(f);
+            else if(st==InspectionView.State.NOT_ASSESSED&&f.group==null&&Store.closeups.containsKey(f.key))unassessed.add(f);
         }
-        Button markerDetails=new Button(this);markerDetails.setAllCaps(false);markerDetails.setText("Inspect marker outlines  ▸");
-        markerDetails.setOnClickListener(v->{boolean show=inspections.getVisibility()!=View.VISIBLE;inspections.setVisibility(show?View.VISIBLE:View.GONE);markerDetails.setText(show?"Inspect marker outlines  ▾":"Inspect marker outlines  ▸");});
-        root.addView(markerDetails,lp(-1,dp(48),12));root.addView(inspections,lp(-1,-2,6));
+        if(!flagged.isEmpty()){root.addView(text("Flagged",18,Color.WHITE,true),lp(-1,-2,18));grid(root,s,flagged);}
+        if(!unassessed.isEmpty()){root.addView(text("Not assessed",18,Color.WHITE,true),lp(-1,-2,18));grid(root,s,unassessed);}
+        String grouped=s.notAssessedLine();
+        if(!grouped.isEmpty()&&unassessed.isEmpty()&&flagged.isEmpty())root.addView(text(grouped,13,MUTED,false),lp(-1,-2,8));
 
-        // secondary
+        // 4. every marker, one line each (collapsed)
+        LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);list.setVisibility(View.GONE);
+        for(Alpha99Findings.Finding f:s.all){
+            if(f.group!=null&&f.status==Alpha99Findings.Status.NOT_ASSESSED&&!Store.closeups.containsKey(f.key))continue;
+            MarkerMismatchResearch.Result q=Store.mismatch.get(f.hour);InspectionView.State st=InspectionView.state(f,q);
+            String area=InspectionView.area(f,q);
+            Button b=new Button(this);b.setAllCaps(false);b.setTextColor(stateColour(st));
+            b.setText(f.title+"  ·  "+InspectionView.label(st)+(area==null?"":"  ·  "+area.replace("Area mismatch ","area ").replace("Area: not assessed","area not assessed")));
+            final int index=s.all.indexOf(f);b.setOnClickListener(v->openDetail(index));
+            list.addView(b,lp(-1,-2,4));
+        }
+        root.addView(toggle("All markers",list),lp(-1,dp(48),18));root.addView(list,lp(-1,-2,4));
+
+        // 5. technical details (collapsed): overlays and every exact measurement, unchanged
+        LinearLayout tech=new LinearLayout(this);tech.setOrientation(LinearLayout.VERTICAL);tech.setVisibility(View.GONE);
         if(Store.photo!=null&&Store.overlay!=null){
             Button ov=new Button(this);ov.setText("Open scoring / fixed-master overlays");ov.setAllCaps(false);ov.setOnClickListener(v->openOverlay());
-            root.addView(ov,lp(-1,dp(48),18));
+            tech.addView(ov,lp(-1,dp(48),4));
         }
-        TextView tech=text(Store.technical==null?"":Store.technical,12,MUTED,false);tech.setTextIsSelectable(true);tech.setVisibility(View.GONE);
-        Button details=new Button(this);details.setText("Exact measurements  ▸");details.setAllCaps(false);
-        details.setOnClickListener(v->{boolean show=tech.getVisibility()!=View.VISIBLE;tech.setVisibility(show?View.VISIBLE:View.GONE);details.setText(show?"Exact measurements  ▾":"Exact measurements  ▸");});
-        root.addView(details,lp(-1,dp(48),8));root.addView(tech,lp(-1,-2,6));
+        for(String line:s.headlineLines())tech.addView(text(line,13,MUTED,false),lp(-1,-2,4));
+        tech.addView(text(Alpha99Findings.DISCLAIMER,12,MUTED,false),lp(-1,-2,6));
+        TextView exact=text(Store.technical==null?"":Store.technical,12,MUTED,false);exact.setTextIsSelectable(true);
+        tech.addView(exact,lp(-1,-2,6));
+        root.addView(toggle("Technical details",tech),lp(-1,dp(48),8));root.addView(tech,lp(-1,-2,4));
+        root.addView(text(InspectionView.SHORT_DISCLAIMER,12,MUTED,false),lp(-1,-2,14));
         return scroll;
     }
 
+    /** The existing status wording, kept for the technical details. */
+    static String colourLabel(Alpha99Findings.Finding f){return "Existing status: "+f.statusLabel()+(f.partNotAssessed==null?"":" ("+f.partNotAssessed+" not assessed: "+f.partReason+")");}
+
+    static int stateColour(InspectionView.State st){
+        switch(st){case CLEAR:return RED;case WORTH:return AMBER;case WITHIN:return GREEN;case MINOR:return SLATE;default:return GREY;}
+    }
+
+    private void grid(LinearLayout root,Alpha99Findings.Summary s,List<Alpha99Findings.Finding> tiles){
+        LinearLayout row=null;
+        for(int i=0;i<tiles.size();i++){
+            if(i%2==0){row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);root.addView(row,lp(-1,-2,10));}
+            LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(0,-2,1f);if(i%2==1)tp.leftMargin=dp(10);
+            row.addView(tile(s.all.indexOf(tiles.get(i)),tiles.get(i)),tp);
+        }
+        if(tiles.size()%2==1){LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(0,-2,1f);tp.leftMargin=dp(10);row.addView(new View(this),tp);}
+    }
+
+    private Button toggle(String name,View target){
+        Button b=new Button(this);b.setAllCaps(false);b.setText(name+"  ▸");
+        b.setOnClickListener(v->{boolean show=target.getVisibility()!=View.VISIBLE;target.setVisibility(show?View.VISIBLE:View.GONE);b.setText(name+(show?"  ▾":"  ▸"));});
+        return b;
+    }
+
+    private void openDetail(int index){Intent i=new Intent(this,Alpha99DetailActivity.class);i.putExtra(Alpha99DetailActivity.EXTRA_INDEX,index);startActivity(i);}
+
     private View tile(int index,Alpha99Findings.Finding f){
+        MarkerMismatchResearch.Result q=Store.mismatch.get(f.hour);InspectionView.State st=InspectionView.state(f,q);
         LinearLayout t=new LinearLayout(this);t.setOrientation(LinearLayout.VERTICAL);t.setBackgroundColor(CARD);t.setPadding(dp(8),dp(8),dp(8),dp(10));
         Bitmap c=Store.closeups.get(f.key);
         if(c!=null){ImageView iv=new ImageView(this);iv.setImageBitmap(c);iv.setAdjustViewBounds(true);iv.setScaleType(ImageView.ScaleType.FIT_CENTER);t.addView(iv,new LinearLayout.LayoutParams(-1,-2));}
         t.addView(text(f.title,15,Color.WHITE,true),lp(-1,-2,6));
-        t.addView(text(f.statusLabel(),12,colour(f.status),true),lp(-1,-2,2));
-        t.addView(text(f.shortLine(),13,Color.WHITE,false),lp(-1,-2,2));
-        if(f.edgeDiagnostic!=null)
-            t.addView(text(f.edgeDiagnostic,11,MUTED,false),lp(-1,-2,5));
-        t.setOnClickListener(v->{Intent i=new Intent(this,Alpha99DetailActivity.class);i.putExtra(Alpha99DetailActivity.EXTRA_INDEX,index);startActivity(i);});
+        t.addView(text(InspectionView.label(st),13,stateColour(st),true),lp(-1,-2,2));
+        List<String> lines=InspectionView.findings(f);
+        String one=!lines.isEmpty()?lines.get(0):InspectionView.explain(f,q);
+        if(one!=null)t.addView(text(one,13,Color.WHITE,false),lp(-1,-2,2));
+        t.setOnClickListener(v->openDetail(index));
         return t;
     }
 

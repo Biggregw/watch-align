@@ -150,6 +150,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 Alpha99ResultsActivity.Store.scoringOverlay=fo.scoringOverlay;
                 Alpha99ResultsActivity.Store.technical=fo.technical;
                 Alpha99ResultsActivity.Store.modelLabel=fo.model==null?null:fo.model.label;
+                Alpha99ResultsActivity.Store.model=fo.model;
                 Alpha99ResultsActivity.Store.modelHint=modelHint(fo);
                 status.setText(fo.summary.headline());
                 openResults();

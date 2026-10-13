@@ -22,14 +22,21 @@ final class Alpha99Overview {
 
     private Alpha99Overview(){}
 
-    static Bitmap render(Mat rgba,double[] H,Alpha99Findings.Summary s,ModelSpec model){
+    static Bitmap render(Mat rgba,double[] H,Alpha99Findings.Summary s,ModelSpec model){return render(rgba,H,s,model,null);}
+
+    /** With the per-marker area comparisons: a marker whose area or part of whose measurement was withheld gets the
+     *  grey "partly assessed" tick and an outside-genuine reading below visibility (MINOR) the slate tick, so no badge
+     *  claims "within genuine range" for something that was not fully measured. Display only. */
+    static Bitmap render(Mat rgba,double[] H,Alpha99Findings.Summary s,ModelSpec model,java.util.Map<Integer,MarkerMismatchResearch.Result> mismatch){
         Mat m=Alpha98Closeups.render(rgba,H,0,0,HALF);
         Mat big=new Mat();Imgproc.resize(m,big,new org.opencv.core.Size(SIZE,SIZE),0,0,Imgproc.INTER_CUBIC);
         double scale=SIZE/(2*HALF);
         for(Alpha99Findings.Finding f:s.all){
             if(!hasBadge(f))continue;
             double[] p=badgeAt(f,model);if(p==null)continue;
-            badge(big,new Point((p[0]+HALF)*scale,(p[1]+HALF)*scale),f.status,f.shape==Alpha99Findings.Shape.RING?"ring":null);
+            Point at=new Point((p[0]+HALF)*scale,(p[1]+HALF)*scale);
+            if(mismatch==null)badge(big,at,f.status,f.shape==Alpha99Findings.Shape.RING?"ring":null);
+            else badge(big,at,InspectionView.state(f,mismatch.get(f.hour)),f.shape==Alpha99Findings.Shape.RING?"ring":null);
         }
         Bitmap b=Bitmap.createBitmap(SIZE,SIZE,Bitmap.Config.ARGB_8888);Utils.matToBitmap(big,b);return b;
     }
@@ -71,6 +78,37 @@ final class Alpha99Overview {
             default:Imgproc.line(m,new Point(x-u,y),new Point(x+u,y),WHITE,th+1,Imgproc.LINE_AA);
         }
         if(label!=null)Imgproc.putText(m,label,new Point(x+rad+6,y+rad*0.45),Imgproc.FONT_HERSHEY_SIMPLEX,SIZE/1200.0,WHITE,Math.max(1,th-1),Imgproc.LINE_AA);
+    }
+
+    static void badge(Mat m,Point c,InspectionView.State st,String label){
+        switch(st){
+            case CLEAR:badge(m,c,Alpha99Findings.Status.CLEAR,label);return;
+            case WORTH:badge(m,c,Alpha99Findings.Status.WORTH,label);return;
+            case WITHIN:badge(m,c,Alpha99Findings.Status.WITHIN,label);return;
+            case NOT_ASSESSED:badge(m,c,Alpha99Findings.Status.NOT_ASSESSED,label);return;
+            default:{
+                int rad=SIZE/38,th=Math.max(2,SIZE/240);double x=c.x,y=c.y,u=rad*0.5;
+                Imgproc.circle(m,c,rad+th,new Scalar(0,0,0,255),-1,Imgproc.LINE_AA);
+                Imgproc.circle(m,c,rad,st==InspectionView.State.MINOR?SLATE:GREY,-1,Imgproc.LINE_AA);
+                Imgproc.line(m,new Point(x-u,y),new Point(x-u*0.25,y+u*0.7),WHITE,th+1,Imgproc.LINE_AA);
+                Imgproc.line(m,new Point(x-u*0.25,y+u*0.7),new Point(x+u,y-u*0.7),WHITE,th+1,Imgproc.LINE_AA);
+                if(label!=null)Imgproc.putText(m,label,new Point(x+rad+6,y+rad*0.45),Imgproc.FONT_HERSHEY_SIMPLEX,SIZE/1200.0,WHITE,Math.max(1,th-1),Imgproc.LINE_AA);
+            }
+        }
+    }
+
+    /** The finding whose badge is nearest a tap at overview pixel (x, y), or null when none is close. */
+    static Alpha99Findings.Finding at(Alpha99Findings.Summary s,ModelSpec model,double x,double y){
+        double scale=SIZE/(2*HALF),cx=x/scale-HALF,cy=y/scale-HALF,best=0.13;Alpha99Findings.Finding hit=null;
+        for(Alpha99Findings.Finding f:s.all){
+            if(!hasBadge(f))continue;double[] p=badgeAt(f,model);if(p==null)continue;
+            ModelSpec.Marker mk=f.dialWide?null:model.atHour(f.hour);
+            // the badge or the marker itself
+            double d=Math.hypot(cx-p[0],cy-p[1]);
+            if(mk!=null){double a=Math.toRadians(f.hour*30.0),r=mk.centreR;d=Math.min(d,Math.hypot(cx-Math.sin(a)*r,cy+Math.cos(a)*r));}
+            if(d<best){best=d;hit=f;}
+        }
+        return hit;
     }
 
     private static void bang(Mat m,double x,double y,double u,int th){
