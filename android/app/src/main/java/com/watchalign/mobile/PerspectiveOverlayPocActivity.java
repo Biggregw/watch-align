@@ -142,10 +142,12 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 buildButton.setEnabled(true);
                 if(!fo.ok()){lastOverlay=null;lastMeasurement=null;inspectButton.setEnabled(false);
                     status.setText("The dial could not be located in this photo. Try a sharper photo taken straight on with the whole dial visible. ("+(q==null?"no result":q.reason)+")");return;}
-                lastOverlay=q.overlay;lastMeasurement=fo.measurement;inspectButton.setEnabled(true);
+                lastOverlay=fo.diagnosticOverlay!=null?fo.diagnosticOverlay:q.overlay;lastMeasurement=fo.measurement;inspectButton.setEnabled(true);
                 Alpha99ResultsActivity.Store.summary=fo.summary;Alpha99ResultsActivity.Store.overview=fo.overview;
                 Alpha99ResultsActivity.Store.closeups.clear();Alpha99ResultsActivity.Store.closeups.putAll(fo.closeups);
-                Alpha99ResultsActivity.Store.photo=photo;Alpha99ResultsActivity.Store.overlay=q.overlay;
+                Alpha99ResultsActivity.Store.mismatch.clear();Alpha99ResultsActivity.Store.mismatch.putAll(fo.mismatch);
+                Alpha99ResultsActivity.Store.photo=photo;Alpha99ResultsActivity.Store.overlay=lastOverlay;
+                Alpha99ResultsActivity.Store.scoringOverlay=fo.scoringOverlay;
                 Alpha99ResultsActivity.Store.technical=fo.technical;
                 Alpha99ResultsActivity.Store.modelLabel=fo.model==null?null:fo.model.label;
                 Alpha99ResultsActivity.Store.modelHint=modelHint(fo);

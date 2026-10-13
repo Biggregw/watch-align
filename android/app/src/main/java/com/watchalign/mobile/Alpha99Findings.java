@@ -19,7 +19,7 @@ import java.util.Map;
  *     an uncertainty estimate can be outside the range but never CLEAR.
  *  3. round markers judged one by one and named by hour.
  *  4. (Alpha103, QC guardrails 3 and 4) practical significance and photo trust:
- *       TOO SMALL TO SEE  outside the measured genuine range, but by less than the eye can pick out on the watch
+ *       MINOR             outside the measured genuine range, but below the existing visibility guideline
  *                         (VISIBLE_FRACTION of the marker's width for positions and sizes, VISIBLE_DEG for angles). Listed,
  *                         never headlined as a deviation and never a clear finding, however many sigma it is.
  *       small photos      a feature judged against shrunk-genuine rows (photo below the full-resolution coverage) is at
@@ -49,7 +49,7 @@ final class Alpha99Findings {
     static final double TRACK_GAP_VISIBLE_FRACTION=0.20;
     enum Shape{BATON,TRIANGLE,ROUND,RING,DATE}
 
-    static final String DISCLAIMER="These results compare this photo's measurements with genuine watches. They are not an authenticity verdict.";
+    static final String DISCLAIMER="These results compare this photo's measurements with genuine watches. They are not an authenticity verdict. A clear finding means strong measurement evidence, not a decision that an imperfection is visually unacceptable.";
     static final String INTERFERENCE_NOTE="Close-ups are shown so you can check for hands, reflections, dust or other interference.";
 
     /** One measured quantity compared with the genuine reference. */
@@ -112,6 +112,8 @@ final class Alpha99Findings {
         String partNotAssessed,partReason;
         /** the part that was assessed, named in the "within" line (default "rotation", the baton case). */
         String partAssessed;
+        /** Display-only: angles of the ACTUAL two fitted long edges relative to the yellow, ring-adjusted outline. */
+        String edgeDiagnostic;
         /** short name used in the "within" line, e.g. "4" or "date window". */
         final String shortName;
         Finding(String key,String title,String shortName){this.key=key;this.title=title;this.shortName=shortName;}
@@ -125,7 +127,7 @@ final class Alpha99Findings {
             return (st==Status.CLEAR?1e6:st==Status.WORTH?1e3:0)+m.strength()+(m.excess()/Math.max(1e-12,Math.abs(m.genuineMax)));}
 
         String statusLabel(){
-            switch(status){case CLEAR:return "CLEAR FINDING";case WORTH:return "WORTH A LOOK";case MINOR:return "TOO SMALL TO SEE";case NOT_ASSESSED:return "NOT ASSESSED";default:return "WITHIN RANGE";}
+            switch(status){case CLEAR:return "CLEAR FINDING";case WORTH:return "WORTH A LOOK";case MINOR:return "BELOW VISIBILITY GUIDELINE";case NOT_ASSESSED:return "NOT ASSESSED";default:return "WITHIN RANGE";}
         }
         /** One short line for the tile. */
         String shortLine(){
@@ -141,7 +143,7 @@ final class Alpha99Findings {
             for(Measure m:measures){
                 if(!m.outside())continue;
                 String s=m.sentence+". The furthest of "+m.n+" genuine reference watches reads "+fmt(m.genuineMax,m.unit)+".";
-                if(m.belowVisible())s+=" That is less than the eye can pick out on the watch (about "+fmt(m.visibleBar,m.unit)+" here), so it is listed as too small to see, not as a deviation.";
+                if(m.belowVisible())s+=" This is outside the measured genuine range, but below the app's existing visibility guideline ("+fmt(m.visibleBar,m.unit)+" here), so it is not highlighted as a finding. Whether it is unacceptable at normal viewing size has not been established.";
                 else if(m.capAtWorth)s+=" "+m.capReason;
                 else if(!m.hasAllowance())s+=" No measurement-uncertainty estimate exists for this feature, so it is not rated as a clear finding.";
                 else if(m.status()==Status.CLEAR)s+=String.format(Locale.US," The excess (%s) is more than %.0f times the photo-to-photo spread measured on genuine watches (%s), so measurement error alone is unlikely to explain it.",
@@ -170,9 +172,8 @@ final class Alpha99Findings {
         List<Finding> minor(){return with(Status.MINOR);}
         List<Finding> within(){return with(Status.WITHIN);}
         List<Finding> notAssessed(){return with(Status.NOT_ASSESSED);}
-        /** Tiles: clear findings, then worth a look, then not-assessed markers whose close-up shows the reason. Alpha105:
-         *  differences too small to see are shown as within (owner, 2026-10-09: "if it's too small to see make it a pass");
-         *  their measured values stay in the technical details. */
+        /** Tiles: clear, worth a look, then visual not-assessed. The existing Alpha105 non-highlighted MINOR decision
+         *  is preserved; its outside-genuine comparison is now listed separately from truly WITHIN readings. */
         List<Finding> tiles(){
             List<Finding> o=new ArrayList<>(clear());o.addAll(worth());
             for(Finding f:notAssessed())if(f.visual)o.add(f);
@@ -182,7 +183,7 @@ final class Alpha99Findings {
             List<String> h=new ArrayList<>();int c=clear().size(),w=worth().size(),mi=minor().size(),na=notAssessedCount();
             if(c>0)h.add(c+" clear alignment finding"+(c==1?"":"s")+": "+names(clear()));
             if(w>0)h.add(w+(c>0?" other":"")+(w==1?" measurement is":" measurements are")+" worth a look: "+names(worth()));
-            if(c==0&&w==0)h.add(mi>0?"No visible deviation from the genuine watches measured":"No measured feature is outside the measured genuine range");
+            if(c==0&&w==0)h.add(mi>0?"No finding exceeds the current visibility guideline":"No measured feature is outside the measured genuine range");
             // QC guardrails 4: borderline readings alone are not escalated; a repeat on another photo is the stronger evidence
             if(c==0&&w>0)h.add("Another clean, straight-on photo would show whether "+(w==1?"it repeats":"these repeat"));
             if(na>0)h.add(na+(na==1?" feature":" features")+" could not be assessed");
@@ -202,9 +203,18 @@ final class Alpha99Findings {
         }
         String withinLine(){
             StringBuilder b=new StringBuilder();
-            List<Finding> w=new ArrayList<>();for(Finding f:all)if(f.status==Status.WITHIN||f.status==Status.MINOR)w.add(f);
+            List<Finding> w=within();
             for(Finding f:w){if(b.length()>0)b.append(", ");b.append(f.shortName);if(f.partNotAssessed!=null)b.append(" ").append(f.partAssessed!=null?f.partAssessed:"rotation");}
             return b.length()==0?"":"Within measured genuine range: "+b;
+        }
+        /** Preserve the existing non-highlighted classification without calling an outside reading within genuine. */
+        String belowVisibilityLine(){
+            StringBuilder b=new StringBuilder();
+            for(Finding f:minor()){
+                if(b.length()>0)b.append(", ");b.append(f.shortName);
+                if(f.partNotAssessed!=null)b.append(" ").append(f.partAssessed!=null?f.partAssessed:"rotation");
+            }
+            return b.length()==0?"":"Outside measured genuine range, below visibility guideline: "+b;
         }
         /** Not-assessed features without a tile, grouped by reason. */
         String notAssessedLine(){
@@ -330,7 +340,7 @@ final class Alpha99Findings {
             boolean out=true;double v=t.radialR;
             Measure x=new Measure("track",v,ref.triangle.radialMax(out),Double.NaN,k,n,"R",
                     String.format(Locale.US,"%s the minute track by %.2f%% of the dial",out?"closer to":"further from",100*v),
-                    String.format(Locale.US,"It sits %.1f px %s the minute track than on genuine watches (%.2f%% of the dial radius; the genuine gap between its base and the track is about %.1f%%)",
+                    String.format(Locale.US,"Its fitted radial position reads %.1f px %s the minute track than the genuine nominal (%.2f%% of the dial radius; the model-master base-to-track gap is %.1f%%). This is a position-based spacing estimate, not a direct measurement of the visible metal-to-tick gap",
                             Math.abs(t.radialPx),out?"closer to":"further from",100*v,100*gap));
             x.visibleBar=TRACK_GAP_VISIBLE_FRACTION*gap;
             x.capAtWorth=true;
@@ -379,6 +389,9 @@ final class Alpha99Findings {
         if(!gate(f,c))return f;
         Alpha94MarkerMeasurement.Marker m=r==null?null:r.atHour(hour);
         if(m==null||!m.usable){withheldByMeasurement(f,m==null?"unavailable":m.reason);return f;}
+        // Diagnostics do not participate in the evidence calculation and do not change the verdict.
+        double[] ring=r.ring!=null&&r.ring.usable?r.ring.model:null;
+        f.edgeDiagnostic=BatonFitDiagnostic.describe(spec,m,ring);
         double[] rotRef=ref.far(key+"_rot");
         double[] offRef=ref.far(key+"_off");
         double nom=ref.nominal(key+"_rot");
@@ -393,7 +406,7 @@ final class Alpha99Findings {
         String oneSided=oneSidedEdge(m,ref,key,0,2,R);
         if(oneSided!=null){
             f.notes.add(oneSided);
-            f.partNotAssessed="position";f.partReason="one edge hidden by a reflection";
+            f.partNotAssessed="position";f.partReason="opposing edges inconsistent";
             settle(f);return f;
         }
         double off=m.localOffsetPx/R;
@@ -431,9 +444,9 @@ final class Alpha99Findings {
         if(m.sideOffR==null||m.sideOffR.length<=Math.max(sideA,sideB))return null;   // not a polygon fit (tests building markers by hand)
         double dev=m.sideOffR[sideA]+m.sideOffR[sideB]-nom;
         if(Math.abs(dev)<=lim)return null;
-        return String.format(Locale.US,"Its position is not assessed: one of its long edges reads %.1f px %s than on genuine watches while the opposite edge does not move, "
-                +"the sign of a polished bevel reflecting dark (the outline is then traced on the lume, not the marker's edge). A marker that is really out of place moves both edges together. "
-                +"Genuine photos stay within %.1f px; compare the marker with its neighbours in the close-up.",Math.abs(dev)*R,dev<0?"narrower":"wider",lim*R);
+        return String.format(Locale.US,"Its position is not assessed: the fitted separation of its opposing long edges reads %.1f px %s than the genuine nominal; the genuine edge-consistency limit here is %.1f px. "
+                +"This can arise from uncertain localisation of the polished bevel or real dimensional variation. This check does not establish which edge is wrong or prove a reflection. "
+                +"Width and filled-area mismatch cannot be interpreted reliably from this boundary fit; length is not independently validated. Rotation is assessed separately. Compare the marker with its neighbours in the close-up.",Math.abs(dev)*R,dev<0?"narrower":"wider",lim*R);
     }
 
     static List<Finding> rounds(Alpha94MarkerMeasurement.Report r,double R,Map<Integer,Alpha99MarkerInterference.Check> checks,

@@ -28,7 +28,12 @@ final class Alpha99Pipeline {
         Map<Integer,Alpha94MarkerMeasurement.Marker> partial;
         Alpha99Findings.Summary summary;
         Bitmap overview;
+        /** Transparent full-photo overlay: yellow expected geometry + cyan actual fitted baton edges. */
+        Bitmap diagnosticOverlay;
+        /** Full-photo ring-adjusted scoring reference, kept separate from the fixed-master overlay. */
+        Bitmap scoringOverlay;
         final Map<String,Bitmap> closeups=new LinkedHashMap<>();
+        final Map<Integer,MarkerMismatchResearch.Result> mismatch=new LinkedHashMap<>();
         String technical;
         ModelSpec model;ModelReference reference;
         boolean ok(){return pose!=null&&pose.valid&&pose.homography!=null&&summary!=null;}
@@ -42,6 +47,8 @@ final class Alpha99Pipeline {
         if(o.pose==null||!o.pose.valid||o.pose.homography==null)return o;
         double[] H=o.pose.homography;
         o.measurement=Alpha94MarkerMeasurement.analyse(photo,H,model);
+        try{o.diagnosticOverlay=BatonFitDiagnosticOverlay.render(o.pose.overlay,o.measurement,H);}
+        catch(Throwable t){o.diagnosticOverlay=o.pose.overlay;}
         Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(photo,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
         try{o.date=model.date==null?null:Alpha98DateWindow.analyse(gray,H,model.date);}catch(Throwable t){o.date=null;}
         try{o.checks=Alpha99MarkerInterference.analyse(gray,H,model);}catch(Throwable t){o.checks=null;}
@@ -49,10 +56,18 @@ final class Alpha99Pipeline {
         o.summary=Alpha99Findings.build(o.measurement,o.date,o.checks,o.partial,model,ref);
         try{o.overview=Alpha99Overview.render(rgba,H,o.summary,model);}catch(Throwable t){o.overview=null;}
         double[] ring=o.measurement.ring!=null&&o.measurement.ring.usable?o.measurement.ring.model:null;
-        for(Alpha99Findings.Finding f:o.summary.tiles()){
-            Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref);}catch(Throwable t){c=null;}
+        List<Alpha99Findings.Finding> tiles=o.summary.tiles();
+        for(Alpha99Findings.Finding f:o.summary.all){
+            if(!f.dialWide&&model.atHour(f.hour)!=null)
+                o.mismatch.put(f.hour,MarkerMismatchResearch.score(o.measurement,model.atHour(f.hour),ref,f,o.checks==null?null:o.checks.get(f.hour)));
+            if(!tiles.contains(f)&&(f.dialWide||model.atHour(f.hour)==null))continue;
+            // Use the existing detector result. This is a display-only diagnostic: no rerun or changed measurement.
+            Alpha94MarkerMeasurement.Marker measured=f.shape==Alpha99Findings.Shape.BATON?o.measurement.atHour(f.hour):null;
+            MarkerMismatchResearch.Result comparison=f.dialWide?null:o.mismatch.get(f.hour);
+            Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref,measured,comparison);}catch(Throwable t){c=null;}
             if(c!=null)o.closeups.put(f.key,c);
         }
+        try{o.scoringOverlay=MarkerMismatchOverlay.fullWatch(photo.getWidth(),photo.getHeight(),H,o.mismatch);}catch(Throwable t){o.scoringOverlay=null;}
         o.technical=technical(o);
         rgba.release();gray.release();
         return o;
@@ -134,11 +149,14 @@ final class Alpha99Pipeline {
             for(Alpha99Findings.Measure x:f.measures)
                 s.append(String.format(Locale.US,"\n  %s %s: %s / %s / %s -> %s",f.title,x.name,Alpha99Findings.fmt(x.value,x.unit),Alpha99Findings.fmt(x.genuineMax,x.unit),
                         x.hasAllowance()?Alpha99Findings.fmt(x.allowance(),x.unit):"none",
-                        x.status()==Alpha99Findings.Status.MINOR?"WITHIN (too small to see: under "+Alpha99Findings.fmt(x.visibleBar,x.unit)+")":x.status()));
+                        x.status()==Alpha99Findings.Status.MINOR?"OUTSIDE GENUINE RANGE (below visibility guideline: under "+Alpha99Findings.fmt(x.visibleBar,x.unit)+")":x.status()));
             if(o.partial!=null&&o.partial.containsKey(f.hour)&&f.shape==Alpha99Findings.Shape.ROUND&&o.checks!=null&&o.checks.get(f.hour)!=null&&o.checks.get(f.hour).clean)
                 s.append(String.format(Locale.US,"\n    (outline edge not visible over %.0f° of the %d marker; position measured from the rest)",o.partial.get(f.hour).edgeGapDeg,f.hour));
         }
         s.append("\n\nMeasurement only - comparisons with genuine watches, not a verdict. Directions in the upright dial frame (12 at top).");
+        s.append("\n\nIndividual marker outline mismatch: ring-adjusted nominal outer metal; denominator = filled yellow template area. Continuous geometric area of fitted polygons; photographic boundary uncertainty is separate. No QC severity limits. Full-photo inspection offers the scoring reference and a separate fixed master. Global ring placement and minute-track gaps are separate.");
+        for(Map.Entry<Integer,MarkerMismatchResearch.Result> entry:o.mismatch.entrySet())
+            s.append("\n  ").append(entry.getKey()).append(": ").append(entry.getValue().display());
         return s.toString();
     }
 }
