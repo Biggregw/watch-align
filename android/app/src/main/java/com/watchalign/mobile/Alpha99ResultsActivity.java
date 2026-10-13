@@ -81,20 +81,20 @@ public class Alpha99ResultsActivity extends Activity {
         // 3. flagged markers, then markers that could not be assessed (each with its close-up)
         List<Alpha99Findings.Finding> flagged=new java.util.ArrayList<>(),unassessed=new java.util.ArrayList<>();
         for(Alpha99Findings.Finding f:s.all){
-            InspectionView.State st=InspectionView.state(f,Store.mismatch.get(f.hour));
+            InspectionView.State st=InspectionView.state(f,InspectionView.result(f,Store.mismatch));
             if(st==InspectionView.State.CLEAR||st==InspectionView.State.WORTH)flagged.add(f);
             else if(st==InspectionView.State.NOT_ASSESSED&&f.group==null&&Store.closeups.containsKey(f.key))unassessed.add(f);
         }
         if(!flagged.isEmpty()){root.addView(text("Flagged",18,Color.WHITE,true),lp(-1,-2,18));grid(root,s,flagged);}
         if(!unassessed.isEmpty()){root.addView(text("Not assessed",18,Color.WHITE,true),lp(-1,-2,18));grid(root,s,unassessed);}
         String grouped=s.notAssessedLine();
-        if(!grouped.isEmpty()&&unassessed.isEmpty()&&flagged.isEmpty())root.addView(text(grouped,13,MUTED,false),lp(-1,-2,8));
+        if(!grouped.isEmpty())root.addView(text(grouped,13,MUTED,false),lp(-1,-2,8));
 
         // 4. every marker, one line each (collapsed)
         LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);list.setVisibility(View.GONE);
         for(Alpha99Findings.Finding f:s.all){
             if(f.group!=null&&f.status==Alpha99Findings.Status.NOT_ASSESSED&&!Store.closeups.containsKey(f.key))continue;
-            MarkerMismatchResearch.Result q=Store.mismatch.get(f.hour);InspectionView.State st=InspectionView.state(f,q);
+            MarkerMismatchResearch.Result q=InspectionView.result(f,Store.mismatch);InspectionView.State st=InspectionView.state(f,q);
             String area=InspectionView.area(f,q);
             Button b=new Button(this);b.setAllCaps(false);b.setTextColor(stateColour(st));
             b.setText(f.title+"  ·  "+InspectionView.label(st)+(area==null?"":"  ·  "+area.replace("Area mismatch ","area ").replace("Area: not assessed","area not assessed")));
@@ -144,7 +144,7 @@ public class Alpha99ResultsActivity extends Activity {
     private void openDetail(int index){Intent i=new Intent(this,Alpha99DetailActivity.class);i.putExtra(Alpha99DetailActivity.EXTRA_INDEX,index);startActivity(i);}
 
     private View tile(int index,Alpha99Findings.Finding f){
-        MarkerMismatchResearch.Result q=Store.mismatch.get(f.hour);InspectionView.State st=InspectionView.state(f,q);
+        MarkerMismatchResearch.Result q=InspectionView.result(f,Store.mismatch);InspectionView.State st=InspectionView.state(f,q);
         LinearLayout t=new LinearLayout(this);t.setOrientation(LinearLayout.VERTICAL);t.setBackgroundColor(CARD);t.setPadding(dp(8),dp(8),dp(8),dp(10));
         Bitmap c=Store.closeups.get(f.key);
         if(c!=null){ImageView iv=new ImageView(this);iv.setImageBitmap(c);iv.setAdjustViewBounds(true);iv.setScaleType(ImageView.ScaleType.FIT_CENTER);t.addView(iv,new LinearLayout.LayoutParams(-1,-2));}

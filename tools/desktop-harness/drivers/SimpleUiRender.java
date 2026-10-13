@@ -24,12 +24,12 @@ public class SimpleUiRender {
             String[] f=lines.get(li).split(",",-1);String id=f[iid];if(only!=null&&!only.contains(id))continue;
             Bitmap b=Alpha96Calib.loadAlpha96(Path.of(a[1]).resolve(f[ip]).toString());Alpha99Pipeline.Output o=b==null?null:Alpha99Pipeline.run(b,model,ref);
             if(o==null||!o.ok()){System.out.println("UI "+id+": no pose");continue;}
-            for(Alpha99Findings.Finding g:o.summary.all){MarkerMismatchResearch.Result q=o.mismatch.get(g.hour);
+            for(Alpha99Findings.Finding g:o.summary.all){MarkerMismatchResearch.Result q=InspectionView.result(g,o.mismatch);
                 System.out.println("UISTATE "+id+" "+g.key+" "+g.status+" -> "+InspectionView.label(InspectionView.state(g,q))+" | "+InspectionView.area(g,q));}
             javax.imageio.ImageIO.write(main(o,model),"png",out.resolve(id+"__main.png").toFile());
             for(Alpha99Findings.Finding g:o.summary.all){
                 if(g.dialWide||!o.closeups.containsKey(g.key))continue;
-                InspectionView.State st=InspectionView.state(g,o.mismatch.get(g.hour));
+                InspectionView.State st=InspectionView.state(g,InspectionView.result(g,o.mismatch));
                 boolean show=st!=InspectionView.State.WITHIN||g.shape==Alpha99Findings.Shape.TRIANGLE||g.hour==9||g.hour==4;
                 if(show)javax.imageio.ImageIO.write(detail(o,g),"png",out.resolve(id+"__"+g.key+".png").toFile());
             }
@@ -58,12 +58,12 @@ public class SimpleUiRender {
         p.text(model.label,13,MUTED,false,2);
         if(o.overview!=null){p.image(o.overview.img,12);p.text("!! clear   ! worth a look   – not assessed   ✓ within (grey: partly assessed)   ·   tap a marker",12,MUTED,false,4);}
         List<Alpha99Findings.Finding> flagged=new ArrayList<>(),un=new ArrayList<>();
-        for(Alpha99Findings.Finding f:s.all){InspectionView.State st=InspectionView.state(f,o.mismatch.get(f.hour));
+        for(Alpha99Findings.Finding f:s.all){InspectionView.State st=InspectionView.state(f,InspectionView.result(f,o.mismatch));
             if(st==InspectionView.State.CLEAR||st==InspectionView.State.WORTH)flagged.add(f);
             else if(st==InspectionView.State.NOT_ASSESSED&&f.group==null&&o.closeups.containsKey(f.key))un.add(f);}
         if(!flagged.isEmpty()){p.text("Flagged",18,Color.WHITE,true,18);grid(p,o,flagged);}
         if(!un.isEmpty()){p.text("Not assessed",18,Color.WHITE,true,18);grid(p,o,un);}
-        String grouped=s.notAssessedLine();if(!grouped.isEmpty()&&un.isEmpty()&&flagged.isEmpty())p.text(grouped,13,MUTED,false,8);
+        String grouped=s.notAssessedLine();if(!grouped.isEmpty())p.text(grouped,13,MUTED,false,8);
         p.button("All markers  ▸",18);p.button("Technical details  ▸",8);
         p.text(InspectionView.SHORT_DISCLAIMER,12,MUTED,false,14);
         return p.done();
@@ -73,7 +73,7 @@ public class SimpleUiRender {
         for(int i=0;i<tiles.size();i+=2){
             p.y+=d(10);int rowH=0;
             for(int k=0;k<2&&i+k<tiles.size();k++){
-                Alpha99Findings.Finding f=tiles.get(i+k);MarkerMismatchResearch.Result q=o.mismatch.get(f.hour);InspectionView.State st=InspectionView.state(f,q);
+                Alpha99Findings.Finding f=tiles.get(i+k);MarkerMismatchResearch.Result q=InspectionView.result(f,o.mismatch);InspectionView.State st=InspectionView.state(f,q);
                 int x=d(16)+k*(tw+gap);BufferedImage t=new BufferedImage(tw,tw+d(110),BufferedImage.TYPE_INT_RGB);Graphics2D g=t.createGraphics();
                 g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_ON);g.setColor(CARD);g.fillRect(0,0,tw,t.getHeight());
                 int iw=tw-2*d(8);g.drawImage(o.closeups.get(f.key).img,d(8),d(8),iw,iw,null);
@@ -86,7 +86,7 @@ public class SimpleUiRender {
         }
     }
     static BufferedImage detail(Alpha99Pipeline.Output o,Alpha99Findings.Finding f){
-        Page p=new Page();MarkerMismatchResearch.Result q=o.mismatch.get(f.hour);InspectionView.State st=InspectionView.state(f,q);
+        Page p=new Page();MarkerMismatchResearch.Result q=InspectionView.result(f,o.mismatch);InspectionView.State st=InspectionView.state(f,q);
         p.text(f.title,24,Color.WHITE,true,0);p.text(InspectionView.label(st),20,colour(st),true,4);p.text(InspectionView.explain(f,q),15,Color.WHITE,false,4);
         p.image(o.closeups.get(f.key).img,12);
         p.text((q!=null&&q.trusted()?InspectionView.LEGEND_MEASURED:InspectionView.LEGEND_WITHHELD)+"  Tap to zoom.",12,MUTED,false,4);

@@ -36,7 +36,7 @@ final class Alpha99Overview {
             double[] p=badgeAt(f,model);if(p==null)continue;
             Point at=new Point((p[0]+HALF)*scale,(p[1]+HALF)*scale);
             if(mismatch==null)badge(big,at,f.status,f.shape==Alpha99Findings.Shape.RING?"ring":null);
-            else badge(big,at,InspectionView.state(f,mismatch.get(f.hour)),f.shape==Alpha99Findings.Shape.RING?"ring":null);
+            else badge(big,at,InspectionView.state(f,InspectionView.result(f,mismatch)),f.shape==Alpha99Findings.Shape.RING?"ring":null);
         }
         Bitmap b=Bitmap.createBitmap(SIZE,SIZE,Bitmap.Config.ARGB_8888);Utils.matToBitmap(big,b);return b;
     }
