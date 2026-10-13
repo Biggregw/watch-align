@@ -10,8 +10,8 @@ import java.util.Collections;
 
 /** Display only. Paths come from the stored scoring polygons, never a raster mask or a new fit. */
 final class MarkerMismatchOverlay {
-    static final int YELLOW=0xffffd60a,CYAN=0xff32d5f2,EXTRA=0xe6ff801f,MISSING=0xe6e64bdc,INFERRED=0xffff3b30;
-    static final String LEGEND="Orange: extra detected area. Magenta: missing expected area. Yellow: scoring reference. Cyan: directly sampled edge. Red: corner or end inferred from the fitted edges.";
+    static final int YELLOW=0xffffd60a,CYAN=0xff32d5f2,EXTRA=0xe6ff801f,MISSING=0xe6e64bdc,INFERRED=0xffd0d0d0;
+    static final String LEGEND="Orange: extra detected area. Magenta: missing expected area. Yellow: scoring reference. Cyan: directly sampled edge. Dashed light grey: corner or end inferred from the fitted edges.";
     private MarkerMismatchOverlay(){}
 
     static Bitmap fullWatch(int width,int height,double[] H,Map<Integer,MarkerMismatchResearch.Result> results){
@@ -40,15 +40,29 @@ final class MarkerMismatchOverlay {
         return base;
     }
 
-    /** The exact scored polygon. With known sampled spans: thin red for the whole (inferred) shape, cyan over the
+    /** The exact scored polygon. With known sampled spans: thin dashed light grey for the whole (inferred) shape, cyan over the
      *  stretches the detector actually sampled, so an inferred corner is never shown as an observed boundary. */
     private static void actual(Canvas canvas,MarkerMismatchResearch.Result q,double[] T,float width){
         if(q.observedSpans==null){draw(canvas,q.score.actualPolygon,T,CYAN,false,width);return;}
-        draw(canvas,q.score.actualPolygon,T,INFERRED,false,width);
+        dashed(canvas,q.score.actualPolygon,T,width);
         Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);paint.setColor(CYAN);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2*width);
         Path path=new Path();
         for(double[][] span:q.observedSpans){double[][] p=project(new double[][]{span[0],span[1],span[1]},T);if(p==null)continue;
             path.moveTo((float)p[0][0],(float)p[0][1]);path.lineTo((float)p[1][0],(float)p[1][1]);}
+        canvas.drawPath(path,paint);
+    }
+
+    /** Thin dashed light-grey outline drawn as explicit short segments (no PathEffect needed). */
+    private static void dashed(Canvas canvas,double[][] polygon,double[] T,float width){
+        double[][] p=project(polygon,T);if(p==null)return;
+        Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);paint.setColor(INFERRED);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(width);
+        Path path=new Path();double dash=4*width,gap=3*width;
+        for(int i=0;i<p.length;i++){
+            double[] a=p[i],b=p[(i+1)%p.length];double L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(!(L>0))continue;
+            for(double t=0;t<L;t+=dash+gap){double e=Math.min(L,t+dash);
+                path.moveTo((float)(a[0]+(b[0]-a[0])*t/L),(float)(a[1]+(b[1]-a[1])*t/L));
+                path.lineTo((float)(a[0]+(b[0]-a[0])*e/L),(float)(a[1]+(b[1]-a[1])*e/L));}
+        }
         canvas.drawPath(path,paint);
     }
 

@@ -6,7 +6,7 @@ name: Outer-metal review
 on:
   push:
     branches: [outer-metal/inspection-20261013]
-    paths: ['.github/workflows/outer-metal-review.yml', 'tools/desktop-harness/drivers/OuterMetalReview.java', 'tools/research/outer_metal/**']
+    paths: ['.github/workflows/outer-metal-review.yml', 'tools/desktop-harness/drivers/OuterMetalReview.java', 'tools/desktop-harness/drivers/EdgeAngleBatch.java', 'tools/research/outer_metal/**']
   workflow_dispatch:
 permissions: {contents: read}
 jobs:
@@ -29,6 +29,7 @@ jobs:
             [ -f "qc_in/$model/manifest.csv" ] || continue
             JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh MarkerMismatchBatch "qc_in/$model/manifest.csv" qc_in "out/qc_$model.csv" 2>/dev/null
             JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh OuterMetalReview "qc_in/$model/manifest.csv" qc_in out/sheets 2>/dev/null | grep -v '^Picked'
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$model" tools/desktop-harness/run.sh EdgeAngleBatch "qc_in/$model/manifest.csv" qc_in "out/edges_qc_$model.csv" 2>/dev/null
           done
       - uses: actions/upload-artifact@v4
         with: {name: outer-metal-qc, path: out/, retention-days: 14}
@@ -57,7 +58,7 @@ jobs:
           python3 - <<'PY'
           import csv
           rows = [r for r in csv.DictReader(open('${{ matrix.catalogue }}')) if r.get('class_label', 'gen') == 'gen']
-          if ${{ contains(github.event.head_commit.message, '[sheets-only]') && 'True' || 'False' }}:
+          if False:
               rows = [r for r in rows if r['photo_id'] in '${{ matrix.sheets }}'.split(',')]
           with open('manifest.csv', 'w', newline='') as fh:
               w = csv.DictWriter(fh, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
@@ -68,10 +69,11 @@ jobs:
         env: {JAVA_TOOL_OPTIONS: '-Dwatchalign.model=${{ matrix.model }}'}
         run: |
           mkdir -p out/sheets
-          if [ "${{ contains(github.event.head_commit.message, '[sheets-only]') }}" != "true" ]; then
+          tools/desktop-harness/run.sh EdgeAngleBatch manifest.csv img out/edges_genuine_${{ matrix.model }}.csv 2>/dev/null
+          if [ "${{ contains(github.event.head_commit.message, '[with-area]') }}" = "true" ]; then
             tools/desktop-harness/run.sh MarkerMismatchBatch manifest.csv img out/genuine_${{ matrix.model }}.csv 2>/dev/null
+            tools/desktop-harness/run.sh OuterMetalReview manifest.csv img out/sheets '${{ matrix.sheets }}' 2>/dev/null | grep -v '^Picked'
           fi
-          tools/desktop-harness/run.sh OuterMetalReview manifest.csv img out/sheets '${{ matrix.sheets }}' 2>/dev/null | grep -v '^Picked'
       - uses: actions/upload-artifact@v4
         with: {name: 'outer-metal-genuine-${{ matrix.model }}', path: out/, retention-days: 14}
   report:
@@ -106,5 +108,7 @@ jobs:
               for r in csv.DictReader(open(f)):
                   print('QCNUM', r['photo_id'], r['hour'], r['confidence'][:40], r['mismatch_pct'][:8])
           PY
-      - name: Per-marker comparison with genuine (summary last)
+      - name: Per-marker comparison with genuine
         run: python3 tools/research/outer_metal/compare.py all
+      - name: Per-edge angles vs genuine (summary last)
+        run: python3 tools/research/outer_metal/edge_stats.py all

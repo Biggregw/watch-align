@@ -36,7 +36,7 @@ public class MarkerMismatchVisualCheck {
         spans.observedSpans=new double[][][]{{{.04,-.2},{.36,-.2}},{{.4,-.16},{.4,.16}},{{.36,.2},{.04,.2}},{{0,.16},{0,-.16}}};
         Bitmap marked=MarkerMismatchOverlay.closeup(Bitmap.createBitmap(320,320,Bitmap.Config.ARGB_8888),0,0,1,spans);
         check(cyan(marked.getPixel(170,127)),"sampled middle stretch of a fitted side must be cyan");
-        check(red(marked.getPixel(162,127)),"inferred corner stretch must be red, not cyan");
+        check(grey(marked.getPixel(162,127)),"inferred corner stretch must be dashed light grey, not cyan");
         InspectionImageStore.setMarkerOverlays(crop,noActual,overlay);
         check(InspectionImageStore.scoringOverlay==overlay&&InspectionImageStore.bitmap==noActual,"both inspection options must reach the image store");
         InspectionImageStore.setOverlay(crop,noActual,"legacy fixed view");
@@ -66,6 +66,6 @@ public class MarkerMismatchVisualCheck {
     private static boolean extra(int c){return (c>>>24)>0&&(c>>16&255)>200&&(c>>8&255)<180&&(c&255)<100;}
     private static boolean missing(int c){return (c>>>24)>0&&(c>>16&255)>150&&(c>>8&255)<140&&(c&255)>150;}
     private static boolean yellow(int c){return (c>>>24)>0&&(c>>16&255)>200&&(c>>8&255)>160&&(c&255)<80;}
-    private static boolean red(int c){return (c>>>24)>0&&(c>>16&255)>200&&(c>>8&255)<100&&(c&255)<100;}
+    private static boolean grey(int c){return (c>>>24)>0&&(c>>16&255)>180&&Math.abs((c>>16&255)-(c&255))<12&&Math.abs((c>>8&255)-(c&255))<12;}
     private static boolean cyan(int c){return (c>>>24)>0&&(c>>16&255)<100&&(c>>8&255)>160&&(c&255)>180;}
 }

@@ -34,7 +34,7 @@ final class MarkerMismatchResearch {
             if(!trusted())return "Outline mismatch withheld: "+reason+".";
             return String.format(Locale.US,"Measured outline mismatch: %.3f%% (extra %.3f%% + missing %.3f%% of filled yellow template). Geometric fit area; no severity assigned. Photographic edge uncertainty remains.",
                     score.mismatchPct,score.extraPct,score.missingPct)
-                    +(observedSpans==null?"":" Each edge is fitted independently from the middle of its length (cyan); corners are inferred where the fitted edges meet (red) and are not directly observed.");
+                    +(observedSpans==null?"":" Each edge is fitted independently from the middle of its length (cyan); corners are inferred where the fitted edges meet (dashed light grey) and are not directly observed.");
         }
     }
 
