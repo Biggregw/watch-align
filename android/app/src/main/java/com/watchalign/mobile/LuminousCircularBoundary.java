@@ -4,7 +4,11 @@ import java.util.*;
 
 /** Photographic evidence for circular lume boundaries, independent of the expected template.
  * A small interior brightness drop is not a separator merely because distant metal recovers.
- * Use the final observed fall into a local dark trough and its immediately following recovery.
+ * EXPERIMENTAL (first-fall): each ray supplies at most one selected sample, the first significant
+ * outward fall from the seed-connected luminous region. A polished bevel that reflects as brightly
+ * as the lume can merge with it; a later groove/metal trough is then never substituted because it
+ * is darker or fits a steadier circle. An insignificant dip that recovers (a possible unresolved
+ * lume-to-bevel edge) makes the ray ambiguous: it supplies no selected sample.
  * All numeric gates below reuse the experimental separator/fit pixel-evidence gates; no QC bands.
  */
 final class LuminousCircularBoundary {
@@ -17,32 +21,72 @@ final class LuminousCircularBoundary {
     static double[][] samples(byte[] pixels,int n,int seed){
         return evidence(pixels,n,seed).primary;
     }
+    /** Significant fall: the trough leaves the luminous level by this fraction of the local
+     * face-to-background contrast (same face/background definitions as the detector). Provisional. */
+    static final double SIGNIFICANT_FALL=.35;
     static Evidence evidence(byte[] pixels,int n,int seed){
         List<double[]> points=new ArrayList<>(),alternatives=new ArrayList<>();
-        for(int k=0;k<LuminousSeparator.RAYS;k++){
+        List<Double> central=new ArrayList<>();
+        for(int y=seed-2;y<=seed+2;y++)for(int x=seed-2;x<=seed+2;x++)central.add((double)(pixels[y*n+x]&255));
+        Collections.sort(central);double face=central.get(central.size()/2);
+        int[] sorted=new int[pixels.length];for(int i=0;i<sorted.length;i++)sorted[i]=pixels[i]&255;Arrays.sort(sorted);
+        double significant=face-SIGNIFICANT_FALL*(face-sorted[sorted.length/5]);
+        int rays=LuminousSeparator.RAYS;double[] selected=new double[rays],dip=new double[rays];double[][] sample=new double[rays][];
+        Arrays.fill(selected,Double.NaN);Arrays.fill(dip,Double.NaN);
+        for(int k=0;k<rays;k++){
             double a=k*2*Math.PI/LuminousSeparator.RAYS,dx=Math.cos(a),dy=Math.sin(a);
             int count=(int)(((n/2.0-2)/Math.max(Math.abs(dx),Math.abs(dy)))/.25);
             double[] v=new double[count];for(int i=0;i<count;i++)v[i]=LuminousSeparator.smooth(pixels,n,seed+i*.25*dx,seed+i*.25*dy);
+            boolean regionEnded=false;
             for(int j=12;j<count-8;j++){
                 double drop=v[j-4]-v[j+4];
                 if(drop<12||drop<v[j-5]-v[j+3]||drop<v[j-3]-v[j+5])continue;
                 int trough=j+4;while(trough<count-2&&v[trough+1]<=v[trough])trough++;
                 int recovery=trough;while(recovery<count-2&&v[recovery+1]>=v[recovery])recovery++;
-                // Recovery must belong to this trough. A later polished rim must not validate
-                // an interior texture edge, or a hand/shadow followed by more luminous material.
-                if(v[recovery]-v[trough]<12||v[j+4]-v[trough]>12)continue;
+                boolean ownRecovery=v[recovery]-v[trough]>=12&&v[j+4]-v[trough]<=12;
+                if(!regionEnded){
+                    // Judge the fall itself (the level just after it), not a later descent it runs into.
+                    if(v[j+4]>significant){
+                        // Still bright: a shading step stays inside the luminous region; a dip that
+                        // recovers may be an unresolved lume-to-bevel edge, so this ray is ambiguous.
+                        if(ownRecovery){regionEnded=true;double[] q=crossing(v,j,drop,dx,dy,seed);if(q!=null)dip[k]=Math.hypot(q[0]-seed,q[1]-seed);}
+                        continue;
+                    }
+                    regionEnded=true;
+                    // Recovery must belong to this trough. A later polished rim must not validate
+                    // an interior texture edge, or a hand/shadow followed by more luminous material.
+                    if(!ownRecovery)continue;
+                    double[] q=crossing(v,j,drop,dx,dy,seed);if(q==null)continue;
+                    int bright=0;for(int i=0;i<j-4;i++)if(v[i]>=v[j+4]+.6*drop)bright++;
+                    if(bright<.90*(j-4))alternatives.add(q);else{sample[k]=q;selected[k]=Math.hypot(q[0]-seed,q[1]-seed);}
+                    continue;
+                }
+                // Later transitions (groove, outer metal) never supply the selected boundary. A dark
+                // interior ring can hide the true outer boundary from the bright-prefix gate: keep
+                // such directly observed troughs as contrary evidence only, as before.
+                if(!ownRecovery)continue;
                 int bright=0;for(int i=0;i<j-4;i++)if(v[i]>=v[j+4]+.6*drop)bright++;
-                double target=v[j+4]+.50*drop;int crossing=-1;
-                for(int i=j-4;i<j+4;i++)if(v[i]>=target&&v[i+1]<target)crossing=i;
-                if(crossing<0)continue;
-                double r=.25*(crossing+(target-v[crossing])/(v[crossing+1]-v[crossing]));
-                // A dark interior ring can hide the true outer boundary from the bright-prefix
-                // gate. Keep other directly observed troughs as contrary evidence, without
-                // allowing an unsupported seed-to-edge path to supply the selected fit.
-                (bright<.90*(j-4)?alternatives:points).add(new double[]{seed+r*dx,seed+r*dy});
+                if(bright<.90*(j-4)){double[] q=crossing(v,j,drop,dx,dy,seed);if(q!=null)alternatives.add(q);}
             }
         }
+        // Where the dip is too faint to register on a ray, its first significant fall can be the groove.
+        // An unresolved dip observed on a neighbouring ray (within one 30-degree sector) inside that
+        // fall, beyond the contour-localisation allowance (crop px ~ source px), marks it as a later
+        // transition: the ray supplies no selected sample.
+        int window=Math.max(1,rays/12);
+        for(int k=0;k<rays;k++){
+            if(sample[k]==null)continue;boolean later=false;
+            for(int o=-window;o<=window&&!later;o++){double r=dip[((k+o)%rays+rays)%rays];if(r<selected[k]-1.25)later=true;}
+            if(!later)points.add(sample[k]);
+        }
         return new Evidence(points,alternatives);
+    }
+    private static double[] crossing(double[] v,int j,double drop,double dx,double dy,int seed){
+        double target=v[j+4]+.50*drop;int crossing=-1;
+        for(int i=j-4;i<j+4;i++)if(v[i]>=target&&v[i+1]<target)crossing=i;
+        if(crossing<0)return null;
+        double r=.25*(crossing+(target-v[crossing])/(v[crossing+1]-v[crossing]));
+        return new double[]{seed+r*dx,seed+r*dy};
     }
 
     static LuminousPartialFit.Fit fit(double[][] points,int hour,double R){

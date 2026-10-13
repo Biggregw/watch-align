@@ -13,6 +13,25 @@ public class LuminousCircularBoundaryTest {
         }
         return p;
     }
+    /** 124060 c14f8b3abb49c038 / 8 mechanism: on the lit side the inner bevel is as bright as the lume
+     * (a weak dip, no dark separator); the next trough is the bevel groove. That later trough must
+     * never be substituted as the luminous boundary. */
+    @Test public void litBevelMergedWithLumeNeverSubstitutesTheGrooveTrough(){
+        int n=100;byte[] p=new byte[n*n];
+        for(int y=0;y<n;y++)for(int x=0;x<n;x++){
+            double r=Math.hypot(x-50,y-50);boolean lit=y<50;
+            p[y*n+x]=(byte)(r<20?220:r<22?(lit?195:50):r<25?215:r<27?50:r<30?230:10);
+        }
+        LuminousCircularBoundary.Evidence evidence=LuminousCircularBoundary.evidence(p,n,50);
+        assertTrue(evidence.primary.length>0);
+        for(double[] q:evidence.primary){
+            double r=Math.hypot(q[0]-50,q[1]-50);
+            assertTrue("groove trough supplied a selected sample at r="+r,r<22.5);
+            assertTrue("lit-side ray supplied a sample",q[1]>=49);
+        }
+        LuminousPartialFit.Fit f=LuminousCircularBoundary.fit(evidence.primary,evidence.alternatives,12,1);
+        if(f.ideal!=null)assertEquals(21,f.radius,.8);
+    }
     @Test public void interiorDropCannotBorrowRecoveryFromDistantMetal(){
         double[][] p=LuminousCircularBoundary.samples(scene(100),100,50);
         LuminousPartialFit.Fit f=LuminousCircularBoundary.fit(p,12,1);
