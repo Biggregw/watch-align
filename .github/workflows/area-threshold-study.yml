@@ -1,0 +1,21 @@
+# ANALYSIS ONLY: one bounded pass over the existing per-marker area results of run 38437479608 (genuine catalogues of
+# the three models and the nine QC photos, unchanged pipeline). No measurement, no new photos.
+name: Area threshold study
+on:
+  push:
+    branches: [outer-metal/inspection-20261013]
+    paths: ['.github/workflows/area-threshold-study.yml', 'tools/research/outer_metal/threshold_study.py']
+  workflow_dispatch:
+permissions: {contents: read, actions: read}
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q numpy
+      - uses: actions/download-artifact@v4
+        with: {pattern: 'outer-metal-*', path: all, merge-multiple: true, run-id: 38437479608, github-token: '${{ secrets.GITHUB_TOKEN }}'}
+      - run: ls all; wc -l all/*.csv
+      - run: python3 tools/research/outer_metal/threshold_study.py all
