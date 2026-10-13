@@ -123,3 +123,35 @@ un = [x for x in Q if x['pose_status'] == 'accepted' and (x['photo_id'], x['hour
 print(f'   unlabelled trusted QC markers: {len(un)}; above T: ' + ', '.join(f'{T}%: {sum(float(x["mismatch_pct"]) > T for x in un)}' for T in TH))
 qall = [x for x in Q if x['pose_status'] == 'accepted' and x['model_shape']]
 print(f"   QC withheld: {sum(x['confidence'] != 'measured' for x in qall)}/{len(qall)} markers")
+
+print('\n== 7. MEASUREMENT COVERAGE (per model and shape). eligible = marker in a photo whose pose was found;')
+print('   polygon = detector produced a usable outline; raw = a percentage was computed; trusted = cleared for QC use')
+def coverage(rows, title):
+    pose_fail = len({r['photo_id'] for r in rows if r['pose_status'] != 'accepted'})
+    print(f'-- {title}: photos {len({r["photo_id"] for r in rows})}, pose not found on {pose_fail}')
+    E = [r for r in rows if r['pose_status'] == 'accepted' and r['model_shape']]
+    by = defaultdict(list)
+    for r in E: by[(r.get('model', ''), r['model_shape'])].append(r)
+    print('   model        shape     eligible  polygon     raw %     trusted     no polygon')
+    for k in sorted(by):
+        rs = by[k]; n = len(rs)
+        poly = sum(r['polygon_usable'] == 'true' for r in rs); raw = sum(bool(r['mismatch_pct']) for r in rs)
+        tr = sum(r['confidence'] == 'measured' for r in rs)
+        print(f'   {k[0]:12} {k[1]:8} {n:7}   {poly:5} {100*poly/n:3.0f}%  {raw:5} {100*raw/n:3.0f}%  {tr:5} {100*tr/n:3.0f}%   {n-poly:5} {100*(n-poly)/n:3.0f}%')
+    print('   withheld with a raw percentage, by reason: count | raw median / p95 (trusted median / p95 of the same model+shape)')
+    for k in sorted(by):
+        rs = by[k]; tv = [float(r['mismatch_pct']) for r in rs if r['confidence'] == 'measured' and r['mismatch_pct']]
+        reasons = defaultdict(list)
+        for r in rs:
+            if r['confidence'] != 'measured' and r['mismatch_pct']:
+                reasons[r['confidence'].split(':')[0][:44]].append(float(r['mismatch_pct']))
+        for why, v in sorted(reasons.items(), key=lambda kv: -len(kv[1])):
+            if len(v) >= (3 if title.startswith('GENUINE') else 1):
+                print(f'     {k[0]:12} {k[1]:8} {why:44} {len(v):4} | {np.median(v):5.2f} / {pct(v,95):5.2f}   ({np.median(tv) if tv else float("nan"):.2f} / {pct(tv,95):.2f})')
+    nop = Counter(r['reason'][:50] for r in E if r['polygon_usable'] != 'true')
+    print('   no-polygon reasons (top): ' + '; '.join(f'{k} {v}' for k, v in nop.most_common(6)))
+coverage(G, 'GENUINE')
+for f in sorted(D.glob('qc_*.csv')):
+    rows = load(f)
+    for r in rows: r['model'] = f.stem[3:]
+    coverage(rows, 'QC ' + f.stem[3:])
