@@ -123,6 +123,10 @@ jobs:
           AAPT=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)aapt
           "$AAPT" dump badging "Watch Align.apk" | grep -E "^package:|^application-label:|^launchable-activity:|native-code" | tee apk-info.txt
           grep -q "application-label:'Watch Align'" apk-info.txt
+          # the genuine luminous alignment references must be inside the APK
+          unzip -l "Watch Align.apk" | grep "alignment/luminous_alignment.json" | tee apk-references.txt
+          grep -q "assets/models/gmt_126710/alignment/luminous_alignment.json" apk-references.txt
+          grep -q "assets/models/submariner_124060/alignment/luminous_alignment.json" apk-references.txt
       - name: Upload working APK
         uses: actions/upload-artifact@v4
         with:
