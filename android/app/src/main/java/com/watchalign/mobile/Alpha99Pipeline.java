@@ -39,7 +39,7 @@ final class Alpha99Pipeline {
         /** Watch Align alignment-only results (every marker), their close-ups (hour -> image) and technical text. */
         AlignmentAnalysis.Output alignment;
         final Map<Integer,Bitmap> alignmentCloseups=new LinkedHashMap<>();
-        String alignmentTechnical;AlignmentReference alignmentReference;
+        String alignmentTechnical;AlignmentReference alignmentReference;Bitmap alignmentOverview;
         boolean ok(){return pose!=null&&pose.valid&&pose.homography!=null&&summary!=null;}
     }
 
@@ -73,6 +73,7 @@ final class Alpha99Pipeline {
                 try{o.alignmentCloseups.put(am.hour,AlignmentCloseup.render(rgba,H,model.atHour(am.hour),am));}catch(Throwable t){/* close-up optional */}
             }
             o.alignmentTechnical=AlignmentAnalysis.technical(o.alignment,align);
+            try{o.alignmentOverview=AlignmentOverview.render(rgba,H,o.alignment,model);}catch(Throwable t){o.alignmentOverview=null;}
         }catch(Throwable t){o.alignment=null;}
         double[] ring=o.measurement.ring!=null&&o.measurement.ring.usable?o.measurement.ring.model:null;
         List<Alpha99Findings.Finding> tiles=o.summary.tiles();

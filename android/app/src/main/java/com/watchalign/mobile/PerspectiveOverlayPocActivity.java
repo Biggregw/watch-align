@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** One-photo fixed-genuine-master perspective proof. */
+/** Watch Align start screen: choose the model and a dial photo, check every hour marker's alignment. */
 public class PerspectiveOverlayPocActivity extends Activity {
     private static final int PICK_CANDIDATE=2301;
     private static final int BG=Color.rgb(8,17,31),ACCENT=Color.rgb(50,213,242),MUTED=Color.rgb(158,176,201);
@@ -38,7 +38,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
     private String modelId=MODEL_ID;
     private static final String PREFS="watchalign",PREF_MODEL="model";
     private final List<String> modelIds=new ArrayList<>(),modelLabels=new ArrayList<>();
-    private ModelSpec model;private ModelReference reference;
+    private ModelSpec model;private ModelReference reference;private AlignmentReference alignment;
     private TextView title,intro;
     private Bitmap candidateBitmap,lastOverlay;
     private Alpha94MarkerMeasurement.Report lastMeasurement;
@@ -58,8 +58,8 @@ public class PerspectiveOverlayPocActivity extends Activity {
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-1));
         discoverModels();
         try{String last=getSharedPreferences(PREFS,MODE_PRIVATE).getString(PREF_MODEL,MODEL_ID);if(modelIds.contains(last))modelId=last;}catch(Exception ignored){}
-        title=text("Dial Check",28,Color.WHITE);root.addView(title);
-        root.addView(text("Alpha99 · compares the dial with genuine watches · research build, no verdicts",14,ACCENT));
+        title=text("Watch Align",28,Color.WHITE);root.addView(title);
+        root.addView(text("Hour-marker alignment, compared with verified genuine Rolex watches",14,ACCENT));
         if(modelIds.size()>1){
             Spinner picker=new Spinner(this);
             picker.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,modelLabels));
@@ -68,7 +68,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 @Override public void onItemSelected(AdapterView<?> parent,View v,int position,long id){
                     String chosen=modelIds.get(position);
                     if(chosen.equals(modelId))return;
-                    modelId=chosen;model=null;reference=null;Alpha99ResultsActivity.Store.summary=null;
+                    modelId=chosen;model=null;reference=null;alignment=null;Alpha99ResultsActivity.Store.summary=null;AlignmentResultsActivity.Store.result=null;
                     try{getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString(PREF_MODEL,chosen).apply();}catch(Exception ignored){}
                     inspectButton.setEnabled(false);updateModelText();
                 }
@@ -81,7 +81,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
         Button pick=button("Choose a photo");pick.setOnClickListener(v->pickPhoto());root.addView(pick,lp(-1,dp(52),8));
         buildButton=button("Check this photo");buildButton.setBackgroundColor(ACCENT);buildButton.setTextColor(Color.rgb(4,32,42));buildButton.setEnabled(false);buildButton.setOnClickListener(v->buildOverlay());root.addView(buildButton,lp(-1,dp(54),6));
         inspectButton=button("Show last results");inspectButton.setEnabled(false);inspectButton.setOnClickListener(v->openInspector());root.addView(inspectButton,lp(-1,dp(48),6));
-        status=text("Choose a sharp, upright photo with the complete black dial visible.",14,MUTED);root.addView(status,lp(-1,-2,12));
+        status=text("Upload a sharp photo taken straight on, with the whole dial visible.",14,MUTED);root.addView(status,lp(-1,-2,12));
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(BG);root.addView(preview,lp(-1,-2,8));
         updateModelText();
         return scroll;
@@ -102,7 +102,8 @@ public class PerspectiveOverlayPocActivity extends Activity {
         return null;
     }
 
-    /** Model folders in the app's assets, default first; a folder whose spec cannot be read is not offered. */
+    /** Model folders in the app's assets that have a verified genuine luminous alignment reference, default first; a
+     *  folder whose spec or reference cannot be read is not offered (e.g. a model researched but not validated). */
     private void discoverModels(){
         modelIds.clear();modelLabels.clear();
         try{
@@ -111,6 +112,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 java.util.Arrays.sort(ids);
                 for(String id:ids){
                     try{ModelSpec m=ModelSpec.load(getAssets()::open,id);
+                        if(AlignmentReference.load(getAssets()::open,m)==null)continue;
                         int at=id.equals(MODEL_ID)?0:modelIds.size();modelIds.add(at,id);modelLabels.add(at,m.label);}
                     catch(Exception ignored){}
                 }
@@ -121,27 +123,28 @@ public class PerspectiveOverlayPocActivity extends Activity {
 
     private void updateModelText(){
         String label=modelLabels.get(Math.max(0,modelIds.indexOf(modelId)));
-        title.setText(modelIds.size()>1?"Dial Check":"GMT Dial Check");
-        intro.setText("Checking: "+label+". Choose a sharp photo taken straight on, with the whole black dial visible. The app measures the hour markers"
-                +" and shows close-ups of anything that reads further from genuine than every genuine watch it has been compared with.");
+        title.setText("Watch Align");
+        intro.setText("Checking: "+label+". Upload a sharp, straight-on photo of the dial with the whole dial visible and no hands over the markers if possible."
+                +" Watch Align checks each hour marker's position and rotation against verified genuine watches and answers No defect, Defect detected or Cannot assess for each one.");
     }
 
     private void pickPhoto(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("image/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,PICK_CANDIDATE);}
 
     private void buildOverlay(){
         if(candidateBitmap==null)return;final Bitmap photo=candidateBitmap;
-        buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Measuring the dial…");
+        buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Checking the markers…");
         worker.submit(()->{
             Alpha99Pipeline.Output o;
             try{
-                if(model==null){model=ModelSpec.load(getAssets()::open,modelId);reference=ModelReference.load(getAssets()::open,model);}
-                o=Alpha99Pipeline.run(photo,model,reference);
+                if(model==null){model=ModelSpec.load(getAssets()::open,modelId);reference=ModelReference.load(getAssets()::open,model);
+                    alignment=AlignmentReference.load(getAssets()::open,model);}
+                o=Alpha99Pipeline.run(photo,model,reference,alignment,null);
             }catch(Throwable t){o=new Alpha99Pipeline.Output();}
             final Alpha99Pipeline.Output fo=o;final AutomaticDialOverlay.Result q=o.pose;
             runOnUiThread(()->{
                 buildButton.setEnabled(true);
                 if(!fo.ok()){lastOverlay=null;lastMeasurement=null;inspectButton.setEnabled(false);
-                    status.setText("The dial could not be located in this photo. Try a sharper photo taken straight on with the whole dial visible. ("+(q==null?"no result":q.reason)+")");return;}
+                    status.setText("Cannot assess: the dial could not be located in this photo. Try a sharper photo taken straight on with the whole dial visible. ("+(q==null?"no result":q.reason)+")");return;}
                 lastOverlay=fo.diagnosticOverlay!=null?fo.diagnosticOverlay:q.overlay;lastMeasurement=fo.measurement;inspectButton.setEnabled(true);
                 Alpha99ResultsActivity.Store.summary=fo.summary;Alpha99ResultsActivity.Store.overview=fo.overview;
                 Alpha99ResultsActivity.Store.closeups.clear();Alpha99ResultsActivity.Store.closeups.putAll(fo.closeups);
@@ -152,7 +155,13 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 Alpha99ResultsActivity.Store.modelLabel=fo.model==null?null:fo.model.label;
                 Alpha99ResultsActivity.Store.model=fo.model;
                 Alpha99ResultsActivity.Store.modelHint=modelHint(fo);
-                status.setText(fo.summary.headline());
+                AlignmentResultsActivity.Store.result=fo.alignment;AlignmentResultsActivity.Store.model=fo.model;
+                AlignmentResultsActivity.Store.modelLabel=fo.model==null?null:fo.model.label;
+                AlignmentResultsActivity.Store.overview=fo.alignmentOverview;AlignmentResultsActivity.Store.photo=photo;
+                AlignmentResultsActivity.Store.closeups.clear();AlignmentResultsActivity.Store.closeups.putAll(fo.alignmentCloseups);
+                AlignmentResultsActivity.Store.technical=fo.alignmentTechnical;AlignmentResultsActivity.Store.legacyTechnical=fo.technical;
+                if(fo.alignment==null){inspectButton.setEnabled(false);status.setText("Cannot assess: the markers could not be measured in this photo.");return;}
+                status.setText(AlignmentAnalysis.headline(fo.alignment)+"  ·  "+AlignmentAnalysis.counts(fo.alignment));
                 openResults();
             });
         });
@@ -161,8 +170,8 @@ public class PerspectiveOverlayPocActivity extends Activity {
     private void openInspector(){openResults();}
 
     private void openResults(){
-        if(Alpha99ResultsActivity.Store.summary==null)return;
-        startActivity(new Intent(this,Alpha99ResultsActivity.class));
+        if(AlignmentResultsActivity.Store.result==null)return;
+        startActivity(new Intent(this,AlignmentResultsActivity.class));
     }
 
     @Override protected void onActivityResult(int request,int result,Intent data){
