@@ -45,14 +45,15 @@ final class MetalAlignment {
      *  inconclusive readings; a CLEAR metal component makes the marker "Defect detected". */
     static void apply(AlignmentAnalysis.Output o,Alpha99Findings.Summary s,Alpha94MarkerMeasurement.Report r,ModelSpec model,
                       ModelReference ref,Map<String,Double> extra){
-        if(o==null||s==null||r==null||ref==null||o.photoReason!=null)return;
+        if(o==null||o.photoReason!=null)return;
+        if(s==null||r==null||model==null||ref==null){notAssessed(o,"the outer-metal comparison could not be run");return;}
         double R=r.dialRadiusPx;
         for(AlignmentDecision.Marker m:o.markers){
             if(m.shape==ModelSpec.Shape.ROUND)continue;
             Alpha99Findings.Finding f=null;
             for(Alpha99Findings.Finding x:s.all)if(!x.dialWide&&x.hour==m.hour&&(x.shape==Alpha99Findings.Shape.TRIANGLE||x.shape==Alpha99Findings.Shape.BATON))f=x;
-            if(f==null)continue;
-            if(f.status==Alpha99Findings.Status.NOT_ASSESSED){m.metalNotes.add("Outer metal not assessed: "+f.reason+".");settle(m);continue;}
+            if(f==null){notAssessed(m,"no outer-metal measurement was produced for this marker");continue;}
+            if(f.status==Alpha99Findings.Status.NOT_ASSESSED){notAssessed(m,f.reason);continue;}
             ModelSpec.Marker spec=model.atHour(m.hour);
             double lever=0.5*Math.max(spec.outerEdgeR()-spec.innerR(),2*spec.halfWidth());
             double[] er=LuminousAlignment.radial(m.hour),et=LuminousAlignment.tangential(m.hour);
@@ -97,6 +98,21 @@ final class MetalAlignment {
                             words(i),fmt(x.value,x.unit,R),fmt(x.genuineMax,x.unit,R)));}
             }
             settle(m);
+        }
+    }
+
+    /** An incomplete outer-metal check must not leave a passing luminous fit labelled as a complete pass. */
+    static void notAssessed(AlignmentAnalysis.Output o,String reason){
+        if(o==null)return;
+        for(AlignmentDecision.Marker m:o.markers)if(m.shape!=ModelSpec.Shape.ROUND)notAssessed(m,reason);
+    }
+
+    static void notAssessed(AlignmentDecision.Marker m,String reason){
+        String detail=reason==null||reason.trim().isEmpty()?"the outer-metal edge was not measurable":reason;
+        m.metalNotes.add("Outer metal not assessed: "+detail+".");
+        if(m.outcome!=AlignmentDecision.Outcome.DEFECT){
+            m.outcome=AlignmentDecision.Outcome.CANNOT_ASSESS;
+            m.reason="outer-metal alignment could not be assessed: "+detail;
         }
     }
 
