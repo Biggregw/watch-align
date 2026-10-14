@@ -1,6 +1,6 @@
 # Dataset harvester
 
-Run 20261013T104224Z · 2026-10-13T10:42:24Z → 2026-10-13T10:44:09Z
+Run 20261014T084801Z · 2026-10-14T08:48:01Z → 2026-10-14T08:48:07Z
 
 ## Adapters
 
@@ -9,28 +9,19 @@ Run 20261013T104224Z · 2026-10-13T10:42:24Z → 2026-10-13T10:44:09Z
 - **search**: enabled (brave)
 - **reddit**: disabled: REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not set
 
-Search results filtered before storing: not_gmt 10
+Search results filtered before storing: not_gmt 11
 
 ## This run
 
-- 1 new sources discovered (179 already known)
-- 1 sources examined (0 deferred, 0 failed)
-- 9 images downloaded, 0 used from local copies
+- 0 new sources discovered (180 already known)
+- 0 sources examined (0 deferred, 0 failed)
+- 0 images downloaded, 0 used from local copies
 - 0 exact and 0 near duplicates
-- 9 images rejected, 0 inconclusive
+- 0 images rejected, 0 inconclusive
 - 0 measurement-quality images
 - 0 physical watches accepted
 - 0 quarantined
-- 1 rejected
-
-Images rejected or inconclusive, by reason:
-
-- reject_no_dial: 9
-
-Watch decisions, by reason:
-
-- reject_unusable_imagery: 1
-- reject_no_dial: 1
+- 0 rejected
 
 ## Dataset now (accepted, independent physical watches)
 

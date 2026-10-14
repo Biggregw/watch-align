@@ -52,15 +52,13 @@
   "dry_run": false,
   "errors": [],
   "exact_duplicates": 0,
-  "finished_at": "2026-10-13T10:44:09Z",
-  "images_downloaded": 9,
+  "finished_at": "2026-10-14T08:48:07Z",
+  "images_downloaded": 0,
   "images_inconclusive": 0,
   "images_local": 0,
   "images_measurement_quality": 0,
-  "images_rejected": 9,
-  "images_rejected_by_reason": {
-    "reject_no_dial": 9
-  },
+  "images_rejected": 0,
+  "images_rejected_by_reason": {},
   "images_restored": 0,
   "images_unreadable": 0,
   "near_duplicates": 0,
@@ -139,22 +137,19 @@
     }
   ],
   "possible_duplicates": 0,
-  "run_id": "20261013T104224Z",
+  "run_id": "20261014T084801Z",
   "search_results_filtered": {
-    "not_gmt": 10
+    "not_gmt": 11
   },
-  "sources_already_known": 179,
+  "sources_already_known": 180,
   "sources_deferred": 0,
-  "sources_discovered_new": 1,
-  "sources_examined": 1,
+  "sources_discovered_new": 0,
+  "sources_examined": 0,
   "sources_failed": 0,
-  "sources_pending_total": 1,
-  "started_at": "2026-10-13T10:42:24Z",
-  "watch_reasons": {
-    "reject_no_dial": 1,
-    "reject_unusable_imagery": 1
-  },
+  "sources_pending_total": 0,
+  "started_at": "2026-10-14T08:48:01Z",
+  "watch_reasons": {},
   "watches_accepted": 0,
   "watches_quarantined": 0,
-  "watches_rejected": 1
+  "watches_rejected": 0
 }
