@@ -119,3 +119,33 @@ The repository has no shared signing-key secret, so CI signs with a fresh throwa
 build. The APK installs as `com.watchalign.mobile.poc` but **cannot update** an earlier Watch Align / Alpha build:
 uninstall the old app first. Doing so removes its saved settings (only the last-chosen model). This is not a production
 signing.
+
+## 1.5.1 additions (owner request after phone testing, 14 Oct 2026)
+- **Outer-metal alignment** (`MetalAlignment`) for the triangle and batons covers position and rotation only.
+  - **Reuse:** it uses the existing Alpha107 measurement, genuine references and nominal offsets, with Alpha107's
+    CLEAR standard.
+  - **Inconclusive readings:** a reading beyond every genuine watch but within the allowance is shown as an
+    "Inconclusive" note, not as a defect.
+  - **Wording:** results are reported as "Outer metal ...".
+- **The 12's distance from the minute track** previously had no photo-to-photo allowance. It now has one, in
+  `alignment/metal_alignment.properties`.
+  - **Pooled within-watch SD:** GMT 0.123 % R (0.50 px), Submariner 0.051 % R (0.19 px).
+  - **Repeat photos used:** only those the app itself assesses (dial radius ≥ 200 px). The sub-200 px copies of the
+    same auction images had inflated the GMT value to 0.218 %.
+  - **Multiplier:** k = 2, as in every luminous decision.
+  - **Genuine check:** on the genuine photos the app assesses (92 GMT, 105 Submariner), neither k = 2 nor k = 3 flags
+    any 12.
+  - **Track-referenced reading:** measuring from the minute track instead of the ring of other markers was checked and
+    is not more reliable (GMT σ 0.120 vs 0.123 % R, Submariner 0.070 vs 0.051 %; wider genuine spread), so the
+    ring-relative measure is kept.
+  - **Owner's Batgirl 12:**
+    - outer metal 0.685 % R towards the track, against a genuine maximum of 0.318 %;
+    - excess 0.367 % R (0.99 px at its dial radius of 270 px), against an allowance of 0.371 %;
+    - result: Inconclusive, by about 0.01 px. A photo of the same watch with a dial radius of 273 px or more would
+      flag it.
+- **Round markers:**
+  - **Edge:** the lume edge is the steepest point of its fall; a shallower separator counts when a lit bevel follows
+    it.
+  - **Size check:** a fully seen round's size is checked only against a merged bevel (half a surround width). Its
+    centre does not depend on its size.
+  - **Owner's genuine GMT:** all seven rounds without a hand over them are now assessed, with no defects.

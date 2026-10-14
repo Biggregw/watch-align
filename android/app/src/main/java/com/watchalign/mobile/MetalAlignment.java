@@ -21,8 +21,10 @@ import java.util.Properties;
  * but within the allowance is reported as inconclusive (a note), not as a defect.
  *
  * The 12's radial ("track") reading had no photo-to-photo allowance, so Alpha107 capped it at worth a look. Its
- * allowance now comes from alignment/metal_alignment.properties (twelve_radial: pooled within-watch SD of the same
- * genuine photos, tools/research/alignment_only/twelve_radial_uncertainty.py). Without that file it stays capped.
+ * allowance now comes from alignment/metal_alignment.properties (twelve_radial: pooled within-watch SD of the genuine
+ * repeat photos the app would assess, with k = 2 as in every luminous decision;
+ * tools/research/alignment_only/twelve_radial_uncertainty.py). Without that file it stays capped. The other metal
+ * components keep Alpha107's established k = 3.
  */
 final class MetalAlignment {
     static final String FILE="alignment/metal_alignment.properties";
@@ -67,7 +69,8 @@ final class MetalAlignment {
                     case "track": {   // the 12 towards the minute track, with its photo-to-photo allowance
                         i.param=LuminousAlignment.Param.RADIAL;i.deviation=x.value;i.screen=er.clone();
                         double sig=sigmaRadial(extra,R);
-                        use=new Alpha99Findings.Measure(x.name,x.value,x.genuineMax,sig,x.k,x.n,x.unit,x.shortValue,x.sentence);
+                        Double kk=extra==null?null:extra.get("twelve_radial.k");
+                        use=new Alpha99Findings.Measure(x.name,x.value,x.genuineMax,sig,kk!=null&&kk>0?kk:x.k,x.n,x.unit,x.shortValue,x.sentence);
                         use.visibleBar=x.visibleBar;
                         if(!Double.isFinite(sig))use.cap("no photo-to-photo allowance for the 12's distance from the minute track");
                         break;}
