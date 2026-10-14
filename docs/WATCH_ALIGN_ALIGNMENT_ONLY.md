@@ -1,7 +1,7 @@
-# Watch Align 1.5.4: alignment-only hour-marker check (14 Oct 2026)
+# Watch Align 1.5.5: alignment-only hour-marker check (14 Oct 2026)
 
-Current version 1.5.4 (versionCode 13120). The 1.5.0 description below still applies; the later sections list what
-changed in 1.5.1–1.5.4.
+Current version 1.5.5 (versionCode 13121). The 1.5.0 description below still applies; the later sections list what
+changed in 1.5.1–1.5.5.
 
 Branch `feature/android-alignment-only-20261014`, built from Alpha107 (`outer-metal/integration-20261013` @ `5e6d565`).
 Merged into `main` with 1.5.3. Rollback: install the Alpha107 APK (run 38493791860) or check out `5e6d565`.
@@ -337,3 +337,57 @@ unchanged.
 **On-device tests:** the emulator instrumentation job now runs for the first time since 4 Oct.
 - Run 38588915705: 6 tests on an API 35 emulator.
 - Included: the three EXIF orientation tests of the real upload path.
+
+## 1.5.5: false hand warnings from the marker's own reflections
+
+This release contains only one targeted correction, in the per-marker hand check (`Alpha99MarkerInterference`).
+
+**Unchanged:** the genuine references, the 1.00 % round visual tolerance and the 20 % bevel-merge limit.
+
+**The two exclusions**
+1. **Glint on the surround.** A bright structure touching the marker that never leaves the glow just outside the
+   marker's metal is the marker's own reflection, not a hand. "Just outside" means the halo plus 0.012 R
+   (`GLOW_BAND`).
+   - Owner photo: GMT 11 was withheld for a reflection on its surround's shoulder.
+2. **Edge reflection inside the lume.** A thin streak across the marker face that keeps a constant distance from the
+   outline is the lume's own edge reflection, not a hand. "Constant" means within 0.006 R (`EDGE_STREAK`), inside the
+   face's outer band.
+   - Owner photo: GMT 6 was withheld for a 1–2 px bright line along its long edge.
+
+**What is still treated as a hand**
+- A real hand reaching a marker runs on, straight out from the centre, well beyond these bands.
+- A hand lying along a baton's axis sits deeper than the edge band.
+- The seconds-hand line rule (from its lume dot) is unchanged.
+
+**Owner and supplied photos:** 9 photos, 101 markers, deterministic A/B with each image's SHA-256 recorded.
+- Exactly two markers change, the two false warnings:
+  - GMT-25 11 becomes No defect;
+  - GMT-13 6 becomes Cannot assess, with the true reason: its outer-metal edge on that side is not clean, and its lume
+    is within the genuine range.
+- The 20 real hand obstructions in those photos are all still withheld.
+- One further false warning remains, and is not addressed by this release: the Batman QC 2. Broad glare reaches
+  0.06 R beyond its metal, which this rule cannot separate from a real hand tip, so the marker stays withheld (fails
+  closed).
+
+**CI A/B against 1.5.4 on the same verified genuine photos** (workflow `watch-align-ab.yml`, run 38613197456)
+- Both builds ran in one job on one photo set. Every image was checked against its catalogue's SHA-256 before use and
+  checked again after both runs. The references and model spec were byte-identical in both builds.
+- GMT 126710: 77 genuine photos, 747 markers (set digest `3291e4fe…5a1128`). 5 markers change; there are 0 new defects
+  and 0 lost defects. Public QC controls: 3 photos, 33 markers, no changes.
+  - 3 markers previously withheld as "hand" are now still withheld, for a real measurement reason: two 1 o'clock rounds
+    are irregular by 1.2–1.3 px.
+  - 2 markers previously withheld as "hand" are now No defect.
+  - One 12 o'clock triangle (photo `fc62906af2b272de`) changes from No defect to Cannot assess.
+- **The triangle change.** The triangle itself is measured identically in both builds; it changes indirectly.
+  - The growth check compares each marker's edge offset with the other markers in the same photo.
+  - The 4 o'clock round in that photo was previously wrongly excluded as a hand. It is now included in the comparison,
+    which places the triangle's edge 2.8 px further out than the rest.
+  - The triangle is therefore withheld. This fails closed and adds no defect.
+- Submariner 124060: 372 genuine photos, 1967 markers (set digest `5c72c11c…3a1c4e`). 19 markers change; there are 0
+  new defects and 0 lost defects, and no measurement value changes. Public QC controls: 4 photos, 48 markers, no
+  changes.
+  - Every change is a marker previously withheld as "hand".
+  - 2 of them are now No defect.
+  - 17 are still withheld, now for their real reason: bevel merge (23–69 %), an irregular edge, a shape mismatch, or
+    too few other markers.
+- In both models, every photo's SHA-256 was unchanged after both runs.

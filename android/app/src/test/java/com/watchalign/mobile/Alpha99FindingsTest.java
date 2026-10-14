@@ -471,6 +471,38 @@ public class Alpha99FindingsTest {
         assertTrue(c.get(12).clean);assertTrue(c.get(5).clean);assertTrue(c.get(7).clean);
     }
 
+    /** A bright reflection hugging a round marker's metal (just outside it) is the marker's own glint, not a hand. */
+    @Test public void aGlintHuggingTheMarkerIsNotAHand(){
+        Alpha99MarkerInterference.Sampler base=dial(-1,0,0,-1);
+        double a=Math.toRadians(330),cx=Math.sin(a)*Alpha92GmtMaster.ROUND_CENTER_R,cy=-Math.cos(a)*Alpha92GmtMaster.ROUND_CENTER_R;
+        Alpha99MarkerInterference.Sampler glint=(px,py)->{double x=(px-500)/200,y=(py-500)/200,d=Math.hypot(x-cx,y-cy)-Alpha92GmtMaster.ROUND_OUTER_R;
+            double ang=Math.atan2(x-cx,-(y-cy));   // 0 = towards 12
+            if(d>0&&d<0.033&&ang>-0.2&&ang<0.9)return 200;       // a bright arc on and just outside the metal, upper-right shoulder
+            return base.at(px,py);};
+        assertTrue(Alpha99MarkerInterference.analyse(glint,H,TestModels.gmt()).get(11).clean);
+        // the same brightness running on towards the centre is a hand
+        Alpha99MarkerInterference.Sampler hand=(px,py)->{double x=(px-500)/200,y=(py-500)/200;
+            double ex=Math.sin(a),ey=-Math.cos(a),along=x*ex+y*ey,across=-x*ey+y*ex;
+            if(along>0.40&&along<Alpha92GmtMaster.ROUND_CENTER_R&&Math.abs(across-Alpha92GmtMaster.ROUND_OUTER_R-0.02)<0.008)return 200;
+            return glint.at(px,py);};
+        assertFalse(Alpha99MarkerInterference.analyse(hand,H,TestModels.gmt()).get(11).clean);
+    }
+
+    /** A thin bright streak just inside a baton's long edge, parallel to it, is the lume's edge reflection, not a hand;
+     *  a thin hand lying along the face near its axis (deeper than the edge band) is still a hand. */
+    @Test public void anEdgeReflectionInsideABatonIsNotAHand(){
+        Alpha99MarkerInterference.Sampler base=dial(-1,0,0,-1);
+        Alpha99MarkerInterference.Sampler streak=(px,py)->{double x=(px-500)/200,y=(py-500)/200;   // 6 o'clock: radial = +y
+            double t=x-(Alpha92GmtMaster.BATON_TANGENTIAL_HALF-0.036);   // 0.036 R inside the metal outline, in the face's edge band
+            if(Math.abs(t)<0.002&&Math.abs(y-Alpha92GmtMaster.BATON_CENTER_R)<0.10)return 250;
+            return base.at(px,py);};
+        assertTrue(Alpha99MarkerInterference.analyse(streak,H,TestModels.gmt()).get(6).clean);
+        Alpha99MarkerInterference.Sampler across=(px,py)->{double x=(px-500)/200,y=(py-500)/200;
+            if(Math.abs(x-0.01)<0.004&&Math.abs(y-Alpha92GmtMaster.BATON_CENTER_R)<0.10)return 20;     // thin dark hand along the face, near its axis
+            return base.at(px,py);};
+        assertFalse(Alpha99MarkerInterference.analyse(across,H,TestModels.gmt()).get(6).clean);
+    }
+
     @Test public void failsClosedWithoutAnImage(){
         for(Alpha99MarkerInterference.Check x:Alpha99MarkerInterference.analyse((Alpha99MarkerInterference.Sampler)null,H,TestModels.gmt()).values())assertFalse(x.clean);
         for(Alpha99MarkerInterference.Check x:Alpha99MarkerInterference.analyse(dial(-1,0,0,-1),null,TestModels.gmt()).values())assertFalse(x.clean);

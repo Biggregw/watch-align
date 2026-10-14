@@ -1,0 +1,137 @@
+# Watch Align A/B: the base build (default: main) and this branch run the app's decision on the SAME photographs in one
+# job. Every image is sha256-verified against its catalogue before use; the per-image sha256 list is printed and checked
+# again after both runs. Then every marker's outcome, reason and primary issue are compared. References: this branch's
+# bundled files, which must be byte-identical to the base build's (checked).
+name: Watch Align A/B (same photos, base vs branch)
+on:
+  workflow_dispatch:
+    inputs:
+      base: {description: 'base ref', default: 'main'}
+permissions: {contents: read}
+jobs:
+  ab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {model: gmt_126710, catalogue: tools/research/alpha96_calibration/catalogue_provenance_strong.csv, prefix: '126710'}
+          - {model: submariner_124060, catalogue: tools/research/sub124060/catalogue_124060.csv, prefix: '124060'}
+    env: {JAVA_TOOL_OPTIONS: '-Dwatchalign.model=${{ matrix.model }}'}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: "${{ inputs.base || 'main' }}", path: base}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests numpy pillow==12.3.0
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Same references in both builds
+        run: |
+          for f in luminous_alignment.json metal_alignment.properties; do
+            cmp android/app/src/main/assets/models/${{ matrix.model }}/alignment/$f base/android/app/src/main/assets/models/${{ matrix.model }}/alignment/$f
+          done
+          cmp android/app/src/main/assets/models/${{ matrix.model }}/model.json base/android/app/src/main/assets/models/${{ matrix.model }}/model.json
+          echo "references and model spec byte-identical"
+      - name: Verified genuine photos (sha256-checked catalogue) and public QC controls
+        run: |
+          mkdir -p g out q/img
+          python3 - <<'PY'
+          import csv
+          rows = [r for r in csv.DictReader(open('${{ matrix.catalogue }}'))
+                  if r.get('class_label', 'gen') == 'gen' and r['model'].startswith('${{ matrix.prefix }}')]
+          w = csv.DictWriter(open('g/manifest.csv', 'w', newline=''), fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+          PY
+          python3 tools/research/alpha96_calibration/fetch_verified.py g/manifest.csv g/img g/fetch_log.csv | tail -1
+          python3 - <<'PY'
+          import requests, hashlib, csv, pathlib
+          cases = [
+           ('GMT_crooked6_1s4cszq','gmt_126710','https://i.redd.it/zsgyaaky0frg1.jpg','c36f1af94be604ec9153e77b42322d0396634af0eb955c2ab7d3841dce4bb6cd'),
+           ('GMT_accepted6_18vdgh0','gmt_126710','https://i.redd.it/tqmt3k1f8o9c1.jpg','a041d20d14d7c9f105991496b539bb73d63182d75e3b61b6d5a8f0590ecd6c13'),
+           ('GMT_accepted6_18vdgh0_photo2','gmt_126710','https://i.redd.it/fobj8k1f8o9c1.jpg','77245a16744f3fb1369bdaef2101593bd6b52de3a0f031946e3cd84ea9fe8217'),
+           ('SUB_rejected12_1wgfy7k','submariner_124060','https://i.redd.it/0rx4t01hujph1.jpg','7c9f2b50f8e89b860bf567cebdc7a86f3268c5c5e04397f44314bbf5f3f2e0ba'),
+           ('SUB_accepted12_1w848xb','submariner_124060','https://i.redd.it/wdaw7dp93qnh1.jpg','2fe59ac6f06f8effed25c288075ee931b608c874c66d536c6255524ae7a7f91f'),
+           ('SUB_accepted12_1w848xb_photo5','submariner_124060','https://i.redd.it/zm5wgcp93qnh1.jpg','4c4f8cd97ef5e2c3aa8fe2f3a729f3e462b0bf3cd83ea38793419ea7313b2561'),
+           ('SUB_control12_1kqn8ub','submariner_124060','https://i.redd.it/o3xibqc50t1f1.jpg','471e927748db033d97e3a0087f3cf66dbe2a374246185c72852488c18157a3b2')]
+          s = requests.Session(); s.headers.update({'User-Agent': 'Mozilla/5.0 WatchAlignResearch/1.0', 'Referer': 'https://www.reddit.com/'})
+          w = csv.writer(open('q/manifest.csv', 'w', newline='')); w.writerow(['photo_id', 'local_path', 'physical_watch_id'])
+          for name, model, url, sha in cases:
+              if model != '${{ matrix.model }}': continue
+              try:
+                  data = s.get(url, timeout=20).content
+                  if hashlib.sha256(data).hexdigest() != sha: raise ValueError('sha256')
+                  (pathlib.Path('q/img') / (name + '.jpg')).write_bytes(data); w.writerow([name, name + '.jpg', name])
+              except Exception as e: print('QC not available:', name, e)
+          PY
+          # the exact photo set used by both builds
+          python3 - <<'PY'
+          import csv, hashlib, pathlib
+          rows = []
+          for d, man in (('g/img', 'g/manifest.csv'), ('q/img', 'q/manifest.csv')):
+              for r in csv.DictReader(open(man)):
+                  p = pathlib.Path(d) / r['local_path']
+                  if p.exists(): rows.append((r['photo_id'], hashlib.sha256(p.read_bytes()).hexdigest()))
+          rows.sort(); open('out/photos.sha256', 'w').write(''.join(f'{h}  {i}\n' for i, h in rows))
+          print(f'photo set: {len(rows)} images; set digest', hashlib.sha256(open('out/photos.sha256', 'rb').read()).hexdigest())
+          PY
+      - name: Build both (base and branch)
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then mkdir -p $(dirname $J); curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar; fi
+          for side in base branch; do
+            R=.; [ $side = base ] && R=base
+            mkdir -p cls_$side
+            javac -encoding UTF-8 -nowarn -cp $J -sourcepath "$R/tools/desktop-harness/shim:$R/android/app/src/main/java" -d cls_$side $R/tools/desktop-harness/drivers/*.java
+          done
+      - name: Decide with both on the same photos
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar;REF=android/app/src/main/assets/models/${{ matrix.model }}/alignment/luminous_alignment.json
+          for side in base branch; do
+            java -Xmx3g -cp $J:cls_$side com.watchalign.mobile.AlignmentCalib decide g/manifest.csv g/img out/g_$side.csv $REF | grep -c PHOTO
+            java -Xmx3g -cp $J:cls_$side com.watchalign.mobile.AlignmentCalib decide q/manifest.csv q/img out/q_$side.csv $REF | grep -c PHOTO
+          done
+          python3 - <<'PY'
+          import csv, hashlib, pathlib
+          ok = 0
+          for d, man in (('g/img', 'g/manifest.csv'), ('q/img', 'q/manifest.csv')):
+              for r in csv.DictReader(open(man)):
+                  p = pathlib.Path(d) / r['local_path']
+                  if p.exists(): ok += 1
+          lines = [l.split() for l in open('out/photos.sha256')]
+          paths = {**{r['photo_id']: pathlib.Path('g/img') / r['local_path'] for r in csv.DictReader(open('g/manifest.csv'))},
+                   **{r['photo_id']: pathlib.Path('q/img') / r['local_path'] for r in csv.DictReader(open('q/manifest.csv'))}}
+          bad = [i for h, i in lines if hashlib.sha256(paths[i].read_bytes()).hexdigest() != h]
+          print('photos unchanged after both runs:', not bad, bad[:3])
+          PY
+      - name: Compare every marker
+        run: |
+          python3 - <<'PY'
+          import csv, collections
+          for kind in ('g', 'q'):
+              a = {(r['photo_id'], r['hour']): r for r in csv.DictReader(open(f'out/{kind}_base.csv'))}
+              b = {(r['photo_id'], r['hour']): r for r in csv.DictReader(open(f'out/{kind}_branch.csv'))}
+              assert a.keys() == b.keys(), 'different marker sets'
+              key = lambda r: (r['outcome'], r['reason'], r['primary'], r['metal'])
+              diff = [k for k in sorted(a) if key(a[k]) != key(b[k])]
+              num = [k for k in sorted(a) if key(a[k]) == key(b[k]) and (a[k]['radial_R'], a[k]['tangential_R'], a[k]['rotation_deg']) != (b[k]['radial_R'], b[k]['tangential_R'], b[k]['rotation_deg'])]
+              label = 'genuine' if kind == 'g' else 'public QC'
+              print(f'## {label}: {len({k[0] for k in a})} photos, {len(a)} markers; changed outcome/reason {len(diff)}; changed numbers only {len(num)}')
+              trans = collections.Counter((a[k]['outcome'], b[k]['outcome']) for k in diff)
+              print('   transitions:', dict(trans))
+              for k in diff:
+                  print(f"   {k[0]} {k[1]:>2}h {a[k]['shape']:8} {a[k]['outcome']} [{(a[k]['reason'] or a[k]['primary'])[:55]}] -> {b[k]['outcome']} [{(b[k]['reason'] or b[k]['primary'])[:70]}]")
+              for k in num[:10]: print('   NUMBERS', k)
+              newdef = [k for k in diff if b[k]['outcome'] == 'DEFECT' and a[k]['outcome'] != 'DEFECT']
+              lost = [k for k in diff if a[k]['outcome'] == 'DEFECT' and b[k]['outcome'] != 'DEFECT']
+              print(f'   new defects: {len(newdef)}; defects no longer reported: {len(lost)}')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: watch-align-ab-${{ matrix.model }}
+          path: out/
+          retention-days: 7

@@ -39,6 +39,10 @@ final class Alpha99MarkerInterference {
     static final double MIN_LEVELS=20,NOISE_K=5,MIN_SPAN=0.05,MAX_FOREIGN=0.35,INNER=0.02,MAX_HAND_WIDTH=0.05;
     static final double DOT_IN=0.02,DOT_OUT=0.065,DOT_EDGE=0.05,DOT_ALONG=0.06,DOT_SHAFT=0.012,DOT_MIN_FRAC=0.45,SHAFT_HALF=0.006;
     static final double TOUCH_R=0.012,TOUCH_PX=1.0;
+    /** width (R) of the glow band beyond the halo in which a bright structure is treated as the marker's own glint */
+    static final double GLOW_BAND=0.012;
+    /** largest spread (R) of distance from the outline for a face streak to count as the marker's edge reflection */
+    static final double EDGE_STREAK=0.006;
     static final String HAND="hand crosses or touches this marker";
     static final String GLARE="reflection or glare around this marker";
     static final String UNCHECKED="marker surroundings could not be checked";
@@ -203,12 +207,18 @@ final class Alpha99MarkerInterference {
             double gap=gapInto(g,v,dd,rows,cols,comp,rpx);
             if(gap<c.touchGapPx)c.touchGapPx=gap;
             if(gap>TOUCH_R*rpx+TOUCH_PX)continue;            // passes clear of the edge the measurement reads
+            // the marker's own glint: a bright structure that never leaves the glow just outside the marker's metal
+            // (within GLOW_BAND beyond the halo) is a reflection hugging the outline, not a hand. A hand reaching the
+            // marker runs on, radially, well beyond that band.
+            double far=Double.NEGATIVE_INFINITY,bright=0;
+            for(int k:comp){far=Math.max(far,dd[k]);bright+=v[k]-rowMed[k/cols];}
+            if(bright>0&&far<=halo+GLOW_BAND)continue;
             for(int k:comp)g[k]=2;
             if(span>best)best=span;
         }
         c.touchSpanR=best;
         // a thin structure across the marker's own face (hand over the lume): elongated, narrow, darker or brighter
-        double across=faceTest?interior(g,v,rows,cols,step):0;
+        double across=faceTest?interior(g,v,dd,rows,cols,step,inner+GLOW_BAND):0;
         c.acrossSpanR=across;
         if(best>=MIN_SPAN||across>=MIN_SPAN){c.clean=false;c.reason=HAND;}
         else if(c.foreignFrac>MAX_FOREIGN){c.clean=false;c.reason=GLARE;}
@@ -239,7 +249,9 @@ final class Alpha99MarkerInterference {
         return gap;
     }
 
-    private static double interior(int[] g,float[] v,int rows,int cols,double step){
+    /** @param edgeBand depth (R, from the master outline) of the face's outer band, in which a thin streak at a constant
+     *  distance from the outline is the marker's own edge reflection, not a hand */
+    private static double interior(int[] g,float[] v,float[] dd,int rows,int cols,double step,double edgeBand){
         int n=0;for(int x:g)if(x==4)n++;
         if(n<30)return 0;
         double[] a=new double[n];int m=0;for(int k=0;k<g.length;k++)if(g[k]==4)a[m++]=v[k];
@@ -255,6 +267,11 @@ final class Alpha99MarkerInterference {
                 for(int di=-1;di<=1;di++)for(int dj=-1;dj<=1;dj++){int ii=i+di,jj=j+dj;if(ii<0||jj<0||ii>=rows||jj>=cols)continue;
                     int kk=ii*cols+jj;if(g[kk]==5&&!seen[kk]){seen[kk]=true;q.add(kk);}}}
             double span=(iMax-iMin+1)*step,width=comp.size()*step/(iMax-iMin+1);
+            // the marker's own edge reflection: a thin streak that keeps a constant distance from the outline inside the
+            // face's outer band (a hand crossing the face runs radially, so its distance from a round or angled outline
+            // changes, and a hand along a baton's axis lies deeper than this band)
+            double dMin=Double.POSITIVE_INFINITY,dMax=Double.NEGATIVE_INFINITY;for(int k:comp){dMin=Math.min(dMin,dd[k]);dMax=Math.max(dMax,dd[k]);}
+            if(dMax-dMin<=EDGE_STREAK&&dMin>=-edgeBand)continue;
             if(width<=MAX_HAND_WIDTH&&span>best)best=span;
             if(width<=MAX_HAND_WIDTH&&span>=MIN_SPAN)for(int k:comp)g[k]=2;
         }
