@@ -59,6 +59,18 @@ public class RoundVisualFloorTest {
         assertTrue(r.primary.genuine(),r.primary.genuine().contains("more than 1.00% of the dial radius"));
     }
 
+    @Test public void exactVisualFloorIsNotAnExceedanceAndPhotoUncertaintyCanRaiseTheThreshold(){
+        AlignmentReference ref=AlignmentDecisionTest.ref();
+        assertEquals(AlignmentDecision.Outcome.NO_DEFECT,decide(round(4,FLOOR,0),ref).outcome);
+        assertEquals(AlignmentDecision.Outcome.DEFECT,decide(round(4,FLOOR+1e-6,0),ref).outcome);
+
+        LuminousAlignment.Result f=round(4,0.011,0);
+        f.seRadialR=0.003; // genuine envelope plus 2 SE, not the visual floor, is now the larger bound
+        assertEquals(AlignmentDecision.Outcome.NO_DEFECT,decide(f,ref).outcome);
+        f.radialR=0.013;
+        assertEquals(AlignmentDecision.Outcome.DEFECT,decide(f,ref).outcome);
+    }
+
     @Test public void negativeDirectionsBehaveIdentically(){
         AlignmentReference ref=AlignmentDecisionTest.ref();
         for(double d:new double[]{0.009,0.0105,0.02}){
