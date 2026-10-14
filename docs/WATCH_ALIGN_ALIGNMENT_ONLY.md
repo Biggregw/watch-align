@@ -288,7 +288,14 @@ assess" are low resolution and a hand over the marker.
    - The emulator job adds x86_64 native code only for its own test build (`-PtestAbi=x86_64`); the delivered APK
      stays arm64-only.
    - Its extraction step now uses the real package `com.watchalign.mobile.poc`.
-8. **Enlarged photos (qualified, not fixed):**
+8. **The outer metal must be measured too.** This was adopted from the independent PR #54 after review.
+   - The rule: a triangle or baton whose outer metal could not be measured is never an unqualified "No defect".
+   - Why: a misplaced surround can sit around a correctly placed lume, which was the owner's Batgirl 12 case.
+   - When it applies: the metal is not assessed, no metal measurement was produced, or the comparison could not run
+     or failed.
+   - The result: such a marker reads "Cannot assess". The reason says the luminous fill is within the genuine range.
+   - Confirmed luminous or metal defects stand, and round markers are unaffected.
+9. **Enlarged photos (qualified, not fixed):**
    - The outer-metal 12 allowance has a pixel term, so the same normalised reading can be judged more strictly on a
      photo with more pixels. An enlarged (resampled) photo is not detected and would count as a sharper one.
    - The note no longer claims enlargement cannot change the result. It asks the user not to enlarge, and says the

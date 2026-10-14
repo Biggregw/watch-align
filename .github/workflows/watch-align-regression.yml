@@ -7,7 +7,7 @@ name: Watch Align regression (bundled references)
 on:
   push:
     branches: [feature/android-alignment-only-20261014]
-    paths: ['.github/workflows/watch-align-regression.yml', 'android/app/src/main/java/com/watchalign/mobile/AlignmentDecision.java', 'android/app/src/main/java/com/watchalign/mobile/LuminousAlignment.java']
+    paths: ['.github/workflows/watch-align-regression.yml', 'android/app/src/main/java/com/watchalign/mobile/AlignmentDecision.java', 'android/app/src/main/java/com/watchalign/mobile/LuminousAlignment.java', 'android/app/src/main/java/com/watchalign/mobile/MetalAlignment.java']
   workflow_dispatch:
 permissions: {contents: read}
 jobs:
@@ -100,6 +100,9 @@ jobs:
           for r in held: print('  FLOOR HELD', r['photo_id'], r['hour'], r['round_floor_held'], r['radial_R'], r['tangential_R'])
           mc = collections.Counter('CLEAR' if 'CLEAR' in r['metal'] else 'worth a look' if 'Worth a look' in r['metal'] else 'none' for r in rows if r['shape'] != 'round')
           print('genuine metal (triangle+baton markers):', dict(mc))
+          mw = [r for r in rows if r['shape'] != 'round' and r['outcome'] == 'CANNOT_ASSESS' and r['reason'].startswith('its outer metal could not be measured')]
+          print(f'genuine triangles/batons withheld only because the outer metal could not be measured: {len(mw)}',
+                dict(collections.Counter(r['reason'].split('(')[1].split(')')[0][:50] for r in mw).most_common(5)))
           inf = sum(1 for r in rows if r['inferred'] == '1' and r['outcome'] != 'CANNOT_ASSESS')
           print('assessed markers using known-shape inference:', inf)
           # repeat photos of the same genuine watch: same outcome for a marker in every assessed photo
