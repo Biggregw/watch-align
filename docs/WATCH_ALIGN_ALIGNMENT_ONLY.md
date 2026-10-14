@@ -120,7 +120,7 @@ build. The APK installs as `com.watchalign.mobile.poc` but **cannot update** an 
 uninstall the old app first. Doing so removes its saved settings (only the last-chosen model). This is not a production
 signing.
 
-## 1.5.1 additions (owner request after phone testing, 14 Oct 2026)
+## 1.5.1–1.5.2 additions (owner request after phone testing, 14 Oct 2026)
 - **Outer-metal alignment** (`MetalAlignment`) for the triangle and batons covers position and rotation only.
   - **Reuse:** it uses the existing Alpha107 measurement, genuine references and nominal offsets, with Alpha107's
     CLEAR standard.
