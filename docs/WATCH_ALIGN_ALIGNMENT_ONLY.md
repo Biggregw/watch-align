@@ -383,3 +383,11 @@ This release contains only one targeted correction, in the per-marker hand check
   - The 4 o'clock round in that photo was previously wrongly excluded as a hand. It is now included in the comparison,
     which places the triangle's edge 2.8 px further out than the rest.
   - The triangle is therefore withheld. This fails closed and adds no defect.
+- Submariner 124060: 372 genuine photos, 1967 markers (set digest `5c72c11c…3a1c4e`). 19 markers change; there are 0
+  new defects and 0 lost defects, and no measurement value changes. Public QC controls: 4 photos, 48 markers, no
+  changes.
+  - Every change is a marker previously withheld as "hand".
+  - 2 of them are now No defect.
+  - 17 are still withheld, now for their real reason: bevel merge (23–69 %), an irregular edge, a shape mismatch, or
+    too few other markers.
+- In both models, every photo's SHA-256 was unchanged after both runs.
