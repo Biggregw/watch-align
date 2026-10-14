@@ -22,6 +22,8 @@ final class AlignmentReference {
     static final class ShapeRef {
         double insetR=Double.NaN,growthNominalR=0,growthSdR=Double.NaN,growthLimitR=Double.NaN,photoGrowthLimitR=Double.NaN;
         double radialLimitR=Double.NaN,tangentialLimitR=Double.NaN,rotationLimitDeg=Double.NaN;
+        /** photographic repeatability (pooled within-watch SD over genuine watches photographed more than once); 0 if absent */
+        double radialPhotoSdR=0,tangentialPhotoSdR=0,rotationPhotoSdDeg=0;
         int watches;boolean supported;String note="";
     }
     static final class HourRef{double radialR=Double.NaN,tangentialR=Double.NaN,rotationDeg=Double.NaN;int watches;}
@@ -48,7 +50,8 @@ final class AlignmentReference {
         if(sh!=null)for(Map.Entry<String,Object> e:sh.entrySet()){
             Map<String,Object> m=(Map<String,Object>)e.getValue();ShapeRef s=new ShapeRef();
             s.insetR=num(m,"inset_R");s.growthNominalR=num(m,"growth_nominal_R");s.growthSdR=num(m,"growth_sd_R");s.growthLimitR=num(m,"growth_limit_R");s.photoGrowthLimitR=num(m,"photo_growth_limit_R");
-            s.radialLimitR=num(m,"radial_limit_R");s.tangentialLimitR=num(m,"tangential_limit_R");s.rotationLimitDeg=num(m,"rotation_limit_deg");
+            s.radialLimitR=num(m,"radial_limit_R");
+            s.radialPhotoSdR=zero(num(m,"radial_photo_sd_R"));s.tangentialPhotoSdR=zero(num(m,"tangential_photo_sd_R"));s.rotationPhotoSdDeg=zero(num(m,"rotation_photo_sd_deg"));s.tangentialLimitR=num(m,"tangential_limit_R");s.rotationLimitDeg=num(m,"rotation_limit_deg");
             s.watches=(int)Math.round(zero(num(m,"watches")));s.supported=Boolean.TRUE.equals(m.get("supported"));
             if(m.get("note")!=null)s.note=String.valueOf(m.get("note"));
             if(!Double.isFinite(s.growthNominalR))s.growthNominalR=0;

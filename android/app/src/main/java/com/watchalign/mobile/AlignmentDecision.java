@@ -10,9 +10,10 @@ import java.util.Locale;
  * Owner requirement (14 Oct 2026, BUILD_BRIEF section 2), superseding the multi-level statuses for the main display:
  * for an assessable marker the answer is binary. A component (radial position, tangential position, rotation) is a
  * defect only when its deviation from the per-hour genuine nominal exceeds the WHOLE genuine envelope for that marker
- * type (the largest deviation of any verified genuine watch, one value per physical watch per marker) by more than this
- * photo's own measurement uncertainty (2 standard errors of the fit, including the known-size uncertainty of inferred
- * edges, never below half a native pixel). Crossing the genuine nominal, or a tiny excursion within the photo's
+ * type (the largest deviation of any verified genuine watch, one value per physical watch per marker, after a documented
+ * far-out measurement-failure screen) by more than the measurement uncertainty: 2 x the combination of this photo's fit
+ * standard error (including the known-size uncertainty of inferred edges) and the genuine photo-to-photo repeatability
+ * of that component, never below half a native pixel. Crossing the genuine nominal, or a tiny excursion within the photo's
  * uncertainty, is never a defect. Replica/QC photos never set any of these numbers.
  *
  * Severity is compared as visible displacement: a rotation counts as the distance it moves the marker's far end.
@@ -78,14 +79,14 @@ final class AlignmentDecision {
         double rpx=f.rpx,floorR=MIN_RESOLVABLE_PX/rpx;
         double lever=f.halfLengthR();
         List<Issue> all=new ArrayList<>();
-        if(f.radialOk)all.add(issue(LuminousAlignment.Param.RADIAL,f.radialR-h.radialR,s.radialLimitR,Math.max(2*f.seRadialR,floorR),1,rpx,f.er()));
+        if(f.radialOk)all.add(issue(LuminousAlignment.Param.RADIAL,f.radialR-h.radialR,s.radialLimitR,Math.max(2*Math.hypot(f.seRadialR,s.radialPhotoSdR),floorR),1,rpx,f.er()));
         else m.notAssessed.add("distance from the centre");
-        if(f.tangentialOk)all.add(issue(LuminousAlignment.Param.TANGENTIAL,f.tangentialR-h.tangentialR,s.tangentialLimitR,Math.max(2*f.seTangentialR,floorR),1,rpx,f.et()));
+        if(f.tangentialOk)all.add(issue(LuminousAlignment.Param.TANGENTIAL,f.tangentialR-h.tangentialR,s.tangentialLimitR,Math.max(2*Math.hypot(f.seTangentialR,s.tangentialPhotoSdR),floorR),1,rpx,f.et()));
         else m.notAssessed.add("sideways position");
         if(m.shape!=ModelSpec.Shape.ROUND){
             if(f.rotationOk&&Double.isFinite(lever)&&lever>0){
                 double floorDeg=Math.toDegrees(floorR/lever);
-                all.add(issue(LuminousAlignment.Param.ROTATION,f.rotationDeg-h.rotationDeg,s.rotationLimitDeg,Math.max(2*f.seRotationDeg,floorDeg),Math.toRadians(1)*lever,rpx,null));
+                all.add(issue(LuminousAlignment.Param.ROTATION,f.rotationDeg-h.rotationDeg,s.rotationLimitDeg,Math.max(2*Math.hypot(f.seRotationDeg,s.rotationPhotoSdDeg),floorDeg),Math.toRadians(1)*lever,rpx,null));
             }else m.notAssessed.add("rotation");
         }
         Issue worst=null;

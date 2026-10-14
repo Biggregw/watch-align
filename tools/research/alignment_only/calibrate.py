@@ -97,8 +97,10 @@ def values(rows, comp):
     return out
 
 
-def nominals_and_envelopes(rows):
-    """per hour nominal (median over watches) and per shape envelope (max |watch value - nominal|)"""
+def nominals_and_envelopes(rows, screened=None):
+    """per hour nominal (median over watches) and per shape envelope: the largest |watch value - nominal| after a
+    Tukey far-out screen (values beyond Q3 + 3 IQR of that marker type's genuine deviations are treated as measurement
+    failures, listed in `screened`, never silently dropped)"""
     hours, env, nw = {}, defaultdict(dict), defaultdict(set)
     shape_of = {int(r['hour']): r['shape'] for r in rows}
     for comp in COMP:
@@ -116,14 +118,40 @@ def nominals_and_envelopes(rows):
         for h, ws in by_hour.items():
             if h in hours and name in hours[h]:
                 for w, v in ws.items():
-                    dev[shape_of[h]].append(abs(v - hours[h][name]))
+                    dev[shape_of[h]].append((abs(v - hours[h][name]), w, h))
                     nw[shape_of[h]].add(w)
         for s, d in dev.items():
-            env[s][name] = max(d)
+            a = sorted(x for x, _, _ in d)
+            q1, q3 = pct(a, 25), pct(a, 75)
+            fence = q3 + 3 * (q3 - q1)
+            env[s][name] = max(x for x in a if x <= fence)
+            if screened is not None:
+                for x, w, h in d:
+                    if x > fence:
+                        screened.append((s, name, w, h, x, fence))
     return hours, env, nw
 
 
-def decide(r, hours, env, shape):
+def photo_sd(rows):
+    """pooled within-watch standard deviation of each component over genuine watches photographed more than once
+    (same watch, same marker, different photos): photographic repeatability, kept separate from manufacturing spread"""
+    out = {}
+    for comp in COMP:
+        name, col, _, ok, _ = comp
+        for s in SHAPES:
+            g = defaultdict(list)
+            for r in rows:
+                if r['shape'] == s and r[ok] == '1' and fnum(r[col]) is not None:
+                    g[(r['physical_watch_id'], r['hour'])].append(fnum(r[col]))
+            ss, dof, n = 0.0, 0, 0
+            for v in g.values():
+                if len(v) > 1:
+                    m = sum(v) / len(v); ss += sum((x - m) ** 2 for x in v); dof += len(v) - 1; n += 1
+            out[(s, name)] = (math.sqrt(ss / dof) if dof else None, n)
+    return out
+
+
+def decide(r, hours, env, shape, psd):
     """mirror of AlignmentDecision.decide: list of (component, excess_R)"""
     h = int(r['hour'])
     rpx = fnum(r['dial_r_px'])
@@ -138,10 +166,12 @@ def decide(r, hours, env, shape):
         if name == 'rotation':
             if not lever:
                 continue
-            unc = max(2 * s, math.degrees(floor / lever))
+            sd = psd.get((shape, name)) or 0
+            unc = max(2 * math.hypot(s, sd), math.degrees(floor / lever))
             out.append((name, (abs(dev) - env[shape][name] - unc) * math.radians(1) * lever))
         else:
-            unc = max(2 * s, floor)
+            sd = psd.get((shape, name)) or 0
+            unc = max(2 * math.hypot(s, sd), floor)
             out.append((name, abs(dev) - env[shape][name] - unc))
     return out
 
@@ -171,10 +201,23 @@ def reference(pass2, model, provenance, out):
                                 'growth_sd_R': 1.4826 * mad, 'growth_limit_R': pct([abs(x - nom) for x in per], GATE_PCT),
                                 'photo_growth_limit_R': pct(d, GATE_PCT) if d else None}
     kept = [r for r in rows if gate(r, ref)]
-    hours, env, nw = nominals_and_envelopes(kept)
+    screened = []
+    hours, env, nw = nominals_and_envelopes(kept, screened)
+    sds = photo_sd(kept)
+    psd = {}
+    for shape in SHAPES:
+        for name in ('radial', 'tangential', 'rotation'):
+            v, n = sds[(shape, name)]
+            if v is None or n < 5:      # too few repeat pairs for this type: the largest of the model's other types
+                cand = [sds[(x, name)][0] for x in SHAPES if sds[(x, name)][0] is not None and sds[(x, name)][1] >= 5]
+                v = max(cand) if cand else None
+            psd[(shape, name)] = v
     for shape, s in ref['shapes'].items():
         e = env.get(shape, {})
-        s.update({'radial_limit_R': e.get('radial'), 'tangential_limit_R': e.get('tangential'),
+        s.update({'radial_photo_sd_R': psd.get((shape, 'radial')), 'tangential_photo_sd_R': psd.get((shape, 'tangential')),
+                  'rotation_photo_sd_deg': psd.get((shape, 'rotation')) if shape != 'round' else None,
+                  'repeat_pairs': {n: sds[(shape, n)][1] for n in ('radial', 'tangential', 'rotation')},
+                  'radial_limit_R': e.get('radial'), 'tangential_limit_R': e.get('tangential'),
                   'rotation_limit_deg': e.get('rotation'), 'watches': len(nw.get(shape, ())),
                   'supported': len(nw.get(shape, ())) >= MIN_SHAPE_WATCHES and e.get('radial') is not None and e.get('tangential') is not None})
         if not s['supported']:
@@ -183,10 +226,12 @@ def reference(pass2, model, provenance, out):
         ref['hours'][str(h)] = {'radial_R': v.get('radial'), 'tangential_R': v.get('tangential'),
                                 'rotation_deg': v.get('rotation'), 'watches': v['watches']}
     json.dump(ref, open(out, 'w'), indent=1)
-    report(rows, kept, ref, hours, env)
+    ref['screened_genuine_readings'] = [{'shape': a, 'component': b, 'watch': w, 'hour': h, 'deviation': x, 'fence': f} for a, b, w, h, x, f in screened]
+    json.dump(ref, open(out, 'w'), indent=1)
+    report(rows, kept, ref, hours, env, psd, screened)
 
 
-def report(rows, kept, ref, hours, env):
+def report(rows, kept, ref, hours, env, psd, screened):
     shape_of = {int(r['hour']): r['shape'] for r in rows}
     photos = {r['photo_id'] for r in rows}
     watches = {r['physical_watch_id'] for r in rows}
@@ -197,6 +242,13 @@ def report(rows, kept, ref, hours, env):
         f = lambda x, k=100: '-' if x is None else f'{k * x:.3f}'
         print(f"| {s} | {f(v.get('inset_R'))} | {f(v.get('growth_sd_R'))} | {f(v.get('growth_limit_R'))} | {f(v.get('photo_growth_limit_R'))} | "
               f"{v.get('watches')} | {f(v.get('radial_limit_R'))} | {f(v.get('tangential_limit_R'))} | {f(v.get('rotation_limit_deg'), 1)} | {v.get('supported')} |")
+    print('\nPhotographic repeatability (pooled within-watch SD over genuine watches photographed more than once): ' + '; '.join(
+        f"{s} {n} {('-' if psd.get((s, n)) is None else (f'{psd[(s, n)]:.2f} deg' if n == 'rotation' else f'{100 * psd[(s, n)]:.3f} %R'))} ({ref['shapes'].get(s, {}).get('repeat_pairs', {}).get(n, 0)} pairs)"
+        for s in SHAPES for n in ('radial', 'tangential', 'rotation') if not (s == 'round' and n == 'rotation')))
+    print(f'\nGenuine readings screened out of the envelopes as far-out measurement failures (beyond Q3 + 3 IQR): {len(screened)}')
+    for a, b, w, h, x, f in screened:
+        k = 1 if b == 'rotation' else 100
+        print(f'  {a} {b} watch {w} {h}h: {k*x:.3f} (fence {k*f:.3f})')
     # coverage, per marker type, over posed photos
     print('\n### Coverage (every marker of every posed genuine photo)\n')
     print('| Marker type | Markers | Measured and passed gates | Cannot assess | Main reasons |')
@@ -222,12 +274,12 @@ def report(rows, kept, ref, hours, env):
     outcome = {}
     for w, rs in by_w.items():
         others = [r for r in kept if r['physical_watch_id'] != w]
-        h2, e2, _ = nominals_and_envelopes(others)
+        h2, e2, _ = nominals_and_envelopes(others)   # photo sd from all watches (repeatability, not a limit)
         for r in rs:
             s = r['shape']
             if not ref['shapes'].get(s, {}).get('supported'):
                 continue
-            ex = decide(r, h2, e2, s)
+            ex = decide(r, h2, e2, s, psd)
             if not ex:
                 continue
             total[s] += 1
