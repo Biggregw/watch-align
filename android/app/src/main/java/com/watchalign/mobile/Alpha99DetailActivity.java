@@ -33,7 +33,7 @@ public class Alpha99DetailActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Alpha99ResultsActivity.BG);
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-2));
-        MarkerMismatchResearch.Result q=f.dialWide?null:Alpha99ResultsActivity.InspectionView.result(f,Store.mismatch);
+        MarkerMismatchResearch.Result q=InspectionView.result(f,Alpha99ResultsActivity.Store.mismatch);
         InspectionView.State st=InspectionView.state(f,q);
         // the answer
         root.addView(text(f.title,24,Color.WHITE,true));
