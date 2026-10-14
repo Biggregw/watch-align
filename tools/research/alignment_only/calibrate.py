@@ -260,11 +260,34 @@ def report(rows, kept, ref, hours, env):
         for name, col, _, ok, _ in COMP:
             xs = [fnum(r[col]) for r, _ in v if r[ok] == '1' and fnum(r[col]) is not None]
             if len(xs) > 1:
-                spreads[(shape_of[h], name)].append(max(xs) - min(xs))
+                spreads[(shape_of[int(h)], name)].append(max(xs) - min(xs))
     for (s, name), sp in sorted(spreads.items()):
         unit = 'deg' if name == 'rotation' else '%R'
         k = 1 if name == 'rotation' else 100
         print(f'- {s} {name}: {len(sp)} pairs, median spread {k * st.median(sp):.3f} {unit}, max {k * max(sp):.3f} {unit}')
+    # what sets each envelope: the largest genuine deviations with their measurement-quality fields
+    print('\n### Genuine distribution and the watches that set each envelope\n')
+    contrib = []
+    for comp in COMP:
+        name, col, _, ok, _ = comp
+        for s in SHAPES:
+            devs = []
+            for r in kept:
+                h = int(r['hour'])
+                if r['shape'] != s or r[ok] != '1' or h not in hours or name not in hours[h] or fnum(r[col]) is None:
+                    continue
+                devs.append((abs(fnum(r[col]) - hours[h][name]), r))
+            if not devs:
+                continue
+            k = 1 if name == 'rotation' else 100
+            a = sorted(d for d, _ in devs)
+            print(f'- {s} {name}: n={len(a)} photo-markers, p50 {k*pct(a,50):.3f} p90 {k*pct(a,90):.3f} p95 {k*pct(a,95):.3f} p99 {k*pct(a,99):.3f} max {k*a[-1]:.3f}')
+            for d, r in sorted(devs, key=lambda x: -x[0])[:4]:
+                print(f'    {k*d:.3f} {r["photo_id"]} {r["hour"]}h watch={r["physical_watch_id"]} R={r["dial_r_px"]} inferred={r["inferred"]} '
+                      f'growth_free={r["growth_free"]} merged={r["merged_share"]} noise={r["noise_px"]} samples={r["samples"]} '
+                      f'g={r["growth_R"]} photo_g_diff={r["photo_growth_diff_R"]} radial_ok={r["radial_ok"]} tang_ok={r["tangential_ok"]}')
+                contrib.append(f'{r["photo_id"]} {r["hour"]}')
+    open(sys.argv[5].replace('.json', '_contributors.txt'), 'w').write('\n'.join(sorted(set(contrib))) + '\n')
 
 
 if __name__ == '__main__':

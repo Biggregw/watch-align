@@ -121,6 +121,20 @@ jobs:
               b = io.BytesIO(); W.save(b, 'JPEG', quality=85)
               print(f'BEGIN_IMG genuine_{pid}.jpg ' + ' '.join(f"{x['hour']}:{x['outcome']}" for x in sorted(by[pid], key=lambda x: int(x['hour']))))
               print(base64.b64encode(b.getvalue()).decode()); print('END_IMG')
+          # the genuine markers that set each envelope (largest deviations), one tile each, labelled
+          from PIL import ImageDraw
+          cf = Path('out/luminous_alignment_contributors.txt')
+          ids = [l.split() for l in cf.read_text().split('\n') if l.strip()] if cf.exists() else []
+          tiles = [(p, h, Path(f'out/gen_render/{p}_{h}.png')) for p, h in ids]
+          tiles = [t for t in tiles if t[2].exists()][:36]
+          if tiles:
+              W = Image.new('RGB', (240 * 6, 260 * ((len(tiles) + 5) // 6)), 'black'); d = ImageDraw.Draw(W)
+              for i, (p, h, f) in enumerate(tiles):
+                  x, y = 240 * (i % 6), 260 * (i // 6)
+                  W.paste(Image.open(f).convert('RGB').resize((240, 240)), (x, y + 20)); d.text((x + 4, y + 4), f'{p[:10]} {h}h', fill='white')
+              b = io.BytesIO(); W.save(b, 'JPEG', quality=85)
+              print('BEGIN_IMG envelope_contributors.jpg ' + ' '.join(f'{p}:{h}' for p, h, _ in tiles))
+              print(base64.b64encode(b.getvalue()).decode()); print('END_IMG')
           PY
       - uses: actions/upload-artifact@v4
         if: always()
