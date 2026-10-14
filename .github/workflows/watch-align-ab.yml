@@ -4,9 +4,6 @@
 # bundled files, which must be byte-identical to the base build's (checked).
 name: Watch Align A/B (same photos, base vs branch)
 on:
-  push:
-    branches: [experiment/marker-coverage]
-    paths: ['.github/workflows/watch-align-ab.yml', 'android/app/src/main/java/**']
   workflow_dispatch:
     inputs:
       base: {description: 'base ref', default: 'main'}
