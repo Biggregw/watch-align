@@ -18,7 +18,7 @@ import android.widget.TextView;
  *  genuine range. Exact numbers for any marker stay under a collapsed "Technical details". Display only. */
 public class AlignmentDetailActivity extends Activity {
     static final String EXTRA_HOUR="hour";
-    static final String LEGEND="Yellow: genuine outer-metal reference (fixed). Silver: estimated metal surround drawn around the luminous marker as fitted in this photo (illustration only). Cyan: the fitted luminous outline, dashed where an edge was not visible and was inferred from the marker's known shape. Red: direction of the misalignment.";
+    static final String LEGEND="Yellow: genuine outer-metal reference (fixed). Pink dotted: where the genuine luminous fill is expected. Cyan: the luminous outline measured in this photo, dashed where an edge was not visible and was inferred from the marker's known shape. Silver: illustration of the metal surround around the measured lume. Red: direction of the misalignment.";
 
     @Override public void onCreate(Bundle state){
         super.onCreate(state);
@@ -33,7 +33,8 @@ public class AlignmentDetailActivity extends Activity {
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(AlignmentResultsActivity.BG);
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-2));
-        root.addView(text(m.title()+" — "+m.label(),24,AlignmentResultsActivity.colour(m.outcome),true));
+        root.addView(text(m.title()+" — "+m.label(),24,AlignmentResultsActivity.colour(m),true));
+        if(m.worthALook())root.addView(text("Luminous fill: within the genuine range. Outer metal: borderline, see below.",15,Color.WHITE,false),lp(-1,-2,6));
         if(m.outcome==AlignmentDecision.Outcome.DEFECT)root.addView(text("Primary issue: "+m.primary.headline()+".",18,Color.WHITE,true),lp(-1,-2,6));
         else if(m.outcome==AlignmentDecision.Outcome.CANNOT_ASSESS)root.addView(text(AlignmentDecision.capital(m.reason)+".",15,Color.WHITE,false),lp(-1,-2,6));
         Bitmap c=AlignmentResultsActivity.Store.closeups.get(m.hour);

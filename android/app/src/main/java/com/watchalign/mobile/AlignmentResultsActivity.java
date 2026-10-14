@@ -25,7 +25,7 @@ import java.util.Map;
  */
 public class AlignmentResultsActivity extends Activity {
     static final int BG=Color.rgb(8,17,31),CARD=Color.rgb(17,30,50),MUTED=Color.rgb(158,176,201),
-            RED=Color.rgb(255,99,88),GREEN=Color.rgb(72,209,108),GREY=Color.rgb(160,160,168);
+            RED=Color.rgb(255,99,88),GREEN=Color.rgb(72,209,108),GREY=Color.rgb(160,160,168),AMBER=Color.rgb(255,190,60);
 
     /** Process-local handoff from the start screen. */
     static final class Store {
@@ -43,6 +43,7 @@ public class AlignmentResultsActivity extends Activity {
     }
 
     static int colour(AlignmentDecision.Outcome o){return o==AlignmentDecision.Outcome.DEFECT?RED:o==AlignmentDecision.Outcome.NO_DEFECT?GREEN:GREY;}
+    static int colour(AlignmentDecision.Marker m){return m.worthALook()?AMBER:colour(m.outcome);}
 
     private View build(){
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(BG);
@@ -65,7 +66,7 @@ public class AlignmentResultsActivity extends Activity {
                 return true;
             });
             root.addView(hero,lp(-1,-2,12));
-            root.addView(text("✓ no defect   ! defect detected   – cannot assess   ·   tap a marker",12,MUTED,false),lp(-1,-2,4));
+            root.addView(text("✓ no defect   ! defect detected   ? worth a look   – cannot assess   ·   tap a marker",12,MUTED,false),lp(-1,-2,4));
         }
 
         // a card for every defect, the dominant issue first
@@ -77,7 +78,7 @@ public class AlignmentResultsActivity extends Activity {
             LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.VERTICAL);row.setBackgroundColor(CARD);row.setPadding(dp(12),dp(10),dp(12),dp(10));
             LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.HORIZONTAL);
             top.addView(text(m.title(),16,Color.WHITE,true),new LinearLayout.LayoutParams(0,-2,1f));
-            top.addView(text(m.label(),16,colour(m.outcome),true));
+            top.addView(text(m.label(),16,colour(m),true));
             row.addView(top);
             String sub=AlignmentDecision.summary(m);
             if(sub!=null)row.addView(text(sub,13,MUTED,false),lp(-1,-2,2));
@@ -95,7 +96,7 @@ public class AlignmentResultsActivity extends Activity {
     }
 
     static final String DISCLAIMER="Watch Align checks the alignment of each hour marker against verified genuine Rolex watches. It is not an authenticity check or a buying recommendation.";
-    static final String NOTE="Each marker's luminous shape is fitted by position and rotation only and compared with the range measured on verified genuine watches of this model, allowing for this photo's measurement uncertainty. A marker's genuine reference is placed by the other markers, never by the marker itself. The photo is treated as taken straight on.";
+    static final String NOTE="Each marker's luminous shape is fitted by position and rotation only and compared with the range measured on verified genuine watches of this model, allowing for this photo's measurement uncertainty. A marker's genuine reference is placed by the other markers, never by the marker itself. Round markers are reported only when also displaced by more than 1.00% of the dial radius. The outer metal of the triangle and batons is checked separately. The photo is treated as taken straight on.";
 
     private View defectCard(AlignmentDecision.Marker m){
         LinearLayout t=new LinearLayout(this);t.setOrientation(LinearLayout.VERTICAL);t.setBackgroundColor(CARD);t.setPadding(dp(10),dp(10),dp(10),dp(12));

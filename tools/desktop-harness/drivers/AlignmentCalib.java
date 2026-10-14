@@ -42,14 +42,14 @@ public class AlignmentCalib {
         try(PrintWriter w=new PrintWriter(Files.newBufferedWriter(out))){
             w.println("photo_id,physical_watch_id,model,hour,shape,dial_r_px,outcome,reason,radial_R,tangential_R,rotation_deg,se_radial_R,se_tangential_R,se_rotation_deg,"
                     +"radial_ok,tangential_ok,rotation_ok,growth_R,growth_free,se_growth_R,photo_growth_R,photo_growth_diff_R,merged_share,inferred,noise_px,samples,"
-                    +"lume,dial,round_cover,primary,primary_excess_R,secondary,fit_assessed,half_len_R,check,metal");
+                    +"lume,dial,round_cover,primary,primary_excess_R,secondary,fit_assessed,half_len_R,check,metal,round_floor_held");
             for(Map<String,String> r:rows){
                 String id=r.get("photo_id");Path img=root.resolve(r.get("local_path"));
                 if(!Files.exists(img)){System.out.println("SKIP "+id+" (no image)");continue;}
                 Bitmap b=Alpha96Calib.loadAlpha96(img.toString());
                 Alpha99Pipeline.Output o;
                 try{o=b==null?null:Alpha99Pipeline.run(b,model,metal,ref,setups);}catch(Throwable t){o=null;}
-                if(o==null||!o.ok()||o.alignment==null){System.out.println("NOPOSE "+id);w.println(id+","+r.getOrDefault("physical_watch_id","")+","+model.id+",,,,NOPOSE,,,,,,,,,,,,,,,,,,,,,,,,,,,,,");continue;}
+                if(o==null||!o.ok()||o.alignment==null){System.out.println("NOPOSE "+id);w.println(id+","+r.getOrDefault("physical_watch_id","")+","+model.id+",,,,NOPOSE,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,");continue;}
                 int d=0,n=0,c=0;
                 for(AlignmentDecision.Marker m:o.alignment.markers){
                     LuminousAlignment.Result f=m.fit;
@@ -67,7 +67,7 @@ public class AlignmentCalib {
                             m.primary==null?"":m.primary.param.name()+":"+m.primary.headline().replace(",",";"),m.primary==null?"":f(m.primary.excessR),
                             secondary(m),b(f!=null&&f.assessed),f(f==null?Double.NaN:f.halfLengthR()),
                             o.checks==null||o.checks.get(m.hour)==null?"unchecked":o.checks.get(m.hour).clean?"clean":o.checks.get(m.hour).reason.replace(",",";"),
-                            metal(m)));
+                            metal(m),floorHeld(m)));
                     if(renderDir!=null&&(render.contains(id)||render.contains("ALL"))&&o.alignmentCloseups.containsKey(m.hour))
                         javax.imageio.ImageIO.write(o.alignmentCloseups.get(m.hour).img,"png",renderDir.resolve(id+"_"+m.hour+".png").toFile());
                 }
@@ -109,5 +109,12 @@ public class AlignmentCalib {
         for(int i=0;i<l.length();i++){char c=l.charAt(i);if(c=='"'){if(q&&i+1<l.length()&&l.charAt(i+1)=='"'){b.append('"');i++;}else q=!q;}
             else if(c==','&&!q){o.add(b.toString());b.setLength(0);}else b.append(c);}
         o.add(b.toString());return o;
+    }
+    /** Round components beyond the genuine envelope + uncertainty but within the 1.00 % R visual floor (not reported). */
+    static String floorHeld(AlignmentDecision.Marker m){
+        StringBuilder b=new StringBuilder();
+        for(AlignmentDecision.Issue i:AlignmentAnalysis.allIssues(m))
+            if(!i.metal&&i.visualFloor>0&&Math.abs(i.deviation)>i.limit+i.uncertainty&&!i.outside())b.append(b.length()==0?"":";").append(i.param.name());
+        return b.toString();
     }
 }

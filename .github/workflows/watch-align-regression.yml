@@ -7,7 +7,7 @@ name: Watch Align regression (bundled references)
 on:
   push:
     branches: [feature/android-alignment-only-20261014]
-    paths: ['.github/workflows/watch-align-regression.yml']
+    paths: ['.github/workflows/watch-align-regression.yml', 'android/app/src/main/java/com/watchalign/mobile/AlignmentDecision.java']
   workflow_dispatch:
 permissions: {contents: read}
 jobs:
@@ -92,16 +92,31 @@ jobs:
               print(f'{s}: markers {n}, no defect {c[(s, "NO_DEFECT")]}, defect {c[(s, "DEFECT")]}, cannot assess {c[(s, "CANNOT_ASSESS")]}')
           bad = [r for r in rows if r['outcome'] == 'DEFECT']
           print(f'genuine photos with a defect: {len({r["photo_id"] for r in bad})} of {len(photos)}')
-          for r in bad: print('  GENUINE DEFECT', r['photo_id'], r['hour'], r['shape'], r['primary'], '| metal:', r['metal'][:120])
-          mc = collections.Counter('CLEAR' if 'CLEAR' in r['metal'] else 'inconclusive' if 'Inconclusive' in r['metal'] else 'none' for r in rows if r['shape'] != 'round')
+          for r in bad: print('  GENUINE DEFECT', r['photo_id'], r['physical_watch_id'], r['hour'], r['shape'], r['primary'], 'excess', r['primary_excess_R'],
+                              'dev(rad,tan,rot)', r['radial_R'], r['tangential_R'], r['rotation_deg'], 'R', r['dial_r_px'], 'noise', r['noise_px'],
+                              'merged', r['merged_share'], 'inferred', r['inferred'], '| metal:', r['metal'][:120])
+          held = [r for r in rows if r.get('round_floor_held')]
+          print(f'genuine round markers beyond the genuine envelope but within the 1.00% R visual floor (not reported): {len(held)}')
+          for r in held: print('  FLOOR HELD', r['photo_id'], r['hour'], r['round_floor_held'], r['radial_R'], r['tangential_R'])
+          mc = collections.Counter('CLEAR' if 'CLEAR' in r['metal'] else 'worth a look' if 'Worth a look' in r['metal'] else 'none' for r in rows if r['shape'] != 'round')
           print('genuine metal (triangle+baton markers):', dict(mc))
+          inf = sum(1 for r in rows if r['inferred'] == '1' and r['outcome'] != 'CANNOT_ASSESS')
+          print('assessed markers using known-shape inference:', inf)
+          # repeat photos of the same genuine watch: same outcome for a marker in every assessed photo
+          by = collections.defaultdict(set)
+          for r in rows:
+              if r['outcome'] != 'CANNOT_ASSESS': by[(r['physical_watch_id'], r['hour'])].add(r['outcome'])
+          n_assessed = collections.Counter((r['physical_watch_id'], r['hour']) for r in rows if r['outcome'] != 'CANNOT_ASSESS')
+          multi = [k for k, v in n_assessed.items() if v > 1]
+          same = sum(1 for k in multi if len(by[k]) == 1)
+          print(f'repeat photos: {same} of {len(multi)} watch-marker pairs with the same outcome in every assessed photo')
           reasons = collections.Counter(r['reason'].split('(')[0].strip()[:60] for r in rows if r['outcome'] == 'CANNOT_ASSESS')
           print('cannot assess reasons:', reasons.most_common(6))
           if os.path.exists('out/qc.csv'):
               lab = {r['photo_id']: r['label'] for r in csv.DictReader(open('q/manifest.csv'))}
               for r in csv.DictReader(open('out/qc.csv')):
                   if r['outcome'] == 'NOPOSE': print(r['photo_id'], 'NO POSE'); continue
-                  print(f"QC {r['photo_id']:32} [{lab.get(r['photo_id'],'')}] {r['hour']:>2}h {r['shape']:8} {r['outcome']:13} {(r['primary'] or r['reason'])[:60]} | {r['metal'][:110]}")
+                  print(f"QC {r['photo_id']:32} [{lab.get(r['photo_id'],'')}] {r['hour']:>2}h {r['shape']:8} {r['outcome']:13} {(r['primary'] or r['reason'])[:60]} | floor-held {r['round_floor_held'] or '-'} | {r['metal'][:110]}")
           PY
       - uses: actions/upload-artifact@v4
         if: always()

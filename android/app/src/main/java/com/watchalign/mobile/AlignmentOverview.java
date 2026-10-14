@@ -15,7 +15,7 @@ import org.opencv.imgproc.Imgproc;
 final class AlignmentOverview {
     static final int SIZE=Alpha99Overview.SIZE;
     static final double HALF=Alpha99Overview.HALF;
-    static final Scalar GREEN=new Scalar(52,199,89,255),RED=new Scalar(255,59,48,255),GREY=new Scalar(142,142,147,255),
+    static final Scalar AMBER=new Scalar(255,190,60,255),GREEN=new Scalar(52,199,89,255),RED=new Scalar(255,59,48,255),GREY=new Scalar(142,142,147,255),
             WHITE=new Scalar(255,255,255,255),BLACK=new Scalar(0,0,0,255);
 
     private AlignmentOverview(){}
@@ -26,7 +26,7 @@ final class AlignmentOverview {
         double scale=SIZE/(2*HALF);
         for(AlignmentDecision.Marker a:o.markers){
             double[] p=badgeAt(model.atHour(a.hour));if(p==null)continue;
-            badge(big,new Point((p[0]+HALF)*scale,(p[1]+HALF)*scale),a.outcome);
+            badge(big,new Point((p[0]+HALF)*scale,(p[1]+HALF)*scale),a.outcome,a.worthALook());
         }
         Bitmap b=Bitmap.createBitmap(SIZE,SIZE,Bitmap.Config.ARGB_8888);Utils.matToBitmap(big,b);big.release();return b;
     }
@@ -37,10 +37,14 @@ final class AlignmentOverview {
         return new double[]{Math.sin(a)*r,-Math.cos(a)*r};
     }
 
-    static void badge(Mat m,Point c,AlignmentDecision.Outcome o){
+    static void badge(Mat m,Point c,AlignmentDecision.Outcome o,boolean worth){
         int rad=SIZE/34,th=Math.max(2,SIZE/240);double x=c.x,y=c.y,u=rad*0.5;
         Imgproc.circle(m,c,rad+th,BLACK,-1,Imgproc.LINE_AA);
-        Imgproc.circle(m,c,rad,o==AlignmentDecision.Outcome.DEFECT?RED:o==AlignmentDecision.Outcome.NO_DEFECT?GREEN:GREY,-1,Imgproc.LINE_AA);
+        Imgproc.circle(m,c,rad,worth?AMBER:o==AlignmentDecision.Outcome.DEFECT?RED:o==AlignmentDecision.Outcome.NO_DEFECT?GREEN:GREY,-1,Imgproc.LINE_AA);
+        if(worth){   // "?" : borderline, not a confirmed defect
+            double fs=rad/22.0;int[] base=new int[1];org.opencv.core.Size ts=Imgproc.getTextSize("?",Imgproc.FONT_HERSHEY_SIMPLEX,fs,th+1,base);
+            Imgproc.putText(m,"?",new Point(x-ts.width/2,y+ts.height/2),Imgproc.FONT_HERSHEY_SIMPLEX,fs,WHITE,th+1,Imgproc.LINE_AA);return;
+        }
         switch(o){
             case NO_DEFECT:
                 Imgproc.line(m,new Point(x-u,y),new Point(x-u*0.25,y+u*0.7),WHITE,th+1,Imgproc.LINE_AA);

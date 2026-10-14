@@ -19,6 +19,7 @@ import java.util.List;
  *   yellow  the existing genuine outer-metal reference, fixed (placed by the other markers, never by this one)
  *   silver  translucent estimated metal surround, drawn around the luminous shape FITTED TO THIS MARKER, with the genuine
  *           typical bevel width and rounded corners; it follows the marker, never the yellow
+ *   pink    dotted: where the genuine luminous fill is expected (ring of the other markers + genuine per-hour nominal)
  *   cyan    the fitted luminous outline: solid where its edge was seen, dashed where inferred from the known shape
  *   red     for a defect, the direction of the dominant misalignment (or the rotated axis)
  * A marker that cannot be assessed shows only the yellow reference over the photo.
@@ -26,7 +27,7 @@ import java.util.List;
 final class AlignmentCloseup {
     static final int SIZE=480;
     static final Scalar YELLOW=new Scalar(255,214,10,255),CYAN=new Scalar(80,220,245,255),RED=new Scalar(255,59,48,255),
-            SILVER=new Scalar(214,219,226,255);
+            SILVER=new Scalar(214,219,226,255),PINK=new Scalar(255,120,215,255);
     static final double SILVER_ALPHA=0.40;
 
     private AlignmentCloseup(){}
@@ -47,6 +48,7 @@ final class AlignmentCloseup {
         if(shown&&Double.isFinite(m.bevelR)&&m.bevelR>0)silver(img,cx,cy,half,f,m.bevelR);
         if(m.yellow!=null)poly(img,cx,cy,half,m.yellow,YELLOW,th,true);
         if(!shown)return;
+        expected(img,cx,cy,half,m);
         if(f.fittedCircle!=null){
             Imgproc.circle(img,px(cx,cy,half,f.fittedCircle[0],f.fittedCircle[1]),(int)Math.round(f.fittedCircle[2]/s),CYAN,Math.max(1,th-1),Imgproc.LINE_AA);
         }else{
@@ -58,6 +60,19 @@ final class AlignmentCloseup {
             }
         }
         if(m.outcome==AlignmentDecision.Outcome.DEFECT&&m.primary!=null)arrow(img,cx,cy,half,m);
+    }
+
+    /** Thin dotted outline of the expected genuine luminous position (display only). */
+    private static void expected(Mat img,double cx,double cy,double half,AlignmentDecision.Marker m){
+        double s=2*half/SIZE;
+        if(m.expectedCircle!=null){
+            Point p=px(cx,cy,half,m.expectedCircle[0],m.expectedCircle[1]);double r=m.expectedCircle[2]/s;int n=48;
+            for(int k=0;k<n;k+=2){double a0=2*Math.PI*k/n,a1=2*Math.PI*(k+1)/n;
+                Imgproc.line(img,new Point(p.x+r*Math.cos(a0),p.y+r*Math.sin(a0)),new Point(p.x+r*Math.cos(a1),p.y+r*Math.sin(a1)),PINK,1,Imgproc.LINE_AA);}
+        }else if(m.expectedPolygon!=null){
+            int n=m.expectedPolygon.length;
+            for(int i=0;i<n;i++)dashed(img,px(cx,cy,half,m.expectedPolygon[i][0],m.expectedPolygon[i][1]),px(cx,cy,half,m.expectedPolygon[(i+1)%n][0],m.expectedPolygon[(i+1)%n][1]),PINK,1);
+        }
     }
 
     /** Silver band: the fitted luminous shape grown by the bevel width (round joins), minus the shape itself. */

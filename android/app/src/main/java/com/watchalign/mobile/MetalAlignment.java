@@ -18,7 +18,7 @@ import java.util.Properties;
  *
  * A component is a defect only when Alpha107 would call it CLEAR: beyond every genuine watch by more than the
  * allowance, and visible. Merely crossing the yellow reference is never a defect. A reading beyond every genuine watch
- * but within the allowance is reported as inconclusive (a note), not as a defect.
+ * but within the allowance is reported as "Worth a look" (a borderline note), never as a defect.
  *
  * The 12's radial ("track") reading had no photo-to-photo allowance, so Alpha107 capped it at worth a look. Its
  * allowance now comes from alignment/metal_alignment.properties (twelve_radial: pooled within-watch SD of the genuine
@@ -91,9 +91,10 @@ final class MetalAlignment {
                 i.excessR=(x.value-x.genuineMax-(use.hasAllowance()?use.allowance():0))*toR;
                 Alpha99Findings.Status st=use.status();
                 if(st==Alpha99Findings.Status.CLEAR)m.metal.add(i);
-                else if(st==Alpha99Findings.Status.WORTH)
-                    m.metalNotes.add(String.format(Locale.US,"Inconclusive: the outer metal reads %s, beyond every genuine watch measured (%s, genuine up to %s) but within this photo's measurement uncertainty.",
-                            words(i),fmt(x.value,x.unit,R),fmt(x.genuineMax,x.unit,R)));
+                else if(st==Alpha99Findings.Status.WORTH){
+                    m.metalBorderline=true;
+                    m.metalNotes.add(String.format(Locale.US,"Worth a look (not confirmed): the outer metal reads %s, beyond every genuine watch measured (%s; genuine up to %s), but the difference is within this photo's measurement uncertainty. A sharper original photo may settle it; an enlarged copy of this photo cannot.",
+                            words(i),fmt(x.value,x.unit,R),fmt(x.genuineMax,x.unit,R)));}
             }
             settle(m);
         }

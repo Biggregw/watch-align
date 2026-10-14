@@ -121,8 +121,10 @@ final class AlignmentAnalysis {
     static String counts(Output o){
         StringBuilder b=new StringBuilder();
         int d=o.count(AlignmentDecision.Outcome.DEFECT),n=o.count(AlignmentDecision.Outcome.NO_DEFECT),c=o.count(AlignmentDecision.Outcome.CANNOT_ASSESS);
+        int w=0;for(AlignmentDecision.Marker m:o.markers)if(m.worthALook())w++;
         if(d>0)b.append(d).append(d==1?" defect":" defects");
-        if(n>0)b.append(b.length()>0?"  ·  ":"").append(n).append(" no defect");
+        if(n-w>0)b.append(b.length()>0?"  ·  ":"").append(n-w).append(" no defect");
+        if(w>0)b.append(b.length()>0?"  ·  ":"").append(w).append(" worth a look");
         if(c>0)b.append(b.length()>0?"  ·  ":"").append(c).append(" cannot assess");
         return b.toString();
     }
@@ -132,6 +134,7 @@ final class AlignmentAnalysis {
         if(o.photoReason!=null)return "Cannot assess this photo";
         if(d>0)return d==1?"1 marker: defect detected":d+" markers: defect detected";
         if(n==0)return "Cannot assess";
+        for(AlignmentDecision.Marker m:o.markers)if(m.worthALook())return "No defect confirmed";
         return "No defect detected";
     }
 
@@ -153,8 +156,9 @@ final class AlignmentAnalysis {
             if(f.rotationOk)s.append(String.format(java.util.Locale.US,"\n  rotation %+.2f° ± %.2f (genuine nominal %+.2f)",f.rotationDeg,f.seRotationDeg,h==null?Double.NaN:h.rotationDeg));
             if(Double.isFinite(f.growthR))s.append(String.format(java.util.Locale.US,"\n  edge offset g %+.3f%%R (%s)",100*f.growthR,f.growthFree?"measured":"assumed"));
             MetalAlignment.technical(s,m);
-            for(AlignmentDecision.Issue i:allIssues(m)){if(i.metal)continue;s.append(String.format(java.util.Locale.US,"\n  %s: deviation %s, genuine envelope %s, photo uncertainty %s -> %s",
-                    AlignmentDecision.name(i.param),fmt(i.param,i.deviation),fmt(i.param,i.limit),fmt(i.param,i.uncertainty),i.outside()?"OUTSIDE":"within"));}
+            for(AlignmentDecision.Issue i:allIssues(m)){if(i.metal)continue;s.append(String.format(java.util.Locale.US,"\n  %s: deviation %s, genuine envelope %s, photo uncertainty %s%s -> %s",
+                    AlignmentDecision.name(i.param),fmt(i.param,i.deviation),fmt(i.param,i.limit),fmt(i.param,i.uncertainty),
+                    i.visualFloor>0?", visual floor "+fmt(i.param,i.visualFloor):"",i.outside()?"DEFECT":"within"));}
         }
         return s.toString();
     }
