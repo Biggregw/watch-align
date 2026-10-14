@@ -127,8 +127,13 @@ final class AlignmentDecision {
             m.outcome=Outcome.DEFECT;m.primary=worst;
             for(Issue i:all)if(i!=worst&&Double.isFinite(i.limit)&&i.outside())m.secondary.add(i);
             m.secondary.sort((a,b)->Double.compare(b.excessR,a.excessR));
-        }else if(m.within.isEmpty()){m.outcome=Outcome.CANNOT_ASSESS;m.reason="its position could not be compared with genuine watches";}
-        else m.outcome=Outcome.NO_DEFECT;
+        }else if(!m.notAssessed.isEmpty()){
+            m.outcome=Outcome.CANNOT_ASSESS;
+            m.reason="one or more alignment components could not be assessed: "+String.join(", ",m.notAssessed);
+        }else if(m.within.isEmpty()){
+            m.outcome=Outcome.CANNOT_ASSESS;
+            m.reason="its position could not be compared with genuine watches";
+        }else m.outcome=Outcome.NO_DEFECT;
     }
 
     /** Display only: the known luminous shape at the genuine nominal for this hour, placed by the other markers' ring. */
