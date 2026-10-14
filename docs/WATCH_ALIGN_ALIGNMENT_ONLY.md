@@ -1,11 +1,16 @@
-# Watch Align 1.5.0: alignment-only hour-marker check (14 Oct 2026)
+# Watch Align 1.5.3: alignment-only hour-marker check (14 Oct 2026)
+
+Current version 1.5.3 (versionCode 13119). The 1.5.0 description below still applies; the later sections list what
+changed in 1.5.1–1.5.3.
 
 Branch `feature/android-alignment-only-20261014`, built from Alpha107 (`outer-metal/integration-20261013` @ `5e6d565`).
-Not merged into main. Rollback: install the Alpha107 APK (run 38493791860) or check out `5e6d565`.
+Merged into `main` with 1.5.3. Rollback: install the Alpha107 APK (run 38493791860) or check out `5e6d565`.
 
 ## What the app does
 For every hour marker of the selected model (GMT-Master II 126710: triangle, 2 batons, 8 rounds; Submariner 124060:
-triangle, 3 batons, 8 rounds) the answer is **No defect**, **Defect detected** or **Cannot assess**.
+triangle, 3 batons, 8 rounds) the answer is **No defect**, **Defect detected** or **Cannot assess**. From 1.5.3 a marker
+whose lume is in place but whose outer metal reads beyond every genuine watch within the photo's uncertainty is shown
+as **Worth a look** (borderline, not a confirmed defect).
 
 - The photo is treated as straight-on (owner decision). The existing frozen dial pose supplies only the centre, scale
   and orientation.
@@ -124,8 +129,8 @@ signing.
 - **Outer-metal alignment** (`MetalAlignment`) for the triangle and batons covers position and rotation only.
   - **Reuse:** it uses the existing Alpha107 measurement, genuine references and nominal offsets, with Alpha107's
     CLEAR standard.
-  - **Inconclusive readings:** a reading beyond every genuine watch but within the allowance is shown as an
-    "Inconclusive" note, not as a defect.
+  - **Borderline readings:** a reading beyond every genuine watch but within the allowance is shown as a note, not
+    as a defect (labelled "Worth a look" from 1.5.3).
   - **Wording:** results are reported as "Outer metal ...".
 - **The 12's distance from the minute track** previously had no photo-to-photo allowance. It now has one, in
   `alignment/metal_alignment.properties`.
@@ -141,11 +146,113 @@ signing.
   - **Owner's Batgirl 12:**
     - outer metal 0.685 % R towards the track, against a genuine maximum of 0.318 %;
     - excess 0.367 % R (0.99 px at its dial radius of 270 px), against an allowance of 0.371 %;
-    - result: Inconclusive, by about 0.01 px. A photo of the same watch with a dial radius of 273 px or more would
-      flag it.
+    - result: borderline ("Worth a look" from 1.5.3), by about 0.01 px. A genuinely sharper original photo of the
+      same watch (dial radius 273 px or more) would flag it; enlarging this photo adds no detail and cannot.
 - **Round markers:**
   - **Edge:** the lume edge is the steepest point of its fall; a shallower separator counts when a lit bevel follows
     it.
   - **Size check:** a fully seen round's size is checked only against a merged bevel (half a surround width). Its
     centre does not depend on its size.
   - **Owner's genuine GMT:** all seven rounds without a hand over them are now assessed, with no defects.
+
+## 1.5.3 (14 Oct 2026, merged into main)
+
+### Round-marker visual tolerance (owner decision)
+- **Rule:** a round marker's radial or tangential position is a defect only when BOTH of these hold:
+  1. it is beyond the genuine envelope plus this photo's uncertainty (the existing genuine rule);
+  2. it is displaced from its genuine reference position by more than **1.00 % of the dial radius**
+     (`AlignmentDecision.ROUND_VISUAL_FLOOR_R`).
+- **How the thresholds combine:** the larger of the two thresholds applies; they are never added together.
+- **Why:** this is a product acceptability choice. Watch Align reports visually unacceptable misalignment, not every
+  measurable difference from genuine averages.
+- **What does not change:**
+  - triangles, batons, rotations and the outer-metal checks;
+  - the bundled genuine references (byte-identical, pinned by `RoundVisualFloorTest`);
+  - a round that cannot be measured still reads "Cannot assess".
+- **Technical details:** shows the floor next to the genuine envelope for every round component.
+
+### Borderline outer metal: "Worth a look"
+- **When it applies:** a triangle or baton whose lume is in place but whose outer metal reads beyond every genuine
+  watch, while staying within this photo's measurement uncertainty.
+- **How it is shown:**
+  - labelled **Worth a look** in amber, with a "?" badge on the dial;
+  - the detail screen states that the luminous fill is within the genuine range and the outer metal is borderline.
+- **How it is counted:** it is not counted as a defect.
+- **The note's advice:** a sharper original photo may settle it; an enlarged copy of the same photo cannot.
+
+### Close-ups
+- A thin pink dotted outline marks where the genuine luminous fill is expected. It is placed by the other markers'
+  ring plus the genuine per-hour nominal.
+- It is display only and does not affect any decision.
+
+### Owner's photos (run locally; not published)
+
+| Photo | Marker | Result |
+|---|---|---|
+| Batgirl | 7 | **No defect.** 0.89 % R, beyond the genuine GMT range but under the 1.00 % floor |
+| Batgirl | 8 | **No defect.** 0.93 % R, beyond the genuine GMT range but under the 1.00 % floor |
+| Batgirl | 12 | **Worth a look.** Outer metal 0.68 % R high against a genuine maximum of 0.32 %, still within this photo's uncertainty by about 0.01 px. Not forced to a defect. |
+| Batgirl | 9 baton | Worth a look (outer-metal rotation) |
+| Genuine GMT control | All | Every round marker free of a hand is assessed; no defects (the shallow-separator fix holds) |
+| QC 38097 | 12, 9 | Defect (outer metal) |
+| QC 38097 | 1 round | Defect (above 1.00 %) |
+| QC 38097 | 8, 10 rounds | Now under the floor |
+| Old 116710 control | Rounds | Withheld (lit bevel merged with the lume) |
+
+### Final regression
+
+Run 38581584394, on the final decision code (commit `ae9b828`) with the bundled references.
+
+| | GMT 126710 | Submariner 124060 |
+|---|---:|---:|
+| Genuine photos with a pose / watches | 67 / 39 | 133 / 76 |
+| Genuine photos with any "Defect detected" | **0** | **2** (one physical watch) |
+| False defects: triangle / baton / round | 0 / 0 / 0 | 1 / 1 / 0 |
+| Genuine rounds held by the 1.00 % floor | 0 | 2 (both on that same watch) |
+| Genuine outer metal "Worth a look" | 2 of 204 | 4 of 532 |
+| Repeat photos: same outcome in every photo | 29 of 29 pairs | 181 of 181 pairs |
+| Assessed markers using known-shape inference | 0 | 0 |
+
+**Coverage.** Genuine round markers assessed: GMT 247 of 544, Submariner 619 of 1,064. The main reasons for "Cannot
+assess" are low resolution and a hand over the marker.
+
+**The two Submariner genuine false defects.**
+- Both photos belong to one dealer listing (SwissWatchExpo 47665, watch `auto_swe_124060_053392110b92`).
+- **What was flagged:**
+  - photo `f27a64f8`: the 12 triangle, 0.46 % R right;
+  - photo `c321f617`: the 9 baton, 0.67 % R.
+- **The pattern:** the same watch's other markers also read displaced, and the genuine calibration had already marked
+  it as a far-out outlier on 12 marker readings.
+- **What the diagnostics showed:**
+  - edge noise 0.3–0.5 px;
+  - no known-shape inference;
+  - merged bevel 0–11 %.
+- **Conclusion:** the pattern is photo-wide, consistent with dealer retouching or a photo that is not straight-on. It
+  does not point to one marker's code path.
+- **Not reproduced or fixed:** the originals could not be fetched outside CI, so no implementation bug was
+  demonstrated, and none was fixed.
+- **Recorded as a known limitation.** The references were not altered to hide these flags.
+
+**Public QC controls** (reviewer labels are not alignment ground truth):
+
+| QC case | Result |
+|---|---|
+| GMT "crooked 6" (rejected) | 6 baton defect "too high"; 9 and 12 also flagged |
+| GMT "accepted", photo 1 | The 8 round is now held by the floor. The 12's outer metal reads Defect "too high" under the 1.5.2 allowance (k = 2). |
+| GMT "accepted", photo 2 | No defects |
+| GMT "accepted", photo 3 | Too low resolution |
+| Sub "rejected 12" | 12 outer metal Defect "too high" (identified) |
+| Sub "accepted" | Photos 1 and 5 both report the 12 (lume left and outer metal high); the 11 round is now held by the floor |
+| Sub "control" | The four round flags of earlier runs are now all under the floor; no defects |
+
+### Known limitations (unchanged unless stated)
+- **The photo must be straight-on.** Photos that are not, or are heavily retouched, can shift several markers together
+  and cause false defects, as with the one Submariner dealer listing above.
+- **A borderline outer-metal 12 depends on resolution.** It turns into a defect only when a sharper original photo
+  separates it from the uncertainty.
+- **Coverage is limited:**
+  - dials under 400 px across are withheld;
+  - a hand anywhere on a marker withholds it;
+  - known-shape inference is implemented and unit-tested but was not used by any assessed genuine marker.
+- **Signing:** builds use a throwaway debug key (no shared signing-key secret in the repository). Uninstall any
+  earlier Watch Align before installing.
