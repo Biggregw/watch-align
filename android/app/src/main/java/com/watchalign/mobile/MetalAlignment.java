@@ -45,14 +45,16 @@ final class MetalAlignment {
      *  inconclusive readings; a CLEAR metal component makes the marker "Defect detected". */
     static void apply(AlignmentAnalysis.Output o,Alpha99Findings.Summary s,Alpha94MarkerMeasurement.Report r,ModelSpec model,
                       ModelReference ref,Map<String,Double> extra){
-        if(o==null||s==null||r==null||ref==null||o.photoReason!=null)return;
+        if(o==null||o.photoReason!=null)return;
+        // triangles and batons need BOTH their luminous and outer-metal alignment for an unqualified "No defect"
+        if(s==null||r==null||model==null||ref==null){notAssessed(o,"the outer-metal comparison could not be run");return;}
         double R=r.dialRadiusPx;
         for(AlignmentDecision.Marker m:o.markers){
             if(m.shape==ModelSpec.Shape.ROUND)continue;
             Alpha99Findings.Finding f=null;
             for(Alpha99Findings.Finding x:s.all)if(!x.dialWide&&x.hour==m.hour&&(x.shape==Alpha99Findings.Shape.TRIANGLE||x.shape==Alpha99Findings.Shape.BATON))f=x;
-            if(f==null)continue;
-            if(f.status==Alpha99Findings.Status.NOT_ASSESSED){m.metalNotes.add("Outer metal not assessed: "+f.reason+".");settle(m);continue;}
+            if(f==null){notAssessed(m,"no outer-metal measurement was produced for this marker");continue;}
+            if(f.status==Alpha99Findings.Status.NOT_ASSESSED){notAssessed(m,f.reason);continue;}
             ModelSpec.Marker spec=model.atHour(m.hour);
             double lever=0.5*Math.max(spec.outerEdgeR()-spec.innerR(),2*spec.halfWidth());
             double[] er=LuminousAlignment.radial(m.hour),et=LuminousAlignment.tangential(m.hour);
@@ -93,10 +95,29 @@ final class MetalAlignment {
                 if(st==Alpha99Findings.Status.CLEAR)m.metal.add(i);
                 else if(st==Alpha99Findings.Status.WORTH){
                     m.metalBorderline=true;
-                    m.metalNotes.add(String.format(Locale.US,"Worth a look (not confirmed): the outer metal reads %s, beyond every genuine watch measured (%s; genuine up to %s), but the difference is within this photo's measurement uncertainty. A sharper original photo may settle it; an enlarged copy of this photo cannot.",
+                    m.metalNotes.add(String.format(Locale.US,"Worth a look (not confirmed): the outer metal reads %s, beyond every genuine watch measured (%s; genuine up to %s), but the difference is within this photo's measurement uncertainty. A sharper original photo may settle it. Do not enlarge this photo to try: enlarging adds no detail, and this check cannot yet tell an enlarged photo from a sharper one.",
                             words(i),fmt(x.value,x.unit,R),fmt(x.genuineMax,x.unit,R)));}
             }
             settle(m);
+        }
+    }
+
+    /** The outer-metal check could not run for any triangle or baton of this photo. */
+    static void notAssessed(AlignmentAnalysis.Output o,String reason){
+        if(o==null||o.photoReason!=null)return;
+        for(AlignmentDecision.Marker m:o.markers)if(m.shape!=ModelSpec.Shape.ROUND)notAssessed(m,reason);
+    }
+
+    /** A triangle or baton whose outer metal could not be measured is never an unqualified "No defect" (a misplaced
+     *  surround can sit around a correctly placed lume). A confirmed luminous defect stands; a marker the luminous check
+     *  already withheld keeps its own reason. Reported as Cannot assess, with the luminous result stated. */
+    static void notAssessed(AlignmentDecision.Marker m,String reason){
+        String why=reason==null||reason.trim().isEmpty()?"its edge was not measurable":reason.trim();
+        if(why.endsWith("."))why=why.substring(0,why.length()-1);
+        m.metalNotes.add("Outer metal not assessed: "+why+".");
+        if(m.outcome==AlignmentDecision.Outcome.NO_DEFECT){
+            m.outcome=AlignmentDecision.Outcome.CANNOT_ASSESS;
+            m.reason="its outer metal could not be measured ("+why+"); its luminous fill is within the genuine range";
         }
     }
 
@@ -110,6 +131,8 @@ final class MetalAlignment {
         m.reason="";
     }
 
+    /** Note: the pixel term falls as the dial radius in pixels grows. It assumes those pixels carry real detail; an
+     *  enlarged (resampled) photo is not detected and would be judged as a sharper one (known limitation, documented). */
     static double sigmaRadial(Map<String,Double> extra,double R){
         if(extra==null)return Double.NaN;
         Double a=extra.get("twelve_radial.R"),b=extra.get("twelve_radial.px");

@@ -96,7 +96,7 @@ public class AlignmentResultsActivity extends Activity {
     }
 
     static final String DISCLAIMER="Watch Align checks the alignment of each hour marker against verified genuine Rolex watches. It is not an authenticity check or a buying recommendation.";
-    static final String NOTE="Each marker's luminous shape is fitted by position and rotation only and compared with the range measured on verified genuine watches of this model, allowing for this photo's measurement uncertainty. A marker's genuine reference is placed by the other markers, never by the marker itself. Round markers are reported only when also displaced by more than 1.00% of the dial radius. The outer metal of the triangle and batons is checked separately. The photo is treated as taken straight on.";
+    static final String NOTE="Each marker's luminous shape is fitted by position and rotation only and compared with the range measured on verified genuine watches of this model, allowing for this photo's measurement uncertainty. A marker's genuine luminous reference is placed by the other markers, never by the marker itself (the separate outer-metal check uses the established Alpha107 ring, which includes the marker, as its genuine references do). Round markers are reported only when also displaced by more than 1.00% of the dial radius. The outer metal of the triangle and batons is checked separately. The photo is treated as taken straight on.";
 
     private View defectCard(AlignmentDecision.Marker m){
         LinearLayout t=new LinearLayout(this);t.setOrientation(LinearLayout.VERTICAL);t.setBackgroundColor(CARD);t.setPadding(dp(10),dp(10),dp(10),dp(12));

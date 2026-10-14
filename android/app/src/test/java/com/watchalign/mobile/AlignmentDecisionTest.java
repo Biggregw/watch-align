@@ -74,7 +74,7 @@ public class AlignmentDecisionTest {
     @Test public void anUndeterminedComponentIsNamedNotPassed(){
         LuminousAlignment.Result f=fit(6,ModelSpec.Shape.BATON,0,0,0,0.0005);f.radialOk=false;f.radialR=Double.NaN;
         AlignmentDecision.Marker m=decide(f,ref());
-        assertEquals(AlignmentDecision.Outcome.NO_DEFECT,m.outcome);
+        assertEquals("a partial measurement is never an unqualified pass",AlignmentDecision.Outcome.CANNOT_ASSESS,m.outcome);
         assertTrue(AlignmentDecision.summary(m).contains("distance from the centre"));
     }
 
