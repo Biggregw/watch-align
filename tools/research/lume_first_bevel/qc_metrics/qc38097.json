@@ -1,0 +1,121 @@
+{
+ "id": "qc38097_user_private_photo",
+ "metrics": {
+  "R": 303.0153,
+  "merged": false,
+  "fail": null,
+  "tangential_px": -0.6411810262897168,
+  "radial_px": 2.845234516815051,
+  "growth_px": 1.949937255277957,
+  "rotation_deg": -0.9542053902629025,
+  "sides": {
+   "top": {
+    "state": "observed",
+    "cover": 1.0,
+    "offset_px": 4.7949685710274075,
+    "angle_deg": 0.7501631114890547,
+    "shape_angle_deg": 0.2040422787738433,
+    "thickness_px": 5.72567879955593
+   },
+   "left": {
+    "state": "observed",
+    "cover": 1.0,
+    "offset_px": 1.491480278916947,
+    "angle_deg": -1.0948642515480589,
+    "shape_angle_deg": -0.14065886128515526,
+    "thickness_px": 4.490293281294217
+   },
+   "right": {
+    "state": "observed",
+    "cover": 0.7704918032786885,
+    "offset_px": 0.2988324480389043,
+    "angle_deg": 1.0175888077515973,
+    "shape_angle_deg": -0.06338341748868837,
+    "thickness_px": 4.417608307802837
+   }
+  },
+  "holdout": [
+   {
+    "src": "top",
+    "dst": "left",
+    "n": 61,
+    "median_px": -1.1965759866778938,
+    "mad_px": 1.1965759866778938
+   },
+   {
+    "src": "top",
+    "dst": "right",
+    "n": 47,
+    "median_px": -1.5921596567662062,
+    "mad_px": 1.5921596567662062
+   },
+   {
+    "src": "left",
+    "dst": "top",
+    "n": 61,
+    "median_px": 1.1780566080163966,
+    "mad_px": 1.1780566080163966
+   },
+   {
+    "src": "left",
+    "dst": "right",
+    "n": 47,
+    "median_px": -0.3567741385044972,
+    "mad_px": 0.3567741385044972
+   },
+   {
+    "src": "right",
+    "dst": "top",
+    "n": 61,
+    "median_px": 1.250741581507774,
+    "mad_px": 1.250741581507774
+   },
+   {
+    "src": "right",
+    "dst": "left",
+    "n": 61,
+    "median_px": 0.11149450507520123,
+    "mad_px": 0.11873834212801666
+   }
+  ],
+  "sens": {
+   "n": 32,
+   "merged": 0,
+   "tangential_px": [
+    -0.6429939423914555,
+    -0.6408391588004195
+   ],
+   "radial_px": [
+    2.84523079946367,
+    3.830522944182973
+   ],
+   "growth_px": [
+    1.9461282050906346,
+    2.3146694673272337
+   ],
+   "rotation_deg": [
+    -1.0418037382535112,
+    -0.9541294038185137
+   ]
+  },
+  "app": {
+   "centreline": {
+    "value": 1.079273,
+    "status": "WORTH"
+   },
+   "sides": {
+    "value": 1.052251,
+    "status": "WORTH"
+   },
+   "lateral": {
+    "value": 0.003363,
+    "status": "MINOR"
+   },
+   "track": {
+    "value": 0.009398,
+    "status": "WORTH"
+   }
+  },
+  "app_status": "WORTH"
+ }
+}

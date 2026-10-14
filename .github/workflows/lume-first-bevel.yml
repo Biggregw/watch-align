@@ -1,0 +1,70 @@
+# RESEARCH ONLY (lume-first outer-metal reconstruction of the 12 o'clock triangle). Verified genuine 126710-family
+# photos from the existing sha256 catalogue, the UNCHANGED Alpha107 pipeline for pose/reference (TriangleLumeExport),
+# then tools/research/lume_first_bevel. No app change, no APK. Images go to this log only.
+name: Lume-first bevel research
+on:
+  push:
+    branches: [research/lume-first-bevel-20261014]
+    paths: ['.github/workflows/lume-first-bevel.yml', 'tools/research/lume_first_bevel/**', 'tools/desktop-harness/drivers/TriangleLumeExport.java']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  genuine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests numpy opencv-python-headless pillow==12.3.0
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Verified genuine 126710-family photos (existing catalogue, sha256-checked)
+        run: |
+          mkdir -p g
+          python3 - <<'PY'
+          import csv
+          rows = [r for r in csv.DictReader(open('tools/research/alpha96_calibration/catalogue_provenance_strong.csv'))
+                  if r.get('class_label', 'gen') == 'gen' and r['model'].startswith('126710')]
+          w = csv.DictWriter(open('g/manifest.csv', 'w', newline=''), fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+          print('126710 genuine photos', len(rows), 'watches', len({r['physical_watch_id'] for r in rows}))
+          PY
+          python3 tools/research/alpha96_calibration/fetch_verified.py g/manifest.csv g/img g/fetch_log.csv | tail -3
+      - name: Export (unchanged pipeline) and reconstruct
+        env: {JAVA_TOOL_OPTIONS: -Dwatchalign.model=gmt_126710}
+        run: |
+          mkdir -p ex res
+          first=$(python3 -c "import csv;print(next(r['local_path'] for r in csv.DictReader(open('g/manifest.csv'))))")
+          tools/desktop-harness/run.sh TriangleLumeExport "g/img/$first" ex warmup 2>/dev/null | grep -v Picked || true
+          CP=tools/desktop-harness/.cache/opencv-4.9.0-0.jar:tools/desktop-harness/.cache/classes
+          python3 -c "import csv;[print(r['photo_id'],r['local_path']) for r in csv.DictReader(open('g/manifest.csv'))]" | while read id path; do
+            [ -f "g/img/$path" ] || continue
+            java -Xmx1g -cp $CP com.watchalign.mobile.TriangleLumeExport "g/img/$path" ex "$id" 2>/dev/null | grep -v Picked
+            [ -f "ex/${id}_export.json" ] && python3 tools/research/lume_first_bevel/lume_first_compare.py ex "$id" res --original "g/img/$path" > "res/${id}.txt" 2>&1 || true
+          done
+          ls res/*_result.json | wc -l
+      - name: Per-photo lines (selected)
+        run: for id in 3cf5442ab9c87b9c a5431af6379b78a5 22075296f80ce8ce 49ba843c0a7e19d7 cae9ed4ca889fc44; do [ -f res/$id.txt ] && cat res/$id.txt; done
+      - uses: actions/upload-artifact@v4
+        with: {name: lume-first-genuine-126710, path: 'res/*.json', retention-days: 30}
+      - name: Images (JPEG, base64, log only)
+        run: |
+          python3 - <<'PY'
+          import base64, io
+          from pathlib import Path
+          from PIL import Image
+          n = 0
+          for pid in ('3cf5442ab9c87b9c', 'a5431af6379b78a5', '22075296f80ce8ce', '49ba843c0a7e19d7', 'cae9ed4ca889fc44'):
+              for kind in ('compare', 'vs_app', 'zoom', 'original_overlay'):
+                  f = Path('res') / f'{pid}_{kind}.png'
+                  if not f.exists(): continue
+                  im = Image.open(f).convert('RGB')
+                  if im.width > 1100: im = im.resize((1100, round(im.height * 1100 / im.width)))
+                  b = io.BytesIO(); im.save(b, 'JPEG', quality=85); n += 1
+                  print(f'BEGIN_IMG {pid}_{kind}.jpg'); print(base64.b64encode(b.getvalue()).decode()); print('END_IMG')
+          print('IMAGES', n)
+          PY
+      - name: Genuine summary vs QC (summary last)
+        run: python3 tools/research/lume_first_bevel/genuine_summary.py res g/manifest.csv tools/research/lume_first_bevel/qc_metrics/qc38097.json
