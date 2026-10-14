@@ -10,6 +10,7 @@ on:
 permissions: {contents: read}
 jobs:
   genuine:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -68,3 +69,22 @@ jobs:
           PY
       - name: Genuine summary vs QC (summary last)
         run: python3 tools/research/lume_first_bevel/genuine_summary.py res g/manifest.csv tools/research/lume_first_bevel/qc_metrics/qc38097.json
+  summary-only:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions: {contents: read, actions: read}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q numpy
+      - uses: actions/download-artifact@v4
+        with: {name: lume-first-genuine-126710, path: res, run-id: 38534404729, github-token: '${{ secrets.GITHUB_TOKEN }}'}
+      - run: |
+          python3 - <<'PY'
+          import csv
+          rows = [r for r in csv.DictReader(open('tools/research/alpha96_calibration/catalogue_provenance_strong.csv'))
+                  if r.get('class_label', 'gen') == 'gen' and r['model'].startswith('126710')]
+          w = csv.DictWriter(open('manifest.csv', 'w', newline=''), fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+          PY
+          python3 tools/research/lume_first_bevel/genuine_summary.py res manifest.csv tools/research/lume_first_bevel/qc_metrics/qc38097.json

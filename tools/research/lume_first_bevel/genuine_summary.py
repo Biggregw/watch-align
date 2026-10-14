@@ -19,6 +19,8 @@ print(f'== GENUINE 126710 lume-first results: {len(M)} photos with a pose, {len(
 
 def pr(m, key): return m[key] / m['R'] * 100 if m.get(key) == m.get(key) and m.get(key) is not None else np.nan   # % of R
 ok = {p: m for p, m in M.items() if not m.get('fail') and not m.get('merged') and m['rotation_deg'] == m['rotation_deg']}
+strict = {p: m for p, m in ok.items() if m['sens'].get('merged', 0) == 0}
+print(f'   of those, luminous fill never merged in any sensitivity variant: {len(strict)} photos')
 print(f'   complete three-side comparison: {len(ok)} photos; luminous fill merged with metal: {sum(m.get("merged", False) for m in M.values())}; '
       f'no comparison: {len(M) - len(ok)}')
 for side in ('top', 'left', 'right'):
@@ -49,8 +51,16 @@ for name, fn in rows:
 
 print('\n== REPEAT PHOTOS of the same physical watch (spread = max - min across its photos)')
 for name, fn in rows[:4]:
-    sp = [np.ptp([fn(m) for m in ms]) for ms in by.values() if len(ms) > 1]
+    sp = []
+    for ms in by.values():
+        x = [fn(m) for m in ms]; x = [y for y in x if y == y]
+        if len(x) > 1: sp.append(np.ptp(x))
     if sp: print(f'   {name:36} watches {len(sp):3}  median spread {np.median(sp):.3f}  max {np.max(sp):.3f}')
+print('   per repeat watch (photo: R px, rotation deg, tangential %R, radial %R):')
+for w, ms in by.items():
+    if len(ms) > 1:
+        ids = [p for p in ok if watch[p] == w]
+        print(f'     {w}: ' + '; '.join(f"{p[:6]} R{ok[p]['R']:.0f} {ok[p]['rotation_deg']:+.2f} {pr(ok[p],'tangential_px'):+.3f} {pr(ok[p],'radial_px'):+.3f}" for p in ids))
 
 print('\n== HOLD-OUT: thickness from one side predicting another side\'s observed outer edge (median |error| in %R, per photo)')
 ho = defaultdict(list)
