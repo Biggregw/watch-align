@@ -31,6 +31,8 @@ final class AlignmentReference {
     final String model;final String provenance;
     final Map<String,ShapeRef> shapes=new HashMap<>();
     final Map<Integer,HourRef> hours=new HashMap<>();
+    /** outer-metal alignment allowances that Alpha107's reference lacks (MetalAlignment.FILE); null when absent */
+    Map<String,Double> metalExtra;
 
     AlignmentReference(String model,String provenance){this.model=model;this.provenance=provenance;}
 
@@ -39,7 +41,10 @@ final class AlignmentReference {
 
     /** null when the model has no luminous alignment reference (every marker then cannot be assessed). */
     static AlignmentReference load(ModelSpec.Assets assets,ModelSpec model){
-        try{return parse(ModelSpec.read(assets,model.dir+"/"+FILE));}catch(IOException|RuntimeException e){return null;}
+        AlignmentReference r;
+        try{r=parse(ModelSpec.read(assets,model.dir+"/"+FILE));}catch(IOException|RuntimeException e){return null;}
+        r.metalExtra=MetalAlignment.load(assets,model);
+        return r;
     }
 
     @SuppressWarnings("unchecked")

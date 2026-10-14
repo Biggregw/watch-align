@@ -32,7 +32,9 @@ public class AlignmentCalib {
         if(mode.equals("fit")){Map<String,double[]> su=setups(Files.readString(Path.of(a[4])));
             setups=s->{double[] v=su.get(AlignmentReference.key(s));if(v==null)return null;
                 LuminousAlignment.Setup x=new LuminousAlignment.Setup(v[0],0.003);x.fixedGrowthR=v[1];x.growthNominalR=v[2];x.rejectOutward=v[3]>0;return x;};}
-        else{ref=AlignmentReference.parse(Files.readString(Path.of(a[4])));setups=ref::setup;}
+        else{ref=AlignmentReference.parse(Files.readString(Path.of(a[4])));setups=ref::setup;
+            Path metalFile=Path.of(a[4]).resolveSibling("metal_alignment.properties");
+            if(Files.exists(metalFile))ref.metalExtra=MetalAlignment.parse(Files.readString(metalFile));}
         Path renderDir=a.length>5?Path.of(a[5]):null;
         Set<String> render=new HashSet<>();if(a.length>6)for(String x:a[6].split(","))render.add(x.trim());
         if(renderDir!=null)Files.createDirectories(renderDir);
@@ -40,14 +42,14 @@ public class AlignmentCalib {
         try(PrintWriter w=new PrintWriter(Files.newBufferedWriter(out))){
             w.println("photo_id,physical_watch_id,model,hour,shape,dial_r_px,outcome,reason,radial_R,tangential_R,rotation_deg,se_radial_R,se_tangential_R,se_rotation_deg,"
                     +"radial_ok,tangential_ok,rotation_ok,growth_R,growth_free,se_growth_R,photo_growth_R,photo_growth_diff_R,merged_share,inferred,noise_px,samples,"
-                    +"lume,dial,round_cover,primary,primary_excess_R,secondary,fit_assessed,half_len_R,check");
+                    +"lume,dial,round_cover,primary,primary_excess_R,secondary,fit_assessed,half_len_R,check,metal");
             for(Map<String,String> r:rows){
                 String id=r.get("photo_id");Path img=root.resolve(r.get("local_path"));
                 if(!Files.exists(img)){System.out.println("SKIP "+id+" (no image)");continue;}
                 Bitmap b=Alpha96Calib.loadAlpha96(img.toString());
                 Alpha99Pipeline.Output o;
                 try{o=b==null?null:Alpha99Pipeline.run(b,model,metal,ref,setups);}catch(Throwable t){o=null;}
-                if(o==null||!o.ok()||o.alignment==null){System.out.println("NOPOSE "+id);w.println(id+","+r.getOrDefault("physical_watch_id","")+","+model.id+",,,,NOPOSE,,,,,,,,,,,,,,,,,,,,,,,,,,,,");continue;}
+                if(o==null||!o.ok()||o.alignment==null){System.out.println("NOPOSE "+id);w.println(id+","+r.getOrDefault("physical_watch_id","")+","+model.id+",,,,NOPOSE,,,,,,,,,,,,,,,,,,,,,,,,,,,,,");continue;}
                 int d=0,n=0,c=0;
                 for(AlignmentDecision.Marker m:o.alignment.markers){
                     LuminousAlignment.Result f=m.fit;
@@ -64,7 +66,8 @@ public class AlignmentCalib {
                             f(f==null?Double.NaN:f.roundCover),
                             m.primary==null?"":m.primary.param.name()+":"+m.primary.headline().replace(",",";"),m.primary==null?"":f(m.primary.excessR),
                             secondary(m),b(f!=null&&f.assessed),f(f==null?Double.NaN:f.halfLengthR()),
-                            o.checks==null||o.checks.get(m.hour)==null?"unchecked":o.checks.get(m.hour).clean?"clean":o.checks.get(m.hour).reason.replace(",",";")));
+                            o.checks==null||o.checks.get(m.hour)==null?"unchecked":o.checks.get(m.hour).clean?"clean":o.checks.get(m.hour).reason.replace(",",";"),
+                            metal(m)));
                     if(renderDir!=null&&(render.contains(id)||render.contains("ALL"))&&o.alignmentCloseups.containsKey(m.hour))
                         javax.imageio.ImageIO.write(o.alignmentCloseups.get(m.hour).img,"png",renderDir.resolve(id+"_"+m.hour+".png").toFile());
                 }
@@ -77,6 +80,10 @@ public class AlignmentCalib {
             }
         }
     }
+    static String metal(AlignmentDecision.Marker m){StringBuilder s=new StringBuilder();
+        for(AlignmentDecision.Issue i:m.metal)s.append(s.length()==0?"":"|").append("CLEAR ").append(i.headline());
+        for(String n:m.metalNotes)s.append(s.length()==0?"":"|").append(n.length()>90?n.substring(0,90):n);
+        return s.toString().replace(",",";");}
     static String secondary(AlignmentDecision.Marker m){StringBuilder s=new StringBuilder();for(AlignmentDecision.Issue i:m.secondary)s.append(s.length()==0?"":"|").append(i.param.name());return s.toString();}
     static String f(double v){return Double.isFinite(v)?String.format(Locale.US,"%.6g",v):"";}
     static String b(boolean v){return v?"1":"0";}

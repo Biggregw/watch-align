@@ -78,7 +78,7 @@ final class AlignmentAnalysis {
             if(m.fit.assessed&&m.fit.growthFree){
                 double d=(m.fit.growthR-setup.growthNominalR)-g[0];
                 m.fit.photoGrowthDiffR=d;
-                if(Double.isFinite(setup.photoGrowthLimitR)&&Math.abs(d)>setup.photoGrowthLimitR+2*m.fit.seGrowthR){
+                if(Double.isFinite(setup.photoGrowthLimitR)&&Math.abs(d)>LuminousAlignment.sizeLimit(m.fit,setup.photoGrowthLimitR)+2*m.fit.seGrowthR){
                     m.fit.assessed=false;
                     m.fit.reason=String.format(java.util.Locale.US,"its detected luminous edge sits %.1f px %s than on the other markers in this photo (a bright bevel or glare)",
                             Math.abs(d)*m.fit.rpx,d>0?"further out":"further in");
@@ -143,7 +143,7 @@ final class AlignmentAnalysis {
             s.append(String.format(java.util.Locale.US,"\n%s (%s): %s",m.title(),AlignmentReference.key(m.shape),m.label()));
             LuminousAlignment.Result f=m.fit;
             if(m.outcome==AlignmentDecision.Outcome.CANNOT_ASSESS)s.append(" - ").append(m.reason);
-            if(f==null)continue;
+            if(f==null){MetalAlignment.technical(s,m);continue;}
             s.append(String.format(java.util.Locale.US,"\n  lume %.0f / dial %.0f · %d edge samples · edge noise %.2f px%s",f.lume,f.dial,f.samples,f.noisePx,f.inferred?" · known-size inference":""));
             if(f.shape==ModelSpec.Shape.ROUND)s.append(String.format(java.util.Locale.US," · outline seen %.0f%%",100*f.roundCover));
             else{StringBuilder sd=new StringBuilder();for(LuminousAlignment.Side x:f.sides)sd.append(sd.length()==0?"":"/").append(x.observed?String.format(java.util.Locale.US,"%.0f%%",100*x.cover()):"-");s.append(" · sides seen ").append(sd);}
@@ -152,8 +152,9 @@ final class AlignmentAnalysis {
             if(f.tangentialOk)s.append(String.format(java.util.Locale.US,"\n  tangential %+.3f%%R ± %.3f (genuine nominal %+.3f)",100*f.tangentialR,100*f.seTangentialR,h==null?Double.NaN:100*h.tangentialR));
             if(f.rotationOk)s.append(String.format(java.util.Locale.US,"\n  rotation %+.2f° ± %.2f (genuine nominal %+.2f)",f.rotationDeg,f.seRotationDeg,h==null?Double.NaN:h.rotationDeg));
             if(Double.isFinite(f.growthR))s.append(String.format(java.util.Locale.US,"\n  edge offset g %+.3f%%R (%s)",100*f.growthR,f.growthFree?"measured":"assumed"));
-            for(AlignmentDecision.Issue i:allIssues(m))s.append(String.format(java.util.Locale.US,"\n  %s: deviation %s, genuine envelope %s, photo uncertainty %s -> %s",
-                    AlignmentDecision.name(i.param),fmt(i.param,i.deviation),fmt(i.param,i.limit),fmt(i.param,i.uncertainty),i.outside()?"OUTSIDE":"within"));
+            MetalAlignment.technical(s,m);
+            for(AlignmentDecision.Issue i:allIssues(m)){if(i.metal)continue;s.append(String.format(java.util.Locale.US,"\n  %s: deviation %s, genuine envelope %s, photo uncertainty %s -> %s",
+                    AlignmentDecision.name(i.param),fmt(i.param,i.deviation),fmt(i.param,i.limit),fmt(i.param,i.uncertainty),i.outside()?"OUTSIDE":"within"));}
         }
         return s.toString();
     }

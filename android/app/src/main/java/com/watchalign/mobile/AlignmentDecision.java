@@ -35,20 +35,25 @@ final class AlignmentDecision {
         double uncertainty;   // 2 SE / resolution floor (same unit)
         double excessR;       // visible excess beyond envelope + uncertainty, R
         double rpx;double[] screen;   // unit screen direction of a positional deviation
+        /** the outer metal surround (MetalAlignment), not the luminous fill */
+        boolean metal;
         boolean outside(){return excessR>0;}
         String headline(){
-            if(param==LuminousAlignment.Param.ROTATION)return deviation>0?"Rotated clockwise":"Rotated anticlockwise";
+            String who=metal?"Outer metal ":"";
+            if(param==LuminousAlignment.Param.ROTATION)return (metal?who+"rotated ":"Rotated ")+(deviation>0?"clockwise":"anticlockwise");
             String w=words(screen);
-            return "Positioned too "+w;
+            return (metal?who+"positioned":"Positioned")+" too "+w;
         }
         String measured(){
+            String what=metal?"outer-metal ":"";
             if(param==LuminousAlignment.Param.ROTATION)
-                return String.format(Locale.US,"Measured rotation: %.1f° %s from the genuine position.",Math.abs(deviation),deviation>0?"clockwise":"anticlockwise");
-            return String.format(Locale.US,"Measured shift: %.2f%% of the dial radius (about %.1f px in this photo).",100*Math.abs(deviation),Math.abs(deviation)*rpx);
+                return String.format(Locale.US,"Measured %srotation: %.1f° %s from the genuine position.",what,Math.abs(deviation),deviation>0?"clockwise":"anticlockwise");
+            return String.format(Locale.US,"Measured %sshift: %.2f%% of the dial radius (about %.1f px in this photo).",what,100*Math.abs(deviation),Math.abs(deviation)*rpx);
         }
         String genuine(){
-            if(param==LuminousAlignment.Param.ROTATION)return String.format(Locale.US,"Genuine Rolex range: up to %.1f° either way.",limit);
-            return String.format(Locale.US,"Genuine Rolex range: up to %.2f%% of the dial radius (about %.1f px here).",100*limit,limit*rpx);
+            String what=metal?" (outer metal)":"";
+            if(param==LuminousAlignment.Param.ROTATION)return String.format(Locale.US,"Genuine Rolex range%s: up to %.1f° either way.",what,limit);
+            return String.format(Locale.US,"Genuine Rolex range%s: up to %.2f%% of the dial radius (about %.1f px here).",what,100*limit,limit*rpx);
         }
     }
 
@@ -62,6 +67,8 @@ final class AlignmentDecision {
         /** yellow outer-metal reference (ring of the other markers), canonical */
         double[][] yellow;
         double bevelR=Double.NaN,photoGrowthR=Double.NaN;
+        /** outer-metal alignment (triangle, batons): clear deviations, and plain notes (inconclusive / not assessed) */
+        final List<Issue> metal=new ArrayList<>();final List<String> metalNotes=new ArrayList<>();
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
         String title(){return hour+" o'clock";}
         String label(){return outcome==Outcome.DEFECT?"Defect detected":outcome==Outcome.NO_DEFECT?"No defect":"Cannot assess";}
@@ -125,6 +132,7 @@ final class AlignmentDecision {
     /** Short line for a list row. */
     static String summary(Marker m){
         if(m.outcome==Outcome.DEFECT)return m.primary.headline()+".";
+        if(m.outcome==Outcome.NO_DEFECT&&!m.metalNotes.isEmpty())return m.metalNotes.get(0);
         if(m.outcome==Outcome.CANNOT_ASSESS)return capital(m.reason)+".";
         return m.notAssessed.isEmpty()?null:"Not assessed: "+String.join(", ",m.notAssessed)+".";
     }

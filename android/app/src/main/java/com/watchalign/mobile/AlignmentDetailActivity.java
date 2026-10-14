@@ -52,6 +52,7 @@ public class AlignmentDetailActivity extends Activity {
                 root.addView(text(i.measured()+" "+i.genuine(),13,AlignmentResultsActivity.MUTED,false),lp(-1,-2,2));
             }
         }
+        for(String note:m.metalNotes)root.addView(text(note,14,Color.WHITE,false),lp(-1,-2,10));
         String sub=m.outcome==AlignmentDecision.Outcome.CANNOT_ASSESS?null:m.notAssessed.isEmpty()?null:"Not assessed: "+String.join(", ",m.notAssessed)+" (the visible edges do not fix it).";
         if(sub!=null)root.addView(text(sub,13,AlignmentResultsActivity.MUTED,false),lp(-1,-2,10));
         if(m.fit!=null&&m.fit.inferred&&m.outcome!=AlignmentDecision.Outcome.CANNOT_ASSESS)

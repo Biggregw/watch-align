@@ -3,10 +3,8 @@
 # Private user photos are never used here. Images are not uploaded except the public QC close-ups (artifact, 7 days)
 # and a few genuine composites printed to the log.
 name: Watch Align alignment calibration
+# Manual only: the bundled references come from run 38565452660; the owner has not authorised another calibration.
 on:
-  push:
-    branches: [feature/android-alignment-only-20261014]
-    paths: ['.github/workflows/watch-align-alignment.yml', 'tools/research/alignment_only/**']
   workflow_dispatch:
 permissions: {contents: read}
 jobs:

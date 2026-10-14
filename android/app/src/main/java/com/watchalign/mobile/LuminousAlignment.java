@@ -196,7 +196,7 @@ final class LuminousAlignment {
                 double a=2*Math.PI*k/N;double[] n={Math.cos(a),Math.sin(a)};
                 double[] q={r.refCentre[0]+r.refRadius*n[0],r.refCentre[1]+r.refRadius*n[1]};
                 s.rays++;
-                double d=firstFall(img,H,q,n,0.5*r.refRadius,REACH_R,step,r.threshold,r.lume-r.dial);
+                double d=firstFall(img,H,q,n,0.5*r.refRadius,REACH_R,step,r.threshold,r.lume-r.dial,true);
                 if(!Double.isFinite(d))continue;
                 s.found++;bins[(int)Math.floor(k*32.0/N)%32]=true;
                 s.points.add(new double[]{q[0]+d*n[0],q[1]+d*n[1]});
@@ -282,7 +282,7 @@ final class LuminousAlignment {
             r.sides.get(i).anomalyPx=worst;
         }
         // 4. a free g outside the genuine range: the edge found is not the luminous edge (bevel merge / glare)
-        if(r.growthFree&&Double.isFinite(setup.growthLimitR)&&Math.abs(r.growthR-setup.growthNominalR)>setup.growthLimitR+2*r.seGrowthR){
+        if(r.growthFree&&Double.isFinite(setup.growthLimitR)&&Math.abs(r.growthR-setup.growthNominalR)>sizeLimit(r,setup.growthLimitR)+2*r.seGrowthR){
             r.reason=String.format(java.util.Locale.US,"its detected luminous edge does not match the marker's known shape (%+.2f%% of the dial radius: bright bevel or glare)",100*(r.growthR-setup.growthNominalR));
             return r;
         }
@@ -302,6 +302,20 @@ final class LuminousAlignment {
     }
 
     /**
+     * The size-consistency limit applied to a fitted marker. A round marker whose outline is seen all round (free-size
+     * fit) has a centre that does not depend on its size, so its size only has to reveal what it is checked for: a lit
+     * bevel merged with the lume, which grows the radius by about a whole surround width. Genuine lume discs differ by
+     * ~1-1.5 px between markers of one sharp photo (genuine GMT, owner's test photo 14 Oct 2026), beyond the genuine
+     * photo-level limit, so for these only the established half-surround cut applies. Triangles, batons and partly seen
+     * rounds keep the genuine limit (their position depends on the size assumption).
+     */
+    static double sizeLimit(Result r,double genuineLimit){
+        if(r.shape==ModelSpec.Shape.ROUND&&r.growthFree&&Double.isFinite(r.roundCover)&&r.roundCover>=FREE_SIZE_ROUND_COVER)
+            return Math.max(genuineLimit,Alpha99Pipeline.HALF_SURROUND_R);
+        return genuineLimit;
+    }
+
+    /**
      * First supported luminous-to-dark fall along n, starting depth inside the expected edge: distance from q along n
      * (canonical, + outward). The edge is where the profile crosses half-way between the local luminous level and the
      * FIRST outward minimum, provided that minimum is a supported drop (at least 35% of the lume-dial contrast below the
@@ -311,6 +325,18 @@ final class LuminousAlignment {
      * NaN when the ray does not start in lume or no supported fall is found.
      */
     static double firstFall(Image img,double[] H,double[] q,double[] n,double depth,double reach,double step,double T,double contrast){
+        return firstFall(img,H,q,n,depth,reach,step,T,contrast,false);
+    }
+
+    /**
+     * @param steepest round markers: the edge is the steepest point of the lume's fall (sub-sample parabola on the
+     *                 gradient), which a shallow or wide dark separator does not push outward (the half-way level does:
+     *                 about 2 px on genuine round markers whose separator is faint on one side). A separator may then be
+     *                 shallower (20% of the contrast instead of 35%), but only when the profile rises again into the lit
+     *                 bevel after it (the separator signature); a bevel merged with the lume has no such dip and is still
+     *                 found at its outer edge and set aside by the known-size fit.
+     */
+    static double firstFall(Image img,double[] H,double[] q,double[] n,double depth,double reach,double step,double T,double contrast,boolean steepest){
         int N=(int)Math.floor((depth+reach)/step)+1;if(N<8)return Double.NaN;
         double[] v=new double[N];
         for(int i=0;i<N;i++){double s=-depth+i*step;double[] p=project(H,q[0]+s*n[0],q[1]+s*n[1]);v[i]=p==null?Double.NaN:img.at(p[0],p[1]);
@@ -323,10 +349,21 @@ final class LuminousAlignment {
             while(i<N&&v[i]>=lume-0.25*contrast)i++;
             if(i>=N)return Double.NaN;
             // follow it down to the first minimum (a rise of 10% of the contrast, or the end, stops it)
-            int m=i;
-            for(int j=i;j<N;j++){if(v[j]<v[m])m=j;else if(v[j]>v[m]+0.10*contrast)break;}
-            if(v[m]>lume-0.35*contrast){i=m+1;continue;}             // a shallow dip in the lume: keep looking
+            int m=i;boolean rose=false;
+            for(int j=i;j<N;j++){if(v[j]<v[m])m=j;else if(v[j]>v[m]+0.10*contrast){rose=true;break;}}
             int k0=Math.max(0,i-8);double loc=0;int c=0;for(int k=k0;k<i;k++){loc+=v[k];c++;}loc=c>0?Math.max(loc/c,v[i-1]):v[i-1];
+            boolean deep=v[m]<=lume-0.35*contrast;
+            boolean separator=steepest&&rose&&v[m]<=loc-0.20*contrast;
+            if(!deep&&!separator){i=m+1;continue;}                  // a shallow dip in the lume: keep looking
+            if(steepest){
+                int lo=Math.max(1,i-8),best=-1;double g=0;
+                for(int k=lo;k<=m&&k<N-1;k++){double d=v[k-1]-v[k+1];if(d>g){g=d;best=k;}}
+                if(best>0){
+                    double gm=best>1?v[best-2]-v[best]:g,gp=best<N-2?v[best]-v[best+2]:g,den=gm-2*g+gp;
+                    double off=Math.abs(den)>1e-9?Math.max(-0.5,Math.min(0.5,0.5*(gm-gp)/den)):0;
+                    return -depth+(best+off)*step;
+                }
+            }
             double level=0.5*(loc+v[m]);
             for(int k=m;k>0;k--)if(v[k-1]>=level&&v[k]<level){
                 double t=(v[k-1]-level)/Math.max(1e-9,v[k-1]-v[k]);
