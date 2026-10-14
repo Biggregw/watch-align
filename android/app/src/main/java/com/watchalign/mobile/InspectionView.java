@@ -9,7 +9,7 @@ import java.util.Map;
  * Plain-language presentation of the existing results (display only). It never changes a finding, a measurement or
  * a withheld state: it only decides what the simple screens say about them.
  *
- * A marker is called "Within genuine range" only when its existing finding is WITHIN and nothing about it was
+ * A marker is called "No finding" only when its existing finding is WITHIN and nothing about it was
  * withheld (no part not assessed, and its area comparison was cleared). Otherwise it is "Partly assessed".
  * Outside-genuine readings below the existing visibility guideline (MINOR) are never called within range.
  */
@@ -51,7 +51,7 @@ final class InspectionView {
             case MINOR:return "Minor difference";
             case PARTLY:return "Partly assessed";
             case NOT_ASSESSED:return "Not assessed";
-            default:return "Within genuine range";
+            default:return "No finding";
         }
     }
 
@@ -66,7 +66,7 @@ final class InspectionView {
                 String missing=f.partNotAssessed!=null?f.partNotAssessed+(q!=null&&q.trusted()?"":" and area"):"area";
                 return capital(assessed)+" within genuine range; "+missing+" not assessed.";
             }
-            case WITHIN:return marker(f)?"Position, rotation and outline within genuine range.":"Within the measured genuine range.";
+            case WITHIN:return marker(f)?"Position and rotation within genuine range. Its area is measured, not judged.":"Within the measured genuine range.";
             default:return null;
         }
     }
@@ -90,6 +90,9 @@ final class InspectionView {
         if(q!=null&&q.trusted())return String.format(Locale.US,"Area mismatch %.2f%%",q.score.mismatchPct);
         return "Area: not assessed";
     }
+
+    /** Area is descriptive evidence: no genuine tolerance has been established for it. */
+    static final String AREA_NOTE="A measured difference, not a pass or fail: no genuine tolerance for area has been established yet.";
 
     static String areaParts(MarkerMismatchResearch.Result q){
         if(q==null||!q.trusted())return null;
@@ -125,7 +128,7 @@ final class InspectionView {
         add(b,n[State.NOT_ASSESSED.ordinal()],"not assessed","not assessed");
         add(b,n[State.PARTLY.ordinal()],"partly assessed","partly assessed");
         add(b,n[State.MINOR.ordinal()],"minor","minor");
-        add(b,n[State.WITHIN.ordinal()],"within genuine range","within genuine range");
+        add(b,n[State.WITHIN.ordinal()],"no finding","no finding");
         return b.toString();
     }
 

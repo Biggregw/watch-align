@@ -57,12 +57,13 @@ final class Alpha99Pipeline {
         double[] ring=o.measurement.ring!=null&&o.measurement.ring.usable?o.measurement.ring.model:null;
         List<Alpha99Findings.Finding> tiles=o.summary.tiles();
         for(Alpha99Findings.Finding f:o.summary.all){
-            if(!f.dialWide&&model.atHour(f.hour)!=null)
+            // Only individual marker outlines are scored, each under its own hour (never a ring/date/size feature).
+            if(InspectionView.marker(f)&&model.atHour(f.hour)!=null)
                 o.mismatch.put(f.hour,MarkerMismatchResearch.score(o.measurement,model.atHour(f.hour),ref,f,o.checks==null?null:o.checks.get(f.hour)));
             if(!tiles.contains(f)&&(f.dialWide||model.atHour(f.hour)==null))continue;
             // Use the existing detector result. This is a display-only diagnostic: no rerun or changed measurement.
             Alpha94MarkerMeasurement.Marker measured=f.shape==Alpha99Findings.Shape.BATON?o.measurement.atHour(f.hour):null;
-            MarkerMismatchResearch.Result comparison=f.dialWide?null:o.mismatch.get(f.hour);
+            MarkerMismatchResearch.Result comparison=InspectionView.result(f,o.mismatch);
             Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref,measured,comparison);}catch(Throwable t){c=null;}
             if(c!=null)o.closeups.put(f.key,c);
         }

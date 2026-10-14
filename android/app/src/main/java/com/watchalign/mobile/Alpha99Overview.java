@@ -45,7 +45,9 @@ final class Alpha99Overview {
      *  withheld as a group for a photo-wide reason (e.g. round markers at too low a resolution) get none: the reason is
      *  the photo, not the marker, and the not-assessed line under the grid says so. */
     static boolean hasBadge(Alpha99Findings.Finding f){
-        return !f.dialWide&&!(f.status==Alpha99Findings.Status.NOT_ASSESSED&&f.group!=null);
+        // Every individual marker gets a badge, including markers withheld as a group (grey dash): a withheld
+        // marker must be visibly identifiable on the dial, never look as if it had passed.
+        return !f.dialWide;
     }
 
     /** Badge position in canonical units: just inside each marker (towards the centre), beside the date window, the
