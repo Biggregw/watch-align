@@ -71,11 +71,20 @@ public class AlignmentDecisionTest {
         assertFalse(m.notAssessed.contains("rotation"));
     }
 
-    @Test public void anUndeterminedComponentIsNamedNotPassed(){
+    @Test public void anUndeterminedComponentCannotBeReportedAsNoDefect(){
         LuminousAlignment.Result f=fit(6,ModelSpec.Shape.BATON,0,0,0,0.0005);f.radialOk=false;f.radialR=Double.NaN;
         AlignmentDecision.Marker m=decide(f,ref());
-        assertEquals(AlignmentDecision.Outcome.NO_DEFECT,m.outcome);
-        assertTrue(AlignmentDecision.summary(m).contains("distance from the centre"));
+        assertEquals(AlignmentDecision.Outcome.CANNOT_ASSESS,m.outcome);
+        assertEquals("Cannot assess",m.label());
+        assertTrue(m.reason.contains("distance from the centre"));
+    }
+
+    @Test public void aConfirmedComponentDefectSurvivesAnUndeterminedComponent(){
+        LuminousAlignment.Result f=fit(6,ModelSpec.Shape.BATON,0,0.02,0,0.0005);f.radialOk=false;f.radialR=Double.NaN;
+        AlignmentDecision.Marker m=decide(f,ref());
+        assertEquals(AlignmentDecision.Outcome.DEFECT,m.outcome);
+        assertEquals(LuminousAlignment.Param.TANGENTIAL,m.primary.param);
+        assertTrue(m.notAssessed.contains("distance from the centre"));
     }
 
     @Test public void anUnmeasuredMarkerCannotBeAssessed(){
