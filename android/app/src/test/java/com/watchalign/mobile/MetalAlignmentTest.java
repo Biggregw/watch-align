@@ -50,4 +50,18 @@ public class MetalAlignmentTest {
         AlignmentDecision.Marker m=new AlignmentDecision.Marker(6,ModelSpec.Shape.BATON);m.outcome=AlignmentDecision.Outcome.NO_DEFECT;
         MetalAlignment.settle(m);assertEquals(AlignmentDecision.Outcome.NO_DEFECT,m.outcome);assertNull(m.primary);
     }
+
+    @Test public void unmeasurableMetalCannotLeaveAnOtherwisePassingMarkerAsNoDefect(){
+        AlignmentDecision.Marker m=new AlignmentDecision.Marker(6,ModelSpec.Shape.BATON);m.outcome=AlignmentDecision.Outcome.NO_DEFECT;
+        MetalAlignment.notAssessed(m,"edge hidden by glare");
+        assertEquals(AlignmentDecision.Outcome.CANNOT_ASSESS,m.outcome);
+        assertTrue(m.reason.contains("edge hidden by glare"));
+    }
+
+    @Test public void aLuminousDefectRemainsConfirmedWhenMetalCannotBeAssessed(){
+        AlignmentDecision.Marker m=new AlignmentDecision.Marker(6,ModelSpec.Shape.BATON);m.outcome=AlignmentDecision.Outcome.DEFECT;
+        AlignmentDecision.Issue lume=new AlignmentDecision.Issue();lume.param=LuminousAlignment.Param.RADIAL;m.primary=lume;
+        MetalAlignment.notAssessed(m,"edge hidden by glare");
+        assertEquals(AlignmentDecision.Outcome.DEFECT,m.outcome);assertSame(lume,m.primary);
+    }
 }
