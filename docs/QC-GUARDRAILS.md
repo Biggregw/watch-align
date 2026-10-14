@@ -167,3 +167,23 @@ Do not solve uncertainty by silently widening limits, adding arbitrary tolerance
 **The app should be more willing to say "not assessed" or "worth a look" than to manufacture confidence.**
 
 Accurate restraint is part of the product.
+
+## Superseding owner requirement: alignment-only Watch Align (14 Oct 2026)
+
+The owner's BUILD_BRIEF (14 Oct 2026) supersedes section 2's four display states **for the main Watch Align screen only**:
+
+- The product scope is narrowed to **individual hour-marker alignment** (position and rotation; position only for round
+  markers), measured on the **luminous** fill and compared with **genuine luminous** alignment of the same model.
+- For an assessable marker the answer is binary: **No defect** or **Defect detected**. **Cannot assess** is kept as the
+  honest third outcome for missing or unreliable evidence (the old NOT ASSESSED).
+- "Defect detected" means the deviation from the genuine nominal exceeds the whole genuine envelope for that marker type
+  by more than the measurement uncertainty (fit error combined with genuine photo-to-photo repeatability, never below half
+  a native pixel). This is the CLEAR FINDING standard; there is no separate WORTH A LOOK tier on the main screen.
+  Borderline readings therefore show as No defect, and their exact numbers stay available under Technical details.
+- Everything else in this document still applies: genuine watches alone set the references (one value per physical
+  watch), replica/QC photos never set limits, contamination fails closed, missing references fail closed, the marker
+  judged never moves its own reference, and nothing is described as an authenticity or buying decision.
+- The earlier outer-metal Alpha107 analysis, its references, tolerances and historic reports are unchanged and remain on
+  `outer-metal/integration-20261013`; its text is still shown under Technical details for reference only.
+
+Implementation and evidence: `docs/WATCH_ALIGN_ALIGNMENT_ONLY.md`.
