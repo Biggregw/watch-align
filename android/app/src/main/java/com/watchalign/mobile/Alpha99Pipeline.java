@@ -36,13 +36,23 @@ final class Alpha99Pipeline {
         final Map<Integer,MarkerMismatchResearch.Result> mismatch=new LinkedHashMap<>();
         String technical;
         ModelSpec model;ModelReference reference;
+        /** Watch Align alignment-only results (every marker), their close-ups (hour -> image) and technical text. */
+        AlignmentAnalysis.Output alignment;
+        final Map<Integer,Bitmap> alignmentCloseups=new LinkedHashMap<>();
+        String alignmentTechnical;AlignmentReference alignmentReference;
         boolean ok(){return pose!=null&&pose.valid&&pose.homography!=null&&summary!=null;}
     }
 
     private Alpha99Pipeline(){}
 
-    static Output run(Bitmap photo,ModelSpec model,ModelReference ref){
-        Output o=new Output();o.model=model;o.reference=ref;
+    static Output run(Bitmap photo,ModelSpec model,ModelReference ref){return run(photo,model,ref,null,null);}
+
+    /**
+     * @param align the model's genuine luminous alignment reference (null: every marker "Cannot assess")
+     * @param setups fit setups; null = from align (the calibration driver passes its own)
+     */
+    static Output run(Bitmap photo,ModelSpec model,ModelReference ref,AlignmentReference align,AlignmentAnalysis.Setups setups){
+        Output o=new Output();o.model=model;o.reference=ref;o.alignmentReference=align;
         o.pose=AutomaticDialOverlay.build(photo,model);
         if(o.pose==null||!o.pose.valid||o.pose.homography==null)return o;
         double[] H=o.pose.homography;
@@ -54,6 +64,16 @@ final class Alpha99Pipeline {
         try{o.checks=Alpha99MarkerInterference.analyse(gray,H,model);}catch(Throwable t){o.checks=null;}
         try{o.partial=partialRounds(photo,H,o.measurement,o.checks,model);}catch(Throwable t){o.partial=null;}
         o.summary=Alpha99Findings.build(o.measurement,o.date,o.checks,o.partial,model,ref);
+        // Watch Align alignment-only layer: reads the frozen pose, the measured ring of the OTHER markers and the hand /
+        // glare checks; changes none of them.
+        try{
+            AlignmentAnalysis.Setups su=setups!=null?setups:align==null?s->null:align::setup;
+            o.alignment=AlignmentAnalysis.run((mk,ring)->AlignmentAnalysis.image(gray,H,mk,ring),H,o.measurement,o.checks,model,ref,align,su);
+            for(AlignmentDecision.Marker am:o.alignment.markers){
+                try{o.alignmentCloseups.put(am.hour,AlignmentCloseup.render(rgba,H,model.atHour(am.hour),am));}catch(Throwable t){/* close-up optional */}
+            }
+            o.alignmentTechnical=AlignmentAnalysis.technical(o.alignment,align);
+        }catch(Throwable t){o.alignment=null;}
         double[] ring=o.measurement.ring!=null&&o.measurement.ring.usable?o.measurement.ring.model:null;
         List<Alpha99Findings.Finding> tiles=o.summary.tiles();
         for(Alpha99Findings.Finding f:o.summary.all){

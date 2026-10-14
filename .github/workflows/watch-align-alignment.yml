@@ -1,0 +1,134 @@
+# Watch Align alignment-only: genuine luminous reference + ONE bounded validation per supported model.
+# Genuine: sha256-verified catalogue photos only (fetch_verified). QC: the sha256-verified public Reddit controls.
+# Private user photos are never used here. Images are not uploaded except the public QC close-ups (artifact, 7 days)
+# and a few genuine composites printed to the log.
+name: Watch Align alignment calibration
+on:
+  push:
+    branches: [feature/android-alignment-only-20261014]
+    paths: ['.github/workflows/watch-align-alignment.yml', 'tools/research/alignment_only/**']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {model: gmt_126710, catalogue: tools/research/alpha96_calibration/catalogue_provenance_strong.csv, prefix: '126710'}
+          - {model: submariner_124060, catalogue: tools/research/sub124060/catalogue_124060.csv, prefix: '124060'}
+    env: {JAVA_TOOL_OPTIONS: '-Dwatchalign.model=${{ matrix.model }}'}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests numpy pillow==12.3.0
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Verified genuine photos (sha256-checked catalogue)
+        run: |
+          mkdir -p g out
+          python3 - <<'PY'
+          import csv
+          rows = [r for r in csv.DictReader(open('${{ matrix.catalogue }}'))
+                  if r.get('class_label', 'gen') == 'gen' and r['model'].startswith('${{ matrix.prefix }}')]
+          w = csv.DictWriter(open('g/manifest.csv', 'w', newline=''), fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+          print('genuine photos', len(rows), 'watches', len({r['physical_watch_id'] for r in rows}))
+          PY
+          python3 tools/research/alpha96_calibration/fetch_verified.py g/manifest.csv g/img g/fetch_log.csv | tail -3
+      - name: Public QC controls (sha256-verified originals)
+        run: |
+          mkdir -p q/img
+          python3 - <<'PY'
+          import requests, hashlib, csv, pathlib
+          cases = [
+           ('GMT_crooked6_1s4cszq','gmt_126710','https://i.redd.it/zsgyaaky0frg1.jpg','c36f1af94be604ec9153e77b42322d0396634af0eb955c2ab7d3841dce4bb6cd','rejected: crooked 6'),
+           ('GMT_accepted6_18vdgh0','gmt_126710','https://i.redd.it/tqmt3k1f8o9c1.jpg','a041d20d14d7c9f105991496b539bb73d63182d75e3b61b6d5a8f0590ecd6c13','accepted (photo 1)'),
+           ('GMT_accepted6_18vdgh0_photo2','gmt_126710','https://i.redd.it/fobj8k1f8o9c1.jpg','77245a16744f3fb1369bdaef2101593bd6b52de3a0f031946e3cd84ea9fe8217','accepted (photo 2)'),
+           ('GMT_accepted6_18vdgh0_photo3','gmt_126710','https://i.redd.it/lltuak1f8o9c1.jpg','04c83496a5b4f15911b04d21e5f010d65844dbf6aca1ce8fb903099925a9b88b','accepted (photo 3)'),
+           ('SUB_rejected12_1wgfy7k','submariner_124060','https://i.redd.it/0rx4t01hujph1.jpg','7c9f2b50f8e89b860bf567cebdc7a86f3268c5c5e04397f44314bbf5f3f2e0ba','rejected: 12'),
+           ('SUB_accepted12_1w848xb','submariner_124060','https://i.redd.it/wdaw7dp93qnh1.jpg','2fe59ac6f06f8effed25c288075ee931b608c874c66d536c6255524ae7a7f91f','accepted'),
+           ('SUB_accepted12_1w848xb_photo5','submariner_124060','https://i.redd.it/zm5wgcp93qnh1.jpg','4c4f8cd97ef5e2c3aa8fe2f3a729f3e462b0bf3cd83ea38793419ea7313b2561','accepted (photo 5)'),
+           ('SUB_control12_1kqn8ub','submariner_124060','https://i.redd.it/o3xibqc50t1f1.jpg','471e927748db033d97e3a0087f3cf66dbe2a374246185c72852488c18157a3b2','control'),
+           ('SUB_control12_1kqn8ub_photo2','submariner_124060','https://i.redd.it/9a6p65g50t1f1.jpg','234937eb33a3e203031f5423ecf20116a5cba6c034bf15bfd43dd51ddadd5769','control (photo 2)')]
+          s = requests.Session(); s.headers.update({'User-Agent': 'Mozilla/5.0 WatchAlignResearch/1.0', 'Referer': 'https://www.reddit.com/'})
+          w = csv.writer(open('q/manifest.csv', 'w', newline='')); w.writerow(['photo_id', 'local_path', 'physical_watch_id', 'label'])
+          for name, model, url, sha, label in cases:
+              if model != '${{ matrix.model }}': continue
+              try:
+                  b = s.get(url, timeout=20); b.raise_for_status(); data = b.content
+                  if hashlib.sha256(data).hexdigest() != sha: raise ValueError('source changed (sha256)')
+                  (pathlib.Path('q/img') / (name + '.jpg')).write_bytes(data); w.writerow([name, name + '.jpg', name.split('_photo')[0], label])
+                  print('verified', name)
+              except Exception as e:
+                  print('NOT RERUN (original bytes unavailable):', name, repr(e)[:120])
+          PY
+      - name: Pass 1 - luminous inset from the outer-metal master (free size, no rejection)
+        run: |
+          echo '{"triangle":{"inset_R":0,"fixed_growth_R":-0.008,"growth_nominal_R":-0.008,"reject":0},"baton":{"inset_R":0,"fixed_growth_R":-0.008,"growth_nominal_R":-0.008,"reject":0},"round":{"inset_R":0,"fixed_growth_R":-0.008,"growth_nominal_R":-0.008,"reject":0}}' > out/pass1_setups.json
+          first=$(python3 -c "import csv;print(next(r['local_path'] for r in csv.DictReader(open('g/manifest.csv'))))")
+          printf "photo_id,local_path\nwarm,$first\n" > out/warm.csv
+          tools/desktop-harness/run.sh AlignmentCalib fit out/warm.csv g/img out/warm_out.csv out/pass1_setups.json | grep -v Picked || true
+          CP=tools/desktop-harness/.cache/opencv-4.9.0-0.jar:tools/desktop-harness/.cache/classes
+          java -Xmx3g -cp $CP com.watchalign.mobile.AlignmentCalib fit g/manifest.csv g/img out/pass1.csv out/pass1_setups.json | grep -c PHOTO
+          python3 tools/research/alignment_only/calibrate.py insets out/pass1.csv out/pass2_setups.json
+      - name: Pass 2 - luminous template fit, reference and leave-one-watch-out validation
+        run: |
+          CP=tools/desktop-harness/.cache/opencv-4.9.0-0.jar:tools/desktop-harness/.cache/classes
+          java -Xmx3g -cp $CP com.watchalign.mobile.AlignmentCalib fit g/manifest.csv g/img out/pass2.csv out/pass2_setups.json | grep -c PHOTO
+          python3 tools/research/alignment_only/calibrate.py reference out/pass2.csv ${{ matrix.model }} \
+            "Watch Align luminous alignment reference: ${{ github.sha }} run ${{ github.run_id }}; sha256-verified genuine catalogue ${{ matrix.catalogue }}" \
+            out/luminous_alignment.json out/pass2_setups.json | tee out/report.md
+          cat out/luminous_alignment.json
+      - name: The app's own decision with the frozen reference (genuine in-sample, then public QC)
+        run: |
+          CP=tools/desktop-harness/.cache/opencv-4.9.0-0.jar:tools/desktop-harness/.cache/classes
+          java -Xmx3g -cp $CP com.watchalign.mobile.AlignmentCalib decide g/manifest.csv g/img out/genuine_decide.csv out/luminous_alignment.json out/gen_render ALL | grep PHOTO | awk '{print $3,$4,$5}' | sort | uniq -c | sort -rn | head -20
+          if [ -s q/manifest.csv ] && [ $(wc -l < q/manifest.csv) -gt 1 ]; then
+            java -Xmx3g -cp $CP com.watchalign.mobile.AlignmentCalib decide q/manifest.csv q/img out/qc_decide.csv out/luminous_alignment.json out/qc_render ALL | grep PHOTO
+            python3 - <<'PY'
+          import csv
+          lab = {r['photo_id']: r['label'] for r in csv.DictReader(open('q/manifest.csv'))}
+          for r in csv.DictReader(open('out/qc_decide.csv')):
+              if r['outcome'] == 'NOPOSE': print(r['photo_id'], 'NO POSE'); continue
+              print(f"{r['photo_id']:32} [{lab.get(r['photo_id'],'')}] {r['hour']:>2}h {r['shape']:8} {r['outcome']:13} {r['primary'] or r['reason'][:70]} "
+                    f"r={r['radial_R']} t={r['tangential_R']} rot={r['rotation_deg']}")
+          PY
+            for f in out/qc_render/*_technical.txt; do echo "== $f"; cat "$f"; done
+          fi
+      - name: Genuine summary of the app's decisions (in-sample) and example composites (log only)
+        run: |
+          python3 - <<'PY'
+          import csv, base64, io, collections
+          from pathlib import Path
+          from PIL import Image
+          rows = [r for r in csv.DictReader(open('out/genuine_decide.csv')) if r['outcome'] != 'NOPOSE']
+          c = collections.Counter((r['shape'], r['outcome']) for r in rows)
+          for k in sorted(c): print(k, c[k])
+          by = collections.defaultdict(list)
+          for r in rows: by[r['photo_id']].append(r)
+          good = sorted(by, key=lambda p: (-sum(x['outcome'] == 'NO_DEFECT' for x in by[p]), p))[:2]
+          bad = [p for p in by if any(x['outcome'] == 'DEFECT' for x in by[p])][:2]
+          for pid in good + bad:
+              tiles = [Image.open(f) for f in sorted(Path('out/gen_render').glob(f'{pid}_*.png'), key=lambda f: int(f.stem.split('_')[-1]))]
+              if not tiles: continue
+              W = Image.new('RGB', (240 * 6, 240 * ((len(tiles) + 5) // 6)), 'black')
+              for i, t in enumerate(tiles): W.paste(t.convert('RGB').resize((240, 240)), (240 * (i % 6), 240 * (i // 6)))
+              b = io.BytesIO(); W.save(b, 'JPEG', quality=85)
+              print(f'BEGIN_IMG genuine_{pid}.jpg ' + ' '.join(f"{x['hour']}:{x['outcome']}" for x in sorted(by[pid], key=lambda x: int(x['hour']))))
+              print(base64.b64encode(b.getvalue()).decode()); print('END_IMG')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: watch-align-alignment-${{ matrix.model }}
+          path: |
+            out/*.csv
+            out/*.json
+            out/report.md
+            out/qc_render/
+          retention-days: 7
