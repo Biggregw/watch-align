@@ -1,5 +1,11 @@
 plugins { id 'com.android.application' }
 
+// Keep distributable builds ARM64-only. Instrumentation on GitHub's x86_64 emulator opts in explicitly.
+def watchAlignAbi = (findProperty('watchAlignAbi') ?: 'arm64-v8a').toString()
+if (!(watchAlignAbi in ['arm64-v8a', 'x86_64'])) {
+    throw new GradleException("Unsupported watchAlignAbi '${watchAlignAbi}'")
+}
+
 android {
     namespace 'com.watchalign.mobile'
     compileSdk 35
@@ -11,7 +17,7 @@ android {
         versionCode 13119
         versionName '1.5.3'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-        ndk { abiFilters 'arm64-v8a' }
+        ndk { abiFilters watchAlignAbi }
     }
 
     // One fixed signing key for every build (local and CI), so Android sees the same developer each
