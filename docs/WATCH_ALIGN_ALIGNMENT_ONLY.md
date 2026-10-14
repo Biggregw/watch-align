@@ -1,7 +1,7 @@
-# Watch Align 1.5.3: alignment-only hour-marker check (14 Oct 2026)
+# Watch Align 1.5.4: alignment-only hour-marker check (14 Oct 2026)
 
-Current version 1.5.3 (versionCode 13119). The 1.5.0 description below still applies; the later sections list what
-changed in 1.5.1–1.5.3.
+Current version 1.5.4 (versionCode 13120). The 1.5.0 description below still applies; the later sections list what
+changed in 1.5.1–1.5.4.
 
 Branch `feature/android-alignment-only-20261014`, built from Alpha107 (`outer-metal/integration-20261013` @ `5e6d565`).
 Merged into `main` with 1.5.3. Rollback: install the Alpha107 APK (run 38493791860) or check out `5e6d565`.
@@ -256,3 +256,52 @@ assess" are low resolution and a hand over the marker.
   - known-shape inference is implemented and unit-tested but was not used by any assessed genuine marker.
 - **Signing:** builds use a throwaway debug key (no shared signing-key secret in the repository). Uninstall any
   earlier Watch Align before installing.
+
+## 1.5.4: corrections from the 1.5.3 audit
+
+1. **Incomplete measurements no longer pass.**
+   - A marker reads "No defect" only when every alignment component it has was measured: position (radial and
+     sideways) and, for triangles and batons, rotation.
+   - When a component cannot be measured (for example a baton with both ends hidden), the marker reads "Cannot assess".
+     The reason names the missing component and says the measured part is within the genuine range.
+   - A confirmed defect still stands when another component is missing.
+   - Missing reference or measurement numbers (NaN) fail closed.
+   - The "Not measured: …" explanation is never hidden by an outer-metal note.
+2. **Round markers are fitted exactly at any resolution.**
+   - **Cause:** the rays start at the expected centre, and the old linear approximation of a displaced circle was read
+     as edge noise at high resolution. A clean 2 % R shift became "Cannot assess" at 600 px.
+   - **Fix:** rounds are now re-centred on the fitted centre, and the same measured edge points are re-expressed
+     exactly, until the fit converges.
+   - The 0.8 px edge-noise gate is unchanged.
+3. **Close-ups show only accepted evidence.**
+   - The cyan and silver luminous geometry is drawn only when the luminous fit itself was accepted. An outer-metal
+     defect no longer restores geometry that was rejected as bevel or glare.
+   - An outer-metal rotation no longer draws the lume's axis, which was wrong evidence. No axis is drawn instead.
+4. **Changing model during a check is safe.**
+   - Each check captures the photo and model it started with, and loaded data is keyed by model id.
+   - A result is discarded when the photo or model changed meanwhile.
+5. **Photo import applies EXIF orientation.** Rotation and mirroring are applied before the preview and the analysis,
+   so a sideways-stored phone JPEG is analysed upright.
+6. **Shallow separators:** for round markers, the plateau exit and separator acceptance now both use the documented
+   20 % criterion (`SEPARATOR_SHARE`), measured from the plateau. Triangles and batons are unchanged.
+7. **CI instrumentation:**
+   - The emulator job adds x86_64 native code only for its own test build (`-PtestAbi=x86_64`); the delivered APK
+     stays arm64-only.
+   - Its extraction step now uses the real package `com.watchalign.mobile.poc`.
+8. **Enlarged photos (qualified, not fixed):**
+   - The outer-metal 12 allowance has a pixel term, so the same normalised reading can be judged more strictly on a
+     photo with more pixels. An enlarged (resampled) photo is not detected and would count as a sharper one.
+   - The note no longer claims enlargement cannot change the result. It asks the user not to enlarge, and says the
+     check cannot yet tell an enlarged photo from a sharper one.
+   - Preventing this needs a validated estimate of a photo's native resolution, which does not exist yet.
+     Known limitation.
+
+**Documented, not changed:**
+- **Duplicate photos in the luminous calibration.** The calibration does not apply the earlier measured exclusions
+  of reused photos. Excluding them would tighten the Submariner round radial envelope from 0.3627 % to 0.3461 % R.
+  - This changes no round verdict, because the 1.00 % R visual floor is the larger threshold.
+  - Rebuilding the references is a recalibration and was not done. It belongs to the next calibration.
+- **Outer-metal ring definition.** The outer-metal baton reference uses Alpha107's ring, which includes the judged
+  baton. A displacement is partly absorbed by it (0.40 % R read as 0.33 % R). The genuine references use the same
+  definition, so the comparison is like for like. The claim that references never use the judged marker applies
+  to the luminous check only.

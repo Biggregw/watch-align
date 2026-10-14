@@ -93,7 +93,7 @@ final class MetalAlignment {
                 if(st==Alpha99Findings.Status.CLEAR)m.metal.add(i);
                 else if(st==Alpha99Findings.Status.WORTH){
                     m.metalBorderline=true;
-                    m.metalNotes.add(String.format(Locale.US,"Worth a look (not confirmed): the outer metal reads %s, beyond every genuine watch measured (%s; genuine up to %s), but the difference is within this photo's measurement uncertainty. A sharper original photo may settle it; an enlarged copy of this photo cannot.",
+                    m.metalNotes.add(String.format(Locale.US,"Worth a look (not confirmed): the outer metal reads %s, beyond every genuine watch measured (%s; genuine up to %s), but the difference is within this photo's measurement uncertainty. A sharper original photo may settle it. Do not enlarge this photo to try: enlarging adds no detail, and this check cannot yet tell an enlarged photo from a sharper one.",
                             words(i),fmt(x.value,x.unit,R),fmt(x.genuineMax,x.unit,R)));}
             }
             settle(m);
@@ -110,6 +110,8 @@ final class MetalAlignment {
         m.reason="";
     }
 
+    /** Note: the pixel term falls as the dial radius in pixels grows. It assumes those pixels carry real detail; an
+     *  enlarged (resampled) photo is not detected and would be judged as a sharper one (known limitation, documented). */
     static double sigmaRadial(Map<String,Double> extra,double R){
         if(extra==null)return Double.NaN;
         Double a=extra.get("twelve_radial.R"),b=extra.get("twelve_radial.px");

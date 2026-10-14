@@ -38,6 +38,9 @@ final class LuminousAlignment {
     static final int MIN_SIDE_SAMPLES=6;
     static final double MIN_CONTRAST=25;         // grey levels between luminous fill and dial
     static final double MAX_DILUTION=5.0;        // geometric dilution of precision: above it a parameter is not determined
+    /** Round markers: a dark separator at least this share of the lume-dial contrast, followed by a rise into the lit
+     *  bevel, marks the luminous edge (documented 20 % criterion; plateau exit and acceptance use the same value). */
+    static final double SEPARATOR_SHARE=0.20;
     static final double MAX_EDGE_NOISE_PX=0.8;   // robust residual spread above which the edge is too irregular to trust (genuine readings that set the first envelopes had 0.8-1.5 px)
     static final double MIN_ROUND_COVER=0.50;    // share of 32 directions with an edge for a round marker
     static final double FREE_SIZE_ROUND_COVER=0.70;
@@ -200,7 +203,7 @@ final class LuminousAlignment {
                 if(!Double.isFinite(d))continue;
                 s.found++;bins[(int)Math.floor(k*32.0/N)%32]=true;
                 s.points.add(new double[]{q[0]+d*n[0],q[1]+d*n[1]});
-                rows.add(new double[]{n[0]*er[0]+n[1]*er[1],n[0]*et[0]+n[1]*et[1],0,1,d,0});
+                rows.add(new double[]{n[0]*er[0]+n[1]*er[1],n[0]*et[0]+n[1]*et[1],0,1,d,0,q[0]+d*n[0],q[1]+d*n[1]});
             }
             int c=0,gap=0,run=0;for(int k=0;k<64;k++){boolean b=bins[k%32];if(k<32&&b)c++;run=b?0:run+1;gap=Math.max(gap,Math.min(run,32));}
             r.roundCover=c/32.0;r.roundGapDeg=gap*360.0/32;
@@ -245,6 +248,13 @@ final class LuminousAlignment {
         // a merged sample sits a whole surround width (about 0.016 R) outside the luminous edge
         double outlierR=Math.max(Alpha99Pipeline.HALF_SURROUND_R,3*0.3/r.rpx);   // the established 0.016 R surround / 2
         int total=rows.size();
+        // A round's rays start at the EXPECTED centre, so "distance along the ray" is only a linear approximation of a
+        // displaced circle; its error grows with the displacement squared and, in pixels, with the resolution (a clean
+        // 2 % R shift read as edge noise at 600 px). Rounds are therefore re-centred on the fitted centre and the edge
+        // points (unchanged image measurements) re-expressed as exact radial distances, until the shift converges.
+        List<double[]> allRows=rows;double[] cc=r.refCentre.clone();
+        for(int recentre=0;;recentre++){
+        rows=allRows;
         for(int pass=0;setup.rejectOutward&&pass<4;pass++){
             Fit fixed=null;
             for(int[] set:order){if(contains(set,3))continue;Fit f=irls(rows,set,setup.fixedGrowthR,r.rpx,halfLen);if(f!=null&&f.determined){fixed=f;break;}}
@@ -255,7 +265,16 @@ final class LuminousAlignment {
             if(kept.size()==rows.size())break;
             rows=kept;
         }
+        best=null;
         for(int[] set:order){Fit f=irls(rows,set,setup.fixedGrowthR,r.rpx,halfLen);if(f!=null&&f.determined){best=f;break;}}
+        if(!round||best==null||recentre>=5)break;
+        double sx=best.x[0]*er[0]+best.x[1]*et[0],sy=best.x[0]*er[1]+best.x[1]*et[1];
+        if(Math.hypot(sx,sy)*r.rpx<0.01)break;
+        cc[0]+=sx;cc[1]+=sy;allRows=recentred(allRows,cc,r.refRadius,er,et);
+        }
+        // the converged fit is relative to cc: express it relative to the expected centre again
+        double offR=(cc[0]-r.refCentre[0])*er[0]+(cc[1]-r.refCentre[1])*er[1],offT=(cc[0]-r.refCentre[0])*et[0]+(cc[1]-r.refCentre[1])*et[1];
+        if(best!=null&&(offR!=0||offT!=0)){best.x=best.x.clone();best.x[0]+=offR;best.x[1]+=offT;}
         r.mergedShare=1-rows.size()/(double)Math.max(1,total);
         r.samples=rows.size();
         if(r.mergedShare>MAX_MERGED_SHARE){r.reason=String.format(java.util.Locale.US,"a bright bevel merges with its luminous fill on %.0f%% of the outline",100*r.mergedShare);return r;}
@@ -345,15 +364,20 @@ final class LuminousAlignment {
         double lume=T+0.5*contrast;                                  // the marker's luminous level (T = dial + contrast/2)
         int i=1;
         while(i<N){
-            // the fall begins where the profile leaves the luminous plateau
-            while(i<N&&v[i]>=lume-0.25*contrast)i++;
+            // the fall begins where the profile leaves the luminous plateau (rounds: at the 20 % separator criterion,
+            // so a separator that is shallow but real is reached at all)
+            double exit=steepest?SEPARATOR_SHARE:0.25;
+            while(i<N&&v[i]>=lume-exit*contrast)i++;
             if(i>=N)return Double.NaN;
             // follow it down to the first minimum (a rise of 10% of the contrast, or the end, stops it)
             int m=i;boolean rose=false;
             for(int j=i;j<N;j++){if(v[j]<v[m])m=j;else if(v[j]>v[m]+0.10*contrast){rose=true;break;}}
             int k0=Math.max(0,i-8);double loc=0;int c=0;for(int k=k0;k<i;k++){loc+=v[k];c++;}loc=c>0?Math.max(loc/c,v[i-1]):v[i-1];
+            // the separator is measured from the plateau the profile left (the brightest of the local samples), not
+            // from an average that already includes the start of the fall
+            double plateau=v[i-1];for(int k=k0;k<i;k++)plateau=Math.max(plateau,v[k]);
             boolean deep=v[m]<=lume-0.35*contrast;
-            boolean separator=steepest&&rose&&v[m]<=loc-0.20*contrast;
+            boolean separator=steepest&&rose&&v[m]<=plateau-SEPARATOR_SHARE*contrast;
             if(!deep&&!separator){i=m+1;continue;}                  // a shallow dip in the lume: keep looking
             if(steepest){
                 int lo=Math.max(1,i-8),best=-1;double g=0;
@@ -372,6 +396,18 @@ final class LuminousAlignment {
             return Double.NaN;
         }
         return Double.NaN;
+    }
+
+    /** Round rows re-expressed about centre c: ray direction from c to each measured edge point, and its exact distance
+     *  beyond the known radius. */
+    static List<double[]> recentred(List<double[]> rows,double[] c,double radius,double[] er,double[] et){
+        List<double[]> out=new ArrayList<>(rows.size());
+        for(double[] w:rows){
+            double dx=w[6]-c[0],dy=w[7]-c[1],l=Math.hypot(dx,dy);if(!(l>0))continue;
+            double nx=dx/l,ny=dy/l;
+            out.add(new double[]{nx*er[0]+ny*er[1],nx*et[0]+ny*et[1],0,1,l-radius,w[5],w[6],w[7]});
+        }
+        return out;
     }
 
     // ------------------------------------------------------------------ robust joint fit

@@ -7,7 +7,7 @@ name: Watch Align regression (bundled references)
 on:
   push:
     branches: [feature/android-alignment-only-20261014]
-    paths: ['.github/workflows/watch-align-regression.yml', 'android/app/src/main/java/com/watchalign/mobile/AlignmentDecision.java']
+    paths: ['.github/workflows/watch-align-regression.yml', 'android/app/src/main/java/com/watchalign/mobile/AlignmentDecision.java', 'android/app/src/main/java/com/watchalign/mobile/LuminousAlignment.java']
   workflow_dispatch:
 permissions: {contents: read}
 jobs:

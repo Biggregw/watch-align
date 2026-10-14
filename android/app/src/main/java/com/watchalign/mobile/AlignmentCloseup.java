@@ -44,10 +44,11 @@ final class AlignmentCloseup {
     static void draw(Mat img,double cx,double cy,double half,AlignmentDecision.Marker m){
         double s=2*half/SIZE;int th=Math.max(2,SIZE/200);
         LuminousAlignment.Result f=m.fit;
-        boolean shown=m.outcome!=AlignmentDecision.Outcome.CANNOT_ASSESS&&f!=null&&(f.fittedPolygon!=null||f.fittedCircle!=null);
+        // luminous geometry only when the luminous fit itself was accepted: never restored by an outer-metal finding
+        boolean shown=m.lumeAccepted()&&(f.fittedPolygon!=null||f.fittedCircle!=null);
         if(shown&&Double.isFinite(m.bevelR)&&m.bevelR>0)silver(img,cx,cy,half,f,m.bevelR);
         if(m.yellow!=null)poly(img,cx,cy,half,m.yellow,YELLOW,th,true);
-        if(!shown)return;
+        if(!shown){if(m.outcome==AlignmentDecision.Outcome.DEFECT&&m.primary!=null)arrow(img,cx,cy,half,m);return;}
         expected(img,cx,cy,half,m);
         if(f.fittedCircle!=null){
             Imgproc.circle(img,px(cx,cy,half,f.fittedCircle[0],f.fittedCircle[1]),(int)Math.round(f.fittedCircle[2]/s),CYAN,Math.max(1,th-1),Imgproc.LINE_AA);
@@ -98,9 +99,14 @@ final class AlignmentCloseup {
 
     private static void arrow(Mat img,double cx,double cy,double half,AlignmentDecision.Marker m){
         LuminousAlignment.Result f=m.fit;AlignmentDecision.Issue i=m.primary;
-        double[] c=f.fittedPolygon!=null?LuminousAlignment.centroid(f.fittedPolygon):new double[]{f.fittedCircle[0],f.fittedCircle[1]};
+        boolean lume=m.lumeAccepted()&&(f.fittedPolygon!=null||f.fittedCircle!=null);
+        // the arrow starts at the measured lume when it was accepted, otherwise at the marker's expected centre
+        double[] c=lume?(f.fittedPolygon!=null?LuminousAlignment.centroid(f.fittedPolygon):new double[]{f.fittedCircle[0],f.fittedCircle[1]})
+                :f!=null&&f.refCentre!=null?f.refCentre:new double[]{cx,cy};
         int th=Math.max(3,SIZE/140);
-        if(i.param==LuminousAlignment.Param.ROTATION&&f.fittedPolygon!=null){
+        // an outer-metal rotation has no measured metal axis to draw here: no axis rather than the lume's (wrong evidence)
+        if(i.param==LuminousAlignment.Param.ROTATION&&i.metal)return;
+        if(i.param==LuminousAlignment.Param.ROTATION&&lume&&f.fittedPolygon!=null){
             // the marker's long axis as fitted (red) against the reference axis (yellow, dashed)
             double[] far=axisEnd(f.fittedPolygon),rc=f.refCentre,rf=axisEnd(f.refPolygon);
             dashed(img,px(cx,cy,half,rc[0]-(rf[0]-rc[0])*0.25,rc[1]-(rf[1]-rc[1])*0.25),px(cx,cy,half,rf[0]+(rf[0]-rc[0])*0.15,rf[1]+(rf[1]-rc[1])*0.15),YELLOW,2);

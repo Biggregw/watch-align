@@ -38,7 +38,12 @@ public class PerspectiveOverlayPocActivity extends Activity {
     private String modelId=MODEL_ID;
     private static final String PREFS="watchalign",PREF_MODEL="model";
     private final List<String> modelIds=new ArrayList<>(),modelLabels=new ArrayList<>();
-    private ModelSpec model;private ModelReference reference;private AlignmentReference alignment;
+    /** Loaded model data, keyed by model id so a check never uses another model's geometry or references. */
+    private static final class Loaded{final String id;final ModelSpec model;final ModelReference reference;final AlignmentReference alignment;
+        Loaded(String id,ModelSpec m,ModelReference r,AlignmentReference a){this.id=id;model=m;reference=r;alignment=a;}}
+    private volatile Loaded loaded;
+    /** Every change of photo or model starts a new request; a check's result is shown only if it is still current. */
+    private int request;
     private TextView title,intro;
     private Bitmap candidateBitmap,lastOverlay;
     private Alpha94MarkerMeasurement.Report lastMeasurement;
@@ -68,7 +73,8 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 @Override public void onItemSelected(AdapterView<?> parent,View v,int position,long id){
                     String chosen=modelIds.get(position);
                     if(chosen.equals(modelId))return;
-                    modelId=chosen;model=null;reference=null;alignment=null;Alpha99ResultsActivity.Store.summary=null;AlignmentResultsActivity.Store.result=null;
+                    modelId=chosen;request++;Alpha99ResultsActivity.Store.summary=null;AlignmentResultsActivity.Store.result=null;
+                    if(candidateBitmap!=null){buildButton.setEnabled(true);status.setText("Model changed. Tap Check this photo.");}
                     try{getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString(PREF_MODEL,chosen).apply();}catch(Exception ignored){}
                     inspectButton.setEnabled(false);updateModelText();
                 }
@@ -132,16 +138,20 @@ public class PerspectiveOverlayPocActivity extends Activity {
 
     private void buildOverlay(){
         if(candidateBitmap==null)return;final Bitmap photo=candidateBitmap;
+        // immutable inputs of this check: the photo, the model id and the request number at the time of the tap
+        final String wantId=modelId;final int mine=++request;
         buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Checking the markers…");
         worker.submit(()->{
             Alpha99Pipeline.Output o;
             try{
-                if(model==null){model=ModelSpec.load(getAssets()::open,modelId);reference=ModelReference.load(getAssets()::open,model);
-                    alignment=AlignmentReference.load(getAssets()::open,model);}
-                o=Alpha99Pipeline.run(photo,model,reference,alignment,null);
+                Loaded l=loaded;
+                if(l==null||!l.id.equals(wantId)){ModelSpec m=ModelSpec.load(getAssets()::open,wantId);
+                    l=new Loaded(wantId,m,ModelReference.load(getAssets()::open,m),AlignmentReference.load(getAssets()::open,m));loaded=l;}
+                o=Alpha99Pipeline.run(photo,l.model,l.reference,l.alignment,null);
             }catch(Throwable t){o=new Alpha99Pipeline.Output();}
             final Alpha99Pipeline.Output fo=o;final AutomaticDialOverlay.Result q=o.pose;
             runOnUiThread(()->{
+                if(mine!=request||!wantId.equals(modelId)||photo!=candidateBitmap)return;   // the photo or model changed meanwhile: discard
                 buildButton.setEnabled(true);
                 if(!fo.ok()){lastOverlay=null;lastMeasurement=null;inspectButton.setEnabled(false);
                     status.setText("Cannot assess: the dial could not be located in this photo. Try a sharper photo taken straight on with the whole dial visible. ("+(q==null?"no result":q.reason)+")");return;}
@@ -177,13 +187,38 @@ public class PerspectiveOverlayPocActivity extends Activity {
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);if(request!=PICK_CANDIDATE||result!=RESULT_OK||data==null||data.getData()==null)return;
         try{
-            candidateBitmap=readBitmap(data.getData());lastOverlay=null;lastMeasurement=null;preview.setImageBitmap(candidateBitmap);buildButton.setEnabled(true);inspectButton.setEnabled(false);status.setText("Photo ready. Tap Check this photo.");
+            candidateBitmap=readBitmap(data.getData());request++;lastOverlay=null;lastMeasurement=null;preview.setImageBitmap(candidateBitmap);buildButton.setEnabled(true);inspectButton.setEnabled(false);status.setText("Photo ready. Tap Check this photo.");
         }catch(Exception e){status.setText("Could not read image: "+e.getMessage());}
     }
 
     private Bitmap readBitmap(Uri uri)throws Exception{
         BitmapFactory.Options opts=new BitmapFactory.Options();opts.inJustDecodeBounds=true;try(InputStream in=getContentResolver().openInputStream(uri)){BitmapFactory.decodeStream(in,null,opts);}if(opts.outWidth<=0||opts.outHeight<=0)throw new IllegalArgumentException("Not a readable image");
-        int maxDim=Math.max(opts.outWidth,opts.outHeight),sample=1;while(maxDim/(sample*2)>=3200)sample*=2;opts.inJustDecodeBounds=false;opts.inSampleSize=sample;opts.inPreferredConfig=Bitmap.Config.ARGB_8888;Bitmap b;try(InputStream in=getContentResolver().openInputStream(uri)){b=BitmapFactory.decodeStream(in,null,opts);}if(b==null)throw new IllegalArgumentException("Not a readable image");int currentMax=Math.max(b.getWidth(),b.getHeight());if(currentMax<=3200)return b.copy(Bitmap.Config.ARGB_8888,false);float s=3200f/currentMax;return Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true).copy(Bitmap.Config.ARGB_8888,false);
+        int maxDim=Math.max(opts.outWidth,opts.outHeight),sample=1;while(maxDim/(sample*2)>=3200)sample*=2;opts.inJustDecodeBounds=false;opts.inSampleSize=sample;opts.inPreferredConfig=Bitmap.Config.ARGB_8888;Bitmap b;try(InputStream in=getContentResolver().openInputStream(uri)){b=BitmapFactory.decodeStream(in,null,opts);}if(b==null)throw new IllegalArgumentException("Not a readable image");int currentMax=Math.max(b.getWidth(),b.getHeight());
+        if(currentMax>3200){float s=3200f/currentMax;b=Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true);}
+        return upright(b,exifOrientation(uri)).copy(Bitmap.Config.ARGB_8888,false);
+    }
+
+    /** The JPEG's EXIF orientation (1 when absent or unreadable). Phones often store pixels sideways and flag them. */
+    private int exifOrientation(Uri uri){
+        try(InputStream in=getContentResolver().openInputStream(uri)){
+            return in==null?1:new android.media.ExifInterface(in).getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION,android.media.ExifInterface.ORIENTATION_NORMAL);
+        }catch(Exception e){return 1;}
+    }
+
+    /** Pixels as the gallery shows them: EXIF rotation and reflection applied before preview and analysis. */
+    static Bitmap upright(Bitmap b,int orientation){
+        android.graphics.Matrix m=new android.graphics.Matrix();
+        switch(orientation){
+            case 2:m.setScale(-1,1);break;                    // mirrored
+            case 3:m.setRotate(180);break;
+            case 4:m.setScale(1,-1);break;                    // mirrored vertically
+            case 5:m.setRotate(90);m.postScale(-1,1);break;   // transpose
+            case 6:m.setRotate(90);break;
+            case 7:m.setRotate(-90);m.postScale(-1,1);break;  // transverse
+            case 8:m.setRotate(-90);break;
+            default:return b;
+        }
+        return Bitmap.createBitmap(b,0,0,b.getWidth(),b.getHeight(),m,true);
     }
 
     private TextView text(String s,int sp,int color){TextView v=new TextView(this);v.setText(s);v.setTextSize(sp);v.setTextColor(color);return v;}

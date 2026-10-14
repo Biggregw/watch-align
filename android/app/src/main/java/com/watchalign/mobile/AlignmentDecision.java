@@ -84,6 +84,11 @@ final class AlignmentDecision {
         final List<Issue> metal=new ArrayList<>();final List<String> metalNotes=new ArrayList<>();
         /** an outer-metal reading beyond every genuine watch but within this photo's uncertainty (not a confirmed defect) */
         boolean metalBorderline;
+        /** the luminous result alone, before any outer-metal finding (the close-up draws luminous geometry only when it
+         *  was accepted) */
+        Outcome luminous;
+        /** true when the luminous fill was measured and accepted for at least one alignment component */
+        boolean lumeAccepted(){return fit!=null&&fit.assessed&&luminous!=null&&(luminous!=Outcome.CANNOT_ASSESS||!within.isEmpty());}
         /** display only: where the genuine luminous shape is expected (ring of the other markers + per-hour genuine nominal) */
         double[][] expectedPolygon;double[] expectedCircle;
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
@@ -95,7 +100,9 @@ final class AlignmentDecision {
 
     private AlignmentDecision(){}
 
-    static void decide(Marker m,AlignmentReference ref){
+    static void decide(Marker m,AlignmentReference ref){decideLuminous(m,ref);m.luminous=m.outcome;}
+
+    private static void decideLuminous(Marker m,AlignmentReference ref){
         LuminousAlignment.Result f=m.fit;
         if(f==null){m.outcome=Outcome.CANNOT_ASSESS;if(m.reason.isEmpty())m.reason="not measured";return;}
         if(!f.assessed){m.outcome=Outcome.CANNOT_ASSESS;m.reason=f.reason;return;}
@@ -118,16 +125,24 @@ final class AlignmentDecision {
                 all.add(issue(LuminousAlignment.Param.ROTATION,f.rotationDeg-h.rotationDeg,s.rotationLimitDeg,Math.max(2*Math.hypot(f.seRotationDeg,s.rotationPhotoSdDeg),floorDeg),0,Math.toRadians(1)*lever,rpx,null));
             }else m.notAssessed.add("rotation");
         }
-        Issue worst=null;
+        Issue worst=null;List<Issue> usable=new ArrayList<>();
         for(Issue i:all){
-            if(!Double.isFinite(i.limit)){m.notAssessed.add(name(i.param));continue;}
+            // any missing number (reference or measurement) fails closed for that component, never passes it
+            if(!Double.isFinite(i.limit)||!Double.isFinite(i.deviation)||!Double.isFinite(i.uncertainty)||!Double.isFinite(i.excessR)){m.notAssessed.add(name(i.param));continue;}
+            usable.add(i);
             if(i.outside()){if(worst==null||i.excessR>worst.excessR)worst=i;}else m.within.add(i);
         }
         if(worst!=null){
+            // a confirmed defect stands even when another component could not be measured
             m.outcome=Outcome.DEFECT;m.primary=worst;
-            for(Issue i:all)if(i!=worst&&Double.isFinite(i.limit)&&i.outside())m.secondary.add(i);
+            for(Issue i:usable)if(i!=worst&&i.outside())m.secondary.add(i);
             m.secondary.sort((a,b)->Double.compare(b.excessR,a.excessR));
         }else if(m.within.isEmpty()){m.outcome=Outcome.CANNOT_ASSESS;m.reason="its position could not be compared with genuine watches";}
+        else if(!m.notAssessed.isEmpty()){
+            // "No defect" needs every alignment component of the marker; a partial result is never an unqualified pass
+            m.outcome=Outcome.CANNOT_ASSESS;
+            m.reason="its "+String.join(" and ",m.notAssessed)+" could not be measured (the visible edges do not fix it); what could be measured is within the genuine range";
+        }
         else m.outcome=Outcome.NO_DEFECT;
     }
 
@@ -168,10 +183,14 @@ final class AlignmentDecision {
 
     /** Short line for a list row. */
     static String summary(Marker m){
-        if(m.outcome==Outcome.DEFECT)return m.primary.headline()+".";
-        if(m.outcome==Outcome.NO_DEFECT&&!m.metalNotes.isEmpty())return m.metalNotes.get(0);
-        if(m.outcome==Outcome.CANNOT_ASSESS)return capital(m.reason)+".";
-        return m.notAssessed.isEmpty()?null:"Not assessed: "+String.join(", ",m.notAssessed)+".";
+        String notAssessed=m.outcome==Outcome.CANNOT_ASSESS||m.notAssessed.isEmpty()?null:"Not measured: "+String.join(", ",m.notAssessed)+".";
+        String s;
+        if(m.outcome==Outcome.DEFECT)s=m.primary.headline()+".";
+        else if(m.outcome==Outcome.CANNOT_ASSESS)s=capital(m.reason)+".";
+        else s=m.metalNotes.isEmpty()?null:m.metalNotes.get(0);
+        if(m.outcome==Outcome.CANNOT_ASSESS&&m.metalBorderline)s+=" Outer metal: worth a look (see the marker).";
+        if(notAssessed!=null)s=s==null?notAssessed:s+" "+notAssessed;   // never hidden by another note
+        return s;
     }
     static String capital(String s){return s==null||s.isEmpty()?"":Character.toUpperCase(s.charAt(0))+s.substring(1);}
 }
