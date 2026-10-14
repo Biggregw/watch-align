@@ -24,8 +24,9 @@ final class AlignmentDecision {
 
     /** Native pixels below which no difference is resolvable (photo resolution floor of the uncertainty). */
     static final double MIN_RESOLVABLE_PX=0.5;
-    /** Dial radius below which luminous edges and their dark separators are too few pixels to measure. */
-    static final double MIN_DIAL_RADIUS_PX=150;
+    /** Dial radius below which luminous edges and their dark separators are too few pixels to measure (genuine readings
+     *  that set the first envelopes clustered at 150-200 px). */
+    static final double MIN_DIAL_RADIUS_PX=200;
 
     static final class Issue {
         LuminousAlignment.Param param;

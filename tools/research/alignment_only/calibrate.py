@@ -99,8 +99,8 @@ def values(rows, comp):
 
 def nominals_and_envelopes(rows, screened=None):
     """per hour nominal (median over watches) and per shape envelope: the largest |watch value - nominal| after a
-    Tukey far-out screen (values beyond Q3 + 3 IQR of that marker type's genuine deviations are treated as measurement
-    failures, listed in `screened`, never silently dropped)"""
+    measurement-quality gates in the app (merged bevel, edge noise, resolution). Far-out readings (beyond Q3 + 3 IQR) are
+    LISTED in `screened` for review only; they are not removed"""
     hours, env, nw = {}, defaultdict(dict), defaultdict(set)
     shape_of = {int(r['hour']): r['shape'] for r in rows}
     for comp in COMP:
@@ -124,7 +124,7 @@ def nominals_and_envelopes(rows, screened=None):
             a = sorted(x for x, _, _ in d)
             q1, q3 = pct(a, 25), pct(a, 75)
             fence = q3 + 3 * (q3 - q1)
-            env[s][name] = max(x for x in a if x <= fence)
+            env[s][name] = a[-1]   # every genuine reading that passed the measurement-quality gates counts
             if screened is not None:
                 for x, w, h in d:
                     if x > fence:
@@ -245,7 +245,7 @@ def report(rows, kept, ref, hours, env, psd, screened):
     print('\nPhotographic repeatability (pooled within-watch SD over genuine watches photographed more than once): ' + '; '.join(
         f"{s} {n} {('-' if psd.get((s, n)) is None else (f'{psd[(s, n)]:.2f} deg' if n == 'rotation' else f'{100 * psd[(s, n)]:.3f} %R'))} ({ref['shapes'].get(s, {}).get('repeat_pairs', {}).get(n, 0)} pairs)"
         for s in SHAPES for n in ('radial', 'tangential', 'rotation') if not (s == 'round' and n == 'rotation')))
-    print(f'\nGenuine readings screened out of the envelopes as far-out measurement failures (beyond Q3 + 3 IQR): {len(screened)}')
+    print(f'\nFar-out genuine readings (beyond Q3 + 3 IQR), listed for review, still counted in the envelopes: {len(screened)}')
     for a, b, w, h, x, f in screened:
         k = 1 if b == 'rotation' else 100
         print(f'  {a} {b} watch {w} {h}h: {k*x:.3f} (fence {k*f:.3f})')

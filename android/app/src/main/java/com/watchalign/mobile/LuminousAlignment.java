@@ -38,11 +38,11 @@ final class LuminousAlignment {
     static final int MIN_SIDE_SAMPLES=6;
     static final double MIN_CONTRAST=25;         // grey levels between luminous fill and dial
     static final double MAX_DILUTION=5.0;        // geometric dilution of precision: above it a parameter is not determined
-    static final double MAX_EDGE_NOISE_PX=1.5;   // robust residual spread above which the edge is too irregular to trust
+    static final double MAX_EDGE_NOISE_PX=0.8;   // robust residual spread above which the edge is too irregular to trust (genuine readings that set the first envelopes had 0.8-1.5 px)
     static final double MIN_ROUND_COVER=0.50;    // share of 32 directions with an edge for a round marker
     static final double FREE_SIZE_ROUND_COVER=0.70;
     static final int MIN_RING_OTHERS=4;          // Alpha94 fits its ring on >= 5 markers including the judged one; here the judged one is left out
-    static final double MAX_MERGED_SHARE=0.35;   // more of the outline merged with a lit bevel than this: withheld
+    static final double MAX_MERGED_SHARE=0.20;   // more of the outline merged with a lit bevel than this: withheld (genuine outliers had 0.2-0.33)
 
     static final class Side {
         /** template side endpoints (canonical) and outward unit normal */

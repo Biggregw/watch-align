@@ -200,9 +200,9 @@ public class LuminousAlignmentTest {
     @Test public void roundWithAPartlyMergedBevelSetsTheMergedArcAside(){
         ModelSpec.Marker m=marker(4);double[] c=m.masterPoint();
         Scene s=new Scene();s.circle=new double[]{c[0]+2/RPX,c[1],m.outerR-BEVEL};
-        s.merged=(x,y)->x>c[0]+0.045;               // a lit bevel on about a fifth of the outline
+        s.merged=(x,y)->x>c[0]+0.068;               // a lit bevel on about an eighth of the outline
         LuminousAlignment.Result r=fit(s,4);
-        assertTrue(r.reason,r.assessed);assertTrue(r.mergedShare>0.1);
+        assertTrue(r.reason,r.assessed);assertTrue(r.mergedShare>0.05);
         double[] et=LuminousAlignment.tangential(4),er=LuminousAlignment.radial(4);
         assertEquals(2*er[0],r.radialR*RPX,0.3);assertEquals(2*et[0],r.tangentialR*RPX,0.3);
         Scene t=new Scene();t.circle=s.circle;t.merged=(x,y)->x>c[0]-0.02;   // most of the outline merged
