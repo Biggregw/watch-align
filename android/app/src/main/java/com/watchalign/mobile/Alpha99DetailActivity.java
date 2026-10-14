@@ -56,6 +56,7 @@ public class Alpha99DetailActivity extends Activity {
             root.addView(text(area,18,Color.WHITE,true),lp(-1,-2,14));
             String parts=InspectionView.areaParts(q),reason=InspectionView.areaReason(f,q);
             if(parts!=null)root.addView(text(parts,14,Alpha99ResultsActivity.MUTED,false),lp(-1,-2,2));
+            if(parts!=null)root.addView(text(InspectionView.AREA_NOTE,13,Alpha99ResultsActivity.MUTED,false),lp(-1,-2,2));
             if(reason!=null)root.addView(text(reason,14,Alpha99ResultsActivity.MUTED,false),lp(-1,-2,2));
         }
         for(String line:InspectionView.findings(f))root.addView(text(line,16,Color.WHITE,false),lp(-1,-2,10));

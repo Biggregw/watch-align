@@ -75,7 +75,7 @@ public class Alpha99ResultsActivity extends Activity {
                 return true;
             });
             root.addView(hero,lp(-1,-2,12));
-            root.addView(text("!! clear   ! worth a look   – not assessed   ✓ within (grey: partly assessed)   ·   tap a marker",12,MUTED,false),lp(-1,-2,4));
+            root.addView(text("!! clear   ! worth a look   – not assessed   ✓ no finding (grey: partly assessed)   ·   tap a marker",12,MUTED,false),lp(-1,-2,4));
         }
 
         // 3. flagged markers, then markers that could not be assessed (each with its close-up)

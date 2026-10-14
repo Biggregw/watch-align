@@ -346,7 +346,7 @@ public class Alpha99FindingsTest {
         Alpha99Findings.Summary s=Alpha99Findings.build(small,null,c,TestModels.gmt(),TestModels.gmtRef());
         Alpha99Findings.Finding round=find(s,"round2");
         assertEquals(Alpha99Findings.Status.NOT_ASSESSED,round.status);assertEquals("resolution too low",round.shortReason);
-        assertFalse(Alpha99Overview.hasBadge(round));
+        assertTrue(Alpha99Overview.hasBadge(round));                                        // withheld markers stay visible (grey dash)
         assertTrue(Alpha99Overview.hasBadge(find(s,"six")));                               // hand: marker-specific, keeps its dash
         assertTrue(Alpha99Overview.hasBadge(find(s,"nine")));
         assertTrue(s.notAssessedLine().contains("round markers (resolution too low)"));

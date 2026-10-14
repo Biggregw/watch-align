@@ -16,7 +16,8 @@ public class InspectionViewTest {
     @Test public void withinOnlyWhenNothingWasWithheld(){
         MarkerMismatchResearch.Result trusted=new MarkerMismatchResearch.Result(score(),"measured");
         assertEquals(InspectionView.State.WITHIN,InspectionView.state(finding(Alpha99Findings.Status.WITHIN),trusted));
-        assertEquals("Within genuine range",InspectionView.label(InspectionView.State.WITHIN));
+        assertEquals("No finding",InspectionView.label(InspectionView.State.WITHIN));
+        assertTrue(InspectionView.explain(finding(Alpha99Findings.Status.WITHIN),trusted).contains("area is measured, not judged"));
         MarkerMismatchResearch.Result withheld=new MarkerMismatchResearch.Result(score(),"hand/glare or interference not cleared");
         assertEquals(InspectionView.State.PARTLY,InspectionView.state(finding(Alpha99Findings.Status.WITHIN),withheld));
         assertEquals(InspectionView.State.PARTLY,InspectionView.state(finding(Alpha99Findings.Status.WITHIN),null));
@@ -70,6 +71,8 @@ public class InspectionViewTest {
         a.hour=6;b.hour=9;c.hour=3;sum.all.add(a);sum.all.add(b);sum.all.add(c);
         assertEquals("2 markers flagged",InspectionView.headline(sum,mm));
         assertEquals("1 clear deviation  ·  1 worth a look  ·  1 partly assessed",InspectionView.counts(sum,mm));
+        mm.put(9,new MarkerMismatchResearch.Result(score(),"measured"));
+        assertEquals("1 clear deviation  ·  1 worth a look  ·  1 no finding",InspectionView.counts(sum,mm));
     }
     @Test public void findingLinesComeFromTheExistingMeasures(){
         Alpha99Findings.Finding f=finding(Alpha99Findings.Status.WORTH);
