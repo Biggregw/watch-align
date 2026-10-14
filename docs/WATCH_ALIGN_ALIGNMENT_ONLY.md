@@ -312,3 +312,28 @@ assess" are low resolution and a hand over the marker.
   baton. A displacement is partly absorbed by it (0.40 % R read as 0.33 % R). The genuine references use the same
   definition, so the comparison is like for like. The claim that references never use the judged marker applies
   to the luminous check only.
+
+### 1.5.4 validation
+
+Regression run 38588906217 on the final decision code (`22d7052`), with the genuine references and visual thresholds
+unchanged.
+
+| | GMT 126710 | Submariner 124060 |
+|---|---:|---:|
+| Genuine photos with a pose | 67 | 147 |
+| Genuine photos with any "Defect detected" | **0** | **2**, the same dealer listing as in 1.5.3 (1 triangle, 1 baton) |
+| Genuine triangles and batons withheld only by the new outer-metal assessability rule | 1 of 111 | 1 of about 380 |
+| Repeat photos: same outcome in every photo | 32 of 32 | 190 of 190 |
+| Public QC controls | unchanged from 1.5.3 | unchanged from 1.5.3 |
+
+**Round coverage against 1.5.3, same photos** (run 38587729590):
+- GMT: +1 round assessed.
+- Submariner: 6 fewer rounds assessed, about 1 %, from the consistent 20 % separator criterion.
+
+**Owner's photos (local, not published):** outcomes are identical to 1.5.3.
+- Batgirl: 7 and 8 No defect; 12 Worth a look.
+- Genuine GMT: all unobstructed rounds assessed, no defects.
+
+**On-device tests:** the emulator instrumentation job now runs for the first time since 4 Oct.
+- Run 38588915705: 6 tests on an API 35 emulator.
+- Included: the three EXIF orientation tests of the real upload path.
