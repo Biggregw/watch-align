@@ -70,7 +70,8 @@ final class Alpha99Pipeline {
             AlignmentAnalysis.Setups su=setups!=null?setups:align==null?s->null:align::setup;
             o.alignment=AlignmentAnalysis.run((mk,ring)->AlignmentAnalysis.image(gray,H,mk,ring),H,o.measurement,o.checks,model,ref,align,su);
             // outer-metal alignment of the triangle and batons (existing Alpha107 measurement and genuine reference)
-            try{MetalAlignment.apply(o.alignment,o.summary,o.measurement,model,ref,align==null?null:align.metalExtra);}catch(Throwable t){/* metal check optional */}
+            try{MetalAlignment.apply(o.alignment,o.summary,o.measurement,model,ref,align==null?null:align.metalExtra);}
+            catch(Throwable t){MetalAlignment.notAssessed(o.alignment,"the outer-metal comparison failed");}
             for(AlignmentDecision.Marker am:o.alignment.markers){
                 try{o.alignmentCloseups.put(am.hour,AlignmentCloseup.render(rgba,H,model.atHour(am.hour),am));}catch(Throwable t){/* close-up optional */}
             }
