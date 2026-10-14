@@ -1,0 +1,142 @@
+{
+ "model": "submariner_124060",
+ "provenance": "Watch Align luminous alignment reference: 295b1dee99d849fde0d8065235371050e718b209 run 38565452660; sha256-verified genuine catalogue tools/research/sub124060/catalogue_124060.csv",
+ "method": "LuminousAlignment rigid fit (translation + rotation; circle translation only) of the genuine-measured luminous template; reference ring from the other markers only. Per marker type: inset = median luminous inset from the outer-metal master; g = photographic edge offset (nominal, robust sd, p95 absolute and photo-relative limits); envelopes = largest deviation of any physical watch (one value per watch per marker position) from the per-hour genuine nominal. Genuine photos only; no replica or QC photo used.",
+ "shapes": {
+  "triangle": {
+   "inset_R": 0.010791,
+   "growth_nominal_R": 3.05187e-05,
+   "growth_sd_R": 0.00114974547702,
+   "growth_limit_R": 0.001899675,
+   "photo_growth_limit_R": 0.002053938,
+   "radial_photo_sd_R": 0.0003798666184410857,
+   "tangential_photo_sd_R": 0.000139803641959214,
+   "rotation_photo_sd_deg": 0.06445438407359141,
+   "repeat_pairs": {
+    "radial": 18,
+    "tangential": 18,
+    "rotation": 18
+   },
+   "radial_limit_R": 0.003254705,
+   "tangential_limit_R": 0.0024169415,
+   "rotation_limit_deg": 1.28256995,
+   "watches": 68,
+   "supported": true
+  },
+  "baton": {
+   "inset_R": 0.014699,
+   "growth_nominal_R": 7.64302e-05,
+   "growth_sd_R": 0.0007903106047199999,
+   "growth_limit_R": 0.0015394938799999998,
+   "photo_growth_limit_R": 0.002439064,
+   "radial_photo_sd_R": 0.00028737899298810225,
+   "tangential_photo_sd_R": 0.0004386728609309679,
+   "rotation_photo_sd_deg": 0.0848616731886335,
+   "repeat_pairs": {
+    "radial": 54,
+    "tangential": 54,
+    "rotation": 54
+   },
+   "radial_limit_R": 0.00388934,
+   "tangential_limit_R": 0.004149636,
+   "rotation_limit_deg": 0.7915754,
+   "watches": 73,
+   "supported": true
+  },
+  "round": {
+   "inset_R": 0.01609,
+   "growth_nominal_R": -0.000202847,
+   "growth_sd_R": 0.0015709970598,
+   "growth_limit_R": 0.0023394789999999998,
+   "photo_growth_limit_R": 0.00121413,
+   "radial_photo_sd_R": 0.0003399882267634576,
+   "tangential_photo_sd_R": 0.0002788199423087054,
+   "rotation_photo_sd_deg": null,
+   "repeat_pairs": {
+    "radial": 113,
+    "tangential": 113,
+    "rotation": 0
+   },
+   "radial_limit_R": 0.0036266700000000002,
+   "tangential_limit_R": 0.0037277269999999997,
+   "rotation_limit_deg": null,
+   "watches": 73,
+   "supported": true
+  }
+ },
+ "hours": {
+  "1": {
+   "radial_R": 0.00059077,
+   "tangential_R": 6.4503e-05,
+   "rotation_deg": null,
+   "watches": 65
+  },
+  "2": {
+   "radial_R": 0.00027379149999999996,
+   "tangential_R": -0.000425007,
+   "rotation_deg": null,
+   "watches": 14
+  },
+  "3": {
+   "radial_R": 0.000419672,
+   "tangential_R": 0.000199856,
+   "rotation_deg": -0.131584,
+   "watches": 69
+  },
+  "4": {
+   "radial_R": 0.00041089399999999997,
+   "tangential_R": 1.2300199999999998e-05,
+   "rotation_deg": null,
+   "watches": 62
+  },
+  "5": {
+   "radial_R": 0.00025197,
+   "tangential_R": 0.000354209,
+   "rotation_deg": null,
+   "watches": 65
+  },
+  "6": {
+   "radial_R": 0.00075629,
+   "tangential_R": -4.12467e-05,
+   "rotation_deg": -0.0830147,
+   "watches": 67
+  },
+  "7": {
+   "radial_R": 0.00038453850000000003,
+   "tangential_R": -7.033104999999999e-05,
+   "rotation_deg": null,
+   "watches": 61
+  },
+  "8": {
+   "radial_R": 0.000125718,
+   "tangential_R": 6.401504999999999e-05,
+   "rotation_deg": null,
+   "watches": 65
+  },
+  "9": {
+   "radial_R": 0.000467378,
+   "tangential_R": -0.0001986,
+   "rotation_deg": -0.0624804,
+   "watches": 69
+  },
+  "10": {
+   "radial_R": 0.00030826599999999997,
+   "tangential_R": -5.9391225e-05,
+   "rotation_deg": null,
+   "watches": 70
+  },
+  "11": {
+   "radial_R": 0.0007232925,
+   "tangential_R": -6.156919999999999e-05,
+   "rotation_deg": null,
+   "watches": 72
+  },
+  "12": {
+   "radial_R": -0.001087625,
+   "tangential_R": -0.00022590149999999999,
+   "rotation_deg": 0.09550995,
+   "watches": 68
+  }
+ },
+ "screened_genuine_readings": []
+}

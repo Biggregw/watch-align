@@ -28,31 +28,70 @@ final class Alpha99Pipeline {
         Map<Integer,Alpha94MarkerMeasurement.Marker> partial;
         Alpha99Findings.Summary summary;
         Bitmap overview;
+        /** Transparent full-photo overlay: yellow expected geometry + cyan actual fitted baton edges. */
+        Bitmap diagnosticOverlay;
+        /** Full-photo ring-adjusted scoring reference, kept separate from the fixed-master overlay. */
+        Bitmap scoringOverlay;
         final Map<String,Bitmap> closeups=new LinkedHashMap<>();
+        final Map<Integer,MarkerMismatchResearch.Result> mismatch=new LinkedHashMap<>();
         String technical;
         ModelSpec model;ModelReference reference;
+        /** Watch Align alignment-only results (every marker), their close-ups (hour -> image) and technical text. */
+        AlignmentAnalysis.Output alignment;
+        final Map<Integer,Bitmap> alignmentCloseups=new LinkedHashMap<>();
+        String alignmentTechnical;AlignmentReference alignmentReference;Bitmap alignmentOverview;
         boolean ok(){return pose!=null&&pose.valid&&pose.homography!=null&&summary!=null;}
     }
 
     private Alpha99Pipeline(){}
 
-    static Output run(Bitmap photo,ModelSpec model,ModelReference ref){
-        Output o=new Output();o.model=model;o.reference=ref;
+    static Output run(Bitmap photo,ModelSpec model,ModelReference ref){return run(photo,model,ref,null,null);}
+
+    /**
+     * @param align the model's genuine luminous alignment reference (null: every marker "Cannot assess")
+     * @param setups fit setups; null = from align (the calibration driver passes its own)
+     */
+    static Output run(Bitmap photo,ModelSpec model,ModelReference ref,AlignmentReference align,AlignmentAnalysis.Setups setups){
+        Output o=new Output();o.model=model;o.reference=ref;o.alignmentReference=align;
         o.pose=AutomaticDialOverlay.build(photo,model);
         if(o.pose==null||!o.pose.valid||o.pose.homography==null)return o;
         double[] H=o.pose.homography;
         o.measurement=Alpha94MarkerMeasurement.analyse(photo,H,model);
+        try{o.diagnosticOverlay=BatonFitDiagnosticOverlay.render(o.pose.overlay,o.measurement,H);}
+        catch(Throwable t){o.diagnosticOverlay=o.pose.overlay;}
         Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(photo,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
         try{o.date=model.date==null?null:Alpha98DateWindow.analyse(gray,H,model.date);}catch(Throwable t){o.date=null;}
         try{o.checks=Alpha99MarkerInterference.analyse(gray,H,model);}catch(Throwable t){o.checks=null;}
         try{o.partial=partialRounds(photo,H,o.measurement,o.checks,model);}catch(Throwable t){o.partial=null;}
         o.summary=Alpha99Findings.build(o.measurement,o.date,o.checks,o.partial,model,ref);
-        try{o.overview=Alpha99Overview.render(rgba,H,o.summary,model);}catch(Throwable t){o.overview=null;}
+        // Watch Align alignment-only layer: reads the frozen pose, the measured ring of the OTHER markers and the hand /
+        // glare checks; changes none of them.
+        try{
+            AlignmentAnalysis.Setups su=setups!=null?setups:align==null?s->null:align::setup;
+            o.alignment=AlignmentAnalysis.run((mk,ring)->AlignmentAnalysis.image(gray,H,mk,ring),H,o.measurement,o.checks,model,ref,align,su);
+            // outer-metal alignment of the triangle and batons (existing Alpha107 measurement and genuine reference)
+            try{MetalAlignment.apply(o.alignment,o.summary,o.measurement,model,ref,align==null?null:align.metalExtra);}catch(Throwable t){/* metal check optional */}
+            for(AlignmentDecision.Marker am:o.alignment.markers){
+                try{o.alignmentCloseups.put(am.hour,AlignmentCloseup.render(rgba,H,model.atHour(am.hour),am));}catch(Throwable t){/* close-up optional */}
+            }
+            o.alignmentTechnical=AlignmentAnalysis.technical(o.alignment,align);
+            try{o.alignmentOverview=AlignmentOverview.render(rgba,H,o.alignment,model);}catch(Throwable t){o.alignmentOverview=null;}
+        }catch(Throwable t){o.alignment=null;}
         double[] ring=o.measurement.ring!=null&&o.measurement.ring.usable?o.measurement.ring.model:null;
-        for(Alpha99Findings.Finding f:o.summary.tiles()){
-            Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref);}catch(Throwable t){c=null;}
+        List<Alpha99Findings.Finding> tiles=o.summary.tiles();
+        for(Alpha99Findings.Finding f:o.summary.all){
+            // Only individual marker outlines are scored, each under its own hour (never a ring/date/size feature).
+            if(InspectionView.marker(f)&&model.atHour(f.hour)!=null)
+                o.mismatch.put(f.hour,MarkerMismatchResearch.score(o.measurement,model.atHour(f.hour),ref,f,o.checks==null?null:o.checks.get(f.hour)));
+            if(!tiles.contains(f)&&(f.dialWide||model.atHour(f.hour)==null))continue;
+            // Use the existing detector result. This is a display-only diagnostic: no rerun or changed measurement.
+            Alpha94MarkerMeasurement.Marker measured=f.shape==Alpha99Findings.Shape.BATON?o.measurement.atHour(f.hour):null;
+            MarkerMismatchResearch.Result comparison=InspectionView.result(f,o.mismatch);
+            Bitmap c=null;try{c=Alpha98Closeups.forFinding(rgba,H,f,o.date,ring,model,ref,measured,comparison);}catch(Throwable t){c=null;}
             if(c!=null)o.closeups.put(f.key,c);
         }
+        try{o.overview=Alpha99Overview.render(rgba,H,o.summary,model,o.mismatch);}catch(Throwable t){o.overview=null;}
+        try{o.scoringOverlay=MarkerMismatchOverlay.fullWatch(photo.getWidth(),photo.getHeight(),H,o.mismatch);}catch(Throwable t){o.scoringOverlay=null;}
         o.technical=technical(o);
         rgba.release();gray.release();
         return o;
@@ -134,11 +173,14 @@ final class Alpha99Pipeline {
             for(Alpha99Findings.Measure x:f.measures)
                 s.append(String.format(Locale.US,"\n  %s %s: %s / %s / %s -> %s",f.title,x.name,Alpha99Findings.fmt(x.value,x.unit),Alpha99Findings.fmt(x.genuineMax,x.unit),
                         x.hasAllowance()?Alpha99Findings.fmt(x.allowance(),x.unit):"none",
-                        x.status()==Alpha99Findings.Status.MINOR?"WITHIN (too small to see: under "+Alpha99Findings.fmt(x.visibleBar,x.unit)+")":x.status()));
+                        x.status()==Alpha99Findings.Status.MINOR?"OUTSIDE GENUINE RANGE (below visibility guideline: under "+Alpha99Findings.fmt(x.visibleBar,x.unit)+")":x.status()));
             if(o.partial!=null&&o.partial.containsKey(f.hour)&&f.shape==Alpha99Findings.Shape.ROUND&&o.checks!=null&&o.checks.get(f.hour)!=null&&o.checks.get(f.hour).clean)
                 s.append(String.format(Locale.US,"\n    (outline edge not visible over %.0f° of the %d marker; position measured from the rest)",o.partial.get(f.hour).edgeGapDeg,f.hour));
         }
         s.append("\n\nMeasurement only - comparisons with genuine watches, not a verdict. Directions in the upright dial frame (12 at top).");
+        s.append("\n\nIndividual marker outline mismatch: ring-adjusted nominal outer metal; denominator = filled yellow template area. Continuous geometric area of fitted polygons; photographic boundary uncertainty is separate. No QC severity limits. Full-photo inspection offers the scoring reference and a separate fixed master. Global ring placement and minute-track gaps are separate.");
+        for(Map.Entry<Integer,MarkerMismatchResearch.Result> entry:o.mismatch.entrySet())
+            s.append("\n  ").append(entry.getKey()).append(": ").append(entry.getValue().display());
         return s.toString();
     }
 }

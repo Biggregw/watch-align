@@ -278,10 +278,11 @@ public class Alpha99FindingsTest {
         // Alpha103: just past the genuine maximum is far below what the eye can see (5% of the marker's width)
         assertEquals(Alpha99Findings.Status.MINOR,find(s,"round8").status);
         assertEquals(Alpha99Findings.Status.MINOR,find(s,"round11").status);
-        assertTrue(s.headline(),s.headline().startsWith("No visible deviation"));
-        // Alpha105: shown as within (green, no tile), named in the within line
+        assertTrue(s.headline(),s.headline().startsWith("No finding exceeds"));
+        // Classification and badges remain unchanged; outside readings are no longer called within genuine.
         assertFalse(s.headline(),s.headline().contains("Too small"));
-        assertTrue(s.withinLine(),s.withinLine().contains("8")&&s.withinLine().contains("11"));
+        assertFalse(s.withinLine(),s.withinLine().contains("8")||s.withinLine().contains("11"));
+        assertTrue(s.belowVisibilityLine(),s.belowVisibilityLine().contains("8")&&s.belowVisibilityLine().contains("11"));
         for(Alpha99Findings.Finding f:s.tiles())assertNotEquals(Alpha99Findings.Status.MINOR,f.status);
         for(Alpha94MarkerMeasurement.Marker m:r.markers)if(m.hour==8||m.hour==11)m.localOffsetPx=0.012*r.dialRadiusPx;
         s=Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef());
@@ -345,7 +346,7 @@ public class Alpha99FindingsTest {
         Alpha99Findings.Summary s=Alpha99Findings.build(small,null,c,TestModels.gmt(),TestModels.gmtRef());
         Alpha99Findings.Finding round=find(s,"round2");
         assertEquals(Alpha99Findings.Status.NOT_ASSESSED,round.status);assertEquals("resolution too low",round.shortReason);
-        assertFalse(Alpha99Overview.hasBadge(round));
+        assertTrue(Alpha99Overview.hasBadge(round));                                        // withheld markers stay visible (grey dash)
         assertTrue(Alpha99Overview.hasBadge(find(s,"six")));                               // hand: marker-specific, keeps its dash
         assertTrue(Alpha99Overview.hasBadge(find(s,"nine")));
         assertTrue(s.notAssessedLine().contains("round markers (resolution too low)"));
@@ -542,7 +543,7 @@ public class Alpha99FindingsTest {
         Alpha99Findings.Finding f=find(Alpha99Findings.build(r,null,allClean(),TestModels.gmt(),TestModels.gmtRef()),"nine");
         assertEquals(Alpha99Findings.Status.WITHIN,f.status);                 // rotation within, position not assessed
         assertEquals("position",f.partNotAssessed);
-        assertEquals("one edge hidden by a reflection",f.partReason);
+        assertEquals("opposing edges inconsistent",f.partReason);
         for(Alpha99Findings.Measure x:f.measures)assertNotEquals("position",x.name);
         assertTrue(String.join(" ",f.detail()),String.join(" ",f.detail()).contains("polished bevel"));
         // a real displacement moves both long sides the same way and keeps the width: still measured and still flagged

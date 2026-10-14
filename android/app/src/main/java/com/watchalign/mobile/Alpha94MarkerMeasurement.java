@@ -51,7 +51,8 @@ final class Alpha94MarkerMeasurement {
         double failedRadiusErrPx=Double.NaN;
         /** Polygon markers (batons, 12): per side, the fitted line's offset from the master side along its outward normal
          *  (canonical units, + = outward), its edge coverage, and the fitted vertices. Diagnostics; null otherwise. */
-        double[] sideOffR,sideCov;double[][] fitVertices;
+        /** Polygon fits: each independently fitted side's angle from its master side, deg (detector output, all sides). */
+        double[] sideOffR,sideCov,sideAngDeg;double[][] fitVertices;
         double canonDx=Double.NaN,canonDy=Double.NaN;
         /** 12 triangle only (research-only display): side angle errors and base tilt, + = clockwise. */
         double leftSideErrDeg=Double.NaN,rightSideErrDeg=Double.NaN,baseTiltDeg=Double.NaN;
@@ -440,9 +441,9 @@ final class Alpha94MarkerMeasurement {
         for(int i=0;i<k;i++){V[i]=intersect(lp[(i+k-1)%k],ld[(i+k-1)%k],lp[i],ld[i]);if(V[i]==null){m.reason="degenerate marker fit";return null;}}
         double[] centre=polygonCentroid(V);
         double[] angErr=new double[k];double maxAng=0,maxOff=0,minCov=1;
-        m.sideOffR=new double[k];m.sideCov=cov.clone();m.fitVertices=V;
+        m.sideOffR=new double[k];m.sideCov=cov.clone();m.fitVertices=V;m.sideAngDeg=new double[k];
         for(int i=0;i<k;i++){
-            angErr[i]=wrap90(Math.toDegrees(Math.atan2(ld[i][1],ld[i][0])-Math.atan2(dm[i][1],dm[i][0])));
+            angErr[i]=wrap90(Math.toDegrees(Math.atan2(ld[i][1],ld[i][0])-Math.atan2(dm[i][1],dm[i][0])));m.sideAngDeg[i]=angErr[i];
             // offset of the fitted line at the master side's midpoint (independent of the side's tilt)
             double mx=a[i][0]+0.5*L[i]*dm[i][0],my=a[i][1]+0.5*L[i]*dm[i][1];
             double tt=(mx-lp[i][0])*ld[i][0]+(my-lp[i][1])*ld[i][1];

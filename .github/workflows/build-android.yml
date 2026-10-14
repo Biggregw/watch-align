@@ -117,14 +117,27 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Prepare working APK
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk "WatchAlign-Android-${{ steps.version.outputs.version }}.apk"
-          sha256sum "WatchAlign-Android-${{ steps.version.outputs.version }}.apk" > SHA256SUMS-Android.txt
+          cp app/build/outputs/apk/debug/app-debug.apk "Watch Align.apk"
+          sha256sum "Watch Align.apk" > SHA256SUMS-Android.txt
+          cat SHA256SUMS-Android.txt
+          AAPT=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)aapt
+          "$AAPT" dump badging "Watch Align.apk" | grep -E "^package:|^application-label:|^launchable-activity:|native-code" | tee apk-info.txt
+          grep -q "application-label:'Watch Align'" apk-info.txt
+          # the genuine luminous alignment references must be inside the APK
+          unzip -l "Watch Align.apk" | grep "alignment/" | tee apk-references.txt
+          grep -q "assets/models/gmt_126710/alignment/luminous_alignment.json" apk-references.txt
+          grep -q "assets/models/submariner_124060/alignment/luminous_alignment.json" apk-references.txt
+          grep -q "assets/models/gmt_126710/alignment/metal_alignment.properties" apk-references.txt
+          grep -q "assets/models/submariner_124060/alignment/metal_alignment.properties" apk-references.txt
+          # the final decision logic (round-marker 1.00% visual floor) must be compiled into the APK
+          unzip -p "Watch Align.apk" 'classes*.dex' | grep -aq "Round markers are reported only when displaced"
+          echo "Round visual floor present in the APK."
       - name: Upload working APK
         uses: actions/upload-artifact@v4
         with:
-          name: WatchAlign-Android-${{ steps.version.outputs.version }}
+          name: Watch Align
           path: |
-            android/WatchAlign-Android-${{ steps.version.outputs.version }}.apk
+            android/Watch Align.apk
             android/SHA256SUMS-Android.txt
           if-no-files-found: error
           retention-days: 30
@@ -134,9 +147,12 @@ jobs:
         with:
           tag_name: "v${{ steps.version.outputs.version }}"
           name: "Watch Align Android v${{ steps.version.outputs.version }}"
-          body: "Official standalone build for Watch Align Android v${{ steps.version.outputs.version }}."
+          body: |
+            Watch Align Android v${{ steps.version.outputs.version }} (alignment-only hour-marker check), built from ${{ github.sha }}.
+            Download "Watch Align.apk"; its SHA-256 is in SHA256SUMS-Android.txt. Notes and limitations: docs/WATCH_ALIGN_ALIGNMENT_ONLY.md.
+            Signing: when the repository's shared signing-key secret is absent the APK is signed with a throwaway debug key; uninstall any earlier Watch Align build before installing.
           files: |
-            android/WatchAlign-Android-${{ steps.version.outputs.version }}.apk
+            android/Watch Align.apk
             android/SHA256SUMS-Android.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
