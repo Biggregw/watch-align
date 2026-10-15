@@ -451,6 +451,122 @@ def render(img_color, H, m, res, rpx, path):
     cv2.imwrite(path, crop)
 
 
+def zone_fit(img, H, m, rpx, insets):
+    """Tolerance-zone method (owner's suggestion, 15 Oct 2026). The overlay stays FIXED where the app places it.
+    From well inside the marker, each ray along an outline normal follows the marker's bright fill outward to where
+    it ends (first drop below half-way between lume and dial). That boundary's offset from the lume outline, side by
+    side, is how far the marker spills past (+) or falls short of (-) the overlay there.
+
+    The marker's shift is the part of those offsets that differs between opposite sides (a uniform halo or edge
+    softness moves every side the same way and is removed as one common offset). Rays that start dark (a hand over
+    the marker) or never end within reach (a hand or glare continuing outward) are not used; points well off the
+    common pattern (a lit bevel merged on part of the outline) are ignored by the robust fit. No search: the result
+    is a fixed function of the photo and the overlay."""
+    shape = m['shape']
+    poly = template(m, insets)
+    if poly is None:
+        return {'status': 'no overlay'}
+    inset = insets[shape]
+    pts, nrm, c0 = outline_points(poly, rpx, shape)
+    lv = levels(img, H, poly, c0, rpx, inset)
+    if lv is None:
+        return {'status': 'too close to the photo edge'}
+    lume, dial = lv
+    if lume - dial < 25:
+        return {'status': 'marker not distinguishable from the dial'}
+    T = dial + 0.5 * (lume - dial)
+    rot = shape != 'round'
+    if shape == 'round':
+        inr = float(np.mean(np.hypot(*(pts - c0).T)))
+    else:
+        e = np.roll(poly, -1, axis=0)
+        area = abs(np.sum((poly[:, 0] - c0[0]) * (e[:, 1] - c0[1]) - (poly[:, 1] - c0[1]) * (e[:, 0] - c0[0]))) / 2
+        inr = 2 * area / np.sum(np.hypot(*(e - poly).T))
+    depth = min(0.45 * inr, 0.025)
+    reach = inset + 3.0 / rpx
+    steps = np.arange(-depth, reach + 1e-12, PROFILE_STEP_PX / rpx)
+    P = pts[:, None, :] + steps[None, :, None] * nrm[:, None, :]
+    v = sample(img, project(H, P.reshape(-1, 2))).reshape(len(pts), len(steps))
+    ext = np.full(len(pts), np.nan)
+    for i in range(len(pts)):
+        row = v[i]
+        if not np.all(np.isfinite(row)):
+            continue
+        k0 = int(0.25 * len(steps) * depth / (depth + reach))   # the ray must start inside bright fill
+        if np.median(row[:max(3, k0)]) < T:
+            continue
+        below = np.where(row < T)[0]
+        if len(below) == 0:
+            continue                                   # bright all the way out: a hand or glare, not used
+        j = below[0]
+        if j == 0:
+            continue
+        f = (row[j - 1] - T) / (row[j - 1] - row[j])   # sub-sample crossing
+        ext[i] = steps[j - 1] + f * (steps[1] - steps[0])
+    seen = np.isfinite(ext)
+    if seen.mean() < MIN_SEEN:
+        return {'status': 'too little of its outline is visible (%.0f%%)' % (100 * seen.mean()), 'seen': float(seen.mean())}
+    hour = m['hour']
+    a = math.radians(hour * 30.0)
+    er = np.array([math.sin(a), -math.cos(a)]) if hour % 12 else np.array([0.0, -1.0])
+    et = np.array([math.cos(a), math.sin(a)]) if hour % 12 else np.array([1.0, 0.0])
+    lev = pts - c0
+    halfLen = float(np.max(np.hypot(*lev.T)))
+    cols = [nrm @ er, nrm @ et]
+    if rot:
+        cols.append((-nrm[:, 0] * lev[:, 1] + nrm[:, 1] * lev[:, 0]) / halfLen)
+    cols.append(np.ones(len(pts)))                     # common offset (halo / edge softness), never a shift
+    A = np.c_[tuple(cols)]
+    idx = np.where(seen)[0]
+    y = ext * rpx
+    wi = np.ones(len(idx))
+    for _ in range(10):
+        x, *_ = np.linalg.lstsq(A[idx] * wi[:, None], y[idx] * wi, rcond=None)
+        r = y[idx] - A[idx] @ x
+        u = r / TUKEY_PX
+        wi = np.sqrt(np.where(np.abs(u) < 1, (1 - u ** 2) ** 2, 0.0))
+    r_all = np.where(seen, y - A @ x, np.nan)
+    inl = seen & (np.abs(np.nan_to_num(r_all, nan=99)) < TUKEY_PX)
+    sig = max(float(np.std(r_all[inl])) if inl.sum() > 5 else float('nan'), 0.3)
+    try:
+        se = np.sqrt(np.diag(np.linalg.inv(A[inl].T @ A[inl]))) * sig
+    except np.linalg.LinAlgError:
+        se = np.full(A.shape[1], np.inf)
+    nfix = 3 if rot else 2
+    fixed = [bool(q < FIX_SE_PX) for q in se[:nfix]]
+    rad, tan = float(x[0]), float(x[1])
+    far = float(x[2]) if rot else 0.0
+    # the marker's outline moved by (rad, tan) and turned so its far end moves by `far`: largest movement of any point
+    use_r = rad if fixed[0] else 0.0
+    use_t = tan if fixed[1] else 0.0
+    use_f = far if (rot and fixed[2]) else 0.0
+    yellow = np.asarray(m['yellow'], float)
+    th = use_f / (halfLen * rpx) if rot else 0.0
+    cu, su = math.cos(th), math.sin(th)
+    moved = c0 + (yellow - c0) @ np.array([[cu, -su], [su, cu]]).T + (use_r * er + use_t * et) / rpx
+    gap_px = float(np.max(np.hypot(*(moved - yellow).T)) * rpx)
+    return {
+        'status': 'measured' if any(fixed) else 'the visible edges do not fix its position',
+        'seen': float(seen.mean()), 'inliers': float(inl.mean()),
+        'noise_px': float(np.std(r_all[inl])) if inl.sum() > 5 else float('nan'),
+        'radial_px': rad, 'tangential_px': tan, 'rotation_deg': math.degrees(th) if rot else float('nan'),
+        'se_radial_px': float(se[0]), 'se_tangential_px': float(se[1]), 'se_far_end_px': float(se[2]) if rot else float('nan'),
+        'fixed': ''.join('rtθ'[i] for i, f in enumerate(fixed) if f),
+        'edge_offset_px': float(x[-1]), 'gap_px': gap_px, 'gap_R': gap_px / rpx,
+        # containment (pass/fail gauge): how far the marker's bright shape reaches past the OUTER outline (yellow),
+        # as the 90th percentile over the rays that saw an edge (a whole side spilling, not one stray ray)
+        'spill_px': float(np.percentile((ext[seen] - inset) * rpx, 90)),
+        '_lume': poly, '_pts': pts, '_nrm': nrm, '_off': ext, '_inl': inl,
+        '_fit': c0 + (yellow - c0) @ np.array([[math.cos(math.radians(math.degrees(th) if rot else 0)), -math.sin(th)], [math.sin(th), math.cos(th)]]).T + (rad * er + tan * et) / rpx,
+    }
+
+
+def measure(img, H, m, rpx, insets):
+    if os.environ.get('OVERLAY_GAP_METHOD', 'zone') == 'zone':
+        return zone_fit(img, H, m, rpx, insets)
+    return fit_marker(img, H, m, rpx, insets)
+
+
 def perturb_test(img, d, m, rpx, insets, base):
     """Move the overlay by a known shift (and rotation for polygons) and compare the measured change with it."""
     import hashlib
@@ -466,7 +582,7 @@ def perturb_test(img, d, m, rpx, insets, base):
     R = np.array([[math.cos(dth), -math.sin(dth)], [math.sin(dth), math.cos(dth)]])
     m2 = dict(m)
     m2['yellow'] = (c + (y - c) @ R.T + v).tolist()
-    res = fit_marker(img, d['H'], m2, rpx, insets)
+    res = measure(img, d['H'], m2, rpx, insets)
     if res.get('status') != 'measured':
         return {'inj_px': '%.2f' % (mag * rpx), 'rec_err_px': 'lost'}
     a = math.radians(m['hour'] * 30.0)
@@ -478,6 +594,8 @@ def perturb_test(img, d, m, rpx, insets, base):
     got = np.array([res['radial_px'] - base['radial_px'], res['tangential_px'] - base['tangential_px']])
     want_rt = np.array([want @ er, want @ et])
     out = {'inj_px': '%.2f' % (mag * rpx), 'rec_err_px': '%.3f' % float(np.hypot(*(got - want_rt)))}
+    if 'spill_px' in res:
+        out['spill_moved_px'] = '%.2f' % res['spill_px']
     if rot:
         out['inj_deg'] = '%.2f' % math.degrees(dth)
         out['rec_err_deg'] = '%.3f' % abs((res['rotation_deg'] - base['rotation_deg']) + math.degrees(dth))
@@ -505,7 +623,7 @@ def main():
     cols = ['photo_id', 'watch', 'model', 'hour', 'shape', 'rpx', 'app_outcome', 'app_reason', 'app_primary', 'app_excess_px',
             'hand_clean', 'status', 'seen', 'inliers', 'noise_px', 'radial_px', 'tangential_px', 'rotation_deg',
             'se_radial_px', 'se_tangential_px', 'se_far_end_px', 'fixed', 'edge_offset_px', 'metal_offset_px', 'metal_share', 'gap_px', 'gap_R',
-            'match', 'ambiguity', 'inj_px', 'inj_deg', 'rec_err_px', 'rec_err_deg']
+            'match', 'ambiguity', 'spill_px', 'spill_moved_px', 'inj_px', 'inj_deg', 'rec_err_px', 'rec_err_deg']
     with open(out, 'w', newline='') as fo:
         w = csv.DictWriter(fo, fieldnames=cols, extrasaction='ignore')
         w.writeheader()
@@ -525,7 +643,7 @@ def main():
             insets = model_insets(d['model'])
             for m in d['markers']:
                 try:
-                    res = fit_marker(img, d['H'], m, rpx, insets)
+                    res = measure(img, d['H'], m, rpx, insets)
                 except Exception as e:  # research: record, never hide
                     res = {'status': 'error %s' % e}
                 row = {'photo_id': d['photo_id'], 'watch': d['watch'], 'model': d['model'], 'hour': m['hour'],
