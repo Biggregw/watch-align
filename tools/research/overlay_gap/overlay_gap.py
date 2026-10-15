@@ -422,6 +422,7 @@ def fit_marker(img, H, m, rpx, insets, size=None):
         'edge_offset_px': float(G1 * rpx), 'metal_offset_px': float(G2 * rpx),
         'gap_px': gap_px, 'gap_R': gap_px / rpx, 'contrast': contrast, 'match': score, 'ambiguity': ambiguity,
         '_lume': poly, '_pts': pts + G1 * nrm, '_nrm': nrm, '_off': off + lab * (inset + G2), '_inl': inl,
+        '_T': (c0.copy(), np.array([tx, ty]), th),
         '_fit': c0 + (yellow - c0) @ R.T + dt,
     }
 
@@ -657,7 +658,7 @@ def centroid_fit(img, H, m, rpx, insets, size=None):
     gap_px = float(np.max(np.hypot(*(moved - yellow).T)) * rpx)
     out.update({'status': 'measured' if ok else 'its visible lume is not the expected size (%.0f%%): a hand, glare or a lit ring' % (100 * size_ratio),
                 'fixed': 'rtθ' if (ok and rot) else ('rt' if ok else ''), 'gap_px': gap_px, 'gap_R': gap_px / rpx,
-                '_lume': poly})
+                '_lume': poly, '_T': (cpoly.copy(), d / rpx, th)})
     return out
 
 
