@@ -235,7 +235,7 @@ def fall_score(img, H, P, N, contrast, rpx, side=None, offs_px=(-1.5, -1.0, -0.5
     return best
 
 
-def global_pose(img, H, lume_pts, lume_nrm, lume_side, c0, rot, rpx, contrast, metal=None, merge_px=0.0,
+def global_pose(img, H, lume_pts, lume_nrm, lume_side, c0, rot, rpx, contrast, metal=None, merge_px=0.0, size_px=None,
                 span_px=10.0, step_px=1.0, rot_deg=3.0, rot_step=1.0, centre=(0.0, 0.0, 0.0)):
     """Exhaustive search of shift (and rotation) maximising how well BOTH known edges (lume edge, outer metal edge)
     sit on real bright->dark steps. Returns best (tx, ty, th), its score and the best score of any pose at least 2 px
@@ -262,10 +262,16 @@ def global_pose(img, H, lume_pts, lume_nrm, lume_side, c0, rot, rpx, contrast, m
         N = np.einsum('pij,nj->pni', R, allN)
         # the lume edge may sit anywhere from 1.5 px inside nominal to the metal edge (a separator blurred away or a
         # lit bevel merged all round), uniformly
-        offs = tuple(np.arange(-1.5, merge_px + 1.5 + 1e-9, 0.5))
+        if size_px is None:
+            offs = tuple(np.arange(-1.5, merge_px + 1.5 + 1e-9, 0.5))
+            moffs = (-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5)
+        else:   # this photo's marker size, measured on its cleanest marker of this shape: position only
+            offs = (size_px[0] - 0.5, size_px[0], size_px[0] + 0.5)
+            m0 = size_px[0] + size_px[1]
+            moffs = (m0 - 0.5, m0, m0 + 0.5)
         out[k:k + B] = fall_score(img, H, P[:, :nl], N[:, :nl], contrast, rpx, SD, offs_px=offs)
         if metal is not None:
-            out[k:k + B] += 0.5 * fall_score(img, H, P[:, nl:], N[:, nl:], contrast, rpx, MS)
+            out[k:k + B] += 0.5 * fall_score(img, H, P[:, nl:], N[:, nl:], contrast, rpx, MS, offs_px=moffs)
     i = int(np.argmax(out))
     best = poses[i]
     far = np.hypot((poses[:, 0] - best[0]) * rpx, (poses[:, 1] - best[1]) * rpx) + np.abs(poses[:, 2] - best[2]) * halfLen * rpx
@@ -273,7 +279,7 @@ def global_pose(img, H, lume_pts, lume_nrm, lume_side, c0, rot, rpx, contrast, m
     return best, float(out[i]), alt
 
 
-def fit_marker(img, H, m, rpx, insets):
+def fit_marker(img, H, m, rpx, insets, size=None):
     """Known shape, two concentric edges: the lume edge (template) and the outer metal edge a known inset outside it.
     Each outline point uses whichever of the two it shows (a lit bevel merged with the lume only shows the outer one).
     Unknowns: shift, rotation (polygons), uniform lume-edge offset G1 and metal-edge offset G2 (photo edge definition;
@@ -294,6 +300,8 @@ def fit_marker(img, H, m, rpx, insets):
     rot = shape != 'round'
     tx = ty = th = 0.0
     G1 = G2 = 0.0
+    if size is not None:
+        G1, G2 = size[0] / rpx, size[1] / rpx
     lever = pts0 - c0
     hour = m['hour']
     a = math.radians(hour * 30.0)
@@ -306,6 +314,8 @@ def fit_marker(img, H, m, rpx, insets):
         cols = [nrm[:, 0], nrm[:, 1]]
         if rot:
             cols.append(-nrm[:, 0] * lev[:, 1] + nrm[:, 1] * lev[:, 0])
+        if size is not None:
+            return np.c_[tuple(cols)]
         cols.append(np.ones(len(nrm)))
         if use_g2:
             cols.append(lab.astype(float))
@@ -315,8 +325,8 @@ def fit_marker(img, H, m, rpx, insets):
     side0 = outline_points.side
     ypts, ynrm, _ = outline_points(np.asarray(m['yellow'], float), rpx, shape)
     metal_family = (ypts, ynrm, outline_points.side)
-    best, score, alt = global_pose(img, H, pts0, nrm0, side0, c0, rot, rpx, contrast, metal_family, inset * rpx)
-    best, score, alt2 = global_pose(img, H, pts0, nrm0, side0, c0, rot, rpx, contrast, metal_family, inset * rpx,
+    best, score, alt = global_pose(img, H, pts0, nrm0, side0, c0, rot, rpx, contrast, metal_family, inset * rpx, size)
+    best, score, alt2 = global_pose(img, H, pts0, nrm0, side0, c0, rot, rpx, contrast, metal_family, inset * rpx, size,
                                     span_px=1.0, step_px=0.25, rot_deg=0.75, rot_step=0.25, centre=best)
     tx, ty, th = float(best[0]), float(best[1]), float(best[2])
     ambiguity = alt / score if score > 0 else 1.0
@@ -342,7 +352,7 @@ def fit_marker(img, H, m, rpx, insets):
         if seen.mean() < MIN_SEEN:
             return {'status': 'too little of its outline is visible (%.0f%%)' % (100 * seen.mean()), 'seen': float(seen.mean())}
         idx = np.where(seen)[0]
-        use_g2 = mode == 'pair' and 0.1 <= lab[idx].mean() <= 0.9
+        use_g2 = size is None and mode == 'pair' and 0.1 <= lab[idx].mean() <= 0.9
         A = design(pts, nrm, lab, use_g2)
         wi = np.ones(len(idx))
         for _ in range(8):
@@ -356,7 +366,8 @@ def fit_marker(img, H, m, rpx, insets):
         if rot:
             th += x[2]
             k = 3
-        G1 += x[k]
+        if size is None:
+            G1 += x[k]
         if use_g2:
             G2 += x[k + 1]
     # final evaluation at the converged pose
@@ -370,13 +381,14 @@ def fit_marker(img, H, m, rpx, insets):
     seen = np.isfinite(off)
     r = np.where(seen, off * rpx, np.nan)
     inl = seen & (np.abs(np.nan_to_num(r, nan=99)) < TUKEY_PX)
-    use_g2 = inl.sum() > 0 and 0.1 <= lab[inl].mean() <= 0.9
+    use_g2 = size is None and inl.sum() > 0 and 0.1 <= lab[inl].mean() <= 0.9
     # precision of each reported direction (px): radial, tangential, far-end shift from rotation
     lev = pts - (c0 + [tx, ty])
     cols = [nrm @ er, nrm @ et]
     if rot:
         cols.append((-nrm[:, 0] * lev[:, 1] + nrm[:, 1] * lev[:, 0]) / halfLen)
-    cols.append(np.ones(len(nrm)))
+    if size is None:
+        cols.append(np.ones(len(nrm)))
     if use_g2:
         cols.append(lab.astype(float))
     A = np.c_[tuple(cols)][inl]
@@ -561,13 +573,38 @@ def zone_fit(img, H, m, rpx, insets):
     }
 
 
-def measure(img, H, m, rpx, insets):
-    if os.environ.get('OVERLAY_GAP_METHOD', 'zone') == 'zone':
+def measure(img, H, m, rpx, insets, size=None):
+    if os.environ.get('OVERLAY_GAP_METHOD', 'edges') == 'zone':
         return zone_fit(img, H, m, rpx, insets)
-    return fit_marker(img, H, m, rpx, insets)
+    return fit_marker(img, H, m, rpx, insets, size)
 
 
-def perturb_test(img, d, m, rpx, insets, base):
+def photo_sizes(results, markers):
+    """Per shape, this photo's marker size from its cleanest markers of that shape (whole outline seen, little noise,
+    no hand): median lume-edge offset and metal-edge offset, px. Every marker of a shape is the same part."""
+    out = {}
+    for shape in {m['shape'] for m in markers}:
+        clean = [r for m, r in zip(markers, results) if m['shape'] == shape and r.get('status') == 'measured'
+                 and m['hand_clean'] and r['seen'] >= 0.95 and r['inliers'] >= 0.9 and r['noise_px'] <= 0.4]
+        if not clean:
+            continue
+        g1 = float(np.median([r['edge_offset_px'] for r in clean]))
+        mm = [r['metal_offset_px'] for r in clean if 0.1 <= r.get('metal_share', 0) <= 0.9]
+        g2 = float(np.median(mm)) if mm else 0.0
+        out[shape] = (g1, g2, len(clean))
+    # a shape with no clean sibling (the single 12 triangle, or every baton spoiled) borrows the photo's edge offsets
+    # from the other shapes' clean markers: edge sharpness and lighting belong to the photo, not to one marker
+    pooled = [v for v in out.values() if v[2] >= 2]
+    if pooled:
+        g1 = float(np.median([v[0] for v in pooled]))
+        g2 = float(np.median([v[1] for v in pooled]))
+        for shape in {m['shape'] for m in markers}:
+            if shape not in out or out[shape][2] < 2:
+                out[shape] = (g1, g2, 'photo')
+    return out
+
+
+def perturb_test(img, d, m, rpx, insets, base, size=None):
     """Move the overlay by a known shift (and rotation for polygons) and compare the measured change with it."""
     import hashlib
     seed = int(hashlib.sha256(('%s|%d' % (d['photo_id'], m['hour'])).encode()).hexdigest()[:8], 16)
@@ -582,7 +619,7 @@ def perturb_test(img, d, m, rpx, insets, base):
     R = np.array([[math.cos(dth), -math.sin(dth)], [math.sin(dth), math.cos(dth)]])
     m2 = dict(m)
     m2['yellow'] = (c + (y - c) @ R.T + v).tolist()
-    res = measure(img, d['H'], m2, rpx, insets)
+    res = measure(img, d['H'], m2, rpx, insets, size)
     if res.get('status') != 'measured':
         return {'inj_px': '%.2f' % (mag * rpx), 'rec_err_px': 'lost'}
     a = math.radians(m['hour'] * 30.0)
@@ -623,7 +660,7 @@ def main():
     cols = ['photo_id', 'watch', 'model', 'hour', 'shape', 'rpx', 'app_outcome', 'app_reason', 'app_primary', 'app_excess_px',
             'hand_clean', 'status', 'seen', 'inliers', 'noise_px', 'radial_px', 'tangential_px', 'rotation_deg',
             'se_radial_px', 'se_tangential_px', 'se_far_end_px', 'fixed', 'edge_offset_px', 'metal_offset_px', 'metal_share', 'gap_px', 'gap_R',
-            'match', 'ambiguity', 'spill_px', 'spill_moved_px', 'inj_px', 'inj_deg', 'rec_err_px', 'rec_err_deg']
+            'match', 'ambiguity', 'size_from', 'spill_px', 'spill_moved_px', 'inj_px', 'inj_deg', 'rec_err_px', 'rec_err_deg']
     with open(out, 'w', newline='') as fo:
         w = csv.DictWriter(fo, fieldnames=cols, extrasaction='ignore')
         w.writeheader()
@@ -641,11 +678,24 @@ def main():
                 color = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_GRAY2BGR)
             rpx = d['rpx']
             insets = model_insets(d['model'])
+            first = []
             for m in d['markers']:
                 try:
-                    res = measure(img, d['H'], m, rpx, insets)
+                    first.append(measure(img, d['H'], m, rpx, insets))
                 except Exception as e:  # research: record, never hide
-                    res = {'status': 'error %s' % e}
+                    first.append({'status': 'error %s' % e})
+            sizes = photo_sizes(first, d['markers']) if os.environ.get('OVERLAY_GAP_SIZE', '1') == '1' else {}
+            for m, res0 in zip(d['markers'], first):
+                sz = sizes.get(m['shape'])
+                size = None if sz is None else sz[:2]
+                if size is None:
+                    res = res0
+                else:
+                    try:
+                        res = measure(img, d['H'], m, rpx, insets, size)
+                    except Exception as e:
+                        res = {'status': 'error %s' % e}
+                    res['size_from'] = sz[2]
                 row = {'photo_id': d['photo_id'], 'watch': d['watch'], 'model': d['model'], 'hour': m['hour'],
                        'shape': m['shape'], 'rpx': '%.1f' % rpx, 'app_outcome': m['outcome'], 'app_reason': m['reason'],
                        'app_primary': m['primary'],
@@ -655,7 +705,7 @@ def main():
                     if not k.startswith('_'):
                         row[k] = ('%.4g' % v) if isinstance(v, float) else v
                 if os.environ.get('OVERLAY_GAP_PERTURB') and res.get('status') == 'measured':
-                    row.update(perturb_test(img, d, m, rpx, insets, res))
+                    row.update(perturb_test(img, d, m, rpx, insets, res, size))
                 w.writerow(row)
                 if rdir:
                     render(color, d['H'], m, res, rpx, os.path.join(rdir, '%s_%02d.png' % (d['photo_id'], m['hour'])))
