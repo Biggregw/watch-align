@@ -573,7 +573,97 @@ def zone_fit(img, H, m, rpx, insets):
     }
 
 
+def centroid_fit(img, H, m, rpx, insets, size=None):
+    """Centre method (owner's suggestion, 15 Oct 2026): the geometric centre of the marker's lume, found as the
+    brightness-weighted centre of the bright region connected to the marker's middle, compared with the centre of the
+    overlay's lume outline. A uniform change of apparent size (blur, exposure, edge softness) does not move a centre.
+    Lopsided additions or losses do (a ring lit on one side, a glint, a hand), so the region's area must match the
+    known lume area; otherwise the marker is not measured. Batons and the triangle also give their tilt from the
+    region's principal axis (second moments)."""
+    shape = m['shape']
+    poly = template(m, insets)
+    if poly is None:
+        return {'status': 'no overlay'}
+    inset = insets[shape]
+    c0 = poly.mean(axis=0) if shape == 'round' else None
+    # template area centroid
+    e = np.roll(poly, -1, axis=0)
+    cr = poly[:, 0] * e[:, 1] - e[:, 0] * poly[:, 1]
+    A0 = cr.sum() / 2
+    cpoly = np.array([((poly[:, 0] + e[:, 0]) * cr).sum(), ((poly[:, 1] + e[:, 1]) * cr).sum()]) / (6 * A0)
+    A0 = abs(A0)
+    if shape == 'round':
+        cpoly = poly.mean(axis=0)
+    lv = levels(img, H, poly, cpoly, rpx, inset)
+    if lv is None:
+        return {'status': 'too close to the photo edge'}
+    lume, dial = lv
+    if lume - dial < 25:
+        return {'status': 'marker not distinguishable from the dial'}
+    T = dial + 0.5 * (lume - dial)
+    half = float(np.max(np.hypot(*(poly - cpoly).T))) + inset + 6.0 / rpx
+    st = 0.5 / rpx
+    g = np.arange(-half, half + 1e-12, st)
+    X, Y = np.meshgrid(cpoly[0] + g, cpoly[1] + g)
+    v = sample(img, project(H, np.c_[X.ravel(), Y.ravel()])).reshape(X.shape)
+    if not np.all(np.isfinite(v)):
+        return {'status': 'too close to the photo edge'}
+    mask = (v >= T).astype(np.uint8)
+    n, lab = cv2.connectedComponents(mask, connectivity=4)
+    ci = len(g) // 2
+    # the component under the middle of the overlay (or the largest one overlapping the inner half of the lume)
+    inner = np.zeros_like(mask)
+    q = cpoly + 0.5 * (poly - cpoly)
+    qq = np.c_[(q[:, 0] - (cpoly[0] - half)) / st, (q[:, 1] - (cpoly[1] - half)) / st].astype(np.int32)
+    cv2.fillPoly(inner, [qq.reshape(-1, 1, 2)], 1)
+    ids, counts = np.unique(lab[(inner > 0) & (lab > 0)], return_counts=True)
+    if len(ids) == 0:
+        return {'status': 'its lume is not visible'}
+    k = ids[np.argmax(counts)]
+    region = lab == k
+    w = np.clip((v - dial) / (lume - dial), 0, 1) * region      # soft edges: partial pixels count partly
+    area = w.sum() * st * st
+    size_ratio = area / A0
+    cx = (w * X).sum() / w.sum()
+    cy = (w * Y).sum() / w.sum()
+    hour = m['hour']
+    a = math.radians(hour * 30.0)
+    er = np.array([math.sin(a), -math.cos(a)]) if hour % 12 else np.array([0.0, -1.0])
+    et = np.array([math.cos(a), math.sin(a)]) if hour % 12 else np.array([1.0, 0.0])
+    d = (np.array([cx, cy]) - cpoly) * rpx
+    out = {'radial_px': float(d @ er), 'tangential_px': float(d @ et), 'size_ratio': float(size_ratio),
+           'rotation_deg': float('nan'), 'seen': float(min(size_ratio, 1.0))}
+    rot = shape != 'round'
+    th = 0.0
+    if rot:
+        def axis(Wt, XX, YY, cx_, cy_):
+            mu20 = (Wt * (XX - cx_) ** 2).sum(); mu02 = (Wt * (YY - cy_) ** 2).sum(); mu11 = (Wt * (XX - cx_) * (YY - cy_)).sum()
+            return 0.5 * math.atan2(2 * mu11, mu20 - mu02)
+        # template's own axis from a rasterised template
+        tm = np.zeros_like(mask)
+        pp = np.c_[(poly[:, 0] - (cpoly[0] - half)) / st, (poly[:, 1] - (cpoly[1] - half)) / st]
+        cv2.fillPoly(tm, [np.round(pp * 16).astype(np.int32).reshape(-1, 1, 2)], 1, lineType=cv2.LINE_8, shift=4)
+        a_t = axis(tm.astype(float), X, Y, *cpoly)
+        a_m = axis(w, X, Y, cx, cy)
+        th = (a_m - a_t + math.pi / 2) % math.pi - math.pi / 2
+        out['rotation_deg'] = math.degrees(th)
+    # the area must match the known lume (a hand or a lit ring changes it): within -12 % / +30 % of the template
+    # (a uniformly merged ring all round grows it evenly and does not move the centre)
+    ok = 0.88 <= size_ratio <= 1.0 + 2 * inset * (np.sum(np.hypot(*(e - poly).T))) / A0 + 0.05
+    yellow = np.asarray(m['yellow'], float)
+    cy_ = yellow.mean(axis=0)
+    cu, su = math.cos(th), math.sin(th)
+    moved = cy_ + (yellow - cy_) @ np.array([[cu, -su], [su, cu]]).T + d / rpx
+    gap_px = float(np.max(np.hypot(*(moved - yellow).T)) * rpx)
+    out.update({'status': 'measured' if ok else 'its visible lume is not the expected size (%.0f%%): a hand, glare or a lit ring' % (100 * size_ratio),
+                'fixed': 'rtθ' if (ok and rot) else ('rt' if ok else ''), 'gap_px': gap_px, 'gap_R': gap_px / rpx,
+                '_lume': poly})
+    return out
+
+
 def measure(img, H, m, rpx, insets, size=None):
+    if os.environ.get('OVERLAY_GAP_METHOD', 'edges') == 'centre':
+        return centroid_fit(img, H, m, rpx, insets)
     if os.environ.get('OVERLAY_GAP_METHOD', 'edges') == 'zone':
         return zone_fit(img, H, m, rpx, insets)
     return fit_marker(img, H, m, rpx, insets, size)
@@ -660,7 +750,7 @@ def main():
     cols = ['photo_id', 'watch', 'model', 'hour', 'shape', 'rpx', 'app_outcome', 'app_reason', 'app_primary', 'app_excess_px',
             'hand_clean', 'status', 'seen', 'inliers', 'noise_px', 'radial_px', 'tangential_px', 'rotation_deg',
             'se_radial_px', 'se_tangential_px', 'se_far_end_px', 'fixed', 'edge_offset_px', 'metal_offset_px', 'metal_share', 'gap_px', 'gap_R',
-            'match', 'ambiguity', 'size_from', 'spill_px', 'spill_moved_px', 'inj_px', 'inj_deg', 'rec_err_px', 'rec_err_deg']
+            'match', 'ambiguity', 'size_from', 'size_ratio', 'spill_px', 'spill_moved_px', 'inj_px', 'inj_deg', 'rec_err_px', 'rec_err_deg']
     with open(out, 'w', newline='') as fo:
         w = csv.DictWriter(fo, fieldnames=cols, extrasaction='ignore')
         w.writeheader()
