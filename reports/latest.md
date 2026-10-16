@@ -1,6 +1,6 @@
 # Dataset harvester
 
-Run 20261015T082329Z · 2026-10-15T08:23:29Z → 2026-10-15T08:23:34Z
+Run 20261016T081551Z · 2026-10-16T08:15:51Z → 2026-10-16T08:15:58Z
 
 ## Adapters
 
@@ -13,8 +13,8 @@ Search results filtered before storing: not_gmt 11
 
 ## This run
 
-- 0 new sources discovered (181 already known)
-- 0 sources examined (0 deferred, 0 failed)
+- 1 new sources discovered (180 already known)
+- 1 sources examined (0 deferred, 1 failed)
 - 0 images downloaded, 0 used from local copies
 - 0 exact and 0 near duplicates
 - 0 images rejected, 0 inconclusive
@@ -22,6 +22,10 @@ Search results filtered before storing: not_gmt 11
 - 0 physical watches accepted
 - 0 quarantined
 - 0 rejected
+
+Errors / retries:
+
+- https://imgur.com/a/qluDrhJ: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/qluDrhJ?include=media%2Ctags%2Caccount' (final)
 
 ## Dataset now (accepted, independent physical watches)
 
