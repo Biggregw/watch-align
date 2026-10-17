@@ -17,6 +17,7 @@ import org.opencv.imgproc.Imgproc;
  *   blue rings   where the round markers' centres and the batons' outer ends should sit (this dial's own ring)
  *   circle       the marker: red = clearly off, green = no visible issue, grey = can't check
  *   red cross    the measured centre of a marker that is clearly off
+ *   short arcs   12 triangle: the minute-track tick ends (blue) and its measured top edge, the gap between them
  * DISPLAY ONLY: nothing drawn here feeds the decision.
  */
 final class ClearlyOffEvidence {
@@ -50,6 +51,12 @@ final class ClearlyOffEvidence {
             Imgproc.circle(big,px(c),(int)Math.round(rad),BLACK,4*th+2,Imgproc.LINE_AA);
             Imgproc.circle(big,px(c),(int)Math.round(rad),col,3*th,Imgproc.LINE_AA);
             ClearlyOff.Marker t=am.track;
+            if(t!=null&&Double.isFinite(t.gapEdgeR)){
+                // the triangle's gap: the minute-track tick ends (blue) and the measured top edge (marker colour)
+                double k=SIZE/(2*HALF),a=30*(am.hour%12)-90;
+                Imgproc.ellipse(big,px(new double[]{0,0}),new Size(t.gapTrackR*k,t.gapTrackR*k),0,a-9,a+9,GUIDE,2*th,Imgproc.LINE_AA);
+                Imgproc.ellipse(big,px(new double[]{0,0}),new Size(t.gapEdgeR*k,t.gapEdgeR*k),0,a-9,a+9,col,2*th,Imgproc.LINE_AA);
+            }
             if(t!=null&&t.state==ClearlyOff.State.CLEARLY_OFF&&t.cObs!=null){
                 Point p=px(t.cObs);int u=SIZE/90;
                 Imgproc.line(big,new Point(p.x-u,p.y),new Point(p.x+u,p.y),RED,2*th,Imgproc.LINE_AA);
