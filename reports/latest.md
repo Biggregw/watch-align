@@ -1,6 +1,6 @@
 # Dataset harvester
 
-Run 20261016T081551Z · 2026-10-16T08:15:51Z → 2026-10-16T08:15:58Z
+Run 20261017T075239Z · 2026-10-17T07:52:39Z → 2026-10-17T07:53:42Z
 
 ## Adapters
 
@@ -9,30 +9,42 @@ Run 20261016T081551Z · 2026-10-16T08:15:51Z → 2026-10-16T08:15:58Z
 - **search**: enabled (brave)
 - **reddit**: disabled: REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not set
 
-Search results filtered before storing: not_gmt 11
+Search results filtered before storing: not_gmt 12
 
 ## This run
 
-- 1 new sources discovered (180 already known)
-- 1 sources examined (0 deferred, 1 failed)
-- 0 images downloaded, 0 used from local copies
+- 5 new sources discovered (175 already known)
+- 5 sources examined (0 deferred, 1 failed)
+- 32 images downloaded, 0 used from local copies
 - 0 exact and 0 near duplicates
-- 0 images rejected, 0 inconclusive
+- 32 images rejected, 0 inconclusive
 - 0 measurement-quality images
 - 0 physical watches accepted
 - 0 quarantined
-- 0 rejected
+- 4 rejected
+
+Images rejected or inconclusive, by reason:
+
+- reject_no_dial: 32
+- reject_low_resolution: 1
+
+Watch decisions, by reason:
+
+- reject_unusable_imagery: 3
+- reject_no_dial: 3
+- reject_no_images: 1
+- reject_low_resolution: 1
 
 Errors / retries:
 
-- https://imgur.com/a/qluDrhJ: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/qluDrhJ?include=media%2Ctags%2Caccount' (final)
+- https://imgur.com/a/BQkTVhv: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/BQkTVhv?include=media%2Ctags%2Caccount' (final)
 
 ## Dataset now (accepted, independent physical watches)
 
 - Genuine: 13 independent watches
 - Replica: 28 independent watches
 - Usable images in accepted watches: 78 (images are views, not independent samples)
-- Quarantined watches: 163 · rejected watches: 164
+- Quarantined watches: 163 · rejected watches: 168
 - Reference-only (not counted as population): official_catalogue_2026
 
 Replica watches by factory:
