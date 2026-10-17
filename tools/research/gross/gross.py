@@ -7,7 +7,7 @@ Per marker:
   2. Measure: centre of the lume (overlay_gap.centroid_fit): shift (radial, tangential) and, for batons and the
      triangle, tilt from the blob's principal axis.
   3. Two independent votes, both required for "Clearly off":
-       absolute: shift beyond T_POS (% of dial radius) or tilt beyond T_ROT, after subtracting the measurement margin;
+       absolute: shift beyond T_POS (% of dial radius) or, for batons, tilt beyond T_ROT, after subtracting the margin;
        relative: the marker is also that far from where the OTHER clean markers put it (similarity fit, leave one out;
                  needs >= MIN_PEERS clean peers), so camera tilt / overlay placement that moves every marker cannot
                  trigger it.
@@ -25,8 +25,8 @@ sys.path.insert(0, os.path.join(HERE, '..', 'overlay_gap'))
 import overlay_gap as og  # noqa: E402
 import flags as fl  # noqa: E402
 
-T_POS = 2.0          # % of dial radius
-T_ROT = 4.0          # degrees
+T_POS = 0.6          # % of dial radius, after the margin (genuine max 0.45; owner feedback 17 Oct 2026)
+T_ROT = 2.0          # degrees, batons only, after the margin (genuine max 1.48; the triangle's tilt is not reliable)
 MARGIN_PX = 1.0      # measurement margin (ground truth: centre method p99 error ~0.6 px on clean markers)
 MARGIN_DEG = 0.5
 MIN_PEERS = 5
@@ -124,8 +124,9 @@ def decide(results, rpx, t_pos=T_POS, t_rot=T_ROT):
         r.update(rel)
         abs_pos = r['shift_pct'] - mp > t_pos
         rel_pos = r['rel_pct'] - mp > t_pos
-        abs_rot = r['tilt_deg'] == r['tilt_deg'] and abs(r['tilt_deg']) - MARGIN_DEG > t_rot
-        rel_rot = r['rel_tilt_deg'] == r['rel_tilt_deg'] and abs(r['rel_tilt_deg']) - MARGIN_DEG > t_rot
+        baton = r['shape'] == 'baton'
+        abs_rot = baton and r['tilt_deg'] == r['tilt_deg'] and abs(r['tilt_deg']) - MARGIN_DEG > t_rot
+        rel_rot = baton and r['rel_tilt_deg'] == r['rel_tilt_deg'] and abs(r['rel_tilt_deg']) - MARGIN_DEG > t_rot
         r['state'] = 'Clearly off' if (abs_pos and rel_pos) or (abs_rot and rel_rot) else 'No visible issue'
     return results
 
