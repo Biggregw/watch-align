@@ -44,6 +44,17 @@ def main(files):
             print('%-8s %-13s %% R: min %.2f p1 %.2f p50 %.2f p99 %.2f max %.2f  top5 %s' % (
                 shape, k[:-3], v[0], np.percentile(v, 1), np.median(v), np.percentile(v, 99), v[-1],
                 ' '.join('%.2f' % x for x in v[-5:])))
+    t = [r for r in base if r['shape'] == 'triangle']
+    v = np.sort([min(float(r['shift_pct']), float(r['rel_pct'])) for r in t])
+    print('triangle, no pixel margin: min(abs, rel) %% R top8 %s' % ' '.join('%.2f' % x for x in v[-8:]))
+    print('  lowest rpx among the top8: %s' % ' '.join(sorted({r['rpx'] for r in t if min(float(r['shift_pct']), float(r['rel_pct'])) >= v[-8]})))
+    print('  triangle limit (no margin) | genuine flagged | moved 0.5%%  1%%  2%%')
+    for tp in (0.4, 0.45, 0.5, 0.55, 0.6, 0.7):
+        cells = []
+        for mp in ('0.5', '1.0', '2.0'):
+            rs = [r for r in moved if r['shape'] == 'triangle' and r['move_pct'] == mp and r['move_deg'] == '0.0']
+            cells.append('%5.1f%%' % (100.0 * sum(1 for r in rs if min(float(r['shift_pct']), float(r['rel_pct'])) > tp) / len(rs)) if rs else '  n/a')
+        print('  %.2f %% R                  | %3d             | %s' % (tp, sum(1 for x in v if x > tp), ' '.join(cells)))
     print('\nposition limit (after margin) | genuine flagged | moved 1%  1.5%  2% (all shapes)')
     for tp in (0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1.0, 1.25):
         fa = sum(1 for r in base if pos(r) > tp)
