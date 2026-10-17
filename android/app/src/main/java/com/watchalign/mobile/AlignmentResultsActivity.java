@@ -66,7 +66,8 @@ public class AlignmentResultsActivity extends Activity {
                 return true;
             });
             root.addView(hero,lp(-1,-2,12));
-            root.addView(text("✓ no defect   ! defect detected   ? worth a look   – cannot assess   ·   tap a marker",12,MUTED,false),lp(-1,-2,4));
+            root.addView(text(AlignmentAnalysis.tracked(o)?"✓ no visible issue   ! clearly off   – can't check   ·   tap a marker"
+                    :"✓ no defect   ! defect detected   ? worth a look   – cannot assess   ·   tap a marker",12,MUTED,false),lp(-1,-2,4));
         }
 
         // a card for every defect, the dominant issue first
@@ -87,7 +88,7 @@ public class AlignmentResultsActivity extends Activity {
         }
 
         LinearLayout tech=new LinearLayout(this);tech.setOrientation(LinearLayout.VERTICAL);tech.setVisibility(View.GONE);
-        tech.addView(text(NOTE,12,MUTED,false),lp(-1,-2,4));
+        tech.addView(text(AlignmentAnalysis.tracked(o)?TRACK_NOTE:NOTE,12,MUTED,false),lp(-1,-2,4));
         TextView exact=text((Store.technical==null?"":Store.technical)+(Store.legacyTechnical==null?"":"\n\nPrevious outer-metal analysis (Alpha107, kept for reference; not used for the results above):\n"+Store.legacyTechnical),11,MUTED,false);
         exact.setTextIsSelectable(true);tech.addView(exact,lp(-1,-2,6));
         root.addView(toggle("Technical details",tech),lp(-1,dp(48),18));root.addView(tech,lp(-1,-2,4));
@@ -95,11 +96,21 @@ public class AlignmentResultsActivity extends Activity {
         return scroll;
     }
 
-    static final String DISCLAIMER="Watch Align checks the alignment of each hour marker against verified genuine Rolex watches. It is not an authenticity check or a buying recommendation.";
+    static final String DISCLAIMER="Watch Align checks whether each hour marker is clearly out of place on this photo. It is not an authenticity check or a buying recommendation.";
+    static final String TRACK_NOTE="Each marker is measured against references found in this photo: its hour line (from the hour tick of the printed minute track, through the centre, to the opposite hour tick) and the ring through the other markers. A marker is clearly off when it sits more than 1.0% of the dial radius to the side of its line, more than 1.0% too far in or out (1.25% for the 12 o'clock triangle), or, for a baton, is tilted more than 2.25° (a small allowance is added on low-resolution photos). On verified genuine watches no marker reached these limits. A marker is not checked when a hand, glare or blur makes the reading unreliable.";
     static final String NOTE="Each marker's luminous shape is fitted by position and rotation only and compared with the range measured on verified genuine watches of this model, allowing for this photo's measurement uncertainty. A marker's genuine luminous reference is placed by the other markers, never by the marker itself (the separate outer-metal check uses the established Alpha107 ring, which includes the marker, as its genuine references do). Round markers are reported only when also displaced by more than 1.00% of the dial radius. The outer metal of the triangle and batons is checked separately. The photo is treated as taken straight on.";
 
     private View defectCard(AlignmentDecision.Marker m){
         LinearLayout t=new LinearLayout(this);t.setOrientation(LinearLayout.VERTICAL);t.setBackgroundColor(CARD);t.setPadding(dp(10),dp(10),dp(10),dp(12));
+        if(m.track!=null){
+            t.addView(text(m.title()+" — Clearly off",18,RED,true));
+            t.addView(text(ClearlyOff.headline(m.track)+".",16,Color.WHITE,true),lp(-1,-2,4));
+            Bitmap ev=Store.closeups.get(m.hour);
+            if(ev!=null){ImageView iv=new ImageView(this);iv.setImageBitmap(ev);iv.setAdjustViewBounds(true);iv.setScaleType(ImageView.ScaleType.FIT_CENTER);t.addView(iv,lp(-1,-2,8));}
+            t.addView(text(ClearlyOff.numbers(m.track),13,MUTED,false),lp(-1,-2,8));
+            final int hr=m.hour;t.setOnClickListener(v->openDetail(hr));
+            return t;
+        }
         t.addView(text(m.title()+" — Defect detected",18,RED,true));
         t.addView(text("Primary issue: "+m.primary.headline()+".",16,Color.WHITE,true),lp(-1,-2,4));
         Bitmap c=Store.closeups.get(m.hour);

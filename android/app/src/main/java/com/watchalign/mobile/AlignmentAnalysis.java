@@ -117,9 +117,16 @@ final class AlignmentAnalysis {
         return img::at;
     }
 
-    /** Plain counts line, e.g. "1 defect · 9 no defect · 1 cannot assess". */
+    /** Plain counts line, e.g. "1 clearly off · 9 no visible issue · 1 can't check". */
     static String counts(Output o){
         StringBuilder b=new StringBuilder();
+        if(tracked(o)){
+            int d=o.count(AlignmentDecision.Outcome.DEFECT),n=o.count(AlignmentDecision.Outcome.NO_DEFECT),c=o.count(AlignmentDecision.Outcome.CANNOT_ASSESS);
+            if(d>0)b.append(d).append(" clearly off");
+            if(n>0)b.append(b.length()>0?"  ·  ":"").append(n).append(" no visible issue");
+            if(c>0)b.append(b.length()>0?"  ·  ":"").append(c).append(" can't check");
+            return b.toString();
+        }
         int d=o.count(AlignmentDecision.Outcome.DEFECT),n=o.count(AlignmentDecision.Outcome.NO_DEFECT),c=o.count(AlignmentDecision.Outcome.CANNOT_ASSESS);
         int w=0;for(AlignmentDecision.Marker m:o.markers)if(m.worthALook())w++;
         if(d>0)b.append(d).append(d==1?" defect":" defects");
@@ -129,8 +136,17 @@ final class AlignmentAnalysis {
         return b.toString();
     }
 
+    /** true when the 1.6.0 clearly-off check decided the answers */
+    static boolean tracked(Output o){for(AlignmentDecision.Marker m:o.markers)if(m.track!=null)return true;return false;}
+
     static String headline(Output o){
         int d=o.count(AlignmentDecision.Outcome.DEFECT),n=o.count(AlignmentDecision.Outcome.NO_DEFECT);
+        if(tracked(o)){
+            if(o.photoReason!=null)return "Can't check this photo";
+            if(d>0)return d==1?"1 marker clearly off":d+" markers clearly off";
+            if(n==0)return "Can't check";
+            return "No marker clearly off";
+        }
         if(o.photoReason!=null)return "Cannot assess this photo";
         if(d>0)return d==1?"1 marker: defect detected":d+" markers: defect detected";
         if(n==0)return "Cannot assess";
