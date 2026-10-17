@@ -1,0 +1,22 @@
+# Research only: re-score the saved minute-track validation output (no photos) with limits.py.
+name: Minute-track rescore (saved output)
+on:
+  push:
+    branches: [claude/calibration-measurement-contract-epunh5]
+    paths: ['.github/workflows/track-rescore.yml', 'tools/research/track/limits.py']
+  workflow_dispatch:
+permissions: {contents: read, actions: read}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q numpy
+      - uses: actions/download-artifact@v4
+        with: {run-id: 39026737489, github-token: '${{ github.token }}', path: saved}
+      - name: GMT
+        run: python3 tools/research/track/limits.py saved/track-gmt_126710/track.csv
+      - name: Submariner
+        run: python3 tools/research/track/limits.py saved/track-submariner_124060/track.csv
