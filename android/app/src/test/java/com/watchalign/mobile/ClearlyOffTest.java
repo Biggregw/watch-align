@@ -54,5 +54,8 @@ public class ClearlyOffTest {
         assertFalse(b.worthALook());assertEquals("Can't check",b.label());
         AlignmentDecision.applyClearlyOff(ms,null);
         assertEquals(AlignmentDecision.Outcome.CANNOT_ASSESS,a.outcome);
+        // a photo-wide reason (e.g. too low a resolution) is what the owner sees for every marker
+        AlignmentDecision.applyClearlyOff(ms,r,"the photo's resolution is too low");
+        assertEquals(AlignmentDecision.Outcome.CANNOT_ASSESS,a.outcome);assertEquals("the photo's resolution is too low",a.reason);
     }
 }

@@ -190,13 +190,17 @@ final class AlignmentDecision {
      * Watch Align 1.6.0: the clearly-off check decides every marker's answer. The earlier luminous / outer-metal results
      * stay in the technical details only. A failed check fails closed (every marker "Can't check").
      */
-    static void applyClearlyOff(List<Marker> markers,ClearlyOff.Result r){
+    static void applyClearlyOff(List<Marker> markers,ClearlyOff.Result r){applyClearlyOff(markers,r,null);}
+
+    /** @param photoReason the photo-wide reason no marker can be checked (e.g. resolution too low), or null */
+    static void applyClearlyOff(List<Marker> markers,ClearlyOff.Result r,String photoReason){
         for(Marker m:markers){
             ClearlyOff.Marker t=r==null?null:r.at(m.hour);
             if(t==null){t=new ClearlyOff.Marker(m.hour,m.shape);t.reason=r==null?"the check could not be run on this photo":"it could not be located";}
             m.track=t;m.primary=null;m.secondary.clear();m.metalBorderline=false;m.metalNotes.clear();m.metal.clear();m.notAssessed.clear();
             m.outcome=t.state==ClearlyOff.State.CLEARLY_OFF?Outcome.DEFECT:t.state==ClearlyOff.State.NO_VISIBLE_ISSUE?Outcome.NO_DEFECT:Outcome.CANNOT_ASSESS;
             m.reason=t.state==ClearlyOff.State.CANT_CHECK?t.reason:"";
+            if(photoReason!=null){t.state=ClearlyOff.State.CANT_CHECK;t.reason=photoReason;m.outcome=Outcome.CANNOT_ASSESS;m.reason=photoReason;}
         }
     }
 
