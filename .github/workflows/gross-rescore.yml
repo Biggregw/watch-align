@@ -1,0 +1,24 @@
+# Research only: re-score the saved clearly-off validation output (no photos, no re-measuring) with calibrate.py.
+name: Clearly-off rescore (saved output)
+on:
+  push:
+    branches: [claude/calibration-measurement-contract-epunh5]
+    paths: ['.github/workflows/gross-rescore.yml', 'tools/research/gross/calibrate.py']
+  workflow_dispatch:
+permissions: {contents: read, actions: read}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q numpy
+      - uses: actions/download-artifact@v4
+        with: {run-id: 39020170640, github-token: '${{ github.token }}', path: saved}
+      - name: GMT
+        run: python3 tools/research/gross/calibrate.py saved/gross-gmt_126710/gross.csv
+      - name: Submariner
+        run: python3 tools/research/gross/calibrate.py saved/gross-submariner_124060/gross.csv
+      - name: Both
+        run: python3 tools/research/gross/calibrate.py saved/*/gross.csv
