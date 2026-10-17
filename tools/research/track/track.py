@@ -178,7 +178,7 @@ def context(img, d, insets=None):
     ticks = tick_track(img, H, rpx)
     lines = {h: hour_line(ticks, h, rpx) for h in range(12)}
     r_in = float(np.nanmedian([t['r_in'] for t in ticks if not t['bad']]))
-    return dict(H=H, rpx=rpx, insets=insets, ctx=ctx, sib=sib, ticks=ticks, lines=lines,
+    return dict(H=H, rpx=rpx, model=d['model'], insets=insets, ctx=ctx, sib=sib, ticks=ticks, lines=lines,
                 track_scale=r_in / track_inner_r(d['model']), nbad=sum(1 for t in ticks if t['bad']))
 
 
@@ -237,6 +237,7 @@ def analyse(img, d, insets=None):
         if C['lines'].get(m['hour'] % 12) is None:
             row['gate'] = '; '.join(x for x in (row['gate'], 'minute ticks near it hidden') if x)
         row.update(metrics(b, m['hour'], C, ring_scale(base, i)))
+        row.update(outer_gap(img, m, C))
         rows.append(row)
     clean = [r['side_pct'] for r in rows if not r['gate'] and 'side_pct' in r]
     ring_turn = float(np.median(clean)) if len(clean) >= 3 else float('nan')
@@ -268,3 +269,65 @@ def move_confined(img, d, m, C, v, dth):
     dial = float(np.median(img[around]))
     vacated = (1 - old) * img + old * dial
     return (new * moved + (1 - new) * vacated).astype(img.dtype)
+
+
+GAP_OFFS = {'triangle': (-4.5, -3.0, -1.5, 1.5, 3.0, 4.5), 'round': (-3.0, -1.5, 1.5, 3.0)}   # deg, between ticks
+
+
+def ray_out(poly, a):
+    """Largest radius at which the ray from the centre at angle a crosses the polygon (None if it misses)."""
+    u = np.array([math.sin(a), -math.cos(a)])
+    best = None
+    P = np.asarray(poly, float)
+    for p, q in zip(P, np.roll(P, -1, axis=0)):
+        e = q - p
+        den = u[0] * (-e[1]) + u[1] * e[0]
+        if abs(den) < 1e-12:
+            continue
+        t = (p[0] * (-e[1]) + p[1] * e[0]) / den
+        s = (u[0] * p[1] - u[1] * p[0]) / den
+        if t > 0 and 0 <= s <= 1:
+            best = t if best is None else max(best, t)
+    return best
+
+
+def outer_gap(img, m, C):
+    """The owner's gap: the clear dial between the marker's outer edge and the inner ends of the minute ticks above
+    it, measured along rays between the ticks (px, % R). The edge is where the bright marker surround falls half way
+    to the dial; the tick ends are this photo's own (median of the clean ticks near the hour)."""
+    offs = GAP_OFFS.get(m['shape'])
+    a0 = C['lines'].get(m['hour'] % 12)
+    if not offs or a0 is None or len(m.get('yellow') or []) < 3:
+        return {}
+    H, rpx, ticks = C['H'], C['rpx'], C['ticks']
+    k0 = (5 * m['hour']) % 60
+    rin = [ticks[(k0 + dk) % 60]['r_in'] for dk in (-2, -1, 0, 1, 2) if not ticks[(k0 + dk) % 60]['bad']]
+    if len(rin) < 3:
+        return {}
+    r_t = float(np.median(rin))
+    gaps, gen = [], []
+    for off in offs:
+        a = a0 + math.radians(off)
+        rg = ray_out(m['yellow'], math.radians(30 * (m['hour'] % 12) + off))
+        if rg is None:
+            continue
+        radii = np.arange(rg - 0.03, r_t, 0.25 / rpx)
+        p = tr_polar(img, H, radii, a)
+        if p is None or len(p) < 8:
+            continue
+        ip = int(np.argmax(p[: max(2, int(np.searchsorted(radii, r_t - 0.004)))]))
+        dial = float(np.percentile(p[ip:], 10)) if ip < len(p) - 1 else float(p[-1])
+        thr = dial + 0.5 * (p[ip] - dial)
+        e = first_cross(p, thr, ip, 1)
+        r_e = r_t if e is None else float(np.interp(e, np.arange(len(radii)), radii))
+        gaps.append(math.copysign(px_between(H, cpt(min(r_e, r_t), a), cpt(r_t, a)), r_t - r_e))
+        gen.append(track_inner_r(C['model']) - rg)
+    if len(gaps) < max(2, len(offs) // 2):
+        return {}
+    g = float(np.median(gaps))
+    return dict(gap_px=g, gap_pct=100 * g / rpx, gap_gen_pct=100 * float(np.median(gen)) * C['track_scale'])
+
+
+def tr_polar(img, H, radii, a):
+    v = polar(img, H, radii, np.array([a]))[:, 0]
+    return None if np.isnan(v).any() else v
