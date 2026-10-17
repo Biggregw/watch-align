@@ -59,6 +59,14 @@ def load(path, d):
 
 
 def work(args):
+    try:
+        return work1(args)
+    except Exception as e:     # research: one bad photo is logged, never stops the run
+        print('ERROR', json.loads(args[0]).get('photo_id'), repr(e), flush=True)
+        return []
+
+
+def work1(args):
     line, root, inject = args
     d = json.loads(line)
     if not d.get('pose'):

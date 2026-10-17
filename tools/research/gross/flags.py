@@ -32,6 +32,8 @@ def photo_context(img, H, d):
     rs_all = []
     for m in d['markers']:
         y = np.asarray(m['yellow'], float)
+        if y.ndim != 2 or len(y) < 3:
+            continue
         rr = np.hypot(y[:, 0], y[:, 1])
         rs_all += [rr.min(), rr.max()]
     r0 = max(0.2, min(rs_all) - 0.06)
@@ -87,7 +89,8 @@ def photo_context(img, H, d):
     for shape in {m['shape'] for m in d['markers']}:
         hs = [m['hour'] for m in d['markers'] if m['shape'] == shape]
         b = learn(hs)                 # the shape is known from the model: its own band even with 1-2 markers
-        pad = int(round((0.025 if len(hs) >= 3 else 0.04) / dr))
+        # wide enough that a grossly displaced marker is still inside the band (it must be judged, not withheld)
+        pad = int(round(0.05 / dr))
         b = b or shared
         if b:
             ctx['band'][shape] = (max(0, b[0] - pad), min(len(radii) - 1, b[1] + pad))

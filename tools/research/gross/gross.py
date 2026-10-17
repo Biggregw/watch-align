@@ -46,6 +46,9 @@ def measure_marker(img, d, m, insets, ctx, sib, D=None, use_app_hand=True):
     rpx = d['rpx']
     out = {'hour': m['hour'], 'shape': m['shape']}
     why = []
+    if len(m.get('yellow') or []) < 3:
+        out['gate'] = 'no overlay for this marker'
+        return out
     if use_app_hand and not m['hand_clean']:
         why.append('hand (app check)')
     f = fl.measure(ctx, m, insets, D, sib)
