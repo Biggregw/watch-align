@@ -37,6 +37,13 @@ def main(files):
         t = np.sort([x for x in (rot(r) for r in b) if x == x])
         if len(t):
             print('%-8s         tilt after margin:     p99 %.2f  top5 %s' % ('', np.percentile(t, 99), ' '.join('%.2f' % x for x in t[-5:])))
+    for shape in ('triangle', 'baton', 'round'):
+        b = [r for r in base if r['shape'] == shape and r['radial_px']]
+        for k in ('radial_px', 'tangential_px'):
+            v = np.sort([100 * float(r[k]) / float(r['rpx']) for r in b])
+            print('%-8s %-13s %% R: min %.2f p1 %.2f p50 %.2f p99 %.2f max %.2f  top5 %s' % (
+                shape, k[:-3], v[0], np.percentile(v, 1), np.median(v), np.percentile(v, 99), v[-1],
+                ' '.join('%.2f' % x for x in v[-5:])))
     print('\nposition limit (after margin) | genuine flagged | moved 1%  1.5%  2% (all shapes)')
     for tp in (0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1.0, 1.25):
         fa = sum(1 for r in base if pos(r) > tp)
