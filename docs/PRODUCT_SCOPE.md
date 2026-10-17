@@ -1,5 +1,10 @@
 # Watch Align Product Scope
 
+> **Owner decision, 17 Oct 2026:** the only hard rule is that the app works from a **single photo**. The goal is to
+> find markers that are **clearly off** on the genuine overlay. Everything in this document is now background and
+> guidance: follow it by default, overrule it when the evidence says so, and where it conflicts with `CLAUDE.md`,
+> `CLAUDE.md` wins. Task orders, paused-work lists and restart plans below are historical.
+
 ## Product definition
 
 Watch Align analyses **one uploaded dealer/QC photo** and reports how the measured watch compares with proven-genuine reference geometry for that model or family.
