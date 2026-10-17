@@ -88,7 +88,9 @@ def tick_track(img, H, rpx):
     ca, cb = min(core), max(core)
     cb2 = ca + max(2, int(round((cb - ca) * 0.7)))
     prof = V[ca:cb2 + 1].mean(axis=0)
-    th0 = (np.angle((prof * e).sum()) / 60.0) % D6
+    # tick 0 is the one nearest 12 o'clock: the dial pose is right to well within half a tick (3 deg), so wrap to
+    # (-3, +3] deg (wrapping to 0..6 deg mislabels every tick by one when 12 o'clock sits just anticlockwise of 0)
+    th0 = (np.angle((prof * e).sum()) / 60.0 + D6 / 2) % D6 - D6 / 2
     spa = 2 * math.pi / na
     wcol = int(round(3.0 * math.pi / 180 / spa))
     ext = np.r_[prof[-wcol:], prof, prof[:wcol]]
