@@ -39,6 +39,12 @@ def main(files):
         print('|tilt| deg (batons, triangle): p50 %.2f p95 %.2f p99 %.2f max %.2f' % tuple(np.percentile(t, [50, 95, 99, 100])))
     worst = sorted(m, key=lambda r: -min(float(r['shift_pct']), float(r['rel_pct'] or 0)))[:6]
     print('largest (abs/rel %):', ', '.join('%s %sh %s %.2f/%.2f' % (r['photo_id'][:16], r['hour'], r['shape'], float(r['shift_pct']), float(r['rel_pct'] or 0)) for r in worst))
+    fa = [r for r in base if r['state'] == 'Clearly off']
+    for r in fa:
+        print('AS-FOUND CLEARLY OFF: %s %sh %s rpx %s abs %s rel %s tilt %s rel_tilt %s peers %s' % (
+            r['photo_id'], r['hour'], r['shape'], r['rpx'], r['shift_pct'], r['rel_pct'], r['tilt_deg'], r['rel_tilt_deg'], r['peers']))
+    tl = sorted([r for r in m if r['tilt_deg']], key=lambda r: -abs(float(r['tilt_deg'])))[:5]
+    print('largest tilts:', ', '.join('%s %sh %s %+.2f' % (r['photo_id'][:16], r['hour'], r['shape'], float(r['tilt_deg'])) for r in tl))
     print('\nthreshold sweep (as found = false alarms on genuine; detection on moved markers)')
     print('  T_pos  T_rot | as-found clearly off | moved 0%% (control) | 1%%  2%%  3%%  4%% | tilt 2  4  6 deg')
     for tp in (1.0, 1.25, 1.5, 2.0):
