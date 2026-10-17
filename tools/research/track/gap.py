@@ -58,6 +58,20 @@ def summary(rows):
                                           c.max() if len(c) else np.nan))
 
 
+def lowest(rows, shape='triangle', n=12):
+    g = sorted((float(r['gap_pct']), r) for r in rows if r['shape'] == shape and not r['gate'] and r['gap_pct'])
+    print('lowest %s gaps (%% R, px, rpx):' % shape)
+    for v, r in g[:n]:
+        print('  %5.2f %5.1f px  rpx %4s  %s' % (v, float(r['gap_px']), r['rpx'], r['photo_id']))
+    if g:
+        a = np.array([[float(r['rpx']), v] for v, r in g])
+        for lo, hi in ((0, 300), (300, 450), (450, 9999)):
+            k = (a[:, 0] >= lo) & (a[:, 0] < hi)
+            if k.any():
+                print('  rpx %4d-%4d: n %3d min %5.2f p5 %5.2f med %5.2f' % (lo, hi, k.sum(), a[k, 1].min(),
+                                                                           np.percentile(a[k, 1], 5), np.median(a[k, 1])))
+
+
 def main():
     global ROOT
     dump, ROOT, outp = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -72,6 +86,7 @@ def main():
         w.writeheader()
         w.writerows(rows)
     summary(rows)
+    lowest(rows)
 
 
 if __name__ == '__main__':
