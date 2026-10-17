@@ -237,7 +237,7 @@ def analyse(img, d, insets=None):
         if C['lines'].get(m['hour'] % 12) is None:
             row['gate'] = '; '.join(x for x in (row['gate'], 'minute ticks near it hidden') if x)
         row.update(metrics(b, m['hour'], C, ring_scale(base, i)))
-        row.update(outer_gap(img, m, C))
+        row.update(outer_gap(img, m, C, ring_scale(base, i)))
         rows.append(row)
     clean = [r['side_pct'] for r in rows if not r['gate'] and 'side_pct' in r]
     ring_turn = float(np.median(clean)) if len(clean) >= 3 else float('nan')
@@ -291,10 +291,12 @@ def ray_out(poly, a):
     return best
 
 
-def outer_gap(img, m, C):
+def outer_gap(img, m, C, scale=None):
     """The owner's gap: the clear dial between the marker's outer edge and the inner ends of the minute ticks above
     it, measured along rays between the ticks (px, % R). The edge is where the bright marker surround falls half way
-    to the dial; the tick ends are this photo's own (median of the clean ticks near the hour)."""
+    to the dial; the tick ends are this photo's own (median of the clean ticks near the hour). Also the owner's
+    'outer edge' check (eye test): that edge against the genuine outer edge scaled by this dial's ring of round markers
+    (edge_out, + = outward; the triangle's top against the baton-end circle)."""
     offs = GAP_OFFS.get(m['shape'])
     a0 = C['lines'].get(m['hour'] % 12)
     if not offs or a0 is None or len(m.get('yellow') or []) < 3:
@@ -305,7 +307,7 @@ def outer_gap(img, m, C):
     if len(rin) < 3:
         return {}
     r_t = float(np.median(rin))
-    gaps, gen = [], []
+    gaps, gen, outs = [], [], []
     for off in offs:
         a = a0 + math.radians(off)
         rg = ray_out(m['yellow'], math.radians(30 * (m['hour'] % 12) + off))
@@ -322,10 +324,16 @@ def outer_gap(img, m, C):
         r_e = r_t if e is None else float(np.interp(e, np.arange(len(radii)), radii))
         gaps.append(math.copysign(px_between(H, cpt(min(r_e, r_t), a), cpt(r_t, a)), r_t - r_e))
         gen.append(track_inner_r(C['model']) - rg)
+        if scale is not None:
+            re = scale * rg
+            outs.append(math.copysign(px_between(H, cpt(re, a), cpt(r_e, a)), r_e - re))
     if len(gaps) < max(2, len(offs) // 2):
         return {}
     g = float(np.median(gaps))
-    return dict(gap_px=g, gap_pct=100 * g / rpx, gap_gen_pct=100 * float(np.median(gen)) * C['track_scale'])
+    out = dict(gap_px=g, gap_pct=100 * g / rpx, gap_gen_pct=100 * float(np.median(gen)) * C['track_scale'])
+    if len(outs) == len(gaps):
+        out['edge_out_pct'] = 100 * float(np.median(outs)) / rpx
+    return out
 
 
 def tr_polar(img, H, radii, a):

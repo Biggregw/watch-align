@@ -20,7 +20,7 @@ _s = importlib.util.spec_from_file_location('track_validate', os.path.join(HERE,
 va = importlib.util.module_from_spec(_s)
 _s.loader.exec_module(va)     # this folder's validate.py (another one sits on the research path)
 
-COLS = ['photo_id', 'model', 'rpx', 'hour', 'shape', 'gate', 'gap_px', 'gap_pct', 'gap_gen_pct', 'inout_pct', 'side_pct']
+COLS = ['photo_id', 'model', 'rpx', 'hour', 'shape', 'gate', 'gap_px', 'gap_pct', 'gap_gen_pct', 'edge_out_pct', 'inout_pct', 'side_pct']
 
 
 def work(line):
@@ -44,14 +44,18 @@ def summary(rows):
     keys = sorted({(r['shape'], int(r['hour'])) for r in rows})
     for shape in sorted({k[0] for k in keys}) :
         for h in [None] + sorted(k[1] for k in keys if k[0] == shape):
-            g = [(float(r['gap_pct']), float(r['gap_pct']) - float(r['gap_gen_pct'])) for r in rows
+            g = [(float(r['gap_pct']), float(r['gap_pct']) - float(r['gap_gen_pct']),
+                  float(r['edge_out_pct']) if r['edge_out_pct'] else np.nan) for r in rows
                  if r['shape'] == shape and (h is None or int(r['hour']) == h) and not r['gate'] and r['gap_pct']]
             if not g:
                 continue
-            a, b = np.array(g).T
-            print('%-8s %4s %4d %5.2f %5.2f %5.2f %5.2f %5.2f | %5.2f %5.2f %5.2f %5.2f' % (
-                shape, 'all' if h is None else h, len(a), a.min(), *np.percentile(a, [1, 5, 25, 50]),
-                b.min(), *np.percentile(b, [1, 5, 50])))
+            a, b, c = np.array(g).T
+            c = c[np.isfinite(c)]
+            print('%-8s %4s %4d %5.2f %5.2f %5.2f %5.2f %5.2f | %5.2f %5.2f %5.2f %5.2f | edge out: n %d med %5.2f p95 %5.2f '
+                  'p99 %5.2f max %5.2f' % (shape, 'all' if h is None else h, len(a), a.min(), *np.percentile(a, [1, 5, 25, 50]),
+                                          b.min(), *np.percentile(b, [1, 5, 50]), len(c),
+                                          *(np.percentile(c, [50, 95, 99]) if len(c) else [np.nan] * 3),
+                                          c.max() if len(c) else np.nan))
 
 
 def main():
