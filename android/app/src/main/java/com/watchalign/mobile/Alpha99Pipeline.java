@@ -40,6 +40,8 @@ final class Alpha99Pipeline {
         AlignmentAnalysis.Output alignment;
         final Map<Integer,Bitmap> alignmentCloseups=new LinkedHashMap<>();
         String alignmentTechnical;AlignmentReference alignmentReference;Bitmap alignmentOverview;
+        /** Watch Align 1.6.0: clearly-off check against the printed minute track (decides the alignment results). */
+        ClearlyOff.Result clearlyOff;
         boolean ok(){return pose!=null&&pose.valid&&pose.homography!=null&&summary!=null;}
     }
 
@@ -72,10 +74,18 @@ final class Alpha99Pipeline {
             // outer-metal alignment of the triangle and batons (existing Alpha107 measurement and genuine reference)
             try{MetalAlignment.apply(o.alignment,o.summary,o.measurement,model,ref,align==null?null:align.metalExtra);}
             catch(Throwable t){MetalAlignment.notAssessed(o.alignment,"the outer-metal comparison failed");}   // fail closed, never a silent pass
-            for(AlignmentDecision.Marker am:o.alignment.markers){
-                try{o.alignmentCloseups.put(am.hour,AlignmentCloseup.render(rgba,H,model.atHour(am.hour),am));}catch(Throwable t){/* close-up optional */}
-            }
             o.alignmentTechnical=AlignmentAnalysis.technical(o.alignment,align);
+            try{o.clearlyOff=ClearlyOff.analyse(gray,H,o.measurement.dialRadiusPx,clearlyOffInputs(o.alignment,o.checks),insets(align),model.minuteTrackInnerR);}
+            catch(Throwable t){o.clearlyOff=null;}
+            // 1.6.0: the clearly-off check decides the answers; earlier results stay in the technical details
+            String legacy=o.alignmentTechnical;
+            AlignmentDecision.applyClearlyOff(o.alignment.markers,o.clearlyOff);
+            o.alignmentTechnical=(o.clearlyOff==null?"Clearly-off check: could not be run on this photo.":ClearlyOff.technical(o.clearlyOff))
+                    +"\n\nEarlier luminous / outer-metal analysis (kept for reference; not used for the results above):\n"+legacy;
+            o.alignmentCloseups.clear();
+            for(AlignmentDecision.Marker am:o.alignment.markers){
+                try{o.alignmentCloseups.put(am.hour,ClearlyOffEvidence.render(rgba,H,model,o.clearlyOff,am));}catch(Throwable t){/* evidence picture optional */}
+            }
             try{o.alignmentOverview=AlignmentOverview.render(rgba,H,o.alignment,model);}catch(Throwable t){o.alignmentOverview=null;}
         }catch(Throwable t){o.alignment=null;}
         double[] ring=o.measurement.ring!=null&&o.measurement.ring.usable?o.measurement.ring.model:null;
@@ -96,6 +106,25 @@ final class Alpha99Pipeline {
         o.technical=technical(o);
         rgba.release();gray.release();
         return o;
+    }
+
+    /** The app's markers as the clearly-off check reads them: yellow outer-metal reference and hand / glare check. */
+    static List<ClearlyOff.Input> clearlyOffInputs(AlignmentAnalysis.Output a,Map<Integer,Alpha99MarkerInterference.Check> checks){
+        List<ClearlyOff.Input> in=new ArrayList<>();
+        for(AlignmentDecision.Marker m:a.markers){
+            Alpha99MarkerInterference.Check c=checks==null?null:checks.get(m.hour);
+            in.add(new ClearlyOff.Input(m.hour,m.shape,m.yellow,c==null?null:c.clean,c==null?"its surroundings could not be checked for hands or glare":c.reason));
+        }
+        return in;
+    }
+
+    /** Genuine luminous inset per supported shape (the luminous outline inside the yellow outer-metal reference). */
+    static Map<ModelSpec.Shape,Double> insets(AlignmentReference align){
+        Map<ModelSpec.Shape,Double> m=new java.util.HashMap<>();
+        if(align==null)return m;
+        for(ModelSpec.Shape s:ModelSpec.Shape.values()){AlignmentReference.ShapeRef r=align.shape(s);
+            if(r!=null&&r.supported&&Double.isFinite(r.insetR))m.put(s,r.insetR);}
+        return m;
     }
 
     /** Ignored arc around the hand direction for a partial round fit (+/- deg). */

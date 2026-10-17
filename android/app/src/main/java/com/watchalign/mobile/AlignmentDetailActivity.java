@@ -29,7 +29,10 @@ public class AlignmentDetailActivity extends Activity {
         setContentView(build(m));
     }
 
+    static final String TRACK_LEGEND="Blue lines: from each hour tick of the printed minute track, through the centre, to the opposite hour tick. Blue rings: where the round markers' centres and the batons' outer ends should sit on this dial. Circle: this marker (red clearly off, green no visible issue, grey can't check). Red cross: its measured centre.";
+
     private View build(AlignmentDecision.Marker m){
+        if(m.track!=null)return buildTrack(m);
         int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(AlignmentResultsActivity.BG);
         scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-2));
@@ -71,6 +74,34 @@ public class AlignmentDetailActivity extends Activity {
         Button more=new Button(this);more.setAllCaps(false);more.setText("Technical details  ▸");
         more.setOnClickListener(v->{boolean show=tech.getVisibility()!=View.VISIBLE;tech.setVisibility(show?View.VISIBLE:View.GONE);more.setText(show?"Technical details  ▾":"Technical details  ▸");});
         root.addView(more,lp(-1,dp(48),18));root.addView(tech,lp(-1,-2,4));
+        root.addView(text(AlignmentResultsActivity.DISCLAIMER,12,AlignmentResultsActivity.MUTED,false),lp(-1,-2,14));
+        return scroll;
+    }
+
+    /** 1.6.0: the clearly-off answer, the evidence picture with the guide lines, and the measured numbers. */
+    private View buildTrack(AlignmentDecision.Marker m){
+        int pad=dp(16);ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(AlignmentResultsActivity.BG);
+        scroll.setOnApplyWindowInsetsListener((v,ins)->{v.setPadding(0,ins.getSystemWindowInsetTop(),0,ins.getSystemWindowInsetBottom());return ins;});
+        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-2));
+        root.addView(text(m.title()+" — "+m.label(),24,AlignmentResultsActivity.colour(m),true));
+        if(m.outcome==AlignmentDecision.Outcome.DEFECT)root.addView(text(ClearlyOff.headline(m.track)+".",18,Color.WHITE,true),lp(-1,-2,6));
+        else if(m.outcome==AlignmentDecision.Outcome.CANNOT_ASSESS)root.addView(text(AlignmentDecision.capital(m.reason)+".",15,Color.WHITE,false),lp(-1,-2,6));
+        Bitmap c=AlignmentResultsActivity.Store.closeups.get(m.hour);
+        if(c!=null){
+            ImageView iv=new ImageView(this);iv.setImageBitmap(c);iv.setAdjustViewBounds(true);iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            final String title=m.title()+" - evidence";
+            iv.setOnClickListener(v->{InspectionImageStore.set(c,title);startActivity(new Intent(this,FullscreenInspectActivity.class));});
+            root.addView(iv,lp(-1,-2,12));
+            root.addView(text(TRACK_LEGEND+"  Tap to zoom.",12,AlignmentResultsActivity.MUTED,false),lp(-1,-2,4));
+        }
+        String n=ClearlyOff.numbers(m.track);
+        if(!n.isEmpty()){
+            LinearLayout tech=new LinearLayout(this);tech.setOrientation(LinearLayout.VERTICAL);tech.setVisibility(View.GONE);
+            TextView exact=text(n,13,AlignmentResultsActivity.MUTED,false);exact.setTextIsSelectable(true);tech.addView(exact);
+            Button more=new Button(this);more.setAllCaps(false);more.setText("Measured numbers  ▸");
+            more.setOnClickListener(v->{boolean show=tech.getVisibility()!=View.VISIBLE;tech.setVisibility(show?View.VISIBLE:View.GONE);more.setText(show?"Measured numbers  ▾":"Measured numbers  ▸");});
+            root.addView(more,lp(-1,dp(48),18));root.addView(tech,lp(-1,-2,4));
+        }
         root.addView(text(AlignmentResultsActivity.DISCLAIMER,12,AlignmentResultsActivity.MUTED,false),lp(-1,-2,14));
         return scroll;
     }
