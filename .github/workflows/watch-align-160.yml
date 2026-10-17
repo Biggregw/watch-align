@@ -37,7 +37,7 @@ jobs:
           w = csv.DictWriter(open('g/manifest.csv', 'w', newline=''), fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
           PY
           python3 tools/research/alpha96_calibration/fetch_verified.py g/manifest.csv g/img g/fetch_log.csv | tail -3
-      - name: App code (desktop harness): overlay export and the clearly-off check
+      - name: 'App code (desktop harness) - overlay export and the clearly-off check'
         run: |
           J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
           if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then mkdir -p $(dirname $J); curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar; fi
