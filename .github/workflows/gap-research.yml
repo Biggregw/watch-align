@@ -1,0 +1,82 @@
+# Research only: the owner's gap (marker outer edge to the minute-track tick ends, tools/research/track/gap.py) on the
+# sha256-verified GENUINE photos and the pinned public QC photos.
+name: Marker gap research (genuine photos)
+on:
+  push:
+    branches: [claude/calibration-measurement-contract-epunh5]
+    paths: ['.github/workflows/gap-research.yml', 'tools/research/track/gap.py']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {model: gmt_126710, catalogue: tools/research/alpha96_calibration/catalogue_provenance_strong.csv, prefix: '126710'}
+          - {model: submariner_124060, catalogue: tools/research/sub124060/catalogue_124060.csv, prefix: '124060'}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests numpy scipy opencv-python-headless pillow==12.3.0
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Verified genuine photos (sha256-checked catalogue)
+        run: |
+          mkdir -p g out
+          python3 - <<'PY'
+          import csv
+          rows = [r for r in csv.DictReader(open('${{ matrix.catalogue }}'))
+                  if r.get('class_label', 'gen') == 'gen' and r['model'].startswith('${{ matrix.prefix }}')]
+          w = csv.DictWriter(open('g/manifest.csv', 'w', newline=''), fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+          PY
+          python3 tools/research/alpha96_calibration/fetch_verified.py g/manifest.csv g/img g/fetch_log.csv | tail -3
+      - name: Public QC photos (same sha256-pinned set as the A/B workflow)
+        run: |
+          mkdir -p q/img
+          python3 - <<'PY'
+          import requests, hashlib, csv, pathlib
+          cases = [
+           ('GMT_crooked6_1s4cszq','gmt_126710','https://i.redd.it/zsgyaaky0frg1.jpg','c36f1af94be604ec9153e77b42322d0396634af0eb955c2ab7d3841dce4bb6cd'),
+           ('GMT_accepted6_18vdgh0','gmt_126710','https://i.redd.it/tqmt3k1f8o9c1.jpg','a041d20d14d7c9f105991496b539bb73d63182d75e3b61b6d5a8f0590ecd6c13'),
+           ('GMT_accepted6_18vdgh0_photo2','gmt_126710','https://i.redd.it/fobj8k1f8o9c1.jpg','77245a16744f3fb1369bdaef2101593bd6b52de3a0f031946e3cd84ea9fe8217'),
+           ('SUB_rejected12_1wgfy7k','submariner_124060','https://i.redd.it/0rx4t01hujph1.jpg','7c9f2b50f8e89b860bf567cebdc7a86f3268c5c5e04397f44314bbf5f3f2e0ba'),
+           ('SUB_accepted12_1w848xb','submariner_124060','https://i.redd.it/wdaw7dp93qnh1.jpg','2fe59ac6f06f8effed25c288075ee931b608c874c66d536c6255524ae7a7f91f'),
+           ('SUB_accepted12_1w848xb_photo5','submariner_124060','https://i.redd.it/zm5wgcp93qnh1.jpg','4c4f8cd97ef5e2c3aa8fe2f3a729f3e462b0bf3cd83ea38793419ea7313b2561'),
+           ('SUB_control12_1kqn8ub','submariner_124060','https://i.redd.it/o3xibqc50t1f1.jpg','471e927748db033d97e3a0087f3cf66dbe2a374246185c72852488c18157a3b2')]
+          s = requests.Session(); s.headers.update({'User-Agent': 'Mozilla/5.0 WatchAlignResearch/1.0', 'Referer': 'https://www.reddit.com/'})
+          w = csv.writer(open('q/manifest.csv', 'w', newline='')); w.writerow(['photo_id', 'local_path', 'physical_watch_id'])
+          for name, model, url, sha in cases:
+              if model != '${{ matrix.model }}': continue
+              try:
+                  data = s.get(url, timeout=20).content
+                  if hashlib.sha256(data).hexdigest() != sha: raise ValueError('sha256')
+                  (pathlib.Path('q/img') / (name + '.jpg')).write_bytes(data); w.writerow([name, name + '.jpg', name])
+              except Exception as e: print('QC not available:', name, e)
+          PY
+      - name: Overlay export (app code, desktop harness)
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then mkdir -p $(dirname $J); curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar; fi
+          mkdir -p cls
+          javac -encoding UTF-8 -nowarn -cp $J -sourcepath "tools/desktop-harness/shim:android/app/src/main/java" -d cls tools/desktop-harness/drivers/*.java
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.OverlayDump g/manifest.csv g/img out/dump.jsonl | grep -c DUMP
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.OverlayDump q/manifest.csv q/img out/qc_dump.jsonl | grep -c DUMP
+      - name: Gap on genuine photos
+        env: {OMP_NUM_THREADS: '1', OPENBLAS_NUM_THREADS: '1'}
+        run: python3 tools/research/track/gap.py out/dump.jsonl g/img out/gap.csv 4 | grep -v '^ERROR' | tee out/gap.txt
+      - name: Gap on public QC photos (every marker)
+        run: |
+          python3 tools/research/track/gap.py out/qc_dump.jsonl q/img out/qc_gap.csv 2
+          cat out/qc_gap.csv
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gap-${{ matrix.model }}
+          path: out/
+          retention-days: 14

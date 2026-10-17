@@ -27,7 +27,7 @@ import gross as gr  # noqa: E402
 import track as tr  # noqa: E402
 
 COLS = ['photo_id', 'watch', 'model', 'rpx', 'hour', 'shape', 'move', 'kind', 'amount', 'gate', 'side_pct', 'inout_pct',
-        'tilt_line_deg', 'ring_turn_pct', 'scale', 'nbad_ticks']
+        'tilt_line_deg', 'ring_turn_pct', 'scale', 'nbad_ticks', 'gap_pct']
 SHIFTS = (0.5, 1.0, 1.5, 2.0)
 TURNS = (1.0, 1.5, 2.0, 3.0)
 
@@ -40,7 +40,7 @@ def row(d, C, r, move='base', kind='', amount=0.0):
     o = {'photo_id': d['photo_id'], 'watch': d.get('watch', ''), 'model': d['model'], 'rpx': '%.0f' % d['rpx'],
          'hour': r['hour'], 'shape': r['shape'], 'move': move, 'kind': kind, 'amount': amount, 'gate': r.get('gate', ''),
          'nbad_ticks': C['nbad']}
-    for k in ('side_pct', 'inout_pct', 'tilt_line_deg', 'ring_turn_pct', 'scale'):
+    for k in ('side_pct', 'inout_pct', 'tilt_line_deg', 'ring_turn_pct', 'scale', 'gap_pct'):
         o[k] = fmt(r.get(k))
     return o
 

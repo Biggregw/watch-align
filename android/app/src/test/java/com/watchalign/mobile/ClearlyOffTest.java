@@ -25,9 +25,22 @@ public class ClearlyOffTest {
         assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.ROUND,0,-1.05,Double.NaN),1e9));
         assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.BATON,0,0,-2.3),1e9));
     }
+    static ClearlyOff.Marker tri(double inout,double tilt,double gap){ClearlyOff.Marker r=m(ModelSpec.Shape.TRIANGLE,0,inout,tilt);r.gapPct=gap;return r;}
     @Test public void triangleHasItsOwnInOutLimitAndNoTiltVote(){
-        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(m(ModelSpec.Shape.TRIANGLE,0,1.2,5.0),1e9));
-        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.TRIANGLE,0,1.3,0),1e9));
+        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(tri(1.2,5.0,3.0),1e9));
+        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(tri(1.3,0,3.0),1e9));
+    }
+    @Test public void triangleNeedsAClearGapUnderTheMinuteTrack(){
+        // the owner's "clear gap": genuine 2.34 % or more; their BLNR photos 1.08 % and 1.90 % with the centre in place
+        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(tri(0.0,0,2.34),250));
+        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(tri(0.6,0,1.08),278));
+        ClearlyOff.Marker two=tri(0.03,0,1.90);
+        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(two,366));
+        assertTrue(ClearlyOff.headline(two).contains("clear under the minute track"));
+        // 0.5 px allowance: 2.2 % less 0.25 % on a 200 px dial radius
+        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(tri(0,0,1.97),200));
+        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(tri(0,0,1.93),200));
+        assertEquals("no gap reading, no pass",ClearlyOff.State.CANT_CHECK,decide(tri(0,0,Double.NaN),1e9));
     }
     @Test public void lowResolutionAllowance(){
         // 0.5 px on a 200 px dial radius = 0.25 % of the radius
