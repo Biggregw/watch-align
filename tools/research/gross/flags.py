@@ -110,7 +110,29 @@ def photo_context(img, H, d):
         elif run is not None:
             hands.append(((run[0] + run[1]) / 2 * 0.5, (run[1] - run[0] + 1) * 0.5))
             run = None
-    ctx['hands'] = [hd for hd in hands if hd[1] <= 25]
+    hands = [hd for hd in hands if hd[1] <= 25]
+    # how far out each hand reaches (owner, 17 Oct 2026: a short hour hand pointing at a marker does not touch it):
+    # walking out from 0.38 R along the hand, the hand ends where it no longer differs from the ring median
+    rr2 = np.arange(0.38, 0.97, 0.005)
+    a3 = np.arange(720) * math.pi / 360
+    Q2 = np.stack([np.outer(rr2, np.sin(a3)), -np.outer(rr2, np.cos(a3))], -1).reshape(-1, 2)
+    med2 = np.nanmedian(og.sample(img, og.project(H, Q2)).reshape(len(rr2), 720), axis=1)
+    reach = []
+    for a, wdt in hands:
+        cols = np.radians(a + np.linspace(-min(wdt / 2, 3.0), min(wdt / 2, 3.0), 5))
+        Q3 = np.stack([np.outer(rr2, np.sin(cols)), -np.outer(rr2, np.cos(cols))], -1).reshape(-1, 2)
+        v = og.sample(img, og.project(H, Q3)).reshape(len(rr2), len(cols))
+        on2 = (np.abs(v - med2[:, None]) > 0.07 * 255).any(axis=1)      # a thin hand covers one column
+        end, miss = rr2[0], 0
+        for r, o in zip(rr2, on2):
+            if o:
+                end, miss = r, 0
+            else:
+                miss += 1
+                if miss >= 3:
+                    break
+        reach.append((a, wdt, float(end)))
+    ctx['hands'] = reach
     ctx['img'], ctx['H'] = img, H
     return ctx
 
@@ -185,8 +207,10 @@ def measure(ctx, m, insets, D=None, sib=None):
     # hands reaching this marker
     if not flag:
         ang = math.degrees(math.atan2(mx, -my)) % 360
-        for a, wdt in ctx['hands']:
-            if abs((ang - a + 180) % 360 - 180) <= wdt / 2 + 4:
+        y = np.asarray(m['yellow'], float)
+        r_in = float(np.min(np.hypot(y[:, 0], y[:, 1]))) if y.ndim == 2 and len(y) >= 3 else 0.0
+        for a, wdt, end in ctx['hands']:
+            if abs((ang - a + 180) % 360 - 180) <= wdt / 2 + 4 and end >= r_in - 0.02:
                 flag = 'hand'
     poly = og.template(m, insets)
     if shape == 'round':

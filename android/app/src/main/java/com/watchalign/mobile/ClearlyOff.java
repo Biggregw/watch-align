@@ -365,11 +365,25 @@ final class ClearlyOff {
         double[][] hv=img.polar(rr,a2);
         double[] frac=new double[720];
         for(int i=0;i<40;i++){double hm=nanmedian(hv[i]);for(int j=0;j<720;j++)if(Math.abs(hv[i][j]-hm)>0.07*255)frac[j]+=1.0/40;}
-        int[] run=null;
+        int[] run=null;List<double[]> hands=new ArrayList<>();
         for(int i=0;i<=720;i++){
             double f=i<720?frac[i%720]:0;
             if(f>=0.85)run=run==null?new int[]{i,i}:new int[]{run[0],i};
-            else if(run!=null){double wd=(run[1]-run[0]+1)*0.5;if(wd<=25)ctx.hands.add(new double[]{(run[0]+run[1])/2.0*0.5,wd});run=null;}
+            else if(run!=null){double wd=(run[1]-run[0]+1)*0.5;if(wd<=25)hands.add(new double[]{(run[0]+run[1])/2.0*0.5,wd});run=null;}
+        }
+        // how far out each hand reaches (owner, 17 Oct 2026: a short hour hand pointing at a marker does not touch it):
+        // walking out from 0.38 R along the hand, the hand ends where it no longer differs from the ring median
+        double[] rr2=arange(0.38,0.97,0.005);
+        double[][] ring2=img.polar(rr2,a2);double[] med2=new double[rr2.length];for(int i=0;i<rr2.length;i++)med2[i]=nanmedian(ring2[i]);
+        for(double[] hd:hands){
+            double half=Math.min(hd[1]/2,3.0);double[] cols=new double[5];for(int j=0;j<5;j++)cols[j]=Math.toRadians(hd[0]-half+j*half/2);
+            double[][] v=img.polar(rr2,cols);
+            double end=rr2[0];int miss=0;
+            for(int i=0;i<rr2.length;i++){
+                boolean on=false;for(int j=0;j<5;j++)if(Math.abs(v[i][j]-med2[i])>0.07*255)on=true;   // a thin hand covers one column
+                if(on){end=rr2[i];miss=0;}else if(++miss>=3)break;
+            }
+            ctx.hands.add(new double[]{hd[0],hd[1],end});
         }
         return ctx;
     }
@@ -463,7 +477,8 @@ final class ClearlyOff {
         }
         if(flag.isEmpty()){
             double ang=pmod(Math.toDegrees(Math.atan2(mo[0],-mo[1])),360);
-            for(double[] hd:ctx.hands)if(Math.abs(pmod(ang-hd[0]+180,360)-180)<=hd[1]/2+4)flag="hand";
+            double rIn=Double.POSITIVE_INFINITY;for(double[] p:m.yellow)rIn=Math.min(rIn,norm(p));
+            for(double[] hd:ctx.hands)if(Math.abs(pmod(ang-hd[0]+180,360)-180)<=hd[1]/2+4&&hd[2]>=rIn-0.02)flag="hand";
         }
         if(m.shape!=ModelSpec.Shape.ROUND){
             double[][] poly=template(m,inset);double[] cp=areaCentroid(poly);
