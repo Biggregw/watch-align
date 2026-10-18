@@ -1,5 +1,5 @@
 # Measured verified-genuine markers (clearly-off check, app code, desktop harness), numbers only: 1126 markers.
-# From run 39158440353 (.github/workflows/watch-align-160.yml). Used by the calibration screen to count the genuine markers a setting would flag.
+# From run 39162146517 (.github/workflows/watch-align-160.yml). Used by the calibration screen to count the genuine markers a setting would flag.
 shape,rpx,side_pct,inout_pct,tilt_deg,gap_pct
 triangle,438,-0.0875,-0.0143,0.1824,3.4939
 round,438,-0.2143,0.0476,,
@@ -489,17 +489,6 @@ round,258,-0.0468,0.2765,,
 baton,258,-0.1037,0.0156,-0.0431,
 round,258,-0.0575,-0.0391,,
 round,258,0.0487,-0.1255,,
-triangle,250,-0.0351,-0.2150,0.3953,2.8067
-round,250,0.0630,-0.2227,,
-round,250,0.0998,-0.0097,,
-baton,250,0.2594,-0.0656,-0.1836,
-round,250,0.1773,0.3650,,
-baton,250,-0.0319,0.1971,0.0373,
-round,250,-0.0556,0.1720,,
-round,250,-0.2903,0.0540,,
-baton,250,-0.4081,0.0556,-0.2246,
-round,250,-0.2481,-0.0448,,
-round,250,-0.1036,-0.1818,,
 triangle,256,-0.2838,-0.0558,,2.6511
 round,256,-0.0290,-0.0796,,
 round,256,0.0667,-0.0246,,
@@ -946,6 +935,17 @@ round,201,-0.0865,0.1474,,
 baton,201,-0.0352,0.0239,-0.0780,
 round,201,-0.1066,-0.0563,,
 round,201,-0.1306,-0.1119,,
+triangle,440,-0.0080,0.2678,,3.9573
+round,440,-0.2481,0.1221,,
+baton,440,-0.2351,-0.1313,-0.4877,
+round,440,-0.2777,-0.0629,,
+round,440,-0.3250,-0.0126,,
+baton,440,-0.1075,0.0481,-0.1869,
+round,440,-0.2177,0.0177,,
+round,440,-0.1255,-0.1241,,
+baton,440,0.0860,-0.0670,-0.1151,
+round,440,-0.0645,-0.0052,,
+round,440,0.0472,0.1721,,
 triangle,438,0.2982,0.2395,,3.8523
 round,438,0.1038,0.1431,,
 baton,438,-0.3127,-0.2424,-0.3201,
