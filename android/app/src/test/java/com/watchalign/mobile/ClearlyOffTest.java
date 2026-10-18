@@ -38,11 +38,12 @@ public class ClearlyOffTest {
         ClearlyOff.Marker r=m(ModelSpec.Shape.ROUND,0.9,0,Double.NaN);
         ClearlyOff.decide(r,1e9,in(r.shape),ClearlyOff.Limits.defaults());assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,r.state);
         ClearlyOff.decide(r,1e9,in(r.shape),L);assertEquals(ClearlyOff.State.CLEARLY_OFF,r.state);
-        // triangle rotation is not judged by default; once set it is
-        ClearlyOff.Marker t=m(ModelSpec.Shape.TRIANGLE,0,0,3.0);t.gapPct=3.0;
-        ClearlyOff.decide(t,1e9,in(t.shape),ClearlyOff.Limits.defaults());assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,t.state);
+        // triangle rotation: 1.0 deg by default (owner, 18 Oct 2026); the owner can loosen it or turn it off
+        ClearlyOff.Marker t=m(ModelSpec.Shape.TRIANGLE,0,0,1.4);t.gapPct=3.0;
+        ClearlyOff.decide(t,1e9,in(t.shape),ClearlyOff.Limits.defaults());assertEquals(ClearlyOff.State.CLEARLY_OFF,t.state);
         ClearlyOff.Limits T=ClearlyOff.Limits.defaults();T.triTiltDeg=2.0;
-        ClearlyOff.decide(t,1e9,in(t.shape),T);assertEquals(ClearlyOff.State.CLEARLY_OFF,t.state);
+        ClearlyOff.decide(t,1e9,in(t.shape),T);assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,t.state);
+        T.triTiltDeg=Double.NaN;ClearlyOff.decide(t,1e9,in(t.shape),T);assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,t.state);
         // a withheld marker stays withheld whatever the limits
         ClearlyOff.Result res=new ClearlyOff.Result();res.rpx=1e9;ClearlyOff.Marker g=m(ModelSpec.Shape.ROUND,5,0,Double.NaN);g.gate.add("hand");
         ClearlyOff.decide(g,1e9,in(g.shape));res.markers.add(g);res.markers.add(r);
@@ -52,8 +53,37 @@ public class ClearlyOffTest {
     }
     static ClearlyOff.Marker tri(double inout,double tilt,double gap){ClearlyOff.Marker r=m(ModelSpec.Shape.TRIANGLE,0,inout,tilt);r.gapPct=gap;return r;}
     @Test public void triangleHasItsOwnInOutLimitAndNoTiltVote(){
-        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(tri(1.2,5.0,3.0),1e9));
+        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(tri(1.2,0.5,3.0),1e9));
         assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(tri(1.3,0,3.0),1e9));
+    }
+    /** synthetic top edge turned deg clockwise (its right-hand end lower: s falls with t), one half (sign -1 left, +1
+     *  right), with noise (px) */
+    static List<double[]> edge(double deg,double sign,double noisePx,double rpx,java.util.Random rnd){
+        List<double[]> l=new ArrayList<>();double k=-Math.tan(Math.toRadians(deg));
+        for(double t=ClearlyOff.ROT_T0;t<=ClearlyOff.ROT_T1;t+=0.5/rpx)l.add(new double[]{sign*t,0.91+k*sign*t+rnd.nextGaussian()*noisePx/rpx});
+        return l;
+    }
+    @Test public void triangleRotationAgainstTicks59And1(){
+        double rpx=400;java.util.Random rnd=new java.util.Random(7);
+        double[] er={0,-1},et={1,0};
+        double[] p59=ClearlyOff.cpt(0.93,Math.toRadians(-6)),p01=ClearlyOff.cpt(0.93,Math.toRadians(6));
+        // a top edge turned 1.4 deg clockwise reads +1.4 (the owner's replica reading) and is clearly off at the 1.0 default
+        ClearlyOff.RotFit f=ClearlyOff.rotationFit(edge(1.4,-1,0.1,rpx,rnd),edge(1.4,1,0.1,rpx,rnd),p59,p01,er,et,rpx,0);
+        assertEquals("",f.fail);assertEquals(1.4,f.rot,0.05);assertEquals(f.left,f.right,0.3);
+        ClearlyOff.Marker t=m(ModelSpec.Shape.TRIANGLE,0,0,f.rot);t.gapPct=3.0;
+        ClearlyOff.decide(t,rpx,in(t.shape),ClearlyOff.Limits.defaults());assertEquals(ClearlyOff.State.CLEARLY_OFF,t.state);
+        assertTrue(ClearlyOff.headline(t).contains("clockwise"));
+        // ticks printed turned by the same amount: the triangle is square to them, no rotation
+        double[] q59=ClearlyOff.cpt(0.93,Math.toRadians(-6+1.4)),q01=ClearlyOff.cpt(0.93,Math.toRadians(6+1.4));
+        assertEquals(0.0,ClearlyOff.rotationFit(edge(1.4,-1,0,rpx,rnd),edge(1.4,1,0,rpx,rnd),q59,q01,er,et,rpx,0).rot,0.05);
+        // halves that disagree (a bent or partly hidden edge), a rough edge, or too few clear columns: withheld
+        assertFalse(ClearlyOff.rotationFit(edge(-1.0,-1,0,rpx,rnd),edge(1.0,1,0,rpx,rnd),p59,p01,er,et,rpx,0).fail.isEmpty());
+        assertFalse(ClearlyOff.rotationFit(edge(0,-1,1.5,rpx,rnd),edge(0,1,1.5,rpx,rnd),p59,p01,er,et,rpx,0).fail.isEmpty());
+        assertFalse(ClearlyOff.rotationFit(edge(0,-1,0,rpx,rnd),edge(0,1,0,rpx,rnd),p59,p01,er,et,rpx,0.3).fail.isEmpty());
+        // a withheld rotation is never a pass while the rotation is judged
+        ClearlyOff.Marker w=m(ModelSpec.Shape.TRIANGLE,0,0,Double.NaN);w.gapPct=3.0;w.rotNote="its top edge is not clear enough";
+        ClearlyOff.decide(w,rpx,in(w.shape),ClearlyOff.Limits.defaults());
+        assertEquals(ClearlyOff.State.CANT_CHECK,w.state);assertTrue(w.reason.contains("rotation"));
     }
     @Test public void triangleNeedsAClearGapUnderTheMinuteTrack(){
         // the owner's "clear gap": genuine 2.34 % or more; their BLNR photos 1.08 % and 1.90 % with the centre in place
