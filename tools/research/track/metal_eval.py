@@ -29,7 +29,8 @@ va = importlib.util.module_from_spec(_s)
 _s.loader.exec_module(va)
 
 COLS = ['photo_id', 'watch', 'model', 'rpx', 'hour', 'shape', 'trial', 'amount', 'old_ok', 'old_side', 'old_inout',
-        'old_tilt', 'new_ok', 'new_side', 'new_inout', 'new_tilt', 'new_se_pos', 'new_se_rot', 'new_cover', 'new_note']
+        'old_tilt', 'new_ok', 'new_side', 'new_inout', 'new_tilt', 'new_se_pos', 'new_se_rot', 'new_cover', 'new_note',
+        'new_rms_px', 'new_bad_frac', 'new_state', 'new_reason']
 
 
 def new_all(img, d, C, hands, bias=None):
@@ -84,7 +85,8 @@ def row(d, m, trial, amount, old, new):
                 old_inout=g(orow.get('inout_pct')), old_tilt=g(orow.get('tilt_line_deg')), new_ok=int(not nf['gate']),
                 new_side=g(nrow.get('side_pct')), new_inout=g(nrow.get('inout_pct')), new_tilt=g(nrow.get('tilt_line_deg')),
                 new_se_pos=g(100 * nf.get('se_pos', float('nan'))), new_se_rot=g(nf.get('se_rot')),
-                new_cover=g(nf.get('cover')), new_note=nf['gate'])
+                new_cover=g(nf.get('cover')), new_note=nf['gate'], new_rms_px=g(nf.get('rms_px')),
+                new_bad_frac=g(nf.get('bad_frac')), **dict(zip(('new_state', 'new_reason'), mt.verdict(nf, nrow, float(d['rpx'])))))
 
 
 def occlude(img, H, m, rpx, rng):
@@ -132,6 +134,9 @@ def work(args):
             trials = [('occlude', 0.0, None, 0.0), ('side', 1.5, 0.015 * et, 0.0), ('inout', 1.5, 0.015 * er, 0.0)]
             if m['shape'] == 'baton':
                 trials.append(('turn', 3.0, np.zeros(2), math.radians(3.0)))
+            if m['shape'] == 'triangle':       # 1.5 deg further the way it already leans (a known 1.5 deg defect)
+                sg = 1.0 if not (n[1].get('tilt_line_deg', 0) < 0) else -1.0
+                trials.append(('turn12', 1.5 * sg, np.zeros(2), math.radians(1.5 * sg)))
             for kind, amount, v, dth in trials:
                 img2 = occlude(img, C['H'], m, C['rpx'], rng) if kind == 'occlude' else tr.move_confined(img, d, m, C, v, dth)
                 ob = tr.centre_of(img2, d, m, C, gr.wedge(img2, C['ctx'], m))
@@ -158,6 +163,17 @@ def summary(rows):
         pos = math.hypot(0 if s != s else s, 0 if io != io else io)
         return pos > POS + allow(r) or (r['shape'] == 'baton' and abs(t) > TILT)
     base = [r for r in rows if r['trial'] == 'base']
+    print('new method verdicts (base photos), by shape:')
+    for sh in ('round', 'baton', 'triangle'):
+        b = [r for r in base if r['shape'] == sh]
+        if b:
+            print('  %-8s ' % sh + '  '.join('%s %d' % (st, sum(1 for r in b if r['new_state'] == st))
+                                           for st in (mt.CLEARLY_OFF, mt.INSPECT, mt.NO_ISSUE, mt.CANT)))
+    for st in (mt.CLEARLY_OFF, mt.INSPECT):
+        fl = [r for r in base if r['new_state'] == st]
+        print('  %s: %s' % (st, [(r['photo_id'][:10], int(r['hour']), r['new_reason'][:90]) for r in fl][:12]))
+    unc = [r for r in base if r['new_state'] == mt.NO_ISSUE and r['new_reason']]
+    print('  no visible issue but uncertain edge: %d of %d measured' % (len(unc), sum(1 for r in base if r['new_state'] != mt.CANT)))
     print('marker coverage (assessed / all), base photos:')
     for sh in ('round', 'baton', 'triangle'):
         b = [r for r in base if r['shape'] == sh]
@@ -190,7 +206,7 @@ def summary(rows):
         if sd:
             print('repeatability %s: sideways SD between photos of one watch, median %.2f %% R (n %d groups)' % (k, np.median(sd), len(sd)))
     base_by = {(r['photo_id'], r['hour']): r for r in base}
-    for kind in ('occlude', 'side', 'inout', 'turn'):
+    for kind in ('occlude', 'side', 'inout', 'turn', 'turn12'):
         T = [r for r in rows if r['trial'] == kind]
         if not T:
             continue
@@ -199,13 +215,15 @@ def summary(rows):
             err = []
             for r in okk:
                 b0 = base_by[(r['photo_id'], r['hour'])]
-                q = 'tilt' if kind == 'turn' else ('side' if kind == 'side' else 'inout' if kind == 'inout' else None)
+                q = 'tilt' if kind.startswith('turn') else ('side' if kind == 'side' else 'inout' if kind == 'inout' else None)
                 if q is None:
                     err.append(math.hypot(f(r[k + '_side']) - f(b0[k + '_side']), f(r[k + '_inout']) - f(b0[k + '_inout'])))
                 else:
                     err.append(abs(f(r[k + '_' + q]) - f(b0[k + '_' + q]) - float(r['amount']) * (1 if q != 'tilt' else 1)))
             err = np.array([e for e in err if e == e])
-            caught = sum(1 for r in okk if off(r, k))
+            caught = sum(1 for r in okk if off(r, k)) if k == 'old' else sum(1 for r in T if r['new_state'] in (mt.CLEARLY_OFF, mt.INSPECT))
+            if k == 'new':
+                line0 = ' [clearly off %d, inspect %d]' % (sum(1 for r in T if r['new_state'] == mt.CLEARLY_OFF), sum(1 for r in T if r['new_state'] == mt.INSPECT))
             line = '%-7s %s: assessed %d/%d' % (kind, k, len(okk), len(T))
             if len(err):
                 line += '  |error| p50 %.2f p95 %.2f' % (np.median(err), np.percentile(err, 95))
@@ -213,7 +231,7 @@ def summary(rows):
                 line += '  clearly off %d (lost %d)' % (caught, len(T) - caught)
             else:
                 line += '  false clearly off %d' % caught
-            print(line)
+            print(line + (line0 if k == 'new' else ''))
 
 
 def main():

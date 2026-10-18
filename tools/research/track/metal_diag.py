@@ -1,8 +1,9 @@
 """Research only: close-ups and numbers behind the outer-metal fit (metal.py), to see WHY a marker reads as it does.
 
-  python3 metal_diag.py dump.jsonl image_root metal.csv out_dir [app.csv] [--all] [--qc] [--b64]
+  python3 metal_diag.py dump.jsonl image_root metal.csv out_dir [app.csv] [--all] [--qc] [--ids=photo:hour,...] [--b64]
 
-Cases: every marker either method calls clearly off (--qc: and the 12 triangle) (base rows of metal.csv; with --all every marker of every photo).
+Cases: every marker the new fit calls Clearly off or Possible misalignment - inspect, named ones (--ids, photo id
+prefix:hour), with --qc every 12 triangle (base rows of metal.csv; with --all every marker of every photo).
 Per photo: the registration (minute-tick lattice residuals, tick scale, bad ticks) and this photo's edge correction.
 Per marker: old vs new numbers, which edge points were used or rejected and why, the mean residual on each side of
 the outline (a side consistently in or out = the genuine outline does not match this marker's shape or size), and a
@@ -109,7 +110,20 @@ def side_table(fit, shape):
     return '; '.join(out)
 
 
-def closeup(gray, img, H, m, fit, C, path, label):
+def ref_dir(C, h):
+    """unit direction (dial frame) of the minute-track line from hour tick h to the opposite tick h+6; None if hidden"""
+    a1, a2 = C['lines'].get(h % 12), C['lines'].get((h + 6) % 12)
+    if a1 is None or a2 is None:
+        return None
+    v = tr.cpt(0.93, a2) - tr.cpt(0.93, a1)
+    return v / np.hypot(*v)
+
+
+def closeup(gray, img, H, m, fit, C, path, lines, bias=0.0):
+    """left: the photo; right: genuine overlay (thin yellow), fitted outer-metal outline (green = its edge seen and
+    consistent, orange = seen but inconsistent: shadowed bevel or reflection, dashed magenta = reconstructed: hidden or
+    no edge), and the minute-track reference (cyan) against the fitted direction (white): batons' long axis vs the
+    parallel h to h+6 line, the triangle's top edge vs the perpendicular to the 0-30 line, circles' hour line."""
     poly0 = np.asarray(m['yellow'], float)
     c0 = poly0.mean(axis=0)
     P0 = og.project(H, poly0)
@@ -120,36 +134,64 @@ def closeup(gray, img, H, m, fit, C, path, label):
     x0, y0 = max(0, x0), max(0, y0)
     crop = img[y0:y1, x0:x1]
     crop = cv2.cvtColor(crop, cv2.COLOR_GRAY2BGR) if crop.ndim == 2 else crop.copy()
-    Z = float(np.clip(240.0 / max(1, crop.shape[0]), 2, 6))
+    Z = float(np.clip(260.0 / max(1, crop.shape[0]), 2, 6))
     big = cv2.resize(crop, None, fx=Z, fy=Z, interpolation=cv2.INTER_CUBIC)
     plain = big.copy()
     tf = lambda P: np.round((og.project(H, np.asarray(P, float)) - [x0, y0]) * Z + (Z - 1) / 2).astype(np.int32)  # noqa: E731
     cv2.polylines(big, [tf(poly0)], True, (0, 230, 255), 1, cv2.LINE_AA)
-    # reference: the hour line through the marker (minute-track ticks h and h+6)
-    a = C['lines'].get(m['hour'] % 12)
-    if a is not None:
-        r0 = float(np.hypot(*c0))
-        seg = [tr.cpt(r0 - 0.12, a), tr.cpt(r0 + 0.08, a)]
-        cv2.polylines(big, [tf(seg)], False, (255, 255, 0), 1, cv2.LINE_AA)
+    rpx = C['rpx']
     if 'c_obs' in fit:
+        c = np.asarray(fit['c_obs'], float)
         th = math.radians(fit['tilt_deg']) if fit.get('tilt_deg') == fit.get('tilt_deg') else 0.0
-        poly = np.asarray(fit['c_obs']) + (poly0 - c0) @ mt._rot(th).T
-        pts, nrm, off = mt.edges(gray, H, poly, C['rpx'], m['shape'], C['ctx'].get('hands'))
+        poly = c + (poly0 - c0) @ mt._rot(th).T
+        pts, nrm, off = mt.edges(gray, H, poly, rpx, m['shape'], C['ctx'].get('hands'))
         why = mt.edges.why
         seen = np.isfinite(off)
+        bad = seen & (np.abs(np.where(seen, off, 0) - bias) * rpx > mt.EDGE_BAD_PX)
         Q = tf(pts)
         E = tf(pts + np.where(seen, off, 0)[:, None] * nrm)
-        for i in range(len(pts)):
-            if i % 3 == 0:
-                cv2.circle(big, tuple(E[i] if seen[i] else Q[i]), 1, COL[int(why[i])], -1)
+        for i in range(0, len(pts), 3):
+            cv2.circle(big, tuple(E[i] if seen[i] else Q[i]), 1, (0, 140, 255) if bad[i] else COL[int(why[i])], -1)
         for i in range(len(pts) - 1):
-            if np.hypot(*(pts[i + 1] - pts[i])) > 3 * og.STEP_PX / C['rpx']:
+            if np.hypot(*(pts[i + 1] - pts[i])) > 3 * og.STEP_PX / rpx:
                 continue
-            dash = not (seen[i] and seen[i + 1])
-            if not dash or (i // 4) % 2 == 0:
-                cv2.line(big, tuple(Q[i]), tuple(Q[i + 1]), (255, 0, 255) if dash else (60, 220, 60), 1, cv2.LINE_AA)
-    cv2.putText(big, label, (4, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255, 255, 255), 1, cv2.LINE_AA)
-    cv2.imwrite(path, np.hstack([plain, big]), [cv2.IMWRITE_JPEG_QUALITY, 82])
+            if seen[i] and seen[i + 1]:
+                col = (0, 140, 255) if (bad[i] or bad[i + 1]) else (60, 220, 60)
+                cv2.line(big, tuple(Q[i]), tuple(Q[i + 1]), col, 2, cv2.LINE_AA)
+            elif (i // 4) % 2 == 0:
+                cv2.line(big, tuple(Q[i]), tuple(Q[i + 1]), (255, 0, 255), 1, cv2.LINE_AA)
+        u = ref_dir(C, m['hour'])
+        if m['shape'] == 'baton' and u is not None:
+            q = poly - c
+            ax = np.linalg.svd(q - q.mean(axis=0))[2][0]
+            L = 0.75 * np.abs(q @ ax).max()
+            cv2.line(big, *[tuple(x) for x in tf([c - 1.4 * L * u, c + 1.4 * L * u])], (255, 255, 0), 1, cv2.LINE_AA)
+            cv2.line(big, *[tuple(x) for x in tf([c - L * ax, c + L * ax])], (255, 255, 255), 1, cv2.LINE_AA)
+        elif m['shape'] == 'triangle' and u is not None:
+            er = c / np.hypot(*c)
+            et = np.array([-er[1], er[0]])
+            rad = poly @ er
+            top = poly[rad > rad.max() - 0.004]
+            pa, pb = top[np.argmin(top @ et)], top[np.argmax(top @ et)]
+            mid, w = (pa + pb) / 2, np.hypot(*(pb - pa))
+            v = np.array([-u[1], u[0]])
+            cv2.line(big, *[tuple(x) for x in tf([mid - 0.75 * w * v, mid + 0.75 * w * v])], (255, 255, 0), 1, cv2.LINE_AA)
+            cv2.line(big, *[tuple(x) for x in tf([pa, pb])], (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.line(big, *[tuple(x) for x in tf([mid - 0.12 * u, mid + 0.02 * u])], (255, 255, 0), 1, cv2.LINE_AA)
+        else:
+            a = C['lines'].get(m['hour'] % 12)
+            if a is not None:
+                r0 = float(np.hypot(*c0))
+                cv2.line(big, *[tuple(x) for x in tf([tr.cpt(r0 - 0.1, a), tr.cpt(r0 + 0.07, a)])], (255, 255, 0), 1, cv2.LINE_AA)
+    row = np.hstack([plain, big])
+    wrap = []
+    for t in lines:
+        n = max(20, row.shape[1] // 7)
+        wrap += [t[i:i + n] for i in range(0, len(t), n)]
+    cap = np.full((8 + 16 * len(wrap), row.shape[1], 3), 255, np.uint8)
+    for k, t in enumerate(wrap):
+        cv2.putText(cap, t, (4, 14 + 16 * k), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 0, 0) if k else (0, 0, 160), 1, cv2.LINE_AA)
+    cv2.imwrite(path, np.vstack([row, cap]), [cv2.IMWRITE_JPEG_QUALITY, 82])
     return path
 
 
@@ -194,19 +236,20 @@ def main():
     rows = list(csv.DictReader(open(mcsv)))
     if app and os.path.exists(app):
         triangle_compare(rows, app)
-    POS, TILT = 1.0, 2.25
-
-    def off(r):
-        s, io, t = f(r['new_side']), f(r['new_inout']), f(r['new_tilt'])
-        pos = math.hypot(0 if s != s else s, 0 if io != io else io)
-        return int(r['new_ok']) and r['shape'] != 'triangle' and (pos > POS + 50 / float(r['rpx']) or (r['shape'] == 'baton' and abs(t) > TILT))
+    ids = {}
+    for a in sys.argv[5:]:
+        if a.startswith('--ids='):
+            for x in a[6:].split(','):
+                pid, h = x.split(':')
+                ids.setdefault(pid, set()).add(int(h))
     want = {}
     for r in rows:
-        if r['trial'] == 'base' and (every or off(r) or (qc and r['shape'] == 'triangle') or (int(r['old_ok']) and r['shape'] != 'triangle' and math.hypot(
-                *(0 if x != x else x for x in (f(r['old_side']), f(r['old_inout'])))) > POS + 50 / float(r['rpx']))):
+        named = any(r['photo_id'].startswith(k) and int(r['hour']) in v for k, v in ids.items())
+        if r['trial'] == 'base' and (every or named or r.get('new_state') in (mt.CLEARLY_OFF, mt.INSPECT) or
+                                     (qc and r['shape'] == 'triangle')):
             want.setdefault(r['photo_id'], set()).add(int(r['hour']))
     if not want:
-        print('no clearly-off markers to inspect')
+        print('no flagged or named markers to inspect')
     for line in open(dump):
         d = json.loads(line)
         if d['photo_id'] not in want or not d.get('pose'):
@@ -237,8 +280,19 @@ def main():
                       (fit.get('bias', float('nan')) - bias.get(m['shape'], 0.0)) * C['rpx'], ks, fit.get('gate', '')))
             print('     ' + side_table(fit, m['shape']))
             print('     ' + profile(img, C['H'], m, fit, C))
-            p = closeup(img, color, C['H'], m, fit, C, os.path.join(outd, '%s_%02d.jpg' % (d['photo_id'][:12], m['hour'])),
-                        '%s %d new %s/%s' % (d['photo_id'][:10], m['hour'], me.va.fmt(nr.get('side_pct')), me.va.fmt(nr.get('inout_pct'))))
+            st, why = mt.verdict(fit, nr, C['rpx'])
+            print('     verdict (new): %s%s' % (st, ' - ' + why if why else ''))
+            lab = ['%s %d o\'clock: %s' % (d['photo_id'][:12], m['hour'], st),
+                   'side %+.2f  in/out %+.2f %% R%s  (limits 1.0 %% R%s)' % (
+                       nr.get('side_pct', float('nan')), nr.get('inout_pct', float('nan')),
+                       '' if m['shape'] == 'round' else '  turn %+.2f deg vs %s' % (
+                           nr.get('tilt_line_deg', float('nan')), 'the parallel %d-%d line' % (
+                               (5 * m['hour']) % 60, (5 * m['hour'] + 30) % 60) if m['shape'] == 'baton' else
+                           'the perpendicular to the 0-30 line'),
+                       '' if m['shape'] == 'round' else ', %.2f deg' % mt.TILT_LIMIT[m['shape']])]
+            lab += ['uncertain: ' + x for x in fit.get('uncertain', '').split('; ') if x]
+            p = closeup(img, color, C['H'], m, fit, C, os.path.join(outd, '%s_%02d.jpg' % (d['photo_id'][:16], m['hour'])),
+                        lab, bias.get(m['shape'], 0.0))
             if b64:
                 s = base64.b64encode(open(p, 'rb').read()).decode()
                 print('IMG %s %s' % (os.path.basename(p), s))

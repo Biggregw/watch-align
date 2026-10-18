@@ -82,16 +82,13 @@ jobs:
       - name: Outer-metal fit vs current detector (public QC photos)
         run: |
           python3 tools/research/track/metal_eval.py out/qc_dump.jsonl q/img out/metal_qc.csv 2
-          cut -d, -f1,5,6,9-20 out/metal_qc.csv
-      - name: Outer-metal close-ups and diagnosis (flagged genuine markers; QC flags and 12 triangles; base64 in the log)
+          cut -d, -f1,5,6,9-24 out/metal_qc.csv
+      - name: Outer-metal verdicts and close-ups (flagged and named genuine markers, QC flags and 12 triangles; base64 in the log)
         run: |
-          echo "--- first edge rule (half of lume contrast), genuine flags:"
-          METAL_EDGE=half python3 tools/research/track/metal_eval.py out/dump.jsonl g/img out/metal_v1.csv 4 | grep -v '^ERROR' | grep 'clearly off'
-          METAL_EDGE=half python3 tools/research/track/metal_diag.py out/dump.jsonl g/img out/metal_v1.csv out/diag_v1 --b64 | tee out/diag_v1.txt | cut -c1-400
-          echo "--- rim-level edge rule:"
-          python3 tools/research/track/metal_diag.py out/dump.jsonl g/img out/metal.csv out/diag out/app.csv --b64 | tee out/diag.txt | cut -c1-400
+          IDS=--ids=6ac54fe6df:4,6ac54fe6df:5,6ac54fe6df:7,efa51fd35f:2,445e3c952d:12,728e4c157e:12,7e0e15cbb6:12,cb5175ff2c:12,501e07afc5:12,22075296f8:12
+          python3 tools/research/track/metal_diag.py out/dump.jsonl g/img out/metal.csv out/diag out/app.csv $IDS --b64 | tee out/diag.txt | cut -c1-400
           python3 tools/research/track/metal_diag.py out/qc_dump.jsonl q/img out/metal_qc.csv out/diag_qc out/app_qc.csv --qc --b64 | tee out/diag_qc.txt | cut -c1-400
-          grep '^IMG ' out/diag_v1.txt out/diag.txt out/diag_qc.txt | cut -d' ' -f2- || true
+          grep -h '^IMG ' out/diag.txt out/diag_qc.txt || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:

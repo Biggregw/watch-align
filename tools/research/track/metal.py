@@ -5,7 +5,9 @@ The genuine outer-metal outline (the overlay's yellow polygon) is fixed in shape
 X/Y and rotation (batons, triangle) are fitted, never a stretch. Along the outline's normals the outermost bright-to-
 dark crossing (metal to dial) is found; points under a hand, without contrast, or with a bright outside (reflection,
 a neighbouring hand edge) are masked, and the rest are fitted robustly (Tukey). A reading is kept only when what is
-visible constrains it: enough clean points and standard errors under MAX_SE_POS / MAX_SE_ROT; otherwise a reason.
+visible constrains it at all (enough clean points, standard errors under CANT_SE_POS / CANT_SE_ROT); otherwise a reason
+(Can't check). A kept reading whose edge is rough, inconsistent, mostly reconstructed or loosely fixed is marked
+uncertain: over a limit it becomes 'Possible misalignment - inspect' (verdict), never a silent pass.
 """
 import math
 import os
@@ -21,6 +23,16 @@ MAX_SE_POS = 0.0025    # R
 MAX_SE_ROT = 0.35      # deg
 ITER = 4
 OLD_EDGE = os.environ.get('METAL_EDGE') == 'half'   # the first rule (half of lume contrast), for comparison only
+# edge reliability (how far the visible metal can be trusted; never a defect limit)
+EDGE_RMS_OK = 0.5      # px: fit roughness of a clean rim is about 0.1-0.2 px
+EDGE_BAD_PX = 1.0      # px: an edge point this far from the fitted outline is inconsistent (shadowed bevel, reflection)
+EDGE_BAD_FRAC = 0.15   # share of inconsistent points above which the edge is unreliable
+MIN_COVER = 0.5        # below this share of the outline seen, the rest is mostly reconstructed
+CANT_SE_POS = 0.01     # R: a position this loosely fixed decides nothing against the 1 % R limit -> Can't check
+CANT_SE_ROT = 1.0      # deg: likewise for rotation (the triangle limit)
+# existing limits (ClearlyOff.Limits defaults): position 1.0 % R (+0.5 px), baton tilt 2.25 deg, triangle rotation 1.0 deg
+POS_LIMIT_PCT, ALLOW_PX, TILT_LIMIT = 1.0, 0.5, {'baton': 2.25, 'triangle': 1.0}
+CLEARLY_OFF, INSPECT, NO_ISSUE, CANT = 'Clearly off', 'Possible misalignment - inspect', 'No visible issue', "Can't check"
 RIM_FRAC = 0.25        # of lume-to-dial contrast: where the rim starts, scanning in from the dial
 RIM_PX = 1.5           # px inside that start over which the rim's own level is taken
 WHY = ('used', 'under a hand', 'low contrast', 'no dark dial outside', 'bright again outside', 'outside the photo')
@@ -127,8 +139,47 @@ def fit(img, H, m, rpx, hands, rotate, bias=0.0):
                _resid=np.full(len(off), np.nan))
     out['_w'][np.flatnonzero(ok)] = w
     out['_resid'][np.flatnonzero(ok)] = res
+    seen = np.isfinite(out['_resid'])
+    bad = seen & (np.abs(out['_resid']) * rpx > EDGE_BAD_PX)
+    out['bad_frac'] = float(bad.sum()) / max(1, seen.sum())
+    out['_bad'] = bad
+    unc = []
+    if out['rms_px'] > EDGE_RMS_OK:
+        unc.append('its visible edge is rough (fit %.2f px)' % out['rms_px'])
+    if out['bad_frac'] > EDGE_BAD_FRAC:
+        unc.append('%.0f %% of its visible edge is inconsistent (shadowed or reflecting metal)' % (100 * out['bad_frac']))
+    if out['cover'] < MIN_COVER:
+        unc.append('only %.0f %% of its outline is visible, the rest is reconstructed' % (100 * out['cover']))
     if se_pos > MAX_SE_POS:
+        unc.append('its visible edge only loosely fixes its position')
+    if rotate and se_rot > MAX_SE_ROT:
+        unc.append('its visible edge only loosely fixes its rotation')
+    out['uncertain'] = '; '.join(unc)
+    if se_pos > CANT_SE_POS:
         out['note'] = 'its visible edge does not fix its position'
-    elif rotate and se_rot > MAX_SE_ROT:
+    elif rotate and se_rot > CANT_SE_ROT:
         out['note'] = 'its visible edge does not fix its rotation'
     return out
+
+
+def verdict(fit, row, rpx):
+    """(state, reason) of one fitted marker against the existing limits; row: track.metrics of the fit (side_pct,
+    inout_pct, tilt_line_deg). Over a limit with an unreliable edge is 'Possible misalignment - inspect', never a pass."""
+    if fit.get('gate') or fit.get('note') or 'c_obs' not in fit:
+        return CANT, fit.get('gate') or fit.get('note') or 'no fit'
+    s, io = row.get('side_pct', float('nan')), row.get('inout_pct', float('nan'))
+    if s != s and io != io:
+        return CANT, 'its minute-track references are hidden'
+    pos = math.hypot(0 if s != s else s, 0 if io != io else io)
+    over = []
+    if pos > POS_LIMIT_PCT + 100 * ALLOW_PX / rpx:
+        over.append('moved %.2f %% R' % pos)
+    lim = TILT_LIMIT.get(fit['shape'])
+    t = row.get('tilt_line_deg', float('nan'))
+    if lim is not None and t == t and abs(t) > lim:
+        over.append('turned %+.2f deg' % t)
+    if not over:
+        return NO_ISSUE, fit.get('uncertain', '')
+    if fit.get('uncertain'):
+        return INSPECT, ', '.join(over) + '; but ' + fit['uncertain']
+    return CLEARLY_OFF, ', '.join(over)
