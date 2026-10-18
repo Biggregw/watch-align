@@ -76,6 +76,18 @@ jobs:
         run: |
           python3 tools/research/track/parity.py out/app.csv out/research.csv | tee out/parity.txt
           echo "## public QC photos (app answers, every marker)"; cat out/qc.csv
+      - name: Genuine numbers for the app's calibration screen (measured markers only, no photos)
+        run: |
+          python3 - <<'PY'
+          import csv
+          n = 0
+          for r in csv.DictReader(open('out/app.csv')):
+              if r['gate'] or r['state'] == 'CANT_CHECK' and not (r['side_pct'] or r['inout_pct']):
+                  continue
+              print('GEN|%s|%.0f|%s|%s|%s|%s' % (r['shape'], float(r['rpx']), r['side_pct'], r['inout_pct'], r['tilt_line_deg'], r.get('gap_pct', '')))
+              n += 1
+          print('GEN-END|%d' % n)
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
