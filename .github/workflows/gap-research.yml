@@ -4,7 +4,7 @@ name: Marker gap research (genuine photos)
 on:
   push:
     branches: [claude/calibration-measurement-contract-epunh5]
-    paths: ['.github/workflows/gap-research.yml', 'tools/research/track/gap.py', 'tools/research/track/metal.py', 'tools/research/track/metal_eval.py']
+    paths: ['.github/workflows/gap-research.yml', 'tools/research/track/gap.py', 'tools/research/track/metal.py', 'tools/research/track/metal_eval.py', 'tools/research/track/metal_diag.py']
   workflow_dispatch:
 permissions: {contents: read}
 jobs:
@@ -67,6 +67,8 @@ jobs:
           javac -encoding UTF-8 -nowarn -cp $J -sourcepath "tools/desktop-harness/shim:android/app/src/main/java" -d cls tools/desktop-harness/drivers/*.java
           java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.OverlayDump g/manifest.csv g/img out/dump.jsonl | grep -c DUMP
           java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.OverlayDump q/manifest.csv q/img out/qc_dump.jsonl | grep -c DUMP
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TrackDump g/manifest.csv g/img out/app.csv | grep -c TRACK
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TrackDump q/manifest.csv q/img out/app_qc.csv | grep -c TRACK
       - name: Gap on genuine photos
         env: {OMP_NUM_THREADS: '1', OPENBLAS_NUM_THREADS: '1'}
         run: python3 tools/research/track/gap.py out/dump.jsonl g/img out/gap.csv 4 | grep -v '^ERROR' | tee out/gap.txt
@@ -81,6 +83,15 @@ jobs:
         run: |
           python3 tools/research/track/metal_eval.py out/qc_dump.jsonl q/img out/metal_qc.csv 2
           cut -d, -f1,5,6,9-20 out/metal_qc.csv
+      - name: Outer-metal close-ups and diagnosis (flagged genuine markers; QC flags and 12 triangles; base64 in the log)
+        run: |
+          echo "--- first edge rule (half of lume contrast), genuine flags:"
+          METAL_EDGE=half python3 tools/research/track/metal_eval.py out/dump.jsonl g/img out/metal_v1.csv 4 | grep -v '^ERROR' | grep 'clearly off'
+          METAL_EDGE=half python3 tools/research/track/metal_diag.py out/dump.jsonl g/img out/metal_v1.csv out/diag_v1 --b64 | tee out/diag_v1.txt | cut -c1-400
+          echo "--- rim-level edge rule:"
+          python3 tools/research/track/metal_diag.py out/dump.jsonl g/img out/metal.csv out/diag out/app.csv --b64 | tee out/diag.txt | cut -c1-400
+          python3 tools/research/track/metal_diag.py out/qc_dump.jsonl q/img out/metal_qc.csv out/diag_qc out/app_qc.csv --qc --b64 | tee out/diag_qc.txt | cut -c1-400
+          grep '^IMG ' out/diag_v1.txt out/diag.txt out/diag_qc.txt | cut -d' ' -f2- || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
