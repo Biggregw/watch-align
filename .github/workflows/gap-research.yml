@@ -4,7 +4,7 @@ name: Marker gap research (genuine photos)
 on:
   push:
     branches: [claude/calibration-measurement-contract-epunh5]
-    paths: ['.github/workflows/gap-research.yml', 'tools/research/track/gap.py']
+    paths: ['.github/workflows/gap-research.yml', 'tools/research/track/gap.py', 'tools/research/track/metal.py', 'tools/research/track/metal_eval.py']
   workflow_dispatch:
 permissions: {contents: read}
 jobs:
@@ -74,6 +74,13 @@ jobs:
         run: |
           python3 tools/research/track/gap.py out/qc_dump.jsonl q/img out/qc_gap.csv 2
           cat out/qc_gap.csv
+      - name: Outer-metal fit vs current detector (genuine, with synthetic occlusions and known moves)
+        env: {OMP_NUM_THREADS: '1', OPENBLAS_NUM_THREADS: '1'}
+        run: python3 tools/research/track/metal_eval.py out/dump.jsonl g/img out/metal.csv 4 --synthetic | grep -v '^ERROR' | tee out/metal.txt
+      - name: Outer-metal fit vs current detector (public QC photos)
+        run: |
+          python3 tools/research/track/metal_eval.py out/qc_dump.jsonl q/img out/metal_qc.csv 2
+          cut -d, -f1,5,6,9-20 out/metal_qc.csv
       - uses: actions/upload-artifact@v4
         if: always()
         with:
