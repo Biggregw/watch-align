@@ -1,5 +1,5 @@
-# Measured verified-genuine markers (clearly-off check, app code, desktop harness), numbers only: 1126 markers.
-# From run 39149706199 (.github/workflows/watch-align-160.yml). Used by the calibration screen to count the genuine markers a setting would flag.
+# Measured verified-genuine markers (clearly-off check, app code, desktop harness), numbers only: 1137 markers.
+# From run 39151574405 (.github/workflows/watch-align-160.yml). Used by the calibration screen to count the genuine markers a setting would flag.
 shape,rpx,side_pct,inout_pct,tilt_deg,gap_pct
 triangle,438,-0.0875,-0.0143,0.1824,3.4939
 round,438,-0.2143,0.0476,,
@@ -978,17 +978,6 @@ round,437,-0.0027,-0.2091,,
 baton,437,0.1814,-0.2404,0.1983,
 round,437,0.2733,0.0581,,
 round,437,0.1781,0.0218,,
-triangle,439,0.1660,0.2903,,3.8389
-round,439,0.0021,0.0333,,
-baton,439,-0.2153,0.0670,0.2061,
-round,439,-0.1037,-0.0250,,
-round,439,-0.0513,-0.0109,,
-baton,439,0.1373,-0.0514,0.0603,
-round,439,0.0820,-0.0584,,
-round,439,0.2307,-0.0117,,
-baton,439,0.3069,-0.1931,-0.1633,
-round,439,0.0802,0.0225,,
-round,439,0.0309,0.1010,,
 triangle,438,0.0549,0.2084,,4.1191
 round,438,0.1156,0.2044,,
 baton,438,-0.0174,-0.1047,-0.0307,
@@ -1117,6 +1106,28 @@ round,438,-0.0406,-0.0688,,
 baton,438,-0.0796,0.1436,-0.4587,
 round,438,0.0566,0.1771,,
 round,438,0.0288,0.1925,,
+triangle,438,-0.0768,0.3047,,3.7535
+round,438,-0.1576,0.1971,,
+baton,438,-0.0931,0.0245,-0.3463,
+round,438,-0.2132,-0.1443,,
+round,438,-0.0868,-0.1278,,
+baton,438,-0.0684,0.1271,-0.3277,
+round,438,0.0113,0.0160,,
+round,438,0.1919,-0.0742,,
+baton,438,0.3203,-0.3034,-0.2418,
+round,438,-0.0360,0.0578,,
+round,438,-0.0340,0.1038,,
+triangle,438,0.1035,0.2702,0.5127,3.9620
+round,438,0.0879,0.0105,,
+baton,438,-0.1897,-0.1593,-0.2963,
+round,438,-0.2123,-0.0137,,
+round,438,-0.2191,-0.1346,,
+baton,438,-0.0794,-0.1312,-0.2588,
+round,438,-0.0148,-0.1668,,
+round,438,-0.1054,0.0031,,
+baton,438,-0.0632,-0.1567,-0.2472,
+round,438,0.0038,0.0205,,
+round,438,0.0034,0.0601,,
 triangle,439,0.1523,0.2618,-0.3436,4.0352
 round,439,0.1701,0.2945,,
 baton,439,-0.0395,-0.0144,-0.2170,
