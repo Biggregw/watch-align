@@ -263,7 +263,7 @@ public class CalibrateActivity extends Activity {
         Calibration.Record r=current();Calibration.Mark k=r==null?null:r.at(hour);Calibration.Verdict v=k==null?null:k.verdict;
         for(int i=0;i<verdictButtons.length;i++){boolean on=v==Calibration.Verdict.values()[i];
             verdictButtons[i].setTextColor(on?Color.BLACK:Color.WHITE);
-            verdictButtons[i].getBackground().setTint(on?(i==0?GREEN:i==1?RED:AMBER):Color.rgb(45,60,85));}
+            verdictButtons[i].getBackground().mutate().setTint(on?(i==0?GREEN:i==1?RED:AMBER):Color.rgb(45,60,85));}
         verdictLine.setText(v==null?"Not recorded. Tap again to clear.":"Saved with this photo. Tap again to clear.");
     }
 
