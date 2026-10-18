@@ -1,5 +1,5 @@
-# Measured verified-genuine markers (clearly-off check, app code, desktop harness), numbers only: 459 markers.
-# From run 39147823945 (.github/workflows/watch-align-160.yml). Used by the calibration screen to count the genuine markers a setting would flag.
+# Measured verified-genuine markers (clearly-off check, app code, desktop harness), numbers only: 469 markers.
+# From run 39149706199 (.github/workflows/watch-align-160.yml). Used by the calibration screen to count the genuine markers a setting would flag.
 shape,rpx,side_pct,inout_pct,tilt_deg,gap_pct
 triangle,434,-0.0417,-0.4209,,3.6978
 round,434,-0.0954,0.3575,,
@@ -460,3 +460,13 @@ round,271,0.6640,-0.2618,,
 baton,271,0.4258,0.0404,0.0268,
 round,271,0.5025,-0.0991,,
 round,271,0.4380,0.0023,,
+triangle,452,0.2227,0.3439,,2.7285
+round,452,0.3349,-0.0006,,
+round,452,0.0750,0.1366,,
+round,452,-0.1463,0.0347,,
+baton,452,0.0114,0.3020,0.2797,
+round,452,0.3087,-0.1928,,
+round,452,0.1650,0.1075,,
+baton,452,0.6781,0.2716,-0.2020,
+round,452,0.0929,-0.0340,,
+round,452,0.1692,-0.1750,,
