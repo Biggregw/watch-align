@@ -28,7 +28,7 @@ public class TrackDump {
             if(Files.exists(metalFile))ref.metalExtra=MetalAlignment.parse(Files.readString(metalFile));}
         List<Map<String,String>> rows=AlignmentCalib.csv(Files.readAllLines(manifest));
         try(PrintWriter w=new PrintWriter(Files.newBufferedWriter(out))){
-            w.println("photo_id,watch,model,rpx,hour,shape,state,gate,side_pct,inout_pct,tilt_line_deg,ring_turn_pct,bad_ticks,gap_pct,tilt_centroid_deg,rot_left_deg,rot_right_deg,rot_rms_px,rot_note");
+            w.println("photo_id,watch,model,rpx,hour,shape,state,gate,side_pct,inout_pct,tilt_line_deg,ring_turn_pct,bad_ticks,gap_pct,tilt_centroid_deg,rot_left_deg,rot_right_deg,rot_rms_px,rot_note,rot_vs_line_deg,tip_dr_px");
             for(Map<String,String> r:rows){
                 String id=r.get("photo_id");Path img=root.resolve(r.get("local_path"));
                 if(!Files.exists(img))continue;
@@ -40,7 +40,7 @@ public class TrackDump {
                 for(ClearlyOff.Marker m:c.markers){
                     w.println(String.join(",",id,r.getOrDefault("physical_watch_id",""),model.id,f(c.rpx),String.valueOf(m.hour),AlignmentReference.key(m.shape),
                             m.state.name(),String.join("; ",m.gate).replace(",",""),f(m.sidePct),f(m.inoutPct),f(m.tiltDeg),f(c.ringTurnPct),String.valueOf(c.badTicks),f(m.gapPct),
-                            f(m.tiltCentroidDeg),f(m.rotLeftDeg),f(m.rotRightDeg),f(m.rotRmsPx),m.rotNote.replace(",",";")));
+                            f(m.tiltCentroidDeg),f(m.rotLeftDeg),f(m.rotRightDeg),f(m.rotRmsPx),m.rotNote.replace(",",";"),f(m.rotLineDeg),f(m.tipDrPx)));
                 }
                 w.flush();System.out.println("TRACK "+id);
             }

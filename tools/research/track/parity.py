@@ -43,6 +43,15 @@ def main(jf, pf):
         for r in sorted(ok, key=lambda r: -abs(f(r['tilt_line_deg'])))[:8]:
             print('  %s rpx %s rot %+.2f (halves %s / %s, fit %s px) lume axis %s' % (r['photo_id'], r['rpx'], f(r['tilt_line_deg']),
                   r['rot_left_deg'], r['rot_right_deg'], r['rot_rms_px'], r['tilt_centroid_deg']))
+        vl = np.array([f(r.get('rot_vs_line_deg', '')) for r in tri]);vl = vl[np.isfinite(vl)]
+        dr = np.array([f(r.get('tip_dr_px', '')) for r in ok]);rr = np.array([f(r['tilt_line_deg']) for r in ok])
+        hd = np.array([abs(f(r['rot_left_deg']) - f(r['rot_right_deg'])) for r in tri if r['rot_left_deg'] and r['rot_right_deg']])
+        if len(vl):
+            print('  same edge against the hour line (all with an edge fit, n %d): |rot| p50 %.2f p95 %.2f max %.2f deg' % (len(vl), np.median(np.abs(vl)), np.percentile(np.abs(vl), 95), np.abs(vl).max()))
+        if len(dr) > 2:
+            print('  tick 1 vs 59 inner-end offset px: p50 |dr| %.2f p95 %.2f; corr(rot, dr) %.2f' % (np.median(np.abs(dr)), np.percentile(np.abs(dr), 95), np.corrcoef(rr, dr)[0, 1]))
+        if len(hd):
+            print('  |left - right| half readings (all): p50 %.2f p75 %.2f p95 %.2f deg' % tuple(np.percentile(hd, [50, 75, 95])))
         old = sorted(tri, key=lambda r: -abs(f(r['tilt_centroid_deg']) if r['tilt_centroid_deg'] else 0))[:5]
         for r in old:
             print('  largest lume-axis reading: %s lume axis %s -> top edge %s %s' % (r['photo_id'], r['tilt_centroid_deg'], r['tilt_line_deg'] or 'withheld', r['rot_note']))

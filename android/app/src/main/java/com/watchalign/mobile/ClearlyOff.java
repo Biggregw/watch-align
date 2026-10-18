@@ -108,6 +108,8 @@ final class ClearlyOff {
         /** triangle rotation: the earlier lume-axis reading (kept for the details), the two half-edge readings, the edge fit
          *  roughness (px) and, when withheld, why */
         double tiltCentroidDeg=Double.NaN,rotLeftDeg=Double.NaN,rotRightDeg=Double.NaN,rotRmsPx=Double.NaN;String rotNote="";
+        /** diagnostics: the same top edge against the hour line (tick lattice), and the radial offset of tick 1's inner end from tick 59's (px) */
+        double rotLineDeg=Double.NaN,tipDrPx=Double.NaN;
         /** triangle: the clear gap under the minute track (% R, px), its limit, and where the edge and the tick ends sit
          *  (canonical radius, for the evidence picture) */
         double gapPct=Double.NaN,gapPx=Double.NaN,gapLimitPct=Double.NaN,gapEdgeR=Double.NaN,gapTrackR=Double.NaN;
@@ -372,11 +374,11 @@ final class ClearlyOff {
             (t<0?left:right).add(new double[]{t,interp(e,radii)});
         }
         RotFit f=rotationFit(left,right,ClearlyOff.cpt(t59.rIn,t59.a),ClearlyOff.cpt(t01.rIn,t01.a),er,et,rpx,cols==0?1:(double)weak/cols);
-        r.rotLeftDeg=f.left;r.rotRightDeg=f.right;r.rotRmsPx=f.rmsPx;r.rotNote=f.fail;
+        r.rotLeftDeg=f.left;r.rotRightDeg=f.right;r.rotRmsPx=f.rmsPx;r.rotNote=f.fail;r.rotLineDeg=f.line;r.tipDrPx=(t01.rIn-t59.rIn)*rpx;
         if(f.fail.isEmpty())r.tiltDeg=f.rot;
     }
 
-    static final class RotFit {double rot=Double.NaN,left=Double.NaN,right=Double.NaN,rmsPx=Double.NaN;String fail="";}
+    static final class RotFit {double rot=Double.NaN,left=Double.NaN,right=Double.NaN,rmsPx=Double.NaN,line=Double.NaN;String fail="";}
 
     /** The rotation from top-edge samples {t, s} (t along the tick line, s along the hour line; canonical) of the left and
      *  right halves and the inner tick tips p59, p01, with the reliability checks. + = clockwise. */
@@ -387,7 +389,7 @@ final class ClearlyOff {
         double[] kl=edgeLine(left,rpx),kr=edgeLine(right,rpx);
         List<double[]> both=new ArrayList<>(left);both.addAll(right);double[] kb=edgeLine(both,rpx);
         double[] q={p01[0]-p59[0],p01[1]-p59[1]};
-        f.left=angleTo(q,kl[0],er,et);f.right=angleTo(q,kr[0],er,et);f.rot=angleTo(q,kb[0],er,et);f.rmsPx=kb[1];
+        f.left=angleTo(q,kl[0],er,et);f.right=angleTo(q,kr[0],er,et);f.rot=angleTo(q,kb[0],er,et);f.rmsPx=kb[1];f.line=angleTo(et,kb[0],er,et);
         if(f.rmsPx>ROT_MAX_RMS_PX)f.fail="its top edge is not straight enough in this photo";
         else if(Math.abs(f.left-f.right)>ROT_MAX_HALF_DIFF_DEG)f.fail="the two halves of its top edge disagree";
         return f;
