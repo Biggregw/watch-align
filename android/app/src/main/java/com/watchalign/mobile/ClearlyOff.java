@@ -44,8 +44,10 @@ final class ClearlyOff {
      *  baton tilt 1.97 deg. */
     static final double SIDE_LIMIT_R=0.010,INOUT_LIMIT_R=0.010,INOUT_TRIANGLE_LIMIT_R=0.0125,TILT_LIMIT_DEG=2.25;
     /** 1.6.2: round markers and batons, distance from where the centre should be (any direction; replaces the separate
-     *  sideways / in-out limits of 1.6.0-1.6.1 for these shapes, the owner's "circle around the position"). */
-    static final double POS_LIMIT_R=0.0125;
+     *  sideways / in-out limits of 1.6.0-1.6.1 for these shapes, the owner's "circle around the position"). The same
+     *  1.0 %: it flags everything the square did, and more only on the diagonal. Genuine maximum 0.97 % (1,548 round
+     *  markers and batons, assets genuine_track.csv). */
+    static final double POS_LIMIT_R=0.010;
     /** The owner's "clear gap" (17 Oct 2026): the 12 triangle is clearly off when the dial left clear between its top edge
      *  and the minute-track tick ends is smaller than this (less the low-res allowance). Genuine minima: GMT 2.55 %,
      *  Sub 2.34 % (159 photos); owner's two BLNR photos 1.08 % and 1.90 %, the Sub rejected for its 12 1.90 %. */

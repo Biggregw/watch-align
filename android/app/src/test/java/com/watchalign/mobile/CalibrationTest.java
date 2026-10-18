@@ -45,16 +45,16 @@ public class CalibrationTest {
         ClearlyOff.Limits t=d.copy();t.roundPosR=0.007;assertEquals(1,gen.flagged(ModelSpec.Shape.ROUND,t));
 
         List<Calibration.Record> recs=new ArrayList<>();
-        recs.add(rec("1",mark(1,ModelSpec.Shape.ROUND,1.10,0,Double.NaN,Double.NaN,Calibration.Verdict.FAIL),
+        recs.add(rec("1",mark(1,ModelSpec.Shape.ROUND,0.95,0,Double.NaN,Double.NaN,Calibration.Verdict.FAIL),
                 mark(2,ModelSpec.Shape.ROUND,0.30,0,Double.NaN,Double.NaN,Calibration.Verdict.PASS)));
         Calibration.Agreement a=Calibration.agreement(recs,"gmt_126710",ModelSpec.Shape.ROUND,d);
         assertEquals(2,a.total);assertEquals(1,a.agree);assertEquals(1,a.disagree.size());
-        // the suggestion catches the Fail (1.10) without failing either genuine marker (largest 0.86)
+        // the suggestion catches the Fail (0.95, under the 1.0 % default) without failing either genuine marker (largest 0.86)
         ClearlyOff.Limits s=Calibration.suggest(recs,"gmt_126710",ModelSpec.Shape.ROUND,d,gen);
         assertNotNull(s);
         assertEquals(2,Calibration.agreement(recs,"gmt_126710",ModelSpec.Shape.ROUND,s).agree);
         assertEquals(0,gen.flagged(ModelSpec.Shape.ROUND,s));
-        assertTrue(s.roundPosR*100<1.10&&s.roundPosR*100>=0.86);
+        assertTrue(s.roundPosR*100<0.95&&s.roundPosR*100>=0.86);
         assertNull("no verdicts, no suggestion",Calibration.suggest(recs,"gmt_126710",ModelSpec.Shape.BATON,d,gen));
     }
 
