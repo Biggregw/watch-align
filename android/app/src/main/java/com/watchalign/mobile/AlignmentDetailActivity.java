@@ -28,6 +28,11 @@ public class AlignmentDetailActivity extends Activity {
         setTitle("Watch Align");
         setContentView(build(m));
     }
+    @Override protected void onRestart(){
+        super.onRestart();   // 1.6.2: the answers may have been judged again on the calibration screen
+        AlignmentAnalysis.Output o=AlignmentResultsActivity.Store.result;int hour=getIntent().getIntExtra(EXTRA_HOUR,-1);
+        if(o!=null)for(AlignmentDecision.Marker x:o.markers)if(x.hour==hour){setContentView(build(x));return;}
+    }
 
     static final String TRACK_LEGEND="Blue lines: from each hour tick of the printed minute track, through the centre, to the opposite hour tick. Blue rings: where the round markers' centres and the batons' outer ends should sit on this dial. Circle: this marker (red clearly off, green no visible issue, grey can't check). Red cross: its measured centre.";
 
@@ -93,6 +98,11 @@ public class AlignmentDetailActivity extends Activity {
             iv.setOnClickListener(v->{InspectionImageStore.set(c,title);startActivity(new Intent(this,FullscreenInspectActivity.class));});
             root.addView(iv,lp(-1,-2,12));
             root.addView(text(TRACK_LEGEND+"  Tap to zoom.",12,AlignmentResultsActivity.MUTED,false),lp(-1,-2,4));
+        }
+        if(AlignmentResultsActivity.Store.clearlyOff!=null&&AlignmentResultsActivity.Store.clearlyOff.at(m.hour)!=null){
+            Button cal=new Button(this);cal.setAllCaps(false);cal.setText("Calibrate  ·  your verdict and limits");final int hr=m.hour;
+            cal.setOnClickListener(v->{Intent i=new Intent(this,CalibrateActivity.class);i.putExtra(CalibrateActivity.EXTRA_HOUR,hr);startActivity(i);});
+            root.addView(cal,lp(-1,dp(52),14));
         }
         String n=ClearlyOff.numbers(m.track);
         if(!n.isEmpty()){

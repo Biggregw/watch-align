@@ -16,14 +16,39 @@ public class ClearlyOffTest {
     static List<ClearlyOff.Input> in(ModelSpec.Shape s){List<ClearlyOff.Input> l=new ArrayList<>();l.add(new ClearlyOff.Input(3,s,null,true,""));return l;}
     static ClearlyOff.State decide(ClearlyOff.Marker r,double rpx){ClearlyOff.decide(r,rpx,in(r.shape));return r.state;}
 
+    static final double POS=100*ClearlyOff.POS_LIMIT_R;
     @Test public void withinLimitsIsNoVisibleIssue(){
-        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(m(ModelSpec.Shape.ROUND,0.95,-0.9,Double.NaN),1e9));
+        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(m(ModelSpec.Shape.ROUND,0.6*POS,-0.6*POS,Double.NaN),1e9));
         assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(m(ModelSpec.Shape.BATON,0.2,0.2,2.2),1e9));
     }
     @Test public void beyondAnyLimitIsClearlyOff(){
-        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.ROUND,1.05,0,Double.NaN),1e9));
-        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.ROUND,0,-1.05,Double.NaN),1e9));
+        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.ROUND,POS+0.05,0,Double.NaN),1e9));
+        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.ROUND,0,-POS-0.05,Double.NaN),1e9));
         assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.BATON,0,0,-2.3),1e9));
+    }
+    @Test public void positionIsADistanceInAnyDirection(){
+        // the owner's circle around where the centre should be: 0.75 POS sideways and 0.75 POS out is 1.06 POS away
+        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.ROUND,0.75*POS,0.75*POS,Double.NaN),1e9));
+        ClearlyOff.Marker r=m(ModelSpec.Shape.ROUND,0.75*POS,0.75*POS,Double.NaN);decide(r,1e9);
+        assertTrue(ClearlyOff.headline(r).contains("from where it should be"));
+    }
+    @Test public void ownerLimitsReplaceTheDefaults(){
+        ClearlyOff.Limits L=ClearlyOff.Limits.defaults();assertTrue(L.isDefault());
+        L.roundPosR=0.008;assertFalse(L.isDefault());
+        ClearlyOff.Marker r=m(ModelSpec.Shape.ROUND,0.9,0,Double.NaN);
+        ClearlyOff.decide(r,1e9,in(r.shape),ClearlyOff.Limits.defaults());assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,r.state);
+        ClearlyOff.decide(r,1e9,in(r.shape),L);assertEquals(ClearlyOff.State.CLEARLY_OFF,r.state);
+        // triangle rotation is not judged by default; once set it is
+        ClearlyOff.Marker t=m(ModelSpec.Shape.TRIANGLE,0,0,3.0);t.gapPct=3.0;
+        ClearlyOff.decide(t,1e9,in(t.shape),ClearlyOff.Limits.defaults());assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,t.state);
+        ClearlyOff.Limits T=ClearlyOff.Limits.defaults();T.triTiltDeg=2.0;
+        ClearlyOff.decide(t,1e9,in(t.shape),T);assertEquals(ClearlyOff.State.CLEARLY_OFF,t.state);
+        // a withheld marker stays withheld whatever the limits
+        ClearlyOff.Result res=new ClearlyOff.Result();res.rpx=1e9;ClearlyOff.Marker g=m(ModelSpec.Shape.ROUND,5,0,Double.NaN);g.gate.add("hand");
+        ClearlyOff.decide(g,1e9,in(g.shape));res.markers.add(g);res.markers.add(r);
+        ClearlyOff.rescore(res,ClearlyOff.Limits.defaults());
+        assertEquals(ClearlyOff.State.CANT_CHECK,g.state);assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,r.state);
+        assertTrue(res.limits.isDefault());
     }
     static ClearlyOff.Marker tri(double inout,double tilt,double gap){ClearlyOff.Marker r=m(ModelSpec.Shape.TRIANGLE,0,inout,tilt);r.gapPct=gap;return r;}
     @Test public void triangleHasItsOwnInOutLimitAndNoTiltVote(){
@@ -44,8 +69,8 @@ public class ClearlyOffTest {
     }
     @Test public void lowResolutionAllowance(){
         // 0.5 px on a 200 px dial radius = 0.25 % of the radius
-        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(m(ModelSpec.Shape.ROUND,1.2,0,Double.NaN),200));
-        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.ROUND,1.3,0,Double.NaN),200));
+        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(m(ModelSpec.Shape.ROUND,POS+0.2,0,Double.NaN),200));
+        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.ROUND,POS+0.3,0,Double.NaN),200));
     }
     @Test public void failsClosed(){
         ClearlyOff.Marker g=m(ModelSpec.Shape.ROUND,3.0,0,Double.NaN);g.gate.add("hand");

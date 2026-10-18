@@ -54,6 +54,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
     @Override public void onCreate(Bundle state){
         super.onCreate(state);
         if(!OpenCVLoader.initLocal())Toast.makeText(this,"OpenCV could not start",Toast.LENGTH_LONG).show();
+        CalibrationStore.loadLimits(this);   // 1.6.2: the owner's saved limits (defaults when none)
         setContentView(buildUi());
     }
 
@@ -170,6 +171,16 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 AlignmentResultsActivity.Store.overview=fo.alignmentOverview;AlignmentResultsActivity.Store.photo=photo;
                 AlignmentResultsActivity.Store.closeups.clear();AlignmentResultsActivity.Store.closeups.putAll(fo.alignmentCloseups);
                 AlignmentResultsActivity.Store.technical=fo.alignmentTechnical;AlignmentResultsActivity.Store.legacyTechnical=fo.technical;
+                AlignmentResultsActivity.Store.H=q.homography;AlignmentResultsActivity.Store.clearlyOff=fo.clearlyOff;AlignmentResultsActivity.Store.recordId=null;
+                if(fo.alignment!=null&&fo.clearlyOff!=null&&fo.model!=null){
+                    // 1.6.2: keep this photo's measured numbers (and a small picture) on the phone for calibration
+                    long now=System.currentTimeMillis();String id=Long.toString(now);
+                    String label=new java.text.SimpleDateFormat("d MMM HH:mm",java.util.Locale.UK).format(new java.util.Date(now))+" · "+fo.model.label;
+                    Calibration.Record rec=Calibration.of(id,now,fo.model.id,label,fo.clearlyOff,fo.alignment.photoReason);
+                    final android.graphics.Bitmap th=fo.alignmentOverview;
+                    AlignmentResultsActivity.Store.recordId=id;
+                    worker.submit(()->CalibrationStore.save(this,rec,th));
+                }
                 if(fo.alignment==null){inspectButton.setEnabled(false);status.setText("Cannot assess: the markers could not be measured in this photo.");return;}
                 status.setText(AlignmentAnalysis.headline(fo.alignment)+"  ·  "+AlignmentAnalysis.counts(fo.alignment));
                 openResults();

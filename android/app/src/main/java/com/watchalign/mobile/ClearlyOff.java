@@ -43,6 +43,9 @@ final class ClearlyOff {
     /** Limits (fractions of the dial radius / degrees). Genuine maxima: sideways 0.98 %, in/out 0.64 % (triangle 0.96 %),
      *  baton tilt 1.97 deg. */
     static final double SIDE_LIMIT_R=0.010,INOUT_LIMIT_R=0.010,INOUT_TRIANGLE_LIMIT_R=0.0125,TILT_LIMIT_DEG=2.25;
+    /** 1.6.2: round markers and batons, distance from where the centre should be (any direction; replaces the separate
+     *  sideways / in-out limits of 1.6.0-1.6.1 for these shapes, the owner's "circle around the position"). */
+    static final double POS_LIMIT_R=0.0125;
     /** The owner's "clear gap" (17 Oct 2026): the 12 triangle is clearly off when the dial left clear between its top edge
      *  and the minute-track tick ends is smaller than this (less the low-res allowance). Genuine minima: GMT 2.55 %,
      *  Sub 2.34 % (159 photos); owner's two BLNR photos 1.08 % and 1.90 %, the Sub rejected for its 12 1.90 %. */
@@ -56,6 +59,31 @@ final class ClearlyOff {
 
     enum State{CLEARLY_OFF,NO_VISIBLE_ISSUE,CANT_CHECK}
 
+    /**
+     * 1.6.2: the limits a marker is judged against, one set per marker TYPE (genuine markers of a type all vary alike).
+     * The owner can change them on the calibration screen; DEFAULTS are the tested values. Fractions of the dial radius
+     * and degrees; the low-resolution allowance is added on top of every position limit (subtracted from the gap).
+     *   round, baton  POSITION: distance of the centre from where it should be (hour line x ring), any direction
+     *   baton         TILT against the hour line
+     *   triangle      SIDEWAYS from the hour line, GAP under the minute track, TILT (not judged by default: NaN)
+     * The triangle's centre in/out limit (INOUT_TRIANGLE_LIMIT_R) is not adjustable: it catches a triangle sunk towards
+     * the centre, which the one-sided gap does not.
+     */
+    static final class Limits {
+        double roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg;
+        static Limits defaults(){Limits l=new Limits();l.roundPosR=POS_LIMIT_R;l.batonPosR=POS_LIMIT_R;l.batonTiltDeg=TILT_LIMIT_DEG;
+            l.triSideR=SIDE_LIMIT_R;l.triGapR=GAP_TRIANGLE_LIMIT_R;l.triTiltDeg=Double.NaN;return l;}
+        Limits copy(){Limits l=new Limits();l.roundPosR=roundPosR;l.batonPosR=batonPosR;l.batonTiltDeg=batonTiltDeg;
+            l.triSideR=triSideR;l.triGapR=triGapR;l.triTiltDeg=triTiltDeg;return l;}
+        double[] values(){return new double[]{roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg};}
+        boolean same(Limits o){double[] a=values(),b=o.values();for(int i=0;i<a.length;i++){if(Double.isNaN(a[i])!=Double.isNaN(b[i]))return false;
+            if(!Double.isNaN(a[i])&&Math.abs(a[i]-b[i])>1e-9)return false;}return true;}
+        boolean isDefault(){return same(defaults());}
+    }
+    /** The owner's saved limits per model id (set by the app at start-up and by the calibration screen); defaults otherwise. */
+    static final Map<String,Limits> USER=new java.util.concurrent.ConcurrentHashMap<>();
+    static Limits forModel(String id){Limits l=id==null?null:USER.get(id);return l==null?Limits.defaults():l.copy();}
+
     static final class Marker {
         final int hour;final ModelSpec.Shape shape;
         State state=State.CANT_CHECK;
@@ -66,12 +94,19 @@ final class ClearlyOff {
         double sidePct=Double.NaN,inoutPct=Double.NaN,tiltDeg=Double.NaN,sidePx=Double.NaN,inoutPx=Double.NaN;
         double tiltRaw=Double.NaN,scale=Double.NaN;
         double sideLimitPct=Double.NaN,inoutLimitPct=Double.NaN;
+        /** round / baton: distance from where it should be (% R) and its limit; tilt limit used (NaN = not judged) */
+        double posPct=Double.NaN,posLimitPct=Double.NaN,tiltLimitDeg=Double.NaN;
+        boolean posOff;
         /** triangle: the clear gap under the minute track (% R, px), its limit, and where the edge and the tick ends sit
          *  (canonical radius, for the evidence picture) */
         double gapPct=Double.NaN,gapPx=Double.NaN,gapLimitPct=Double.NaN,gapEdgeR=Double.NaN,gapTrackR=Double.NaN;
         boolean sideOff,inoutOff,tiltOff,gapOff;
         double[] cObs,cGen;
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
+        /** a copy to judge against other limits without changing the shown answer (calibration screen) */
+        Marker copy(){Marker m=new Marker(hour,shape);m.state=state;m.reason=reason;m.gate.addAll(gate);
+            m.sidePct=sidePct;m.inoutPct=inoutPct;m.tiltDeg=tiltDeg;m.sidePx=sidePx;m.inoutPx=inoutPx;m.tiltRaw=tiltRaw;m.scale=scale;
+            m.gapPct=gapPct;m.gapPx=gapPx;m.gapEdgeR=gapEdgeR;m.gapTrackR=gapTrackR;m.cObs=cObs;m.cGen=cGen;return m;}
         boolean measured(){return Double.isFinite(sidePct)||Double.isFinite(inoutPct);}
     }
 
@@ -84,6 +119,8 @@ final class ClearlyOff {
         /** genuine canonical radius of the round centres and the baton outer ends (for drawing the ring / circle) */
         double roundCentreR=Double.NaN,batonEndR=Double.NaN,ringScale=Double.NaN;
         String photoReason;
+        /** the limits the answers were judged against */
+        Limits limits=Limits.defaults();
         Marker at(int h){for(Marker m:markers)if(m.hour==h)return m;return null;}
     }
 
@@ -102,7 +139,10 @@ final class ClearlyOff {
      * @param trackInnerR the model's minute-track inner radius (canonical)
      */
     static Result analyse(Mat gray,double[] H,double rpx,List<Input> in,Map<ModelSpec.Shape,Double> insets,double trackInnerR){
-        Result res=new Result();res.rpx=rpx;
+        return analyse(gray,H,rpx,in,insets,trackInnerR,Limits.defaults());
+    }
+    static Result analyse(Mat gray,double[] H,double rpx,List<Input> in,Map<ModelSpec.Shape,Double> insets,double trackInnerR,Limits L){
+        Result res=new Result();res.rpx=rpx;res.limits=L.copy();
         Mat f=new Mat();gray.convertTo(f,CvType.CV_32F);
         try{
             Img img=new Img(f,H);
@@ -134,31 +174,51 @@ final class ClearlyOff {
                 if(m.shape==ModelSpec.Shape.ROUND)rc.add(norm(mean(m.yellow)));
                 if(m.shape==ModelSpec.Shape.BATON){double mx=0;for(double[] p:m.yellow)mx=Math.max(mx,norm(p));be.add(mx);}}
             res.roundCentreR=rc.isEmpty()?Double.NaN:median(toArray(rc));res.batonEndR=be.isEmpty()?Double.NaN:median(toArray(be));
-            for(Marker r:res.markers)decide(r,rpx,in);
+            for(Marker r:res.markers)decide(r,rpx,in,L);
         }finally{f.release();}
         return res;
     }
 
     // ------------------------------------------------------------------------------------------------ decision
 
-    static void decide(Marker r,double rpx,List<Input> in){
-        Input m=null;for(Input x:in)if(x.hour==r.hour)m=x;
+    static void decide(Marker r,double rpx,List<Input> in){decide(r,rpx,in,Limits.defaults());}
+
+    static void decide(Marker r,double rpx,List<Input> in,Limits L){
+        Input m=null;if(in!=null)for(Input x:in)if(x.hour==r.hour)m=x;
         double allow=100*LOWRES_ALLOWANCE_PX/rpx;
-        r.sideLimitPct=100*SIDE_LIMIT_R+allow;
-        r.inoutLimitPct=100*(r.shape==ModelSpec.Shape.TRIANGLE?INOUT_TRIANGLE_LIMIT_R:INOUT_LIMIT_R)+allow;
+        boolean tri=r.shape==ModelSpec.Shape.TRIANGLE,baton=r.shape==ModelSpec.Shape.BATON;
+        r.sideLimitPct=tri?100*L.triSideR+allow:Double.NaN;
+        r.inoutLimitPct=tri?100*INOUT_TRIANGLE_LIMIT_R+allow:Double.NaN;
+        r.posLimitPct=tri?Double.NaN:100*(baton?L.batonPosR:L.roundPosR)+allow;
+        r.tiltLimitDeg=baton?L.batonTiltDeg:tri?L.triTiltDeg:Double.NaN;
+        r.gapLimitPct=tri?100*L.triGapR-allow:Double.NaN;
+        r.sideOff=r.inoutOff=r.posOff=r.tiltOff=r.gapOff=false;r.posPct=Double.NaN;
         if(!r.gate.isEmpty()){r.state=State.CANT_CHECK;r.reason=reason(r.gate,m);return;}
-        r.sideOff=Double.isFinite(r.sidePct)&&Math.abs(r.sidePct)>r.sideLimitPct;
-        r.inoutOff=Double.isFinite(r.inoutPct)&&Math.abs(r.inoutPct)>r.inoutLimitPct;
-        r.tiltOff=r.shape==ModelSpec.Shape.BATON&&Double.isFinite(r.tiltDeg)&&Math.abs(r.tiltDeg)>TILT_LIMIT_DEG;
-        if(r.shape==ModelSpec.Shape.TRIANGLE)r.gapLimitPct=100*GAP_TRIANGLE_LIMIT_R-allow;
-        r.gapOff=r.shape==ModelSpec.Shape.TRIANGLE&&Double.isFinite(r.gapPct)&&r.gapPct<r.gapLimitPct;
-        if(r.sideOff||r.inoutOff||r.tiltOff||r.gapOff){r.state=State.CLEARLY_OFF;return;}
+        r.reason="";
+        if(tri){
+            r.sideOff=Double.isFinite(r.sidePct)&&Math.abs(r.sidePct)>r.sideLimitPct;
+            r.inoutOff=Double.isFinite(r.inoutPct)&&Math.abs(r.inoutPct)>r.inoutLimitPct;
+            r.gapOff=Double.isFinite(r.gapPct)&&r.gapPct<r.gapLimitPct;
+        }else{
+            // what is measured of the position counts (a clearly-off reading stands when the other component is missing)
+            double a=Double.isFinite(r.sidePct)?r.sidePct:0,b=Double.isFinite(r.inoutPct)?r.inoutPct:0;
+            if(Double.isFinite(r.sidePct)||Double.isFinite(r.inoutPct))r.posPct=Math.hypot(a,b);
+            r.posOff=Double.isFinite(r.posPct)&&r.posPct>r.posLimitPct;
+        }
+        r.tiltOff=Double.isFinite(r.tiltLimitDeg)&&Double.isFinite(r.tiltDeg)&&Math.abs(r.tiltDeg)>r.tiltLimitDeg;
+        if(r.sideOff||r.inoutOff||r.posOff||r.tiltOff||r.gapOff){r.state=State.CLEARLY_OFF;return;}
         // a pass needs every measurement of the marker (fail closed)
         if(!Double.isFinite(r.sidePct)){r.state=State.CANT_CHECK;r.reason="its hour line could not be placed from the minute track";return;}
         if(!Double.isFinite(r.inoutPct)){r.state=State.CANT_CHECK;r.reason="too few other round markers could be measured to place the ring";return;}
-        if(r.shape==ModelSpec.Shape.BATON&&!Double.isFinite(r.tiltDeg)){r.state=State.CANT_CHECK;r.reason="its tilt could not be measured (the opposite hour line is hidden)";return;}
-        if(r.shape==ModelSpec.Shape.TRIANGLE&&!Double.isFinite(r.gapPct)){r.state=State.CANT_CHECK;r.reason="the gap under the minute track could not be measured";return;}
+        if(Double.isFinite(r.tiltLimitDeg)&&!Double.isFinite(r.tiltDeg)){r.state=State.CANT_CHECK;r.reason="its tilt could not be measured (the opposite hour line is hidden)";return;}
+        if(tri&&!Double.isFinite(r.gapPct)){r.state=State.CANT_CHECK;r.reason="the gap under the minute track could not be measured";return;}
         r.state=State.NO_VISIBLE_ISSUE;
+    }
+
+    /** 1.6.2: judge every marker again against other limits (the calibration screen); withheld markers stay withheld. */
+    static void rescore(Result res,Limits L){
+        res.limits=L.copy();
+        for(Marker r:res.markers){if(!r.gate.isEmpty())continue;decide(r,res.rpx,null,L);}
     }
 
     static String reason(List<String> gate,Input m){
@@ -791,20 +851,38 @@ final class ClearlyOff {
     static String headline(Marker r){
         List<String> s=new ArrayList<>();
         if(r.tiltOff)s.add("tilted "+String.format(Locale.US,"%.1f°",Math.abs(r.tiltDeg))+(r.tiltDeg>0?" clockwise":" anticlockwise"));
+        if(r.posOff)s.add("sits "+fmtPct(r.posPct)+" of the dial radius from where it should be ("+where(r)+")");
         if(r.sideOff)s.add("sits "+fmtPct(r.sidePct)+" of the dial radius "+(r.sidePct>0?"clockwise":"anticlockwise")+" of its hour line");
         if(r.inoutOff)s.add("sits "+fmtPct(r.inoutPct)+" of the dial radius too far "+(r.inoutPct>0?"out (towards the minute track)":"in (towards the centre)"));
         if(r.gapOff)s.add("leaves only "+fmtPct(r.gapPct)+" of the dial radius clear under the minute track (clearly off below "+fmtPct(r.gapLimitPct)+")");
         return s.isEmpty()?"":AlignmentDecision.capital(String.join("; ",s));
     }
 
+    /** the components of a position reading in plain words, the larger first */
+    static String where(Marker r){
+        List<String> w=new ArrayList<>();
+        String side=Double.isFinite(r.sidePct)?fmtPct(r.sidePct)+(r.sidePct>0?" clockwise of its hour line":" anticlockwise of its hour line"):null;
+        String io=Double.isFinite(r.inoutPct)?fmtPct(r.inoutPct)+(r.inoutPct>0?" too far out":" too far in"):null;
+        boolean sideFirst=!Double.isFinite(r.inoutPct)||(Double.isFinite(r.sidePct)&&Math.abs(r.sidePct)>=Math.abs(r.inoutPct));
+        if(sideFirst){if(side!=null)w.add(side);if(io!=null)w.add(io);}else{if(io!=null)w.add(io);if(side!=null)w.add(side);}
+        return String.join(", ",w);
+    }
+
     /** Every measured number for the details. */
     static String numbers(Marker r){
         StringBuilder b=new StringBuilder();
-        if(Double.isFinite(r.sidePct))b.append(String.format(Locale.US,"Sideways from the hour line: %+.2f%% of the dial radius (%+.1f px); clearly off beyond %.2f%%.",r.sidePct,r.sidePx,r.sideLimitPct));
-        if(Double.isFinite(r.inoutPct))b.append(String.format(Locale.US,"\nIn/out from the ring: %+.2f%% (%+.1f px); clearly off beyond %.2f%%.",r.inoutPct,r.inoutPx,r.inoutLimitPct));
+        boolean tri=r.shape==ModelSpec.Shape.TRIANGLE;
+        if(!tri&&Double.isFinite(r.posPct))b.append(String.format(Locale.US,"From where it should be: %.2f%% of the dial radius; clearly off beyond %.2f%%.",r.posPct,r.posLimitPct));
+        if(Double.isFinite(r.sidePct)){if(b.length()>0)b.append('\n');
+            b.append(String.format(Locale.US,"Sideways from the hour line: %+.2f%% of the dial radius (%+.1f px)",r.sidePct,r.sidePx))
+             .append(tri?String.format(Locale.US,"; clearly off beyond %.2f%%.",r.sideLimitPct):".");}
+        if(Double.isFinite(r.inoutPct))b.append(String.format(Locale.US,"\nIn/out from the ring: %+.2f%% (%+.1f px)",r.inoutPct,r.inoutPx))
+             .append(tri?String.format(Locale.US,"; clearly off beyond %.2f%%.",r.inoutLimitPct):".");
         if(Double.isFinite(r.gapPct))b.append(String.format(Locale.US,"\nGap under the minute track: %.2f%% (%.1f px); clearly off below %.2f%%.",r.gapPct,r.gapPx,r.gapLimitPct));
-        if(r.shape==ModelSpec.Shape.BATON&&Double.isFinite(r.tiltDeg))b.append(String.format(Locale.US,"\nTilt against the hour line: %+.2f°; clearly off beyond %.2f°.",r.tiltDeg,TILT_LIMIT_DEG));
-        if(r.shape==ModelSpec.Shape.TRIANGLE&&Double.isFinite(r.tiltDeg))b.append(String.format(Locale.US,"\nTilt against the hour line: %+.2f° (not judged: unreliable for the triangle).",r.tiltDeg));
+        if(r.shape!=ModelSpec.Shape.ROUND&&Double.isFinite(r.tiltDeg)){
+            b.append(String.format(Locale.US,"\nTilt against the hour line: %+.2f°",r.tiltDeg));
+            b.append(Double.isFinite(r.tiltLimitDeg)?String.format(Locale.US,"; clearly off beyond %.2f°.",r.tiltLimitDeg):" (not judged).");
+        }
         if(!r.gate.isEmpty())b.append(b.length()>0?"\n":"").append("Withheld: ").append(String.join("; ",r.gate)).append('.');
         return b.toString();
     }
