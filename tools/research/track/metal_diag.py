@@ -74,6 +74,26 @@ def free_size(img, H, m, rpx, hands, f0, bias):
     return 100 * (k - 1)
 
 
+def profile(img, H, m, fit, C):
+    """mean brightness across the edge (outside the masked points), px from the FITTED outline (+ = outward), and
+    where the raw edges fell (no edge correction): tells a dark bevel, a halo or a second boundary from a clean step"""
+    if 'c_obs' not in fit:
+        return ''
+    poly0 = np.asarray(m['yellow'], float)
+    c0 = poly0.mean(axis=0)
+    th = math.radians(fit['tilt_deg']) if fit.get('tilt_deg') == fit.get('tilt_deg') else 0.0
+    poly = np.asarray(fit['c_obs']) + (poly0 - c0) @ mt._rot(th).T
+    pts, nrm, off = mt.edges(img, H, poly, C['rpx'], m['shape'], C['ctx'].get('hands'))
+    keep = mt.edges.why != 1
+    d = np.arange(-6, 6.01, 0.5)
+    P = pts[keep][:, None, :] + (d / C['rpx'])[None, :, None] * nrm[keep][:, None, :]
+    v = og.sample(img, og.project(H, P.reshape(-1, 2))).reshape(keep.sum(), len(d))
+    prof = np.nanmedian(v, axis=0)
+    o = off[np.isfinite(off)] * C['rpx']
+    return ('profile px ' + ' '.join('%+g:%.0f' % (a, b) for a, b in zip(d[::2], prof[::2])) +
+            ' | raw edge px p10 %+.2f p50 %+.2f p90 %+.2f' % tuple(np.percentile(o, [10, 50, 90])) if len(o) else '')
+
+
 def side_table(fit, shape):
     if '_resid' not in fit:
         return ''
@@ -89,7 +109,7 @@ def side_table(fit, shape):
     return '; '.join(out)
 
 
-def closeup(img, H, m, fit, C, path, label):
+def closeup(gray, img, H, m, fit, C, path, label):
     poly0 = np.asarray(m['yellow'], float)
     c0 = poly0.mean(axis=0)
     P0 = og.project(H, poly0)
@@ -114,7 +134,7 @@ def closeup(img, H, m, fit, C, path, label):
     if 'c_obs' in fit:
         th = math.radians(fit['tilt_deg']) if fit.get('tilt_deg') == fit.get('tilt_deg') else 0.0
         poly = np.asarray(fit['c_obs']) + (poly0 - c0) @ mt._rot(th).T
-        pts, nrm, off = mt.edges(img, H, poly, C['rpx'], m['shape'], C['ctx'].get('hands'))
+        pts, nrm, off = mt.edges(gray, H, poly, C['rpx'], m['shape'], C['ctx'].get('hands'))
         why = mt.edges.why
         seen = np.isfinite(off)
         Q = tf(pts)
@@ -216,7 +236,8 @@ def main():
                       100 * fit.get('cover', float('nan')), fit.get('rms_px', float('nan')),
                       (fit.get('bias', float('nan')) - bias.get(m['shape'], 0.0)) * C['rpx'], ks, fit.get('gate', '')))
             print('     ' + side_table(fit, m['shape']))
-            p = closeup(color, C['H'], m, fit, C, os.path.join(outd, '%s_%02d.jpg' % (d['photo_id'][:12], m['hour'])),
+            print('     ' + profile(img, C['H'], m, fit, C))
+            p = closeup(img, color, C['H'], m, fit, C, os.path.join(outd, '%s_%02d.jpg' % (d['photo_id'][:12], m['hour'])),
                         '%s %d new %s/%s' % (d['photo_id'][:10], m['hour'], me.va.fmt(nr.get('side_pct')), me.va.fmt(nr.get('inout_pct'))))
             if b64:
                 s = base64.b64encode(open(p, 'rb').read()).decode()
