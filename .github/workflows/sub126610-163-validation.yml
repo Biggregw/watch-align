@@ -1,10 +1,14 @@
 name: Submariner Date 126610 1.6.3 genuine validation
 on:
   push:
-    branches: [research/sub126610-163]
+    branches: [research/sub126610-163, research/sub126610-hand-continuity]
     paths:
       - '.github/workflows/sub126610-163-validation.yml'
       - 'tools/research/sub126610/validate_163.py'
+      - 'android/app/src/main/java/com/watchalign/mobile/MetalFit.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/ClearlyOff.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Pipeline.java'
+      - 'android/app/src/test/java/com/watchalign/mobile/MetalFitTest.java'
   workflow_dispatch:
 permissions:
   contents: read
