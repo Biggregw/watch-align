@@ -99,4 +99,36 @@ public class MetalFitTest {
         assertEquals(ClearlyOff.State.POSSIBLE,Calibration.state(back,back.at(4),ClearlyOff.Limits.defaults()));
         assertTrue(Calibration.flagged(ClearlyOff.State.POSSIBLE));
     }
+
+    @Test public void verifiedCentreToMarkerSecondsLineMasksEdgeSamples(){
+        double[][] gen=rect(0,0.75,0.025,0.08);
+        ClearlyOff.Img im=dial(gen).img();
+        MetalFit.Fit noHand=MetalFit.fit(im,gen,ModelSpec.Shape.BATON,RPX,new ArrayList<>(),0);
+        ClearlyOff.Input withHand=new ClearlyOff.Input(6,ModelSpec.Shape.BATON,gen,false,
+                Alpha99MarkerInterference.HAND,180.0);
+        MetalFit.Fit masked=MetalFit.fitAll(im,java.util.Collections.singletonList(withHand),
+                RPX,new ArrayList<>())[0];
+        assertTrue(noHand.note,noHand.ok());
+        assertTrue(masked.note,masked.ok());
+        assertTrue("detected centre-to-marker hand must mask edge samples",
+                masked.cover<noHand.cover-0.02);
+    }
+
+    @Test public void confirmedHandAndUnreliableMetalEdgeMustWithholdNotFlag(){
+        ClearlyOff.Marker m=new ClearlyOff.Marker(6,ModelSpec.Shape.BATON);
+        m.sidePct=0.1;m.inoutPct=0.0;m.tiltDeg=2.1;
+        m.uncertain="its visible edge is rough (2.3 px)";
+        ClearlyOff.Input hand=new ClearlyOff.Input(6,ModelSpec.Shape.BATON,null,false,
+                Alpha99MarkerInterference.HAND,180.0);
+        ClearlyOff.decide(m,400,java.util.Collections.singletonList(hand));
+        assertEquals(ClearlyOff.State.CANT_CHECK,m.state);
+        assertTrue(m.reason.contains("hand"));
+
+        // Without positive hand evidence, the same uncertain fit remains reviewable.
+        ClearlyOff.Marker unobstructed=new ClearlyOff.Marker(6,ModelSpec.Shape.BATON);
+        unobstructed.sidePct=0.1;unobstructed.inoutPct=0.0;
+        unobstructed.tiltDeg=2.1;unobstructed.uncertain=m.uncertain;
+        ClearlyOff.decide(unobstructed,400,null);
+        assertEquals(ClearlyOff.State.POSSIBLE,unobstructed.state);
+    }
 }
