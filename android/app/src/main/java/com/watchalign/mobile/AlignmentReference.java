@@ -37,6 +37,7 @@ final class AlignmentReference {
     AlignmentReference(String model,String provenance){this.model=model;this.provenance=provenance;}
 
     static String key(ModelSpec.Shape s){return s==ModelSpec.Shape.TRIANGLE?"triangle":s==ModelSpec.Shape.BATON?"baton":"round";}
+    static ModelSpec.Shape shape(String key){return "triangle".equals(key)?ModelSpec.Shape.TRIANGLE:"baton".equals(key)?ModelSpec.Shape.BATON:"round".equals(key)?ModelSpec.Shape.ROUND:null;}
     ShapeRef shape(ModelSpec.Shape s){return shapes.get(key(s));}
 
     /** null when the model has no luminous alignment reference (every marker then cannot be assessed). */

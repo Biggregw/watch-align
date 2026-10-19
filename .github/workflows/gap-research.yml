@@ -4,7 +4,7 @@ name: Marker gap research (genuine photos)
 on:
   push:
     branches: [claude/calibration-measurement-contract-epunh5]
-    paths: ['.github/workflows/gap-research.yml', 'tools/research/track/gap.py']
+    paths: ['.github/workflows/gap-research.yml', 'tools/research/track/gap.py', 'tools/research/track/metal.py', 'tools/research/track/metal_eval.py', 'tools/research/track/metal_diag.py']
   workflow_dispatch:
 permissions: {contents: read}
 jobs:
@@ -67,6 +67,8 @@ jobs:
           javac -encoding UTF-8 -nowarn -cp $J -sourcepath "tools/desktop-harness/shim:android/app/src/main/java" -d cls tools/desktop-harness/drivers/*.java
           java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.OverlayDump g/manifest.csv g/img out/dump.jsonl | grep -c DUMP
           java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.OverlayDump q/manifest.csv q/img out/qc_dump.jsonl | grep -c DUMP
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TrackDump g/manifest.csv g/img out/app.csv | grep -c TRACK
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TrackDump q/manifest.csv q/img out/app_qc.csv | grep -c TRACK
       - name: Gap on genuine photos
         env: {OMP_NUM_THREADS: '1', OPENBLAS_NUM_THREADS: '1'}
         run: python3 tools/research/track/gap.py out/dump.jsonl g/img out/gap.csv 4 | grep -v '^ERROR' | tee out/gap.txt
@@ -74,6 +76,19 @@ jobs:
         run: |
           python3 tools/research/track/gap.py out/qc_dump.jsonl q/img out/qc_gap.csv 2
           cat out/qc_gap.csv
+      - name: Outer-metal fit vs current detector (genuine, with synthetic occlusions and known moves)
+        env: {OMP_NUM_THREADS: '1', OPENBLAS_NUM_THREADS: '1'}
+        run: python3 tools/research/track/metal_eval.py out/dump.jsonl g/img out/metal.csv 4 --synthetic | grep -v '^ERROR' | tee out/metal.txt
+      - name: Outer-metal fit vs current detector (public QC photos)
+        run: |
+          python3 tools/research/track/metal_eval.py out/qc_dump.jsonl q/img out/metal_qc.csv 2
+          cut -d, -f1,5,6,9-24 out/metal_qc.csv
+      - name: Outer-metal verdicts and close-ups (flagged and named genuine markers, QC flags and 12 triangles; base64 in the log)
+        run: |
+          IDS=--ids=6ac54fe6df:4,6ac54fe6df:5,6ac54fe6df:7,efa51fd35f:2,445e3c952d:12,728e4c157e:12,7e0e15cbb6:12,cb5175ff2c:12,501e07afc5:12,22075296f8:12
+          python3 tools/research/track/metal_diag.py out/dump.jsonl g/img out/metal.csv out/diag out/app.csv $IDS --b64 | tee out/diag.txt | cut -c1-400
+          python3 tools/research/track/metal_diag.py out/qc_dump.jsonl q/img out/metal_qc.csv out/diag_qc out/app_qc.csv --qc --b64 | tee out/diag_qc.txt | cut -c1-400
+          grep -h '^IMG ' out/diag.txt out/diag_qc.txt || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:

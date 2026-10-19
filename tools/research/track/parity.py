@@ -21,13 +21,40 @@ def main(jf, pf):
     gate = sum(1 for k in both if bool(J[k]['gate']) != bool(P[k]['gate']))
     print('gate (can\'t check) disagreements: %d' % gate)
     for jk, pk in (('side_pct', 'side_pct'), ('inout_pct', 'inout_pct'), ('tilt_line_deg', 'tilt_line_deg'), ('gap_pct', 'gap_pct')):
-        d = [abs(f(J[k][jk]) - f(P[k][pk])) for k in both if J[k].get(jk) and P[k].get(pk)]
+        # the app measures the 12 triangle's rotation from its top edge (1.6.2); the research tool keeps the lume axis
+        d = [abs(f(J[k][jk]) - f(P[k][pk])) for k in both if J[k].get(jk) and P[k].get(pk)
+             and not (jk == 'tilt_line_deg' and J[k]['shape'] == 'triangle')]
         if d:
             print('%-14s |java - python|: p50 %.4f p99 %.4f max %.4f (n %d)' % (jk, np.median(d), np.percentile(d, 99), max(d), len(d)))
     st = {}
     for r in J.values():
         st[r['state']] = st.get(r['state'], 0) + 1
     print('app answers on these (genuine) photos:', st)
+    tri = [r for r in J.values() if r['shape'] == 'triangle' and not r['gate']]
+    if tri and 'rot_note' in tri[0]:
+        ok = [r for r in tri if r['tilt_line_deg']]
+        notes = {}
+        for r in tri:
+            if not r['tilt_line_deg']:
+                notes[r['rot_note']] = notes.get(r['rot_note'], 0) + 1
+        a = np.abs([f(r['tilt_line_deg']) for r in ok]) if ok else np.array([np.nan])
+        print('12 triangle rotation (top edge vs ticks 59-1): measured %d of %d, |rot| p50 %.2f p95 %.2f max %.2f deg; withheld: %s'
+              % (len(ok), len(tri), np.median(a), np.percentile(a, 95), a.max(), notes))
+        for r in sorted(ok, key=lambda r: -abs(f(r['tilt_line_deg'])))[:8]:
+            print('  %s rpx %s rot %+.2f (halves %s / %s, fit %s px) lume axis %s' % (r['photo_id'], r['rpx'], f(r['tilt_line_deg']),
+                  r['rot_left_deg'], r['rot_right_deg'], r['rot_rms_px'], r['tilt_centroid_deg']))
+        vl = np.array([f(r.get('rot_vs_line_deg', '')) for r in tri]);vl = vl[np.isfinite(vl)]
+        dr = np.array([f(r.get('tip_dr_px', '')) for r in ok]);rr = np.array([f(r['tilt_line_deg']) for r in ok])
+        hd = np.array([abs(f(r['rot_left_deg']) - f(r['rot_right_deg'])) for r in tri if r['rot_left_deg'] and r['rot_right_deg']])
+        if len(vl):
+            print('  same edge against the hour line (all with an edge fit, n %d): |rot| p50 %.2f p95 %.2f max %.2f deg' % (len(vl), np.median(np.abs(vl)), np.percentile(np.abs(vl), 95), np.abs(vl).max()))
+        if len(dr) > 2:
+            print('  tick 1 vs 59 inner-end offset px: p50 |dr| %.2f p95 %.2f; corr(rot, dr) %.2f' % (np.median(np.abs(dr)), np.percentile(np.abs(dr), 95), np.corrcoef(rr, dr)[0, 1]))
+        if len(hd):
+            print('  |left - right| half readings (all): p50 %.2f p75 %.2f p95 %.2f deg' % tuple(np.percentile(hd, [50, 75, 95])))
+        old = sorted(tri, key=lambda r: -abs(f(r['tilt_centroid_deg']) if r['tilt_centroid_deg'] else 0))[:5]
+        for r in old:
+            print('  largest lume-axis reading: %s lume axis %s -> top edge %s %s' % (r['photo_id'], r['tilt_centroid_deg'], r['tilt_line_deg'] or 'withheld', r['rot_note']))
     for r in J.values():
         if r['state'] == 'CLEARLY_OFF':
             print('  CLEARLY OFF on a genuine photo: %s %sh %s side %s inout %s tilt %s gap %s rpx %s' % (

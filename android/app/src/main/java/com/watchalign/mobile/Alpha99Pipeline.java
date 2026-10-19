@@ -75,7 +75,7 @@ final class Alpha99Pipeline {
             try{MetalAlignment.apply(o.alignment,o.summary,o.measurement,model,ref,align==null?null:align.metalExtra);}
             catch(Throwable t){MetalAlignment.notAssessed(o.alignment,"the outer-metal comparison failed");}   // fail closed, never a silent pass
             o.alignmentTechnical=AlignmentAnalysis.technical(o.alignment,align);
-            try{o.clearlyOff=ClearlyOff.analyse(gray,H,o.measurement.dialRadiusPx,clearlyOffInputs(o.alignment,o.checks),insets(align),model.minuteTrackInnerR);}
+            try{o.clearlyOff=ClearlyOff.analyse(gray,H,o.measurement.dialRadiusPx,clearlyOffInputs(o.alignment,o.checks),insets(align),model.minuteTrackInnerR,ClearlyOff.forModel(model.id));}
             catch(Throwable t){o.clearlyOff=null;}
             // 1.6.0: the clearly-off check decides the answers; earlier results stay in the technical details
             String legacy=o.alignmentTechnical;

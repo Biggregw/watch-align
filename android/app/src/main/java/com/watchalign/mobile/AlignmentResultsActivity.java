@@ -32,6 +32,9 @@ public class AlignmentResultsActivity extends Activity {
         static AlignmentAnalysis.Output result;static ModelSpec model;static String modelLabel;
         static Bitmap overview,photo;static final Map<Integer,Bitmap> closeups=new HashMap<>();
         static String technical,legacyTechnical;
+        /** 1.6.2 calibration: the pose, the clearly-off result (re-judged when the owner changes the limits) and this
+         *  photo's saved record */
+        static double[] H;static ClearlyOff.Result clearlyOff;static String recordId;
         private Store(){}
     }
 
@@ -41,6 +44,7 @@ public class AlignmentResultsActivity extends Activity {
         setTitle("Watch Align");
         setContentView(build());
     }
+    @Override protected void onRestart(){super.onRestart();if(Store.result!=null)setContentView(build());}   // 1.6.2: after calibration
 
     static int colour(AlignmentDecision.Outcome o){return o==AlignmentDecision.Outcome.DEFECT?RED:o==AlignmentDecision.Outcome.NO_DEFECT?GREEN:GREY;}
     static int colour(AlignmentDecision.Marker m){return m.worthALook()?AMBER:colour(m.outcome);}
@@ -54,6 +58,8 @@ public class AlignmentResultsActivity extends Activity {
         root.addView(text(AlignmentAnalysis.headline(o),26,o.count(AlignmentDecision.Outcome.DEFECT)>0?RED:Color.WHITE,true),lp(-1,-2,2));
         root.addView(text(AlignmentAnalysis.counts(o),14,MUTED,false),lp(-1,-2,4));
         if(Store.modelLabel!=null)root.addView(text(Store.modelLabel,13,MUTED,false),lp(-1,-2,2));
+        if(Store.clearlyOff!=null&&!Store.clearlyOff.limits.isDefault())
+            root.addView(text("Judged with your saved limits (tap a marker, then Calibrate, to change or reset them).",13,AMBER,false),lp(-1,-2,4));
         if(o.photoReason!=null)root.addView(text(AlignmentDecision.capital(o.photoReason)+". Upload a sharp photo taken straight on, with the whole dial visible.",15,Color.WHITE,false),lp(-1,-2,8));
 
         if(Store.overview!=null){
@@ -91,13 +97,15 @@ public class AlignmentResultsActivity extends Activity {
         tech.addView(text(AlignmentAnalysis.tracked(o)?TRACK_NOTE:NOTE,12,MUTED,false),lp(-1,-2,4));
         TextView exact=text((Store.technical==null?"":Store.technical)+(Store.legacyTechnical==null?"":"\n\nPrevious outer-metal analysis (Alpha107, kept for reference; not used for the results above):\n"+Store.legacyTechnical),11,MUTED,false);
         exact.setTextIsSelectable(true);tech.addView(exact,lp(-1,-2,6));
-        root.addView(toggle("Technical details",tech),lp(-1,dp(48),18));root.addView(tech,lp(-1,-2,4));
+        Button saved=new Button(this);saved.setAllCaps(false);saved.setText("Saved photos and calibration");
+        saved.setOnClickListener(v->startActivity(new Intent(this,SavedPhotosActivity.class)));root.addView(saved,lp(-1,dp(48),18));
+        root.addView(toggle("Technical details",tech),lp(-1,dp(48),8));root.addView(tech,lp(-1,-2,4));
         root.addView(text(DISCLAIMER,12,MUTED,false),lp(-1,-2,14));
         return scroll;
     }
 
     static final String DISCLAIMER="Watch Align checks whether each hour marker is clearly out of place on this photo. It is not an authenticity check or a buying recommendation.";
-    static final String TRACK_NOTE="Each marker is measured against references found in this photo: its hour line (from the hour tick of the printed minute track, through the centre, to the opposite hour tick) and the ring through the other markers. A marker is clearly off when it sits more than 1.0% of the dial radius to the side of its line, more than 1.0% too far in or out (1.25% for the 12 o'clock triangle), or, for a baton, is tilted more than 2.25° (a small allowance is added on low-resolution photos). On verified genuine watches no marker reached these limits. A marker is not checked when a hand, glare or blur makes the reading unreliable.";
+    static final String TRACK_NOTE="Each marker is measured against references found in this photo: its hour line (from the hour tick of the printed minute track, through the centre, to the opposite hour tick) and the ring through the other markers. With the default limits, a round marker or baton is clearly off when its centre sits more than "+String.format(java.util.Locale.US,"%.2f",100*ClearlyOff.POS_LIMIT_R)+"% of the dial radius from where it should be, a baton when it is tilted more than 2.25°, and the 12 o'clock triangle when it sits more than 1.0% to the side of its line, more than 1.25% in or out, leaves less than 2.2% of the dial radius clear under the minute track, or its top edge is turned more than "+String.format(java.util.Locale.US,"%.1f",ClearlyOff.TRI_ROT_LIMIT_DEG)+"° against the line through the inner ends of minute ticks 59 and 1 (a small allowance is made on low-resolution photos). On verified genuine watches no marker reached these limits. Your own limits, if saved, replace them. A marker is not checked when a hand, glare or blur makes the reading unreliable.";
     static final String NOTE="Each marker's luminous shape is fitted by position and rotation only and compared with the range measured on verified genuine watches of this model, allowing for this photo's measurement uncertainty. A marker's genuine luminous reference is placed by the other markers, never by the marker itself (the separate outer-metal check uses the established Alpha107 ring, which includes the marker, as its genuine references do). Round markers are reported only when also displaced by more than 1.00% of the dial radius. The outer metal of the triangle and batons is checked separately. The photo is treated as taken straight on.";
 
     private View defectCard(AlignmentDecision.Marker m){
