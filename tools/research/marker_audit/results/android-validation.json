@@ -1,0 +1,126 @@
+{
+  "run_id": 39311780904,
+  "revision": "29c2403d6f2900c671b154482e9a32c14f62c806",
+  "url": "https://github.com/Biggregw/watch-align/actions/runs/39311780904",
+  "emulator": {
+    "api": 35,
+    "architecture": "x86_64",
+    "profile": "pixel_2",
+    "heap_bytes": 201326592
+  },
+  "artifacts": {
+    "instrumentation": 12217051860,
+    "units": 12217150113
+  },
+  "image_measurements": [
+    {
+      "photo_id": "d15ed6cf309dec1f",
+      "model": "submariner_124060",
+      "hour": "6",
+      "state": "NO_VISIBLE_ISSUE",
+      "tilt": "-0.1653043799367576",
+      "side": "-0.02925530059318747",
+      "inout": "0.17956584956747046",
+      "cover": "0.9877675840978594",
+      "uncertain": ""
+    },
+    {
+      "photo_id": "49ba843c0a7e19d7",
+      "model": "gmt_126710",
+      "hour": "6",
+      "state": "NO_VISIBLE_ISSUE",
+      "tilt": "0.3794178779586337",
+      "side": "-0.08297390764572359",
+      "inout": "0.34184890903712767",
+      "cover": "0.9587155963302753",
+      "uncertain": ""
+    },
+    {
+      "photo_id": "ee07ceedbb6f0bd3",
+      "model": "submariner_126610",
+      "hour": "6",
+      "state": "NO_VISIBLE_ISSUE",
+      "tilt": "-0.07160657949692688",
+      "side": "-0.039682114001492796",
+      "inout": "0.06385020121477893",
+      "cover": "0.622356495468278",
+      "uncertain": ""
+    },
+    {
+      "photo_id": "2802b4a30cfb277b",
+      "model": "submariner_126610",
+      "hour": "9",
+      "state": "NO_VISIBLE_ISSUE",
+      "tilt": "0.43034236974432427",
+      "side": "0.22689184578895566",
+      "inout": "0.04956568843900612",
+      "cover": "0.6055045871559633",
+      "uncertain": ""
+    }
+  ],
+  "android": {
+    "tests": 10,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "cases": [
+      {
+        "class": "com.watchalign.mobile.GenuineOfficialImageValidationTest",
+        "name": "batgirlOfficialImageDoesNotCreateMajorDefects",
+        "seconds": 21.693
+      },
+      {
+        "class": "com.watchalign.mobile.GenuineOfficialImageValidationTest",
+        "name": "submarinerOfficialImageDoesNotCreateMajorDefects",
+        "seconds": 7.618
+      },
+      {
+        "class": "com.watchalign.mobile.EmulatorPhotoRunTest",
+        "name": "runAllPhotos",
+        "seconds": 323.63
+      },
+      {
+        "class": "com.watchalign.mobile.PhotoExifOrientationTest",
+        "name": "normalOrientationIsUnchanged",
+        "seconds": 0.004
+      },
+      {
+        "class": "com.watchalign.mobile.PhotoExifOrientationTest",
+        "name": "mirroringKeepsTheSizeAndFlipsTheCorner",
+        "seconds": 0.01
+      },
+      {
+        "class": "com.watchalign.mobile.PhotoExifOrientationTest",
+        "name": "rotationsSwapTheSidesAndMoveTheCorner",
+        "seconds": 0.0
+      },
+      {
+        "class": "com.watchalign.mobile.MetalMarkerImageRegressionTest",
+        "name": "noDateControl",
+        "seconds": 8.973
+      },
+      {
+        "class": "com.watchalign.mobile.MetalMarkerImageRegressionTest",
+        "name": "gmtControl",
+        "seconds": 7.85
+      },
+      {
+        "class": "com.watchalign.mobile.MetalMarkerImageRegressionTest",
+        "name": "dateSixAdjacentSeconds",
+        "seconds": 7.523
+      },
+      {
+        "class": "com.watchalign.mobile.MetalMarkerImageRegressionTest",
+        "name": "dateNineAdjacentSeconds",
+        "seconds": 7.496
+      }
+    ]
+  },
+  "units": {
+    "tests": 467,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "cases": []
+  }
+}

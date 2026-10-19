@@ -26,8 +26,10 @@ recommendation are recorded in the validation section below.
 ## Reproduction and completeness
 
 Baseline is `cf373d205a873648fde46c9704aba177284bc920` (production 1.6.3).
-The focused production change is `c812a83fb0f8c0823e654620f1eea7faf08eb082`;
-later fixture/tooling commits do not change measurement logic. Research branch:
+The focused measurement change is `c812a83fb0f8c0823e654620f1eea7faf08eb082`.
+Android execution subsequently exposed a pre-existing allocation failure;
+`29c2403d6f2900c671b154482e9a32c14f62c806` corrects temporary storage without
+changing the sampling coordinates or measurement definitions. Research branch:
 `research/metal-marker-evidence`; [draft PR #63](https://github.com/Biggregw/watch-align/pull/63).
 
 All **ten original photographs were recovered with their catalogued full
@@ -292,7 +294,7 @@ not averaging defect decisions across a watch.
 
 | Family / primary shape | Marker count | Warnings before → after | Uncertainty-free before → after |
 |---|---:|---:|---:|
-| GMT baton / round / triangle | 100 / 400 / 50 | 0 / 0 / 0 → unchanged | see full JSON by shape |
+| GMT baton / round / triangle | 100 / 400 / 50 | 0 / 0 / 0 → unchanged | 98 / 326 / 50 → unchanged |
 | No-Date baton | 336 | 0 → 0 | 329 → 329 |
 | No-Date round | 896 | 3 → 3 | 801 → 801 |
 | No-Date triangle | 112 | 1 → 1 | 111 → 111 |

@@ -1,0 +1,6 @@
+heap_limit=201326592 pose=true reason= clearlyOff=false
+Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+	at com.watchalign.mobile.ClearlyOff$Img.polar(ClearlyOff.java:952)
+	at com.watchalign.mobile.ClearlyOff.tickTrack(ClearlyOff.java:518)
+	at com.watchalign.mobile.ClearlyOff.analyse(ClearlyOff.java:187)
+	at com.watchalign.mobile.MarkerMemoryProbe.main(MarkerMemoryProbe.java:27)

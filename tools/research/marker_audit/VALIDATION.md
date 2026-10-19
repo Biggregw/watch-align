@@ -3,7 +3,7 @@
 ## Completed local checks
 
 - Unmodified production 1.6.3: official Gradle unit suite, **455 passed**.
-- Corrected production: official Gradle unit suite, **465 passed**, zero failed,
+- Corrected production: official Gradle unit suite, **467 passed**, zero failed,
   errored or skipped. Existing tests were not disabled or weakened.
 - Corrected `:app:assembleDebug`: passed.
 - Corrected `:app:assembleDebugAndroidTest`: passed with all four verified image
@@ -41,6 +41,7 @@ validated. Hardware-accelerated GitHub Android instrumentation is tracked below.
 | [39306132742](https://github.com/Biggregw/watch-align/actions/runs/39306132742) | 31078ac6 | Same preparation failure after another JPEG negotiation option. No emulator validation claimed. |
 | [39307094723](https://github.com/Biggregw/watch-align/actions/runs/39307094723) | cc66657c | Fixtures verified; 10 emulator tests executed, 6 passed, 4 new image regressions failed. Logcat proves OutOfMemoryError under the unchanged 192 MB heap. |
 | [39309182307](https://github.com/Biggregw/watch-align/actions/runs/39309182307) | 9a7eecfb | Evidence-only revision of the same code; repeat failure, not a validated build. |
+| [39311780904](https://github.com/Biggregw/watch-align/actions/runs/39311780904) | 29c2403d | **467 unit tests and 10 API 35 emulator tests passed**, zero failures/errors/skips. All four hash-pinned image regressions executed successfully. APK build passed. |
 
 The four files were retained unchanged with their catalogue hashes and source
 URLs. This repairs test reproducibility without substituting images, skipping
@@ -52,6 +53,23 @@ successful analysis, expected marker status, numeric rotation/position, and
 seconds-hand evidence on both targets. Numeric tolerances allow Android/desktop
 JPEG decoding differences (0.2° rotation, 0.15 percentage points of R) and remain
 far smaller than the original approximately 2° shaft errors.
+
+The final run was checked from the downloaded test XML and per-test logcat, not
+just its workflow conclusion. `results/android-validation.json` retains the
+run/revision/artifact identifiers, all ten executed test names and the four
+actual image measurements; `android-instrumentation.xml` retains the raw report.
+On the API 35 x86_64 Pixel 2 emulator with its unchanged 192 MB heap:
+
+| Photo / target | Rotation | Side % R | Radial % R | Coverage | Edge uncertainty |
+|---|---:|---:|---:|---:|---|
+| GMT 49ba843c0a7e19d7 / 6 | +0.379418° | −0.082974 | +0.341849 | 95.87% | none |
+| No-Date d15ed6cf309dec1f / 6 | −0.165304° | −0.029255 | +0.179566 | 98.78% | none |
+| Date ee07ceedbb6f0bd3 / 6 | −0.071607° | −0.039682 | +0.063850 | 62.24% | none |
+| Date 2802b4a30cfb277b / 9 | +0.430342° | +0.226892 | +0.049566 | 60.55% | none |
+
+The other six tests are two legacy official-image checks, three EXIF checks,
+and the existing bulk-photo smoke test. Their passing status is not substituted
+for per-marker numerical validation. No physical Android handset was tested.
 
 ### Memory failure diagnosed during Android validation
 
@@ -70,6 +88,7 @@ samples one polar row at a time with identical coordinates/interpolation and
 computes the grid median in a single primitive scratch array. It changes neither
 resolution nor mathematical definitions, thresholds, pose or model references.
 The same original image now completes all 11 markers under the same heap limit.
+The baseline and corrected probe logs are retained in `results/memory-*.log`.
 
 Two new unit tests compare every sample bit-for-bit against the original batch
 calculation, including projective mapping/off-image samples, and compare median

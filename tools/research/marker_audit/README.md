@@ -94,3 +94,21 @@ Android preparation is `python tools/research/marker_audit/fetch_android.py`.
 It copies and independently verifies the four pinned public originals into the
 ignored instrumentation-assets directory. `MetalMarkerImageRegressionTest`
 checks each hash again before the actual Android decoder/native pipeline run.
+
+## Constrained-heap reproduction
+
+`MarkerMemoryProbe.java` runs the full pipeline and exposes the underlying
+ClearlyOff exception if the pipeline withholds the result. Compile it against
+each revision's desktop-harness classes, then run from the repository root:
+
+```sh
+java -Xmx192m -Dwatchalign.model=submariner_126610 \
+  -cp "$OPENCV_JAR:$HARNESS_CLASSES:$PROBE_CLASSES" com.watchalign.mobile.MarkerMemoryProbe \
+  tools/research/marker_audit/fixtures/ee07ceedbb6f0bd3.jpg
+```
+
+Unmodified 1.6.3 fails in full-grid polar allocation; the corrected revision
+completes all 11 markers with the same input and heap limit. Probe logs and the
+executed Android test XML/measurements are retained in `results/`. The storage
+change must also preserve every exported field in the matched cohorts; a
+successful run alone is not evidence of numerical equivalence.

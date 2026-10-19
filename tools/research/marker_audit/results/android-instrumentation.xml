@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.watchalign.mobile.GenuineOfficialImageValidationTest" tests="10" failures="0" errors="0" skipped="0" time="385.012" timestamp="2026-10-19T19:42:11" hostname="localhost">
+  <properties>
+    <property name="device" value="emulator-5554 - 15" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="batgirlOfficialImageDoesNotCreateMajorDefects" classname="com.watchalign.mobile.GenuineOfficialImageValidationTest" time="21.693" />
+  <testcase name="submarinerOfficialImageDoesNotCreateMajorDefects" classname="com.watchalign.mobile.GenuineOfficialImageValidationTest" time="7.618" />
+  <testcase name="runAllPhotos" classname="com.watchalign.mobile.EmulatorPhotoRunTest" time="323.63" />
+  <testcase name="normalOrientationIsUnchanged" classname="com.watchalign.mobile.PhotoExifOrientationTest" time="0.004" />
+  <testcase name="mirroringKeepsTheSizeAndFlipsTheCorner" classname="com.watchalign.mobile.PhotoExifOrientationTest" time="0.01" />
+  <testcase name="rotationsSwapTheSidesAndMoveTheCorner" classname="com.watchalign.mobile.PhotoExifOrientationTest" time="0.0" />
+  <testcase name="noDateControl" classname="com.watchalign.mobile.MetalMarkerImageRegressionTest" time="8.973" />
+  <testcase name="gmtControl" classname="com.watchalign.mobile.MetalMarkerImageRegressionTest" time="7.85" />
+  <testcase name="dateSixAdjacentSeconds" classname="com.watchalign.mobile.MetalMarkerImageRegressionTest" time="7.523" />
+  <testcase name="dateNineAdjacentSeconds" classname="com.watchalign.mobile.MetalMarkerImageRegressionTest" time="7.496" />
+</testsuite>
