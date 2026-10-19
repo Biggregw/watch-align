@@ -38,9 +38,11 @@ public class ClearlyOffTest {
         ClearlyOff.Marker r=m(ModelSpec.Shape.ROUND,0.9,0,Double.NaN);
         ClearlyOff.decide(r,1e9,in(r.shape),ClearlyOff.Limits.defaults());assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,r.state);
         ClearlyOff.decide(r,1e9,in(r.shape),L);assertEquals(ClearlyOff.State.CLEARLY_OFF,r.state);
-        // triangle rotation: 1.0 deg by default (owner, 18 Oct 2026); the owner can loosen it or turn it off
+        // triangle rotation: 1.2 deg by default (owner, 19 Oct 2026; was 1.0); the owner can loosen it or turn it off
         ClearlyOff.Marker t=m(ModelSpec.Shape.TRIANGLE,0,0,1.4);t.gapPct=3.0;
         ClearlyOff.decide(t,1e9,in(t.shape),ClearlyOff.Limits.defaults());assertEquals(ClearlyOff.State.CLEARLY_OFF,t.state);
+        ClearlyOff.Marker t2=m(ModelSpec.Shape.TRIANGLE,0,0,1.17);t2.gapPct=3.0;   // the largest verified genuine reading
+        ClearlyOff.decide(t2,1e9,in(t2.shape),ClearlyOff.Limits.defaults());assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,t2.state);
         ClearlyOff.Limits T=ClearlyOff.Limits.defaults();T.triTiltDeg=2.0;
         ClearlyOff.decide(t,1e9,in(t.shape),T);assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,t.state);
         T.triTiltDeg=Double.NaN;ClearlyOff.decide(t,1e9,in(t.shape),T);assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,t.state);

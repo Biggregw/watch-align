@@ -29,9 +29,9 @@ EDGE_BAD_PX = 1.0      # px: an edge point this far from the fitted outline is i
 EDGE_BAD_FRAC = 0.15   # share of inconsistent points above which the edge is unreliable
 MIN_COVER = 0.5        # below this share of the outline seen, the rest is mostly reconstructed
 CANT_SE_POS = 0.01     # R: a position this loosely fixed decides nothing against the 1 % R limit -> Can't check
-CANT_SE_ROT = 1.0      # deg: likewise for rotation (the triangle limit)
-# existing limits (ClearlyOff.Limits defaults): position 1.0 % R (+0.5 px), baton tilt 2.25 deg, triangle rotation 1.0 deg
-POS_LIMIT_PCT, ALLOW_PX, TILT_LIMIT = 1.0, 0.5, {'baton': 2.25, 'triangle': 1.0}
+CANT_SE_ROT = 1.0      # deg: likewise for rotation (about the triangle limit)
+# existing limits (ClearlyOff.Limits defaults): position 1.0 % R (+0.5 px), baton tilt 2.25 deg, triangle rotation 1.2 deg
+POS_LIMIT_PCT, ALLOW_PX, TILT_LIMIT = 1.0, 0.5, {'baton': 2.25, 'triangle': 1.2}
 CLEARLY_OFF, INSPECT, NO_ISSUE, CANT = 'Clearly off', 'Possible misalignment - inspect', 'No visible issue', "Can't check"
 RIM_FRAC = 0.25        # of lume-to-dial contrast: where the rim starts, scanning in from the dial
 RIM_PX = 1.5           # px inside that start over which the rim's own level is taken

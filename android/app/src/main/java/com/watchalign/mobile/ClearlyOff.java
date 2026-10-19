@@ -55,10 +55,11 @@ final class ClearlyOff {
     /** Rays between the minute ticks along which the triangle's gap is measured (deg either side of the hour line). */
     static final double[] GAP_OFFS_DEG={-4.5,-3.0,-1.5,1.5,3.0,4.5};
     /** 12 triangle rotation (owner's method, 18 Oct 2026): the line of the triangle's top outer-metal edge between its two
-     *  corners against the line through the inner ends of minute ticks 59 and 1. Default limit 1.0 deg. The reading is
+     *  corners against the line through the inner ends of minute ticks 59 and 1. Default limit 1.2 deg (owner, 19 Oct 2026:
+     *  verified genuine triangles reach about 1.17 deg). The reading is
      *  withheld below ROT_MIN_RPX, when an edge column lacks contrast, when the edge fit is rough, or when the left and
      *  right halves of the edge (two independent fits) disagree. */
-    static final double TRI_ROT_LIMIT_DEG=1.0,ROT_MIN_RPX=200,ROT_MIN_CONTRAST=30,ROT_MAX_RMS_PX=0.35,ROT_MAX_HALF_DIFF_DEG=0.6,
+    static final double TRI_ROT_LIMIT_DEG=1.2,ROT_MIN_RPX=200,ROT_MIN_CONTRAST=30,ROT_MAX_RMS_PX=0.35,ROT_MAX_HALF_DIFF_DEG=0.6,
             ROT_T0=0.015,ROT_T1=0.090;
     /** Added to the position limits so that a genuine marker on a small photo never tips over (px). */
     static final double LOWRES_ALLOWANCE_PX=0.5;
