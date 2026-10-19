@@ -49,9 +49,10 @@ def fetch(rows, root, log):
             attempts = [(url, "image/jpeg,image/png;q=0.9,image/*;q=0.5")]
             if "bobswatches.com/" in url:
                 attempts.append((url + ("&" if "?" in url else "?") + "format=jpg", "image/jpeg"))
+                attempts.append((url + ("&" if "?" in url else "?") + "format=jpeg", "image/jpeg"))
             for attempt, accept in attempts:
                 try:
-                    response = http.get(attempt, headers={"Accept": accept})
+                    response = http.get(attempt, headers={"Accept": accept, "Cache-Control": "no-cache"})
                     sha = hashlib.sha256(response.content).hexdigest()
                     entry["attempts"].append({"url": attempt, "accept": accept, "sha256": sha, "bytes": len(response.content), "content_type": response.content_type})
                     if sha == want:
