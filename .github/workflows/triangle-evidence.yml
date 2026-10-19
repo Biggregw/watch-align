@@ -1,0 +1,24 @@
+name: Submariner Date triangle evidence (read-only)
+on:
+  push:
+    branches: [research/sub126610-triangle-validity]
+    paths:
+      - tools/research/marker_audit/triangle_study.py
+      - .github/workflows/triangle-evidence.yml
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Analyse frozen genuine triangle evidence
+        run: python3 tools/research/marker_audit/triangle_study.py
+      - name: Print results
+        run: cat triangle-study-out/TRIANGLE_STUDY.md
+      - name: Preserve study reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: triangle-study-readonly
+          path: triangle-study-out/
+          if-no-files-found: error
