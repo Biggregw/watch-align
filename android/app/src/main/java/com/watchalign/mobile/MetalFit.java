@@ -190,11 +190,22 @@ final class MetalFit {
     /** the edge offsets (R) the last fitAll used, per shape (diagnostics) */
     static final java.util.Map<ModelSpec.Shape,Double> lastBias=new java.util.concurrent.ConcurrentHashMap<>();
 
+    /** Exclude a line proved by the independent hand detector to continue from the dial centre.
+     * Use a thin shaft mask, not the broad hour/minute-hand tip mask. Reach > 1 prevents
+     * the tip heuristic widening this seconds-hand shaft over marker edges. */
+    static List<double[]> markerHands(ClearlyOff.Input m,List<double[]> hands){
+        if(!Double.isFinite(m.secondsLineDeg))return hands;
+        List<double[]> out=new ArrayList<>();
+        if(hands!=null)out.addAll(hands);
+        out.add(new double[]{m.secondsLineDeg,1.0,1.1});
+        return out;
+    }
+
     /** every marker of a photo: a first pass for each shape's edge offset (median over fully seen markers), then the fit */
     static Fit[] fitAll(ClearlyOff.Img img,List<ClearlyOff.Input> in,double rpx,List<double[]> hands){
         Fit[] first=new Fit[in.size()];
         for(int i=0;i<in.size();i++){ClearlyOff.Input m=in.get(i);
-            first[i]=m.yellow==null||m.yellow.length<3?null:fit(img,m.yellow,m.shape,rpx,hands,0);}
+            first[i]=m.yellow==null||m.yellow.length<3?null:fit(img,m.yellow,m.shape,rpx,markerHands(m,hands),0);}
         java.util.Map<ModelSpec.Shape,Double> bias=new java.util.HashMap<>();
         for(ModelSpec.Shape s:ModelSpec.Shape.values()){List<Double> b=new ArrayList<>();
             for(int i=0;i<in.size();i++){Fit f=first[i];if(f!=null&&in.get(i).shape==s&&f.ok()&&f.cover>0.9)b.add(f.bias);}
@@ -202,7 +213,7 @@ final class MetalFit {
         lastBias.clear();lastBias.putAll(bias);
         Fit[] out=new Fit[in.size()];
         for(int i=0;i<in.size();i++){ClearlyOff.Input m=in.get(i);
-            out[i]=first[i]==null?null:fit(img,m.yellow,m.shape,rpx,hands,bias.get(m.shape));}
+            out[i]=first[i]==null?null:fit(img,m.yellow,m.shape,rpx,markerHands(m,hands),bias.get(m.shape));}
         return out;
     }
 
