@@ -11,14 +11,14 @@ import static org.junit.Assert.*;
 
 /**
  * The bundled genuine luminous alignment references (calibration run 38565452660) load for exactly the models the app
- * offers, each with its own data, covering every marker of that model; and a smoke check that a clean synthetic dial
+ * offers, the Date family's luminous edge-fit reference explicitly inherited from the 124060, covering every marker; and a smoke check that a clean synthetic dial
  * judged against the REAL reference is assessed (not "Cannot assess") and shows no defect.
  */
 public class AlignmentReferenceTest {
     static ModelSpec spec(String id){try{return ModelSpec.load(TestModels.files(),id);}catch(Exception e){throw new AssertionError(e);}}
 
-    @Test public void bothSupportedModelsLoadTheirOwnReference(){
-        for(String id:new String[]{"gmt_126710","submariner_124060"}){
+    @Test public void allOfferedModelsHaveExplicitAlignmentReference(){
+        for(String id:new String[]{"gmt_126710","submariner_124060","submariner_126610"}){
             ModelSpec m=spec(id);AlignmentReference r=AlignmentReference.load(TestModels.files(),m);
             assertNotNull(id+" reference missing",r);
             assertEquals(id,r.model);
@@ -38,13 +38,22 @@ public class AlignmentReferenceTest {
         assertNotEquals(g.shape(ModelSpec.Shape.TRIANGLE).insetR,s.shape(ModelSpec.Shape.TRIANGLE).insetR,1e-9);
     }
 
-    @Test public void unvalidatedModelHasNoReferenceAndIsNotOffered(){
-        // 126610 has research data only: no alignment reference is bundled, so the start screen does not offer it
-        assertNull(AlignmentReference.load(TestModels.files(),spec("submariner_126610")));
+    @Test public void dateFamilyReusesDocumentedLuminousGeometryButKeepsDistinctGenuineMetalReference(){
+        ModelSpec date=spec("submariner_126610");
+        assertEquals(11,date.markers.size());
+        assertEquals(3,date.date.hour);
+        assertNull(date.atHour(3));
+        AlignmentReference borrowed=AlignmentReference.load(TestModels.files(),date);
+        assertNotNull(borrowed);
+        assertEquals("submariner_126610",borrowed.model);
+        assertTrue(borrowed.provenance,borrowed.provenance.contains("Shared 124060"));
+        assertFalse("date family has no 3 baton",borrowed.hours.containsKey(3));
+        ModelReference independent=ModelReference.load(TestModels.files(),date);
+        assertTrue("date-family genuine watch reference missing",independent.far("six_rot").length>0);
     }
 
     @Test public void cleanDialAgainstTheRealReferenceIsAssessedWithoutDefects(){
-        for(String id:new String[]{"gmt_126710","submariner_124060"}){
+        for(String id:new String[]{"gmt_126710","submariner_124060","submariner_126610"}){
             ModelSpec model=spec(id);AlignmentReference ref=AlignmentReference.load(TestModels.files(),model);
             LuminousAlignmentTest.Scene sc=new LuminousAlignmentTest.Scene();
             for(ModelSpec.Marker mk:model.markers){
