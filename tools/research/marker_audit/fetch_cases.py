@@ -46,14 +46,14 @@ def fetch(rows, root, log):
             if dest.exists():
                 dest.unlink()
             url = row["image_url"]
-            urls = [url]
+            attempts = [(url, "image/jpeg,image/png;q=0.9,image/*;q=0.5")]
             if "bobswatches.com/" in url:
-                urls.append(url + ("&" if "?" in url else "?") + "format=jpg")
-            for attempt in urls:
+                attempts.append((url + ("&" if "?" in url else "?") + "format=jpg", "image/jpeg"))
+            for attempt, accept in attempts:
                 try:
-                    response = http.get(attempt, headers={"Accept": "image/jpeg,image/png;q=0.9,image/*;q=0.5"})
+                    response = http.get(attempt, headers={"Accept": accept})
                     sha = hashlib.sha256(response.content).hexdigest()
-                    entry["attempts"].append({"url": attempt, "sha256": sha, "bytes": len(response.content), "content_type": response.content_type})
+                    entry["attempts"].append({"url": attempt, "accept": accept, "sha256": sha, "bytes": len(response.content), "content_type": response.content_type})
                     if sha == want:
                         dest.parent.mkdir(parents=True, exist_ok=True)
                         dest.write_bytes(response.content)

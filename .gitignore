@@ -76,6 +76,7 @@ datasets/126710BLNR/resolved_images.csv
 
 # Third-party photos fetched by CI for the emulator photo run; never commit.
 android/app/src/androidTest/assets/e2e/
+android/app/src/androidTest/assets/marker_regression/
 
 # Dataset harvester data directory (its own branch, data/harvest; images never committed)
 datasets/harvest/

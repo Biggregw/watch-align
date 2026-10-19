@@ -10,14 +10,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-
-CASES = {
-    "6f071d93608b9081": 12, "22060f9a8f867d35": 12,
-    "800cd2600f322aa5": 12, "02d7c97e429c6984": 12,
-    "482e344ce9c60e61": 12, "e418538d0e9af0bf": 12,
-    "94ad771e9e2aedde": 5, "2802b4a30cfb277b": 9,
-    "c11761654b519222": 12, "ee07ceedbb6f0bd3": 6,
-}
+from fetch_cases import CASES
 
 
 def check_coverage(directory):

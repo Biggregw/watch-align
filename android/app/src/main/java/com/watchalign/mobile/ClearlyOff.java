@@ -163,8 +163,13 @@ final class ClearlyOff {
     /** One marker as the app knows it: shape, the yellow outer-metal reference (canonical) and the hand/glare check. */
     static final class Input {
         final int hour;final ModelSpec.Shape shape;final double[][] yellow;final Boolean handClean;final String handReason;
+        /** Seconds direction independently evidenced outside the marker, not inferred from its edge. */
+        final double secondsLineDeg;
         Input(int hour,ModelSpec.Shape shape,double[][] yellow,Boolean handClean,String handReason){
-            this.hour=hour;this.shape=shape;this.yellow=yellow;this.handClean=handClean;this.handReason=handReason;}
+            this(hour,shape,yellow,handClean,handReason,Double.NaN);}
+        Input(int hour,ModelSpec.Shape shape,double[][] yellow,Boolean handClean,String handReason,double secondsLineDeg){
+            this.hour=hour;this.shape=shape;this.yellow=yellow;this.handClean=handClean;this.handReason=handReason;
+            this.secondsLineDeg=secondsLineDeg;}
     }
 
     /**

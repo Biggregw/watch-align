@@ -1,0 +1,54 @@
+[
+  {
+    "photo_id": "49ba843c0a7e19d7",
+    "sha256": "49ba843c0a7e19d7ca00fd558a3d7f14544925f55d6d0ac7047fe4a4208fce81",
+    "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-GMT-Master-II-126710-Black-Chromalight-Dial-SKU175818.jpg",
+    "local_path": "images/49/49ba843c0a7e19d7ca00fd558a3d7f14544925f55d6d0ac7047fe4a4208fce81.jpg",
+    "physical_watch_id": "bobs_175818",
+    "model": "126710BLNR",
+    "analysis_model": "gmt_126710",
+    "hour": 6,
+    "expected_tilt": 0.3794,
+    "expected_side": -0.083,
+    "expected_inout": 0.3418
+  },
+  {
+    "photo_id": "d15ed6cf309dec1f",
+    "sha256": "d15ed6cf309dec1fd5b0ff89431ce72faaa1bb89f5185c43e4392503677278f0",
+    "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-124060-SKU194063.jpg",
+    "local_path": "images/d1/d15ed6cf309dec1fd5b0ff89431ce72faaa1bb89f5185c43e4392503677278f0.jpg",
+    "physical_watch_id": "auto_bobs_124060_d758a78acef9",
+    "model": "124060",
+    "analysis_model": "submariner_124060",
+    "hour": 6,
+    "expected_tilt": -0.1653,
+    "expected_side": -0.0293,
+    "expected_inout": 0.1796
+  },
+  {
+    "photo_id": "2802b4a30cfb277b",
+    "sha256": "2802b4a30cfb277bcf16079466bc7926bce1a9912a325b10cceb4c845d054bef",
+    "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126613-186320.jpg",
+    "local_path": "images/28/2802b4a30cfb277bcf16079466bc7926bce1a9912a325b10cceb4c845d054bef.jpg",
+    "physical_watch_id": "bobs_126613LB_186320",
+    "model": "126613LB",
+    "analysis_model": "submariner_126610",
+    "hour": 9,
+    "expected_tilt": 0.4303,
+    "expected_side": null,
+    "expected_inout": null
+  },
+  {
+    "photo_id": "ee07ceedbb6f0bd3",
+    "sha256": "ee07ceedbb6f0bd3548f7cef9bf8b5f23fa010f621982a648bba0d01349bd292",
+    "image_url": "https://www.bobswatches.com/images/zUsed-Rolex-Submariner-126610-182143.jpg",
+    "local_path": "images/ee/ee07ceedbb6f0bd3548f7cef9bf8b5f23fa010f621982a648bba0d01349bd292.jpg",
+    "physical_watch_id": "bobs_126610_182143",
+    "model": "126610",
+    "analysis_model": "submariner_126610",
+    "hour": 6,
+    "expected_tilt": -0.0716,
+    "expected_side": -0.0397,
+    "expected_inout": 0.0638
+  }
+]

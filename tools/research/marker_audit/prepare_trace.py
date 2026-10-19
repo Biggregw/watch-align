@@ -11,6 +11,12 @@ from pathlib import Path
 
 def generate(source, destination):
     text = Path(source).read_text().replace("MetalFit", "TracedMetalFit")
+    calls = ["            e=edges(img,poly,rpx,round,hands);",
+             "            e=edges(img,poly,rpx,round,hands,secondsLine);"]
+    found = [call for call in calls if text.count(call) == 1]
+    if len(found) != 1:
+        raise ValueError("Trace edge call changed")
+    edge_call = found[0]
     changes = [
         ("    static final class Fit {", """    static final class Step {
         double[][] poly, jacobian; Edges edges;
@@ -18,8 +24,7 @@ def generate(source, destination):
     }
     static final class Fit {
         final List<Step> steps=new ArrayList<>();"""),
-        ("            e=edges(img,poly,rpx,round,hands);", """            e=edges(img,poly,rpx,round,hands);
-            Step trace=new Step();trace.poly=poly;trace.edges=e;f.steps.add(trace);"""),
+        (edge_call, edge_call + "\n            Step trace=new Step();trace.poly=poly;trace.edges=e;f.steps.add(trace);"),
         ("                x=wls(J,r,w,np);", """                trace.solveWeights=w.clone();
                 x=wls(J,r,w,np);"""),
         ("            tx+=x[0];ty+=x[1];if(rotate)th+=x[2];", """            trace.jacobian=J;trace.residual=res;trace.weights=w;
