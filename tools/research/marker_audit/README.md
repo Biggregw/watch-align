@@ -29,8 +29,12 @@ final fitted polygon. Hidden samples are labelled at their search origins;
 they do not have invented observations.
 
 Output includes the analysis bitmap, annotated PNGs, JSON traces and target
-sample CSVs. Keep photographs and derived image panels outside Git. Public
-dealer photos are still verified originals; no owner photographs are used.
+sample CSVs. Keep bulk photographs and derived image panels outside Git. The
+four public dealer originals in `fixtures/` are the sole regression-fixture
+exception: CDN negotiation did not reproduce their bytes on GitHub's runner,
+so the exact catalogued images are pinned for repeatable Android tests. No
+owner photographs are used. See `fixtures/README.md` and `android_fixtures.json`
+for provenance; preparation and Android execution both verify the hashes.
 
 ## Established baseline
 
