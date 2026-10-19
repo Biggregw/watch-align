@@ -30,7 +30,8 @@ def unique_triangles(rows):
         if r["shape"]!="triangle" or r["hour"]!="12":continue
         k=r["photo_id"]
         if k in result:
-            if r!=result[k]:raise ValueError("Conflicting 12 triangle measurements: "+k)
+            if any(r[c]!=result[k][c] for c in r if c!="watch"):
+                raise ValueError("Conflicting 12 triangle measurements: "+k)
             continue
         result[k]=r
     return result
