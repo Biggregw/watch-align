@@ -44,7 +44,8 @@ final class AlignmentAnalysis {
         Output o=new Output();
         double rpx=LuminousAlignment.pxPerR(H);
         if(src==null||H==null||!(rpx>20))o.photoReason="the dial could not be located in this photo";
-        else if(rpx<AlignmentDecision.MIN_DIAL_RADIUS_PX)o.photoReason="the photo's resolution is too low (the dial is under "+(int)(2*AlignmentDecision.MIN_DIAL_RADIUS_PX)+" pixels across)";
+        // experimental 1.6.3: a small dial is measured (its uncertainty grows), never rejected as a whole photo
+        else if(!ClearlyOff.METAL&&rpx<AlignmentDecision.MIN_DIAL_RADIUS_PX)o.photoReason="the photo's resolution is too low (the dial is under "+(int)(2*AlignmentDecision.MIN_DIAL_RADIUS_PX)+" pixels across)";
         else if(report==null)o.photoReason="the markers could not be measured";
         Map<Integer,double[]> rings=new java.util.HashMap<>();
         for(ModelSpec.Marker mk:model.markers){

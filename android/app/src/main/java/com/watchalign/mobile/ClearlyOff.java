@@ -64,6 +64,8 @@ final class ClearlyOff {
     /** Added to the position limits so that a genuine marker on a small photo never tips over (px). */
     static final double LOWRES_ALLOWANCE_PX=0.5;
     static final double MIN_RPX=150;
+    /** METAL: below this dial radius (px) a reading is kept but marked uncertain (the 1.6.2 photo-wide minimum) */
+    static final double LOW_RES_RPX=AlignmentDecision.MIN_DIAL_RADIUS_PX;
     static final int MIN_RING=3;
 
     /** POSSIBLE (experimental 1.6.3): over a limit, but measured from an uncertain outer edge ("Possible misalignment -
@@ -199,6 +201,8 @@ final class ClearlyOff {
                 if(!res.lines.containsKey(m.hour%12))r.gate.add("minute ticks near it hidden");
                 metrics(r,b,res.lines,img,ringScale(base,in,m.hour),rpx);
                 MetalFit.Fit mf=fits.get(m.hour);r.yellow=m.yellow;
+                if(mf!=null&&mf.cObs!=null&&rpx<LOW_RES_RPX)   // a small dial: measured, its findings to inspect
+                    mf.uncertain=(mf.uncertain.isEmpty()?"":mf.uncertain+"; ")+String.format(Locale.US,"the photo's resolution is low (the dial is %.0f px across)",2*rpx);
                 if(mf!=null&&mf.cObs!=null){r.source="outer metal";r.uncertain=mf.uncertain;r.cover=mf.cover;r.fitRmsPx=mf.rmsPx;r.badFrac=mf.badFrac;
                     r.sePosPct=100*mf.sePos;r.seRotDeg=mf.seRot;r.fitTiltDeg=mf.tiltDeg;r.fitPoly=mf.poly;r.fitPts=mf.pts;r.fitStatus=mf.status;}
                 if(m.shape==ModelSpec.Shape.TRIANGLE){
@@ -316,7 +320,6 @@ final class ClearlyOff {
         if(m.yellow==null||m.yellow.length<3||f==null){b.gate.add("no overlay for this marker");return b;}
         if(insets.get(m.shape)==null){b.gate.add("no luminous reference");return b;}
         if(!f.note.isEmpty())b.gate.add(f.note);
-        if(rpx<MIN_RPX)b.gate.add("photo too small");
         if(f.cObs!=null){b.cGen=f.cGen;b.cObs=f.cObs;if(m.shape!=ModelSpec.Shape.ROUND)b.tiltDeg=f.tiltDeg;}
         return b;
     }

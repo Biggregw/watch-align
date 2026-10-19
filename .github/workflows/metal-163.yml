@@ -7,7 +7,8 @@ on:
     branches: [claude/calibration-measurement-contract-epunh5]
     paths: ['.github/workflows/metal-163.yml', 'android/app/src/main/java/com/watchalign/mobile/MetalFit.java',
             'android/app/src/main/java/com/watchalign/mobile/ClearlyOff.java', 'android/app/src/main/java/com/watchalign/mobile/ClearlyOffEvidence.java',
-            'tools/desktop-harness/drivers/TrackDump.java', 'tools/desktop-harness/drivers/MetalSynth.java', 'tools/research/track/app163_summary.py']
+            'tools/desktop-harness/drivers/TrackDump.java', 'tools/desktop-harness/drivers/MetalSynth.java', 'tools/research/track/app163_summary.py', 'tools/research/track/app163_scale.py',
+            'android/app/src/main/java/com/watchalign/mobile/AlignmentAnalysis.java']
   workflow_dispatch:
 permissions: {contents: read}
 jobs:
@@ -81,6 +82,29 @@ jobs:
           java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.MetalSynth g/manifest.csv g/img out/synth_on.csv 40 | grep -c SYNTH
       - name: Summary
         run: python3 tools/research/track/app163_summary.py out/app_off.csv out/app_on.csv out/qc_off.csv out/qc_on.csv out/synth_off.csv out/synth_on.csv 6ac54fe6df efa51fd35f | tee out/summary.txt
+      - name: Lower resolution (the same genuine and QC photos downscaled to 70 / 50 / 35 %), 1.6.3
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          python3 - <<'PY'
+          import csv, os
+          from PIL import Image
+          for src, man in (('g', 'g/manifest.csv'), ('q', 'q/manifest.csv')):
+              rows = list(csv.DictReader(open(man)))[:60]
+              for s in (0.7, 0.5, 0.35):
+                  d = '%s%d' % (src, int(s * 100)); os.makedirs(d + '/img', exist_ok=True)
+                  w = csv.DictWriter(open(d + '/manifest.csv', 'w', newline=''), fieldnames=list(rows[0])); w.writeheader()
+                  for r in rows:
+                      p = os.path.join(src + '/img', r['local_path'])
+                      if not os.path.exists(p): continue
+                      im = Image.open(p); im = im.convert('RGB').resize((max(1, round(im.width * s)), max(1, round(im.height * s))), Image.LANCZOS)
+                      q = os.path.join(d + '/img', r['local_path']); os.makedirs(os.path.dirname(q), exist_ok=True)
+                      im.save(q, 'JPEG', quality=90); w.writerow(r)
+          PY
+          for d in g70 g50 g35 q70 q50 q35; do
+            java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TrackDump $d/manifest.csv $d/img out/app_$d.csv | grep -c TRACK
+          done
+          python3 tools/research/track/app163_scale.py out/app_on.csv 70:out/app_g70.csv 50:out/app_g50.csv 35:out/app_g35.csv | tee out/scale_genuine.txt
+          python3 tools/research/track/app163_scale.py out/qc_on.csv 70:out/app_q70.csv 50:out/app_q50.csv 35:out/app_q35.csv | tee out/scale_qc.txt
       - name: Close-ups (base64 JPEG in the log; genuine flagged and named, QC 12/8/9/6 and flagged)
         run: |
           python3 - <<'PY'
