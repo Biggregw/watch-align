@@ -39,7 +39,8 @@ validated. Hardware-accelerated GitHub Android instrumentation is tracked below.
 | [39301372339](https://github.com/Biggregw/watch-align/actions/runs/39301372339) | 6a0f11e6 | Baseline diagnostics branch CI passed; does not validate the later correction. |
 | [39305849352](https://github.com/Biggregw/watch-align/actions/runs/39305849352) | c812a83f | Build/unit job passed. Instrumentation preparation failed because both Date originals were unavailable at their pinned hashes. Emulator tests did not start. |
 | [39306132742](https://github.com/Biggregw/watch-align/actions/runs/39306132742) | 31078ac6 | Same preparation failure after another JPEG negotiation option. No emulator validation claimed. |
-| [39307094723](https://github.com/Biggregw/watch-align/actions/runs/39307094723) | cc66657c | Four exact public originals pinned; preparation passed; execution results recorded below when complete. |
+| [39307094723](https://github.com/Biggregw/watch-align/actions/runs/39307094723) | cc66657c | Fixtures verified; 10 emulator tests executed, 6 passed, 4 new image regressions failed. Logcat proves OutOfMemoryError under the unchanged 192 MB heap. |
+| [39309182307](https://github.com/Biggregw/watch-align/actions/runs/39309182307) | 9a7eecfb | Evidence-only revision of the same code; repeat failure, not a validated build. |
 
 The four files were retained unchanged with their catalogue hashes and source
 URLs. This repairs test reproducibility without substituting images, skipping
@@ -51,6 +52,30 @@ successful analysis, expected marker status, numeric rotation/position, and
 seconds-hand evidence on both targets. Numeric tolerances allow Android/desktop
 JPEG decoding differences (0.2° rotation, 0.15 percentage points of R) and remain
 far smaller than the original approximately 2° shaft errors.
+
+### Memory failure diagnosed during Android validation
+
+The new full-pipeline tests exposed an existing allocation failure, rather than
+a numeric assertion mismatch. `ClearlyOff.Img.polar` allocated full-grid X, Y,
+projected X, projected Y and sampled-value arrays before copying them into the
+output rows. The minute grid for these photographs has roughly 4.6 million
+values: a single temporary double array takes about 36.6 MB. Android logcat
+records that allocation failing with only 24 MB available in a 192 MB heap.
+The two-dimensional median also boxed every sample into a `Double` list.
+
+`MarkerMemoryProbe` independently reproduces this on **unmodified 1.6.3** with
+`-Xmx192m`: pose succeeds but ClearlyOff fails, and the uncaught diagnostic stack
+identifies `Img.polar` called by `tickTrack`. The minimal storage correction
+samples one polar row at a time with identical coordinates/interpolation and
+computes the grid median in a single primitive scratch array. It changes neither
+resolution nor mathematical definitions, thresholds, pose or model references.
+The same original image now completes all 11 markers under the same heap limit.
+
+Two new unit tests compare every sample bit-for-bit against the original batch
+calculation, including projective mapping/off-image samples, and compare median
+semantics for odd/even inputs, NaNs, signed zero and infinities. The full genuine
+cohort is being rechecked for identical output after this memory-only change.
+The emulator heap limit and image-test assertions remain unchanged.
 
 ## Remaining discrepancies
 

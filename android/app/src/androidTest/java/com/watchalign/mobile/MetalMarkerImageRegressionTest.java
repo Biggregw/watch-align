@@ -55,7 +55,8 @@ public class MetalMarkerImageRegressionTest {
         ref.metalExtra=MetalAlignment.parse(text(app,path+"metal_alignment.properties"));
         try {
             Alpha99Pipeline.Output result=Alpha99Pipeline.run(photo,model,genuine,ref,ref::setup);
-            assertNotNull("pipeline failed for "+id,result.clearlyOff);
+            assertNotNull("pipeline failed for "+id+"; pose="+(result.pose==null?"missing":result.pose.reason)+
+                    "; alignment="+(result.alignment!=null)+"; maxHeap="+Runtime.getRuntime().maxMemory(),result.clearlyOff);
             ClearlyOff.Marker marker=result.clearlyOff.at(row.getInt("hour"));assertNotNull(marker);
             assertEquals(marker.reason,ClearlyOff.State.NO_VISIBLE_ISSUE,marker.state);
             // Android and desktop JPEG decoders can differ by grey-level rounding.
