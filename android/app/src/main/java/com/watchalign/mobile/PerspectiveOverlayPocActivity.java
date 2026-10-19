@@ -119,7 +119,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 java.util.Arrays.sort(ids);
                 for(String id:ids){
                     try{ModelSpec m=ModelSpec.load(getAssets()::open,id);
-                        if(AlignmentReference.load(getAssets()::open,m)==null)continue;
+                        if(!UnifiedMarkerReview.ready(m,ModelReference.load(getAssets()::open,m),AlignmentReference.load(getAssets()::open,m)))continue;
                         int at=id.equals(MODEL_ID)?0:modelIds.size();modelIds.add(at,id);modelLabels.add(at,m.label);}
                     catch(Exception ignored){}
                 }
@@ -148,7 +148,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 Loaded l=loaded;
                 if(l==null||!l.id.equals(wantId)){ModelSpec m=ModelSpec.load(getAssets()::open,wantId);
                     l=new Loaded(wantId,m,ModelReference.load(getAssets()::open,m),AlignmentReference.load(getAssets()::open,m));loaded=l;}
-                o=Alpha99Pipeline.run(photo,l.model,l.reference,l.alignment,null);
+                o=UnifiedMarkerReview.run(photo,l.model,l.reference,l.alignment);
             }catch(Throwable t){o=new Alpha99Pipeline.Output();}
             final Alpha99Pipeline.Output fo=o;final AutomaticDialOverlay.Result q=o.pose;
             runOnUiThread(()->{
