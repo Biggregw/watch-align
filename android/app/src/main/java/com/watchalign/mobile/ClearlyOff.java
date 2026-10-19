@@ -40,8 +40,10 @@ import java.util.Map;
 final class ClearlyOff {
     private ClearlyOff(){}
 
-    /** Limits (fractions of the dial radius / degrees). Genuine maxima: sideways 0.98 %, in/out 0.64 % (triangle 0.96 %),
-     *  baton tilt 1.97 deg. */
+    /** Limits (fractions of the dial radius / degrees). Genuine maxima (1.6.0 lume centre): sideways 0.98 %, in/out 0.64 %
+     *  (triangle 0.96 %), baton tilt 1.97 deg. Baton tilt 1.75 deg by default (owner's tuning): above the largest genuine
+     *  baton tilt measured by the 1.6.3 outer-metal fit (assets genuine_track.csv: GMT 1.63 deg of 126 batons, 124060 0.88
+     *  deg of 432), but below the 1.6.0 lume-centre maximum, so it relies on the outer-metal measurement. */
     static final double SIDE_LIMIT_R=0.010,INOUT_LIMIT_R=0.010,INOUT_TRIANGLE_LIMIT_R=0.0125,TILT_LIMIT_DEG=1.75;
     /** 1.6.2: round markers and batons, distance from where the centre should be (any direction; replaces the separate
      *  sideways / in-out limits of 1.6.0-1.6.1 for these shapes, the owner's "circle around the position"). The same
