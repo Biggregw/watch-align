@@ -1,5 +1,9 @@
 # Validation record
 
+The owner requested handover before the remaining research finished. See
+[HANDOVER.md](HANDOVER.md) and `results/checkpoint/status.json` for the exact
+interrupted-run state. The numerical tables below refer to complete initial cohorts.
+
 ## Completed local checks
 
 - Unmodified production 1.6.3: official Gradle unit suite, **455 passed**.
@@ -92,8 +96,11 @@ The baseline and corrected probe logs are retained in `results/memory-*.log`.
 
 Two new unit tests compare every sample bit-for-bit against the original batch
 calculation, including projective mapping/off-image samples, and compare median
-semantics for odd/even inputs, NaNs, signed zero and infinities. The full genuine
-cohort is being rechecked for identical output after this memory-only change.
+semantics for odd/even inputs, NaNs, signed zero and infinities. The completed
+GMT (726 unique markers), initial Date (1,397 markers), and seven QC-control
+(81 markers) reruns are byte-identical to their pre-storage-fix CSVs. No-Date
+has 972 of 1,620 marker rows rechecked with every field identical; the remaining
+648 markers / 54 photographs are explicitly checkpointed for the next developer.
 The emulator heap limit and image-test assertions remain unchanged.
 
 ## Remaining discrepancies
@@ -133,12 +140,13 @@ production-parity check. Their annotated panels are in the local review bundle.
 ## Merge and activation decision
 
 Date activation is **not supported**: the triangle boundary/reconstruction
-discrepancies remain, the recovered cohort is smaller than the original run, and
+discrepancies remain, the expanded rerun is incomplete, and
 there is no Date-specific real-defect ground-truth control.
 
 The seconds-crossing correction is independently supported by the two real
 baton traces, known-geometry synthetic tests and matching three-family results.
-The final merge recommendation depends on the completed Android execution below.
+Android execution passed at 29c2403d. The final merge recommendation is deferred
+until the remaining No-Date memory-parity and expanded Date regression complete.
 The branch remains a draft; production `main`, releases and model visibility are
 unchanged. No change is proposed to hide the unrelated genuine warnings or the
 existing labelled-GMT defect miss.

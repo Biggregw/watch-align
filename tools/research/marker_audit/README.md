@@ -1,5 +1,9 @@
 # Outer-metal marker investigation
 
+**Start with [HANDOVER.md](HANDOVER.md).** The owner requested a checkpoint before
+the expanded validation finished. Exact progress and remaining manifests are in
+`results/checkpoint/`; partial comparisons must not be presented as final results.
+
 Completed findings and matched results: [REPORT.md](REPORT.md).
 Android execution, remaining limitations and merge recommendation:
 [VALIDATION.md](VALIDATION.md). Numeric evidence is in `results/`.
@@ -34,11 +38,14 @@ they do not have invented observations.
 
 Output includes the analysis bitmap, annotated PNGs, JSON traces and target
 sample CSVs. Keep bulk photographs and derived image panels outside Git. The
-four public dealer originals in `fixtures/` are the sole regression-fixture
+four public dealer originals in `fixtures/` are a regression-fixture
 exception: CDN negotiation did not reproduce their bytes on GitHub's runner,
 so the exact catalogued images are pinned for repeatable Android tests. No
 owner photographs are used. See `fixtures/README.md` and `android_fixtures.json`
 for provenance; preparation and Android execution both verify the hashes.
+For the owner's explicit handover request, `review-bundle.zip` additionally
+preserves all ten public originals and their exact annotated before/after panels.
+The bulk cohort image cache remains outside Git. No owner/private image is included.
 
 ## Established baseline
 

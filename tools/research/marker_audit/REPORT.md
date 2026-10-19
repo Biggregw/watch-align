@@ -1,5 +1,10 @@
 # Rolex outer-metal marker investigation — 19 October 2026
 
+**Handover checkpoint:** the owner paused further work. This report contains the
+completed ten-case investigation and initial matched cohorts. The expanded Date
+comparison and final No-Date memory-parity check are incomplete; exact saved
+progress, remaining manifests and continuation instructions are in [HANDOVER.md](HANDOVER.md).
+
 ## Conclusion
 
 The seconds-hand hypothesis is confirmed for both highlighted batons. The
@@ -321,9 +326,11 @@ There are zero new Can't-check classifications and zero lost uncertainty-free
 measurements even in the full cohort. The GMT warning that disappears belongs
 to the excluded oblique, 241 px dial image `66c4527d45cf91b0`; its remaining
 edge uncertainty worsens, so it is not claimed as an accuracy gain. The Date
-comparison is smaller than the original 219 assessed photos; **all original ten
-targets are present**, but this is not a claim to have rerun all 219. Unavailable
-catalogue images and explicit no-pose outcomes limit generalisation. All results
+initial comparison is smaller than the original 219 assessed photos; **all original ten
+targets are present**, but this is not a claim to have rerun all 219. Subsequent
+recovery obtained 356 verified Date images, including all original 219; the
+expanded rerun was checkpointed at the owner's request. See HANDOVER.md rather
+than treating the initial cohort as the final available dataset. All results
 compare identical bytes and marker hours; there is no cross-run denominator swap.
 
 ## Defect controls and outstanding discrepancies
