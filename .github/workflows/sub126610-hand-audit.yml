@@ -1,0 +1,60 @@
+name: 126610 1.6.3 seconds-hand and marker-edge audit (read-only)
+on:
+  push:
+    branches: [research/sub126610-interference-audit]
+    paths:
+      - .github/workflows/sub126610-hand-audit.yml
+      - tools/desktop-harness/drivers/DateInterferenceAudit.java
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests numpy scipy opencv-python-headless pillow==12.3.0
+      - uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Choose the ten genuine photos flagged by the 126610 1.6.3 run
+        run: |
+          mkdir -p audit/img
+          python3 - <<'PY'
+          import csv
+          ids=set('6f071d93608b9081 22060f9a8f867d35 800cd2600f322aa5 02d7c97e429c6984 482e344ce9c60e61 e418538d0e9af0bf 94ad771e9e2aedde 2802b4a30cfb277b c11761654b519222 ee07ceedbb6f0bd3'.split())
+          rows=[r for r in csv.DictReader(open('tools/research/sub126610/catalogue_126610.csv')) if r['photo_id'] in ids]
+          assert len(rows)==10
+          with open('audit/cases.csv','w') as f:
+            w=csv.DictWriter(f,fieldnames=rows[0].keys());w.writeheader();w.writerows(rows)
+          PY
+      - name: Retrieve original SHA256-verified dealer photographs
+        run: python3 tools/research/alpha96_calibration/fetch_verified.py audit/cases.csv audit/img audit/fetch.csv
+      - name: Run unchanged production pipeline plus independent detector diagnostics
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then
+            mkdir -p "$(dirname "$J")"
+            curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar
+          fi
+          mkdir -p audit/cls
+          javac -encoding UTF-8 -nowarn -cp "$J" \
+            -sourcepath "tools/desktop-harness/shim:android/app/src/main/java" \
+            -d audit/cls tools/desktop-harness/drivers/*.java
+          java -Xmx3g -Dwatchalign.model=submariner_126610 \
+            -cp "$J:audit/cls" com.watchalign.mobile.DateInterferenceAudit \
+            audit/cases.csv audit/img | tee audit/results.txt
+      - name: Upload text report without photographs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: date126610-interference-audit-text
+          path: |
+            audit/cases.csv
+            audit/fetch.csv
+          retention-days: 14
