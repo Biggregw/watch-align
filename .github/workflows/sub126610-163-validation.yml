@@ -1,0 +1,81 @@
+name: Submariner Date 126610 1.6.3 genuine validation
+on:
+  push:
+    branches: [research/sub126610-163, research/sub126610-hand-continuity]
+    paths:
+      - '.github/workflows/sub126610-163-validation.yml'
+      - 'tools/research/sub126610/validate_163.py'
+      - 'android/app/src/main/java/com/watchalign/mobile/MetalFit.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/ClearlyOff.java'
+      - 'android/app/src/main/java/com/watchalign/mobile/Alpha99Pipeline.java'
+      - 'android/app/src/test/java/com/watchalign/mobile/MetalFitTest.java'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  genuine-date-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install genuine fetch and validation dependencies
+        run: python -m pip install -q requests numpy scipy opencv-python-headless pillow==12.3.0
+      - uses: actions/cache@v4
+        with:
+          path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          key: opencv-4.9.0-0-jar
+      - name: Fetch the existing verified 126610 family catalogue
+        run: |
+          mkdir -p genuine/verified report
+          python3 tools/research/alpha96_calibration/fetch_verified.py \
+            tools/research/sub126610/catalogue_126610.csv \
+            genuine/verified report/fetch_log.csv
+      - name: Run the exact current 1.6.3 outer-metal marker engine
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then
+            mkdir -p "$(dirname "$J")"
+            curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar
+          fi
+          mkdir -p cls
+          javac -encoding UTF-8 -nowarn -cp "$J" \
+            -sourcepath "tools/desktop-harness/shim:android/app/src/main/java" \
+            -d cls tools/desktop-harness/drivers/*.java
+          java -Xmx3g -Dwatchalign.model=submariner_126610 \
+            -cp "$J:cls" com.watchalign.mobile.TrackDump \
+            tools/research/sub126610/catalogue_126610.csv genuine/verified report/measurements.csv \
+            > report/runner.log 2>&1
+          echo "Measured photos:"
+          grep -c '^TRACK ' report/runner.log || true
+          echo "No-pose photos:"
+          grep -c '^NOPOSE ' report/runner.log || true
+          tail -10 report/runner.log
+      - name: Assess genuine-photo coverage and false review flags
+        id: assess
+        run: |
+          python3 tools/research/sub126610/validate_163.py \
+            --catalogue tools/research/sub126610/catalogue_126610.csv \
+            --measurements report/measurements.csv \
+            --fetch-log report/fetch_log.csv \
+            --candidate report/genuine_track_candidate.csv \
+            --report report/validation_summary.txt
+      - name: Upload the evidence (CSV only, no images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: submariner-date-126610-163-genuine-validation
+          path: |
+            report/measurements.csv
+            report/fetch_log.csv
+            report/genuine_track_candidate.csv
+            report/validation_summary.txt
+            report/runner.log
+          if-no-files-found: warn
+          retention-days: 30

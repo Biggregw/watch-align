@@ -163,8 +163,14 @@ final class ClearlyOff {
     /** One marker as the app knows it: shape, the yellow outer-metal reference (canonical) and the hand/glare check. */
     static final class Input {
         final int hour;final ModelSpec.Shape shape;final double[][] yellow;final Boolean handClean;final String handReason;
+        /** Confirmed centre-to-marker seconds-hand line from Alpha99, not inferred from a marker edge. */
+        final double secondsLineDeg;
         Input(int hour,ModelSpec.Shape shape,double[][] yellow,Boolean handClean,String handReason){
-            this.hour=hour;this.shape=shape;this.yellow=yellow;this.handClean=handClean;this.handReason=handReason;}
+            this(hour,shape,yellow,handClean,handReason,Double.NaN);
+        }
+        Input(int hour,ModelSpec.Shape shape,double[][] yellow,Boolean handClean,String handReason,double secondsLineDeg){
+            this.hour=hour;this.shape=shape;this.yellow=yellow;this.handClean=handClean;
+            this.handReason=handReason;this.secondsLineDeg=secondsLineDeg;}
     }
 
     /**
@@ -235,6 +241,13 @@ final class ClearlyOff {
 
     static void decide(Marker r,double rpx,List<Input> in,Limits L){
         Input m=null;if(in!=null)for(Input x:in)if(x.hour==r.hour)m=x;
+        // The older hand check sees a line continuing inward from this marker. If the outer-metal
+        // fit is also uncertain, do not call its potentially contaminated edge a manufacturing fault.
+        // A geometrically reliable residual fit may still be measured; no tolerances are changed.
+        if(METAL&&m!=null&&Boolean.FALSE.equals(m.handClean)
+                &&Alpha99MarkerInterference.HAND.equals(m.handReason)
+                &&r.uncertain!=null&&!r.uncertain.isEmpty()
+                &&!r.gate.contains("hand (app check)"))r.gate.add("hand (app check)");
         double allow=100*LOWRES_ALLOWANCE_PX/rpx;
         boolean tri=r.shape==ModelSpec.Shape.TRIANGLE,baton=r.shape==ModelSpec.Shape.BATON;
         r.sideLimitPct=tri?100*L.triSideR+allow:Double.NaN;

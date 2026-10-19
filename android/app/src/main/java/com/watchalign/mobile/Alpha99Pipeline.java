@@ -113,7 +113,10 @@ final class Alpha99Pipeline {
         List<ClearlyOff.Input> in=new ArrayList<>();
         for(AlignmentDecision.Marker m:a.markers){
             Alpha99MarkerInterference.Check c=checks==null?null:checks.get(m.hour);
-            in.add(new ClearlyOff.Input(m.hour,m.shape,m.yellow,c==null?null:c.clean,c==null?"its surroundings could not be checked for hands or glare":c.reason));
+            in.add(new ClearlyOff.Input(m.hour,m.shape,m.yellow,
+                    c==null?null:c.clean,
+                    c==null?"its surroundings could not be checked for hands or glare":c.reason,
+                    c!=null&&c.secondsHand?c.secondsPsi:Double.NaN));
         }
         return in;
     }
