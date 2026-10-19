@@ -50,21 +50,20 @@
     "rejected_watches": 170
   },
   "dry_run": false,
-  "errors": [],
-  "exact_duplicates": 8,
-  "finished_at": "2026-10-18T08:09:14Z",
-  "images_downloaded": 20,
+  "errors": [
+    "https://imgur.com/a/yBBK39k: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/yBBK39k?include=media%2Ctags%2Caccount' (final)"
+  ],
+  "exact_duplicates": 0,
+  "finished_at": "2026-10-19T08:59:53Z",
+  "images_downloaded": 0,
   "images_inconclusive": 0,
   "images_local": 0,
   "images_measurement_quality": 0,
-  "images_rejected": 18,
-  "images_rejected_by_reason": {
-    "reject_low_resolution": 3,
-    "reject_no_dial": 16
-  },
+  "images_rejected": 0,
+  "images_rejected_by_reason": {},
   "images_restored": 0,
   "images_unreadable": 0,
-  "near_duplicates": 2,
+  "near_duplicates": 0,
   "next_priorities": [
     {
       "accepted_watches": 0,
@@ -139,26 +138,20 @@
       "model": "126710BLNR"
     }
   ],
-  "possible_duplicates": 28,
-  "run_id": "20261018T080706Z",
+  "possible_duplicates": 0,
+  "run_id": "20261019T085946Z",
   "search_results_filtered": {
     "not_gmt": 11
   },
-  "sources_already_known": 177,
+  "sources_already_known": 180,
   "sources_deferred": 0,
-  "sources_discovered_new": 3,
-  "sources_examined": 3,
-  "sources_failed": 0,
-  "sources_pending_total": 3,
-  "started_at": "2026-10-18T08:07:06Z",
-  "watch_reasons": {
-    "quarantine_inconclusive_images": 1,
-    "quarantine_possible_same_watch": 1,
-    "reject_low_resolution": 1,
-    "reject_no_dial": 2,
-    "reject_unusable_imagery": 2
-  },
+  "sources_discovered_new": 1,
+  "sources_examined": 1,
+  "sources_failed": 1,
+  "sources_pending_total": 1,
+  "started_at": "2026-10-19T08:59:46Z",
+  "watch_reasons": {},
   "watches_accepted": 0,
-  "watches_quarantined": 1,
-  "watches_rejected": 2
+  "watches_quarantined": 0,
+  "watches_rejected": 0
 }

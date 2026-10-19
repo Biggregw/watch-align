@@ -1,6 +1,6 @@
 # Dataset harvester
 
-Run 20261018T080706Z · 2026-10-18T08:07:06Z → 2026-10-18T08:09:14Z
+Run 20261019T085946Z · 2026-10-19T08:59:46Z → 2026-10-19T08:59:53Z
 
 ## Adapters
 
@@ -13,28 +13,19 @@ Search results filtered before storing: not_gmt 11
 
 ## This run
 
-- 3 new sources discovered (177 already known)
-- 3 sources examined (0 deferred, 0 failed)
-- 20 images downloaded, 0 used from local copies
-- 8 exact and 2 near duplicates (28 possible, not confirmable)
-- 18 images rejected, 0 inconclusive
+- 1 new sources discovered (180 already known)
+- 1 sources examined (0 deferred, 1 failed)
+- 0 images downloaded, 0 used from local copies
+- 0 exact and 0 near duplicates
+- 0 images rejected, 0 inconclusive
 - 0 measurement-quality images
 - 0 physical watches accepted
-- 1 quarantined
-- 2 rejected
+- 0 quarantined
+- 0 rejected
 
-Images rejected or inconclusive, by reason:
+Errors / retries:
 
-- reject_no_dial: 16
-- reject_low_resolution: 3
-
-Watch decisions, by reason:
-
-- reject_unusable_imagery: 2
-- reject_no_dial: 2
-- reject_low_resolution: 1
-- quarantine_possible_same_watch: 1
-- quarantine_inconclusive_images: 1
+- https://imgur.com/a/yBBK39k: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/yBBK39k?include=media%2Ctags%2Caccount' (final)
 
 ## Dataset now (accepted, independent physical watches)
 
