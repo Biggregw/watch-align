@@ -104,6 +104,11 @@ def main():
             else:
                 line += '  caught %d (clearly off %d, inspect %d)  lost %d' % (len(fl), sum(r['state'] == 'CLEARLY_OFF' for r in fl), sum(r['state'] == 'POSSIBLE' for r in fl), len(T) - len(fl))
             print(line)
+            if nm == '1.6.3':
+                bad = sorted(zip(err, ok), key=lambda t: -t[0] if t[0] == t[0] else 0)[:3]
+                for e_, r in bad:
+                    if e_ == e_ and e_ > 0.3:
+                        print('      worst: %s %s %s err %.2f -> %s cover %s | %s' % (r['photo_id'][:12], r['hour'], r['shape'], e_, r['state'], r['cover'][:4], (r['uncertain'] or r['reason'])[:80]))
 
     print('\n=== REPLICA QC photos: answers that differ (1.6.2 -> 1.6.3)')
     k = {(r['photo_id'], r['hour']): r for r in qoff}

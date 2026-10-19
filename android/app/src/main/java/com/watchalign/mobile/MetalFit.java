@@ -33,6 +33,8 @@ final class MetalFit {
     static final double EDGE_RMS_OK=0.5,EDGE_BAD_PX=1.0,EDGE_BAD_FRAC=0.15,MIN_COVER=0.5;
     /** hands: the hand's own width (measured near the pivot) carried out to the marker, plus this margin (R) */
     static final double HAND_MARGIN_R=0.012,HAND_WIDTH_AT_R=0.34;
+    /** the last HAND_TIP_LEN (R) before a hand's reach is treated as at least HAND_TIP_HALF_R wide (GMT arrow, lume plot) */
+    static final double HAND_TIP_LEN=0.12,HAND_TIP_HALF_R=0.045;
     /** edge point status (drawn in the close-up) */
     static final byte SEEN=0,INCONSISTENT=1,HIDDEN=2;
     static final int USED=0,HAND=1,LOW=2,NO_DARK=3,BRIGHT_OUT=4,OUTSIDE=5;
@@ -66,6 +68,7 @@ final class MetalFit {
             double da=Math.toRadians(Math.abs(ClearlyOff.pmod(ang-h[0]+180,360)-180));
             if(da>Math.PI/2)continue;
             double half=HAND_WIDTH_AT_R*Math.sin(Math.toRadians(h[1]/2));   // the hand's half width (R), not its angle
+            if(r>h[2]-HAND_TIP_LEN)half=Math.max(half,HAND_TIP_HALF_R);     // the tip: a GMT arrow or a lume plot is wider
             if(r*Math.sin(da)<=half+HAND_MARGIN_R)return true;
         }
         return false;
