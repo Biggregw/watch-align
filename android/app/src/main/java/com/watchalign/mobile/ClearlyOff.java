@@ -163,8 +163,13 @@ final class ClearlyOff {
     /** One marker as the app knows it: shape, the yellow outer-metal reference (canonical) and the hand/glare check. */
     static final class Input {
         final int hour;final ModelSpec.Shape shape;final double[][] yellow;final Boolean handClean;final String handReason;
+        /** Seconds direction independently evidenced outside the marker, not inferred from its edge. */
+        final double secondsLineDeg;
         Input(int hour,ModelSpec.Shape shape,double[][] yellow,Boolean handClean,String handReason){
-            this.hour=hour;this.shape=shape;this.yellow=yellow;this.handClean=handClean;this.handReason=handReason;}
+            this(hour,shape,yellow,handClean,handReason,Double.NaN);}
+        Input(int hour,ModelSpec.Shape shape,double[][] yellow,Boolean handClean,String handReason,double secondsLineDeg){
+            this.hour=hour;this.shape=shape;this.yellow=yellow;this.handClean=handClean;this.handReason=handReason;
+            this.secondsLineDeg=secondsLineDeg;}
     }
 
     /**
@@ -949,10 +954,14 @@ final class ClearlyOff {
         private float[] px;private int w,h;
         /** values[i][j] at radius radii[i], angle ang[j] (canonical: x = r sin a, y = -r cos a) */
         double[][] polar(double[] radii,double[] ang){
-            int nr=radii.length,na=ang.length;double[] X=new double[nr*na],Y=new double[nr*na];
-            for(int i=0;i<nr;i++)for(int j=0;j<na;j++){X[i*na+j]=radii[i]*Math.sin(ang[j]);Y[i*na+j]=-radii[i]*Math.cos(ang[j]);}
-            double[] v=sampleCanon(X,Y);double[][] out=new double[nr][na];
-            for(int i=0;i<nr;i++)System.arraycopy(v,i*na,out[i],0,na);
+            int nr=radii.length,na=ang.length;double[][] out=new double[nr][];
+            double[] X=new double[na],Y=new double[na];
+            // The minute grid has millions of values. Keep identical coordinates
+            // and interpolation, but avoid five full-grid temporary arrays.
+            for(int i=0;i<nr;i++){
+                for(int j=0;j<na;j++){X[j]=radii[i]*Math.sin(ang[j]);Y[j]=-radii[i]*Math.cos(ang[j]);}
+                out[i]=sampleCanon(X,Y);
+            }
             return out;
         }
     }
@@ -975,7 +984,15 @@ final class ClearlyOff {
     }
     static double median(double[] v){return percentile(v,50);}
     static double nanmedian(double[] v){int n=0;for(double x:v)if(!Double.isNaN(x))n++;double[] a=new double[n];n=0;for(double x:v)if(!Double.isNaN(x))a[n++]=x;return median(a);}
-    static double nanmedian(double[][] v){List<Double> l=new ArrayList<>();for(double[] r:v)for(double x:r)if(!Double.isNaN(x))l.add(x);return median(toArray(l));}
+    static double nanmedian(double[][] v){
+        // Primitive storage avoids millions of boxed Doubles for the minute grid.
+        int n=0;for(double[] r:v)for(double x:r)if(!Double.isNaN(x))n++;
+        if(n==0)return Double.NaN;
+        double[] a=new double[n];int k=0;for(double[] r:v)for(double x:r)if(!Double.isNaN(x))a[k++]=x;
+        Arrays.sort(a);
+        double pos=(n-1)*50.0/100.0;int lo=(int)Math.floor(pos),hi=Math.min(lo+1,n-1);
+        return a[lo]+(a[hi]-a[lo])*(pos-lo);
+    }
     static int argmax(double[] a){int k=0;for(int i=1;i<a.length;i++)if(a[i]>a[k])k=i;return k;}
     static double interp(double x,double[] fp){int i=(int)Math.floor(x);if(i<0)return fp[0];if(i>=fp.length-1)return fp[fp.length-1];return fp[i]+(fp[i+1]-fp[i])*(x-i);}
     static Double firstCross(double[] p,double thr,int start,int step){

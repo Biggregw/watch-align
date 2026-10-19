@@ -35,6 +35,8 @@ final class MetalFit {
     static final double HAND_MARGIN_R=0.012,HAND_WIDTH_AT_R=0.34;
     /** the last HAND_TIP_LEN (R) before a hand's reach is treated as at least HAND_TIP_HALF_R wide (GMT arrow, lume plot) */
     static final double HAND_TIP_LEN=0.12,HAND_TIP_HALF_R=0.045;
+    /** Alpha99's interference strip is sampled every 0.75 px; allow that sampling width around its thin shaft. */
+    static final double SECONDS_SAMPLE_MARGIN_PX=0.75;
     /** edge point status (drawn in the close-up) */
     static final byte SEEN=0,INCONSISTENT=1,HIDDEN=2;
     static final int USED=0,HAND=1,LOW=2,NO_DARK=3,BRIGHT_OUT=4,OUTSIDE=5;
@@ -76,8 +78,22 @@ final class MetalFit {
 
     static final class Edges {Outline o;double[] off;int[] why;}
 
+    /** Test the OBSERVED crossing, not the reference point from which its profile was searched.
+     * A nearby shaft can lie within SPAN while the marker's own boundary remains clear. A broad mask on the
+     * reference would throw away that clean boundary (and can erase the short ends needed to locate a baton).
+     * The direction must come from Alpha99's independent seconds-dot/shaft evidence; radial marker edges alone
+     * never create a hand. Do not apply the hour/minute tip widening or HAND_MARGIN_R to this thin shaft. */
+    static boolean onSecondsHand(double x,double y,double degrees,double rpx){
+        if(!Double.isFinite(degrees))return false;
+        double a=Math.toRadians(degrees),along=x*Math.sin(a)-y*Math.cos(a),cross=x*Math.cos(a)+y*Math.sin(a);
+        return along>0&&Math.abs(cross)<=Alpha99MarkerInterference.SHAFT_HALF+SECONDS_SAMPLE_MARGIN_PX/rpx;
+    }
+
     /** edge offsets (R, + = outward) of the outline along its normals; NaN where left out (why[i] says why) */
     static Edges edges(ClearlyOff.Img img,double[][] poly,double rpx,boolean round,List<double[]> hands){
+        return edges(img,poly,rpx,round,hands,Double.NaN);
+    }
+    static Edges edges(ClearlyOff.Img img,double[][] poly,double rpx,boolean round,List<double[]> hands,double secondsLine){
         Outline o=outline(poly,rpx,round);int n=o.pts.length;
         double ds=PROFILE_STEP_PX/rpx;int ns=(int)Math.floor(2*SPAN/ds+1e-9)+1;
         double[] s=new double[ns];for(int k=0;k<ns;k++)s[k]=-SPAN+k*ds;
@@ -106,7 +122,10 @@ final class MetalFit {
             double x=j+(p[j]-thr)/(p[j]-p[j+1]);
             double out=0;for(int k=j+2;k<ns;k++)out+=p[k];out/=(ns-j-2);
             if(out>thr){e.why[i]=BRIGHT_OUT;continue;}
-            e.off[i]=ClearlyOff.interp(x,s);e.why[i]=USED;
+            double off=ClearlyOff.interp(x,s);
+            if(onSecondsHand(o.pts[i][0]+off*o.nrm[i][0],o.pts[i][1]+off*o.nrm[i][1],secondsLine,rpx)){
+                e.why[i]=HAND;continue;}
+            e.off[i]=off;e.why[i]=USED;
         }
         return e;
     }
@@ -135,13 +154,16 @@ final class MetalFit {
     /** one marker: fixed genuine outline, fitted X/Y (+ rotation unless round). bias: this photo's edge offset for the
      *  shape (R, from its fully seen markers), removed so a partly hidden marker is not pulled to its visible side. */
     static Fit fit(ClearlyOff.Img img,double[][] yellow,ModelSpec.Shape shape,double rpx,List<double[]> hands,double bias){
+        return fit(img,yellow,shape,rpx,hands,bias,Double.NaN);
+    }
+    static Fit fit(ClearlyOff.Img img,double[][] yellow,ModelSpec.Shape shape,double rpx,List<double[]> hands,double bias,double secondsLine){
         Fit f=new Fit();boolean round=shape==ModelSpec.Shape.ROUND,rotate=!round;int np=rotate?3:2;
         double[] c0=ClearlyOff.mean(yellow);f.cGen=c0;
         double tx=0,ty=0,th=0;
         double[] w=null,res=null,x=null;double[][] J=null;Edges e=null;int[] idx=null;
         for(int it=0;it<ITER;it++){
             double[][] poly=pose(yellow,c0,th,tx,ty);
-            e=edges(img,poly,rpx,round,hands);
+            e=edges(img,poly,rpx,round,hands,secondsLine);
             int m=0;for(double d:e.off)if(!Double.isNaN(d))m++;
             if(m<MIN_POINTS){f.note="too little of its outer edge is visible";f.n=m;f.cover=(double)m/Math.max(1,e.off.length);return f;}
             double[] cc=ClearlyOff.mean(poly);
@@ -194,7 +216,7 @@ final class MetalFit {
     static Fit[] fitAll(ClearlyOff.Img img,List<ClearlyOff.Input> in,double rpx,List<double[]> hands){
         Fit[] first=new Fit[in.size()];
         for(int i=0;i<in.size();i++){ClearlyOff.Input m=in.get(i);
-            first[i]=m.yellow==null||m.yellow.length<3?null:fit(img,m.yellow,m.shape,rpx,hands,0);}
+            first[i]=m.yellow==null||m.yellow.length<3?null:fit(img,m.yellow,m.shape,rpx,hands,0,m.secondsLineDeg);}
         java.util.Map<ModelSpec.Shape,Double> bias=new java.util.HashMap<>();
         for(ModelSpec.Shape s:ModelSpec.Shape.values()){List<Double> b=new ArrayList<>();
             for(int i=0;i<in.size();i++){Fit f=first[i];if(f!=null&&in.get(i).shape==s&&f.ok()&&f.cover>0.9)b.add(f.bias);}
@@ -202,7 +224,7 @@ final class MetalFit {
         lastBias.clear();lastBias.putAll(bias);
         Fit[] out=new Fit[in.size()];
         for(int i=0;i<in.size();i++){ClearlyOff.Input m=in.get(i);
-            out[i]=first[i]==null?null:fit(img,m.yellow,m.shape,rpx,hands,bias.get(m.shape));}
+            out[i]=first[i]==null?null:fit(img,m.yellow,m.shape,rpx,hands,bias.get(m.shape),m.secondsLineDeg);}
         return out;
     }
 

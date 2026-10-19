@@ -1,0 +1,65 @@
+{
+  "photos": 3,
+  "markers": 33,
+  "before_states": {
+    "NO_VISIBLE_ISSUE": 30,
+    "CLEARLY_OFF": 2,
+    "CANT_CHECK": 1
+  },
+  "after_states": {
+    "NO_VISIBLE_ISSUE": 30,
+    "CLEARLY_OFF": 2,
+    "CANT_CHECK": 1
+  },
+  "transitions": {
+    "NO_VISIBLE_ISSUE -> NO_VISIBLE_ISSUE": 30,
+    "CLEARLY_OFF -> CLEARLY_OFF": 2,
+    "CANT_CHECK -> CANT_CHECK": 1
+  },
+  "reliable_before": 14,
+  "reliable_after": 14,
+  "reliable_retained": 14,
+  "new_uncertain": [],
+  "by_shape": {
+    "baton": {
+      "markers": 6,
+      "before": {
+        "NO_VISIBLE_ISSUE": 6
+      },
+      "after": {
+        "NO_VISIBLE_ISSUE": 6
+      },
+      "reliable_before": 4,
+      "reliable_after": 4
+    },
+    "round": {
+      "markers": 24,
+      "before": {
+        "NO_VISIBLE_ISSUE": 23,
+        "CANT_CHECK": 1
+      },
+      "after": {
+        "NO_VISIBLE_ISSUE": 23,
+        "CANT_CHECK": 1
+      },
+      "reliable_before": 7,
+      "reliable_after": 7
+    },
+    "triangle": {
+      "markers": 3,
+      "before": {
+        "NO_VISIBLE_ISSUE": 1,
+        "CLEARLY_OFF": 2
+      },
+      "after": {
+        "NO_VISIBLE_ISSUE": 1,
+        "CLEARLY_OFF": 2
+      },
+      "reliable_before": 3,
+      "reliable_after": 3
+    }
+  },
+  "verified_cohort_photos": 3,
+  "unassessed_photos": [],
+  "independent_watches_assessed": 3
+}
