@@ -42,7 +42,7 @@ final class ClearlyOff {
 
     /** Limits (fractions of the dial radius / degrees). Genuine maxima: sideways 0.98 %, in/out 0.64 % (triangle 0.96 %),
      *  baton tilt 1.97 deg. */
-    static final double SIDE_LIMIT_R=0.010,INOUT_LIMIT_R=0.010,INOUT_TRIANGLE_LIMIT_R=0.0125,TILT_LIMIT_DEG=2.25;
+    static final double SIDE_LIMIT_R=0.010,INOUT_LIMIT_R=0.010,INOUT_TRIANGLE_LIMIT_R=0.0125,TILT_LIMIT_DEG=1.75;
     /** 1.6.2: round markers and batons, distance from where the centre should be (any direction; replaces the separate
      *  sideways / in-out limits of 1.6.0-1.6.1 for these shapes, the owner's "circle around the position"). The same
      *  1.0 %: it flags everything the square did, and more only on the diagonal. Genuine maximum 0.97 % (1,548 round
