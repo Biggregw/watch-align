@@ -119,7 +119,7 @@ public class ClearlyOffTest {
         AlignmentDecision.Marker a=new AlignmentDecision.Marker(3,ModelSpec.Shape.ROUND),b=new AlignmentDecision.Marker(4,ModelSpec.Shape.ROUND);
         b.outcome=AlignmentDecision.Outcome.NO_DEFECT;b.metalBorderline=true;ms.add(a);ms.add(b);
         AlignmentDecision.applyClearlyOff(ms,r);
-        assertEquals(AlignmentDecision.Outcome.DEFECT,a.outcome);assertEquals("Clearly off",a.label());
+        assertEquals(AlignmentDecision.Outcome.DEFECT,a.outcome);assertEquals("Flagged for review",a.label());
         assertEquals("a marker the check did not return is never passed",AlignmentDecision.Outcome.CANNOT_ASSESS,b.outcome);
         assertFalse(b.worthALook());assertEquals("Can't check",b.label());
         AlignmentDecision.applyClearlyOff(ms,null);

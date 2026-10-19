@@ -80,7 +80,7 @@ final class Alpha99Pipeline {
             // 1.6.0: the clearly-off check decides the answers; earlier results stay in the technical details
             String legacy=o.alignmentTechnical;
             AlignmentDecision.applyClearlyOff(o.alignment.markers,o.clearlyOff,o.alignment.photoReason);
-            o.alignmentTechnical=(o.clearlyOff==null?"Clearly-off check: could not be run on this photo.":ClearlyOff.technical(o.clearlyOff))
+            o.alignmentTechnical=(o.clearlyOff==null?"Marker alignment check: could not be run on this photo.":ClearlyOff.technical(o.clearlyOff))
                     +"\n\nEarlier luminous / outer-metal analysis (kept for reference; not used for the results above):\n"+legacy;
             o.alignmentCloseups.clear();
             for(AlignmentDecision.Marker am:o.alignment.markers){

@@ -115,7 +115,7 @@ final class Calibration {
     }
     /** a finding the user is shown: clearly off, or (1.6.3) a possible misalignment to inspect */
     static boolean flagged(ClearlyOff.State s){return s==ClearlyOff.State.CLEARLY_OFF||s==ClearlyOff.State.POSSIBLE;}
-    static String word(ClearlyOff.State s){return s==ClearlyOff.State.CLEARLY_OFF?"Clearly off":s==ClearlyOff.State.POSSIBLE?"Possible misalignment — inspect":s==ClearlyOff.State.NO_VISIBLE_ISSUE?"No visible issue":"Can't check";}
+    static String word(ClearlyOff.State s){return s==ClearlyOff.State.CLEARLY_OFF?"Flagged for review":s==ClearlyOff.State.POSSIBLE?"Possible misalignment — inspect":s==ClearlyOff.State.NO_VISIBLE_ISSUE?"No visible issue":"Can't check";}
 
     // ------------------------------------------------------------------------------------------------ settings
 

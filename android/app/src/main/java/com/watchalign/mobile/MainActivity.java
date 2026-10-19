@@ -65,7 +65,7 @@ public class MainActivity extends Activity {
     /** What the selector shows for a profile. */
     static String selectorLabel(ModelCatalog.Profile p){
         if(GENERIC_GMT_CODE.equals(p.code))return "GMT-Master II 126710";
-        if(SUB124060_CODE.equals(p.code))return "Submariner 124060 (experimental)";
+        if(SUB124060_CODE.equals(p.code))return "Submariner No-Date (124060)";
         return p.label;
     }
 

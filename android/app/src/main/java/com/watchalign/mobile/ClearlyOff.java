@@ -48,7 +48,7 @@ final class ClearlyOff {
      *  1.0 %: it flags everything the square did, and more only on the diagonal. Genuine maximum 0.97 % (1,548 round
      *  markers and batons, assets genuine_track.csv). */
     static final double POS_LIMIT_R=0.010;
-    /** The owner's "clear gap" (17 Oct 2026): the 12 triangle is clearly off when the dial left clear between its top edge
+    /** The owner's "clear gap" (17 Oct 2026): the 12 triangle is flagged for review when the dial left clear between its top edge
      *  and the minute-track tick ends is smaller than this (less the low-res allowance). Genuine minima: GMT 2.55 %,
      *  Sub 2.34 % (159 photos); owner's two BLNR photos 1.08 % and 1.90 %, the Sub rejected for its 12 1.90 %. */
     static final double GAP_TRIANGLE_LIMIT_R=0.022;
@@ -1015,14 +1015,14 @@ final class ClearlyOff {
 
     static String fmtPct(double v){return String.format(Locale.US,"%.2f%%",Math.abs(v));}
 
-    /** What is clearly off, in plain words (screen-independent: along / across the hour line). */
+    /** What is flagged for review, in plain words (screen-independent: along / across the hour line). */
     static String headline(Marker r){
         List<String> s=new ArrayList<>();
         if(r.tiltOff)s.add("tilted "+String.format(Locale.US,"%.1f°",Math.abs(r.tiltDeg))+(r.tiltDeg>0?" clockwise":" anticlockwise"));
         if(r.posOff)s.add("sits "+fmtPct(r.posPct)+" of the dial radius from where it should be ("+where(r)+")");
         if(r.sideOff)s.add("sits "+fmtPct(r.sidePct)+" of the dial radius "+(r.sidePct>0?"clockwise":"anticlockwise")+" of its hour line");
         if(r.inoutOff)s.add("sits "+fmtPct(r.inoutPct)+" of the dial radius too far "+(r.inoutPct>0?"out (towards the minute track)":"in (towards the centre)"));
-        if(r.gapOff)s.add("leaves only "+fmtPct(r.gapPct)+" of the dial radius clear under the minute track (clearly off below "+fmtPct(r.gapLimitPct)+")");
+        if(r.gapOff)s.add("leaves only "+fmtPct(r.gapPct)+" of the dial radius clear under the minute track (flagged for review below "+fmtPct(r.gapLimitPct)+")");
         return s.isEmpty()?"":AlignmentDecision.capital(String.join("; ",s));
     }
 
@@ -1040,22 +1040,22 @@ final class ClearlyOff {
     static String numbers(Marker r){
         StringBuilder b=new StringBuilder();
         boolean tri=r.shape==ModelSpec.Shape.TRIANGLE;
-        if(!tri&&Double.isFinite(r.posPct))b.append(String.format(Locale.US,"From where it should be: %.2f%% of the dial radius; clearly off beyond %.2f%%.",r.posPct,r.posLimitPct));
+        if(!tri&&Double.isFinite(r.posPct))b.append(String.format(Locale.US,"From where it should be: %.2f%% of the dial radius; flagged for review beyond %.2f%%.",r.posPct,r.posLimitPct));
         if(Double.isFinite(r.sidePct)){if(b.length()>0)b.append('\n');
             b.append(String.format(Locale.US,"Sideways from the hour line: %+.2f%% of the dial radius (%+.1f px)",r.sidePct,r.sidePx))
-             .append(tri?String.format(Locale.US,"; clearly off beyond %.2f%%.",r.sideLimitPct):".");}
+             .append(tri?String.format(Locale.US,"; flagged for review beyond %.2f%%.",r.sideLimitPct):".");}
         if(Double.isFinite(r.inoutPct))b.append(String.format(Locale.US,"\nIn/out from the ring: %+.2f%% (%+.1f px)",r.inoutPct,r.inoutPx))
-             .append(tri?String.format(Locale.US,"; clearly off beyond %.2f%%.",r.inoutLimitPct):".");
-        if(Double.isFinite(r.gapPct))b.append(String.format(Locale.US,"\nGap under the minute track: %.2f%% (%.1f px); clearly off below %.2f%%.",r.gapPct,r.gapPx,r.gapLimitPct));
-        if(tri&&r.source.equals("outer metal"))b.append(Double.isFinite(r.tiltDeg)?String.format(Locale.US,"\nRotation (fitted outline's top edge against the line through the inner ends of minute ticks 59 and 1): %+.2f°; clearly off beyond %s.%s",
+             .append(tri?String.format(Locale.US,"; flagged for review beyond %.2f%%.",r.inoutLimitPct):".");
+        if(Double.isFinite(r.gapPct))b.append(String.format(Locale.US,"\nGap under the minute track: %.2f%% (%.1f px); flagged for review below %.2f%%.",r.gapPct,r.gapPx,r.gapLimitPct));
+        if(tri&&r.source.equals("outer metal"))b.append(Double.isFinite(r.tiltDeg)?String.format(Locale.US,"\nRotation (fitted outline's top edge against the line through the inner ends of minute ticks 59 and 1): %+.2f°; flagged for review beyond %s.%s",
                 r.tiltDeg,Double.isFinite(r.tiltLimitDeg)?String.format(Locale.US,"%.2f°",r.tiltLimitDeg):"(not judged)",r.rotNote.isEmpty()?"":" ("+r.rotNote+")")
                 :"\nRotation: not measured.");
-        else if(tri)b.append(Double.isFinite(r.tiltDeg)?String.format(Locale.US,"\nRotation (top edge against the line through the inner ends of minute ticks 59 and 1): %+.2f°; clearly off beyond %s. Halves %+.2f° / %+.2f°, edge fit %.2f px.",
+        else if(tri)b.append(Double.isFinite(r.tiltDeg)?String.format(Locale.US,"\nRotation (top edge against the line through the inner ends of minute ticks 59 and 1): %+.2f°; flagged for review beyond %s. Halves %+.2f° / %+.2f°, edge fit %.2f px.",
                 r.tiltDeg,Double.isFinite(r.tiltLimitDeg)?String.format(Locale.US,"%.2f°",r.tiltLimitDeg):"(not judged)",r.rotLeftDeg,r.rotRightDeg,r.rotRmsPx)
                 :"\nRotation: not measured ("+(r.rotNote.isEmpty()?"withheld":r.rotNote)+").");
         else if(r.shape!=ModelSpec.Shape.ROUND&&Double.isFinite(r.tiltDeg)){
             b.append(String.format(Locale.US,"\nTilt (long edges against the line from its hour tick to the opposite one): %+.2f°",r.tiltDeg));
-            b.append(Double.isFinite(r.tiltLimitDeg)?String.format(Locale.US,"; clearly off beyond %.2f°.",r.tiltLimitDeg):" (not judged).");
+            b.append(Double.isFinite(r.tiltLimitDeg)?String.format(Locale.US,"; flagged for review beyond %.2f°.",r.tiltLimitDeg):" (not judged).");
         }
         if(r.gapFromFit)b.append(" (top edge placed from the rest of its outline)");
         if(r.source.equals("outer metal")&&Double.isFinite(r.cover))
@@ -1067,11 +1067,11 @@ final class ClearlyOff {
     }
 
     static String technical(Result res){
-        StringBuilder s=new StringBuilder("Clearly-off check (hour lines from the printed minute track; ring from the other round markers).\n");
+        StringBuilder s=new StringBuilder("Marker alignment check (hour lines from the printed minute track; ring from the other round markers).\n");
         s.append(String.format(Locale.US,"Dial radius %.0f px · minute ticks rejected %d/60 · track scale %.4f · marker ring turned %+.2f%% against the track\n",res.rpx,res.badTicks,res.trackScale,res.ringTurnPct));
         for(Marker r:res.markers){
             s.append('\n').append(r.hour).append(" o'clock (").append(AlignmentReference.key(r.shape)).append("): ")
-             .append(r.state==State.CLEARLY_OFF?"Clearly off":r.state==State.POSSIBLE?"Possible misalignment - inspect":r.state==State.NO_VISIBLE_ISSUE?"No visible issue":"Can't check");
+             .append(r.state==State.CLEARLY_OFF?"Flagged for review":r.state==State.POSSIBLE?"Possible misalignment - inspect":r.state==State.NO_VISIBLE_ISSUE?"No visible issue":"Can't check");
             if(r.state==State.CANT_CHECK)s.append(" - ").append(r.reason);
             String n=numbers(r);if(!n.isEmpty())s.append("\n  ").append(n.replace("\n","\n  "));
         }

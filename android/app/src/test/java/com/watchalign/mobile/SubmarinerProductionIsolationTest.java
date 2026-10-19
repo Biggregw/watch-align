@@ -45,7 +45,7 @@ public class SubmarinerProductionIsolationTest {
         assertEquals("126710BLNR", MainActivity.GENERIC_GMT_CODE);
         assertEquals("124060", offered.get(1).code);
         assertEquals("GMT-Master II 126710", MainActivity.selectorLabel(offered.get(0)));
-        assertEquals("Submariner 124060 (experimental)", MainActivity.selectorLabel(offered.get(1)));
+        assertEquals("Submariner No-Date (124060)", MainActivity.selectorLabel(offered.get(1)));
         // The GMT line under the title is the one the app always showed.
         assertEquals("Rolex GMT-Master II dial check · " + WatchAlignCoreV13.CORE_VERSION, MainActivity.subtitleFor(offered.get(0)));
         assertTrue(MainActivity.subtitleFor(offered.get(1)).contains("Submariner 124060"));

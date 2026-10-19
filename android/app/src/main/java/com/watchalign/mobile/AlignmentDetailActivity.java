@@ -34,7 +34,7 @@ public class AlignmentDetailActivity extends Activity {
         if(o!=null)for(AlignmentDecision.Marker x:o.markers)if(x.hour==hour){setContentView(build(x));return;}
     }
 
-    static final String TRACK_LEGEND="Top: this marker zoomed (photo left; right: yellow = genuine outline, green = fitted outer-metal outline where its edge is seen, orange = seen but uncertain, dashed magenta = reconstructed, cyan = the minute-track reference, white = the fitted direction or centre). Below: blue lines: from each hour tick of the printed minute track, through the centre, to the opposite hour tick. Blue rings: where the round markers' centres and the batons' outer ends should sit on this dial. Circle: this marker (red clearly off, amber inspect, green no visible issue, grey can't check). Cross: its measured centre.";
+    static final String TRACK_LEGEND="Top: this marker zoomed (photo left; right: yellow = genuine outline, green = fitted outer-metal outline where its edge is seen, orange = seen but uncertain, dashed magenta = reconstructed, cyan = the minute-track reference, white = the fitted direction or centre). Below: blue lines: from each hour tick of the printed minute track, through the centre, to the opposite hour tick. Blue rings: where the round markers' centres and the batons' outer ends should sit on this dial. Circle: this marker (red flagged for review, amber inspect, green no visible issue, grey can't check). Cross: its measured centre.";
 
     private View build(AlignmentDecision.Marker m){
         if(m.track!=null)return buildTrack(m);

@@ -15,8 +15,8 @@ import org.opencv.imgproc.Imgproc;
  * against, as the owner judges by eye:
  *   blue lines   each hour tick of the printed minute track, through the centre, to the opposite hour tick
  *   blue rings   where the round markers' centres and the batons' outer ends should sit (this dial's own ring)
- *   circle       the marker: red = clearly off, green = no visible issue, grey = can't check
- *   red cross    the measured centre of a marker that is clearly off
+ *   circle       the marker: red = flagged for review, green = no visible issue, grey = can't check
+ *   red cross    the measured centre of a marker that is flagged for review
  *   short arcs   12 triangle: the minute-track tick ends (blue) and its measured top edge, the gap between them
  * 1.6.3 (experimental, outer-metal fit): above the dial, the marker itself, zoomed and upright: the photo on the left,
  * the same view on the right with
@@ -101,7 +101,7 @@ final class ClearlyOffEvidence {
     }
 
     static String caption(ClearlyOff.Marker t){
-        String st=t.state==ClearlyOff.State.CLEARLY_OFF?"Clearly off":t.state==ClearlyOff.State.POSSIBLE?"Possible misalignment - inspect":
+        String st=t.state==ClearlyOff.State.CLEARLY_OFF?"Flagged for review":t.state==ClearlyOff.State.POSSIBLE?"Possible misalignment - inspect":
                 t.state==ClearlyOff.State.NO_VISIBLE_ISSUE?"No visible issue":"Can't check";
         StringBuilder b=new StringBuilder(st);
         if(t.shape==ModelSpec.Shape.TRIANGLE){

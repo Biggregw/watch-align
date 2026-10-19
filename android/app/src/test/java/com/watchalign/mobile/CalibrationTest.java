@@ -28,7 +28,7 @@ public class CalibrationTest {
         assertEquals(ClearlyOff.State.CLEARLY_OFF,Calibration.state(r,r.at(1),tight));
         assertEquals("the gap rule",ClearlyOff.State.CLEARLY_OFF,Calibration.state(r,r.at(12),d));
         List<String> ch=Calibration.changes(java.util.Arrays.asList(r),"gmt_126710",d,tight);
-        assertEquals(1,ch.size());assertTrue(ch.get(0).contains("1 o'clock: No visible issue → Clearly off"));
+        assertEquals(1,ch.size());assertTrue(ch.get(0).contains("1 o'clock: No visible issue → Flagged for review"));
         // a withheld marker or a photo-wide reason never becomes an answer
         Calibration.Mark g=mark(2,ModelSpec.Shape.ROUND,5,0,Double.NaN,Double.NaN,null);g.gate="hand";g.reason="a hand reaches it";r.marks.add(g);
         assertEquals(ClearlyOff.State.CANT_CHECK,Calibration.state(r,g,tight));
@@ -74,6 +74,6 @@ public class CalibrationTest {
         assertTrue("tilt off survives",Calibration.limitsFromJson(Calibration.limitsToJson(m)).get("gmt_126710").isDefault());
 
         String ex=Calibration.export(m,java.util.Arrays.asList(r),"1.6.2");
-        assertTrue(ex.contains("model,round_position"));assertTrue(ex.contains(",12,triangle,"));assertTrue(ex.contains(",fail,Clearly off"));
+        assertTrue(ex.contains("model,round_position"));assertTrue(ex.contains(",12,triangle,"));assertTrue(ex.contains(",fail,Flagged for review"));
     }
 }

@@ -100,7 +100,7 @@ final class AlignmentDecision {
         /** 1.6.3: over a limit, measured from an uncertain outer edge (shown amber, with its evidence) */
         boolean inspect(){return track!=null&&track.state==ClearlyOff.State.POSSIBLE;}
         String label(){
-            if(track!=null)return inspect()?"Possible misalignment — inspect":outcome==Outcome.DEFECT?"Clearly off":outcome==Outcome.NO_DEFECT?"No visible issue":"Can't check";
+            if(track!=null)return inspect()?"Possible misalignment — inspect":outcome==Outcome.DEFECT?"Flagged for review":outcome==Outcome.NO_DEFECT?"No visible issue":"Can't check";
             return outcome==Outcome.DEFECT?"Defect detected":worthALook()?"Worth a look":outcome==Outcome.NO_DEFECT?"No defect":"Cannot assess";
         }
     }

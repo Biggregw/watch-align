@@ -181,7 +181,7 @@ public class CalibrateActivity extends Activity {
 
     private String legend(){
         if(shape==ModelSpec.Shape.TRIANGLE)return "Blue: the hour line and the minute-track tick ends. Amber: the sideways limits either side of the line, and (dashed) the line the triangle's top edge must stay below. Coloured arc: the measured top edge. Cross: the measured centre.";
-        String s="Blue: the hour line. Amber circle: how far the centre may be from where it should be. Cross: the measured centre (red clearly off, green no visible issue).";
+        String s="Blue: the hour line. Amber circle: how far the centre may be from where it should be. Cross: the measured centre (red flagged for review, green no visible issue).";
         if(shape==ModelSpec.Shape.BATON)s+=" Dashed amber: the rotation limit either side of the line; coloured line: the measured baton axis.";
         return s;
     }
@@ -223,7 +223,7 @@ public class CalibrateActivity extends Activity {
         Bitmap z=drawZone();if(z!=null)picture.setImageBitmap(z);
         if(genuine==null||genuine.total(shape)==0){genuineLine.setText("No verified genuine numbers for this model yet: be careful not to set limits that real watches would fail.");genuineLine.setTextColor(AMBER);}
         else{int n=genuine.flagged(shape,draft),t=genuine.total(shape);
-            genuineLine.setText(String.format(Locale.UK,"Genuine watches: %d of %,d measured %s would be clearly off at these limits.",n,t,shape==ModelSpec.Shape.TRIANGLE?"12 o'clock triangles":typeName()));
+            genuineLine.setText(String.format(Locale.UK,"Genuine watches: %d of %,d measured %s would be flagged for review at these limits.",n,t,shape==ModelSpec.Shape.TRIANGLE?"12 o'clock triangles":typeName()));
             genuineLine.setTextColor(n>0?RED:GREEN);}
         refreshVerdict();
         if(photosLine.getText().length()==0)refreshSlow();
