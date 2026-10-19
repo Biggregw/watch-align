@@ -1,0 +1,124 @@
+name: Handover regression continuation (read-only)
+on:
+  push:
+    branches: [research/marker-audit-validation-20261019]
+    paths: [.github/workflows/handover-verify.yml]
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  finish-checkpoints:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {family: nodate, model: submariner_124060, manifest: tools/research/marker_audit/results/checkpoint/nodate-final-remaining.csv, expected_photos: 54, expected_markers: 1620}
+          - {family: date219, model: submariner_126610, manifest: tools/research/marker_audit/results/checkpoint/original219-after-remaining.csv, expected_photos: 97, expected_markers: 2409}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install verified-photo fetch dependency
+        run: python -m pip install -q requests
+      - name: Retrieve ONLY unprocessed originals; verify full SHA256
+        env:
+          MANIFEST: ${{ matrix.manifest }}
+          EXPECTED: ${{ matrix.expected_photos }}
+        run: |
+          mkdir -p verify/img verify/out
+          python3 - <<'PY'
+          import csv,json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,"tools/research/marker_audit")
+          from fetch_cases import fetch
+          rows=list(csv.DictReader(open(os.environ["MANIFEST"],newline="")))
+          assert len(rows)==int(os.environ["EXPECTED"]),(len(rows),os.environ["EXPECTED"])
+          assert len(set(r["photo_id"] for r in rows))==len(rows)
+          ok=fetch(rows,Path("verify/img"),Path("verify/out/fetch.json"))
+          details=json.loads(Path("verify/out/fetch.json").read_text())
+          got=sum(x["verified"] for x in details)
+          print("SHA256_VERIFIED",got,"/",len(rows),flush=True)
+          Path("verify/out/acquisition.json").write_text(json.dumps({"expected":len(rows),"verified":got,
+              "missing":[x["photo_id"] for x in details if not x["verified"]]},indent=2))
+          if not ok:raise SystemExit("INCOMPLETE_ACQUISITION: missing photos cannot be silently passed")
+          PY
+      - name: Prepare existing Java/OpenCV harness
+        run: |
+          set -euo pipefail
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then
+            mkdir -p "$(dirname "$J")"
+            curl -fLsS --retry 3 -o "$J" https://repo.maven.apache.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar
+          fi
+          mkdir -p verify/cls
+          javac -encoding UTF-8 -nowarn -cp "$J" \
+            -sourcepath tools/desktop-harness/shim:android/app/src/main/java \
+            -d verify/cls tools/desktop-harness/drivers/*.java
+      - name: Resume exact remaining measurements
+        env:
+          MODEL: ${{ matrix.model }}
+          MANIFEST: ${{ matrix.manifest }}
+        run: |
+          set -euo pipefail
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          java -Xmx3g -Dwatchalign.model="$MODEL" \
+            -cp "$J:verify/cls" com.watchalign.mobile.TrackDump \
+            "$MANIFEST" verify/img verify/out/new.csv | tee verify/out/new.log
+      - name: Enforce complete per-marker parity and preserve assessment
+        env:
+          FAMILY: ${{ matrix.family }}
+          EXPECTED_MARKERS: ${{ matrix.expected_markers }}
+        run: |
+          python3 - <<'PY'
+          import csv,json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,"tools/research/marker_audit")
+          from compare import index,compare
+          root=Path("tools/research/marker_audit")
+          ck=root/"results/checkpoint"
+          fam=os.environ["FAMILY"]
+          if fam=="nodate":
+              expected=root/"results/nodate-after.csv"
+              saved=ck/"nodate-final.csv"
+          else:
+              expected=ck/"original219-baseline.csv"
+              saved=ck/"original219-after-matched-partial.csv"
+          def read(p):return list(csv.DictReader(open(p,newline="")))
+          original,_=index(read(expected))
+          current,_=index(read(saved)+read(Path("verify/out/new.csv")))
+          report={"family":fam,"expected":len(original),"actual":len(current)}
+          if len(original)!=int(os.environ["EXPECTED_MARKERS"]):
+              raise ValueError("Unexpected original marker count "+str(len(original)))
+          if set(current)!=set(original):
+              missing=list(set(original)-set(current));extra=list(set(current)-set(original))
+              raise ValueError(f"Unmatched marker keys: {len(missing)} missing, {len(extra)} extra")
+          if fam=="nodate":
+              changes=[{"photo_id":key[0],"hour":key[1]} for key in original if original[key]!=current[key]]
+              report.update({"identical_records":len(original)-len(changes),
+                "differences":changes[:25],"complete_parity":not changes})
+          else:
+              compared=compare(original,current)
+              report.update({"states_before":compared["before_states"],"states_after":compared["after_states"],
+                "transitions":compared["transitions"],
+                "reliable_before":compared["reliable_before"],
+                "reliable_after":compared["reliable_after"],
+                "reliable_retained":compared["reliable_retained"],
+                "new_uncertain":compared["new_uncertain"],
+                "new_cant_check":compared["new_cant_check"],
+                "state_changes":compared["state_changes"]})
+              report["complete_parity"]=not compared["new_uncertain"] and not compared["new_cant_check"]
+          Path("verify/out/verified-result.json").write_text(json.dumps(report,indent=2))
+          print("CHECKPOINT_RESULT",json.dumps({k:v for k,v in report.items() if k not in ["new_uncertain","new_cant_check","state_changes","differences"]}),flush=True)
+          if not report["complete_parity"]:raise SystemExit("REGRESSION: inspect detailed report")
+          PY
+      - name: Upload result and acquisition diagnostics, including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: handover-validation-${{ matrix.family }}
+          if-no-files-found: warn
+          retention-days: 21
+          path: verify/out/
