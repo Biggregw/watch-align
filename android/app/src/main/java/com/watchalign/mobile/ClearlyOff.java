@@ -66,7 +66,13 @@ final class ClearlyOff {
     static final double MIN_RPX=150;
     static final int MIN_RING=3;
 
-    enum State{CLEARLY_OFF,NO_VISIBLE_ISSUE,CANT_CHECK}
+    /** POSSIBLE (experimental 1.6.3): over a limit, but measured from an uncertain outer edge ("Possible misalignment -
+     *  inspect"; shown with its evidence, never a silent pass). */
+    enum State{CLEARLY_OFF,NO_VISIBLE_ISSUE,CANT_CHECK,POSSIBLE}
+
+    /** Experimental 1.6.3: measure each marker from its visible outer metal (MetalFit) instead of its lume centre. The
+     *  desktop harness can switch it off (-Dwatchalign.metal=off) to compare with 1.6.2. */
+    static final boolean METAL=!"off".equals(System.getProperty("watchalign.metal"));
 
     /**
      * 1.6.2: the limits a marker is judged against, one set per marker TYPE (genuine markers of a type all vary alike).
@@ -116,12 +122,21 @@ final class ClearlyOff {
         double gapPct=Double.NaN,gapPx=Double.NaN,gapLimitPct=Double.NaN,gapEdgeR=Double.NaN,gapTrackR=Double.NaN;
         boolean sideOff,inoutOff,tiltOff,gapOff;
         double[] cObs,cGen;
+        /** outer-metal fit (METAL): why the reading is uncertain (empty when reliable), how much of the outline was seen,
+         *  fit roughness (px), share of inconsistent edge, standard errors; the genuine and fitted outlines and the status
+         *  of each fitted outline point (MetalFit.SEEN / INCONSISTENT / HIDDEN), and the triangle's 59/1 tick ends */
+        String uncertain="",source="lume";
+        double cover=Double.NaN,fitRmsPx=Double.NaN,badFrac=Double.NaN,sePosPct=Double.NaN,seRotDeg=Double.NaN,fitTiltDeg=Double.NaN;
+        double[][] yellow,fitPoly,fitPts;byte[] fitStatus;double[] tick59,tick01;boolean gapFromFit;
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
         /** a copy to judge against other limits without changing the shown answer (calibration screen) */
         Marker copy(){Marker m=new Marker(hour,shape);m.state=state;m.reason=reason;m.gate.addAll(gate);
             m.sidePct=sidePct;m.inoutPct=inoutPct;m.tiltDeg=tiltDeg;m.sidePx=sidePx;m.inoutPx=inoutPx;m.tiltRaw=tiltRaw;m.scale=scale;
             m.gapPct=gapPct;m.gapPx=gapPx;m.gapEdgeR=gapEdgeR;m.gapTrackR=gapTrackR;m.cObs=cObs;m.cGen=cGen;
-            m.tiltCentroidDeg=tiltCentroidDeg;m.rotLeftDeg=rotLeftDeg;m.rotRightDeg=rotRightDeg;m.rotRmsPx=rotRmsPx;m.rotNote=rotNote;return m;}
+            m.tiltCentroidDeg=tiltCentroidDeg;m.rotLeftDeg=rotLeftDeg;m.rotRightDeg=rotRightDeg;m.rotRmsPx=rotRmsPx;m.rotNote=rotNote;
+            m.uncertain=uncertain;m.source=source;m.cover=cover;m.fitRmsPx=fitRmsPx;m.badFrac=badFrac;m.sePosPct=sePosPct;m.seRotDeg=seRotDeg;
+            m.fitTiltDeg=fitTiltDeg;m.yellow=yellow;m.fitPoly=fitPoly;m.fitPts=fitPts;m.fitStatus=fitStatus;m.tick59=tick59;m.tick01=tick01;
+            m.gapFromFit=gapFromFit;return m;}
         boolean measured(){return Double.isFinite(sidePct)||Double.isFinite(inoutPct);}
     }
 
@@ -131,6 +146,8 @@ final class ClearlyOff {
         final Map<Integer,Double> lines=new HashMap<>();
         double rpx=Double.NaN,trackScale=Double.NaN,ringTurnPct=Double.NaN;
         int badTicks;
+        /** METAL: this photo's outer-edge offset per shape (px, + = outward; median over fully seen markers) */
+        final Map<ModelSpec.Shape,Double> edgeBiasPx=new HashMap<>();
         /** genuine canonical radius of the round centres and the baton outer ends (for drawing the ring / circle) */
         double roundCentreR=Double.NaN,batonEndR=Double.NaN,ringScale=Double.NaN;
         String photoReason;
@@ -170,13 +187,25 @@ final class ClearlyOff {
             res.badTicks=bad;
             res.trackScale=rin.isEmpty()?Double.NaN:median(toArray(rin))/trackInnerR;
             Map<Integer,Base> base=new LinkedHashMap<>();
-            for(Input m:in)base.put(m.hour,centre(img,ctx,m,insets,sib,rpx));
+            Map<Integer,MetalFit.Fit> fits=new HashMap<>();
+            if(METAL){
+                MetalFit.Fit[] fa=MetalFit.fitAll(img,in,rpx,ctx.hands);
+                for(Map.Entry<ModelSpec.Shape,Double> e:MetalFit.lastBias.entrySet())res.edgeBiasPx.put(e.getKey(),e.getValue()*rpx);
+                for(int i=0;i<in.size();i++){Input m=in.get(i);if(fa[i]!=null)fits.put(m.hour,fa[i]);base.put(m.hour,metalBase(m,fa[i],insets,rpx));}
+            }else for(Input m:in)base.put(m.hour,centre(img,ctx,m,insets,sib,rpx));
             for(Input m:in){
                 Marker r=new Marker(m.hour,m.shape);res.markers.add(r);
                 Base b=base.get(m.hour);r.gate.addAll(b.gate);
                 if(!res.lines.containsKey(m.hour%12))r.gate.add("minute ticks near it hidden");
                 metrics(r,b,res.lines,img,ringScale(base,in,m.hour),rpx);
-                if(m.shape==ModelSpec.Shape.TRIANGLE){gap(r,m,ticks,res.lines,img,rpx);triangleRotation(r,m,ticks,res.lines,img,rpx);}
+                MetalFit.Fit mf=fits.get(m.hour);r.yellow=m.yellow;
+                if(mf!=null&&mf.cObs!=null){r.source="outer metal";r.uncertain=mf.uncertain;r.cover=mf.cover;r.fitRmsPx=mf.rmsPx;r.badFrac=mf.badFrac;
+                    r.sePosPct=100*mf.sePos;r.seRotDeg=mf.seRot;r.fitTiltDeg=mf.tiltDeg;r.fitPoly=mf.poly;r.fitPts=mf.pts;r.fitStatus=mf.status;}
+                if(m.shape==ModelSpec.Shape.TRIANGLE){
+                    gap(r,m,ticks,res.lines,img,rpx);
+                    if(mf!=null&&mf.ok()){if(!Double.isFinite(r.gapPct))gapFromFit(r,mf,ticks,res.lines,img,rpx);metalTriangleRotation(r,mf,ticks);}
+                    else triangleRotation(r,m,ticks,res.lines,img,rpx);
+                }
             }
             List<Double> clean=new ArrayList<>();
             for(Marker r:res.markers)if(r.gate.isEmpty()&&Double.isFinite(r.sidePct))clean.add(r.sidePct);
@@ -221,7 +250,11 @@ final class ClearlyOff {
             r.posOff=Double.isFinite(r.posPct)&&r.posPct>r.posLimitPct;
         }
         r.tiltOff=Double.isFinite(r.tiltLimitDeg)&&Double.isFinite(r.tiltDeg)&&Math.abs(r.tiltDeg)>r.tiltLimitDeg;
-        if(r.sideOff||r.inoutOff||r.posOff||r.tiltOff||r.gapOff){r.state=State.CLEARLY_OFF;return;}
+        if(r.sideOff||r.inoutOff||r.posOff||r.tiltOff||r.gapOff){
+            // over a limit from an uncertain edge: shown as a possible misalignment to inspect, never passed
+            if(r.uncertain.isEmpty()&&!(r.gapOff&&r.gapFromFit))r.state=State.CLEARLY_OFF;
+            else{r.state=State.POSSIBLE;r.reason=r.uncertain.isEmpty()?"its top edge was placed from the rest of its outline":r.uncertain;}
+            return;}
         // a pass needs every measurement of the marker (fail closed)
         if(!Double.isFinite(r.sidePct)){r.state=State.CANT_CHECK;r.reason="its hour line could not be placed from the minute track";return;}
         if(!Double.isFinite(r.inoutPct)){r.state=State.CANT_CHECK;r.reason="too few other round markers could be measured to place the ring";return;}
@@ -274,6 +307,43 @@ final class ClearlyOff {
             if(m.shape!=ModelSpec.Shape.ROUND)b.tiltDeg=Math.toDegrees(c.th);
         }
         return b;
+    }
+
+    /** METAL: the gate and centre from the outer-metal fit. A hand or glare only removes the edge it covers; the marker is
+     *  withheld only when its visible edge cannot fix its geometry. */
+    static Base metalBase(Input m,MetalFit.Fit f,Map<ModelSpec.Shape,Double> insets,double rpx){
+        Base b=new Base();
+        if(m.yellow==null||m.yellow.length<3||f==null){b.gate.add("no overlay for this marker");return b;}
+        if(insets.get(m.shape)==null){b.gate.add("no luminous reference");return b;}
+        if(!f.note.isEmpty())b.gate.add(f.note);
+        if(rpx<MIN_RPX)b.gate.add("photo too small");
+        if(f.cObs!=null){b.cGen=f.cGen;b.cObs=f.cObs;if(m.shape!=ModelSpec.Shape.ROUND)b.tiltDeg=f.tiltDeg;}
+        return b;
+    }
+
+    /** METAL, the 12 triangle: the fitted outline's rotation (its top edge's direction) against the line through the inner
+     *  ends of minute ticks 59 and 1. Hidden ticks: against the 0-30 line (metrics), said so in the note. */
+    static void metalTriangleRotation(Marker r,MetalFit.Fit f,List<Tick> ticks){
+        r.tiltCentroidDeg=Double.NaN;r.rotNote="";r.rotLineDeg=r.tiltDeg;
+        Tick t59=ticks.get(59),t01=ticks.get(1);
+        if(!t59.bad.isEmpty()||!t01.bad.isEmpty()||!Double.isFinite(t59.rIn)||!Double.isFinite(t01.rIn)){
+            r.rotNote="minute ticks 59 and 1 are not clear; measured against the 0-30 line";return;}
+        double[] p59=cpt(t59.rIn,t59.a),p01=cpt(t01.rIn,t01.a);
+        double dev=wrapHalfPi(Math.atan2(p01[1]-p59[1],p01[0]-p59[0]));
+        r.tiltDeg=f.tiltDeg-Math.toDegrees(dev);r.tick59=p59;r.tick01=p01;
+    }
+
+    /** METAL, the 12 triangle, when its top edge itself could not be read (reflection): the gap from the fitted outline */
+    static void gapFromFit(Marker r,MetalFit.Fit f,List<Tick> ticks,Map<Integer,Double> L,Img img,double rpx){
+        Double a0=L.get(r.hour%12);if(a0==null)return;
+        int k0=(5*r.hour)%60;List<Double> rin=new ArrayList<>();
+        for(int dk=-2;dk<=2;dk++){Tick t=ticks.get((int)pmod(k0+dk,60));if(t.bad.isEmpty())rin.add(t.rIn);}
+        if(rin.size()<3)return;
+        double rt=median(toArray(rin));List<Double> gaps=new ArrayList<>(),edges=new ArrayList<>();
+        for(double off:GAP_OFFS_DEG){double a=a0+Math.toRadians(off);Double re=rayOut(f.poly,a);if(re==null)continue;
+            gaps.add(Math.copySign(img.pxBetween(cpt(Math.min(re,rt),a),cpt(rt,a)),rt-re));edges.add(re);}
+        if(gaps.size()<2)return;
+        r.gapPx=median(toArray(gaps));r.gapPct=100*r.gapPx/rpx;r.gapEdgeR=median(toArray(edges));r.gapTrackR=rt;r.gapFromFit=true;
     }
 
     static double ringScaleOf(Map<Integer,Base> base,List<Input> in,int hour){return ringScale(base,in,hour);}
@@ -849,6 +919,8 @@ final class ClearlyOff {
     static final class Img {
         final Mat f;final double[] H;
         Img(Mat f,double[] H){this.f=f;this.H=H;}
+        /** grey values row-major (unit tests: no OpenCV needed) */
+        Img(float[] px,int w,int h,double[] H){this.f=null;this.H=H;this.px=px;this.w=w;this.h=h;}
         double[] project(double x,double y){double w=H[6]*x+H[7]*y+H[8];return new double[]{(H[0]*x+H[1]*y+H[2])/w,(H[3]*x+H[4]*y+H[5])/w};}
         double pxBetween(double[] p,double[] q){double[] a=project(p[0],p[1]),b=project(q[0],q[1]);return Math.hypot(b[0]-a[0],b[1]-a[1]);}
         double[] sampleCanon(double[] X,double[] Y){
@@ -972,13 +1044,21 @@ final class ClearlyOff {
         if(Double.isFinite(r.inoutPct))b.append(String.format(Locale.US,"\nIn/out from the ring: %+.2f%% (%+.1f px)",r.inoutPct,r.inoutPx))
              .append(tri?String.format(Locale.US,"; clearly off beyond %.2f%%.",r.inoutLimitPct):".");
         if(Double.isFinite(r.gapPct))b.append(String.format(Locale.US,"\nGap under the minute track: %.2f%% (%.1f px); clearly off below %.2f%%.",r.gapPct,r.gapPx,r.gapLimitPct));
-        if(tri)b.append(Double.isFinite(r.tiltDeg)?String.format(Locale.US,"\nRotation (top edge against the line through the inner ends of minute ticks 59 and 1): %+.2f°; clearly off beyond %s. Halves %+.2f° / %+.2f°, edge fit %.2f px.",
+        if(tri&&r.source.equals("outer metal"))b.append(Double.isFinite(r.tiltDeg)?String.format(Locale.US,"\nRotation (fitted outline's top edge against the line through the inner ends of minute ticks 59 and 1): %+.2f°; clearly off beyond %s.%s",
+                r.tiltDeg,Double.isFinite(r.tiltLimitDeg)?String.format(Locale.US,"%.2f°",r.tiltLimitDeg):"(not judged)",r.rotNote.isEmpty()?"":" ("+r.rotNote+")")
+                :"\nRotation: not measured.");
+        else if(tri)b.append(Double.isFinite(r.tiltDeg)?String.format(Locale.US,"\nRotation (top edge against the line through the inner ends of minute ticks 59 and 1): %+.2f°; clearly off beyond %s. Halves %+.2f° / %+.2f°, edge fit %.2f px.",
                 r.tiltDeg,Double.isFinite(r.tiltLimitDeg)?String.format(Locale.US,"%.2f°",r.tiltLimitDeg):"(not judged)",r.rotLeftDeg,r.rotRightDeg,r.rotRmsPx)
                 :"\nRotation: not measured ("+(r.rotNote.isEmpty()?"withheld":r.rotNote)+").");
         else if(r.shape!=ModelSpec.Shape.ROUND&&Double.isFinite(r.tiltDeg)){
-            b.append(String.format(Locale.US,"\nTilt against the hour line: %+.2f°",r.tiltDeg));
+            b.append(String.format(Locale.US,"\nTilt (long edges against the line from its hour tick to the opposite one): %+.2f°",r.tiltDeg));
             b.append(Double.isFinite(r.tiltLimitDeg)?String.format(Locale.US,"; clearly off beyond %.2f°.",r.tiltLimitDeg):" (not judged).");
         }
+        if(r.gapFromFit)b.append(" (top edge placed from the rest of its outline)");
+        if(r.source.equals("outer metal")&&Double.isFinite(r.cover))
+            b.append(String.format(Locale.US,"\nMeasured from its outer metal: %.0f%% of the outline seen, edge fit %.2f px, %.0f%% of the seen edge inconsistent, position ± %.2f%%%s.",
+                100*r.cover,r.fitRmsPx,100*r.badFrac,r.sePosPct,Double.isFinite(r.seRotDeg)?String.format(Locale.US,", rotation ± %.2f°",r.seRotDeg):""));
+        if(!r.uncertain.isEmpty())b.append("\nUncertain: ").append(r.uncertain).append('.');
         if(!r.gate.isEmpty())b.append(b.length()>0?"\n":"").append("Withheld: ").append(String.join("; ",r.gate)).append('.');
         return b.toString();
     }
@@ -988,7 +1068,7 @@ final class ClearlyOff {
         s.append(String.format(Locale.US,"Dial radius %.0f px · minute ticks rejected %d/60 · track scale %.4f · marker ring turned %+.2f%% against the track\n",res.rpx,res.badTicks,res.trackScale,res.ringTurnPct));
         for(Marker r:res.markers){
             s.append('\n').append(r.hour).append(" o'clock (").append(AlignmentReference.key(r.shape)).append("): ")
-             .append(r.state==State.CLEARLY_OFF?"Clearly off":r.state==State.NO_VISIBLE_ISSUE?"No visible issue":"Can't check");
+             .append(r.state==State.CLEARLY_OFF?"Clearly off":r.state==State.POSSIBLE?"Possible misalignment - inspect":r.state==State.NO_VISIBLE_ISSUE?"No visible issue":"Can't check");
             if(r.state==State.CANT_CHECK)s.append(" - ").append(r.reason);
             String n=numbers(r);if(!n.isEmpty())s.append("\n  ").append(n.replace("\n","\n  "));
         }

@@ -122,7 +122,9 @@ final class AlignmentAnalysis {
         StringBuilder b=new StringBuilder();
         if(tracked(o)){
             int d=o.count(AlignmentDecision.Outcome.DEFECT),n=o.count(AlignmentDecision.Outcome.NO_DEFECT),c=o.count(AlignmentDecision.Outcome.CANNOT_ASSESS);
+            int i=inspect(o);d-=i;
             if(d>0)b.append(d).append(" clearly off");
+            if(i>0)b.append(b.length()>0?"  ·  ":"").append(i).append(" to inspect");
             if(n>0)b.append(b.length()>0?"  ·  ":"").append(n).append(" no visible issue");
             if(c>0)b.append(b.length()>0?"  ·  ":"").append(c).append(" can't check");
             return b.toString();
@@ -137,13 +139,18 @@ final class AlignmentAnalysis {
     }
 
     /** true when the 1.6.0 clearly-off check decided the answers */
+    /** 1.6.3: markers over a limit measured from an uncertain edge ("Possible misalignment - inspect") */
+    static int inspect(Output o){int i=0;for(AlignmentDecision.Marker m:o.markers)if(m.inspect())i++;return i;}
+
     static boolean tracked(Output o){for(AlignmentDecision.Marker m:o.markers)if(m.track!=null)return true;return false;}
 
     static String headline(Output o){
         int d=o.count(AlignmentDecision.Outcome.DEFECT),n=o.count(AlignmentDecision.Outcome.NO_DEFECT);
         if(tracked(o)){
             if(o.photoReason!=null)return "Can't check this photo";
-            if(d>0)return d==1?"1 marker clearly off":d+" markers clearly off";
+            int i=inspect(o);d-=i;
+            if(d>0)return (d==1?"1 marker clearly off":d+" markers clearly off")+(i>0?", "+i+" to inspect":"");
+            if(i>0)return i==1?"1 possible misalignment to inspect":i+" possible misalignments to inspect";
             if(n==0)return "Can't check";
             return "No marker clearly off";
         }

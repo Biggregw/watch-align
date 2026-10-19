@@ -90,7 +90,7 @@ public class CalibrateActivity extends Activity {
     private Bitmap drawZone(){
         if(base==null)return null;
         Bitmap b=base.copy(Bitmap.Config.ARGB_8888,true);Canvas cv=new Canvas(b);
-        int col=live.state==ClearlyOff.State.CLEARLY_OFF?RED:live.state==ClearlyOff.State.NO_VISIBLE_ISSUE?GREEN:GREY;
+        int col=live.state==ClearlyOff.State.CLEARLY_OFF?RED:live.state==ClearlyOff.State.POSSIBLE?AMBER:live.state==ClearlyOff.State.NO_VISIBLE_ISSUE?GREEN:GREY;
         Paint guide=paint(GUIDE,3,false),zone=paint(AMBER,4,false),meas=paint(col,4,false),fill=paint(Color.argb(60,255,190,60),0,true);
         Paint dashed=paint(AMBER,4,false);dashed.setPathEffect(new DashPathEffect(new float[]{14,10},0));
         Double line=AlignmentResultsActivity.Store.clearlyOff.lines.get(hour%12);
@@ -217,9 +217,9 @@ public class CalibrateActivity extends Activity {
         ClearlyOff.decide(live,r.rpx,null,draft);
         if(AlignmentResultsActivity.Store.result!=null&&AlignmentResultsActivity.Store.result.photoReason!=null){live.state=ClearlyOff.State.CANT_CHECK;live.reason=AlignmentResultsActivity.Store.result.photoReason;}
         String word=Calibration.word(live.state);
-        answer.setText("With these limits: "+word+(live.state==ClearlyOff.State.CLEARLY_OFF?" — "+ClearlyOff.headline(live).toLowerCase(Locale.UK):
+        answer.setText("With these limits: "+word+(Calibration.flagged(live.state)?" — "+ClearlyOff.headline(live).toLowerCase(Locale.UK):
                 live.state==ClearlyOff.State.CANT_CHECK?" — "+live.reason:""));
-        answer.setTextColor(live.state==ClearlyOff.State.CLEARLY_OFF?RED:live.state==ClearlyOff.State.NO_VISIBLE_ISSUE?GREEN:GREY);
+        answer.setTextColor(live.state==ClearlyOff.State.CLEARLY_OFF?RED:live.state==ClearlyOff.State.POSSIBLE?AMBER:live.state==ClearlyOff.State.NO_VISIBLE_ISSUE?GREEN:GREY);
         Bitmap z=drawZone();if(z!=null)picture.setImageBitmap(z);
         if(genuine==null||genuine.total(shape)==0){genuineLine.setText("No verified genuine numbers for this model yet: be careful not to set limits that real watches would fail.");genuineLine.setTextColor(AMBER);}
         else{int n=genuine.flagged(shape,draft),t=genuine.total(shape);

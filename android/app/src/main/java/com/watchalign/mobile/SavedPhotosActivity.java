@@ -55,7 +55,7 @@ public class SavedPhotosActivity extends Activity {
         ClearlyOff.Limits L=ClearlyOff.forModel(r.model);
         int off=0,ok=0,cant=0,verd=0;StringBuilder offHours=new StringBuilder();
         for(Calibration.Mark k:r.marks){ClearlyOff.State s=Calibration.state(r,k,L);
-            if(s==ClearlyOff.State.CLEARLY_OFF){off++;offHours.append(offHours.length()>0?", ":"").append(k.hour);}else if(s==ClearlyOff.State.NO_VISIBLE_ISSUE)ok++;else cant++;
+            if(Calibration.flagged(s)){off++;offHours.append(offHours.length()>0?", ":"").append(k.hour);}else if(s==ClearlyOff.State.NO_VISIBLE_ISSUE)ok++;else cant++;
             if(k.verdict!=null)verd++;}
         col.addView(text(r.label,15,Color.WHITE,true));
         col.addView(text(off==0?"No marker clearly off":off+" clearly off ("+offHours+")",14,off>0?AlignmentResultsActivity.RED:AlignmentResultsActivity.GREEN,true),lp(-1,-2,2));

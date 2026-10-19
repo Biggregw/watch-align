@@ -34,7 +34,7 @@ public class AlignmentDetailActivity extends Activity {
         if(o!=null)for(AlignmentDecision.Marker x:o.markers)if(x.hour==hour){setContentView(build(x));return;}
     }
 
-    static final String TRACK_LEGEND="Blue lines: from each hour tick of the printed minute track, through the centre, to the opposite hour tick. Blue rings: where the round markers' centres and the batons' outer ends should sit on this dial. Circle: this marker (red clearly off, green no visible issue, grey can't check). Red cross: its measured centre.";
+    static final String TRACK_LEGEND="Top: this marker zoomed (photo left; right: yellow = genuine outline, green = fitted outer-metal outline where its edge is seen, orange = seen but uncertain, dashed magenta = reconstructed, cyan = the minute-track reference, white = the fitted direction or centre). Below: blue lines: from each hour tick of the printed minute track, through the centre, to the opposite hour tick. Blue rings: where the round markers' centres and the batons' outer ends should sit on this dial. Circle: this marker (red clearly off, amber inspect, green no visible issue, grey can't check). Cross: its measured centre.";
 
     private View build(AlignmentDecision.Marker m){
         if(m.track!=null)return buildTrack(m);
@@ -91,6 +91,7 @@ public class AlignmentDetailActivity extends Activity {
         root.addView(text(m.title()+" — "+m.label(),24,AlignmentResultsActivity.colour(m),true));
         if(m.outcome==AlignmentDecision.Outcome.DEFECT)root.addView(text(ClearlyOff.headline(m.track)+".",18,Color.WHITE,true),lp(-1,-2,6));
         else if(m.outcome==AlignmentDecision.Outcome.CANNOT_ASSESS)root.addView(text(AlignmentDecision.capital(m.reason)+".",15,Color.WHITE,false),lp(-1,-2,6));
+        if(m.inspect())root.addView(text("Measured from an uncertain edge: "+m.track.reason+". Check the close-up yourself.",15,AlignmentResultsActivity.AMBER,false),lp(-1,-2,4));
         Bitmap c=AlignmentResultsActivity.Store.closeups.get(m.hour);
         if(c!=null){
             ImageView iv=new ImageView(this);iv.setImageBitmap(c);iv.setAdjustViewBounds(true);iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
