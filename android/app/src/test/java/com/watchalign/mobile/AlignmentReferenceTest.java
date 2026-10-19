@@ -11,13 +11,14 @@ import static org.junit.Assert.*;
 
 /**
  * The bundled genuine luminous alignment references (calibration run 38565452660) load for exactly the models the app
- * offers, the Date family's luminous edge-fit reference explicitly inherited from the 124060, covering every marker; and a smoke check that a clean synthetic dial
+ * bundles (whether a model is offered is ModelRegistry's decision), the Date family's luminous edge-fit reference explicitly
+ * inherited from the 124060, covering every marker; and a smoke check that a clean synthetic dial
  * judged against the REAL reference is assessed (not "Cannot assess") and shows no defect.
  */
 public class AlignmentReferenceTest {
     static ModelSpec spec(String id){try{return ModelSpec.load(TestModels.files(),id);}catch(Exception e){throw new AssertionError(e);}}
 
-    @Test public void allOfferedModelsHaveExplicitAlignmentReference(){
+    @Test public void allBundledModelsHaveExplicitAlignmentReference(){
         for(String id:new String[]{"gmt_126710","submariner_124060","submariner_126610"}){
             ModelSpec m=spec(id);AlignmentReference r=AlignmentReference.load(TestModels.files(),m);
             assertNotNull(id+" reference missing",r);

@@ -1,33 +1,36 @@
 package com.watchalign.mobile;
 
 import org.junit.Test;
+
+import java.io.File;
+import java.util.List;
+
 import static org.junit.Assert.*;
 
-/** All supported models must use the single production marker review route. */
+/** All supported models use the single production marker review route; anything else is refused, never rerouted. */
 public class UnifiedMarkerReviewTest {
-    private static ModelSpec spec(String id){
-        try{return ModelSpec.load(TestModels.files(),id);}
-        catch(Exception e){throw new AssertionError(e);}
+    static List<ModelRegistry.Check> bundled(){
+        String[] ids=new File(TestModels.assets(),"models").list();
+        return ModelRegistry.discover(TestModels.files(),ids,"gmt_126710");
     }
 
-    @Test public void allSupportedFamiliesAreReadyForTheSameReviewEngine(){
-        assertEquals(3,UnifiedMarkerReview.FAMILY_IDS.length);
-        for(String id:UnifiedMarkerReview.FAMILY_IDS){
-            ModelSpec model=spec(id);
-            ModelReference metal=ModelReference.load(TestModels.files(),model);
-            AlignmentReference alignment=AlignmentReference.load(TestModels.files(),model);
-            assertTrue("Missing family reference: "+id,UnifiedMarkerReview.ready(model,metal,alignment));
-            assertEquals(id,alignment.model);
-            assertEquals(id.equals("submariner_124060")?12:11,model.markers.size());
+    @Test public void everySupportedFamilyGoesThroughTheSameEngineWithItsOwnReferences(){
+        List<ModelRegistry.Family> fs=ModelRegistry.supported(bundled());
+        assertFalse(fs.isEmpty());
+        for(ModelRegistry.Family f:fs){
+            assertEquals(f.id(),f.alignment.model);
+            assertEquals("models/"+f.id(),f.model.dir);
+            for(ModelSpec.Marker mk:f.model.markers)assertTrue(ModelRegistry.ENGINE_SHAPES.contains(mk.shape));
         }
     }
 
     @Test public void dateFamilyHasNoThreeOclockMarkerButUsesIdenticalMarkerCategories(){
-        ModelSpec noDate=spec("submariner_124060"),date=spec("submariner_126610");
+        ModelSpec noDate=ModelRegistryTest.spec("submariner_124060"),date=ModelRegistryTest.spec("submariner_126610");
         assertNull(date.atHour(3));
         assertNotNull(date.date);
         assertEquals(3,date.date.hour);
         assertNotNull(noDate.atHour(3));
+        assertNull(noDate.date);
         for(ModelSpec.Marker marker:date.markers){
             ModelSpec.Marker other=noDate.atHour(marker.hour);
             assertNotNull("Missing common dial marker: "+marker.hour,other);
@@ -35,19 +38,14 @@ public class UnifiedMarkerReviewTest {
         }
     }
 
-    @Test public void missingOrMixedReferencesNeverChooseAnotherPipeline(){
-        ModelSpec gmt=spec("gmt_126710"),date=spec("submariner_126610");
-        ModelReference genuine=ModelReference.load(TestModels.files(),gmt);
-        AlignmentReference align=AlignmentReference.load(TestModels.files(),gmt);
-        assertFalse(UnifiedMarkerReview.ready(date,genuine,align));
-        assertFalse(UnifiedMarkerReview.ready(gmt,null,align));
-        assertFalse(UnifiedMarkerReview.ready(gmt,genuine,null));
-        assertFalse(UnifiedMarkerReview.supports("116610LN"));
-        assertFalse(UnifiedMarkerReview.supports("bad_id"));
+    @Test(expected=UnifiedMarkerReview.NotSupported.class)
+    public void aModelThatIsNotAValidatedFamilyIsRefusedNotRerouted(){
+        UnifiedMarkerReview.run(null,null);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void unsupportedModelMustNotFallBackToLegacyAnalyzer(){
-        UnifiedMarkerReview.run(null,spec("submariner_126610"),null,null);
+    @Test(expected=UnifiedMarkerReview.NotSupported.class)
+    public void aFamilyWithoutItsReferencesIsRefused(){
+        ModelSpec gmt=ModelRegistryTest.spec("gmt_126710");
+        UnifiedMarkerReview.run(null,new ModelRegistry.Family(gmt,null,AlignmentReference.load(TestModels.files(),gmt)));
     }
 }

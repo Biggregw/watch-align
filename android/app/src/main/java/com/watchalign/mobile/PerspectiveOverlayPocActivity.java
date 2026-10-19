@@ -38,10 +38,8 @@ public class PerspectiveOverlayPocActivity extends Activity {
     private String modelId=MODEL_ID;
     private static final String PREFS="watchalign",PREF_MODEL="model";
     private final List<String> modelIds=new ArrayList<>(),modelLabels=new ArrayList<>();
-    /** Loaded model data, keyed by model id so a check never uses another model's geometry or references. */
-    private static final class Loaded{final String id;final ModelSpec model;final ModelReference reference;final AlignmentReference alignment;
-        Loaded(String id,ModelSpec m,ModelReference r,AlignmentReference a){this.id=id;model=m;reference=r;alignment=a;}}
-    private volatile Loaded loaded;
+    /** The validated families (ModelRegistry), by model id: a check never uses another model's geometry or references. */
+    private final java.util.Map<String,ModelRegistry.Family> families=new java.util.HashMap<>();
     /** Every change of photo or model starts a new request; a check's result is shown only if it is still current. */
     private int request;
     private TextView title,intro;
@@ -109,26 +107,23 @@ public class PerspectiveOverlayPocActivity extends Activity {
         return null;
     }
 
-    /** Model folders in the app's assets that have a verified genuine luminous alignment reference, default first; a
-     *  folder whose spec or reference cannot be read is not offered (e.g. a model researched but not validated). */
+    /** The supported families: every model folder in the app's assets that ModelRegistry validates (its own model
+     *  definition, genuine references for all of its markers, and genuine measurements by this version), default first.
+     *  A folder that does not validate is not offered; there is no built-in fallback family. */
     private void discoverModels(){
-        modelIds.clear();modelLabels.clear();
-        try{
-            String[] ids=getAssets().list("models");
-            if(ids!=null){
-                java.util.Arrays.sort(ids);
-                for(String id:ids){
-                    try{ModelSpec m=ModelSpec.load(getAssets()::open,id);
-                        if(!UnifiedMarkerReview.ready(m,ModelReference.load(getAssets()::open,m),AlignmentReference.load(getAssets()::open,m)))continue;
-                        int at=id.equals(MODEL_ID)?0:modelIds.size();modelIds.add(at,id);modelLabels.add(at,m.label);}
-                    catch(Exception ignored){}
-                }
-            }
-        }catch(Exception ignored){}
-        if(modelIds.isEmpty()){modelIds.add(MODEL_ID);modelLabels.add("GMT-Master II (126710 family)");}
+        modelIds.clear();modelLabels.clear();families.clear();
+        String[] ids=null;
+        try{ids=getAssets().list("models");}catch(Exception ignored){}
+        for(ModelRegistry.Check c:ModelRegistry.discover(getAssets()::open,ids,MODEL_ID)){
+            if(!c.ok()){android.util.Log.i("WatchAlign","model "+c.id+" not offered: "+c.problem);continue;}
+            modelIds.add(c.id);modelLabels.add(c.family.model.label);families.put(c.id,c.family);
+        }
+        if(!modelIds.isEmpty()&&!modelIds.contains(modelId))modelId=modelIds.get(0);
     }
 
     private void updateModelText(){
+        if(modelIds.isEmpty()){title.setText("Watch Align");
+            intro.setText("No watch model with a complete, validated genuine reference is installed, so no photo can be checked.");return;}
         String label=modelLabels.get(Math.max(0,modelIds.indexOf(modelId)));
         title.setText("Watch Align");
         intro.setText("Checking: "+label+". Upload a sharp, straight-on photo of the dial with the whole dial visible and no hands over the markers if possible."
@@ -142,18 +137,17 @@ public class PerspectiveOverlayPocActivity extends Activity {
         // immutable inputs of this check: the photo, the model id and the request number at the time of the tap
         final String wantId=modelId;final int mine=++request;
         buildButton.setEnabled(false);inspectButton.setEnabled(false);status.setText("Checking the markers…");
+        final ModelRegistry.Family family=families.get(wantId);
         worker.submit(()->{
-            Alpha99Pipeline.Output o;
-            try{
-                Loaded l=loaded;
-                if(l==null||!l.id.equals(wantId)){ModelSpec m=ModelSpec.load(getAssets()::open,wantId);
-                    l=new Loaded(wantId,m,ModelReference.load(getAssets()::open,m),AlignmentReference.load(getAssets()::open,m));loaded=l;}
-                o=UnifiedMarkerReview.run(photo,l.model,l.reference,l.alignment);
-            }catch(Throwable t){o=new Alpha99Pipeline.Output();}
-            final Alpha99Pipeline.Output fo=o;final AutomaticDialOverlay.Result q=o.pose;
+            Alpha99Pipeline.Output o;String refused=null;
+            try{o=UnifiedMarkerReview.run(photo,family);}
+            catch(UnifiedMarkerReview.NotSupported e){o=new Alpha99Pipeline.Output();refused=e.getMessage();}
+            catch(Throwable t){o=new Alpha99Pipeline.Output();}
+            final Alpha99Pipeline.Output fo=o;final AutomaticDialOverlay.Result q=o.pose;final String why=refused;
             runOnUiThread(()->{
                 if(mine!=request||!wantId.equals(modelId)||photo!=candidateBitmap)return;   // the photo or model changed meanwhile: discard
                 buildButton.setEnabled(true);
+                if(why!=null){lastOverlay=null;lastMeasurement=null;inspectButton.setEnabled(false);status.setText("Can't check: "+why+".");return;}
                 if(!fo.ok()){lastOverlay=null;lastMeasurement=null;inspectButton.setEnabled(false);
                     status.setText("Cannot assess: the dial could not be located in this photo. Try a sharper photo taken straight on with the whole dial visible. ("+(q==null?"no result":q.reason)+")");return;}
                 lastOverlay=fo.diagnosticOverlay!=null?fo.diagnosticOverlay:q.overlay;lastMeasurement=fo.measurement;inspectButton.setEnabled(true);
