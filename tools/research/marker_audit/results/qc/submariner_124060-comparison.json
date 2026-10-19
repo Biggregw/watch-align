@@ -1,0 +1,170 @@
+{
+  "photos": 4,
+  "markers": 48,
+  "before_states": {
+    "POSSIBLE": 2,
+    "NO_VISIBLE_ISSUE": 45,
+    "CLEARLY_OFF": 1
+  },
+  "after_states": {
+    "POSSIBLE": 2,
+    "NO_VISIBLE_ISSUE": 45,
+    "CLEARLY_OFF": 1
+  },
+  "transitions": {
+    "POSSIBLE -> POSSIBLE": 2,
+    "NO_VISIBLE_ISSUE -> NO_VISIBLE_ISSUE": 45,
+    "CLEARLY_OFF -> CLEARLY_OFF": 1
+  },
+  "reliable_before": 28,
+  "reliable_after": 29,
+  "reliable_retained": 28,
+  "new_uncertain": [],
+  "new_cant_check": [],
+  "state_changes": [],
+  "metric_changes": {
+    "inout_pct": {
+      "changed": 9,
+      "max_absolute_change": 0.003500000000000003,
+      "largest": [
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "1",
+          "delta": -0.003500000000000003
+        },
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "2",
+          "delta": -0.003500000000000003
+        },
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "11",
+          "delta": -0.0034000000000000002
+        },
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "7",
+          "delta": -0.0033999999999999864
+        },
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "8",
+          "delta": 0.003300000000000001
+        },
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "12",
+          "delta": -0.0016999999999999793
+        },
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "3",
+          "delta": -0.0016000000000000458
+        },
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "9",
+          "delta": -0.0015999999999999348
+        },
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "6",
+          "delta": -0.0015000000000000013
+        }
+      ]
+    },
+    "side_pct": {
+      "changed": 1,
+      "max_absolute_change": 0.027000000000000024,
+      "largest": [
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "8",
+          "delta": -0.027000000000000024
+        }
+      ]
+    },
+    "cover": {
+      "changed": 1,
+      "max_absolute_change": 0.12890000000000001,
+      "largest": [
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "8",
+          "delta": -0.12890000000000001
+        }
+      ]
+    },
+    "fit_rms_px": {
+      "changed": 1,
+      "max_absolute_change": 0.08989999999999998,
+      "largest": [
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "8",
+          "delta": -0.08989999999999998
+        }
+      ]
+    },
+    "bad_frac": {
+      "changed": 1,
+      "max_absolute_change": 0.1123,
+      "largest": [
+        {
+          "photo_id": "SUB_control12_1kqn8ub",
+          "hour": "8",
+          "delta": -0.1123
+        }
+      ]
+    }
+  },
+  "by_shape": {
+    "baton": {
+      "markers": 12,
+      "before": {
+        "NO_VISIBLE_ISSUE": 11,
+        "POSSIBLE": 1
+      },
+      "after": {
+        "NO_VISIBLE_ISSUE": 11,
+        "POSSIBLE": 1
+      },
+      "reliable_before": 3,
+      "reliable_after": 3
+    },
+    "round": {
+      "markers": 32,
+      "before": {
+        "NO_VISIBLE_ISSUE": 32
+      },
+      "after": {
+        "NO_VISIBLE_ISSUE": 32
+      },
+      "reliable_before": 22,
+      "reliable_after": 23
+    },
+    "triangle": {
+      "markers": 4,
+      "before": {
+        "POSSIBLE": 1,
+        "NO_VISIBLE_ISSUE": 2,
+        "CLEARLY_OFF": 1
+      },
+      "after": {
+        "POSSIBLE": 1,
+        "NO_VISIBLE_ISSUE": 2,
+        "CLEARLY_OFF": 1
+      },
+      "reliable_before": 3,
+      "reliable_after": 3
+    }
+  },
+  "duplicate_rows": {
+    "before": [],
+    "after": []
+  },
+  "verified_cohort_photos": 4,
+  "unassessed_photos": [],
+  "independent_watches_assessed": 4
+}

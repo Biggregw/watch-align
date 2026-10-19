@@ -1,0 +1,984 @@
+{
+  "photos": 66,
+  "markers": 726,
+  "before_states": {
+    "NO_VISIBLE_ISSUE": 720,
+    "CANT_CHECK": 4,
+    "POSSIBLE": 2
+  },
+  "after_states": {
+    "NO_VISIBLE_ISSUE": 721,
+    "CANT_CHECK": 4,
+    "POSSIBLE": 1
+  },
+  "transitions": {
+    "NO_VISIBLE_ISSUE -> NO_VISIBLE_ISSUE": 720,
+    "CANT_CHECK -> CANT_CHECK": 4,
+    "POSSIBLE -> NO_VISIBLE_ISSUE": 1,
+    "POSSIBLE -> POSSIBLE": 1
+  },
+  "reliable_before": 474,
+  "reliable_after": 474,
+  "reliable_retained": 474,
+  "new_uncertain": [],
+  "new_cant_check": [],
+  "state_changes": [
+    {
+      "photo_id": "66c4527d45cf91b0",
+      "hour": "5",
+      "before": {
+        "photo_id": "66c4527d45cf91b0",
+        "watch": "phillips_181407",
+        "model": "gmt_126710",
+        "rpx": "120.4294",
+        "hour": "5",
+        "shape": "round",
+        "state": "POSSIBLE",
+        "gate": "",
+        "side_pct": "0.2279",
+        "inout_pct": "-2.2619",
+        "tilt_line_deg": "",
+        "ring_turn_pct": "0.0632",
+        "bad_ticks": "4",
+        "gap_pct": "",
+        "tilt_centroid_deg": "",
+        "rot_left_deg": "",
+        "rot_right_deg": "",
+        "rot_rms_px": "",
+        "rot_note": "",
+        "rot_vs_line_deg": "",
+        "tip_dr_px": "",
+        "source": "outer metal",
+        "uncertain": "its visible edge is rough (0.8 px); 38% of its visible edge is inconsistent (shadowed or reflecting metal); the photo's resolution is low (the dial is 241 px across)",
+        "cover": "0.6875",
+        "fit_rms_px": "0.8273",
+        "bad_frac": "0.3750",
+        "se_pos_pct": "0.1151",
+        "se_rot_deg": "",
+        "gap_from_fit": "",
+        "reason": "its visible edge is rough (0.8 px); 38% of its visible edge is inconsistent (shadowed or reflecting metal); the photo's resolution is low (the dial is 241 px across)",
+        "edge_bias_px": "0.0247"
+      },
+      "after": {
+        "photo_id": "66c4527d45cf91b0",
+        "watch": "phillips_181407",
+        "model": "gmt_126710",
+        "rpx": "120.4294",
+        "hour": "5",
+        "shape": "round",
+        "state": "NO_VISIBLE_ISSUE",
+        "gate": "",
+        "side_pct": "1.3578",
+        "inout_pct": "0.1753",
+        "tilt_line_deg": "",
+        "ring_turn_pct": "0.0632",
+        "bad_ticks": "4",
+        "gap_pct": "",
+        "tilt_centroid_deg": "",
+        "rot_left_deg": "",
+        "rot_right_deg": "",
+        "rot_rms_px": "",
+        "rot_note": "",
+        "rot_vs_line_deg": "",
+        "tip_dr_px": "",
+        "source": "outer metal",
+        "uncertain": "its visible edge is rough (1.1 px); 54% of its visible edge is inconsistent (shadowed or reflecting metal); the photo's resolution is low (the dial is 241 px across)",
+        "cover": "0.5391",
+        "fit_rms_px": "1.1371",
+        "bad_frac": "0.5362",
+        "se_pos_pct": "0.1859",
+        "se_rot_deg": "",
+        "gap_from_fit": "",
+        "reason": "",
+        "edge_bias_px": "0.0247"
+      }
+    }
+  ],
+  "metric_changes": {
+    "side_pct": {
+      "changed": 14,
+      "max_absolute_change": 1.1299,
+      "largest": [
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "5",
+          "delta": 1.1299
+        },
+        {
+          "photo_id": "83e5cea4c73fcaee",
+          "hour": "11",
+          "delta": 0.1735
+        },
+        {
+          "photo_id": "9b6e4919c0ab2400",
+          "hour": "5",
+          "delta": 0.0063
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "2",
+          "delta": -0.00269999999999998
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "1",
+          "delta": 0.0025000000000000022
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "11",
+          "delta": -0.0021999999999999797
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "7",
+          "delta": -0.0010000000000000009
+        },
+        {
+          "photo_id": "cae9ed4ca889fc44",
+          "hour": "5",
+          "delta": 0.0005000000000000004
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "4",
+          "delta": -0.0003999999999999976
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "5",
+          "delta": 0.0002999999999999947
+        }
+      ]
+    },
+    "inout_pct": {
+      "changed": 44,
+      "max_absolute_change": 2.4372,
+      "largest": [
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "5",
+          "delta": 2.4372
+        },
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "1",
+          "delta": -0.4293
+        },
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "8",
+          "delta": -0.2651
+        },
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "11",
+          "delta": -0.26239999999999986
+        },
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "2",
+          "delta": -0.26059999999999994
+        },
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "12",
+          "delta": -0.2107
+        },
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "9",
+          "delta": -0.20519999999999994
+        },
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "6",
+          "delta": -0.2037
+        },
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "4",
+          "delta": -0.17550000000000004
+        },
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "10",
+          "delta": -0.17519999999999997
+        }
+      ]
+    },
+    "fit_rms_px": {
+      "changed": 14,
+      "max_absolute_change": 0.3653000000000002,
+      "largest": [
+        {
+          "photo_id": "83e5cea4c73fcaee",
+          "hour": "11",
+          "delta": -0.3653000000000002
+        },
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "5",
+          "delta": 0.30979999999999996
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "11",
+          "delta": 0.016599999999999976
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "1",
+          "delta": 0.016399999999999998
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "10",
+          "delta": 0.011099999999999999
+        },
+        {
+          "photo_id": "9b6e4919c0ab2400",
+          "hour": "5",
+          "delta": -0.008800000000000002
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "5",
+          "delta": -0.008699999999999986
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "7",
+          "delta": -0.007699999999999985
+        },
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "8",
+          "delta": -0.005700000000000011
+        },
+        {
+          "photo_id": "cae9ed4ca889fc44",
+          "hour": "5",
+          "delta": -0.0042999999999999705
+        }
+      ]
+    },
+    "bad_frac": {
+      "changed": 6,
+      "max_absolute_change": 0.1612,
+      "largest": [
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "5",
+          "delta": 0.1612
+        },
+        {
+          "photo_id": "83e5cea4c73fcaee",
+          "hour": "11",
+          "delta": -0.05669999999999997
+        },
+        {
+          "photo_id": "cae9ed4ca889fc44",
+          "hour": "5",
+          "delta": -0.044499999999999984
+        },
+        {
+          "photo_id": "9b6e4919c0ab2400",
+          "hour": "5",
+          "delta": -0.0306
+        },
+        {
+          "photo_id": "454db39fb22b7f94",
+          "hour": "11",
+          "delta": -0.0165
+        },
+        {
+          "photo_id": "734ed2e51fcdbe6d",
+          "hour": "2",
+          "delta": -0.0036
+        }
+      ]
+    },
+    "cover": {
+      "changed": 6,
+      "max_absolute_change": 0.2188,
+      "largest": [
+        {
+          "photo_id": "7a28dfdca6f5027e",
+          "hour": "2",
+          "delta": -0.2188
+        },
+        {
+          "photo_id": "66c4527d45cf91b0",
+          "hour": "5",
+          "delta": -0.14839999999999998
+        },
+        {
+          "photo_id": "9b6e4919c0ab2400",
+          "hour": "5",
+          "delta": -0.02729999999999999
+        },
+        {
+          "photo_id": "36ffe44ce5170d2b",
+          "hour": "1",
+          "delta": -0.011699999999999933
+        },
+        {
+          "photo_id": "83e5cea4c73fcaee",
+          "hour": "11",
+          "delta": -0.0026000000000000467
+        },
+        {
+          "photo_id": "734ed2e51fcdbe6d",
+          "hour": "2",
+          "delta": -0.0025999999999999357
+        }
+      ]
+    }
+  },
+  "by_shape": {
+    "baton": {
+      "markers": 132,
+      "before": {
+        "NO_VISIBLE_ISSUE": 130,
+        "CANT_CHECK": 2
+      },
+      "after": {
+        "NO_VISIBLE_ISSUE": 130,
+        "CANT_CHECK": 2
+      },
+      "reliable_before": 98,
+      "reliable_after": 98
+    },
+    "round": {
+      "markers": 528,
+      "before": {
+        "NO_VISIBLE_ISSUE": 525,
+        "POSSIBLE": 2,
+        "CANT_CHECK": 1
+      },
+      "after": {
+        "NO_VISIBLE_ISSUE": 526,
+        "POSSIBLE": 1,
+        "CANT_CHECK": 1
+      },
+      "reliable_before": 326,
+      "reliable_after": 326
+    },
+    "triangle": {
+      "markers": 66,
+      "before": {
+        "NO_VISIBLE_ISSUE": 65,
+        "CANT_CHECK": 1
+      },
+      "after": {
+        "NO_VISIBLE_ISSUE": 65,
+        "CANT_CHECK": 1
+      },
+      "reliable_before": 50,
+      "reliable_after": 50
+    }
+  },
+  "duplicate_rows": {
+    "before": [
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "12"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "1"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "2"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "4"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "5"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "6"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "7"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "8"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "9"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "10"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "11"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      }
+    ],
+    "after": [
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "12"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "1"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "2"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "4"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "5"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "6"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "7"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "8"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "9"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "10"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      },
+      {
+        "key": [
+          "7a28dfdca6f5027e",
+          "11"
+        ],
+        "watch_aliases": [
+          "hv_page_4a6ca69f12",
+          "hv_page_c2377563f8"
+        ]
+      }
+    ]
+  },
+  "verified_cohort_photos": 76,
+  "unassessed_photos": [
+    "0196a54bb8662bd6",
+    "1eb396cba1b95704",
+    "237b623f0e13ac6a",
+    "641dc405c27149d0",
+    "6de22511c60b1ca2",
+    "91bff020783974d8",
+    "baf57b66c2a15daa",
+    "d0bda0f8f6726fa9",
+    "e9b6fe2e1100dbd9",
+    "f73f5f4bb560c8b1"
+  ],
+  "independent_watches_assessed": 37,
+  "qc_suitable": {
+    "photos": 50,
+    "markers": 550,
+    "before_states": {
+      "NO_VISIBLE_ISSUE": 550
+    },
+    "after_states": {
+      "NO_VISIBLE_ISSUE": 550
+    },
+    "transitions": {
+      "NO_VISIBLE_ISSUE -> NO_VISIBLE_ISSUE": 550
+    },
+    "reliable_before": 474,
+    "reliable_after": 474,
+    "reliable_retained": 474,
+    "new_uncertain": [],
+    "new_cant_check": [],
+    "state_changes": [],
+    "metric_changes": {
+      "side_pct": {
+        "changed": 5,
+        "max_absolute_change": 0.1735,
+        "largest": [
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "11",
+            "delta": 0.1735
+          },
+          {
+            "photo_id": "9b6e4919c0ab2400",
+            "hour": "5",
+            "delta": 0.0063
+          },
+          {
+            "photo_id": "cae9ed4ca889fc44",
+            "hour": "5",
+            "delta": 0.0005000000000000004
+          },
+          {
+            "photo_id": "734ed2e51fcdbe6d",
+            "hour": "2",
+            "delta": 0.0002999999999999947
+          },
+          {
+            "photo_id": "36ffe44ce5170d2b",
+            "hour": "1",
+            "delta": 0.00020000000000000573
+          }
+        ]
+      },
+      "inout_pct": {
+        "changed": 22,
+        "max_absolute_change": 0.036000000000000004,
+        "largest": [
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "11",
+            "delta": 0.036000000000000004
+          },
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "10",
+            "delta": -0.0318
+          },
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "7",
+            "delta": -0.0264
+          },
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "8",
+            "delta": -0.0264
+          },
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "1",
+            "delta": -0.0262
+          },
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "12",
+            "delta": -0.015500000000000014
+          },
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "9",
+            "delta": -0.014800000000000008
+          },
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "6",
+            "delta": -0.01479999999999998
+          },
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "2",
+            "delta": -0.005500000000000005
+          },
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "4",
+            "delta": -0.005500000000000005
+          }
+        ]
+      },
+      "fit_rms_px": {
+        "changed": 5,
+        "max_absolute_change": 0.3653000000000002,
+        "largest": [
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "11",
+            "delta": -0.3653000000000002
+          },
+          {
+            "photo_id": "9b6e4919c0ab2400",
+            "hour": "5",
+            "delta": -0.008800000000000002
+          },
+          {
+            "photo_id": "cae9ed4ca889fc44",
+            "hour": "5",
+            "delta": -0.0042999999999999705
+          },
+          {
+            "photo_id": "36ffe44ce5170d2b",
+            "hour": "1",
+            "delta": 0.003200000000000036
+          },
+          {
+            "photo_id": "734ed2e51fcdbe6d",
+            "hour": "2",
+            "delta": -0.0013999999999999846
+          }
+        ]
+      },
+      "bad_frac": {
+        "changed": 5,
+        "max_absolute_change": 0.05669999999999997,
+        "largest": [
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "11",
+            "delta": -0.05669999999999997
+          },
+          {
+            "photo_id": "cae9ed4ca889fc44",
+            "hour": "5",
+            "delta": -0.044499999999999984
+          },
+          {
+            "photo_id": "9b6e4919c0ab2400",
+            "hour": "5",
+            "delta": -0.0306
+          },
+          {
+            "photo_id": "454db39fb22b7f94",
+            "hour": "11",
+            "delta": -0.0165
+          },
+          {
+            "photo_id": "734ed2e51fcdbe6d",
+            "hour": "2",
+            "delta": -0.0036
+          }
+        ]
+      },
+      "cover": {
+        "changed": 4,
+        "max_absolute_change": 0.02729999999999999,
+        "largest": [
+          {
+            "photo_id": "9b6e4919c0ab2400",
+            "hour": "5",
+            "delta": -0.02729999999999999
+          },
+          {
+            "photo_id": "36ffe44ce5170d2b",
+            "hour": "1",
+            "delta": -0.011699999999999933
+          },
+          {
+            "photo_id": "83e5cea4c73fcaee",
+            "hour": "11",
+            "delta": -0.0026000000000000467
+          },
+          {
+            "photo_id": "734ed2e51fcdbe6d",
+            "hour": "2",
+            "delta": -0.0025999999999999357
+          }
+        ]
+      }
+    },
+    "by_shape": {
+      "baton": {
+        "markers": 100,
+        "before": {
+          "NO_VISIBLE_ISSUE": 100
+        },
+        "after": {
+          "NO_VISIBLE_ISSUE": 100
+        },
+        "reliable_before": 98,
+        "reliable_after": 98
+      },
+      "round": {
+        "markers": 400,
+        "before": {
+          "NO_VISIBLE_ISSUE": 400
+        },
+        "after": {
+          "NO_VISIBLE_ISSUE": 400
+        },
+        "reliable_before": 326,
+        "reliable_after": 326
+      },
+      "triangle": {
+        "markers": 50,
+        "before": {
+          "NO_VISIBLE_ISSUE": 50
+        },
+        "after": {
+          "NO_VISIBLE_ISSUE": 50
+        },
+        "reliable_before": 50,
+        "reliable_after": 50
+      }
+    },
+    "independent_watches_assessed": 33
+  },
+  "suitability_exclusions": [
+    {
+      "photo_id": "1b1874061e3cb0d5",
+      "sha256": "1b1874061e3cb0d599cfd38b0fe1c17ebdb1dd7f8363b7f1b9a77838f2c364c0",
+      "near_frontal": "yes",
+      "rpx": "129.9720",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "406524fb5104d34a",
+      "sha256": "406524fb5104d34a5e344bcdcd7fbbd021c9919883fb95a0d33311746e3f62dd",
+      "near_frontal": "yes",
+      "rpx": "159.7583",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "4f28b9bc46ddd1cf",
+      "sha256": "4f28b9bc46ddd1cf53e7fdb7339a97f344135130a76251d0759ca5309edec7a9",
+      "near_frontal": "yes",
+      "rpx": "119.1591",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "66c4527d45cf91b0",
+      "sha256": "66c4527d45cf91b05a4e520a3e9c620489da78e6afaf4019e2bb0f772412f069",
+      "near_frontal": "no",
+      "rpx": "120.4294",
+      "eligible": "no",
+      "reason": "Oblique product/handheld angle; outside expected frontal QC input; Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "7a28dfdca6f5027e",
+      "sha256": "7a28dfdca6f5027e5033d58293865bd143b4cd3cb999789147364a3208e8c1ef",
+      "near_frontal": "yes",
+      "rpx": "104.6906",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "7a77e61713240ff8",
+      "sha256": "7a77e61713240ff8cf4bfa9d371450bd3275781bd68536daa88c46134b7778e8",
+      "near_frontal": "yes",
+      "rpx": "177.0958",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "7b1978419d4aa853",
+      "sha256": "7b1978419d4aa853b9c05f57346cccebaece33d834baf4b0eedd38f4975e26c7",
+      "near_frontal": "yes",
+      "rpx": "196.9697",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "84aa128bff06f3d7",
+      "sha256": "84aa128bff06f3d7a32fa5ec9a04e900b4f32bba137623621fad030b82246775",
+      "near_frontal": "yes",
+      "rpx": "142.4945",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "b2baff3925ce65f7",
+      "sha256": "b2baff3925ce65f715e1dff43b39044e4b7dd54201d990340f476bb3513ffdf6",
+      "near_frontal": "yes",
+      "rpx": "199.6674",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "bf795611fe399d5f",
+      "sha256": "bf795611fe399d5f1f4ae2fe57b5fe6b96695bf1964f2c5f7da2f05b8035627d",
+      "near_frontal": "yes",
+      "rpx": "190.2697",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "c5f55ae2950cbedf",
+      "sha256": "c5f55ae2950cbedf56b816aaebf672de9d5dc079aa25091879ca423f8fb4d354",
+      "near_frontal": "yes",
+      "rpx": "128.6844",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "ca1360a49365e5ff",
+      "sha256": "ca1360a49365e5ff9799aa337c2c42a5821a30f032c1b5369e138efd914affd1",
+      "near_frontal": "yes",
+      "rpx": "125.9136",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "ccbc58888cb443ab",
+      "sha256": "ccbc58888cb443ab507b866e992da837c2d8f0baf7df3f0dc305b37b9fdb3adf",
+      "near_frontal": "yes",
+      "rpx": "160.0728",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "d6c5edf4cc349905",
+      "sha256": "d6c5edf4cc3499052d695db9169e97d670a5164ca695621310f8c6d6d2151087",
+      "near_frontal": "yes",
+      "rpx": "119.2931",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "da21757059a23f65",
+      "sha256": "da21757059a23f658fb107a9151b670d8d6a1428d4bf56b04b315fb1bac4bfc6",
+      "near_frontal": "yes",
+      "rpx": "189.6090",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    },
+    {
+      "photo_id": "f98441fdf2fdfb49",
+      "sha256": "f98441fdf2fdfb4956498848beab7bb673dab59c88ad2e695767c4825f880907",
+      "near_frontal": "yes",
+      "rpx": "102.0320",
+      "eligible": "no",
+      "reason": "Dial below existing 400 px diameter quality floor"
+    }
+  ]
+}
