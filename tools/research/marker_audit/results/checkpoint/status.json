@@ -1,0 +1,101 @@
+{
+  "saved_at_utc": "2026-10-19T19:53:12.462943+00:00",
+  "reason": "Owner requested handover; longer runs intentionally stopped, not failed.",
+  "code_revision": "29c2403d6f2900c671b154482e9a32c14f62c806",
+  "jobs": {
+    "gmt-final": {
+      "input_rows": 77,
+      "processed_inputs": 77,
+      "assessed_photos": 66,
+      "explicit_no_pose": 10,
+      "remaining_inputs": 0,
+      "marker_rows": 737,
+      "complete": true
+    },
+    "nodate-final": {
+      "input_rows": 294,
+      "processed_inputs": 240,
+      "assessed_photos": 81,
+      "explicit_no_pose": 159,
+      "remaining_inputs": 54,
+      "marker_rows": 972,
+      "complete": false
+    },
+    "date-final": {
+      "input_rows": 128,
+      "processed_inputs": 128,
+      "assessed_photos": 127,
+      "explicit_no_pose": 1,
+      "remaining_inputs": 0,
+      "marker_rows": 1397,
+      "complete": true
+    },
+    "date-additional-before": {
+      "input_rows": 228,
+      "processed_inputs": 47,
+      "assessed_photos": 46,
+      "explicit_no_pose": 1,
+      "remaining_inputs": 181,
+      "marker_rows": 506,
+      "complete": false
+    },
+    "date-additional-after": {
+      "input_rows": 228,
+      "processed_inputs": 52,
+      "assessed_photos": 51,
+      "explicit_no_pose": 1,
+      "remaining_inputs": 176,
+      "marker_rows": 561,
+      "complete": false
+    }
+  },
+  "memory_parity": {
+    "gmt": {
+      "checked_marker_rows": 726,
+      "total_marker_rows": 726,
+      "complete": true,
+      "differences": 0,
+      "saved_csv_sha256": "830e1c8725ddb521f9c02656d5cdeddeb20c073099edb731ddc804e3b354f7e8",
+      "byte_identical_entire_csv": true
+    },
+    "nodate": {
+      "checked_marker_rows": 972,
+      "total_marker_rows": 1620,
+      "complete": false,
+      "differences": 0,
+      "saved_csv_sha256": "582b4033b7fa51e64593eb95a55979665a5af0fa6e49abcf4c684be197e49d4f",
+      "byte_identical_entire_csv": false
+    },
+    "date": {
+      "checked_marker_rows": 1397,
+      "total_marker_rows": 1397,
+      "complete": true,
+      "differences": 0,
+      "saved_csv_sha256": "018b4ea9881c1475881844a352eb4f49f883be26a0b9e96f455049e6c8cf5c8b",
+      "byte_identical_entire_csv": true
+    },
+    "QC gmt_126710": {
+      "checked_marker_rows": 33,
+      "complete": true,
+      "byte_identical_entire_csv": true,
+      "sha256": "4a107b43067bf48e5dcd493b434428335b55a11dc25f02585e9bcda6f4703b41"
+    },
+    "QC submariner_124060": {
+      "checked_marker_rows": 48,
+      "complete": true,
+      "byte_identical_entire_csv": true,
+      "sha256": "a1f1a8f56bebedf1fa7a59017b3fc6fbf33a8d50298661539f2266bf4217ca42"
+    }
+  },
+  "original_219": {
+    "total_photos": 219,
+    "recovered_verified_photos": 219,
+    "original_baseline_marker_rows": 2409,
+    "baseline_rerun_matching_photos": 119,
+    "baseline_rerun_identical_marker_rows": 1309,
+    "candidate_matched_photos": 122,
+    "candidate_matched_marker_rows": 1342,
+    "candidate_remaining_photos": 97,
+    "complete": false
+  }
+}

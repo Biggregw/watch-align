@@ -1,0 +1,604 @@
+{
+  "photos": 122,
+  "markers": 1342,
+  "before_states": {
+    "NO_VISIBLE_ISSUE": 1331,
+    "POSSIBLE": 10,
+    "CANT_CHECK": 1
+  },
+  "after_states": {
+    "NO_VISIBLE_ISSUE": 1334,
+    "POSSIBLE": 7,
+    "CANT_CHECK": 1
+  },
+  "transitions": {
+    "NO_VISIBLE_ISSUE -> NO_VISIBLE_ISSUE": 1331,
+    "POSSIBLE -> POSSIBLE": 7,
+    "POSSIBLE -> NO_VISIBLE_ISSUE": 3,
+    "CANT_CHECK -> CANT_CHECK": 1
+  },
+  "reliable_before": 1238,
+  "reliable_after": 1241,
+  "reliable_retained": 1238,
+  "new_uncertain": [],
+  "new_cant_check": [],
+  "state_changes": [
+    {
+      "photo_id": "2802b4a30cfb277b",
+      "hour": "9",
+      "before": {
+        "photo_id": "2802b4a30cfb277b",
+        "watch": "bobs_126613LB_186320",
+        "model": "submariner_126610",
+        "rpx": "437.7444",
+        "hour": "9",
+        "shape": "baton",
+        "state": "POSSIBLE",
+        "gate": "",
+        "side_pct": "0.5246",
+        "inout_pct": "0.0478",
+        "tilt_line_deg": "2.0221",
+        "ring_turn_pct": "-0.0516",
+        "bad_ticks": "6",
+        "gap_pct": "",
+        "tilt_centroid_deg": "",
+        "rot_left_deg": "",
+        "rot_right_deg": "",
+        "rot_rms_px": "",
+        "rot_note": "",
+        "rot_vs_line_deg": "",
+        "tip_dr_px": "",
+        "source": "outer metal",
+        "uncertain": "its visible edge is rough (1.8 px); 55% of its visible edge is inconsistent (shadowed or reflecting metal)",
+        "cover": "0.8135",
+        "fit_rms_px": "1.8004",
+        "bad_frac": "0.5508",
+        "se_pos_pct": "0.0335",
+        "se_rot_deg": "0.1709",
+        "gap_from_fit": "",
+        "reason": "its visible edge is rough (1.8 px); 55% of its visible edge is inconsistent (shadowed or reflecting metal)",
+        "edge_bias_px": "0.9140"
+      },
+      "after": {
+        "photo_id": "2802b4a30cfb277b",
+        "watch": "bobs_126613LB_186320",
+        "model": "submariner_126610",
+        "rpx": "437.7444",
+        "hour": "9",
+        "shape": "baton",
+        "state": "NO_VISIBLE_ISSUE",
+        "gate": "",
+        "side_pct": "0.2269",
+        "inout_pct": "0.0496",
+        "tilt_line_deg": "0.4303",
+        "ring_turn_pct": "-0.0516",
+        "bad_ticks": "6",
+        "gap_pct": "",
+        "tilt_centroid_deg": "",
+        "rot_left_deg": "",
+        "rot_right_deg": "",
+        "rot_rms_px": "",
+        "rot_note": "",
+        "rot_vs_line_deg": "",
+        "tip_dr_px": "",
+        "source": "outer metal",
+        "uncertain": "",
+        "cover": "0.6055",
+        "fit_rms_px": "0.1720",
+        "bad_frac": "0.0000",
+        "se_pos_pct": "0.0033",
+        "se_rot_deg": "0.0173",
+        "gap_from_fit": "",
+        "reason": "",
+        "edge_bias_px": "0.9140"
+      }
+    },
+    {
+      "photo_id": "6f071d93608b9081",
+      "hour": "12",
+      "before": {
+        "photo_id": "6f071d93608b9081",
+        "watch": "bobs_126613LB_193949",
+        "model": "submariner_126610",
+        "rpx": "438.0777",
+        "hour": "12",
+        "shape": "triangle",
+        "state": "POSSIBLE",
+        "gate": "",
+        "side_pct": "0.0452",
+        "inout_pct": "-0.4285",
+        "tilt_line_deg": "-1.2193",
+        "ring_turn_pct": "0.1418",
+        "bad_ticks": "5",
+        "gap_pct": "3.7301",
+        "tilt_centroid_deg": "",
+        "rot_left_deg": "",
+        "rot_right_deg": "",
+        "rot_rms_px": "",
+        "rot_note": "",
+        "rot_vs_line_deg": "-1.2112",
+        "tip_dr_px": "",
+        "source": "outer metal",
+        "uncertain": "its visible edge is rough (2.1 px); 83% of its visible edge is inconsistent (shadowed or reflecting metal)",
+        "cover": "0.7388",
+        "fit_rms_px": "2.1264",
+        "bad_frac": "0.8333",
+        "se_pos_pct": "0.0408",
+        "se_rot_deg": "0.1564",
+        "gap_from_fit": "",
+        "reason": "its visible edge is rough (2.1 px); 83% of its visible edge is inconsistent (shadowed or reflecting metal)",
+        "edge_bias_px": "0.0000"
+      },
+      "after": {
+        "photo_id": "6f071d93608b9081",
+        "watch": "bobs_126613LB_193949",
+        "model": "submariner_126610",
+        "rpx": "438.0777",
+        "hour": "12",
+        "shape": "triangle",
+        "state": "NO_VISIBLE_ISSUE",
+        "gate": "",
+        "side_pct": "-0.0361",
+        "inout_pct": "-0.4268",
+        "tilt_line_deg": "-0.3589",
+        "ring_turn_pct": "0.1418",
+        "bad_ticks": "5",
+        "gap_pct": "3.7301",
+        "tilt_centroid_deg": "",
+        "rot_left_deg": "",
+        "rot_right_deg": "",
+        "rot_rms_px": "",
+        "rot_note": "",
+        "rot_vs_line_deg": "-0.3508",
+        "tip_dr_px": "",
+        "source": "outer metal",
+        "uncertain": "its visible edge is rough (2.1 px); 100% of its visible edge is inconsistent (shadowed or reflecting metal)",
+        "cover": "0.6752",
+        "fit_rms_px": "2.0573",
+        "bad_frac": "1.0000",
+        "se_pos_pct": "0.0415",
+        "se_rot_deg": "0.1758",
+        "gap_from_fit": "",
+        "reason": "",
+        "edge_bias_px": "0.0000"
+      }
+    },
+    {
+      "photo_id": "ee07ceedbb6f0bd3",
+      "hour": "6",
+      "before": {
+        "photo_id": "ee07ceedbb6f0bd3",
+        "watch": "bobs_126610_182143",
+        "model": "submariner_126610",
+        "rpx": "438.8061",
+        "hour": "6",
+        "shape": "baton",
+        "state": "POSSIBLE",
+        "gate": "",
+        "side_pct": "-0.8051",
+        "inout_pct": "-0.0020",
+        "tilt_line_deg": "-2.1010",
+        "ring_turn_pct": "-0.1772",
+        "bad_ticks": "1",
+        "gap_pct": "",
+        "tilt_centroid_deg": "",
+        "rot_left_deg": "",
+        "rot_right_deg": "",
+        "rot_rms_px": "",
+        "rot_note": "",
+        "rot_vs_line_deg": "",
+        "tip_dr_px": "",
+        "source": "outer metal",
+        "uncertain": "its visible edge is rough (2.3 px); 80% of its visible edge is inconsistent (shadowed or reflecting metal)",
+        "cover": "0.9970",
+        "fit_rms_px": "2.2701",
+        "bad_frac": "0.7985",
+        "se_pos_pct": "0.0409",
+        "se_rot_deg": "0.1682",
+        "gap_from_fit": "",
+        "reason": "its visible edge is rough (2.3 px); 80% of its visible edge is inconsistent (shadowed or reflecting metal)",
+        "edge_bias_px": "1.4553"
+      },
+      "after": {
+        "photo_id": "ee07ceedbb6f0bd3",
+        "watch": "bobs_126610_182143",
+        "model": "submariner_126610",
+        "rpx": "438.8061",
+        "hour": "6",
+        "shape": "baton",
+        "state": "NO_VISIBLE_ISSUE",
+        "gate": "",
+        "side_pct": "-0.0397",
+        "inout_pct": "0.0638",
+        "tilt_line_deg": "-0.0716",
+        "ring_turn_pct": "-0.1436",
+        "bad_ticks": "1",
+        "gap_pct": "",
+        "tilt_centroid_deg": "",
+        "rot_left_deg": "",
+        "rot_right_deg": "",
+        "rot_rms_px": "",
+        "rot_note": "",
+        "rot_vs_line_deg": "",
+        "tip_dr_px": "",
+        "source": "outer metal",
+        "uncertain": "",
+        "cover": "0.6224",
+        "fit_rms_px": "0.2594",
+        "bad_frac": "0.1464",
+        "se_pos_pct": "0.0059",
+        "se_rot_deg": "0.0257",
+        "gap_from_fit": "",
+        "reason": "",
+        "edge_bias_px": "0.3224"
+      }
+    }
+  ],
+  "metric_changes": {
+    "inout_pct": {
+      "changed": 120,
+      "max_absolute_change": 0.0658,
+      "largest": [
+        {
+          "photo_id": "ee07ceedbb6f0bd3",
+          "hour": "6",
+          "delta": 0.0658
+        },
+        {
+          "photo_id": "e418538d0e9af0bf",
+          "hour": "12",
+          "delta": 0.0325
+        },
+        {
+          "photo_id": "ee07ceedbb6f0bd3",
+          "hour": "9",
+          "delta": -0.01490000000000001
+        },
+        {
+          "photo_id": "01fe8fdc2e390902",
+          "hour": "12",
+          "delta": 0.013000000000000012
+        },
+        {
+          "photo_id": "5a63524f951dc981",
+          "hour": "5",
+          "delta": 0.0102
+        },
+        {
+          "photo_id": "d7d1c0e651c1b7fc",
+          "hour": "5",
+          "delta": 0.008400000000000005
+        },
+        {
+          "photo_id": "e28a83cc8ea8e19f",
+          "hour": "7",
+          "delta": -0.007700000000000012
+        },
+        {
+          "photo_id": "1b60e2fde8eaf569",
+          "hour": "5",
+          "delta": 0.007499999999999993
+        },
+        {
+          "photo_id": "63a8ab11f4a943b5",
+          "hour": "8",
+          "delta": -0.0069
+        },
+        {
+          "photo_id": "63a8ab11f4a943b5",
+          "hour": "5",
+          "delta": 0.0068000000000000005
+        }
+      ]
+    },
+    "side_pct": {
+      "changed": 74,
+      "max_absolute_change": 0.7654000000000001,
+      "largest": [
+        {
+          "photo_id": "ee07ceedbb6f0bd3",
+          "hour": "6",
+          "delta": 0.7654000000000001
+        },
+        {
+          "photo_id": "2802b4a30cfb277b",
+          "hour": "9",
+          "delta": -0.29769999999999996
+        },
+        {
+          "photo_id": "6f071d93608b9081",
+          "hour": "12",
+          "delta": -0.0813
+        },
+        {
+          "photo_id": "e418538d0e9af0bf",
+          "hour": "12",
+          "delta": -0.042800000000000005
+        },
+        {
+          "photo_id": "01fe8fdc2e390902",
+          "hour": "12",
+          "delta": 0.01830000000000001
+        },
+        {
+          "photo_id": "e28a83cc8ea8e19f",
+          "hour": "7",
+          "delta": -0.014899999999999997
+        },
+        {
+          "photo_id": "1b5fa4cfde6ed740",
+          "hour": "4",
+          "delta": 0.0115
+        },
+        {
+          "photo_id": "dc0e8616a28d0c7f",
+          "hour": "5",
+          "delta": -0.011100000000000013
+        },
+        {
+          "photo_id": "11f773c93a4c676c",
+          "hour": "1",
+          "delta": 0.010599999999999943
+        },
+        {
+          "photo_id": "33745de80e7a4d9f",
+          "hour": "1",
+          "delta": -0.008199999999999999
+        }
+      ]
+    },
+    "fit_rms_px": {
+      "changed": 80,
+      "max_absolute_change": 2.0107,
+      "largest": [
+        {
+          "photo_id": "ee07ceedbb6f0bd3",
+          "hour": "6",
+          "delta": -2.0107
+        },
+        {
+          "photo_id": "2802b4a30cfb277b",
+          "hour": "9",
+          "delta": -1.6284
+        },
+        {
+          "photo_id": "ee07ceedbb6f0bd3",
+          "hour": "9",
+          "delta": -0.9946999999999999
+        },
+        {
+          "photo_id": "e418538d0e9af0bf",
+          "hour": "12",
+          "delta": -0.11009999999999986
+        },
+        {
+          "photo_id": "6f071d93608b9081",
+          "hour": "12",
+          "delta": -0.06909999999999972
+        },
+        {
+          "photo_id": "e28a83cc8ea8e19f",
+          "hour": "7",
+          "delta": -0.04189999999999999
+        },
+        {
+          "photo_id": "33745de80e7a4d9f",
+          "hour": "1",
+          "delta": -0.030399999999999983
+        },
+        {
+          "photo_id": "01fe8fdc2e390902",
+          "hour": "12",
+          "delta": -0.022199999999999998
+        },
+        {
+          "photo_id": "5a63524f951dc981",
+          "hour": "5",
+          "delta": 0.019399999999999973
+        },
+        {
+          "photo_id": "d7d1c0e651c1b7fc",
+          "hour": "5",
+          "delta": -0.01620000000000002
+        }
+      ]
+    },
+    "cover": {
+      "changed": 32,
+      "max_absolute_change": 0.37460000000000004,
+      "largest": [
+        {
+          "photo_id": "ee07ceedbb6f0bd3",
+          "hour": "6",
+          "delta": -0.37460000000000004
+        },
+        {
+          "photo_id": "2802b4a30cfb277b",
+          "hour": "9",
+          "delta": -0.20799999999999996
+        },
+        {
+          "photo_id": "11f773c93a4c676c",
+          "hour": "7",
+          "delta": -0.125
+        },
+        {
+          "photo_id": "d3494f45f100d847",
+          "hour": "4",
+          "delta": -0.09119999999999995
+        },
+        {
+          "photo_id": "e28a83cc8ea8e19f",
+          "hour": "7",
+          "delta": -0.08850000000000002
+        },
+        {
+          "photo_id": "abe396ed3f60120a",
+          "hour": "5",
+          "delta": -0.07289999999999996
+        },
+        {
+          "photo_id": "63a8ab11f4a943b5",
+          "hour": "5",
+          "delta": -0.07289999999999996
+        },
+        {
+          "photo_id": "1b60e2fde8eaf569",
+          "hour": "5",
+          "delta": -0.07289999999999996
+        },
+        {
+          "photo_id": "5a63524f951dc981",
+          "hour": "5",
+          "delta": -0.07030000000000003
+        },
+        {
+          "photo_id": "dc0e8616a28d0c7f",
+          "hour": "5",
+          "delta": -0.07030000000000003
+        }
+      ]
+    },
+    "bad_frac": {
+      "changed": 37,
+      "max_absolute_change": 0.8498,
+      "largest": [
+        {
+          "photo_id": "ee07ceedbb6f0bd3",
+          "hour": "9",
+          "delta": -0.8498
+        },
+        {
+          "photo_id": "ee07ceedbb6f0bd3",
+          "hour": "6",
+          "delta": -0.6521
+        },
+        {
+          "photo_id": "2802b4a30cfb277b",
+          "hour": "9",
+          "delta": -0.5508
+        },
+        {
+          "photo_id": "6f071d93608b9081",
+          "hour": "12",
+          "delta": 0.16669999999999996
+        },
+        {
+          "photo_id": "e28a83cc8ea8e19f",
+          "hour": "7",
+          "delta": -0.0701
+        },
+        {
+          "photo_id": "b447c3784b867c82",
+          "hour": "9",
+          "delta": -0.0638
+        },
+        {
+          "photo_id": "1ef3415e37d6fbf7",
+          "hour": "10",
+          "delta": -0.062099999999999995
+        },
+        {
+          "photo_id": "acf0f1bda6d8c4c5",
+          "hour": "7",
+          "delta": -0.0407
+        },
+        {
+          "photo_id": "d17202c689d957d2",
+          "hour": "5",
+          "delta": -0.036199999999999996
+        },
+        {
+          "photo_id": "73f994775fa1f3f5",
+          "hour": "1",
+          "delta": -0.0229
+        }
+      ]
+    },
+    "tilt_line_deg": {
+      "changed": 7,
+      "max_absolute_change": 2.0294,
+      "largest": [
+        {
+          "photo_id": "ee07ceedbb6f0bd3",
+          "hour": "6",
+          "delta": 2.0294
+        },
+        {
+          "photo_id": "2802b4a30cfb277b",
+          "hour": "9",
+          "delta": -1.5918
+        },
+        {
+          "photo_id": "6f071d93608b9081",
+          "hour": "12",
+          "delta": 0.8604
+        },
+        {
+          "photo_id": "e418538d0e9af0bf",
+          "hour": "12",
+          "delta": -0.1907000000000001
+        },
+        {
+          "photo_id": "01fe8fdc2e390902",
+          "hour": "12",
+          "delta": 0.0726
+        },
+        {
+          "photo_id": "ee07ceedbb6f0bd3",
+          "hour": "9",
+          "delta": -0.0007999999999999952
+        },
+        {
+          "photo_id": "800cd2600f322aa5",
+          "hour": "12",
+          "delta": 0.0004999999999999449
+        }
+      ]
+    }
+  },
+  "by_shape": {
+    "baton": {
+      "markers": 244,
+      "before": {
+        "NO_VISIBLE_ISSUE": 242,
+        "POSSIBLE": 2
+      },
+      "after": {
+        "NO_VISIBLE_ISSUE": 244
+      },
+      "reliable_before": 226,
+      "reliable_after": 229
+    },
+    "round": {
+      "markers": 976,
+      "before": {
+        "NO_VISIBLE_ISSUE": 974,
+        "CANT_CHECK": 1,
+        "POSSIBLE": 1
+      },
+      "after": {
+        "NO_VISIBLE_ISSUE": 974,
+        "CANT_CHECK": 1,
+        "POSSIBLE": 1
+      },
+      "reliable_before": 904,
+      "reliable_after": 904
+    },
+    "triangle": {
+      "markers": 122,
+      "before": {
+        "NO_VISIBLE_ISSUE": 115,
+        "POSSIBLE": 7
+      },
+      "after": {
+        "NO_VISIBLE_ISSUE": 116,
+        "POSSIBLE": 6
+      },
+      "reliable_before": 108,
+      "reliable_after": 108
+    }
+  },
+  "complete_original_219": false,
+  "warning": "Interrupted handover subset; do not present as the full original validation."
+}
