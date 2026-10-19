@@ -110,6 +110,26 @@ A fix found on one model (owner report, new failure mode) is checked on every mo
 classification is run with current and candidate constants, printing every status change). A fix is applied to a model
 only when that model's genuine evidence supports it; otherwise the reason is recorded in its research README.
 
+## When a model is offered (1.6.3: ModelRegistry)
+
+Every model is measured and judged by the same engine (`UnifiedMarkerReview`: `Alpha99Pipeline` + `ClearlyOff`, outer-
+metal fit, uncertainty, classifications, close-ups). There is no list of families in the code: the start screen offers
+every folder in `assets/models/` that `ModelRegistry.check` validates, and logs why any other folder is not offered.
+A folder is offered only when, all from its own folder:
+
+- `model.json` reads, its `id` is the folder name, and every marker shape is one the engine measures (`triangle`,
+  `baton`, `round`; an unknown shape is refused, never read as one of these);
+- `reference/` has the genuine 12 triangle reference (when the dial has a triangle);
+- `alignment/luminous_alignment.json` names this model and has a supported reference for every marker shape and every
+  marker hour, and no hour the dial does not have (a date dial has no 3; a no-date reference is another layout);
+- `alignment/genuine_track.csv` holds this version's measurements of the family's verified genuine photos, at least
+  20 markers of every shape (`watch-align-160.yml` writes it): the evidence that the engine and the default limits
+  were run on genuine watches of the family.
+
+Adding a compatible family is therefore its model definition and its genuine reference data, nothing in the code.
+Saved limits and photos are per model id, so a new family never changes another's. `ModelRegistryTest` covers
+discovery, missing and mismatched references, layouts, unknown shapes and isolation.
+
 ## What happens with an incomplete model
 
 - **No reference, or no uncertainty, for a feature:** it is reported "not assessed - no genuine reference yet" and can
@@ -137,5 +157,5 @@ pixel; `.github/workflows/alpha103-regression.yml` checks that the genuine catal
 - **A new marker shape** (Arabic numerals, Explorer 3-6-9, applied logos): new measurement code, a new `shape`, and the
   interference / close-up outlines for it.
 - **A date window that is not horizontal at 3 o'clock** (e.g. at 6): the window detector assumes a horizontal aperture.
-- **Model picker:** lists every folder in `assets/models/` and remembers the choice. A GMT run whose date window is not
+- **Model picker:** lists every folder in `assets/models/` that ModelRegistry validates and remembers the choice. A GMT run whose date window is not
   found suggests the no-date Submariner (a suggestion only).

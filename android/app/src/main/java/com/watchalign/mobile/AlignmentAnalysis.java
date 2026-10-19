@@ -44,7 +44,8 @@ final class AlignmentAnalysis {
         Output o=new Output();
         double rpx=LuminousAlignment.pxPerR(H);
         if(src==null||H==null||!(rpx>20))o.photoReason="the dial could not be located in this photo";
-        else if(rpx<AlignmentDecision.MIN_DIAL_RADIUS_PX)o.photoReason="the photo's resolution is too low (the dial is under "+(int)(2*AlignmentDecision.MIN_DIAL_RADIUS_PX)+" pixels across)";
+        // experimental 1.6.3: a small dial is measured (its uncertainty grows), never rejected as a whole photo
+        else if(!ClearlyOff.METAL&&rpx<AlignmentDecision.MIN_DIAL_RADIUS_PX)o.photoReason="the photo's resolution is too low (the dial is under "+(int)(2*AlignmentDecision.MIN_DIAL_RADIUS_PX)+" pixels across)";
         else if(report==null)o.photoReason="the markers could not be measured";
         Map<Integer,double[]> rings=new java.util.HashMap<>();
         for(ModelSpec.Marker mk:model.markers){
@@ -117,12 +118,14 @@ final class AlignmentAnalysis {
         return img::at;
     }
 
-    /** Plain counts line, e.g. "1 clearly off · 9 no visible issue · 1 can't check". */
+    /** Plain counts line, e.g. "1 flagged for review · 9 no visible issue · 1 can't check". */
     static String counts(Output o){
         StringBuilder b=new StringBuilder();
         if(tracked(o)){
             int d=o.count(AlignmentDecision.Outcome.DEFECT),n=o.count(AlignmentDecision.Outcome.NO_DEFECT),c=o.count(AlignmentDecision.Outcome.CANNOT_ASSESS);
-            if(d>0)b.append(d).append(" clearly off");
+            int i=inspect(o);d-=i;
+            if(d>0)b.append(d).append(" flagged for review");
+            if(i>0)b.append(b.length()>0?"  ·  ":"").append(i).append(" to inspect");
             if(n>0)b.append(b.length()>0?"  ·  ":"").append(n).append(" no visible issue");
             if(c>0)b.append(b.length()>0?"  ·  ":"").append(c).append(" can't check");
             return b.toString();
@@ -137,15 +140,20 @@ final class AlignmentAnalysis {
     }
 
     /** true when the 1.6.0 clearly-off check decided the answers */
+    /** 1.6.3: markers over a limit measured from an uncertain edge ("Possible misalignment - inspect") */
+    static int inspect(Output o){int i=0;for(AlignmentDecision.Marker m:o.markers)if(m.inspect())i++;return i;}
+
     static boolean tracked(Output o){for(AlignmentDecision.Marker m:o.markers)if(m.track!=null)return true;return false;}
 
     static String headline(Output o){
         int d=o.count(AlignmentDecision.Outcome.DEFECT),n=o.count(AlignmentDecision.Outcome.NO_DEFECT);
         if(tracked(o)){
             if(o.photoReason!=null)return "Can't check this photo";
-            if(d>0)return d==1?"1 marker clearly off":d+" markers clearly off";
+            int i=inspect(o);d-=i;
+            if(d>0)return (d==1?"1 marker flagged for review":d+" markers flagged for review")+(i>0?", "+i+" to inspect":"");
+            if(i>0)return i==1?"1 possible misalignment to inspect":i+" possible misalignments to inspect";
             if(n==0)return "Can't check";
-            return "No marker clearly off";
+            return "No markers flagged for review";
         }
         if(o.photoReason!=null)return "Cannot assess this photo";
         if(d>0)return d==1?"1 marker: defect detected":d+" markers: defect detected";

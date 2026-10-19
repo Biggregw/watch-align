@@ -25,6 +25,9 @@ final class Calibration {
 
     static final class Mark {
         int hour;ModelSpec.Shape shape;String gate="",reason="";
+        /** 1.6.3 outer-metal fit: why the reading is uncertain (empty when reliable) and whether the triangle's gap came
+         *  from the fitted outline; a reading over a limit then stays "Possible misalignment - inspect" when re-judged */
+        String uncertain="";boolean gapFromFit;
         double side=Double.NaN,inout=Double.NaN,tilt=Double.NaN,gap=Double.NaN;
         Verdict verdict;
     }
@@ -41,7 +44,7 @@ final class Calibration {
         Record rec=new Record();rec.id=id;rec.time=time;rec.model=model;rec.label=label;rec.rpx=r.rpx;rec.photoReason=photoReason;
         for(ClearlyOff.Marker m:r.markers){
             Mark k=new Mark();k.hour=m.hour;k.shape=m.shape;k.gate=String.join("; ",m.gate);k.reason=m.gate.isEmpty()?"":m.reason;
-            k.side=m.sidePct;k.inout=m.inoutPct;k.tilt=m.tiltDeg;k.gap=m.gapPct;rec.marks.add(k);
+            k.side=m.sidePct;k.inout=m.inoutPct;k.tilt=m.tiltDeg;k.gap=m.gapPct;k.uncertain=m.uncertain;k.gapFromFit=m.gapFromFit;rec.marks.add(k);
         }
         return rec;
     }
@@ -49,7 +52,7 @@ final class Calibration {
     /** the clearly-off marker this record's numbers give under limits L */
     static ClearlyOff.Marker judge(Record rec,Mark k,ClearlyOff.Limits L){
         ClearlyOff.Marker m=new ClearlyOff.Marker(k.hour,k.shape);
-        m.sidePct=k.side;m.inoutPct=k.inout;m.tiltDeg=k.tilt;m.gapPct=k.gap;
+        m.sidePct=k.side;m.inoutPct=k.inout;m.tiltDeg=k.tilt;m.gapPct=k.gap;m.uncertain=k.uncertain;m.gapFromFit=k.gapFromFit;
         if(!k.gate.isEmpty())for(String g:k.gate.split("; "))m.gate.add(g);
         ClearlyOff.decide(m,rec.rpx,null,L);
         if(!k.gate.isEmpty()&&!k.reason.isEmpty())m.reason=k.reason;
@@ -67,7 +70,7 @@ final class Calibration {
         int flagged(ModelSpec.Shape s,ClearlyOff.Limits L){
             int n=0;Record r=new Record();
             for(int i=0;i<marks.size();i++){Mark m=marks.get(i);if(m.shape!=s)continue;r.rpx=rpx.get(i);
-                if(state(r,m,L)==ClearlyOff.State.CLEARLY_OFF)n++;}
+                if(Calibration.flagged(state(r,m,L)))n++;}
             return n;
         }
         static Genuine parse(String csv){
@@ -95,9 +98,9 @@ final class Calibration {
             for(Mark k:r.marks){if(k.verdict==null||k.verdict==Verdict.UNSURE||(shape!=null&&k.shape!=shape))continue;
                 ClearlyOff.State s=state(r,k,L);if(s==ClearlyOff.State.CANT_CHECK)continue;
                 a.total++;
-                boolean ok=(k.verdict==Verdict.FAIL)==(s==ClearlyOff.State.CLEARLY_OFF);
+                boolean ok=(k.verdict==Verdict.FAIL)==flagged(s);
                 if(ok)a.agree++;else a.disagree.add(r.label+", "+k.hour+" o'clock: you said "+(k.verdict==Verdict.FAIL?"Fail":"Pass")
-                        +", the app says "+(s==ClearlyOff.State.CLEARLY_OFF?"Clearly off":"No visible issue"));
+                        +", the app says "+word(s));
             }}
         return a;
     }
@@ -110,7 +113,9 @@ final class Calibration {
                 if(a!=b)out.add(r.label+", "+k.hour+" o'clock: "+word(a)+" → "+word(b));}}
         return out;
     }
-    static String word(ClearlyOff.State s){return s==ClearlyOff.State.CLEARLY_OFF?"Clearly off":s==ClearlyOff.State.NO_VISIBLE_ISSUE?"No visible issue":"Can't check";}
+    /** a finding the user is shown: clearly off, or (1.6.3) a possible misalignment to inspect */
+    static boolean flagged(ClearlyOff.State s){return s==ClearlyOff.State.CLEARLY_OFF||s==ClearlyOff.State.POSSIBLE;}
+    static String word(ClearlyOff.State s){return s==ClearlyOff.State.CLEARLY_OFF?"Flagged for review":s==ClearlyOff.State.POSSIBLE?"Possible misalignment — inspect":s==ClearlyOff.State.NO_VISIBLE_ISSUE?"No visible issue":"Can't check";}
 
     // ------------------------------------------------------------------------------------------------ settings
 
@@ -179,6 +184,8 @@ final class Calibration {
             kv(b,"gate",k.gate).append(',');kv(b,"reason",k.reason).append(',');
             b.append("\"side\":").append(n(k.side)).append(",\"inout\":").append(n(k.inout)).append(",\"tilt\":").append(n(k.tilt))
              .append(",\"gap\":").append(n(k.gap));
+            if(!k.uncertain.isEmpty()){b.append(',');kv(b,"uncertain",k.uncertain);}
+            if(k.gapFromFit)b.append(",\"gapFit\":true");
             if(k.verdict!=null)b.append(',').append("\"verdict\":\"").append(k.verdict.name()).append('"');
             b.append('}');}
         return b.append("]}").toString();
@@ -192,6 +199,7 @@ final class Calibration {
             k.hour=(int)dbl(m.get("hour"));k.shape=AlignmentReference.shape(str(m.get("shape")));k.gate=str(m.get("gate"));k.reason=str(m.get("reason"));
             k.side=dbl(m.get("side"));k.inout=dbl(m.get("inout"));k.tilt=dbl(m.get("tilt"));k.gap=dbl(m.get("gap"));
             Object v=m.get("verdict");k.verdict=v==null?null:Verdict.valueOf((String)v);
+            Object u=m.get("uncertain");k.uncertain=u==null?"":(String)u;k.gapFromFit=Boolean.TRUE.equals(m.get("gapFit"));
             if(k.shape!=null)r.marks.add(k);}
         return r;
     }

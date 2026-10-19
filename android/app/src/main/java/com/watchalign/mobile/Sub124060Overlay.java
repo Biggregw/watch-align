@@ -26,8 +26,8 @@ final class Sub124060Overlay {
             STRONG=Color.rgb(255,45,45), WITHHELD=Color.rgb(165,175,190),
             TICK=Color.rgb(90,220,255), WHITE=Color.WHITE, MEASURED=Color.rgb(110,160,255);
     static final String BANNER=Sub124060Calibration.VERDICTS_ENABLED
-            ?"124060 experimental · provisional family calibration"
-            :"124060 experimental · measured, not yet judged";
+            ?"124060 · provisional family calibration"
+            :"124060 · measured, not yet judged";
 
     static final class Baton {
         String label;

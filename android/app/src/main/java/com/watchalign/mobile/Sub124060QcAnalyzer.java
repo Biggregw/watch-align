@@ -465,7 +465,7 @@ final class Sub124060QcAnalyzer {
         if(crop!=null)res.drawing.mapTo(crop);
         Bitmap overlay=res.drawing.hasAnything()?Sub124060Overlay.render(watch,res.drawing):null;
         if(closeUp==null&&res.drawing.hasTriangle())closeUp=Sub124060Overlay.closeUp(watch,overlay,res.drawing,540);
-        String report="Rolex Submariner 124060 (experimental) · Watch Align Core "+WatchAlignCoreV13.CORE_VERSION+"\n\n"
+        String report="Rolex Submariner No-Date 124060 · Watch Align Core "+WatchAlignCoreV13.CORE_VERSION+"\n\n"
                 +Sub124060Summary.build(res)
                 +"\n\nDETAILS\n"+Sub124060Summary.details(res,crop!=null?crop.describe():null);
         WatchAlignCoreV13.AnalysisResult out=new WatchAlignCoreV13.AnalysisResult(watch,null,null,overlay,null,report,Double.NaN,

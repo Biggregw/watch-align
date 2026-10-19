@@ -7,8 +7,8 @@ import java.util.Locale;
 /** Plain-English report for the GMT-style 124060 path. Verdicts appear only when calibration is enabled. */
 final class Sub124060Summary {
     static final String EXPERIMENTAL=Sub124060Calibration.VERDICTS_ENABLED
-            ?"124060 experimental support: frozen provisional family calibration is applied after the existing reliability checks."
-            :"124060 experimental support: values are measured after the reliability checks but NOT YET JUDGED. This is not a QC pass/fail result.";
+            ?"124060 alignment: family calibration is applied after the existing reliability checks."
+            :"124060 alignment: values are measured after the reliability checks but NOT YET JUDGED. This is not a QC pass/fail result.";
     static final String MEASURED=Sub124060Calibration.MEASURED_ONLY;
     static final String NOT_CHECKED="Not checked: bezel and pearl, rehaut, hands, printing, lume.";
 

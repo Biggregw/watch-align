@@ -96,9 +96,11 @@ final class AlignmentDecision {
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
         String title(){return hour+" o'clock";}
         /** No defect confirmed, but a borderline outer-metal reading to look at (not used by the clearly-off answer). */
-        boolean worthALook(){return track==null&&outcome==Outcome.NO_DEFECT&&metalBorderline;}
+        boolean worthALook(){return track==null?outcome==Outcome.NO_DEFECT&&metalBorderline:inspect();}
+        /** 1.6.3: over a limit, measured from an uncertain outer edge (shown amber, with its evidence) */
+        boolean inspect(){return track!=null&&track.state==ClearlyOff.State.POSSIBLE;}
         String label(){
-            if(track!=null)return outcome==Outcome.DEFECT?"Clearly off":outcome==Outcome.NO_DEFECT?"No visible issue":"Can't check";
+            if(track!=null)return inspect()?"Possible misalignment — inspect":outcome==Outcome.DEFECT?"Flagged for review":outcome==Outcome.NO_DEFECT?"No visible issue":"Can't check";
             return outcome==Outcome.DEFECT?"Defect detected":worthALook()?"Worth a look":outcome==Outcome.NO_DEFECT?"No defect":"Cannot assess";
         }
     }
@@ -198,7 +200,7 @@ final class AlignmentDecision {
             ClearlyOff.Marker t=r==null?null:r.at(m.hour);
             if(t==null){t=new ClearlyOff.Marker(m.hour,m.shape);t.reason=r==null?"the check could not be run on this photo":"it could not be located";}
             m.track=t;m.primary=null;m.secondary.clear();m.metalBorderline=false;m.metalNotes.clear();m.metal.clear();m.notAssessed.clear();
-            m.outcome=t.state==ClearlyOff.State.CLEARLY_OFF?Outcome.DEFECT:t.state==ClearlyOff.State.NO_VISIBLE_ISSUE?Outcome.NO_DEFECT:Outcome.CANNOT_ASSESS;
+            m.outcome=t.state==ClearlyOff.State.CLEARLY_OFF||t.state==ClearlyOff.State.POSSIBLE?Outcome.DEFECT:t.state==ClearlyOff.State.NO_VISIBLE_ISSUE?Outcome.NO_DEFECT:Outcome.CANNOT_ASSESS;
             m.reason=t.state==ClearlyOff.State.CANT_CHECK?t.reason:"";
             if(photoReason!=null){t.state=ClearlyOff.State.CANT_CHECK;t.reason=photoReason;m.outcome=Outcome.CANNOT_ASSESS;m.reason=photoReason;}
         }
@@ -207,6 +209,7 @@ final class AlignmentDecision {
     /** Short line for a list row. */
     static String summary(Marker m){
         if(m.track!=null){
+            if(m.inspect())return ClearlyOff.headline(m.track)+". Measured from an uncertain edge: "+m.track.reason+".";
             if(m.outcome==Outcome.DEFECT)return ClearlyOff.headline(m.track)+".";
             if(m.outcome==Outcome.CANNOT_ASSESS)return capital(m.reason)+".";
             return null;

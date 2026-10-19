@@ -19,7 +19,13 @@ public class ClearlyOffTest {
     static final double POS=100*ClearlyOff.POS_LIMIT_R;
     @Test public void withinLimitsIsNoVisibleIssue(){
         assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(m(ModelSpec.Shape.ROUND,0.6*POS,-0.6*POS,Double.NaN),1e9));
-        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(m(ModelSpec.Shape.BATON,0.2,0.2,2.2),1e9));
+        assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,decide(m(ModelSpec.Shape.BATON,0.2,0.2,1.7),1e9));
+        // baton tilt: 1.75 deg by default (other limits unchanged)
+        assertEquals(1.75,ClearlyOff.Limits.defaults().batonTiltDeg,1e-12);
+        assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.BATON,0.2,0.2,1.8),1e9));
+        assertEquals(0.010,ClearlyOff.Limits.defaults().roundPosR,1e-12);assertEquals(0.010,ClearlyOff.Limits.defaults().batonPosR,1e-12);
+        assertEquals(1.2,ClearlyOff.Limits.defaults().triTiltDeg,1e-12);assertEquals(0.022,ClearlyOff.Limits.defaults().triGapR,1e-12);
+        assertEquals(0.010,ClearlyOff.Limits.defaults().triSideR,1e-12);
     }
     @Test public void beyondAnyLimitIsClearlyOff(){
         assertEquals(ClearlyOff.State.CLEARLY_OFF,decide(m(ModelSpec.Shape.ROUND,POS+0.05,0,Double.NaN),1e9));
@@ -119,7 +125,7 @@ public class ClearlyOffTest {
         AlignmentDecision.Marker a=new AlignmentDecision.Marker(3,ModelSpec.Shape.ROUND),b=new AlignmentDecision.Marker(4,ModelSpec.Shape.ROUND);
         b.outcome=AlignmentDecision.Outcome.NO_DEFECT;b.metalBorderline=true;ms.add(a);ms.add(b);
         AlignmentDecision.applyClearlyOff(ms,r);
-        assertEquals(AlignmentDecision.Outcome.DEFECT,a.outcome);assertEquals("Clearly off",a.label());
+        assertEquals(AlignmentDecision.Outcome.DEFECT,a.outcome);assertEquals("Flagged for review",a.label());
         assertEquals("a marker the check did not return is never passed",AlignmentDecision.Outcome.CANNOT_ASSESS,b.outcome);
         assertFalse(b.worthALook());assertEquals("Can't check",b.label());
         AlignmentDecision.applyClearlyOff(ms,null);
