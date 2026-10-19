@@ -1,6 +1,6 @@
 {
   "id": "submariner_126610",
-  "label": "Submariner Date 41 mm (126610 family) - testing",
+  "label": "Submariner Date (41 mm, 126610 family)",
   "note": "41 mm Submariner Date (126610LN/LV, 126613, 126618, 126619): the 124060 dial master (same marker geometry: tools/research/generic_sub, 136 genuine 41 mm date watches within the 124060 watch-to-watch spread) with the date window at 3 in place of the 3 baton; date window, cyclops minute exclusions and seconds-hand search from the GMT 126710 spec. Canonical units: dial radius 1, 12 at the top. Genuine reference: tools/research/sub126610.",
   "pose": {
     "minute_track_inner_r": 0.9325,

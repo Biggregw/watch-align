@@ -132,7 +132,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
         String label=modelLabels.get(Math.max(0,modelIds.indexOf(modelId)));
         title.setText("Watch Align");
         intro.setText("Checking: "+label+". Upload a sharp, straight-on photo of the dial with the whole dial visible and no hands over the markers if possible."
-                +" Watch Align checks each hour marker's position and rotation against verified genuine watches and answers No defect, Defect detected or Cannot assess for each one.");
+                +" Watch Align checks each hour marker's position and rotation against verified genuine watches and answers No visible issue, Flagged for review or Can\'t check for each one.");
     }
 
     private void pickPhoto(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("image/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,PICK_CANDIDATE);}

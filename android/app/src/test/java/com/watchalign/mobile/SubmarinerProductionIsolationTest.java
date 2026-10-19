@@ -69,7 +69,7 @@ public class SubmarinerProductionIsolationTest {
         assertTrue(r.submariner);
         assertTrue(r.dialNeedsManual);
         assertFalse(r.twelveMeasured);
-        assertTrue(r.report.startsWith("Rolex Submariner 124060 (experimental)"));
+        assertTrue(r.report.startsWith("Rolex Submariner No-Date 124060"));
         assertTrue(r.report.contains(Sub124060Summary.EXPERIMENTAL));
         assertTrue(r.report.contains("Dial: not assessable"));
         for (String gmt : new String[]{"GMT-Master", "date window", "Sprite", "date side", "HUMAN 12-MARKER QC", "reference-distribution"})
