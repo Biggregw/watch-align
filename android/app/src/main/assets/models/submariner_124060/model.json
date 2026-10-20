@@ -1,6 +1,6 @@
 {
   "id": "submariner_124060",
-  "label": "Submariner No-Date (124060)",
+  "label": "Submariner (no date)",
   "note": "Genuine 124060 master, measured with SubMaster on the sha256-verified genuine catalogue (CI run 37767221075: 42 dial photos of 25 physical watches, 6 sources; median over watches of each watch's median). Minute track 0.933-0.981 and the 12 triangle and round size match the GMT 126710 master; round centres 0.8136 R; batons 3/6/9 0.7591 R (GMT 0.7551). Canonical units: dial radius 1, 12 at the top. In the app for testing (Alpha102): genuine reference, uncertainty and held-out genuine checks done; usefulness on replica / QC photos not yet validated.",
   "pose": {
     "minute_track_inner_r": 0.9325,
