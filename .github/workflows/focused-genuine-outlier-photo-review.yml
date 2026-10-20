@@ -1,0 +1,69 @@
+name: Focused review of original genuine marker outliers (24 source photos)
+on:
+  push:
+    branches: [research/strict-face-on-genuine-20261020]
+    paths:
+      - '.github/workflows/focused-genuine-outlier-photo-review.yml'
+      - 'tools/research/failing_photos_review/**'
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python3 -m pip install -q pillow==12.3.0 requests
+      - name: Make exact 24-image manifest with source identity
+        run: |
+          mkdir -p g out
+          python3 - <<'PY'
+          import csv
+          base='tools/research/marker_audit/results/'
+          cat={}
+          for fam,prefix in (('GMT','gmt'),('NoDate','nodate'),('Date','date')):
+            for row in csv.DictReader(open(base+prefix+'-verified.csv')):
+              cat[(fam,row['photo_id'])]=row
+          chosen=[]
+          for line in open('tools/research/failing_photos_review/focused24.txt'):
+            line=line.strip()
+            if not line or line.startswith('#'):continue
+            fam,pid=line.split()
+            assert (fam,pid) in cat, (fam,pid)
+            r={**cat[(fam,pid)],'family':fam}
+            chosen.append(r)
+          assert len(chosen)==24
+          keys=list(dict.fromkeys(k for r in chosen for k in r.keys()))
+          with open('g/manifest.csv','w',newline='') as f:
+            w=csv.DictWriter(f,fieldnames=keys);w.writeheader();w.writerows(chosen)
+          print('Selected',len(chosen),'views of',len(set(r['physical_watch_id'] for r in chosen)),'physical watches')
+          PY
+      - name: Restore exact SHA256-verified source photographs (no substitutions)
+        run: python3 tools/research/alpha96_calibration/fetch_verified.py g/manifest.csv g/img out/fetch_log.csv | tail -14
+      - name: Generate original-case/crown contact sheets for all 24
+        run: python3 tools/research/pose_filter/contact_sheets.py
+      - name: Identify independently suitable original views
+        run: |
+          python3 - <<'PY'
+          import csv
+          allowed={}
+          for fam,prefix in (('GMT','gmt'),('NoDate','nodate'),('Date','date')):
+            allowed[fam]={r['photo_id']:r for r in csv.DictReader(open('tools/research/marker_audit/results/'+prefix+'-suitability.csv'))}
+          rows=list(csv.DictReader(open('g/manifest.csv')))
+          fet={r['photo_id']:r for r in csv.DictReader(open('out/fetch_log.csv'))}
+          with open('out/focused_manifest.csv','w',newline='') as f:
+            w=csv.writer(f)
+            w.writerow(['photo_id','family','watch','source','original_url','sha256','original_suitability','original_pose_label','photo_fetch_status','visual_review','perspective_decision','notes'])
+            for r in rows:
+              s=allowed[r['family']].get(r['photo_id'],{})
+              fstatus=fet.get(r['photo_id'],{}).get('status','unavailable')
+              w.writerow([r['photo_id'],r['family'],r['physical_watch_id'],r.get('source',''),r['image_url'],r['sha256'],s.get('eligible',''),s.get('reason',''),fstatus,'PENDING','PENDING','Do not infer camera angle from marker QC'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: focused-original-genuine-24
+          path: out/
+          retention-days: 30
