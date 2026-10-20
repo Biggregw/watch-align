@@ -1,9 +1,9 @@
-# Rolex shared calibration research
+# Pooled Rolex QC study
 
-Read-only study of genuine GMT, Submariner No-Date and Submariner Date measurements. Runs from the repository root:
+Independent, read-only pooled calibration research. No change to main, the APK, production thresholds, model visibility, measurement detectors or genuine references.
 
-    python3 tools/research/pooled_qc/pooled_calibration.py
+Run from repo root: python3 tools/research/pooled_qc/pooled_calibration.py
 
-Inputs are the previously acquired verified-photo measurement CSVs and pre-existing photographic suitability reviews. Outputs are pooled-calibration-output/REPORT.md and results.json.
+Sources: existing genuine model-family after-measurements and frozen photo-suitability lists under tools/research/marker_audit/results. The study pools the common markers, excludes No-Date 3 for baton comparability, groups repeated photographs per physical watch, produces family medians and median absolute deviations, saves every observed extreme, and holds out 20% of physical watches.
 
-Existing pass/fail verdicts never select calibration measurements. Independent physical watches have equal influence; repeated photos of one hour on one watch are collapsed. Only matching 6 and 9 batons are pooled across date/no-date layouts. Proposed robust-MAD limits are exploratory and held-out by watch. An outlying genuine measurement is not automatically bad evidence. Do not merge model availability or detector changes with this study.
+Quality exclusion is independent of measurement deviation or whether the app returned a green/amber/red result. Candidate limits are exploratory and are never applied automatically. Other families, especially Yacht-Master, need their own genuine or confirmed-defect controls before accepting claims of universal validity.
