@@ -1,0 +1,78 @@
+name: Research strict face-on genuine calibration (read only)
+on:
+  push:
+    branches: [research/strict-face-on-genuine-20261020]
+    paths:
+      - '.github/workflows/strict-face-on-calibration.yml'
+      - 'tools/desktop-harness/drivers/PoseQualityDump.java'
+      - 'tools/research/pose_filter/**'
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  pose:
+    name: Pose screen ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: GMT, model: gmt_126710, verified: gmt-verified.csv, suitability: gmt-suitability.csv}
+          - {name: NoDate, model: submariner_124060, verified: nodate-verified.csv, suitability: nodate-suitability.csv}
+          - {name: Date, model: submariner_126610, verified: date-verified.csv, suitability: date-suitability.csv}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests numpy scipy opencv-python-headless pillow==12.3.0
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Make eligible manifest, independent of marker errors
+        run: |
+          mkdir -p g out
+          python3 - <<'PY'
+          import csv
+          root='tools/research/marker_audit/results/'
+          good={r['photo_id'] for r in csv.DictReader(open(root+'${{ matrix.suitability }}')) if r['eligible']=='yes'}
+          all_=list(csv.DictReader(open(root+'${{ matrix.verified }}')))
+          unique={r['photo_id']:r for r in all_ if r['photo_id'] in good}
+          rows=list(unique.values())
+          print('PHOTO COUNT',len(rows),'WATCH COUNT',len({r['physical_watch_id'] for r in rows}))
+          assert rows
+          with open('g/manifest.csv','w',newline='') as fh:
+              w=csv.DictWriter(fh,fieldnames=rows[0].keys());w.writeheader();w.writerows(rows)
+          PY
+      - name: Restore verified originals by SHA256 (photos never uploaded)
+        run: python3 tools/research/alpha96_calibration/fetch_verified.py g/manifest.csv g/img out/fetch_log.csv | tail -8
+      - name: Compile research diagnostics with unmodified Android pose engine
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then
+            mkdir -p "$(dirname "$J")"
+            curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar
+          fi
+          mkdir -p cls
+          javac -encoding UTF-8 -nowarn -cp "$J" -sourcepath "tools/desktop-harness/shim:android/app/src/main/java" -d cls tools/desktop-harness/drivers/*.java
+      - name: Measure independent physical-dial pose, no markers
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp "$J:cls" com.watchalign.mobile.PoseQualityDump g/manifest.csv g/img out/pose.csv | tail -8
+      - name: Measure current main marker results (read-only baseline)
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp "$J:cls" com.watchalign.mobile.TrackDump g/manifest.csv g/img out/measurements.csv | tail -8
+      - name: Independent pose filter and strict pooled tolerance comparison
+        run: |
+          python3 tools/research/pose_filter/face_on_screen.py \
+            --family '${{ matrix.name }}' --pose out/pose.csv \
+            --manifest g/manifest.csv --measurements out/measurements.csv --out out
+          cat out/README.md
+      - name: Upload only measurements and suitability, never genuine photos
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: strict-face-on-${{ matrix.name }}
+          path: out/
+          retention-days: 30
