@@ -16,15 +16,11 @@ def reliable(r):
 def classify_photo(rows, required):
     """mirror of WatchClassification.classify (Java)"""
     by = {int(r['hour']): r for r in rows}
-    complete = len(by) >= required
-    qc_issue = any(r['state'] == 'CLEARLY_OFF' for r in by.values())
+    if len(by) < required or not all(reliable(r) for r in by.values()): return 'CANT_DETERMINE'
+    if any(r['state'] == 'CLEARLY_OFF' for r in by.values()): return 'REPLICA_QC_ISSUES'
     strict = {h: decide(r, GENUINE)[0] for h, r in by.items()}
-    g_fail = [h for h, r in by.items() if reliable(r) and strict[h] == 'CLEARLY_OFF']
-    g_pass = [h for h, r in by.items() if reliable(r) and strict[h] == 'NO_VISIBLE_ISSUE']
-    qc_pass = complete and all(r['state'] == 'NO_VISIBLE_ISSUE' for r in by.values())
-    if qc_issue: return 'REPLICA_QC_ISSUES'
-    if qc_pass and g_fail: return 'REPLICA'
-    if qc_pass and len(g_pass) == len(by): return 'GENUINE'
+    if any(v == 'CLEARLY_OFF' for v in strict.values()): return 'REPLICA'
+    if all(v == 'NO_VISIBLE_ISSUE' for v in strict.values()): return 'GENUINE'
     return 'CANT_DETERMINE'
 
 

@@ -12,13 +12,12 @@ import java.util.Locale;
  *   strict genuine the same decide() at the fixed ClearlyOff.Limits.genuine() (pooled genuine Rolex research)
  * A marker is RELIABLE when it was measured with no withheld part and no uncertain edge (an uncertain outer-metal fit,
  * a low-resolution photo, a gap placed from the rest of the outline all count as unreliable). Classification:
- *   REPLICA_QC_ISSUES  any marker Clearly off at the replica-QC limits (that state is only ever given to reliable readings)
- *   REPLICA            the model's required markers all present and within the replica-QC limits (No visible issue), and at
- *                      least one RELIABLE marker outside the strict genuine standard
- *   GENUINE            the required markers all present, reliable, within the replica-QC limits and within every strict
- *                      genuine limit
- *   CANT_DETERMINE     anything else: the check failed, a marker is missing, can't be checked, possible (uncertain over a
- *                      limit), or an uncertain reading leaves the genuine standard undecided
+ *   CANT_DETERMINE     any required marker missing or not RELIABLE (can't check, possible, an uncertain edge even under the
+ *                      limits), or the check failed
+ *   REPLICA_QC_ISSUES  every required marker reliable and at least one Clearly off at the replica-QC limits
+ *   REPLICA            every required marker reliable, none over the replica-QC limits, at least one outside the strict
+ *                      genuine standard
+ *   GENUINE            every required marker reliable and within every strict genuine limit
  * Each marker is judged on its own; nothing is averaged. These are alignment-based screening classifications, never an
  * authenticity finding.
  */
@@ -106,16 +105,19 @@ final class WatchClassification {
             ClearlyOff.Marker m=r==null?null:r.at(mk.hour);
             out.markers.add(new MarkerCheck(mk.hour,mk.shape,m,r==null?null:strict(m,r.rpx),reliable(m)));
         }
-        boolean qcIssue=false,anyStrictFail=false,allQcPass=r!=null,allGenuinePass=r!=null;
+        boolean allReliable=r!=null,qcIssue=false,anyStrictFail=false,allGenuinePass=true;
         for(MarkerCheck c:out.markers){
+            allReliable&=c.reliable;
             qcIssue|=c.qcFail();
             anyStrictFail|=c.genuineFail();
-            allQcPass&=c.qcPass();
             allGenuinePass&=c.genuinePass();
         }
-        if(qcIssue)out.verdict=Verdict.REPLICA_QC_ISSUES;
-        else if(allQcPass&&anyStrictFail)out.verdict=Verdict.REPLICA;
-        else if(allQcPass&&allGenuinePass)out.verdict=Verdict.GENUINE;
+        // CLAUDE.md (owner, 20 Oct 2026): Genuine, Replica and Replica - QC Issues all need every required marker reliably
+        // assessed; otherwise Can't Determine, with the reliable individual findings still listed underneath
+        if(!allReliable)out.verdict=Verdict.CANT_DETERMINE;
+        else if(qcIssue)out.verdict=Verdict.REPLICA_QC_ISSUES;
+        else if(anyStrictFail)out.verdict=Verdict.REPLICA;
+        else if(allGenuinePass)out.verdict=Verdict.GENUINE;
         else out.verdict=Verdict.CANT_DETERMINE;
         return out;
     }

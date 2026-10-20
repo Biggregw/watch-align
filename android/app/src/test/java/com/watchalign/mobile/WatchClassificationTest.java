@@ -59,9 +59,12 @@ public class WatchClassificationTest {
         WatchClassification.Result c=WatchClassification.classify(judge(r),model,null);
         assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,c.verdict);
         assertEquals(ClearlyOff.State.CLEARLY_OFF,r.at(8).state);
-        // even when another marker could not be checked: one reliable QC failure is enough
+        // CLAUDE.md: every required marker must be reliably assessed; with another marker unchecked the watch is Can't
+        // Determine, and the clearly-off marker is still reported on its own
         r=watch(model);r.at(8).sidePct=1.40;r.at(8).inoutPct=0;r.at(2).gate.add("hand (app check)");
-        assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,verdict(judge(r),model));
+        c=WatchClassification.classify(judge(r),model,null);
+        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);
+        assertTrue(c.at(8).qcFail());
     }
 
     @Test public void anUncertainOrUnreadableMarkerNeverGivesGenuine(){
@@ -71,6 +74,9 @@ public class WatchClassificationTest {
         assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,r.at(10).state);
         assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);
         assertTrue(c.at(10).genuineUndecided());
+        // nor Replica: one reliable strict failure with an uncertain marker elsewhere is Can't Determine
+        r=watch(model);r.at(10).uncertain="its visible edge is rough (0.9 px)";r.at(6).tiltDeg=1.30;
+        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(judge(r),model));
         r=watch(model);r.at(10).gate.add("a hand covers most of its outline");
         assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(judge(r),model));
         r=watch(model);r.at(10).sidePct=Double.NaN;r.at(10).inoutPct=Double.NaN;   // not measured
