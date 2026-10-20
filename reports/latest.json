@@ -50,11 +50,9 @@
     "rejected_watches": 170
   },
   "dry_run": false,
-  "errors": [
-    "https://imgur.com/a/yBBK39k: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/yBBK39k?include=media%2Ctags%2Caccount' (final)"
-  ],
+  "errors": [],
   "exact_duplicates": 0,
-  "finished_at": "2026-10-19T08:59:53Z",
+  "finished_at": "2026-10-20T08:38:22Z",
   "images_downloaded": 0,
   "images_inconclusive": 0,
   "images_local": 0,
@@ -139,17 +137,17 @@
     }
   ],
   "possible_duplicates": 0,
-  "run_id": "20261019T085946Z",
+  "run_id": "20261020T083817Z",
   "search_results_filtered": {
-    "not_gmt": 11
+    "not_gmt": 14
   },
-  "sources_already_known": 180,
+  "sources_already_known": 178,
   "sources_deferred": 0,
-  "sources_discovered_new": 1,
-  "sources_examined": 1,
-  "sources_failed": 1,
-  "sources_pending_total": 1,
-  "started_at": "2026-10-19T08:59:46Z",
+  "sources_discovered_new": 0,
+  "sources_examined": 0,
+  "sources_failed": 0,
+  "sources_pending_total": 0,
+  "started_at": "2026-10-20T08:38:17Z",
   "watch_reasons": {},
   "watches_accepted": 0,
   "watches_quarantined": 0,

@@ -1,6 +1,6 @@
 # Dataset harvester
 
-Run 20261019T085946Z · 2026-10-19T08:59:46Z → 2026-10-19T08:59:53Z
+Run 20261020T083817Z · 2026-10-20T08:38:17Z → 2026-10-20T08:38:22Z
 
 ## Adapters
 
@@ -9,12 +9,12 @@ Run 20261019T085946Z · 2026-10-19T08:59:46Z → 2026-10-19T08:59:53Z
 - **search**: enabled (brave)
 - **reddit**: disabled: REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not set
 
-Search results filtered before storing: not_gmt 11
+Search results filtered before storing: not_gmt 14
 
 ## This run
 
-- 1 new sources discovered (180 already known)
-- 1 sources examined (0 deferred, 1 failed)
+- 0 new sources discovered (178 already known)
+- 0 sources examined (0 deferred, 0 failed)
 - 0 images downloaded, 0 used from local copies
 - 0 exact and 0 near duplicates
 - 0 images rejected, 0 inconclusive
@@ -22,10 +22,6 @@ Search results filtered before storing: not_gmt 11
 - 0 physical watches accepted
 - 0 quarantined
 - 0 rejected
-
-Errors / retries:
-
-- https://imgur.com/a/yBBK39k: gone: [imgur][error] HttpError: '404 Not Found' for 'https://api.imgur.com/post/v1/albums/yBBK39k?include=media%2Ctags%2Caccount' (final)
 
 ## Dataset now (accepted, independent physical watches)
 
