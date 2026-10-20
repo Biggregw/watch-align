@@ -20,7 +20,7 @@ public class RoundVisualFloorTest {
     static LuminousAlignment.Result round(int hour,double radialR,double tangentialR){
         return AlignmentDecisionTest.fit(hour,ModelSpec.Shape.ROUND,radialR,tangentialR,Double.NaN,0.0002);
     }
-    static AlignmentReference gmt(){return AlignmentReference.load(TestModels.files(),TestModels.gmt());}
+    static AlignmentReference gmt(){return AlignmentReference.load(TestModels.legacyFiles(),TestModels.gmt());}
 
     @Test public void theFloorIsOnePercentOfTheDialRadius(){assertEquals(0.010,FLOOR,0);}
 
@@ -104,7 +104,8 @@ public class RoundVisualFloorTest {
         assertTrue(g.shape(ModelSpec.Shape.ROUND).radialLimitR<FLOOR);
     }
     static String sha(String model)throws Exception{
-        byte[] b=Files.readAllBytes(new File(TestModels.assets(),"models/"+model+"/alignment/luminous_alignment.json").toPath());
+        File root=model.equals("gmt_126710")?TestModels.legacyAssets():TestModels.assets();   // the GMT reference these floors were set on (frozen)
+        byte[] b=Files.readAllBytes(new File(root,"models/"+model+"/alignment/luminous_alignment.json").toPath());
         StringBuilder s=new StringBuilder();for(byte x:MessageDigest.getInstance("SHA-256").digest(b))s.append(String.format("%02x",x));return s.toString();
     }
 }

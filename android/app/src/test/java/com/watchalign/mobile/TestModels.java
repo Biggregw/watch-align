@@ -16,9 +16,18 @@ final class TestModels {
         throw new AssertionError("app assets not found");
     }
     static ModelSpec.Assets files(){return ModelSpec.directory(assets());}
+    /** The GMT folder as it was before the GMT option took the Submariner Date geometry (20 Oct 2026), frozen in test
+     *  resources. The earlier analysis layers (Alpha97/98/99, luminous decision) were calibrated and their test
+     *  measurements recorded against it, so their tests keep using it; the app's own GMT folder is files(). */
+    static File legacyAssets(){
+        File a=new File(assets().getParentFile().getParentFile(),"test/resources/legacy_models");
+        if(!new File(a,"models/gmt_126710").isDirectory())throw new AssertionError("legacy GMT fixture not found: "+a);
+        return a;
+    }
+    static ModelSpec.Assets legacyFiles(){return ModelSpec.directory(legacyAssets());}
     static synchronized ModelSpec gmt(){
-        if(gmt==null)try{gmt=ModelSpec.load(files(),"gmt_126710");}catch(Exception e){throw new AssertionError(e);}
+        if(gmt==null)try{gmt=ModelSpec.load(legacyFiles(),"gmt_126710");}catch(Exception e){throw new AssertionError(e);}
         return gmt;
     }
-    static synchronized ModelReference gmtRef(){if(gmtRef==null)gmtRef=ModelReference.load(files(),gmt());return gmtRef;}
+    static synchronized ModelReference gmtRef(){if(gmtRef==null)gmtRef=ModelReference.load(legacyFiles(),gmt());return gmtRef;}
 }

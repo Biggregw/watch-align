@@ -104,7 +104,9 @@ public class ModelSpecTest {
         String[][] map={{"alpha98_reference.csv",ModelReference.GENUINE},{"alpha98_nominal.properties",ModelReference.NOMINAL},
                 {"m12_nominal.properties",ModelReference.TRI_NOMINAL},{"m12_genuine_reference.csv",ModelReference.TRI_REFERENCE},
                 {"alpha99_uncertainty.properties",ModelReference.UNCERTAINTY}};
-        File research=researchDir(),ref=new File(TestModels.assets(),"models/gmt_126710/reference");
+        // the GMT research export is the frozen pre-20 Oct 2026 GMT folder; the app's GMT folder now holds the Submariner
+        // Date reference (ThreeOptionsTest)
+        File research=researchDir(),ref=new File(TestModels.legacyAssets(),"models/gmt_126710/reference");
         for(String[] p:map)assertArrayEquals(p[0]+" -> "+p[1]+" (re-run export_model_reference.py --model gmt_126710)",
                 Files.readAllBytes(new File(research,p[0]).toPath()),Files.readAllBytes(new File(ref,p[1]).toPath()));
         ModelReference r=TestModels.gmtRef();
@@ -175,7 +177,7 @@ public class ModelSpecTest {
         // GMT: low-resolution rows (Alpha102) count once per watch and never touch a photo the full-resolution
         // reference covers: there the limit is exactly the full-resolution rows' limit
         ModelReference g=TestModels.gmtRef();
-        List<String> lines=Files.readAllLines(new File(TestModels.assets(),"models/gmt_126710/reference/genuine_reference.csv").toPath());
+        List<String> lines=Files.readAllLines(new File(TestModels.legacyAssets(),"models/gmt_126710/reference/genuine_reference.csv").toPath());
         List<String> h=java.util.Arrays.asList(lines.get(0).trim().split(",",-1));
         java.util.Set<String> full=new java.util.HashSet<>();double fullMax=0;int low=0;
         for(String l:lines.subList(1,lines.size())){String[] f=l.trim().split(",",-1);if(!f[0].equals("rounds_off"))continue;

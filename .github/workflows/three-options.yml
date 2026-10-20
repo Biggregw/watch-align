@@ -1,0 +1,112 @@
+# The owner's three options (20 Oct 2026): GMT-Master II and Submariner Date measure alike (the GMT folder holds the
+# Submariner Date geometry and references), Submariner (no date) is unchanged. The app's own code (desktop harness) on
+# the sha256-verified genuine photos and the pinned public QC photos, compared marker by marker with the committed
+# results of main (tools/research/marker_audit/results). Numbers only; photos are never committed or uploaded.
+name: Three options (GMT / no date / date) - genuine and QC regression
+on:
+  push:
+    branches: [claude/calibration-measurement-contract-epunh5]
+    paths: ['.github/workflows/three-options.yml', 'tools/research/shared_engine/compare_options.py']
+  workflow_dispatch:
+permissions: {contents: write}   # stores each option's genuine numbers (genuine_track.csv) on this working branch
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {model: gmt_126710, verified: gmt-verified.csv, before: gmt-after.csv, qc: gmt_126710, limit: 0, track: true}
+          - {model: submariner_126610, verified: date-verified.csv, before: date-after.csv, qc: '', limit: 0, track: true}
+          # unchanged option: a control that nothing moved (first 40 genuine photos and the QC photos)
+          - {model: submariner_124060, verified: nodate-verified.csv, before: nodate-after.csv, qc: submariner_124060, limit: 40, track: false}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 50}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests numpy scipy opencv-python-headless pillow==12.3.0
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Verified genuine photos (sha256-checked)
+        run: |
+          mkdir -p g out
+          python3 - <<'PY'
+          import csv
+          rows = list(csv.DictReader(open('tools/research/marker_audit/results/${{ matrix.verified }}')))
+          if ${{ matrix.limit }}: rows = rows[:${{ matrix.limit }}]
+          w = csv.DictWriter(open('g/manifest.csv', 'w', newline=''), fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+          PY
+          python3 tools/research/alpha96_calibration/fetch_verified.py g/manifest.csv g/img g/fetch_log.csv | tail -3
+      - name: Public QC photos (sha256-pinned)
+        if: matrix.qc != ''
+        run: |
+          mkdir -p q/img
+          python3 - <<'PY'
+          import requests, hashlib, csv, pathlib
+          ids = [r['photo_id'] for r in csv.DictReader(open('tools/research/marker_audit/results/qc/${{ matrix.qc }}.csv'))]
+          cases = {
+           'GMT_crooked6_1s4cszq': ('https://i.redd.it/zsgyaaky0frg1.jpg', 'c36f1af94be604ec9153e77b42322d0396634af0eb955c2ab7d3841dce4bb6cd'),
+           'GMT_accepted6_18vdgh0': ('https://i.redd.it/tqmt3k1f8o9c1.jpg', 'a041d20d14d7c9f105991496b539bb73d63182d75e3b61b6d5a8f0590ecd6c13'),
+           'GMT_accepted6_18vdgh0_photo2': ('https://i.redd.it/fobj8k1f8o9c1.jpg', '77245a16744f3fb1369bdaef2101593bd6b52de3a0f031946e3cd84ea9fe8217'),
+           'SUB_rejected12_1wgfy7k': ('https://i.redd.it/0rx4t01hujph1.jpg', '7c9f2b50f8e89b860bf567cebdc7a86f3268c5c5e04397f44314bbf5f3f2e0ba'),
+           'SUB_accepted12_1w848xb': ('https://i.redd.it/wdaw7dp93qnh1.jpg', '2fe59ac6f06f8effed25c288075ee931b608c874c66d536c6255524ae7a7f91f'),
+           'SUB_accepted12_1w848xb_photo5': ('https://i.redd.it/zm5wgcp93qnh1.jpg', '4c4f8cd97ef5e2c3aa8fe2f3a729f3e462b0bf3cd83ea38793419ea7313b2561'),
+           'SUB_control12_1kqn8ub': ('https://i.redd.it/o3xibqc50t1f1.jpg', '471e927748db033d97e3a0087f3cf66dbe2a374246185c72852488c18157a3b2')}
+          s = requests.Session(); s.headers.update({'User-Agent': 'Mozilla/5.0 WatchAlignResearch/1.0', 'Referer': 'https://www.reddit.com/'})
+          w = csv.writer(open('q/manifest.csv', 'w', newline='')); w.writerow(['photo_id', 'local_path', 'physical_watch_id'])
+          for name in ids:
+              url, sha = cases[name]
+              try:
+                  data = s.get(url, timeout=20).content
+                  if hashlib.sha256(data).hexdigest() != sha: raise ValueError('sha256')
+                  (pathlib.Path('q/img') / (name + '.jpg')).write_bytes(data); w.writerow([name, name + '.jpg', name])
+              except Exception as e: print('QC NOT AVAILABLE (not tested):', name, e)
+          PY
+      - name: App code on the photos
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then mkdir -p $(dirname $J); curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar; fi
+          mkdir -p cls
+          javac -encoding UTF-8 -nowarn -cp $J -sourcepath "tools/desktop-harness/shim:android/app/src/main/java" -d cls tools/desktop-harness/drivers/*.java
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TrackDump g/manifest.csv g/img out/genuine.csv | grep -c TRACK
+          if [ -f q/manifest.csv ]; then java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TrackDump q/manifest.csv q/img out/qc.csv | grep -c TRACK; fi
+      - name: Marker-by-marker comparison with main
+        run: |
+          R=tools/research/marker_audit/results
+          python3 - <<'PY'
+          import csv
+          ids = {r['photo_id'] for r in csv.DictReader(open('g/manifest.csv'))}
+          rows = [r for r in csv.DictReader(open('tools/research/marker_audit/results/${{ matrix.before }}')) if r['photo_id'] in ids]
+          w = csv.DictWriter(open('out/genuine_before.csv', 'w', newline=''), fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+          PY
+          python3 tools/research/shared_engine/compare_options.py out/genuine_before.csv out/genuine.csv "genuine ${{ matrix.model }}" | tee out/compare_genuine.txt || echo "COMPARE: markers missing (see above)"
+          if [ -f out/qc.csv ]; then python3 tools/research/shared_engine/compare_options.py $R/qc/${{ matrix.qc }}-after.csv out/qc.csv "QC ${{ matrix.model }}" | tee out/compare_qc.txt || echo "COMPARE: QC markers missing"; echo "## QC answers"; cat out/qc.csv; fi
+          grep -c "" g/fetch_log.csv; python3 -c "import csv,collections;print(collections.Counter(r.get('status','') for r in csv.DictReader(open('g/fetch_log.csv'))))"
+      - name: Store the option's genuine numbers (numbers only; working branch only)
+        if: matrix.track && github.ref_name != 'main'
+        run: |
+          f=android/app/src/main/assets/models/${{ matrix.model }}/alignment/genuine_track.csv
+          python3 - "$f" "${{ github.run_id }}" <<'PY'
+          import csv, sys
+          rows = [r for r in csv.DictReader(open('out/genuine.csv')) if not r['gate'] and (r['side_pct'] or r['inout_pct'])]
+          with open(sys.argv[1], 'w') as o:
+              o.write('# Measured verified-genuine markers (clearly-off check, app code, desktop harness), numbers only: %d markers.\n' % len(rows))
+              o.write('# From run %s (.github/workflows/three-options.yml). Used by the calibration screen to count the genuine markers a setting would flag.\n' % sys.argv[2])
+              o.write('shape,rpx,side_pct,inout_pct,tilt_deg,gap_pct\n')
+              for r in rows:
+                  o.write('%s,%.0f,%s,%s,%s,%s\n' % (r['shape'], float(r['rpx']), r['side_pct'], r['inout_pct'], r['tilt_line_deg'], r.get('gap_pct', '')))
+          PY
+          if git diff --quiet -I '^# From' -- "$f"; then echo "genuine numbers unchanged"; git checkout -- "$f"; exit 0; fi
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$f"; git commit -q -m "Genuine numbers for ${{ matrix.model }} (three options, generated by CI run ${{ github.run_id }})"
+          for i in 1 2 3 4; do git pull -q --rebase origin "${GITHUB_REF_NAME}" && git push -q origin "HEAD:${GITHUB_REF_NAME}" && break; sleep $((i*5)); done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: three-options-${{ matrix.model }}
+          path: out/
+          retention-days: 14
