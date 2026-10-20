@@ -22,6 +22,45 @@ For each marker, the result is one of:
 
 Measured numbers belong in the details for anyone who wants them.
 
+## Two-tier alignment classification (owner, 20 Oct 2026)
+
+Alongside the existing individual-marker visual-QC objective, the owner explicitly wants an **experimental whole-watch
+alignment-based classification** from the same measurements on the same single uploaded photo. This does **not** replace
+the individual-marker results or their close-up evidence.
+
+Apply two independent tiers:
+
+- **Strict genuine-alignment standard:** all required hour markers must meet the separately maintained strict pooled
+  genuine measurement tolerances. The owner deliberately accepts that some authentic Rolex watches will fail this
+  demanding standard. Do not relax genuine limits merely to make every known genuine watch pass.
+- **Acceptable replica-QC standard:** keep the existing, separately adjustable visual acceptability limits and the
+  existing "clearly off" marker checks. Do not silently replace them with the strict genuine limits.
+
+Whole-watch display labels, explicitly approved by the owner:
+
+- **Genuine:** all required hour markers are reliably assessed and all meet the strict genuine-alignment standard.
+- **Replica:** all required markers are reliably assessed; at least one fails the strict genuine standard, but none
+  fails the acceptable replica-QC standard.
+- **Replica — QC Issues:** all required markers are reliably assessed and at least one fails acceptable replica QC;
+  show the specific marker(s) and magnified evidence.
+- **Can't Determine:** a required marker or the photo's pose cannot be assessed reliably, including hand obstruction,
+  blur, glare, ambiguous metal edges, missing measurements or an internal analysis failure. Report reliable individual
+  findings without inferring that unmeasured markers pass.
+
+Require 12 physical hour markers for No-Date models and 11 for models with a date aperture. Never average individual
+defects away, count an unmeasured marker as a pass, or classify a watch as a replica based only on an uncertain edge fit.
+Check photo quality first; invite a new, straight-on photo when the result is unexpected.
+
+**Interpretation is mandatory:** "Genuine" and "Replica" are owner-approved *alignment-based screening predictions*,
+not verification of authenticity, manufacturing origin or movement. Display a visible, concise disclaimer that real
+Rolex watches can fail these strict limits and well-aligned replicas can pass. Never present the label as a conclusive
+authentication or invent a confidence percentage.
+
+Keep strict-genuine and adjustable-replica calibration settings separate, preserve the old individual-marker QC
+behaviour, and do not alter source/reference data merely to improve classification rates. Implement using the existing
+marker measurements; do not introduce a second detection engine.
+
+
 ## Guidance (defaults, not rules)
 
 - **Genuine baseline.** Use proven-genuine photos to place the overlay and as a sanity check: genuine markers should
@@ -31,7 +70,8 @@ Measured numbers belong in the details for anyone who wants them.
 - **Test before shipping.** Prove a change offline first, with ground truth where possible (markers moved by known
   amounts, genuine photos).
 - **Protect existing behaviour.** Adding a model should not change existing models unless that is intended and tested.
-- **Wording.** Describe what was measured. Avoid claiming a watch is genuine or fake.
+- **Wording.** Describe what was measured. Whole-watch **Genuine** / **Replica** labels are explicitly permitted as
+  non-conclusive alignment-based predictions with a visible disclaimer; never claim verified authenticity.
 - **Private photos.** Never commit or publish the owner's private photos.
 
 ## Background documents
