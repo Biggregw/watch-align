@@ -54,10 +54,15 @@ final class MetalFit {
      *  QC, close-up) is unchanged. A side counts as beside the hand when the hand's centre line runs along it (within
      *  ALT_HAND_PARALLEL_DEG) and passes within ALT_HAND_NEAR_R of its midpoint, and exactly one side may be. */
     static final double ALT_HAND_NEAR_R=0.02,ALT_HAND_PARALLEL_DEG=15;
-    static double ALT_U_POS_R=Double.NaN,ALT_U_ROT_DEG=Double.NaN;
+    /** Measured on the verified genuine photos (three-options CI, drivers/SideDrop.java; REFIT_BESIDE_HAND.md): leaving
+     *  out one long side of a reliably fitted genuine baton moved it at most 0.135 % R and turned it at most 0.77 deg
+     *  (about 1,200 refits; GMT 66, Date 99, No-Date 132 photos). ALT_U_POS_R also covers a refit misled by an edge
+     *  evenly along its remaining side that still agrees with the lume: the agreement tolerance (0.30 % R) plus the
+     *  lume's own across-baton error on genuine batons (p95 0.22-0.32 % R). */
+    static final double ALT_U_POS_R=0.0065,ALT_U_ROT_DEG=0.80;
     /** ...and the refit must agree with the independently measured luminous centre within this (R): a misleading edge
      *  evenly along the remaining side would move the refit, not the lume */
-    static double ALT_LUME_AGREE_R=Double.NaN;
+    static final double ALT_LUME_AGREE_R=0.0030;   // genuine lume vs metal across the baton: p95 0.22-0.32, max 0.32-1.03 % R
     /** research only (null in the app): for every reliably fitted baton, each side left out in turn:
      *  {side, side length (R), refit clean 1/0, dx, dy (R), dtilt (deg), x, y} against the full fit */
     static List<double[]> SIDE_DROP_PROBE=null;

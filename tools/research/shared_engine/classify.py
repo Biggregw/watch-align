@@ -12,8 +12,8 @@ def _alt_u():
     """the validated one-side refit uncertainty, read from the app (MetalFit.ALT_U_POS_R, ALT_U_ROT_DEG)"""
     import pathlib, re
     src = (pathlib.Path(__file__).resolve().parents[3] / 'android/app/src/main/java/com/watchalign/mobile/MetalFit.java').read_text()
-    m = re.search(r'static double ALT_U_POS_R=([^,;]+),ALT_U_ROT_DEG=([^;]+);', src)
-    a = re.search(r'static double ALT_LUME_AGREE_R=([^;]+);', src)
+    m = re.search(r'static (?:final )?double ALT_U_POS_R=([^,;]+),ALT_U_ROT_DEG=([^;]+);', src)
+    a = re.search(r'static (?:final )?double ALT_LUME_AGREE_R=([^;]+);', src)
     v = [float('nan') if 'NaN' in x else float(x) for x in m.groups() + a.groups()]
     return 100 * v[0], v[1], 100 * v[2]
 

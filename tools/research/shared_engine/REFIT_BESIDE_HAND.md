@@ -56,18 +56,35 @@ Every reliably fitted genuine baton refitted with each side left out in turn:
 | Submariner Date 126610 (99) | 185 | 0.127 % R | 0.24° (0.21°) | 0.29 % R |
 | Submariner 124060 (132) | 316 | 0.128 % R | 0.46° (0.29°) | 0.95 % R |
 
-Hands are radial lines, so the parallel test only ever leaves out a long side. **U<sub>pos</sub> = 0.20 % R** (≈1.5 × the
-largest of about 1,200 long-side refits) and **U<sub>rot</sub> = 0.80°** (above the largest, 0.77°).
+Hands are radial lines, so the parallel test only ever leaves out a long side. The one-side error does not grow on
+small dials: on dials 0–260 px in radius the long-side maximum is 0.122–0.135 % R.
 
-Lume vs the reliable metal fit, in total: p99 0.48–0.86 % R (max 1.04). That is too loose to catch a misleading edge, but
-it is almost all along the baton. Across it: being measured (three-options CI); the tolerance is set from it.
+Lume vs the reliable metal fit, in total: p99 0.48–0.86 % R (max 1.04). That is too loose to catch a misleading edge,
+and most of it is along the baton. Across the baton (the coordinate a left-out long side would have fixed), per genuine
+baton:
+
+| set | batons | p50 | p95 | p99 | max |
+|---|---|---|---|---|---|
+| GMT | 96 | 0.072 | 0.292 | 0.318 | 0.318 % R |
+| Date | 185 | 0.060 | 0.224 | 0.254 | 0.429 % R |
+| No-Date | 316 | 0.083 | 0.315 | 0.856 | 1.025 % R |
+
+Values set in `MetalFit` (final constants):
+
+- **`ALT_LUME_AGREE_R` = 0.30 % R**, about the genuine p95. About 5 % of honest refits are refused, which errs towards Can't
+  Determine.
+- **`ALT_U_POS_R` = 0.65 % R.** It covers the honest one-side error (≤ 0.135 %), and also a refit misled by an edge evenly
+  along its remaining side that still passes the lume check: the 0.30 tolerance plus the lume's own genuine
+  across-baton error (p95 ≈ 0.32). A tighter value would rely on misleading edges never happening.
+- **`ALT_U_ROT_DEG` = 0.80°**, above the largest genuine one-side tilt error (0.77°). Rotation has no independent
+  cross-check; a misleading edge that is itself tilted is a documented residual risk.
 
 ## Traps (`drivers/RefitTraps.java`, CI; `MetalFitTest`)
 
 | case | refit | lume across | result |
 |---|---|---|---|
 | hand beside the right edge, baton in place / moved 0.6 / 1.2 % R | error 0.005–0.047 % R | 0.001–0.021 % R | accepted, move measured |
-| plus a reflection evenly along the left edge | error 0.92–0.98 % R (looks clean) | 0.93–1.0 % R | refused |
+| plus a reflection evenly along the left edge | error 0.92–0.98 % R (looks clean) | 0.955–1.0 % R | refused (tolerance 0.30) |
 | hand not confirmed by the per-marker check | none | | |
 | hand crossing the baton, or down its middle | none (no single side) | | |
 
@@ -75,14 +92,17 @@ it is almost all along the baton. Across it: being measured (three-options CI); 
 
 The refit leaves out the right edge and reads −0.04 % R sideways, −0.03 % R in/out, −0.24° (lume across 0.038 % R). That
 is stable over all perturbations where it ran (−0.036…−0.073 % R; −0.28…+0.24°), and it matches the other markers
-(−0.27…+0.10 % R). Position 0.05 + 0.20 = 0.25 ≤ 0.96 % R; rotation 0.24 + 0.80 = 1.04 ≤ 1.10°: **Genuine**, with a
-narrow rotation margin.
+(−0.27…+0.10 % R). Position 0.05 + 0.65 = 0.70 ≤ 0.96 % R; rotation 0.24 + 0.80 = 1.04 ≤ 1.10°: the photo classifies
+**Genuine**, with a narrow rotation margin. All 19 perturbations classify Genuine; before this change, 10 were Genuine
+and 9 Can't Determine, depending on whether the hand pulled the main fit.
 
 ## Known limitations
 
 - **A hand very close to a baton edge can pull a fit that is not flagged.** On the synthetic dial, a hand 0.5 px outside
   the edge pulled the fit to 1.17° of tilt with no uncertain flag. That risks a false *Replica*, never a false Genuine.
   It is a pre-existing issue that this change does not alter.
+- **Rotation has no independent check.** A misleading edge that is itself tilted along the remaining long side could
+  hide a real tilt by up to its own angle; U<sub>rot</sub> (0.80°) is the only margin.
 - **Not covered:** round markers and the 12 triangle are not refitted, and an uncertain reading over a replica-QC limit
   (Possible) is never overruled.
 - **A very bright hand can merge into the lume region** and pull the lume centre. Honest refits are then refused (Can't
