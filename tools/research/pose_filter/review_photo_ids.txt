@@ -1,0 +1,44 @@
+# Photo IDs: research contact-sheet selection, based ONLY on independent pose metrics, not on marker results.
+# 24 No-Date provisional candidates (ALL candidates):
+NoDate 295ff012729b77e6
+NoDate 8b8c84ce9219f904
+NoDate 39333b0946ed7fd0
+NoDate e11198980d028b5f
+NoDate 6529d575cc81f1c6
+NoDate cf8b3558e1f51d5d
+NoDate 89990846ea01b6fd
+NoDate f76f406446724e3d
+NoDate 8a879a6b7af453d4
+NoDate 81d79fcb376dc958
+NoDate 6bdbaa824febd436
+NoDate e5053040ac2be163
+NoDate 87a03e2dee808813
+NoDate deeac9c977cff01b
+NoDate f012ee60547d1305
+NoDate cff7f3769fe83671
+NoDate f1e3a0fcb0ac0900
+NoDate 452179d4614332e4
+NoDate 17484cbe61baaa1a
+NoDate bab3598bd3412577
+NoDate 94945a768f7d1b42
+NoDate ae62696b350860cc
+NoDate 11fd59370de4c8ac
+NoDate 3f133ea7c7ca62a1
+# Eight best-geometry GMT comparison controls (not formally admitted)
+GMT 7bd6fe4932a1eaf0
+GMT 454db39fb22b7f94
+GMT 6784943b0c490835
+GMT 5a25cdb409b7c6cd
+GMT c7bbe5da2e41dd7c
+GMT 3b4fa22c3a852c10
+GMT 83e5cea4c73fcaee
+GMT a5e421ece4056202
+# Eight best-geometry Date controls (not formally admitted)
+Date 497523ba2201d2bc
+Date 9a7e4cbaac04e690
+Date d3494f45f100d847
+Date b7c079415a40c75e
+Date a905c73ad32c3491
+Date 3492e88264ed0af4
+Date 4163cb02953e883c
+Date 1eff025aaf97773e
