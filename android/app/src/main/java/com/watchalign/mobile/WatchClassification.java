@@ -116,20 +116,15 @@ final class WatchClassification {
     }
 
     /**
-     * Owner, 21 Oct 2026: one credible out-of-range measurement is enough for Replica; a modest edge-fit imperfection
-     * (slightly rough, partly inconsistent, loosely fixed, low resolution) is not the same as having no measurement.
-     * NOT credible (unavailable or geometrically corrupted), with the engine's existing definitions only: no reading,
-     * anything withheld (Can't check, a gate), no finite measurement, an outline mostly reconstructed (under
-     * MetalFit.MIN_COVER seen), a fit whose typical residual is itself an inconsistent edge point (RMS over
-     * MetalFit.EDGE_BAD_PX), more of its seen edge inconsistent than consistent, or an uncertain fit at a marker where
-     * the per-marker check confirmed a hand (a hand can pull the fit: owner's genuine Submariner Date, 6 baton; the
-     * validated refit decides those). A genuine PASS still needs a reliable reading (reliable()).
+     * Owner, 21 Oct 2026: a completed measurement outside a frozen limit decides, even with a soft edge-fit warning
+     * (rough, inconsistent, partly reconstructed, loosely fixed, low resolution); no reliability threshold is added.
+     * NOT credible (unavailable or invalid): no reading, anything withheld (Can't check, a gate), no finite
+     * measurement, or an uncertain fit at a marker where the per-marker check confirmed a hand (a hand can pull the
+     * fit: owner's genuine Submariner Date, 6 baton; the hand-interference refit decides those). A genuine PASS still
+     * needs a reliable reading (reliable()).
      */
     static boolean credible(ClearlyOff.Marker m){
         if(m==null||m.state==ClearlyOff.State.CANT_CHECK||!m.gate.isEmpty()||!m.measured())return false;
-        if(Double.isFinite(m.cover)&&m.cover<MetalFit.MIN_COVER)return false;
-        if(Double.isFinite(m.fitRmsPx)&&m.fitRmsPx>MetalFit.EDGE_BAD_PX)return false;
-        if(Double.isFinite(m.badFrac)&&m.badFrac>0.5)return false;
         if(m.handConfirmed&&m.uncertain!=null&&!m.uncertain.isEmpty())return false;
         return true;
     }
@@ -238,7 +233,7 @@ final class WatchClassification {
                 +"; the reading is outside the range above and counts.");
         else if(!c.reliable)out.add(q.state==ClearlyOff.State.CANT_CHECK?"Not used for the genuine standard: "+q.reason+"."
                 :"Not enough for a genuine pass: measured from an uncertain edge"+(q.uncertain==null||q.uncertain.isEmpty()?"":" ("+q.uncertain+")")
-                +(c.credible?".":"; not used to decide a failure either (the edge fit is too poor"+(q.handConfirmed?", and a hand is beside it":"")+")."));
+                +(c.credible?".":"; not used to decide a failure either (a hand is beside it)."));
         return out;
     }
     static String row(String name,double v,String unit,String kind,double genuineLimit,double qcLimit){

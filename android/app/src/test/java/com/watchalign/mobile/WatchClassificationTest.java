@@ -86,12 +86,15 @@ public class WatchClassificationTest {
         c=WatchClassification.classify(judge(r),model,null);
         assertEquals(ClearlyOff.State.POSSIBLE,r.at(10).state);
         assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,c.verdict);assertTrue(c.at(10).qcFail());assertFalse(c.at(10).reliable);
-        // ...but a corrupted fit never does: RMS over 1 px (each residual an inconsistent edge point), most of the edge
-        // inconsistent, mostly reconstructed, or an uncertain fit beside a confirmed hand
-        for(int k=0;k<4;k++){r=watch(model);ClearlyOff.Marker m=r.at(10);m.uncertain="its visible edge is rough";m.sidePct=3.0;
-            if(k==0)m.fitRmsPx=1.4;if(k==1)m.badFrac=0.66;if(k==2)m.cover=0.40;if(k==3){m.handConfirmed=true;m.fitRmsPx=0.6;}
+        // owner, 22 Oct 2026: no reliability threshold is added - however rough, inconsistent or partly reconstructed the
+        // fit, a completed reading decides; only an uncertain fit beside a confirmed hand does not (the refit decides it)
+        for(int k=0;k<3;k++){r=watch(model);ClearlyOff.Marker m=r.at(10);m.uncertain="its visible edge is rough";m.sidePct=3.0;
+            if(k==0)m.fitRmsPx=1.4;if(k==1)m.badFrac=0.66;if(k==2)m.cover=0.40;
             c=WatchClassification.classify(judge(r),model,null);
-            assertEquals("case "+k,WatchClassification.Verdict.CANT_DETERMINE,c.verdict);assertFalse(c.at(10).credible);}
+            assertEquals("case "+k,WatchClassification.Verdict.REPLICA_QC_ISSUES,c.verdict);assertTrue(c.at(10).credible);}
+        r=watch(model);ClearlyOff.Marker m=r.at(10);m.uncertain="its visible edge is rough";m.sidePct=3.0;m.handConfirmed=true;m.fitRmsPx=0.6;
+        c=WatchClassification.classify(judge(r),model,null);
+        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);assertFalse(c.at(10).credible);
         r=watch(model);r.at(10).gate.add("a hand covers most of its outline");
         assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(judge(r),model));
         r=watch(model);r.at(10).sidePct=Double.NaN;r.at(10).inoutPct=Double.NaN;   // not measured
@@ -100,19 +103,23 @@ public class WatchClassificationTest {
         assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(judge(r),model));
     }
 
-    /** The Sub Date triangle outliers (genuine; edge fit 1.2-2.2 px RMS): an uncertain fit with an extreme rotation or
-     *  position is Possible at most, never a confident Replica or Replica - QC Issues. */
-    @Test public void aPoorlyObservedTriangleCannotMakeAReplica(){
+    /** The Sub Date triangle outliers (genuine; edge fit 1.2-2.2 px RMS). Owner, 22 Oct 2026: a completed out-of-range
+     *  reading decides despite a soft edge warning, so this genuine triangle now gives a (false) replica result; only
+     *  a reading that is not there is left out. */
+    @Test public void aPoorlyObservedTriangleNowCountsUnlessItsReadingIsMissing(){
         ModelSpec model=date();
         ClearlyOff.Result r=watch(model);ClearlyOff.Marker t=r.at(12);
         t.uncertain="its visible edge is rough (2.2 px); 81% of its visible edge is inconsistent (shadowed or reflecting metal)";
         t.tiltDeg=-1.5331;t.sidePct=0.5963;t.inoutPct=-0.2897;t.gapPct=3.7830;t.fitRmsPx=2.19;t.cover=0.65;  // c11761654b519222
         WatchClassification.Result c=WatchClassification.classify(judge(r),model,null);
         assertEquals(ClearlyOff.State.POSSIBLE,t.state);
-        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);
-        assertFalse(c.at(12).genuineFail());
-        t.tiltDeg=5.0;t.sidePct=3.0;judge(r);                                           // even absurd numbers
-        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(r,model));
+        // owner, 22 Oct 2026: a completed reading outside a limit decides despite its edge warning; this genuine
+        // triangle's 1.53 deg is over the replica-QC 1.2 deg, so the watch is Replica - QC Issues (an accepted false result)
+        assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,c.verdict);
+        assertTrue(c.at(12).genuineFail());
+        // a reading that is not there does not: rotation and position withheld
+        r=watch(model);t=r.at(12);t.uncertain="its visible edge is rough (2.2 px)";t.gate.add("its visible edge does not fix its rotation");
+        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(judge(r),model));
     }
 
     @Test public void aFailedAnalysisIsCantDetermineNeverReplica(){

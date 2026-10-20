@@ -4,10 +4,10 @@
 
 | | |
 |---|---|
-| App | Watch Align 1.6.6 (versionCode 13168), applicationId `com.watchalign.mobile.poc` |
+| App | Watch Align 1.6.6 (versionCode 13169), applicationId `com.watchalign.mobile.poc` |
 | Branch | `claude/calibration-measurement-contract-epunh5` |
-| Code commit the values are read from | `64a5e58` ("1.6.6: one credible out-of-range measurement is enough for Replica"); this file was added in the commit after it |
-| Date | 20 October 2026 (rule of 21 Oct 2026 included) |
+| Code commit the values are read from | `64a5e58` (tolerances and engine); the credibility rule was simplified on 22 Oct 2026 in the commit that updated this file (no tolerance changed) |
+| Date | 20 October 2026 (classification rules of 21–22 Oct 2026 included) |
 
 ## Change control
 
@@ -120,15 +120,15 @@ Source: `MetalFit.java` and `WatchClassification.java`.
 **Reliable** (`WatchClassification.reliable`): measured, nothing withheld, not uncertain, and for the triangle its gap
 measured rather than placed from the outline (`gapFromFit`). **Only reliable readings can pass the genuine standard.**
 
-**Credible** (`WatchClassification.credible`, owner 21 Oct 2026): a reading that may decide a **failure**. Every reliable
-reading is credible. An uncertain reading is also credible **unless any of these apply**:
-- it is Can't check, gated or has no finite measurement;
-- under 50 % of the outline is seen (`MIN_COVER`);
-- its RMS is over 1.0 px (`EDGE_BAD_PX`), so its typical residual is itself an inconsistent edge point;
-- more than half of its seen edge is inconsistent;
-- the per-marker check confirmed a hand at it.
+**Credible** (`WatchClassification.credible`, owner 21–22 Oct 2026): a reading that may decide a **failure**. Every
+reliable reading is credible. An uncertain reading is credible too, **however rough or inconsistent its edge fit**: no
+RMS, inconsistency or coverage threshold applies. It is **not** credible when any of these apply:
+- it is Can't check or gated;
+- it has no finite measurement;
+- the per-marker check confirmed a hand at it (the one-side refit below decides those).
 
-A triangle gap placed from the outline never counts as a failure.
+A photo-wide failure decides first (section 6). A triangle gap placed from the outline (`gapFromFit`) is not a measured
+gap and never counts as a failure.
 
 **One-side refit beside a confirmed hand** (batons, strict genuine standard only; `MetalFit` and `WatchClassification.alt`):
 - **When it runs:** the baton's fit is uncertain, the per-marker check confirmed a hand, and the hand line runs along

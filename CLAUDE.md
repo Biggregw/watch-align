@@ -56,11 +56,11 @@ Decision order (owner, 20 Oct 2026: a confirmed failure takes precedence over un
 4. Otherwise, any required marker missing or unreliable → **Can't Determine**.
 5. **Genuine** only when every required marker is reliably measured and passes every strict genuine limit.
 
-**Credible measurement (owner, 21 Oct 2026):** a modest edge-fit imperfection (slightly rough, partly inconsistent,
-loosely fixed, low resolution) does not discard a usable, out-of-range reading. Not credible, and never a failure:
-missing or non-finite values, anything withheld (Can't check, hand gate), an outline mostly reconstructed, a
-geometrically corrupted fit (RMS over 1 px, or more of the edge inconsistent than consistent), or an uncertain fit
-beside a confirmed hand (the validated refit decides those). A genuine pass still needs every marker reliable. The
+**Credible measurement (owner, 21-22 Oct 2026):** a completed measurement outside a frozen limit decides, even with
+a soft edge-fit uncertainty warning; no reliability threshold (RMS, inconsistency, coverage) is added for this. Not
+credible, and never a failure: missing or non-finite values, anything withheld (Can't check, hand gate), a photo-wide
+failure, a triangle gap placed from the outline rather than measured, or an uncertain fit beside a confirmed hand
+(the hand-interference refit decides those). A genuine pass still needs every marker reliable. The
 genuine and replica-QC tolerances are frozen; do not recalibrate them. When a Replica or Replica — QC Issues result
 rests on partial marker coverage, show a warning that some markers could not be assessed and additional QC issues may
 exist.

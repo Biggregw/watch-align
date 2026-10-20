@@ -52,11 +52,6 @@ def credible(r):
     if not USE_CREDIBLE: return False
     if r['state'] == 'CANT_CHECK' or r['gate']: return False
     if not (math.isfinite(_f(r['side_pct'])) or math.isfinite(_f(r['inout_pct']))): return False
-    cov = _f(r.get('cover'))
-    if math.isfinite(cov) and cov < 0.5: return False
-    rms, bad = _f(r.get('fit_rms_px')), _f(r.get('bad_frac'))
-    if math.isfinite(rms) and rms > 1.0: return False
-    if math.isfinite(bad) and bad > 0.5: return False
     if r.get('hand_confirmed') and r['uncertain']: return False
     return True
 
