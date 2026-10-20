@@ -75,6 +75,11 @@ not verification of authenticity, manufacturing origin or movement. Display a vi
 Rolex watches can fail these strict limits and well-aligned replicas can pass. Never present the label as a conclusive
 authentication or invent a confidence percentage.
 
+**Frozen calibration baseline:** `docs/CALIBRATION_BASELINE_2026-10-20.md` records every genuine and replica-QC
+tolerance, the resolution allowance, the reliability and credibility rules and the classification order, with their
+source constants. Any change to a tolerance or rule there needs the owner's explicit approval and must be documented
+with its old and new values, date and commit.
+
 Keep strict-genuine and adjustable-replica calibration settings separate, preserve the old individual-marker QC
 behaviour, and do not alter source/reference data merely to improve classification rates. Implement using the existing
 marker measurements; do not introduce a second detection engine.
