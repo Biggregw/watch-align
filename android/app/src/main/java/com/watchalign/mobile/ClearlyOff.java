@@ -139,6 +139,9 @@ final class ClearlyOff {
         String uncertain="",source="lume";
         double cover=Double.NaN,fitRmsPx=Double.NaN,badFrac=Double.NaN,sePosPct=Double.NaN,seRotDeg=Double.NaN,fitTiltDeg=Double.NaN;
         double[][] yellow,fitPoly,fitPts;byte[] fitStatus;double[] tick59,tick01;boolean gapFromFit;
+        /** 1.6.6: the clean refit without the side beside a confirmed hand (MetalFit.Fit.alt), measured like the reading
+         *  above; only the strict genuine standard uses it (WatchClassification). altSide: that side, -1 when none */
+        double altSidePct=Double.NaN,altInoutPct=Double.NaN,altTiltDeg=Double.NaN;int altSide=-1;
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
         /** a copy to judge against other limits without changing the shown answer (calibration screen) */
         Marker copy(){Marker m=new Marker(hour,shape);m.state=state;m.reason=reason;m.gate.addAll(gate);
@@ -147,7 +150,7 @@ final class ClearlyOff {
             m.tiltCentroidDeg=tiltCentroidDeg;m.rotLeftDeg=rotLeftDeg;m.rotRightDeg=rotRightDeg;m.rotRmsPx=rotRmsPx;m.rotNote=rotNote;
             m.uncertain=uncertain;m.source=source;m.cover=cover;m.fitRmsPx=fitRmsPx;m.badFrac=badFrac;m.sePosPct=sePosPct;m.seRotDeg=seRotDeg;
             m.fitTiltDeg=fitTiltDeg;m.yellow=yellow;m.fitPoly=fitPoly;m.fitPts=fitPts;m.fitStatus=fitStatus;m.tick59=tick59;m.tick01=tick01;
-            m.gapFromFit=gapFromFit;return m;}
+            m.gapFromFit=gapFromFit;m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;return m;}
         boolean measured(){return Double.isFinite(sidePct)||Double.isFinite(inoutPct);}
     }
 
@@ -219,6 +222,11 @@ final class ClearlyOff {
                     mf.uncertain=(mf.uncertain.isEmpty()?"":mf.uncertain+"; ")+String.format(Locale.US,"the photo's resolution is low (the dial is %.0f px across)",2*rpx);
                 if(mf!=null&&mf.cObs!=null){r.source="outer metal";r.uncertain=mf.uncertain;r.cover=mf.cover;r.fitRmsPx=mf.rmsPx;r.badFrac=mf.badFrac;
                     r.sePosPct=100*mf.sePos;r.seRotDeg=mf.seRot;r.fitTiltDeg=mf.tiltDeg;r.fitPoly=mf.poly;r.fitPts=mf.pts;r.fitStatus=mf.status;}
+                if(mf!=null&&mf.ok()&&mf.alt!=null&&rpx>=LOW_RES_RPX&&b.gate.isEmpty()){   // 1.6.6: the side-beside-the-hand refit
+                    Base ab=new Base();ab.cGen=mf.alt.cGen;ab.cObs=mf.alt.cObs;ab.tiltDeg=mf.alt.tiltDeg;
+                    Marker t=new Marker(m.hour,m.shape);metrics(t,ab,res.lines,img,ringScale(base,in,m.hour),rpx);
+                    r.altSidePct=t.sidePct;r.altInoutPct=t.inoutPct;r.altTiltDeg=t.tiltDeg;r.altSide=mf.altSide;
+                }
                 if(m.shape==ModelSpec.Shape.TRIANGLE){
                     gap(r,m,ticks,res.lines,img,rpx);
                     if(mf!=null&&mf.ok()){if(!Double.isFinite(r.gapPct))gapFromFit(r,mf,ticks,res.lines,img,rpx);metalTriangleRotation(r,mf,ticks);}

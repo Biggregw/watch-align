@@ -2,10 +2,40 @@
 (WatchClassification.java) on TrackDump CSVs: replica-QC = the app's existing per-marker state (default limits),
 strict genuine = the same decision rule at the strict genuine limits (rescore.decide, 0.5 px allowance once).
 Usage: classify.py out.csv [model]   or import classify_rows."""
-import csv, collections, sys
+import csv, collections, math, sys
 from rescore import decide, CUR
 GENUINE = dict(roundPos=0.671, batonPos=0.752, batonTilt=1.096, triSide=0.437, triInout=0.373, triGap=2.81, triRot=1.174)
 REQUIRED = {'gmt_126710': 11, 'submariner_126610': 11, 'submariner_124060': 12}
+
+
+def _alt_u():
+    """the validated one-side refit uncertainty, read from the app (MetalFit.ALT_U_POS_R, ALT_U_ROT_DEG)"""
+    import pathlib, re
+    src = (pathlib.Path(__file__).resolve().parents[3] / 'android/app/src/main/java/com/watchalign/mobile/MetalFit.java').read_text()
+    m = re.search(r'static double ALT_U_POS_R=([^,;]+),ALT_U_ROT_DEG=([^;]+);', src)
+    v = [float('nan') if 'NaN' in x else float(x) for x in m.groups()]
+    return 100 * v[0], v[1]
+
+
+ALT_U_POS_PCT, ALT_U_ROT_DEG = _alt_u()
+USE_ALT = True
+
+
+def _f(x):
+    try: return float(x)
+    except (TypeError, ValueError): return float('nan')
+
+
+def alt(r):
+    """mirror of WatchClassification.alt: NONE / PASS / FAIL / UNDECIDED"""
+    if not USE_ALT or r['shape'] != 'baton' or not r.get('alt_side') or r['gate'] or r['state'] != 'NO_VISIBLE_ISSUE': return 'NONE'
+    side, io, tilt = _f(r['alt_side_pct']), _f(r['alt_inout_pct']), _f(r['alt_tilt_deg'])
+    if not all(math.isfinite(v) for v in (side, io, tilt, ALT_U_POS_PCT, ALT_U_ROT_DEG)): return 'NONE'
+    pos_lim = GENUINE['batonPos'] + 50 / _f(r['rpx']); tilt_lim = GENUINE['batonTilt']
+    pos, tilt = math.hypot(side, io), abs(tilt)
+    if pos - ALT_U_POS_PCT > pos_lim or tilt - ALT_U_ROT_DEG > tilt_lim: return 'FAIL'
+    if pos + ALT_U_POS_PCT <= pos_lim and tilt + ALT_U_ROT_DEG <= tilt_lim: return 'PASS'
+    return 'UNDECIDED'
 
 
 def reliable(r):
@@ -17,10 +47,14 @@ def classify_photo(rows, required):
     """mirror of WatchClassification.classify (Java)"""
     by = {int(r['hour']): r for r in rows}
     strict = {h: decide(r, GENUINE)[0] for h, r in by.items()}
+    al = {h: ('NONE' if reliable(r) else alt(r)) for h, r in by.items()}
+    g_pass = {h: (reliable(r) and strict[h] == 'NO_VISIBLE_ISSUE') or al[h] == 'PASS' for h, r in by.items()}
+    g_fail = {h: (reliable(r) and strict[h] == 'CLEARLY_OFF') or al[h] == 'FAIL' for h, r in by.items()}
+    assessed = {h: reliable(r) or al[h] in ('PASS', 'FAIL') for h, r in by.items()}
     if any(reliable(r) and r['state'] == 'CLEARLY_OFF' for r in by.values()): return 'REPLICA_QC_ISSUES'
-    if any(reliable(r) and strict[h] == 'CLEARLY_OFF' for h, r in by.items()): return 'REPLICA'
-    if len(by) < required or not all(reliable(r) for r in by.values()): return 'CANT_DETERMINE'
-    if all(v == 'NO_VISIBLE_ISSUE' for v in strict.values()): return 'GENUINE'
+    if any(g_fail.values()): return 'REPLICA'
+    if len(by) < required or not all(assessed.values()): return 'CANT_DETERMINE'
+    if all(g_pass.values()): return 'GENUINE'
     return 'CANT_DETERMINE'
 
 
@@ -31,6 +65,7 @@ def classify_rows(rows, model):
 
 
 if __name__ == '__main__':
+    if '--before' in sys.argv: USE_ALT = False; sys.argv.remove('--before')
     rows = list(csv.DictReader(open(sys.argv[1])))
     model = sys.argv[2] if len(sys.argv) > 2 else rows[0]['model']
     res = classify_rows(rows, model)

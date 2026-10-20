@@ -38,17 +38,22 @@ final class WatchClassification {
         /** the same measurements judged at the strict genuine limits (a copy; the reading is never changed) */
         final ClearlyOff.Marker strict;
         final boolean reliable;
+        /** 1.6.6: the strict genuine judgement of an uncertain reading from its clean refit beside a confirmed hand */
+        final Alt alt;
         MarkerCheck(int hour,ModelSpec.Shape shape,ClearlyOff.Marker reading,ClearlyOff.Marker strict,boolean reliable){
-            this.hour=hour;this.shape=shape;this.reading=reading;this.strict=strict;this.reliable=reliable;}
+            this.hour=hour;this.shape=shape;this.reading=reading;this.strict=strict;this.reliable=reliable;
+            this.alt=reliable?Alt.NONE:alt(reading,strict);}
         ClearlyOff.State qc(){return reading==null?ClearlyOff.State.CANT_CHECK:reading.state;}
         /** within the replica-QC limits (its existing answer is No visible issue) */
         boolean qcPass(){return qc()==ClearlyOff.State.NO_VISIBLE_ISSUE;}
         /** outside the replica-QC limits on a reliable reading */
         boolean qcFail(){return reliable&&qc()==ClearlyOff.State.CLEARLY_OFF;}
-        /** reliably within every strict genuine limit */
-        boolean genuinePass(){return reliable&&strict!=null&&strict.state==ClearlyOff.State.NO_VISIBLE_ISSUE;}
-        /** reliably outside a strict genuine limit */
-        boolean genuineFail(){return reliable&&strict!=null&&strict.state==ClearlyOff.State.CLEARLY_OFF;}
+        /** reliably within every strict genuine limit (or, from the clean refit, by more than its validated uncertainty) */
+        boolean genuinePass(){return reliable&&strict!=null&&strict.state==ClearlyOff.State.NO_VISIBLE_ISSUE||alt==Alt.PASS;}
+        /** reliably outside a strict genuine limit (or, from the clean refit, by more than its validated uncertainty) */
+        boolean genuineFail(){return reliable&&strict!=null&&strict.state==ClearlyOff.State.CLEARLY_OFF||alt==Alt.FAIL;}
+        /** the strict genuine standard is decided for this marker, from a reliable reading or the validated refit */
+        boolean assessed(){return reliable||alt==Alt.PASS||alt==Alt.FAIL;}
         /** the genuine standard could not be decided for this marker */
         boolean genuineUndecided(){return !genuinePass()&&!genuineFail();}
     }
@@ -78,6 +83,28 @@ final class WatchClassification {
             case REPLICA_QC_ISSUES:return "One or more markers show significant alignment deviations.";
             default:return "We couldn't reliably assess every required marker. Try another clear, straight-on photograph.";
         }
+    }
+
+    /** 1.6.6 strict genuine judgement from the clean refit (MetalFit.Fit.alt) of an uncertain baton beside a confirmed hand */
+    enum Alt{NONE,PASS,FAIL,UNDECIDED}
+
+    /**
+     * Only for a baton whose own reading is uncertain but within the replica-QC limits (No visible issue; over a limit it
+     * stays "Possible, inspect" and undecided), nothing withheld, and a clean refit without the side beside the hand.
+     * With U the one-side uncertainty measured on the verified genuine photos (MetalFit.ALT_U_POS_R, ALT_U_ROT_DEG):
+     *   PASS       |position| + U and |rotation| + U both inside the strict limits (this photo's allowance included)
+     *   FAIL       |position| - U or |rotation| - U outside a strict limit
+     *   UNDECIDED  the uncertainty could cross a limit (Can't Determine)
+     */
+    static Alt alt(ClearlyOff.Marker m,ClearlyOff.Marker strict){
+        if(m==null||strict==null||m.shape!=ModelSpec.Shape.BATON||m.altSide<0||!m.gate.isEmpty()||m.state!=ClearlyOff.State.NO_VISIBLE_ISSUE)return Alt.NONE;
+        double uPos=100*MetalFit.ALT_U_POS_R,uRot=MetalFit.ALT_U_ROT_DEG;
+        if(!Double.isFinite(m.altSidePct)||!Double.isFinite(m.altInoutPct)||!Double.isFinite(m.altTiltDeg)||!Double.isFinite(uPos)||!Double.isFinite(uRot)
+                ||!Double.isFinite(strict.posLimitPct)||!Double.isFinite(strict.tiltLimitDeg))return Alt.NONE;
+        double pos=Math.hypot(m.altSidePct,m.altInoutPct),tilt=Math.abs(m.altTiltDeg);
+        if(pos-uPos>strict.posLimitPct||tilt-uRot>strict.tiltLimitDeg)return Alt.FAIL;
+        if(pos+uPos<=strict.posLimitPct&&tilt+uRot<=strict.tiltLimitDeg)return Alt.PASS;
+        return Alt.UNDECIDED;
     }
 
     /** a reading with nothing withheld and no uncertain edge */
@@ -116,7 +143,7 @@ final class WatchClassification {
         }
         boolean allReliable=true,qcIssue=false,anyStrictFail=false,allGenuinePass=true;
         for(MarkerCheck c:out.markers){
-            allReliable&=c.reliable;
+            allReliable&=c.assessed();
             qcIssue|=c.qcFail();
             anyStrictFail|=c.genuineFail();
             allGenuinePass&=c.genuinePass();
@@ -136,7 +163,9 @@ final class WatchClassification {
 
     /** one short line for the marker list: the two standards */
     static String line(MarkerCheck c){
-        String g=c.genuinePass()?"meets the genuine standard":c.genuineFail()?"outside the genuine standard ("+String.join(", ",failed(c.strict))+")"
+        String g=c.alt==Alt.PASS?"meets the genuine standard (measured without the edge beside the hand)"
+                :c.alt==Alt.FAIL?"outside the genuine standard (measured without the edge beside the hand)"
+                :c.genuinePass()?"meets the genuine standard":c.genuineFail()?"outside the genuine standard ("+String.join(", ",failed(c.strict))+")"
                 :"genuine standard not assessed";
         String q=c.qcPass()?"within replica QC":c.qcFail()?"outside replica QC":c.qc()==ClearlyOff.State.POSSIBLE?"replica QC: inspect":"replica QC not assessed";
         return AlignmentDecision.capital(g)+" · "+q+".";
@@ -163,7 +192,14 @@ final class WatchClassification {
             out.add(row("Position",q.posPct,"% R","max",s.posLimitPct,q.posLimitPct));
             if(c.shape==ModelSpec.Shape.BATON)out.add(row("Rotation",Math.abs(q.tiltDeg),"°","max",s.tiltLimitDeg,q.tiltLimitDeg));
         }
-        if(!c.reliable)out.add(q.state==ClearlyOff.State.CANT_CHECK?"Not used for the genuine standard: "+q.reason+"."
+        if(c.alt!=Alt.NONE){
+            double uPos=100*MetalFit.ALT_U_POS_R,uRot=MetalFit.ALT_U_ROT_DEG,pos=Math.hypot(q.altSidePct,q.altInoutPct);
+            out.add("This reading is uncertain ("+q.uncertain+"). A hand was found beside it, so for the genuine standard it was measured again without the edge beside the hand:");
+            out.add(String.format(Locale.US,"Position %.2f%% R ± %.2f · genuine max %.2f%% R %s",pos,uPos,s.posLimitPct,c.alt==Alt.UNDECIDED?"(could cross the limit)":mark(pos+(c.alt==Alt.PASS?uPos:-uPos),s.posLimitPct,"max")));
+            out.add(String.format(Locale.US,"Rotation %.2f° ± %.2f · genuine max %.2f° %s",Math.abs(q.altTiltDeg),uRot,s.tiltLimitDeg,c.alt==Alt.UNDECIDED?"(could cross the limit)":mark(Math.abs(q.altTiltDeg)+(c.alt==Alt.PASS?uRot:-uRot),s.tiltLimitDeg,"max")));
+            if(c.alt==Alt.UNDECIDED)out.add("Not decided for the genuine standard: the measurement's uncertainty could cross a limit.");
+        }
+        else if(!c.reliable)out.add(q.state==ClearlyOff.State.CANT_CHECK?"Not used for the genuine standard: "+q.reason+"."
                 :"Not used for the genuine standard: measured from an uncertain edge"+(q.uncertain==null||q.uncertain.isEmpty()?"":" ("+q.uncertain+")")+".");
         return out;
     }

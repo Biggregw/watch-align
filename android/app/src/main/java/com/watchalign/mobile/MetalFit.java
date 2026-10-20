@@ -45,6 +45,19 @@ final class MetalFit {
     static final double HAND_TIP_LEN=0.12,HAND_TIP_HALF_R=0.045;
     /** Alpha99's interference strip is sampled every 0.75 px; allow that sampling width around its thin shaft. */
     static final double SECONDS_SAMPLE_MARGIN_PX=0.75;
+    /** 1.6.6 (owner, 20 Oct 2026; genuine Submariner Date, the seconds hand running beside the 6 baton's right edge while
+     *  the detected seconds line sat ~1.5 deg inside it, so its mask missed that edge): a baton whose fit is uncertain
+     *  while the independent per-marker check found a hand at it is fitted again WITHOUT the one side nearest the
+     *  detected hand. The refit (Fit.alt) is kept only when what remains is clean by the same standards as any reliable
+     *  fit. It is used only for the strict genuine standard, with the one-side uncertainty measured on the verified genuine
+     *  photos (ALT_U_POS_R, ALT_U_ROT_DEG; tools/desktop-harness/drivers/SideDrop.java); the marker's own reading (replica
+     *  QC, close-up) is unchanged. A side counts as beside the hand when the hand's centre line passes within
+     *  ALT_HAND_NEAR_R of its midpoint, and exactly one side may be. */
+    static final double ALT_HAND_NEAR_R=0.02;
+    static double ALT_U_POS_R=Double.NaN,ALT_U_ROT_DEG=Double.NaN;
+    /** research only (null in the app): for every reliably fitted baton, each side left out in turn:
+     *  {side, side length (R), refit clean 1/0, dx, dy (R), dtilt (deg), x, y} against the full fit */
+    static List<double[]> SIDE_DROP_PROBE=null;
     /** edge point status (drawn in the close-up) */
     static final byte SEEN=0,INCONSISTENT=1,HIDDEN=2;
     static final int USED=0,HAND=1,LOW=2,NO_DARK=3,BRIGHT_OUT=4,OUTSIDE=5;
@@ -102,6 +115,10 @@ final class MetalFit {
         return edges(img,poly,rpx,round,hands,Double.NaN);
     }
     static Edges edges(ClearlyOff.Img img,double[][] poly,double rpx,boolean round,List<double[]> hands,double secondsLine){
+        return edges(img,poly,rpx,round,hands,secondsLine,-1);
+    }
+    /** skipSide: a polygon side (index of its first vertex) left out as if under a hand (-1: none) */
+    static Edges edges(ClearlyOff.Img img,double[][] poly,double rpx,boolean round,List<double[]> hands,double secondsLine,int skipSide){
         Outline o=outline(poly,rpx,round);int n=o.pts.length;
         double ds=PROFILE_STEP_PX/rpx;int ns=(int)Math.floor(2*SPAN/ds+1e-9)+1;
         double[] s=new double[ns];for(int k=0;k<ns;k++)s[k]=-SPAN+k*ds;
@@ -114,7 +131,7 @@ final class MetalFit {
         double[] p=new double[ns];
         for(int i=0;i<n;i++){
             e.off[i]=Double.NaN;
-            if(underHand(o.pts[i],hands)){e.why[i]=HAND;continue;}
+            if(underHand(o.pts[i],hands)||(skipSide>=0&&o.side[i]==skipSide)){e.why[i]=HAND;continue;}
             boolean nan=false;for(int k=0;k<ns;k++){p[k]=v[i*ns+k];if(Double.isNaN(p[k]))nan=true;}
             if(nan){e.why[i]=OUTSIDE;continue;}
             double top=Double.NEGATIVE_INFINITY;for(int k=0;k<nIn;k++)top=Math.max(top,p[k]);
@@ -151,6 +168,8 @@ final class MetalFit {
         /** the fitted outline's sample points (canonical) and what was seen at each (SEEN / INCONSISTENT / HIDDEN) */
         double[][] pts;byte[] status;
         double[][] poly;
+        /** 1.6.6: the clean refit without the side beside a confirmed hand (genuine standard only), and that side */
+        Fit alt;int altSide=-1;
         boolean ok(){return note.isEmpty()&&cObs!=null;}
     }
 
@@ -171,13 +190,47 @@ final class MetalFit {
     }
     /** handConfirmed: the independent per-marker check also found a hand at this marker (HAND_COVERS needs it) */
     static Fit fit(ClearlyOff.Img img,double[][] yellow,ModelSpec.Shape shape,double rpx,List<double[]> hands,double bias,double secondsLine,boolean handConfirmed){
+        Fit f=fitCore(img,yellow,shape,rpx,hands,bias,secondsLine,handConfirmed,-1);
+        if(SIDE_DROP_PROBE!=null&&shape==ModelSpec.Shape.BATON&&f.ok()&&f.uncertain.isEmpty())
+            for(int s=0;s<yellow.length;s++){Fit a=fitCore(img,yellow,shape,rpx,hands,bias,secondsLine,handConfirmed,s);
+                double[] a0=yellow[s],a1=yellow[(s+1)%yellow.length];
+                SIDE_DROP_PROBE.add(new double[]{s,Math.hypot(a1[0]-a0[0],a1[1]-a0[1]),a.ok()&&a.uncertain.isEmpty()?1:0,
+                        a.cObs==null?Double.NaN:a.cObs[0]-f.cObs[0],a.cObs==null?Double.NaN:a.cObs[1]-f.cObs[1],a.tiltDeg-f.tiltDeg,f.cObs[0],f.cObs[1]});}
+        if(shape==ModelSpec.Shape.BATON&&handConfirmed&&f.ok()&&!f.uncertain.isEmpty()){
+            int side=sideBesideHand(f.poly,hands,secondsLine);
+            if(side>=0){Fit a=fitCore(img,yellow,shape,rpx,hands,bias,secondsLine,handConfirmed,side);
+                if(a.ok()&&a.uncertain.isEmpty()){f.alt=a;f.altSide=side;}}
+        }
+        return f;
+    }
+
+    /** the one polygon side whose midpoint a detected hand's centre line passes within ALT_HAND_NEAR_R of (hands that
+     *  reach it, and the seconds line), or -1 when none or more than one is */
+    static int sideBesideHand(double[][] poly,List<double[]> hands,double secondsLine){
+        List<Double> lines=new ArrayList<>();
+        if(Double.isFinite(secondsLine))lines.add(secondsLine);
+        int found=-1,n=poly.length;
+        for(int i=0;i<n;i++){
+            double[] a=poly[i],b=poly[(i+1)%n];double mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,r=Math.hypot(mx,my);
+            List<Double> near=new ArrayList<>(lines);
+            if(hands!=null)for(double[] h:hands)if(h[2]>=r-0.02)near.add(h[0]);
+            boolean beside=false;
+            for(double deg:near){double t=Math.toRadians(deg),dx=Math.sin(t),dy=-Math.cos(t);
+                if(mx*dx+my*dy>0&&Math.abs(mx*dy-my*dx)<=ALT_HAND_NEAR_R)beside=true;}
+            if(beside){if(found>=0)return -1;found=i;}
+        }
+        return found;
+    }
+
+    /** the fit itself; skipSide: a polygon side left out (-1: none) */
+    static Fit fitCore(ClearlyOff.Img img,double[][] yellow,ModelSpec.Shape shape,double rpx,List<double[]> hands,double bias,double secondsLine,boolean handConfirmed,int skipSide){
         Fit f=new Fit();boolean round=shape==ModelSpec.Shape.ROUND,rotate=!round;int np=rotate?3:2;
         double[] c0=ClearlyOff.mean(yellow);f.cGen=c0;
         double tx=0,ty=0,th=0;
         double[] w=null,res=null,x=null;double[][] J=null;Edges e=null;int[] idx=null;
         for(int it=0;it<ITER;it++){
             double[][] poly=pose(yellow,c0,th,tx,ty);
-            e=edges(img,poly,rpx,round,hands,secondsLine);
+            e=edges(img,poly,rpx,round,hands,secondsLine,skipSide);
             int m=0;for(double d:e.off)if(!Double.isNaN(d))m++;
             if(m<MIN_POINTS){f.note="too little of its outer edge is visible";f.n=m;f.cover=(double)m/Math.max(1,e.off.length);return f;}
             double[] cc=ClearlyOff.mean(poly);
@@ -239,6 +292,7 @@ final class MetalFit {
             for(int i=0;i<in.size();i++){Fit f=first[i];if(f!=null&&in.get(i).shape==s&&f.ok()&&f.cover>0.9)b.add(f.bias);}
             bias.put(s,b.isEmpty()?0.0:ClearlyOff.median(ClearlyOff.toArray(b)));}
         lastBias.clear();lastBias.putAll(bias);
+        if(SIDE_DROP_PROBE!=null)SIDE_DROP_PROBE.clear();   // research: the final pass only
         Fit[] out=new Fit[in.size()];
         for(int i=0;i<in.size();i++){ClearlyOff.Input m=in.get(i);
             out[i]=first[i]==null?null:fit(img,m.yellow,m.shape,rpx,hands,bias.get(m.shape),m.secondsLineDeg,handConfirmed(m));}
