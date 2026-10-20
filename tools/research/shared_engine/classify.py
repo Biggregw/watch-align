@@ -13,11 +13,12 @@ def _alt_u():
     import pathlib, re
     src = (pathlib.Path(__file__).resolve().parents[3] / 'android/app/src/main/java/com/watchalign/mobile/MetalFit.java').read_text()
     m = re.search(r'static double ALT_U_POS_R=([^,;]+),ALT_U_ROT_DEG=([^;]+);', src)
-    v = [float('nan') if 'NaN' in x else float(x) for x in m.groups()]
-    return 100 * v[0], v[1]
+    a = re.search(r'static double ALT_LUME_AGREE_R=([^;]+);', src)
+    v = [float('nan') if 'NaN' in x else float(x) for x in m.groups() + a.groups()]
+    return 100 * v[0], v[1], 100 * v[2]
 
 
-ALT_U_POS_PCT, ALT_U_ROT_DEG = _alt_u()
+ALT_U_POS_PCT, ALT_U_ROT_DEG, ALT_LUME_AGREE_PCT = _alt_u()
 USE_ALT = True
 
 
@@ -31,6 +32,7 @@ def alt(r):
     if not USE_ALT or r['shape'] != 'baton' or not r.get('alt_side') or r['gate'] or r['state'] != 'NO_VISIBLE_ISSUE': return 'NONE'
     side, io, tilt = _f(r['alt_side_pct']), _f(r['alt_inout_pct']), _f(r['alt_tilt_deg'])
     if not all(math.isfinite(v) for v in (side, io, tilt, ALT_U_POS_PCT, ALT_U_ROT_DEG)): return 'NONE'
+    if not _f(r.get('alt_lume_diff_pct')) <= ALT_LUME_AGREE_PCT: return 'NONE'
     pos_lim = GENUINE['batonPos'] + 50 / _f(r['rpx']); tilt_lim = GENUINE['batonTilt']
     pos, tilt = math.hypot(side, io), abs(tilt)
     if pos - ALT_U_POS_PCT > pos_lim or tilt - ALT_U_ROT_DEG > tilt_lim: return 'FAIL'

@@ -55,6 +55,9 @@ final class MetalFit {
      *  ALT_HAND_PARALLEL_DEG) and passes within ALT_HAND_NEAR_R of its midpoint, and exactly one side may be. */
     static final double ALT_HAND_NEAR_R=0.02,ALT_HAND_PARALLEL_DEG=15;
     static double ALT_U_POS_R=Double.NaN,ALT_U_ROT_DEG=Double.NaN;
+    /** ...and the refit must agree with the independently measured luminous centre within this (R): a misleading edge
+     *  evenly along the remaining side would move the refit, not the lume */
+    static double ALT_LUME_AGREE_R=Double.NaN;
     /** research only (null in the app): for every reliably fitted baton, each side left out in turn:
      *  {side, side length (R), refit clean 1/0, dx, dy (R), dtilt (deg), x, y} against the full fit */
     static List<double[]> SIDE_DROP_PROBE=null;

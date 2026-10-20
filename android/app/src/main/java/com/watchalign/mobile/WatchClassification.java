@@ -90,7 +90,8 @@ final class WatchClassification {
 
     /**
      * Only for a baton whose own reading is uncertain but within the replica-QC limits (No visible issue; over a limit it
-     * stays "Possible, inspect" and undecided), nothing withheld, and a clean refit without the side beside the hand.
+     * stays "Possible, inspect" and undecided), nothing withheld, a clean refit without the side beside the hand, and that
+     * refit within MetalFit.ALT_LUME_AGREE_R of the independently measured luminous centre.
      * With U the one-side uncertainty measured on the verified genuine photos (MetalFit.ALT_U_POS_R, ALT_U_ROT_DEG):
      *   PASS       |position| + U and |rotation| + U both inside the strict limits (this photo's allowance included)
      *   FAIL       |position| - U or |rotation| - U outside a strict limit
@@ -101,6 +102,7 @@ final class WatchClassification {
         double uPos=100*MetalFit.ALT_U_POS_R,uRot=MetalFit.ALT_U_ROT_DEG;
         if(!Double.isFinite(m.altSidePct)||!Double.isFinite(m.altInoutPct)||!Double.isFinite(m.altTiltDeg)||!Double.isFinite(uPos)||!Double.isFinite(uRot)
                 ||!Double.isFinite(strict.posLimitPct)||!Double.isFinite(strict.tiltLimitDeg))return Alt.NONE;
+        if(!(m.altLumeDiffPct<=100*MetalFit.ALT_LUME_AGREE_R))return Alt.NONE;   // NaN (lume not measured, or no tolerance) fails
         double pos=Math.hypot(m.altSidePct,m.altInoutPct),tilt=Math.abs(m.altTiltDeg);
         if(pos-uPos>strict.posLimitPct||tilt-uRot>strict.tiltLimitDeg)return Alt.FAIL;
         if(pos+uPos<=strict.posLimitPct&&tilt+uRot<=strict.tiltLimitDeg)return Alt.PASS;

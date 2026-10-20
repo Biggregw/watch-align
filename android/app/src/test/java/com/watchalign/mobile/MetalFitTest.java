@@ -133,4 +133,65 @@ public class MetalFitTest {
         assertEquals(ClearlyOff.State.POSSIBLE,Calibration.state(back,back.at(4),ClearlyOff.Limits.defaults()));
         assertTrue(Calibration.flagged(ClearlyOff.State.POSSIBLE));
     }
+
+    // ---- 1.6.6: the one-side refit beside a confirmed hand (owner's genuine Submariner Date, 6 baton) ----------------
+
+    /** a seconds hand from the pivot converging on the 6 baton's right edge, gapPx outside it at the baton's outer end;
+     *  the baton moved dx sideways */
+    static Pic secondsBeside(double dx,double gapPx){
+        double xe=0.025+dx+gapPx/RPX+0.002,ang=Math.atan2(xe,0.83),w=0.0025;
+        return dial(moved(rect(0,0.75,0.025,0.08),dx,0,0))
+                .add(new double[][]{{-w,0},{w,0},{xe+w,0.83},{xe-w,0.83}},200)
+                .add(new double[][]{{xe-w,0.83},{xe+w,0.83},{Math.tan(ang)*0.97+w,0.97},{Math.tan(ang)*0.97-w,0.97}},200);
+    }
+    /** the detected seconds line ~1.5 deg inside the hand, as on the owner's photo (its mask then misses the edge) */
+    static double detected(double dx,double gapPx){return 180-Math.toDegrees(Math.atan2(0.025+dx+gapPx/RPX+0.002,0.83))+1.5;}
+
+    @Test public void aHandBesideABatonPullsTheFitAndTheRefitWithoutThatSideRecoversIt(){
+        double[][] gen=rect(0,0.75,0.025,0.08);
+        MetalFit.Fit f=MetalFit.fit(secondsBeside(0,2.5).img(),gen,ModelSpec.Shape.BATON,RPX,null,0,detected(0,2.5),true);
+        assertTrue(f.ok());assertFalse("the pulled fit is flagged",f.uncertain.isEmpty());
+        assertTrue("pulled towards the hand",f.cObs[0]>0.003);
+        assertNotNull(f.alt);assertEquals(1,f.altSide);                                  // rect side 1 = its right side
+        assertTrue(f.alt.uncertain,f.alt.uncertain.isEmpty());
+        assertEquals(0.0,f.alt.cObs[0],0.001);assertEquals(0.75,f.alt.cObs[1],0.001);assertEquals(0.0,f.alt.tiltDeg,0.1);
+    }
+
+    @Test public void aRealMoveBesideAHandIsStillMeasuredByTheRefit(){
+        double[][] gen=rect(0,0.75,0.025,0.08);
+        MetalFit.Fit f=MetalFit.fit(secondsBeside(0.012,2.5).img(),gen,ModelSpec.Shape.BATON,RPX,null,0,detected(0.012,2.5),true);
+        assertNotNull(f.alt);
+        assertEquals("a 1.2 % R move is not hidden by leaving out the hand's side",0.012,f.alt.cObs[0],0.001);
+    }
+
+    @Test public void noRefitWithoutTheIndependentHandCheck(){
+        double[][] gen=rect(0,0.75,0.025,0.08);
+        MetalFit.Fit f=MetalFit.fit(secondsBeside(0,2.5).img(),gen,ModelSpec.Shape.BATON,RPX,null,0,detected(0,2.5),false);
+        assertNull(f.alt);
+        // nor for a clean fit, nor for a round marker
+        MetalFit.Fit c=MetalFit.fit(dial(gen).img(),gen,ModelSpec.Shape.BATON,RPX,null,0,detected(0,2.5),true);
+        assertTrue(c.uncertain.isEmpty());assertNull(c.alt);
+    }
+
+    @Test public void aSideIsBesideAHandOnlyWhenTheHandRunsAlongIt(){
+        double[][] p=rect(0,0.75,0.025,0.08);
+        assertEquals(-1,MetalFit.sideBesideHand(p,null,90));                 // crossing at right angles
+        assertEquals(-1,MetalFit.sideBesideHand(p,null,180));                // down its middle: both long sides alike
+        List<double[]> hands=new ArrayList<>();hands.add(new double[]{178.5,2,0.95});
+        assertEquals(1,MetalFit.sideBesideHand(p,hands,Double.NaN));          // an hour hand along its right side
+        hands.clear();hands.add(new double[]{178.5,2,0.40});
+        assertEquals("a hand that does not reach it",-1,MetalFit.sideBesideHand(p,hands,Double.NaN));
+    }
+
+    /** the trap: a bright reflection evenly along the OTHER long side moves the clean-looking refit (a uniform offset
+     *  of the one remaining long side is indistinguishable from a move). The independent luminous-centre cross-check
+     *  that catches it needs OpenCV: tools/desktop-harness/drivers/RefitTraps.java (three-options CI). */
+    @Test public void aMisleadingEdgeOnTheRemainingSideFoolsTheRefitAlone(){
+        double[][] gen=rect(0,0.75,0.025,0.08);
+        double xl=-0.025-2.0/RPX-0.002;
+        Pic p=secondsBeside(0,2.5).add(new double[][]{{xl-0.0025,0.66},{xl+0.0025,0.66},{xl+0.0025,0.84},{xl-0.0025,0.84}},200);
+        MetalFit.Fit f=MetalFit.fit(p.img(),gen,ModelSpec.Shape.BATON,RPX,null,0,detected(0,2.5),true);
+        assertNotNull(f.alt);assertTrue(f.alt.uncertain.isEmpty());
+        assertTrue("the refit alone is fooled",Math.abs(f.alt.cObs[0])>0.005);
+    }
 }
