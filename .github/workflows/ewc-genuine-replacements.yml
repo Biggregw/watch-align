@@ -1,0 +1,59 @@
+name: Research replacement genuine GMT and Date EWC photographs
+on:
+  push:
+    branches: [research/strict-face-on-genuine-20261020]
+    paths:
+      - '.github/workflows/ewc-genuine-replacements.yml'
+      - 'tools/research/replacement_photos/**'
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  replacements:
+    runs-on: ubuntu-latest
+    timeout-minutes: 140
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - run: python3 -m pip install -q requests numpy scipy opencv-python-headless pillow==12.3.0
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Retrieve 20 separately sourced EWC genuine candidate photos
+        run: |
+          mkdir -p g out
+          python3 tools/research/replacement_photos/collect_ewc.py | tail -21
+          cp g/sources_checked.csv out/
+          cp g/manifest.csv out/
+      - name: Visual case/crown evidence (contact sheets only, not full photos)
+        run: python3 tools/research/pose_filter/contact_sheets.py
+      - name: Compile unchanged app's independent pose diagnostics
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then
+            mkdir -p "$(dirname "$J")
+            curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar
+          fi
+          mkdir -p cls
+          javac -encoding UTF-8 -nowarn -cp "$J" -sourcepath "tools/desktop-harness/shim:android/app/src/main/java" -d cls tools/desktop-harness/drivers/*.java
+      - name: Calculate prospective photo pose, per family
+        run: |
+          python3 - <<'PY'
+          import csv
+          all_=list(csv.DictReader(open('g/manifest.csv')))
+          for fam in ('GMT','Date'):
+            subset=[x for x in all_ if x['family']==fam]
+            with open('g/'+fam+'.csv','w',newline='') as f:
+              w=csv.DictWriter(f,fieldnames=all_[0].keys());w.writeheader();w.writerows(subset)
+            print(fam,'independent candidates',len(subset))
+          PY
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          java -Xmx3g -Dwatchalign.model=gmt_126710 -cp "$J:cls" com.watchalign.mobile.PoseQualityDump g/GMT.csv g/img out/GMT_pose.csv | tail -5
+          java -Xmx3g -Dwatchalign.model=submariner_126610 -cp "$J:cls" com.watchalign.mobile.PoseQualityDump g/Date.csv g/img out/Date_pose.csv | tail -5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prospective-ewc-gmt-date-faceon-photos
+          path: out/
+          retention-days: 30
