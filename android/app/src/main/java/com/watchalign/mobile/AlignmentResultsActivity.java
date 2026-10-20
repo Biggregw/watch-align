@@ -58,9 +58,10 @@ public class AlignmentResultsActivity extends Activity {
         AlignmentAnalysis.Output o=Store.result;
         root.addView(text("Watch Align",14,MUTED,true));
         // 1.6.6: the whole-watch classification (both standards on the same measurements), then the markers
-        WatchClassification.Result cls=WatchClassification.classify(Store.clearlyOff,Store.model,Store.analysisFailure);
+        WatchClassification.Result cls=WatchClassification.classify(Store.clearlyOff,Store.model,Store.analysisFailure,o==null?null:o.photoReason);
         root.addView(text(cls.title(),30,colour(cls.verdict),true),lp(-1,-2,2));
         root.addView(text(cls.message(),15,Color.WHITE,false),lp(-1,-2,4));
+        if(cls.partial)root.addView(text(WatchClassification.PARTIAL,14,AMBER,false),lp(-1,-2,4));
         if(cls.failure!=null)root.addView(text("The analysis failed on this photo (see Technical details).",14,AMBER,false),lp(-1,-2,4));
         root.addView(text(WatchClassification.NOT_PROOF,12,MUTED,false),lp(-1,-2,6));
         root.addView(text(AlignmentAnalysis.counts(o),13,MUTED,false),lp(-1,-2,8));

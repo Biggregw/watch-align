@@ -39,13 +39,25 @@ Apply two independent tiers:
 Whole-watch display labels, explicitly approved by the owner:
 
 - **Genuine:** all required hour markers are reliably assessed and all meet the strict genuine-alignment standard.
-- **Replica:** all required markers are reliably assessed; at least one fails the strict genuine standard, but none
+- **Replica:** at least one reliably measured marker fails the strict genuine standard, and no reliably measured marker
   fails the acceptable replica-QC standard.
-- **Replica — QC Issues:** all required markers are reliably assessed and at least one fails acceptable replica QC;
-  show the specific marker(s) and magnified evidence.
-- **Can't Determine:** a required marker or the photo's pose cannot be assessed reliably, including hand obstruction,
-  blur, glare, ambiguous metal edges, missing measurements or an internal analysis failure. Report reliable individual
-  findings without inferring that unmeasured markers pass.
+- **Replica — QC Issues:** at least one reliably measured marker fails acceptable replica QC; show the specific
+  marker(s) and magnified evidence.
+- **Can't Determine:** no confirmed failure and a required marker cannot be assessed reliably (hand obstruction, blur,
+  glare, ambiguous metal edges, missing measurements), or a photo-wide pose or internal analysis failure.
+
+Decision order (owner, 20 Oct 2026: a confirmed failure takes precedence over unrelated unreadable markers):
+
+1. A photo-wide pose or analysis failure is always **Can't Determine**.
+2. Any reliably measured marker over the replica-QC limits → **Replica — QC Issues**, even if another marker is
+   obscured or uncertain.
+3. Otherwise, any reliably measured marker outside the strict genuine limits → **Replica**, even if another marker
+   cannot be assessed.
+4. Otherwise, any required marker missing or unreliable → **Can't Determine**.
+5. **Genuine** only when every required marker is reliably measured and passes every strict genuine limit.
+
+Never classify from an uncertain edge measurement alone. When a Replica or Replica — QC Issues result rests on partial
+marker coverage, show a warning that some markers could not be assessed and additional QC issues may exist.
 
 Require 12 physical hour markers for No-Date models and 11 for models with a date aperture. Never average individual
 defects away, count an unmeasured marker as a pass, or classify a watch as a replica based only on an uncertain edge fit.

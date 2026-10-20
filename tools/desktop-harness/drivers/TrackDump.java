@@ -54,7 +54,7 @@ public class TrackDump {
                             ||m.state==ClearlyOff.State.POSSIBLE||ids.contains(","+id+":"+m.hour+",")||ids.contains(","+id.substring(0,Math.min(10,id.length()))+":"+m.hour+",");
                         if(want&&o.alignmentCloseups.containsKey(m.hour))javax.imageio.ImageIO.write(o.alignmentCloseups.get(m.hour).img,"png",dir.resolve(id+"_"+m.hour+".png").toFile());}}
                 // 1.6.6: the whole-watch alignment classification of this photo (WatchClassification, app code)
-                System.out.println("CLASS "+id+" "+WatchClassification.classify(c,model,o.clearlyOffError).verdict);
+                System.out.println("CLASS "+id+" "+WatchClassification.classify(c,model,o.clearlyOffError,o.alignment==null?null:o.alignment.photoReason).verdict);
                 w.flush();System.out.println("TRACK "+id);
             }
         }

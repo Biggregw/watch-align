@@ -101,7 +101,7 @@ public class AlignmentDetailActivity extends Activity {
             root.addView(text(TRACK_LEGEND+"  Tap to zoom.",12,AlignmentResultsActivity.MUTED,false),lp(-1,-2,4));
         }
         // 1.6.6: the measurements against both standards
-        WatchClassification.Result cls=WatchClassification.classify(AlignmentResultsActivity.Store.clearlyOff,AlignmentResultsActivity.Store.model,AlignmentResultsActivity.Store.analysisFailure);
+        WatchClassification.Result cls=WatchClassification.classify(AlignmentResultsActivity.Store.clearlyOff,AlignmentResultsActivity.Store.model,AlignmentResultsActivity.Store.analysisFailure,AlignmentResultsActivity.Store.result==null?null:AlignmentResultsActivity.Store.result.photoReason);
         WatchClassification.MarkerCheck chk=cls.at(m.hour);
         if(chk!=null){
             root.addView(text(WatchClassification.line(chk),15,chk.genuineFail()?AlignmentResultsActivity.AMBER:Color.WHITE,true),lp(-1,-2,12));

@@ -11,13 +11,15 @@ import java.util.Locale;
  *                  limits when set): Clearly off, Possible, No visible issue, Can't check
  *   strict genuine the same decide() at the fixed ClearlyOff.Limits.genuine() (pooled genuine Rolex research)
  * A marker is RELIABLE when it was measured with no withheld part and no uncertain edge (an uncertain outer-metal fit,
- * a low-resolution photo, a gap placed from the rest of the outline all count as unreliable). Classification:
- *   CANT_DETERMINE     any required marker missing or not RELIABLE (can't check, possible, an uncertain edge even under the
- *                      limits), or the check failed
- *   REPLICA_QC_ISSUES  every required marker reliable and at least one Clearly off at the replica-QC limits
- *   REPLICA            every required marker reliable, none over the replica-QC limits, at least one outside the strict
- *                      genuine standard
+ * a low-resolution photo, a gap placed from the rest of the outline all count as unreliable). Decision order (owner,
+ * 20 Oct 2026: a confirmed failure takes precedence over unrelated unreadable markers):
+ *   CANT_DETERMINE     first, a photo-wide failure: the check failed, the dial/pose could not be used (photo-wide reason)
+ *   REPLICA_QC_ISSUES  any RELIABLE marker Clearly off at the replica-QC limits, even with another marker unreadable
+ *   REPLICA            otherwise any RELIABLE marker outside the strict genuine standard, even with another unreadable
+ *   CANT_DETERMINE     otherwise any required marker missing or not reliable
  *   GENUINE            every required marker reliable and within every strict genuine limit
+ * An uncertain edge never decides a result. A Replica or QC Issues result with some markers not assessed is PARTIAL
+ * (the screen warns that more issues may exist).
  * Each marker is judged on its own; nothing is averaged. These are alignment-based screening classifications, never an
  * authenticity finding.
  */
@@ -42,7 +44,7 @@ final class WatchClassification {
         /** within the replica-QC limits (its existing answer is No visible issue) */
         boolean qcPass(){return qc()==ClearlyOff.State.NO_VISIBLE_ISSUE;}
         /** outside the replica-QC limits on a reliable reading */
-        boolean qcFail(){return qc()==ClearlyOff.State.CLEARLY_OFF;}
+        boolean qcFail(){return reliable&&qc()==ClearlyOff.State.CLEARLY_OFF;}
         /** reliably within every strict genuine limit */
         boolean genuinePass(){return reliable&&strict!=null&&strict.state==ClearlyOff.State.NO_VISIBLE_ISSUE;}
         /** reliably outside a strict genuine limit */
@@ -57,10 +59,14 @@ final class WatchClassification {
         /** the analysis failure (technical details), or null */
         String failure;
         int required;
+        /** a Replica / QC Issues result from partial coverage: some required markers could not be assessed */
+        boolean partial;
         MarkerCheck at(int h){for(MarkerCheck m:markers)if(m.hour==h)return m;return null;}
         String title(){return WatchClassification.title(verdict);}
         String message(){return WatchClassification.message(verdict);}
     }
+
+    static final String PARTIAL="Some markers could not be assessed on this photo, so additional QC issues may exist.";
 
     static String title(Verdict v){
         switch(v){case GENUINE:return "Genuine";case REPLICA:return "Replica";case REPLICA_QC_ISSUES:return "Replica — QC Issues";default:return "Can't Determine";}
@@ -97,7 +103,10 @@ final class WatchClassification {
      *                a marker)
      * @param failure why the check failed (technical details), or null
      */
-    static Result classify(ClearlyOff.Result r,ModelSpec model,String failure){
+    static Result classify(ClearlyOff.Result r,ModelSpec model,String failure){return classify(r,model,failure,null);}
+
+    /** @param photoReason a photo-wide reason the markers can't be checked (dial or pose not usable), or null */
+    static Result classify(ClearlyOff.Result r,ModelSpec model,String failure,String photoReason){
         Result out=new Result();out.failure=failure;
         if(model==null){out.verdict=Verdict.CANT_DETERMINE;return out;}
         out.required=model.markers.size();
@@ -105,20 +114,21 @@ final class WatchClassification {
             ClearlyOff.Marker m=r==null?null:r.at(mk.hour);
             out.markers.add(new MarkerCheck(mk.hour,mk.shape,m,r==null?null:strict(m,r.rpx),reliable(m)));
         }
-        boolean allReliable=r!=null,qcIssue=false,anyStrictFail=false,allGenuinePass=true;
+        boolean allReliable=true,qcIssue=false,anyStrictFail=false,allGenuinePass=true;
         for(MarkerCheck c:out.markers){
             allReliable&=c.reliable;
             qcIssue|=c.qcFail();
             anyStrictFail|=c.genuineFail();
             allGenuinePass&=c.genuinePass();
         }
-        // CLAUDE.md (owner, 20 Oct 2026): Genuine, Replica and Replica - QC Issues all need every required marker reliably
-        // assessed; otherwise Can't Determine, with the reliable individual findings still listed underneath
-        if(!allReliable)out.verdict=Verdict.CANT_DETERMINE;
+        boolean photoWide=r==null||failure!=null||photoReason!=null||r.photoReason!=null;
+        if(photoWide)out.verdict=Verdict.CANT_DETERMINE;
         else if(qcIssue)out.verdict=Verdict.REPLICA_QC_ISSUES;
         else if(anyStrictFail)out.verdict=Verdict.REPLICA;
+        else if(!allReliable)out.verdict=Verdict.CANT_DETERMINE;
         else if(allGenuinePass)out.verdict=Verdict.GENUINE;
         else out.verdict=Verdict.CANT_DETERMINE;
+        out.partial=(out.verdict==Verdict.REPLICA_QC_ISSUES||out.verdict==Verdict.REPLICA)&&!allReliable;
         return out;
     }
 

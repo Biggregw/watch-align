@@ -59,12 +59,14 @@ public class WatchClassificationTest {
         WatchClassification.Result c=WatchClassification.classify(judge(r),model,null);
         assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,c.verdict);
         assertEquals(ClearlyOff.State.CLEARLY_OFF,r.at(8).state);
-        // CLAUDE.md: every required marker must be reliably assessed; with another marker unchecked the watch is Can't
-        // Determine, and the clearly-off marker is still reported on its own
+        assertFalse(c.partial);
+        // owner, 20 Oct 2026: a confirmed failure takes precedence over an unrelated unreadable marker (partial coverage)
         r=watch(model);r.at(8).sidePct=1.40;r.at(8).inoutPct=0;r.at(2).gate.add("hand (app check)");
         c=WatchClassification.classify(judge(r),model,null);
-        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);
-        assertTrue(c.at(8).qcFail());
+        assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,c.verdict);
+        assertTrue(c.partial);assertTrue(c.at(8).qcFail());
+        r=watch(model);r.at(8).sidePct=1.40;r.at(8).inoutPct=0;r.at(5).uncertain="its visible edge is rough (0.9 px)";
+        assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,verdict(judge(r),model));
     }
 
     @Test public void anUncertainOrUnreadableMarkerNeverGivesGenuine(){
@@ -74,9 +76,15 @@ public class WatchClassificationTest {
         assertEquals(ClearlyOff.State.NO_VISIBLE_ISSUE,r.at(10).state);
         assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);
         assertTrue(c.at(10).genuineUndecided());
-        // nor Replica: one reliable strict failure with an uncertain marker elsewhere is Can't Determine
+        // a reliable strict failure still gives Replica with an uncertain marker elsewhere, flagged as partial coverage
         r=watch(model);r.at(10).uncertain="its visible edge is rough (0.9 px)";r.at(6).tiltDeg=1.30;
-        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(judge(r),model));
+        c=WatchClassification.classify(judge(r),model,null);
+        assertEquals(WatchClassification.Verdict.REPLICA,c.verdict);assertTrue(c.partial);
+        // an uncertain edge alone never decides: far over every limit but uncertain, the rest clean -> Can't Determine
+        r=watch(model);r.at(10).uncertain="its visible edge is rough (0.9 px)";r.at(10).sidePct=3.0;
+        c=WatchClassification.classify(judge(r),model,null);
+        assertEquals(ClearlyOff.State.POSSIBLE,r.at(10).state);
+        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);assertFalse(c.at(10).qcFail());assertFalse(c.at(10).genuineFail());
         r=watch(model);r.at(10).gate.add("a hand covers most of its outline");
         assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(judge(r),model));
         r=watch(model);r.at(10).sidePct=Double.NaN;r.at(10).inoutPct=Double.NaN;   // not measured
@@ -199,5 +207,17 @@ public class WatchClassificationTest {
         String m=String.join("\n",WatchClassification.measures(c.at(4)));
         assertTrue(m,m.startsWith("Position 0.85% R · genuine max 0.80% R ✗ · replica QC max 1.13% R ✓"));
         assertTrue(String.join("\n",WatchClassification.measures(c.at(12))).contains("Gap under the minute track 3.50% R · genuine min 2.69% R ✓"));
+    }
+
+    /** a photo-wide pose or analysis failure is always Can't Determine, whatever the markers read */
+    @Test public void aPhotoWideFailureIsAlwaysCantDetermine(){
+        ModelSpec model=noDate();
+        ClearlyOff.Result r=watch(model);r.at(8).sidePct=1.40;r.at(8).inoutPct=0;judge(r);
+        assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,WatchClassification.classify(r,model,null).verdict);
+        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,WatchClassification.classify(r,model,null,"the dial could not be located in this photo").verdict);
+        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,WatchClassification.classify(r,model,"out of memory").verdict);
+        r.photoReason="the photo is taken at too steep an angle";
+        WatchClassification.Result c=WatchClassification.classify(r,model,null);
+        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);assertFalse(c.partial);
     }
 }
