@@ -142,6 +142,9 @@ final class ClearlyOff {
         /** 1.6.6: the clean refit without the side beside a confirmed hand (MetalFit.Fit.alt), measured like the reading
          *  above; only the strict genuine standard uses it (WatchClassification). altSide: that side, -1 when none */
         double altSidePct=Double.NaN,altInoutPct=Double.NaN,altTiltDeg=Double.NaN;int altSide=-1;
+        /** the independent cross-check of that refit: how far (% R) the luminous centre's displacement differs from the
+         *  refit's (NaN when the lume could not be measured) */
+        double altLumeDiffPct=Double.NaN;
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
         /** a copy to judge against other limits without changing the shown answer (calibration screen) */
         Marker copy(){Marker m=new Marker(hour,shape);m.state=state;m.reason=reason;m.gate.addAll(gate);
@@ -150,7 +153,7 @@ final class ClearlyOff {
             m.tiltCentroidDeg=tiltCentroidDeg;m.rotLeftDeg=rotLeftDeg;m.rotRightDeg=rotRightDeg;m.rotRmsPx=rotRmsPx;m.rotNote=rotNote;
             m.uncertain=uncertain;m.source=source;m.cover=cover;m.fitRmsPx=fitRmsPx;m.badFrac=badFrac;m.sePosPct=sePosPct;m.seRotDeg=seRotDeg;
             m.fitTiltDeg=fitTiltDeg;m.yellow=yellow;m.fitPoly=fitPoly;m.fitPts=fitPts;m.fitStatus=fitStatus;m.tick59=tick59;m.tick01=tick01;
-            m.gapFromFit=gapFromFit;m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;return m;}
+            m.gapFromFit=gapFromFit;m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;m.altLumeDiffPct=altLumeDiffPct;return m;}
         boolean measured(){return Double.isFinite(sidePct)||Double.isFinite(inoutPct);}
     }
 
@@ -222,10 +225,17 @@ final class ClearlyOff {
                     mf.uncertain=(mf.uncertain.isEmpty()?"":mf.uncertain+"; ")+String.format(Locale.US,"the photo's resolution is low (the dial is %.0f px across)",2*rpx);
                 if(mf!=null&&mf.cObs!=null){r.source="outer metal";r.uncertain=mf.uncertain;r.cover=mf.cover;r.fitRmsPx=mf.rmsPx;r.badFrac=mf.badFrac;
                     r.sePosPct=100*mf.sePos;r.seRotDeg=mf.seRot;r.fitTiltDeg=mf.tiltDeg;r.fitPoly=mf.poly;r.fitPts=mf.pts;r.fitStatus=mf.status;}
+                if(LUME_PROBE!=null&&m.shape==ModelSpec.Shape.BATON&&mf!=null&&mf.ok()&&mf.uncertain.isEmpty()&&b.gate.isEmpty()&&insets.get(m.shape)!=null){
+                    Centroid lc=centroidFit(img,m,insets.get(m.shape),rpx);   // research: lume vs a reliable metal fit
+                    if("measured".equals(lc.status))LUME_PROBE.add(new double[]{m.hour,100*Math.hypot(lc.d[0]-(mf.cObs[0]-mf.cGen[0]),lc.d[1]-(mf.cObs[1]-mf.cGen[1]))});
+                }
                 if(mf!=null&&mf.ok()&&mf.alt!=null&&rpx>=LOW_RES_RPX&&b.gate.isEmpty()){   // 1.6.6: the side-beside-the-hand refit
                     Base ab=new Base();ab.cGen=mf.alt.cGen;ab.cObs=mf.alt.cObs;ab.tiltDeg=mf.alt.tiltDeg;
                     Marker t=new Marker(m.hour,m.shape);metrics(t,ab,res.lines,img,ringScale(base,in,m.hour),rpx);
                     r.altSidePct=t.sidePct;r.altInoutPct=t.inoutPct;r.altTiltDeg=t.tiltDeg;r.altSide=mf.altSide;
+                    Double inset=insets.get(m.shape);Centroid lc=inset==null?null:centroidFit(img,m,inset,rpx);
+                    if(lc!=null&&"measured".equals(lc.status))
+                        r.altLumeDiffPct=100*Math.hypot(lc.d[0]-(mf.alt.cObs[0]-mf.alt.cGen[0]),lc.d[1]-(mf.alt.cObs[1]-mf.alt.cGen[1]));
                 }
                 if(m.shape==ModelSpec.Shape.TRIANGLE){
                     gap(r,m,ticks,res.lines,img,rpx);
@@ -828,6 +838,9 @@ final class ClearlyOff {
 
     // ------------------------------------------------------------------------------------------------ lume centre
 
+    /** research only (null in the app): {hour, % R} how far the luminous centre's displacement is from a reliable baton
+     *  metal fit's (tools/desktop-harness/drivers/SideDrop.java) */
+    static List<double[]> LUME_PROBE=null;
     static final class Centroid {String status;double[] cpoly,d;double th;double sizeRatio=Double.NaN;}
 
     /** The lume's brightness-weighted centre (region connected to the marker's middle), area-checked; batons and the

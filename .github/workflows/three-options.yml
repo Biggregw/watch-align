@@ -135,6 +135,9 @@ jobs:
           import csv, sys
           rows = list(csv.DictReader(open(sys.argv[1])))
           def q(v, p): v = sorted(v); return v[min(len(v) - 1, int(p * len(v)))] if v else float('nan')
+          lume = sorted(float(r['dpos_pct']) for r in rows if r['side'] == 'lume' and r['dpos_pct'])
+          print('SIDEDROP lume vs reliable metal fit: %d batons; %% R p50 %.3f p95 %.3f p99 %.3f max %.3f' % (len(lume), q(lume, .5), q(lume, .95), q(lume, .99), max(lume, default=float('nan'))))
+          rows = [r for r in rows if r['side'] != 'lume']
           for kind, keep in (('long side', lambda r: float(r['side_len_r']) > 0.2), ('end', lambda r: float(r['side_len_r']) <= 0.2)):
               a = [r for r in rows if keep(r)]; c = [r for r in a if r['clean'] == '1']
               dp = [float(r['dpos_pct']) for r in c]; dt = [float(r['dtilt_deg']) for r in c]

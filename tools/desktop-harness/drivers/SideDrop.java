@@ -17,7 +17,9 @@ import java.util.Map;
  *
  *   SideDrop manifest.csv image_root out.csv
  *
- * One row per baton and side left out: dpos_pct (% R), dtilt_deg, whether what remains is still clean.
+ * One row per baton and side left out: dpos_pct (% R), dtilt_deg, whether what remains is still clean; and one row
+ * (side "lume") per reliable baton: how far its luminous centre is from the metal fit (dpos_pct), the cross-check
+ * MetalFit's refit must pass (ClearlyOff.Marker.altLumeDiffPct).
  */
 public class SideDrop {
     public static void main(String[] a) throws Exception {
@@ -35,10 +37,11 @@ public class SideDrop {
                 String id=r.get("photo_id");Path img=root.resolve(r.get("local_path"));
                 if(!Files.exists(img))continue;
                 Bitmap b=Alpha96Calib.loadAlpha96(img.toString());
-                MetalFit.SIDE_DROP_PROBE=new ArrayList<>();
+                MetalFit.SIDE_DROP_PROBE=new ArrayList<>();ClearlyOff.LUME_PROBE=new ArrayList<>();
                 Alpha99Pipeline.Output o;
                 try{o=b==null?null:Alpha99Pipeline.run(b,model,metal,ref,ref==null?null:ref::setup);}catch(Throwable t){o=null;}
                 List<double[]> probe=MetalFit.SIDE_DROP_PROBE;MetalFit.SIDE_DROP_PROBE=null;
+                List<double[]> lume=ClearlyOff.LUME_PROBE;ClearlyOff.LUME_PROBE=null;
                 if(o==null||o.clearlyOff==null)continue;
                 for(double[] p:probe){   // the final fitAll pass only (MetalFit clears the probe before it)
                     int hour=hourOf(o.clearlyOff,p[6],p[7]);
@@ -47,6 +50,7 @@ public class SideDrop {
                     w.println(String.join(",",id,model.id,f(o.clearlyOff.rpx),String.valueOf(hour),String.valueOf((int)p[0]),f(p[1]),String.valueOf((int)p[2]),
                             f(100*Math.hypot(p[3],p[4])),f(Math.abs(p[5]))));
                 }
+                for(double[] l:lume)w.println(String.join(",",id,model.id,f(o.clearlyOff.rpx),String.valueOf((int)l[0]),"lume","","",f(l[1]),""));
                 w.flush();System.out.println("SIDEDROP "+id);
             }
         }

@@ -29,7 +29,7 @@ public class TrackDump {
             if(Files.exists(metalFile))ref.metalExtra=MetalAlignment.parse(Files.readString(metalFile));}
         List<Map<String,String>> rows=AlignmentCalib.csv(Files.readAllLines(manifest));
         try(PrintWriter w=new PrintWriter(Files.newBufferedWriter(out))){
-            w.println("photo_id,watch,model,rpx,hour,shape,state,gate,side_pct,inout_pct,tilt_line_deg,ring_turn_pct,bad_ticks,gap_pct,tilt_centroid_deg,rot_left_deg,rot_right_deg,rot_rms_px,rot_note,rot_vs_line_deg,tip_dr_px,source,uncertain,cover,fit_rms_px,bad_frac,se_pos_pct,se_rot_deg,gap_from_fit,reason,edge_bias_px,alt_side,alt_side_pct,alt_inout_pct,alt_tilt_deg");
+            w.println("photo_id,watch,model,rpx,hour,shape,state,gate,side_pct,inout_pct,tilt_line_deg,ring_turn_pct,bad_ticks,gap_pct,tilt_centroid_deg,rot_left_deg,rot_right_deg,rot_rms_px,rot_note,rot_vs_line_deg,tip_dr_px,source,uncertain,cover,fit_rms_px,bad_frac,se_pos_pct,se_rot_deg,gap_from_fit,reason,edge_bias_px,alt_side,alt_side_pct,alt_inout_pct,alt_tilt_deg,alt_lume_diff_pct");
             for(Map<String,String> r:rows){
                 String id=r.get("photo_id");Path img=root.resolve(r.get("local_path"));
                 if(!Files.exists(img))continue;
@@ -45,7 +45,7 @@ public class TrackDump {
                             f(m.tiltCentroidDeg),f(m.rotLeftDeg),f(m.rotRightDeg),f(m.rotRmsPx),m.rotNote.replace(",",";"),f(m.rotLineDeg),f(m.tipDrPx),
                             m.source,m.uncertain.replace(",",";"),f(m.cover),f(m.fitRmsPx),f(m.badFrac),f(m.sePosPct),f(m.seRotDeg),m.gapFromFit?"1":"",m.reason.replace(",",";"),
                             c.edgeBiasPx.containsKey(m.shape)?f(c.edgeBiasPx.get(m.shape)):"",
-                            m.altSide<0?"":String.valueOf(m.altSide),f(m.altSidePct),f(m.altInoutPct),f(m.altTiltDeg)));
+                            m.altSide<0?"":String.valueOf(m.altSide),f(m.altSidePct),f(m.altInoutPct),f(m.altTiltDeg),f(m.altLumeDiffPct)));
                 }
                 // -Dwatchalign.render=DIR: write the evidence close-ups (all markers with -Dwatchalign.renderAll=1, else the
                 // flagged ones and those named in -Dwatchalign.renderIds=photo:hour,...)

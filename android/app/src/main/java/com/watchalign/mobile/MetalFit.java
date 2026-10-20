@@ -51,9 +51,9 @@ final class MetalFit {
      *  detected hand. The refit (Fit.alt) is kept only when what remains is clean by the same standards as any reliable
      *  fit. It is used only for the strict genuine standard, with the one-side uncertainty measured on the verified genuine
      *  photos (ALT_U_POS_R, ALT_U_ROT_DEG; tools/desktop-harness/drivers/SideDrop.java); the marker's own reading (replica
-     *  QC, close-up) is unchanged. A side counts as beside the hand when the hand's centre line passes within
-     *  ALT_HAND_NEAR_R of its midpoint, and exactly one side may be. */
-    static final double ALT_HAND_NEAR_R=0.02;
+     *  QC, close-up) is unchanged. A side counts as beside the hand when the hand's centre line runs along it (within
+     *  ALT_HAND_PARALLEL_DEG) and passes within ALT_HAND_NEAR_R of its midpoint, and exactly one side may be. */
+    static final double ALT_HAND_NEAR_R=0.02,ALT_HAND_PARALLEL_DEG=15;
     static double ALT_U_POS_R=Double.NaN,ALT_U_ROT_DEG=Double.NaN;
     /** research only (null in the app): for every reliably fitted baton, each side left out in turn:
      *  {side, side length (R), refit clean 1/0, dx, dy (R), dtilt (deg), x, y} against the full fit */
@@ -204,7 +204,7 @@ final class MetalFit {
         return f;
     }
 
-    /** the one polygon side whose midpoint a detected hand's centre line passes within ALT_HAND_NEAR_R of (hands that
+    /** the one polygon side a detected hand's centre line runs along, within ALT_HAND_NEAR_R of its midpoint (hands that
      *  reach it, and the seconds line), or -1 when none or more than one is */
     static int sideBesideHand(double[][] poly,List<double[]> hands,double secondsLine){
         List<Double> lines=new ArrayList<>();
@@ -212,11 +212,12 @@ final class MetalFit {
         int found=-1,n=poly.length;
         for(int i=0;i<n;i++){
             double[] a=poly[i],b=poly[(i+1)%n];double mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,r=Math.hypot(mx,my);
+            double len=Math.hypot(b[0]-a[0],b[1]-a[1]);if(len<=0)continue;double ux=(b[0]-a[0])/len,uy=(b[1]-a[1])/len;
             List<Double> near=new ArrayList<>(lines);
             if(hands!=null)for(double[] h:hands)if(h[2]>=r-0.02)near.add(h[0]);
             boolean beside=false;
             for(double deg:near){double t=Math.toRadians(deg),dx=Math.sin(t),dy=-Math.cos(t);
-                if(mx*dx+my*dy>0&&Math.abs(mx*dy-my*dx)<=ALT_HAND_NEAR_R)beside=true;}
+                if(mx*dx+my*dy>0&&Math.abs(mx*dy-my*dx)<=ALT_HAND_NEAR_R&&Math.abs(ux*dy-uy*dx)<=Math.sin(Math.toRadians(ALT_HAND_PARALLEL_DEG)))beside=true;}
             if(beside){if(found>=0)return -1;found=i;}
         }
         return found;
