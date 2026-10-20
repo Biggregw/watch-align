@@ -136,13 +136,13 @@ public class MetalFitTest {
 
     // ---- 1.6.6: the one-side refit beside a confirmed hand (owner's genuine Submariner Date, 6 baton) ----------------
 
-    /** a seconds hand from the pivot converging on the 6 baton's right edge, gapPx outside it at the baton's outer end;
+    /** a steel seconds hand (120: brighter than the dial, darker than the rim) from the pivot converging on the 6 baton's right edge, gapPx outside it at the baton's outer end;
      *  the baton moved dx sideways */
     static Pic secondsBeside(double dx,double gapPx){
         double xe=0.025+dx+gapPx/RPX+0.002,ang=Math.atan2(xe,0.83),w=0.0025;
         return dial(moved(rect(0,0.75,0.025,0.08),dx,0,0))
-                .add(new double[][]{{-w,0},{w,0},{xe+w,0.83},{xe-w,0.83}},200)
-                .add(new double[][]{{xe-w,0.83},{xe+w,0.83},{Math.tan(ang)*0.97+w,0.97},{Math.tan(ang)*0.97-w,0.97}},200);
+                .add(new double[][]{{-w,0},{w,0},{xe+w,0.83},{xe-w,0.83}},120)
+                .add(new double[][]{{xe-w,0.83},{xe+w,0.83},{Math.tan(ang)*0.97+w,0.97},{Math.tan(ang)*0.97-w,0.97}},120);
     }
     /** the detected seconds line ~1.5 deg inside the hand, as on the owner's photo (its mask then misses the edge) */
     static double detected(double dx,double gapPx){return 180-Math.toDegrees(Math.atan2(0.025+dx+gapPx/RPX+0.002,0.83))+1.5;}

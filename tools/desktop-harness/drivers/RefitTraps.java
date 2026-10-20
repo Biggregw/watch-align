@@ -22,7 +22,7 @@ public class RefitTraps {
                 ClearlyOff.Img img=p.img();
                 MetalFit.Fit f=MetalFit.fit(img,gen,ModelSpec.Shape.BATON,RPX,null,0,detected(dx,2.5),true);
                 ClearlyOff.Centroid lc=ClearlyOff.centroidFit(img,new ClearlyOff.Input(6,ModelSpec.Shape.BATON,gen,false,"hand",detected(dx,2.5)),0.008,RPX);
-                double diff=f.alt==null||!"measured".equals(lc.status)?Double.NaN:100*Math.hypot(lc.d[0]-(f.alt.cObs[0]-f.alt.cGen[0]),lc.d[1]-(f.alt.cObs[1]-f.alt.cGen[1]));
+                double diff=f.alt==null||!"measured".equals(lc.status)?Double.NaN:100*ClearlyOff.lumeAcross(lc.d[0]-(f.alt.cObs[0]-f.alt.cGen[0]),lc.d[1]-(f.alt.cObs[1]-f.alt.cGen[1]),gen,f.altSide);
                 double err=f.alt==null?Double.NaN:100*Math.abs(f.alt.cObs[0]-dx);
                 boolean accepted=diff<=tol;
                 // honest: accepted and accurate; trap: if the refit is off, the lume must refuse it
@@ -63,8 +63,8 @@ public class RefitTraps {
     static Pic secondsBeside(double dx,double gapPx){
         double xe=0.025+dx+gapPx/RPX+0.002,ang=Math.atan2(xe,0.83),w=0.0025;double[][] metal=moved(rect(0,0.75,0.025,0.08),dx);
         return new Pic().add(metal,180).add(shrink(metal,0.008),230)
-                .add(new double[][]{{-w,0},{w,0},{xe+w,0.83},{xe-w,0.83}},200)
-                .add(new double[][]{{xe-w,0.83},{xe+w,0.83},{Math.tan(ang)*0.97+w,0.97},{Math.tan(ang)*0.97-w,0.97}},200);
+                .add(new double[][]{{-w,0},{w,0},{xe+w,0.83},{xe-w,0.83}},120)
+                .add(new double[][]{{xe-w,0.83},{xe+w,0.83},{Math.tan(ang)*0.97+w,0.97},{Math.tan(ang)*0.97-w,0.97}},120);
     }
     static double detected(double dx,double gapPx){return 180-Math.toDegrees(Math.atan2(0.025+dx+gapPx/RPX+0.002,0.83))+1.5;}
 }

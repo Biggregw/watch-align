@@ -143,7 +143,8 @@ final class ClearlyOff {
          *  above; only the strict genuine standard uses it (WatchClassification). altSide: that side, -1 when none */
         double altSidePct=Double.NaN,altInoutPct=Double.NaN,altTiltDeg=Double.NaN;int altSide=-1;
         /** the independent cross-check of that refit: how far (% R) the luminous centre's displacement differs from the
-         *  refit's (NaN when the lume could not be measured) */
+         *  refit's, across the side left out (the coordinate that side would have fixed); NaN when the lume could not be
+         *  measured */
         double altLumeDiffPct=Double.NaN;
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
         /** a copy to judge against other limits without changing the shown answer (calibration screen) */
@@ -227,7 +228,8 @@ final class ClearlyOff {
                     r.sePosPct=100*mf.sePos;r.seRotDeg=mf.seRot;r.fitTiltDeg=mf.tiltDeg;r.fitPoly=mf.poly;r.fitPts=mf.pts;r.fitStatus=mf.status;}
                 if(LUME_PROBE!=null&&m.shape==ModelSpec.Shape.BATON&&mf!=null&&mf.ok()&&mf.uncertain.isEmpty()&&b.gate.isEmpty()&&insets.get(m.shape)!=null){
                     Centroid lc=centroidFit(img,m,insets.get(m.shape),rpx);   // research: lume vs a reliable metal fit
-                    if("measured".equals(lc.status))LUME_PROBE.add(new double[]{m.hour,100*Math.hypot(lc.d[0]-(mf.cObs[0]-mf.cGen[0]),lc.d[1]-(mf.cObs[1]-mf.cGen[1]))});
+                    if("measured".equals(lc.status)){double ex=lc.d[0]-(mf.cObs[0]-mf.cGen[0]),ey=lc.d[1]-(mf.cObs[1]-mf.cGen[1]);double[] ax=longAxis(m.yellow);
+                        LUME_PROBE.add(new double[]{m.hour,100*Math.hypot(ex,ey),100*Math.abs(ex*ax[1]-ey*ax[0]),100*Math.abs(ex*ax[0]+ey*ax[1])});}
                 }
                 if(mf!=null&&mf.ok()&&mf.alt!=null&&rpx>=LOW_RES_RPX&&b.gate.isEmpty()){   // 1.6.6: the side-beside-the-hand refit
                     Base ab=new Base();ab.cGen=mf.alt.cGen;ab.cObs=mf.alt.cObs;ab.tiltDeg=mf.alt.tiltDeg;
@@ -235,7 +237,7 @@ final class ClearlyOff {
                     r.altSidePct=t.sidePct;r.altInoutPct=t.inoutPct;r.altTiltDeg=t.tiltDeg;r.altSide=mf.altSide;
                     Double inset=insets.get(m.shape);Centroid lc=inset==null?null:centroidFit(img,m,inset,rpx);
                     if(lc!=null&&"measured".equals(lc.status))
-                        r.altLumeDiffPct=100*Math.hypot(lc.d[0]-(mf.alt.cObs[0]-mf.alt.cGen[0]),lc.d[1]-(mf.alt.cObs[1]-mf.alt.cGen[1]));
+                        r.altLumeDiffPct=100*lumeAcross(lc.d[0]-(mf.alt.cObs[0]-mf.alt.cGen[0]),lc.d[1]-(mf.alt.cObs[1]-mf.alt.cGen[1]),m.yellow,mf.altSide);
                 }
                 if(m.shape==ModelSpec.Shape.TRIANGLE){
                     gap(r,m,ticks,res.lines,img,rpx);
@@ -838,9 +840,17 @@ final class ClearlyOff {
 
     // ------------------------------------------------------------------------------------------------ lume centre
 
-    /** research only (null in the app): {hour, % R} how far the luminous centre's displacement is from a reliable baton
-     *  metal fit's (tools/desktop-harness/drivers/SideDrop.java) */
+    /** research only (null in the app): {hour, % R total, across the baton, along it} how far the luminous centre's
+     *  displacement is from a reliable baton metal fit's (tools/desktop-harness/drivers/SideDrop.java) */
     static List<double[]> LUME_PROBE=null;
+    /** unit vector along a polygon's longest side (a baton's axis) */
+    static double[] longAxis(double[][] p){double best=-1,ux=0,uy=1;
+        for(int i=0;i<p.length;i++){double[] a=p[i],b=p[(i+1)%p.length];double L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L>best){best=L;ux=(b[0]-a[0])/L;uy=(b[1]-a[1])/L;}}
+        return new double[]{ux,uy};}
+    /** the component of (ex, ey) along the normal of polygon side s */
+    static double lumeAcross(double ex,double ey,double[][] p,int s){
+        double[] a=p[s],b=p[(s+1)%p.length];double L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L<=0)return Double.NaN;
+        return Math.abs(ex*(b[1]-a[1])/L-ey*(b[0]-a[0])/L);}
     static final class Centroid {String status;double[] cpoly,d;double th;double sizeRatio=Double.NaN;}
 
     /** The lume's brightness-weighted centre (region connected to the marker's middle), area-checked; batons and the

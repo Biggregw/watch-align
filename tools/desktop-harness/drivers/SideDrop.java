@@ -32,7 +32,7 @@ public class SideDrop {
             if(Files.exists(metalFile))ref.metalExtra=MetalAlignment.parse(Files.readString(metalFile));}
         List<Map<String,String>> rows=AlignmentCalib.csv(Files.readAllLines(manifest));
         try(PrintWriter w=new PrintWriter(Files.newBufferedWriter(out))){
-            w.println("photo_id,model,rpx,hour,side,side_len_r,clean,dpos_pct,dtilt_deg");
+            w.println("photo_id,model,rpx,hour,side,side_len_r,clean,dpos_pct,dtilt_deg,across_pct,along_pct");
             for(Map<String,String> r:rows){
                 String id=r.get("photo_id");Path img=root.resolve(r.get("local_path"));
                 if(!Files.exists(img))continue;
@@ -48,9 +48,9 @@ public class SideDrop {
                     ClearlyOff.Marker m=o.clearlyOff.at(hour);
                     if(m==null||!WatchClassification.reliable(m))continue;   // the marker's own reading must be reliable
                     w.println(String.join(",",id,model.id,f(o.clearlyOff.rpx),String.valueOf(hour),String.valueOf((int)p[0]),f(p[1]),String.valueOf((int)p[2]),
-                            f(100*Math.hypot(p[3],p[4])),f(Math.abs(p[5]))));
+                            f(100*Math.hypot(p[3],p[4])),f(Math.abs(p[5])),"",""));
                 }
-                for(double[] l:lume)w.println(String.join(",",id,model.id,f(o.clearlyOff.rpx),String.valueOf((int)l[0]),"lume","","",f(l[1]),""));
+                for(double[] l:lume)w.println(String.join(",",id,model.id,f(o.clearlyOff.rpx),String.valueOf((int)l[0]),"lume","","",f(l[1]),"",f(l[2]),f(l[3])));
                 w.flush();System.out.println("SIDEDROP "+id);
             }
         }
