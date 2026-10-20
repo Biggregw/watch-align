@@ -1,0 +1,82 @@
+name: Research independent crown/case pose review and model-bias control
+on:
+  push:
+    branches: [research/strict-face-on-genuine-20261020]
+    paths:
+      - '.github/workflows/visual-face-on-review.yml'
+      - 'tools/research/pose_filter/contact_sheets.py'
+      - 'tools/research/pose_filter/review_photo_ids.txt'
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - run: python3 -m pip install -q requests numpy scipy opencv-python-headless pillow==12.3.0
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Fixed, independent pose-only visual candidates and near-front controls
+        run: |
+          mkdir -p g out
+          python3 - <<'PY'
+          import csv
+          base='tools/research/marker_audit/results/'
+          catalogue={}
+          for fam,prefix in [('GMT','gmt'),('NoDate','nodate'),('Date','date')]:
+            for row in csv.DictReader(open(base+prefix+'-verified.csv')):
+              catalogue[(fam,row['photo_id'])]=row
+          chosen=[]
+          for line in open('tools/research/pose_filter/review_photo_ids.txt'):
+            line=line.strip()
+            if not line or line.startswith('#'): continue
+            fam,id=line.split()
+            row=dict(catalogue[(fam,id)]);row['family']=fam;chosen.append(row)
+          assert len(chosen)==40
+          with open('g/manifest.csv','w',newline='') as o:
+            w=csv.DictWriter(o,fieldnames=chosen[0].keys(),extrasaction='ignore');w.writeheader()
+            # Mixed source catalogue columns: normalise all keys.
+          keys=list(dict.fromkeys(k for row in chosen for k in row))
+          with open('g/manifest.csv','w',newline='') as o:
+            w=csv.DictWriter(o,fieldnames=keys);w.writeheader();w.writerows(chosen)
+          print('selected',len(chosen),'unique watches',len({r['physical_watch_id'] for r in chosen}))
+          PY
+      - name: Retrieve the SHA256-matched source photographs
+        run: python3 tools/research/alpha96_calibration/fetch_verified.py g/manifest.csv g/img out/fetch_log.csv | tail -10
+      - name: Make contact sheets (original images not uploaded or committed)
+        run: python3 tools/research/pose_filter/contact_sheets.py
+      - name: Build pose comparison driver
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then
+            mkdir -p "$(dirname "$J")"
+            curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar
+          fi
+          mkdir -p cls
+          javac -encoding UTF-8 -nowarn -cp "$J" -sourcepath "tools/desktop-harness/shim:android/app/src/main/java" -d cls tools/desktop-harness/drivers/*.java
+      - name: Same photo, all three configurations (diagnose model-dependent apparent perspective)
+        run: |
+          python3 - <<'PY'
+          import csv
+          all_=list(csv.DictReader(open('g/manifest.csv')))
+          selected=[next(r for r in all_ if r['family']==f) for f in ('NoDate','GMT','Date')]
+          with open('g/three_photos.csv','w',newline='') as fh:
+            w=csv.DictWriter(fh,fieldnames=all_[0].keys(),extrasaction='ignore')
+            w.writeheader();w.writerows(selected)
+          PY
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          for model in submariner_124060 gmt_126710 submariner_126610; do
+            java -Xmx3g -Dwatchalign.model="$model" -cp "$J:cls" com.watchalign.mobile.PoseQualityDump g/three_photos.csv g/img "out/same_photos_${model}.csv" | tail -4
+          done
+      - name: Publish read-only visual evidence and model-bias measurements
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crown-case-faceon-review
+          path: out/
+          retention-days: 14
