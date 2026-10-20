@@ -68,11 +68,33 @@ def study(strict=False):
   if len({r["photo_id"] for r in suitability})!=len(suitability) or not allow:
    raise ValueError("Suitability data missing or duplicated: "+family)
   readings=read(DATA/(prefix+"-after.csv"))
-  excluded=Counter();seen=set();usable=0
+  # The source catalogues may assign two watch IDs to the SAME photo. Merge
+  # all linked IDs into a single physical-watch identity and keep one copy.
+  parent={r["watch"]:r["watch"] for r in readings}
+  def root(x):
+   while parent[x]!=x:
+    parent[x]=parent[parent[x]]
+    x=parent[x]
+   return x
+  def join(a,b):
+   a,b=root(a),root(b)
+   if a!=b:
+    parent[max(a,b)]=min(a,b)
+  owners=defaultdict(set)
+  for r in readings:owners[r["photo_id"]].add(r["watch"])
+  for ids in owners.values():
+   ids=sorted(ids)
+   for other in ids[1:]:join(ids[0],other)
+  excluded=Counter();seen={};usable=0
   for r in readings:
    key=(r["photo_id"],r["hour"])
-   if key in seen:raise ValueError("Duplicated photo/hour "+repr(key))
-   seen.add(key)
+   if key in seen:
+    prior=seen[key]
+    if any(r[k]!=prior[k] for k in r if k!="watch"):
+     raise ValueError("Conflicting results on same original photo/hour "+repr(key))
+    excluded["duplicate photo under watch aliases"]+=1
+    continue
+   seen[key]=r
    if r["photo_id"] not in allow:excluded["independent photo suitability"]+=1;continue
    if r["gate"]:excluded["measurement gate"]+=1;continue
    if r["uncertain"]:excluded["uncertain metal edge"]+=1;continue
@@ -88,9 +110,10 @@ def study(strict=False):
    for metric,(shape,hours,_,_) in METRICS.items():
     if r["shape"]!=shape or hour not in hours:continue
     n=measure(metric,r)
-    if n is not None:perhour[(family,r["watch"],metric,hour)].append((n,r["photo_id"]))
+    if n is not None:perhour[(family,root(r["watch"]),metric,hour)].append((n,r["photo_id"]))
   counts[family]={"eligible_photos":len(allow),"photos_assessed":len({r["photo_id"] for r in readings}),
-    "independent_watches":len({r["watch"] for r in readings}),
+    "independent_watches":len({root(r["watch"]) for r in readings}),
+    "merged_watch_aliases":sum(len(ids)-1 for ids in owners.values() if len(ids)>1),
     "original_rows":len(readings),"quality_usable_rows":usable,"exclusions":dict(excluded)}
  bywatch=defaultdict(list)
  for (family,watch,metric,hour),vv in perhour.items():
