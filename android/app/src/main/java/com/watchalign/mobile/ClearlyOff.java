@@ -521,17 +521,20 @@ final class ClearlyOff {
         double[] radii=arange(TR0,TR1,STEP/rpx);
         int na=(int)Math.rint(2*Math.PI*0.95*rpx/STEP);na-=na%60;
         double[] ang=new double[na];for(int j=0;j<na;j++)ang[j]=j*2*Math.PI/na;
-        double[][] V=img.polar(radii,ang);
-        double fill=nanmedian(V);
-        for(double[] row:V)for(int j=0;j<row.length;j++)if(Double.isNaN(row[j]))row[j]=fill;
+        // Memory (owner's 12 MP phone photo, dial 765 px: 14 M samples ran a 256 MB phone out of memory): the grid is held
+        // as float (every sample is a float-exact bilinear value, so nothing changes) and the median that fills samples
+        // outside the photo is only taken when there are any.
+        float[][] V=img.polarF(radii,ang);
+        boolean holes=false;for(float[] row:V){for(float x:row)if(Float.isNaN(x)){holes=true;break;}if(holes)break;}
+        final double fill=holes?nanmedian(V):Double.NaN;   // read through at(): a sample outside the photo reads as fill
         int nr=radii.length;double[] A=new double[nr];
         double[] ec=new double[na],es=new double[na];
         for(int j=0;j<na;j++){ec[j]=Math.cos(60*ang[j]);es[j]=-Math.sin(60*ang[j]);}
         for(int i=0;i<nr;i++){
             double re=0,im=0,mu=0,sq=0;
-            for(int j=0;j<na;j++){double v=V[i][j];re+=v*ec[j];im+=v*es[j];mu+=v;}
+            for(int j=0;j<na;j++){double v=at(V,i,j,fill);re+=v*ec[j];im+=v*es[j];mu+=v;}
             re/=na;im/=na;mu/=na;
-            for(int j=0;j<na;j++){double d=V[i][j]-mu;sq+=d*d;}
+            for(int j=0;j<na;j++){double d=at(V,i,j,fill)-mu;sq+=d*d;}
             A[i]=Math.hypot(re,im)/(Math.sqrt(sq/na)+1e-6);
         }
         int j0=argmax(A),jb=j0,je=j0;
@@ -541,7 +544,7 @@ final class ClearlyOff {
         for(int j=jb;j<=je;j++)if(A[j]>0.6*A[j0]){ca=Math.min(ca,j);cb=Math.max(cb,j);}
         int cb2=ca+Math.max(2,(int)Math.rint((cb-ca)*0.7));
         double[] prof=new double[na];
-        for(int j=0;j<na;j++){double s=0;for(int i=ca;i<=cb2;i++)s+=V[i][j];prof[j]=s/(cb2-ca+1);}
+        for(int j=0;j<na;j++){double s=0;for(int i=ca;i<=cb2;i++)s+=at(V,i,j,fill);prof[j]=s/(cb2-ca+1);}
         double re=0,im=0;for(int j=0;j<na;j++){re+=prof[j]*ec[j];im+=prof[j]*es[j];}
         double th0=pmod(Math.atan2(im,re)/60.0+D6/2,D6)-D6/2;
         double spa=2*Math.PI/na;
@@ -562,13 +565,13 @@ final class ClearlyOff {
             int hw=Math.max(1,(hi-lo+1)/3);
             int cc=c-w+(int)Math.rint(off);
             double[] rp=new double[nr];
-            for(int i=0;i<nr;i++){double s=0;for(int q=cc-hw;q<=cc+hw;q++)s+=V[i][(int)pmod(q,na)];rp[i]=s/(2*hw+1);}
+            for(int i=0;i<nr;i++){double s=0;for(int q=cc-hw;q<=cc+hw;q++)s+=at(V,i,(int)pmod(q,na),fill);rp[i]=s/(2*hw+1);}
             List<Integer> bcols=new ArrayList<>();
             for(int q=cc-wcol;q<cc-wcol/2;q++)bcols.add((int)pmod(q,na));
             for(int q=cc+wcol/2;q<cc+wcol;q++)bcols.add((int)pmod(q,na));
             double[] dd=new double[nr];
             double[] tmp=new double[bcols.size()];
-            for(int i=0;i<nr;i++){for(int q=0;q<tmp.length;q++)tmp[q]=V[i][bcols.get(q)];dd[i]=rp[i]-median(tmp);}
+            for(int i=0;i<nr;i++){for(int q=0;q<tmp.length;q++)tmp[q]=at(V,i,bcols.get(q),fill);dd[i]=rp[i]-median(tmp);}
             double[] core=Arrays.copyOfRange(dd,ca,cb2+1);double dl=median(core);
             Double inner=dl>0?firstCross(dd,0.5*dl,(ca+cb2)/2,-1):null;
             Tick t=new Tick();t.k=k;t.a=(c-w+off)*spa;t.amp=pk;t.width=(hi-lo+1)*spa;
@@ -954,6 +957,16 @@ final class ClearlyOff {
         }
         private float[] px;private int w,h;
         /** values[i][j] at radius radii[i], angle ang[j] (canonical: x = r sin a, y = -r cos a) */
+        /** polar() kept as float: the bilinear samples are float arithmetic, so the values are identical, at half the memory */
+        float[][] polarF(double[] radii,double[] ang){
+            int nr=radii.length,na=ang.length;float[][] out=new float[nr][na];
+            double[] X=new double[na],Y=new double[na];
+            for(int i=0;i<nr;i++){
+                for(int j=0;j<na;j++){X[j]=radii[i]*Math.sin(ang[j]);Y[j]=-radii[i]*Math.cos(ang[j]);}
+                double[] r=sampleCanon(X,Y);for(int j=0;j<na;j++)out[i][j]=(float)r[j];
+            }
+            return out;
+        }
         double[][] polar(double[] radii,double[] ang){
             int nr=radii.length,na=ang.length;double[][] out=new double[nr][];
             double[] X=new double[na],Y=new double[na];
@@ -985,6 +998,17 @@ final class ClearlyOff {
     }
     static double median(double[] v){return percentile(v,50);}
     static double nanmedian(double[] v){int n=0;for(double x:v)if(!Double.isNaN(x))n++;double[] a=new double[n];n=0;for(double x:v)if(!Double.isNaN(x))a[n++]=x;return median(a);}
+    /** a minute-grid sample; one outside the photo (NaN) reads as fill */
+    static double at(float[][] V,int i,int j,double fill){float x=V[i][j];return x!=x?fill:x;}
+    /** as nanmedian(double[][]) on float samples: the same sorted order and interpolation, so the same value */
+    static double nanmedian(float[][] v){
+        int n=0;for(float[] r:v)for(float x:r)if(!Float.isNaN(x))n++;
+        if(n==0)return Double.NaN;
+        float[] a=new float[n];int k=0;for(float[] r:v)for(float x:r)if(!Float.isNaN(x))a[k++]=x;
+        Arrays.sort(a);
+        double pos=(n-1)*50.0/100.0;int lo=(int)Math.floor(pos),hi=Math.min(lo+1,n-1);
+        return (double)a[lo]+((double)a[hi]-(double)a[lo])*(pos-lo);
+    }
     static double nanmedian(double[][] v){
         // Primitive storage avoids millions of boxed Doubles for the minute grid.
         int n=0;for(double[] r:v)for(double x:r)if(!Double.isNaN(x))n++;
