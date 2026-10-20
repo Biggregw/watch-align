@@ -1,0 +1,83 @@
+== genuine distribution by shape/family, measurable rows; clean = no uncertainty note
+round    pos   GMT    clean  n= 326 med=0.230 p95=0.572 p99=0.739 max=1.065 min=0.011
+round    pos   GMT    uncert n= 209 med=0.344 p95=0.946 p99=1.057 max=1.784 min=0.012
+round    pos   NoDate clean  n= 801 med=0.164 p95=0.411 p99=0.510 max=0.791 min=0.009
+round    pos   NoDate uncert n= 274 med=0.221 p95=0.895 p99=1.238 max=1.628 min=0.011
+round    pos   Date   clean  n= 938 med=0.162 p95=0.382 p99=0.471 max=0.561 min=0.003
+round    pos   Date   uncert n=  77 med=0.263 p95=1.083 p99=1.391 max=1.405 min=0.048
+baton    pos   GMT    clean  n=  98 med=0.337 p95=0.666 p99=0.722 max=0.723 min=0.161
+baton    pos   GMT    uncert n=  34 med=0.355 p95=0.756 p99=0.870 max=0.874 min=0.103
+baton    pos   NoDate clean  n= 329 med=0.180 p95=0.478 p99=0.733 max=0.819 min=0.016
+baton    pos   NoDate uncert n=  75 med=0.208 p95=0.535 p99=0.885 max=0.940 min=0.051
+baton    pos   Date   clean  n= 234 med=0.163 p95=0.418 p99=0.503 max=0.641 min=0.009
+baton    pos   Date   uncert n=  20 med=0.139 p95=0.745 p99=0.760 max=0.764 min=0.048
+baton    tilt  GMT    clean  n=  98 med=0.216 p95=0.543 p99=0.808 max=0.845 min=0.002
+baton    tilt  GMT    uncert n=  34 med=0.248 p95=1.245 p99=1.632 max=1.633 min=0.034
+baton    tilt  NoDate clean  n= 329 med=0.208 p95=0.683 p99=0.789 max=0.805 min=0.001
+baton    tilt  NoDate uncert n=  73 med=0.196 p95=0.672 p99=0.809 max=0.877 min=0.000
+baton    tilt  Date   clean  n= 234 med=0.226 p95=0.620 p99=0.766 max=0.831 min=0.001
+baton    tilt  Date   uncert n=  20 med=0.140 p95=0.358 p99=0.409 max=0.422 min=0.002
+triangle side  GMT    clean  n=  50 med=0.245 p95=0.614 p99=0.640 max=0.640 min=0.001
+triangle side  GMT    uncert n=  16 med=0.288 p95=0.719 p99=0.816 max=0.841 min=0.042
+triangle side  NoDate clean  n= 111 med=0.105 p95=0.350 p99=0.379 max=0.384 min=0.000
+triangle side  NoDate uncert n=  23 med=0.138 p95=0.334 p99=0.889 max=1.046 min=0.005
+triangle side  Date   clean  n= 112 med=0.085 p95=0.262 p99=0.356 max=0.383 min=0.000
+triangle side  Date   uncert n=  15 med=0.322 p95=0.822 p99=0.884 max=0.899 min=0.014
+triangle inout GMT    clean  n=  50 med=0.094 p95=0.382 p99=0.691 max=0.895 min=0.006
+triangle inout GMT    uncert n=  16 med=0.113 p95=1.471 p99=1.471 max=1.471 min=0.004
+triangle inout NoDate clean  n= 111 med=0.099 p95=0.273 p99=0.415 max=0.535 min=0.001
+triangle inout NoDate uncert n=  23 med=0.119 p95=0.346 p99=0.402 max=0.418 min=0.011
+triangle inout Date   clean  n= 112 med=0.056 p95=0.177 p99=0.212 max=0.214 min=0.000
+triangle inout Date   uncert n=  15 med=0.232 p95=0.858 p99=1.309 max=1.422 min=0.018
+triangle tilt  GMT    clean  n=  50 med=0.344 p95=0.858 p99=0.992 max=1.019 min=0.004
+triangle tilt  GMT    uncert n=  16 med=0.538 p95=0.883 p99=0.922 max=0.932 min=0.116
+triangle tilt  NoDate clean  n= 111 med=0.261 p95=0.887 p99=1.058 max=1.221 min=0.006
+triangle tilt  NoDate uncert n=  23 med=0.300 p95=0.904 p99=1.072 max=1.112 min=0.061
+triangle tilt  Date   clean  n= 112 med=0.319 p95=0.920 p99=1.064 max=1.113 min=0.000
+triangle tilt  Date   uncert n=  15 med=0.359 p95=1.563 p99=1.618 max=1.631 min=0.001
+triangle gap   GMT    clean  n=  50 med=3.723 p95=4.333 p99=4.381 max=4.382 min=2.553
+triangle gap   GMT    uncert n=  16 med=3.390 p95=4.173 p99=4.292 max=4.322 min=2.530
+triangle gap   NoDate clean  n= 111 med=3.834 p95=4.386 p99=4.505 max=9.951 min=2.448
+triangle gap   NoDate uncert n=  23 med=4.034 p95=4.250 p99=4.254 max=4.255 min=2.243
+triangle gap   Date   clean  n= 112 med=3.655 p95=3.884 p99=3.988 max=4.330 min=3.299
+triangle gap   Date   uncert n=  15 med=3.656 p95=4.300 p99=4.334 max=4.342 min=3.409
+
+== repeatability: same physical watch, same hour, >=2 photos (SD across photos, pooled)
+round    side  GMT    groups=  48 within-watch SD=0.077
+round    side  NoDate groups= 307 within-watch SD=0.082
+round    side  Date   groups=  15 within-watch SD=0.506
+round    inout GMT    groups=  48 within-watch SD=0.087
+round    inout NoDate groups= 307 within-watch SD=0.055
+round    inout Date   groups=  15 within-watch SD=0.357
+baton    side  GMT    groups=  12 within-watch SD=0.115
+baton    side  NoDate groups= 116 within-watch SD=0.073
+baton    side  Date   groups=   4 within-watch SD=0.334
+baton    inout GMT    groups=  12 within-watch SD=0.067
+baton    inout NoDate groups= 116 within-watch SD=0.073
+baton    inout Date   groups=   4 within-watch SD=0.045
+baton    tilt  GMT    groups=  12 within-watch SD=0.268
+baton    tilt  NoDate groups= 114 within-watch SD=0.095
+baton    tilt  Date   groups=   4 within-watch SD=0.092
+triangle tilt  GMT    groups=   6 within-watch SD=0.170
+triangle tilt  NoDate groups=  38 within-watch SD=0.123
+triangle tilt  Date   groups=   2 within-watch SD=0.117
+triangle gap   GMT    groups=   6 within-watch SD=0.164
+triangle gap   NoDate groups=  38 within-watch SD=0.290
+triangle gap   Date   groups=   2 within-watch SD=0.432
+triangle side  GMT    groups=   6 within-watch SD=0.196
+triangle side  NoDate groups=  38 within-watch SD=0.085
+triangle side  Date   groups=   2 within-watch SD=0.426
+triangle inout GMT    groups=   6 within-watch SD=0.144
+triangle inout NoDate groups=  38 within-watch SD=0.049
+triangle inout Date   groups=   2 within-watch SD=0.007
+
+== signed medians (systematic offsets) baton 6/9 and triangle, per family
+GMT    h6  side med +0.193 inout med +0.256 tilt med -0.118  |side| med 0.207 |inout| med 0.262 n=66
+GMT    h9  side med +0.167 inout med +0.253 tilt med -0.025  |side| med 0.167 |inout| med 0.253 n=66
+GMT    h12 side med -0.240 inout med +0.074 tilt med -0.172  |side| med 0.247 |inout| med 0.094 n=66
+NoDate h6  side med -0.008 inout med +0.048 tilt med -0.076  |side| med 0.104 |inout| med 0.078 n=135
+NoDate h9  side med +0.113 inout med +0.001 tilt med -0.013  |side| med 0.175 |inout| med 0.077 n=135
+NoDate h12 side med -0.031 inout med +0.019 tilt med +0.155  |side| med 0.108 |inout| med 0.102 n=134
+Date   h6  side med -0.003 inout med +0.004 tilt med -0.013  |side| med 0.093 |inout| med 0.052 n=127
+Date   h9  side med +0.173 inout med -0.002 tilt med +0.056  |side| med 0.182 |inout| med 0.061 n=127
+Date   h12 side med -0.070 inout med -0.001 tilt med -0.092  |side| med 0.086 |inout| med 0.060 n=127

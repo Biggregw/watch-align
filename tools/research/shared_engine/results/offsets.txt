@@ -1,0 +1,10 @@
+GMT    side/inout watch-median %R   1:-0.19/+0.05   2:-0.27/+0.10   3:  --      4:-0.08/-0.01   5:-0.03/+0.02   6:+0.04/+0.25   7:+0.11/-0.04   8:+0.14/-0.06   9:+0.16/+0.28  10:+0.17/-0.05  11:+0.11/-0.03  12:-0.11/+0.09
+NoDate side/inout watch-median %R   1:-0.04/+0.01   2:-0.05/+0.04   3:-0.00/+0.02   4:-0.09/-0.00   5:-0.03/-0.01   6:-0.02/+0.05   7:+0.01/-0.02   8:+0.08/-0.02   9:+0.05/+0.00  10:+0.07/-0.00  11:+0.06/+0.01  12:-0.03/+0.03
+Date   side/inout watch-median %R   1:-0.09/+0.02   2:-0.22/+0.07   3:  --      4:-0.12/-0.01   5:-0.05/-0.02   6:-0.00/+0.00   7:+0.07/-0.01   8:+0.12/-0.01   9:+0.18/+0.00  10:+0.20/-0.02  11:+0.14/-0.04  12:-0.07/-0.00
+
+GMT    round clean n= 326 |pos| raw med 0.230 p99 0.739 max 1.065  -> re-centred med 0.193 p99 0.541 max 0.803
+GMT    baton clean n=  98 |pos| raw med 0.337 p99 0.722 max 0.723  -> re-centred med 0.164 p99 0.478 max 0.479
+NoDate round clean n= 801 |pos| raw med 0.164 p99 0.510 max 0.791  -> re-centred med 0.162 p99 0.522 max 0.704
+NoDate baton clean n= 329 |pos| raw med 0.180 p99 0.733 max 0.819  -> re-centred med 0.177 p99 0.650 max 0.735
+Date   round clean n= 938 |pos| raw med 0.162 p99 0.471 max 0.561  -> re-centred med 0.118 p99 0.376 max 0.550
+Date   baton clean n= 234 |pos| raw med 0.163 p99 0.503 max 0.641  -> re-centred med 0.137 p99 0.427 max 0.474
