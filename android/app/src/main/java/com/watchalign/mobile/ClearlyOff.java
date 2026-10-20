@@ -287,6 +287,7 @@ final class ClearlyOff {
         if(g.equals("no overlay for this marker"))return "it could not be located";
         if(g.equals("no luminous reference"))return "there is no verified genuine reference for this marker type";
         if(g.equals("hand"))return "a hand reaches it";
+        if(g.equals(MetalFit.HAND_COVERS))return "a hand covers most of it";
         if(g.equals("obstructed"))return "something crosses it (a hand or glare)";
         if(g.equals("merged"))return "it merges with something next to it (a hand or glare)";
         if(g.equals("unusual"))return "its visible shape is unlike the other markers (a hand, glare or blur)";

@@ -6,7 +6,8 @@ name: Three options (GMT / no date / date) - genuine and QC regression
 on:
   push:
     branches: [claude/calibration-measurement-contract-epunh5]
-    paths: ['.github/workflows/three-options.yml', 'tools/research/shared_engine/compare_options.py']
+    paths: ['.github/workflows/three-options.yml', 'tools/research/shared_engine/compare_options.py',
+            'android/app/src/main/java/com/watchalign/mobile/MetalFit.java', 'android/app/src/main/java/com/watchalign/mobile/ClearlyOff.java']
   workflow_dispatch:
 permissions: {contents: write}   # stores each option's genuine numbers (genuine_track.csv) on this working branch
 jobs:
@@ -19,8 +20,7 @@ jobs:
         include:
           - {model: gmt_126710, verified: gmt-verified.csv, before: gmt-after.csv, qc: gmt_126710, limit: 0, track: true}
           - {model: submariner_126610, verified: date-verified.csv, before: date-after.csv, qc: '', limit: 0, track: true}
-          # unchanged option: a control that nothing moved (first 40 genuine photos and the QC photos)
-          - {model: submariner_124060, verified: nodate-verified.csv, before: nodate-after.csv, qc: submariner_124060, limit: 40, track: false}
+          - {model: submariner_124060, verified: nodate-verified.csv, before: nodate-after.csv, qc: submariner_124060, limit: 0, track: true}
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 50}

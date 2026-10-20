@@ -31,6 +31,11 @@ final class MetalFit {
     static final double MAX_SE_POS=0.0025,MAX_SE_ROT=0.35;      // reliable
     static final double CANT_SE_POS=0.01,CANT_SE_ROT=1.0;       // indeterminate beyond these
     static final double EDGE_RMS_OK=0.5,EDGE_BAD_PX=1.0,EDGE_BAD_FRAC=0.15,MIN_COVER=0.5;
+    /** Owner, 20 Oct 2026 (genuine Yacht-Master, seconds hand along the 6 baton, 33 % of it seen): when a detected hand
+     *  hides at least this share of a marker's outline and less than MIN_COVER of it is seen, the rest would be
+     *  reconstructed from the hand's side; the marker is Can't check rather than judged either way. */
+    static final double HAND_HIDDEN_CANT=0.5;
+    static final String HAND_COVERS="a hand covers most of its outline";
     /** hands: the hand's own width (measured near the pivot) carried out to the marker, plus this margin (R) */
     static final double HAND_MARGIN_R=0.012,HAND_WIDTH_AT_R=0.34;
     /** the last HAND_TIP_LEN (R) before a hand's reach is treated as at least HAND_TIP_HALF_R wide (GMT arrow, lume plot) */
@@ -133,6 +138,8 @@ final class MetalFit {
     static final class Fit {
         double[] cGen,cObs;double tiltDeg=Double.NaN,sePos=Double.NaN,seRot=Double.NaN,cover=Double.NaN,rmsPx=Double.NaN,
                 bias=Double.NaN,badFrac=Double.NaN;
+        /** share of the outline's sample points hidden by a detected hand (hour, minute or seconds) */
+        double handFrac=Double.NaN;
         int n;
         /** non-empty: no meaningful fit (Can't check) */
         String note="";
@@ -197,6 +204,8 @@ final class MetalFit {
         for(int q=0;q<m;q++){int i=idx[q];seen++;
             if(Math.abs(res[q])*rpx>EDGE_BAD_PX||w[q]==0){f.status[i]=INCONSISTENT;bad++;}else f.status[i]=SEEN;}
         f.badFrac=(double)bad/Math.max(1,seen);
+        int underHand=0;for(int v:e.why)if(v==HAND)underHand++;
+        f.handFrac=(double)underHand/Math.max(1,e.why.length);
         List<String> unc=new ArrayList<>();
         if(f.rmsPx>EDGE_RMS_OK)unc.add(String.format(java.util.Locale.US,"its visible edge is rough (%.1f px)",f.rmsPx));
         if(f.badFrac>EDGE_BAD_FRAC)unc.add(String.format(java.util.Locale.US,"%.0f%% of its visible edge is inconsistent (shadowed or reflecting metal)",100*f.badFrac));
@@ -204,7 +213,8 @@ final class MetalFit {
         if(f.sePos>MAX_SE_POS)unc.add("its visible edge only loosely fixes its position");
         if(rotate&&f.seRot>MAX_SE_ROT)unc.add("its visible edge only loosely fixes its rotation");
         f.uncertain=String.join("; ",unc);
-        if(f.sePos>CANT_SE_POS)f.note="its visible edge does not fix its position";
+        if(f.handFrac>=HAND_HIDDEN_CANT&&f.cover<MIN_COVER)f.note=HAND_COVERS;
+        else if(f.sePos>CANT_SE_POS)f.note="its visible edge does not fix its position";
         else if(rotate&&f.seRot>CANT_SE_ROT)f.note="its visible edge does not fix its rotation";
         return f;
     }
