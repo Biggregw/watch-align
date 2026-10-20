@@ -42,6 +42,8 @@ final class Alpha99Pipeline {
         String alignmentTechnical;AlignmentReference alignmentReference;Bitmap alignmentOverview;
         /** Watch Align 1.6.0: clearly-off check against the printed minute track (decides the alignment results). */
         ClearlyOff.Result clearlyOff;
+        /** 1.6.6: why the clearly-off check failed on this photo as a whole (exception type and message), or null */
+        String clearlyOffError;
         boolean ok(){return pose!=null&&pose.valid&&pose.homography!=null&&summary!=null;}
     }
 
@@ -76,11 +78,11 @@ final class Alpha99Pipeline {
             catch(Throwable t){MetalAlignment.notAssessed(o.alignment,"the outer-metal comparison failed");}   // fail closed, never a silent pass
             o.alignmentTechnical=AlignmentAnalysis.technical(o.alignment,align);
             try{o.clearlyOff=ClearlyOff.analyse(gray,H,o.measurement.dialRadiusPx,clearlyOffInputs(o.alignment,o.checks),insets(align),model.minuteTrackInnerR,ClearlyOff.forModel(model.id));}
-            catch(Throwable t){o.clearlyOff=null;}
+            catch(Throwable t){o.clearlyOff=null;o.clearlyOffError=failure(t);}   // 1.6.6: reported, not masked
             // 1.6.0: the clearly-off check decides the answers; earlier results stay in the technical details
             String legacy=o.alignmentTechnical;
             AlignmentDecision.applyClearlyOff(o.alignment.markers,o.clearlyOff,o.alignment.photoReason);
-            o.alignmentTechnical=(o.clearlyOff==null?"Marker alignment check: could not be run on this photo.":ClearlyOff.technical(o.clearlyOff))
+            o.alignmentTechnical=(o.clearlyOff==null?"Marker alignment check: could not be run on this photo"+(o.clearlyOffError==null?".":" (internal analysis failure: "+o.clearlyOffError+")."):ClearlyOff.technical(o.clearlyOff))
                     +"\n\nEarlier luminous / outer-metal analysis (kept for reference; not used for the results above):\n"+legacy;
             o.alignmentCloseups.clear();
             for(AlignmentDecision.Marker am:o.alignment.markers){
@@ -109,6 +111,12 @@ final class Alpha99Pipeline {
     }
 
     /** The app's markers as the clearly-off check reads them: yellow outer-metal reference and hand / glare check. */
+    /** a failure in plain words for the technical details: its type and message (out of memory says so) */
+    static String failure(Throwable t){
+        if(t instanceof OutOfMemoryError)return "out of memory (the photo is too large for this phone's memory)";
+        String m=t.getMessage();return t.getClass().getSimpleName()+(m==null||m.isEmpty()?"":": "+m);
+    }
+
     static List<ClearlyOff.Input> clearlyOffInputs(AlignmentAnalysis.Output a,Map<Integer,Alpha99MarkerInterference.Check> checks){
         List<ClearlyOff.Input> in=new ArrayList<>();
         for(AlignmentDecision.Marker m:a.markers){

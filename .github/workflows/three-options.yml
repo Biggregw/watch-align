@@ -7,7 +7,8 @@ on:
   push:
     branches: [claude/calibration-measurement-contract-epunh5]
     paths: ['.github/workflows/three-options.yml', 'tools/research/shared_engine/compare_options.py',
-            'android/app/src/main/java/com/watchalign/mobile/MetalFit.java', 'android/app/src/main/java/com/watchalign/mobile/ClearlyOff.java']
+            'android/app/src/main/java/com/watchalign/mobile/MetalFit.java', 'android/app/src/main/java/com/watchalign/mobile/ClearlyOff.java',
+            'android/app/src/main/java/com/watchalign/mobile/WatchClassification.java', 'tools/research/shared_engine/classify.py']
   workflow_dispatch:
 permissions: {contents: write}   # stores each option's genuine numbers (genuine_track.csv) on this working branch
 jobs:
@@ -18,9 +19,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {model: gmt_126710, verified: gmt-verified.csv, before: gmt-after.csv, qc: gmt_126710, limit: 0, track: true}
-          - {model: submariner_126610, verified: date-verified.csv, before: date-after.csv, qc: '', limit: 0, track: true}
-          - {model: submariner_124060, verified: nodate-verified.csv, before: nodate-after.csv, qc: submariner_124060, limit: 0, track: true}
+          - {model: gmt_126710, verified: gmt-verified.csv, before: gmt-after.csv, qc: gmt_126710, limit: 0, track: false}
+          - {model: submariner_126610, verified: date-verified.csv, before: date-after.csv, qc: '', limit: 0, track: false}
+          - {model: submariner_124060, verified: nodate-verified.csv, before: nodate-after.csv, qc: submariner_124060, limit: 0, track: false}
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 50}
@@ -72,8 +73,8 @@ jobs:
           if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then mkdir -p $(dirname $J); curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar; fi
           mkdir -p cls
           javac -encoding UTF-8 -nowarn -cp $J -sourcepath "tools/desktop-harness/shim:android/app/src/main/java" -d cls tools/desktop-harness/drivers/*.java
-          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TrackDump g/manifest.csv g/img out/genuine.csv | grep -c TRACK
-          if [ -f q/manifest.csv ]; then java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TrackDump q/manifest.csv q/img out/qc.csv | grep -c TRACK; fi
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TrackDump g/manifest.csv g/img out/genuine.csv | tee out/genuine.log | grep -c TRACK
+          if [ -f q/manifest.csv ]; then java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TrackDump q/manifest.csv q/img out/qc.csv | tee out/qc.log | grep -c TRACK; fi
       - name: Marker-by-marker comparison with main
         run: |
           R=tools/research/marker_audit/results
@@ -86,6 +87,25 @@ jobs:
           python3 tools/research/shared_engine/compare_options.py out/genuine_before.csv out/genuine.csv "genuine ${{ matrix.model }}" | tee out/compare_genuine.txt || echo "COMPARE: markers missing (see above)"
           if [ -f out/qc.csv ]; then python3 tools/research/shared_engine/compare_options.py $R/qc/${{ matrix.qc }}-after.csv out/qc.csv "QC ${{ matrix.model }}" | tee out/compare_qc.txt || echo "COMPARE: QC markers missing"; echo "## QC answers"; cat out/qc.csv; fi
           grep -c "" g/fetch_log.csv; python3 -c "import csv,collections;print(collections.Counter(r.get('status','') for r in csv.DictReader(open('g/fetch_log.csv'))))"
+      - name: 1.6.6 whole-watch classification (app code), checked against the research replay
+        run: |
+          for s in genuine qc; do
+            [ -f out/$s.csv ] || continue
+            echo "== $s ${{ matrix.model }}"
+            grep '^CLASS ' out/$s.log | awk '{print $3}' | sort | uniq -c
+            python3 tools/research/shared_engine/classify.py out/$s.csv ${{ matrix.model }} | tee out/classify_$s.txt
+            python3 - out/$s.csv out/$s.log ${{ matrix.model }} <<'PY'
+          import csv, sys
+          sys.path.insert(0, 'tools/research/shared_engine')
+          from classify import classify_rows
+          py = classify_rows(list(csv.DictReader(open(sys.argv[1]))), sys.argv[3])
+          java = dict(l.split()[1:3] for l in open(sys.argv[2]) if l.startswith('CLASS '))
+          diff = {p: (java.get(p), v) for p, v in py.items() if java.get(p) != v}
+          print('CLASS PARITY app vs replay:', len(py) - len(diff), 'of', len(py), 'agree', diff or '')
+          if diff: sys.exit(1)
+          PY
+            if [ $s = qc ]; then grep '^CLASS ' out/qc.log; fi
+          done
       - name: Store the option's genuine numbers (numbers only; working branch only)
         if: matrix.track && github.ref_name != 'main'
         run: |

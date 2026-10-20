@@ -35,6 +35,8 @@ public class AlignmentResultsActivity extends Activity {
         /** 1.6.2 calibration: the pose, the clearly-off result (re-judged when the owner changes the limits) and this
          *  photo's saved record */
         static double[] H;static ClearlyOff.Result clearlyOff;static String recordId;
+        /** 1.6.6: why the clearly-off check failed on this photo as a whole, or null */
+        static String analysisFailure;
         private Store(){}
     }
 
@@ -55,9 +57,13 @@ public class AlignmentResultsActivity extends Activity {
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(pad,pad,pad,pad);scroll.addView(root,new ViewGroup.LayoutParams(-1,-2));
         AlignmentAnalysis.Output o=Store.result;
         root.addView(text("Watch Align",14,MUTED,true));
-        int nOff=o.count(AlignmentDecision.Outcome.DEFECT)-AlignmentAnalysis.inspect(o);
-        root.addView(text(AlignmentAnalysis.headline(o),26,nOff>0?RED:AlignmentAnalysis.inspect(o)>0?AMBER:Color.WHITE,true),lp(-1,-2,2));
-        root.addView(text(AlignmentAnalysis.counts(o),14,MUTED,false),lp(-1,-2,4));
+        // 1.6.6: the whole-watch classification (both standards on the same measurements), then the markers
+        WatchClassification.Result cls=WatchClassification.classify(Store.clearlyOff,Store.model,Store.analysisFailure);
+        root.addView(text(cls.title(),30,colour(cls.verdict),true),lp(-1,-2,2));
+        root.addView(text(cls.message(),15,Color.WHITE,false),lp(-1,-2,4));
+        if(cls.failure!=null)root.addView(text("The analysis failed on this photo (see Technical details).",14,AMBER,false),lp(-1,-2,4));
+        root.addView(text(WatchClassification.NOT_PROOF,12,MUTED,false),lp(-1,-2,6));
+        root.addView(text(AlignmentAnalysis.counts(o),13,MUTED,false),lp(-1,-2,8));
         if(Store.modelLabel!=null)root.addView(text(Store.modelLabel,13,MUTED,false),lp(-1,-2,2));
         if(Store.clearlyOff!=null&&!Store.clearlyOff.limits.isDefault())
             root.addView(text("Judged with your saved limits (tap a marker, then Calibrate, to change or reset them).",13,AMBER,false),lp(-1,-2,4));
@@ -79,6 +85,9 @@ public class AlignmentResultsActivity extends Activity {
 
         // a card for every defect, the dominant issue first
         for(AlignmentDecision.Marker m:o.markers)if(m.outcome==AlignmentDecision.Outcome.DEFECT)root.addView(defectCard(m),lp(-1,-2,14));
+        // 1.6.6: and for every marker reliably outside the strict genuine standard (within replica QC)
+        for(AlignmentDecision.Marker m:o.markers){WatchClassification.MarkerCheck c=cls.at(m.hour);
+            if(c!=null&&c.genuineFail()&&m.outcome!=AlignmentDecision.Outcome.DEFECT)root.addView(genuineCard(m,c),lp(-1,-2,14));}
 
         // every marker, one line each
         root.addView(text("All markers",18,Color.WHITE,true),lp(-1,-2,18));
@@ -90,13 +99,15 @@ public class AlignmentResultsActivity extends Activity {
             row.addView(top);
             String sub=AlignmentDecision.summary(m);
             if(sub!=null)row.addView(text(sub,13,MUTED,false),lp(-1,-2,2));
+            WatchClassification.MarkerCheck c=cls.at(m.hour);
+            if(c!=null)row.addView(text(WatchClassification.line(c),13,c.genuineFail()?AMBER:MUTED,false),lp(-1,-2,2));
             final int hour=m.hour;row.setOnClickListener(v->openDetail(hour));
             root.addView(row,lp(-1,-2,6));
         }
 
         LinearLayout tech=new LinearLayout(this);tech.setOrientation(LinearLayout.VERTICAL);tech.setVisibility(View.GONE);
         tech.addView(text(AlignmentAnalysis.tracked(o)?TRACK_NOTE:NOTE,12,MUTED,false),lp(-1,-2,4));
-        TextView exact=text((Store.technical==null?"":Store.technical)+(Store.legacyTechnical==null?"":"\n\nPrevious outer-metal analysis (Alpha107, kept for reference; not used for the results above):\n"+Store.legacyTechnical),11,MUTED,false);
+        TextView exact=text((cls.failure==null?"":"Internal analysis failure: "+cls.failure+"\n\n")+WatchClassification.standardText()+"\n\n"+(Store.technical==null?"":Store.technical)+(Store.legacyTechnical==null?"":"\n\nPrevious outer-metal analysis (Alpha107, kept for reference; not used for the results above):\n"+Store.legacyTechnical),11,MUTED,false);
         exact.setTextIsSelectable(true);tech.addView(exact,lp(-1,-2,6));
         Button saved=new Button(this);saved.setAllCaps(false);saved.setText("Saved photos and calibration");
         saved.setOnClickListener(v->startActivity(new Intent(this,SavedPhotosActivity.class)));root.addView(saved,lp(-1,dp(48),18));
@@ -128,6 +139,21 @@ public class AlignmentResultsActivity extends Activity {
         t.addView(text(m.primary.measured(),14,Color.WHITE,false),lp(-1,-2,8));
         t.addView(text(m.primary.genuine(),14,MUTED,false),lp(-1,-2,2));
         final int hour=m.hour;t.setOnClickListener(v->openDetail(hour));
+        return t;
+    }
+
+    static int colour(WatchClassification.Verdict v){
+        switch(v){case GENUINE:return GREEN;case REPLICA:return AMBER;case REPLICA_QC_ISSUES:return RED;default:return GREY;}
+    }
+
+    /** 1.6.6: a marker within replica QC but reliably outside the strict genuine standard: its close-up and measurements */
+    private View genuineCard(AlignmentDecision.Marker m,WatchClassification.MarkerCheck c){
+        LinearLayout t=new LinearLayout(this);t.setOrientation(LinearLayout.VERTICAL);t.setBackgroundColor(CARD);t.setPadding(dp(10),dp(10),dp(10),dp(12));
+        t.addView(text(m.title()+" — outside the genuine standard",18,AMBER,true));
+        Bitmap ev=Store.closeups.get(m.hour);
+        if(ev!=null){ImageView iv=new ImageView(this);iv.setImageBitmap(ev);iv.setAdjustViewBounds(true);iv.setScaleType(ImageView.ScaleType.FIT_CENTER);t.addView(iv,lp(-1,-2,8));}
+        t.addView(text(String.join("\n",WatchClassification.measures(c)),13,MUTED,false),lp(-1,-2,8));
+        final int hr=m.hour;t.setOnClickListener(v->openDetail(hr));
         return t;
     }
 

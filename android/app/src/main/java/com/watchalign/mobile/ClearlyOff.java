@@ -85,16 +85,23 @@ final class ClearlyOff {
      *   round, baton  POSITION: distance of the centre from where it should be (hour line x ring), any direction
      *   baton         TILT against the hour line
      *   triangle      SIDEWAYS from the hour line, GAP under the minute track, TILT (not judged by default: NaN)
-     * The triangle's centre in/out limit (INOUT_TRIANGLE_LIMIT_R) is not adjustable: it catches a triangle sunk towards
-     * the centre, which the one-sided gap does not.
+     * The triangle's centre in/out limit (INOUT_TRIANGLE_LIMIT_R) is not adjustable by the owner: it catches a triangle sunk
+     * towards the centre, which the one-sided gap does not. It is a field (1.6.6) only so that the fixed strict genuine
+     * standard (genuine()) can judge it at its own value; it is not saved with the owner's limits.
      */
     static final class Limits {
-        double roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg;
+        double roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg,triInoutR=INOUT_TRIANGLE_LIMIT_R;
         static Limits defaults(){Limits l=new Limits();l.roundPosR=POS_LIMIT_R;l.batonPosR=POS_LIMIT_R;l.batonTiltDeg=TILT_LIMIT_DEG;
             l.triSideR=SIDE_LIMIT_R;l.triGapR=GAP_TRIANGLE_LIMIT_R;l.triTiltDeg=TRI_ROT_LIMIT_DEG;return l;}
+        /** 1.6.6 strict genuine standard (owner, pooled genuine Rolex research, PR #64): experimental statistical screening
+         *  limits, not manufacturer specifications. Fixed: never taken from or written to the owner's saved limits. Judged
+         *  by the same decide() as the replica-QC limits, so the 0.5 px allowance is applied once, in the same direction
+         *  (added to every maximum, subtracted from the gap minimum). */
+        static Limits genuine(){Limits l=new Limits();l.roundPosR=0.00671;l.batonPosR=0.00752;l.batonTiltDeg=1.096;
+            l.triSideR=0.00437;l.triInoutR=0.00373;l.triTiltDeg=1.174;l.triGapR=0.02810;return l;}
         Limits copy(){Limits l=new Limits();l.roundPosR=roundPosR;l.batonPosR=batonPosR;l.batonTiltDeg=batonTiltDeg;
-            l.triSideR=triSideR;l.triGapR=triGapR;l.triTiltDeg=triTiltDeg;return l;}
-        double[] values(){return new double[]{roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg};}
+            l.triSideR=triSideR;l.triGapR=triGapR;l.triTiltDeg=triTiltDeg;l.triInoutR=triInoutR;return l;}
+        double[] values(){return new double[]{roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg,triInoutR};}
         boolean same(Limits o){double[] a=values(),b=o.values();for(int i=0;i<a.length;i++){if(Double.isNaN(a[i])!=Double.isNaN(b[i]))return false;
             if(!Double.isNaN(a[i])&&Math.abs(a[i]-b[i])>1e-9)return false;}return true;}
         boolean isDefault(){return same(defaults());}
@@ -243,7 +250,7 @@ final class ClearlyOff {
         double allow=100*LOWRES_ALLOWANCE_PX/rpx;
         boolean tri=r.shape==ModelSpec.Shape.TRIANGLE,baton=r.shape==ModelSpec.Shape.BATON;
         r.sideLimitPct=tri?100*L.triSideR+allow:Double.NaN;
-        r.inoutLimitPct=tri?100*INOUT_TRIANGLE_LIMIT_R+allow:Double.NaN;
+        r.inoutLimitPct=tri?100*L.triInoutR+allow:Double.NaN;
         r.posLimitPct=tri?Double.NaN:100*(baton?L.batonPosR:L.roundPosR)+allow;
         r.tiltLimitDeg=baton?L.batonTiltDeg:tri?L.triTiltDeg:Double.NaN;
         r.gapLimitPct=tri?100*L.triGapR-allow:Double.NaN;

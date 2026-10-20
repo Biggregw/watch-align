@@ -36,7 +36,8 @@ public class TrackDump {
                 Bitmap b=Alpha96Calib.loadAlpha96(img.toString());
                 Alpha99Pipeline.Output o;
                 try{o=b==null?null:Alpha99Pipeline.run(b,model,metal,ref,ref==null?null:ref::setup);}catch(Throwable t){o=null;}
-                if(o==null||o.clearlyOff==null){System.out.println("NOPOSE "+id);continue;}
+                if(o==null||o.clearlyOff==null){System.out.println("NOPOSE "+id+(o!=null&&o.clearlyOffError!=null?" "+o.clearlyOffError:""));
+                    if(o!=null&&o.alignment!=null)System.out.println("CLASS "+id+" "+WatchClassification.classify(null,model,o.clearlyOffError).verdict);continue;}
                 ClearlyOff.Result c=o.clearlyOff;
                 for(ClearlyOff.Marker m:c.markers){
                     w.println(String.join(",",id,r.getOrDefault("physical_watch_id",""),model.id,f(c.rpx),String.valueOf(m.hour),AlignmentReference.key(m.shape),
@@ -52,6 +53,8 @@ public class TrackDump {
                     for(ClearlyOff.Marker m:c.markers){boolean want="1".equals(System.getProperty("watchalign.renderAll"))||m.state==ClearlyOff.State.CLEARLY_OFF
                             ||m.state==ClearlyOff.State.POSSIBLE||ids.contains(","+id+":"+m.hour+",")||ids.contains(","+id.substring(0,Math.min(10,id.length()))+":"+m.hour+",");
                         if(want&&o.alignmentCloseups.containsKey(m.hour))javax.imageio.ImageIO.write(o.alignmentCloseups.get(m.hour).img,"png",dir.resolve(id+"_"+m.hour+".png").toFile());}}
+                // 1.6.6: the whole-watch alignment classification of this photo (WatchClassification, app code)
+                System.out.println("CLASS "+id+" "+WatchClassification.classify(c,model,o.clearlyOffError).verdict);
                 w.flush();System.out.println("TRACK "+id);
             }
         }
