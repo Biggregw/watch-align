@@ -146,6 +146,8 @@ final class ClearlyOff {
          *  refit's, across the side left out (the coordinate that side would have fixed); NaN when the lume could not be
          *  measured */
         double altLumeDiffPct=Double.NaN;
+        /** 1.6.6: the independent per-marker check found a hand at this marker (MetalFit.handConfirmed) */
+        boolean handConfirmed;
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
         /** a copy to judge against other limits without changing the shown answer (calibration screen) */
         Marker copy(){Marker m=new Marker(hour,shape);m.state=state;m.reason=reason;m.gate.addAll(gate);
@@ -154,7 +156,7 @@ final class ClearlyOff {
             m.tiltCentroidDeg=tiltCentroidDeg;m.rotLeftDeg=rotLeftDeg;m.rotRightDeg=rotRightDeg;m.rotRmsPx=rotRmsPx;m.rotNote=rotNote;
             m.uncertain=uncertain;m.source=source;m.cover=cover;m.fitRmsPx=fitRmsPx;m.badFrac=badFrac;m.sePosPct=sePosPct;m.seRotDeg=seRotDeg;
             m.fitTiltDeg=fitTiltDeg;m.yellow=yellow;m.fitPoly=fitPoly;m.fitPts=fitPts;m.fitStatus=fitStatus;m.tick59=tick59;m.tick01=tick01;
-            m.gapFromFit=gapFromFit;m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;m.altLumeDiffPct=altLumeDiffPct;return m;}
+            m.gapFromFit=gapFromFit;m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;m.altLumeDiffPct=altLumeDiffPct;m.handConfirmed=handConfirmed;return m;}
         boolean measured(){return Double.isFinite(sidePct)||Double.isFinite(inoutPct);}
     }
 
@@ -221,7 +223,7 @@ final class ClearlyOff {
                 Base b=base.get(m.hour);r.gate.addAll(b.gate);
                 if(!res.lines.containsKey(m.hour%12))r.gate.add("minute ticks near it hidden");
                 metrics(r,b,res.lines,img,ringScale(base,in,m.hour),rpx);
-                MetalFit.Fit mf=fits.get(m.hour);r.yellow=m.yellow;
+                MetalFit.Fit mf=fits.get(m.hour);r.yellow=m.yellow;r.handConfirmed=MetalFit.handConfirmed(m);
                 if(mf!=null&&mf.cObs!=null&&rpx<LOW_RES_RPX)   // a small dial: measured, its findings to inspect
                     mf.uncertain=(mf.uncertain.isEmpty()?"":mf.uncertain+"; ")+String.format(Locale.US,"the photo's resolution is low (the dial is %.0f px across)",2*rpx);
                 if(mf!=null&&mf.cObs!=null){r.source="outer metal";r.uncertain=mf.uncertain;r.cover=mf.cover;r.fitRmsPx=mf.rmsPx;r.badFrac=mf.badFrac;

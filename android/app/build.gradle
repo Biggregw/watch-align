@@ -8,7 +8,7 @@ android {
         applicationId 'com.watchalign.mobile.poc'
         minSdk 28
         targetSdk 35
-        versionCode 13167
+        versionCode 13168
         versionName '1.6.6'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         ndk {

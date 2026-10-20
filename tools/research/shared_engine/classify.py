@@ -20,6 +20,7 @@ def _alt_u():
 
 ALT_U_POS_PCT, ALT_U_ROT_DEG, ALT_LUME_AGREE_PCT = _alt_u()
 USE_ALT = True
+USE_CREDIBLE = True   # owner, 21 Oct 2026: a credible out-of-range reading decides a failure (False: the earlier rule)
 
 
 def _f(x):
@@ -45,15 +46,37 @@ def reliable(r):
         r['shape'] == 'triangle' and r.get('gap_from_fit', '').lower() in ('true', '1', 'yes'))
 
 
+def credible(r):
+    """mirror of WatchClassification.credible: a usable reading that may decide a failure"""
+    if reliable(r): return True
+    if not USE_CREDIBLE: return False
+    if r['state'] == 'CANT_CHECK' or r['gate']: return False
+    if not (math.isfinite(_f(r['side_pct'])) or math.isfinite(_f(r['inout_pct']))): return False
+    cov = _f(r.get('cover'))
+    if math.isfinite(cov) and cov < 0.5: return False
+    rms, bad = _f(r.get('fit_rms_px')), _f(r.get('bad_frac'))
+    if math.isfinite(rms) and rms > 1.0: return False
+    if math.isfinite(bad) and bad > 0.5: return False
+    if r.get('hand_confirmed') and r['uncertain']: return False
+    return True
+
+
+def over(r, L):
+    """mirror of WatchClassification.over: the limits L a reading is outside (a gap placed from the outline never counts)"""
+    off = list(decide(r, L)[1])
+    if r.get('gap_from_fit', '').lower() in ('true', '1', 'yes') and 'gap' in off: off.remove('gap')
+    return off
+
+
 def classify_photo(rows, required):
     """mirror of WatchClassification.classify (Java)"""
     by = {int(r['hour']): r for r in rows}
     strict = {h: decide(r, GENUINE)[0] for h, r in by.items()}
     al = {h: ('NONE' if reliable(r) else alt(r)) for h, r in by.items()}
     g_pass = {h: (reliable(r) and strict[h] == 'NO_VISIBLE_ISSUE') or al[h] == 'PASS' for h, r in by.items()}
-    g_fail = {h: (reliable(r) and strict[h] == 'CLEARLY_OFF') or al[h] == 'FAIL' for h, r in by.items()}
+    g_fail = {h: (credible(r) and bool(over(r, GENUINE))) or al[h] == 'FAIL' for h, r in by.items()}
     assessed = {h: reliable(r) or al[h] in ('PASS', 'FAIL') for h, r in by.items()}
-    if any(reliable(r) and r['state'] == 'CLEARLY_OFF' for r in by.values()): return 'REPLICA_QC_ISSUES'
+    if any(credible(r) and over(r, CUR) for r in by.values()): return 'REPLICA_QC_ISSUES'
     if any(g_fail.values()): return 'REPLICA'
     if len(by) < required or not all(assessed.values()): return 'CANT_DETERMINE'
     if all(g_pass.values()): return 'GENUINE'
@@ -67,7 +90,7 @@ def classify_rows(rows, model):
 
 
 if __name__ == '__main__':
-    if '--before' in sys.argv: USE_ALT = False; sys.argv.remove('--before')
+    if '--before' in sys.argv: USE_CREDIBLE = False; sys.argv.remove('--before')
     rows = list(csv.DictReader(open(sys.argv[1])))
     model = sys.argv[2] if len(sys.argv) > 2 else rows[0]['model']
     res = classify_rows(rows, model)

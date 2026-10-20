@@ -14,11 +14,12 @@ import java.util.Locale;
  * a low-resolution photo, a gap placed from the rest of the outline all count as unreliable). Decision order (owner,
  * 20 Oct 2026: a confirmed failure takes precedence over unrelated unreadable markers):
  *   CANT_DETERMINE     first, a photo-wide failure: the check failed, the dial/pose could not be used (photo-wide reason)
- *   REPLICA_QC_ISSUES  any RELIABLE marker Clearly off at the replica-QC limits, even with another marker unreadable
- *   REPLICA            otherwise any RELIABLE marker outside the strict genuine standard, even with another unreadable
+ *   REPLICA_QC_ISSUES  any CREDIBLE reading over the replica-QC limits, even with another marker unreadable
+ *   REPLICA            otherwise any CREDIBLE reading outside the strict genuine standard, even with another unreadable
+ *                      (owner, 21 Oct 2026: one marker is enough; a soft edge-fit warning does not discard it; credible())
  *   CANT_DETERMINE     otherwise any required marker missing or not reliable
  *   GENUINE            every required marker reliable and within every strict genuine limit
- * An uncertain edge never decides a result. A Replica or QC Issues result with some markers not assessed is PARTIAL
+ * Genuine still needs every required marker RELIABLE. A Replica or QC Issues result with some markers not assessed is PARTIAL
  * (the screen warns that more issues may exist).
  * Each marker is judged on its own; nothing is averaged. These are alignment-based screening classifications, never an
  * authenticity finding.
@@ -38,20 +39,25 @@ final class WatchClassification {
         /** the same measurements judged at the strict genuine limits (a copy; the reading is never changed) */
         final ClearlyOff.Marker strict;
         final boolean reliable;
+        /** a usable reading that may decide a FAILURE: measured, nothing withheld, not mostly reconstructed, not an
+         *  uncertain fit beside a confirmed hand (credible(); a reliable reading is always credible) */
+        final boolean credible;
         /** 1.6.6: the strict genuine judgement of an uncertain reading from its clean refit beside a confirmed hand */
         final Alt alt;
         MarkerCheck(int hour,ModelSpec.Shape shape,ClearlyOff.Marker reading,ClearlyOff.Marker strict,boolean reliable){
             this.hour=hour;this.shape=shape;this.reading=reading;this.strict=strict;this.reliable=reliable;
+            this.credible=reliable||credible(reading);
             this.alt=reliable?Alt.NONE:alt(reading,strict);}
         ClearlyOff.State qc(){return reading==null?ClearlyOff.State.CANT_CHECK:reading.state;}
         /** within the replica-QC limits (its existing answer is No visible issue) */
         boolean qcPass(){return qc()==ClearlyOff.State.NO_VISIBLE_ISSUE;}
-        /** outside the replica-QC limits on a reliable reading */
-        boolean qcFail(){return reliable&&qc()==ClearlyOff.State.CLEARLY_OFF;}
+        /** outside the replica-QC limits on a credible reading (Clearly off, or Possible from a slightly imperfect edge) */
+        boolean qcFail(){return credible&&!over(reading).isEmpty();}
         /** reliably within every strict genuine limit (or, from the clean refit, by more than its validated uncertainty) */
         boolean genuinePass(){return reliable&&strict!=null&&strict.state==ClearlyOff.State.NO_VISIBLE_ISSUE||alt==Alt.PASS;}
-        /** reliably outside a strict genuine limit (or, from the clean refit, by more than its validated uncertainty) */
-        boolean genuineFail(){return reliable&&strict!=null&&strict.state==ClearlyOff.State.CLEARLY_OFF||alt==Alt.FAIL;}
+        /** a credible reading outside a strict genuine limit (or, from the clean refit, by more than its validated
+         *  uncertainty) */
+        boolean genuineFail(){return credible&&!over(strict).isEmpty()||alt==Alt.FAIL;}
         /** the strict genuine standard is decided for this marker, from a reliable reading or the validated refit */
         boolean assessed(){return reliable||alt==Alt.PASS||alt==Alt.FAIL;}
         /** the genuine standard could not be decided for this marker */
@@ -107,6 +113,33 @@ final class WatchClassification {
         if(pos-uPos>strict.posLimitPct||tilt-uRot>strict.tiltLimitDeg)return Alt.FAIL;
         if(pos+uPos<=strict.posLimitPct&&tilt+uRot<=strict.tiltLimitDeg)return Alt.PASS;
         return Alt.UNDECIDED;
+    }
+
+    /**
+     * Owner, 21 Oct 2026: one credible out-of-range measurement is enough for Replica; a modest edge-fit imperfection
+     * (slightly rough, partly inconsistent, loosely fixed, low resolution) is not the same as having no measurement.
+     * NOT credible (unavailable or geometrically corrupted), with the engine's existing definitions only: no reading,
+     * anything withheld (Can't check, a gate), no finite measurement, an outline mostly reconstructed (under
+     * MetalFit.MIN_COVER seen), a fit whose typical residual is itself an inconsistent edge point (RMS over
+     * MetalFit.EDGE_BAD_PX), more of its seen edge inconsistent than consistent, or an uncertain fit at a marker where
+     * the per-marker check confirmed a hand (a hand can pull the fit: owner's genuine Submariner Date, 6 baton; the
+     * validated refit decides those). A genuine PASS still needs a reliable reading (reliable()).
+     */
+    static boolean credible(ClearlyOff.Marker m){
+        if(m==null||m.state==ClearlyOff.State.CANT_CHECK||!m.gate.isEmpty()||!m.measured())return false;
+        if(Double.isFinite(m.cover)&&m.cover<MetalFit.MIN_COVER)return false;
+        if(Double.isFinite(m.fitRmsPx)&&m.fitRmsPx>MetalFit.EDGE_BAD_PX)return false;
+        if(Double.isFinite(m.badFrac)&&m.badFrac>0.5)return false;
+        if(m.handConfirmed&&m.uncertain!=null&&!m.uncertain.isEmpty())return false;
+        return true;
+    }
+
+    /** the limits a judged reading is outside (its own flags); a gap placed from the rest of the outline is not
+     *  measured and never counts */
+    static List<String> over(ClearlyOff.Marker x){
+        List<String> f=failed(x);
+        if(x!=null&&x.gapFromFit)f.remove("gap");
+        return f;
     }
 
     /** a reading with nothing withheld and no uncertain edge */
@@ -169,7 +202,7 @@ final class WatchClassification {
                 :c.alt==Alt.FAIL?"outside the genuine standard (measured without the edge beside the hand)"
                 :c.genuinePass()?"meets the genuine standard":c.genuineFail()?"outside the genuine standard ("+String.join(", ",failed(c.strict))+")"
                 :"genuine standard not assessed";
-        String q=c.qcPass()?"within replica QC":c.qcFail()?"outside replica QC":c.qc()==ClearlyOff.State.POSSIBLE?"replica QC: inspect":"replica QC not assessed";
+        String q=c.qcFail()?"outside replica QC":c.qcPass()?"within replica QC":c.qc()==ClearlyOff.State.POSSIBLE?"replica QC: inspect":"replica QC not assessed";
         return AlignmentDecision.capital(g)+" · "+q+".";
     }
 
@@ -201,8 +234,11 @@ final class WatchClassification {
             out.add(String.format(Locale.US,"Rotation %.2f° ± %.2f · genuine max %.2f° %s",Math.abs(q.altTiltDeg),uRot,s.tiltLimitDeg,c.alt==Alt.UNDECIDED?"(could cross the limit)":mark(Math.abs(q.altTiltDeg)+(c.alt==Alt.PASS?uRot:-uRot),s.tiltLimitDeg,"max")));
             if(c.alt==Alt.UNDECIDED)out.add("Not decided for the genuine standard: the measurement's uncertainty could cross a limit.");
         }
+        else if(!c.reliable&&c.credible&&(c.genuineFail()||c.qcFail()))out.add("Measured from a slightly imperfect edge"+(q.uncertain==null||q.uncertain.isEmpty()?"":" ("+q.uncertain+")")
+                +"; the reading is outside the range above and counts.");
         else if(!c.reliable)out.add(q.state==ClearlyOff.State.CANT_CHECK?"Not used for the genuine standard: "+q.reason+"."
-                :"Not used for the genuine standard: measured from an uncertain edge"+(q.uncertain==null||q.uncertain.isEmpty()?"":" ("+q.uncertain+")")+".");
+                :"Not enough for a genuine pass: measured from an uncertain edge"+(q.uncertain==null||q.uncertain.isEmpty()?"":" ("+q.uncertain+")")
+                +(c.credible?".":"; not used to decide a failure either (the edge fit is too poor"+(q.handConfirmed?", and a hand is beside it":"")+")."));
         return out;
     }
     static String row(String name,double v,String unit,String kind,double genuineLimit,double qcLimit){

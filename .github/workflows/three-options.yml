@@ -113,7 +113,7 @@ jobs:
           if [ "${{ matrix.model }}" = submariner_126610 ]; then java -cp $J:cls com.watchalign.mobile.RefitTraps; fi
           for s in genuine qc; do
             [ -f out/$s.csv ] || continue
-            echo "== $s ${{ matrix.model }}: classification before (refit unused) and after"
+            echo "== $s ${{ matrix.model }}: classification before (reliable failures only) and after (credible failures)"
             python3 tools/research/shared_engine/classify.py out/$s.csv ${{ matrix.model }} --before | head -1
             python3 tools/research/shared_engine/classify.py out/$s.csv ${{ matrix.model }} | head -1
             python3 - out/$s.csv ${{ matrix.model }} <<'PY'
@@ -121,10 +121,16 @@ jobs:
           sys.path.insert(0, 'tools/research/shared_engine')
           import classify
           rows = list(csv.DictReader(open(sys.argv[1])))
-          after = classify.classify_rows(rows, sys.argv[2]); classify.USE_ALT = False
-          before = classify.classify_rows(rows, sys.argv[2]); classify.USE_ALT = True
+          after = classify.classify_rows(rows, sys.argv[2]); classify.USE_CREDIBLE = False
+          before = classify.classify_rows(rows, sys.argv[2]); classify.USE_CREDIBLE = True
+          by = {}
+          for r in rows: by.setdefault(r['photo_id'], []).append(r)
           for p in sorted(after):
-              if before[p] != after[p]: print('CHANGED', p, before[p], '->', after[p])
+              if before[p] != after[p]:
+                  why = ['%s o\'clock %s: %s outside %s (%s)' % (r['hour'], r['shape'], ', '.join(classify.over(r, classify.CUR) or classify.over(r, classify.GENUINE)),
+                         'replica QC' if classify.over(r, classify.CUR) else 'genuine', r['uncertain'])
+                         for r in by[p] if not classify.reliable(r) and classify.credible(r) and (classify.over(r, classify.CUR) or classify.over(r, classify.GENUINE))]
+                  print('CHANGED', p, before[p], '->', after[p], '|', '; '.join(why))
           for r in rows:
               if r.get('alt_side'):
                   print('REFIT %s %s main side %s inout %s tilt %s (%s) | refit side %s inout %s tilt %s | %s' % (r['photo_id'], r['hour'], r['side_pct'], r['inout_pct'], r['tilt_line_deg'],

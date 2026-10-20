@@ -80,11 +80,18 @@ public class WatchClassificationTest {
         r=watch(model);r.at(10).uncertain="its visible edge is rough (0.9 px)";r.at(6).tiltDeg=1.30;
         c=WatchClassification.classify(judge(r),model,null);
         assertEquals(WatchClassification.Verdict.REPLICA,c.verdict);assertTrue(c.partial);
-        // an uncertain edge alone never decides: far over every limit but uncertain, the rest clean -> Can't Determine
-        r=watch(model);r.at(10).uncertain="its visible edge is rough (0.9 px)";r.at(10).sidePct=3.0;
+        // owner, 21 Oct 2026: a credible reading far over a limit decides even from a slightly rough edge (the marker
+        // itself still reads "Possible, inspect")...
+        r=watch(model);r.at(10).uncertain="its visible edge is rough (0.9 px)";r.at(10).fitRmsPx=0.9;r.at(10).sidePct=3.0;
         c=WatchClassification.classify(judge(r),model,null);
         assertEquals(ClearlyOff.State.POSSIBLE,r.at(10).state);
-        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);assertFalse(c.at(10).qcFail());assertFalse(c.at(10).genuineFail());
+        assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,c.verdict);assertTrue(c.at(10).qcFail());assertFalse(c.at(10).reliable);
+        // ...but a corrupted fit never does: RMS over 1 px (each residual an inconsistent edge point), most of the edge
+        // inconsistent, mostly reconstructed, or an uncertain fit beside a confirmed hand
+        for(int k=0;k<4;k++){r=watch(model);ClearlyOff.Marker m=r.at(10);m.uncertain="its visible edge is rough";m.sidePct=3.0;
+            if(k==0)m.fitRmsPx=1.4;if(k==1)m.badFrac=0.66;if(k==2)m.cover=0.40;if(k==3){m.handConfirmed=true;m.fitRmsPx=0.6;}
+            c=WatchClassification.classify(judge(r),model,null);
+            assertEquals("case "+k,WatchClassification.Verdict.CANT_DETERMINE,c.verdict);assertFalse(c.at(10).credible);}
         r=watch(model);r.at(10).gate.add("a hand covers most of its outline");
         assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(judge(r),model));
         r=watch(model);r.at(10).sidePct=Double.NaN;r.at(10).inoutPct=Double.NaN;   // not measured
@@ -235,6 +242,7 @@ public class WatchClassificationTest {
         ClearlyOff.Result r=watch(model);ClearlyOff.Marker m=r.at(6);
         m.sidePct=-0.60;m.inoutPct=-0.03;m.tiltDeg=-0.06;
         m.uncertain="its visible edge is rough (1.4 px); 66% of its visible edge is inconsistent (shadowed or reflecting metal)";
+        m.fitRmsPx=1.44;m.badFrac=0.66;m.cover=0.89;m.handConfirmed=true;
         m.altSide=0;m.altSidePct=side;m.altInoutPct=inout;m.altTiltDeg=tilt;m.altLumeDiffPct=0.05;
         return judge(r);
     }
@@ -278,7 +286,7 @@ public class WatchClassificationTest {
         r=ownersSix(model,-0.04,-0.03,-0.24);r.at(6).altLumeDiffPct=Double.NaN;
         assertEquals("the lume was not measured",WatchClassification.Verdict.CANT_DETERMINE,verdict(r,model));
         // the uncertain reading over the replica-QC limit: Possible, inspect; the refit does not overrule it
-        r=watch(model);ClearlyOff.Marker m=r.at(6);m.sidePct=-1.40;m.uncertain="its visible edge is rough (1.4 px)";
+        r=watch(model);ClearlyOff.Marker m=r.at(6);m.sidePct=-1.40;m.uncertain="its visible edge is rough (1.4 px)";m.fitRmsPx=1.4;m.handConfirmed=true;
         m.altSide=0;m.altSidePct=-0.04;m.altInoutPct=-0.03;m.altTiltDeg=-0.24;m.altLumeDiffPct=0.05;judge(r);
         assertEquals(ClearlyOff.State.POSSIBLE,m.state);
         WatchClassification.Result c=WatchClassification.classify(r,model,null);
@@ -298,5 +306,46 @@ public class WatchClassificationTest {
         assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,verdict(r,model));
         ClearlyOff.Marker k=r.at(6).copy();
         assertEquals(0,k.altSide);assertEquals(-0.24,k.altTiltDeg,0);assertEquals(0.05,k.altLumeDiffPct,0);
+    }
+
+    // ---- owner, 21 Oct 2026: one credible out-of-range measurement is enough ---------------------------------------
+
+    /** the owner's known replica Submariner Date: its 12 triangle +1.07 % R outwards and a 2.45 % R gap (both outside
+     *  the strict genuine limits, inside replica QC), edge fit 0.62 px RMS (over the 0.5 px reliability cut), 88 %
+     *  of its outline seen, 15 % inconsistent; a hand over another marker */
+    static ClearlyOff.Result replicaTriangle(ModelSpec model){
+        ClearlyOff.Result r=watch(model);ClearlyOff.Marker t=r.at(12);
+        t.uncertain="its visible edge is rough (0.6 px)";t.fitRmsPx=0.62;t.cover=0.88;t.badFrac=0.15;
+        t.sidePct=0.10;t.inoutPct=1.07;t.tiltDeg=0.30;t.gapPct=2.45;
+        r.at(4).gate.add("hand (app check)");
+        return judge(r);
+    }
+
+    @Test public void theOwnersReplicaTriangleIsReplica(){
+        ModelSpec model=date();ClearlyOff.Result r=replicaTriangle(model);
+        assertEquals("inside replica QC: the marker's own answer is unchanged",ClearlyOff.State.NO_VISIBLE_ISSUE,r.at(12).state);
+        WatchClassification.Result c=WatchClassification.classify(r,model,null);
+        assertEquals(WatchClassification.Verdict.REPLICA,c.verdict);assertTrue(c.partial);
+        assertTrue(c.at(12).credible);assertFalse(c.at(12).reliable);assertTrue(c.at(12).genuineFail());assertFalse(c.at(12).qcFail());
+        assertEquals("[in/out, gap]",WatchClassification.over(c.at(12).strict).toString());
+        assertTrue(WatchClassification.line(c.at(12)).startsWith("Outside the genuine standard"));
+        assertTrue(String.join(" ",WatchClassification.measures(c.at(12))).contains("slightly imperfect edge"));
+        // the same numbers on a reliable fit were Replica before; the 0.62 px fit no longer discards them
+        // a gap placed from the rest of the outline is not measured: the in/out reading alone still decides
+        r=replicaTriangle(model);r.at(12).gapFromFit=true;judge(r);
+        assertEquals(WatchClassification.Verdict.REPLICA,verdict(r,model));
+        // within every strict limit, the slightly rough fit is not enough for Genuine
+        r=watch(model);ClearlyOff.Marker t=r.at(12);t.uncertain="its visible edge is rough (0.6 px)";t.fitRmsPx=0.62;judge(r);
+        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(r,model));
+        // nor is any of this a special case of the 12 or of triangles: a baton the same way
+        r=watch(model);ClearlyOff.Marker b=r.at(9);b.uncertain="its visible edge is rough (0.7 px)";b.fitRmsPx=0.7;b.tiltDeg=1.40;judge(r);
+        assertEquals(WatchClassification.Verdict.REPLICA,verdict(r,model));
+    }
+
+    @Test public void theFrozenLimitsAreUnchanged(){
+        ClearlyOff.Limits g=ClearlyOff.Limits.genuine(),q=ClearlyOff.Limits.defaults();
+        assertEquals(0.00373,g.triInoutR,0);assertEquals(0.02810,g.triGapR,0);assertEquals(0.00437,g.triSideR,0);assertEquals(1.174,g.triTiltDeg,0);
+        assertEquals(0.00671,g.roundPosR,0);assertEquals(0.00752,g.batonPosR,0);assertEquals(1.096,g.batonTiltDeg,0);
+        assertEquals(1.75,q.batonTiltDeg,0);assertEquals(1.2,q.triTiltDeg,0);
     }
 }
