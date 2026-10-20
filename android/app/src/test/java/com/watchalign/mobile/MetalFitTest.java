@@ -81,6 +81,18 @@ public class MetalFitTest {
         assertTrue(g.note,g.ok());assertTrue(g.handFrac<MetalFit.HAND_HIDDEN_CANT);
     }
 
+    /** Owner's Submariner Date (20 Oct 2026): the radial hand finder followed the seconds tail out to the 5 marker, where
+     *  the independent per-marker check found no hand. Without that confirmation the marker is measured, not withheld. */
+    @Test public void aHandOnlyTheRadialFinderSeesDoesNotWithholdTheMarker(){
+        double[][] gen=rect(0,0.75,0.025,0.08);
+        List<double[]> along=new ArrayList<>();along.add(new double[]{180,10,0.95});
+        MetalFit.Fit f=MetalFit.fit(dial(gen).img(),gen,ModelSpec.Shape.BATON,RPX,along,0,Double.NaN,false);
+        assertNotEquals(MetalFit.HAND_COVERS,f.note);
+        assertTrue(MetalFit.handConfirmed(new ClearlyOff.Input(6,ModelSpec.Shape.BATON,gen,false,"hand crosses or touches this marker")));
+        assertFalse(MetalFit.handConfirmed(new ClearlyOff.Input(6,ModelSpec.Shape.BATON,gen,true,"")));
+        assertFalse(MetalFit.handConfirmed(new ClearlyOff.Input(6,ModelSpec.Shape.BATON,gen,null,null)));
+    }
+
     @Test public void aHandOverLessThanHalfOfAMarkerLeavesItMeasured(){
         double[] c=ClearlyOff.cpt(0.81,Math.toRadians(60));double[][] gen=circle(c[0],c[1],0.045);
         // a narrow hand past the round marker's edge: it hides a strip of the outline, not most of it
