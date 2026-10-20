@@ -34,9 +34,11 @@ public class AlignmentReferenceTest {
                 assertNotNull(r.setup(mk.shape));
             }
         }
-        // model isolation: the two references are different data, not one shared file
-        AlignmentReference g=AlignmentReference.load(TestModels.files(),spec("gmt_126710")),s=AlignmentReference.load(TestModels.files(),spec("submariner_124060"));
-        assertNotEquals(g.shape(ModelSpec.Shape.TRIANGLE).insetR,s.shape(ModelSpec.Shape.TRIANGLE).insetR,1e-9);
+        // model isolation: each family loads its own file, named for it (the GMT's holds the Submariner Date values by
+        // the owner's choice, 20 Oct 2026: ThreeOptionsTest), never another model's file
+        AlignmentReference g=AlignmentReference.load(TestModels.files(),spec("gmt_126710")),d=AlignmentReference.load(TestModels.files(),spec("submariner_126610"));
+        assertEquals("gmt_126710",g.model);assertEquals("submariner_126610",d.model);
+        assertEquals(d.shape(ModelSpec.Shape.TRIANGLE).insetR,g.shape(ModelSpec.Shape.TRIANGLE).insetR,0);
     }
 
     @Test public void dateFamilyReusesDocumentedLuminousGeometryButKeepsDistinctGenuineMetalReference(){

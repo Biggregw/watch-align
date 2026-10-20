@@ -1,0 +1,161 @@
+{
+ "model": "gmt_126710",
+ "provenance": "Watch Align luminous alignment reference: 295b1dee99d849fde0d8065235371050e718b209 run 38565452660; sha256-verified genuine catalogue tools/research/alpha96_calibration/catalogue_provenance_strong.csv",
+ "method": "LuminousAlignment rigid fit (translation + rotation; circle translation only) of the genuine-measured luminous template; reference ring from the other markers only. Per marker type: inset = median luminous inset from the outer-metal master; g = photographic edge offset (nominal, robust sd, p95 absolute and photo-relative limits); envelopes = largest deviation of any physical watch (one value per watch per marker position) from the per-hour genuine nominal. Genuine photos only; no replica or QC photo used.",
+ "shapes": {
+  "triangle": {
+   "inset_R": 0.008878,
+   "growth_nominal_R": -1.7674699999999996e-06,
+   "growth_sd_R": 0.0007671016878000001,
+   "growth_limit_R": 0.0018670387469999997,
+   "photo_growth_limit_R": 0.0030044444999999995,
+   "radial_photo_sd_R": 0.0004066255172122875,
+   "tangential_photo_sd_R": 0.0008518413460176874,
+   "rotation_photo_sd_deg": 0.3486826071459423,
+   "repeat_pairs": {
+    "radial": 3,
+    "tangential": 3,
+    "rotation": 3
+   },
+   "radial_limit_R": 0.0047355,
+   "tangential_limit_R": 0.0054145370000000005,
+   "rotation_limit_deg": 0.950322,
+   "watches": 31,
+   "supported": true
+  },
+  "baton": {
+   "inset_R": 0.013583,
+   "growth_nominal_R": 4.30717e-05,
+   "growth_sd_R": 0.00110265068802,
+   "growth_limit_R": 0.0023784417,
+   "photo_growth_limit_R": 0.002696555,
+   "radial_photo_sd_R": 0.0004066255172122875,
+   "tangential_photo_sd_R": 0.0008518413460176874,
+   "rotation_photo_sd_deg": 0.3486826071459423,
+   "repeat_pairs": {
+    "radial": 6,
+    "tangential": 6,
+    "rotation": 6
+   },
+   "radial_limit_R": 0.003341155,
+   "tangential_limit_R": 0.0041102709999999995,
+   "rotation_limit_deg": 1.6254955500000001,
+   "watches": 32,
+   "supported": true
+  },
+  "round": {
+   "inset_R": 0.01376,
+   "growth_nominal_R": -0.00010756055,
+   "growth_sd_R": 0.00099219380043,
+   "growth_limit_R": 0.0026993894499999986,
+   "photo_growth_limit_R": 0.0023337245000000003,
+   "radial_photo_sd_R": 0.0003099997600953442,
+   "tangential_photo_sd_R": 0.00035939669240491785,
+   "rotation_photo_sd_deg": null,
+   "repeat_pairs": {
+    "radial": 13,
+    "tangential": 13,
+    "rotation": 0
+   },
+   "radial_limit_R": 0.005649590499999999,
+   "tangential_limit_R": 0.0038625985,
+   "rotation_limit_deg": null,
+   "watches": 33,
+   "supported": true
+  }
+ },
+ "hours": {
+  "1": {
+   "radial_R": 0.001669785,
+   "tangential_R": -0.0008170085000000001,
+   "rotation_deg": null,
+   "watches": 26
+  },
+  "2": {
+   "radial_R": 0.00103006,
+   "tangential_R": -0.00122637,
+   "rotation_deg": null,
+   "watches": 12
+  },
+  "4": {
+   "radial_R": -0.000533517,
+   "tangential_R": -0.00124034,
+   "rotation_deg": null,
+   "watches": 25
+  },
+  "5": {
+   "radial_R": -0.0008713705,
+   "tangential_R": -0.000949362,
+   "rotation_deg": null,
+   "watches": 18
+  },
+  "6": {
+   "radial_R": 0.001393615,
+   "tangential_R": 0.000216769,
+   "rotation_deg": 0.03309555,
+   "watches": 30
+  },
+  "7": {
+   "radial_R": -0.00186523,
+   "tangential_R": 0.000771539,
+   "rotation_deg": null,
+   "watches": 27
+  },
+  "8": {
+   "radial_R": -0.0013019849999999999,
+   "tangential_R": 0.0009380585,
+   "rotation_deg": null,
+   "watches": 26
+  },
+  "9": {
+   "radial_R": 0.00238877,
+   "tangential_R": 0.000871449,
+   "rotation_deg": 0.00301414,
+   "watches": 23
+  },
+  "10": {
+   "radial_R": 0.00012308605,
+   "tangential_R": 0.001299915,
+   "rotation_deg": null,
+   "watches": 26
+  },
+  "11": {
+   "radial_R": 0.00111943,
+   "tangential_R": 0.0008209910000000001,
+   "rotation_deg": null,
+   "watches": 20
+  },
+  "12": {
+   "radial_R": -0.00241402,
+   "tangential_R": -0.000421082,
+   "rotation_deg": -0.014636,
+   "watches": 31
+  }
+ },
+ "screened_genuine_readings": [
+  {
+   "shape": "round",
+   "component": "radial",
+   "watch": "gen_126710BLRO_phillips_210072",
+   "hour": 5,
+   "deviation": 0.005649590499999999,
+   "fence": 0.004665105050000001
+  },
+  {
+   "shape": "triangle",
+   "component": "tangential",
+   "watch": "gen_126710BLRO_phillips_CH080120_75",
+   "hour": 12,
+   "deviation": 0.0054145370000000005,
+   "fence": 0.0028075889500000007
+  },
+  {
+   "shape": "baton",
+   "component": "rotation",
+   "watch": "gen_126710BLRO_phillips_210072",
+   "hour": 6,
+   "deviation": 1.6254955500000001,
+   "fence": 1.1870188500000003
+  }
+ ]
+}

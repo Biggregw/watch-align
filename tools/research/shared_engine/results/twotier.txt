@@ -1,0 +1,9 @@
+clean baton tilt  0.9: genuine flagged GMT 1 mk/1 w, NoDate 5 mk/2 w, Date 7 mk/7 w | QC changes: GMT_crooked6_1:6
+clean baton tilt  1.0: genuine flagged GMT 1 mk/1 w, NoDate 5 mk/2 w, Date 7 mk/7 w | QC changes: GMT_crooked6_1:6
+clean baton tilt  1.1: genuine flagged GMT 1 mk/1 w, NoDate 5 mk/2 w, Date 7 mk/7 w | QC changes: GMT_crooked6_1:6
+clean baton tilt  1.2: genuine flagged GMT 1 mk/1 w, NoDate 5 mk/2 w, Date 7 mk/7 w | QC changes: GMT_crooked6_1:6
+clean baton tilt  1.3: genuine flagged GMT 1 mk/1 w, NoDate 5 mk/2 w, Date 7 mk/7 w | QC changes: GMT_crooked6_1:6
+clean baton tilt  1.4: genuine flagged GMT 1 mk/1 w, NoDate 5 mk/2 w, Date 7 mk/7 w | QC changes: GMT_crooked6_1:6
+clean baton tilt 1.75: genuine flagged GMT 1 mk/1 w, NoDate 5 mk/2 w, Date 7 mk/7 w | QC changes: none
+[('GMT_crooked6_1s4', '6', '1.4134', 'clean'), ('SUB_accepted12_1', '9', '1.0278', 'uncert'), ('SUB_accepted12_1', '9', '1.7114', 'uncert'), ('SUB_control12_1k', '3', '-1.6459', 'uncert'), ('SUB_control12_1k', '9', '2.3029', 'uncert')]
+[(0.8454, 'GMT', '501e07afc5875f4a', '6', '231.6'), (0.8306, 'Date', '6db27eace23615b0', '6', '438.8'), (0.8069, 'GMT', '5a25cdb409b7c6cd', '6', '433.8'), (0.8048, 'NoDate', 'cb5175ff2c02a6b1', '9', '259.6'), (0.8008, 'NoDate', 'e6368f4187793b43', '3', '238.2'), (0.7991, 'NoDate', 'c993b7704f866103', '6', '232.4')]

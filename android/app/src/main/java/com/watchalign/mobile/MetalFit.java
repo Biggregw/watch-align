@@ -31,6 +31,14 @@ final class MetalFit {
     static final double MAX_SE_POS=0.0025,MAX_SE_ROT=0.35;      // reliable
     static final double CANT_SE_POS=0.01,CANT_SE_ROT=1.0;       // indeterminate beyond these
     static final double EDGE_RMS_OK=0.5,EDGE_BAD_PX=1.0,EDGE_BAD_FRAC=0.15,MIN_COVER=0.5;
+    /** Owner, 20 Oct 2026 (genuine Yacht-Master, seconds hand along the 6 baton, 33 % of it seen): when a detected hand
+     *  hides at least this share of a marker's outline and less than MIN_COVER of it is seen, the rest would be
+     *  reconstructed from the hand's side; the marker is Can't check rather than judged either way. Only when the
+     *  independent per-marker hand check (Alpha99MarkerInterference) also finds a hand there: the radial hand finder
+     *  alone can follow a short seconds tail out through dial print and glare (owner's Submariner Date, 20 Oct 2026:
+     *  a 'hand' to the dial edge at 5 o'clock, where no hand is). */
+    static final double HAND_HIDDEN_CANT=0.5;
+    static final String HAND_COVERS="a hand covers most of its outline";
     /** hands: the hand's own width (measured near the pivot) carried out to the marker, plus this margin (R) */
     static final double HAND_MARGIN_R=0.012,HAND_WIDTH_AT_R=0.34;
     /** the last HAND_TIP_LEN (R) before a hand's reach is treated as at least HAND_TIP_HALF_R wide (GMT arrow, lume plot) */
@@ -133,6 +141,8 @@ final class MetalFit {
     static final class Fit {
         double[] cGen,cObs;double tiltDeg=Double.NaN,sePos=Double.NaN,seRot=Double.NaN,cover=Double.NaN,rmsPx=Double.NaN,
                 bias=Double.NaN,badFrac=Double.NaN;
+        /** share of the outline's sample points hidden by a detected hand (hour, minute or seconds) */
+        double handFrac=Double.NaN;
         int n;
         /** non-empty: no meaningful fit (Can't check) */
         String note="";
@@ -157,6 +167,10 @@ final class MetalFit {
         return fit(img,yellow,shape,rpx,hands,bias,Double.NaN);
     }
     static Fit fit(ClearlyOff.Img img,double[][] yellow,ModelSpec.Shape shape,double rpx,List<double[]> hands,double bias,double secondsLine){
+        return fit(img,yellow,shape,rpx,hands,bias,secondsLine,true);
+    }
+    /** handConfirmed: the independent per-marker check also found a hand at this marker (HAND_COVERS needs it) */
+    static Fit fit(ClearlyOff.Img img,double[][] yellow,ModelSpec.Shape shape,double rpx,List<double[]> hands,double bias,double secondsLine,boolean handConfirmed){
         Fit f=new Fit();boolean round=shape==ModelSpec.Shape.ROUND,rotate=!round;int np=rotate?3:2;
         double[] c0=ClearlyOff.mean(yellow);f.cGen=c0;
         double tx=0,ty=0,th=0;
@@ -197,6 +211,8 @@ final class MetalFit {
         for(int q=0;q<m;q++){int i=idx[q];seen++;
             if(Math.abs(res[q])*rpx>EDGE_BAD_PX||w[q]==0){f.status[i]=INCONSISTENT;bad++;}else f.status[i]=SEEN;}
         f.badFrac=(double)bad/Math.max(1,seen);
+        int underHand=0;for(int v:e.why)if(v==HAND)underHand++;
+        f.handFrac=(double)underHand/Math.max(1,e.why.length);
         List<String> unc=new ArrayList<>();
         if(f.rmsPx>EDGE_RMS_OK)unc.add(String.format(java.util.Locale.US,"its visible edge is rough (%.1f px)",f.rmsPx));
         if(f.badFrac>EDGE_BAD_FRAC)unc.add(String.format(java.util.Locale.US,"%.0f%% of its visible edge is inconsistent (shadowed or reflecting metal)",100*f.badFrac));
@@ -204,7 +220,8 @@ final class MetalFit {
         if(f.sePos>MAX_SE_POS)unc.add("its visible edge only loosely fixes its position");
         if(rotate&&f.seRot>MAX_SE_ROT)unc.add("its visible edge only loosely fixes its rotation");
         f.uncertain=String.join("; ",unc);
-        if(f.sePos>CANT_SE_POS)f.note="its visible edge does not fix its position";
+        if(handConfirmed&&f.handFrac>=HAND_HIDDEN_CANT&&f.cover<MIN_COVER)f.note=HAND_COVERS;
+        else if(f.sePos>CANT_SE_POS)f.note="its visible edge does not fix its position";
         else if(rotate&&f.seRot>CANT_SE_ROT)f.note="its visible edge does not fix its rotation";
         return f;
     }
@@ -216,7 +233,7 @@ final class MetalFit {
     static Fit[] fitAll(ClearlyOff.Img img,List<ClearlyOff.Input> in,double rpx,List<double[]> hands){
         Fit[] first=new Fit[in.size()];
         for(int i=0;i<in.size();i++){ClearlyOff.Input m=in.get(i);
-            first[i]=m.yellow==null||m.yellow.length<3?null:fit(img,m.yellow,m.shape,rpx,hands,0,m.secondsLineDeg);}
+            first[i]=m.yellow==null||m.yellow.length<3?null:fit(img,m.yellow,m.shape,rpx,hands,0,m.secondsLineDeg,handConfirmed(m));}
         java.util.Map<ModelSpec.Shape,Double> bias=new java.util.HashMap<>();
         for(ModelSpec.Shape s:ModelSpec.Shape.values()){List<Double> b=new ArrayList<>();
             for(int i=0;i<in.size();i++){Fit f=first[i];if(f!=null&&in.get(i).shape==s&&f.ok()&&f.cover>0.9)b.add(f.bias);}
@@ -224,9 +241,10 @@ final class MetalFit {
         lastBias.clear();lastBias.putAll(bias);
         Fit[] out=new Fit[in.size()];
         for(int i=0;i<in.size();i++){ClearlyOff.Input m=in.get(i);
-            out[i]=first[i]==null?null:fit(img,m.yellow,m.shape,rpx,hands,bias.get(m.shape),m.secondsLineDeg);}
+            out[i]=first[i]==null?null:fit(img,m.yellow,m.shape,rpx,hands,bias.get(m.shape),m.secondsLineDeg,handConfirmed(m));}
         return out;
     }
+    static boolean handConfirmed(ClearlyOff.Input m){return Boolean.FALSE.equals(m.handClean);}
 
     // weighted least squares (normal equations; 2 or 3 unknowns)
     static double[][] normal(double[][] J,double[] w,int np){

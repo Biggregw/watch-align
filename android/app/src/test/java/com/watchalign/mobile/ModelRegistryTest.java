@@ -34,19 +34,18 @@ public class ModelRegistryTest {
         List<ModelRegistry.Check> all=ModelRegistry.discover(TestModels.files(),ids(),"gmt_126710");
         assertEquals("gmt_126710",all.get(0).id);
         List<ModelRegistry.Family> ok=ModelRegistry.supported(all);
-        assertEquals(2,ok.size());
-        assertEquals("gmt_126710",ok.get(0).id());assertEquals("submariner_124060",ok.get(1).id());
+        // the owner's three options (20 Oct 2026): GMT-Master II, Submariner (no date), Submariner Date
+        assertEquals(3,ok.size());
+        assertEquals("gmt_126710",ok.get(0).id());assertEquals("submariner_124060",ok.get(1).id());assertEquals("submariner_126610",ok.get(2).id());
         for(ModelRegistry.Check c:all)if(!c.ok())assertFalse(c.id+" refused without a reason",c.problem==null||c.problem.isEmpty());
     }
 
-    @Test public void stagedDateFamilyWithoutGenuineValidationIsNotOffered(){
-        // the 126610 family has its own dial and metal reference, and an alignment reference transferred from the
-        // 124060, but no genuine photos measured by this version: not offered
-        ModelRegistry.Check c=ModelRegistry.check(TestModels.files(),"submariner_126610");
+    @Test public void dateFamilyIsOfferedOnlyWithItsOwnGenuineMeasurements(){
+        // the 126610 family is offered on its own genuine photos measured by this version (genuine_track.csv) ...
+        assertTrue(ModelRegistry.check(TestModels.files(),"submariner_126610").problem,ModelRegistry.check(TestModels.files(),"submariner_126610").ok());
+        // ... and without them it is not
+        ModelRegistry.Check c=ModelRegistry.check(new Overlay().put("models/submariner_126610/alignment/genuine_track.csv",null),"submariner_126610");
         assertFalse(c.ok());assertTrue(c.problem,c.problem.startsWith("not validated"));
-        // ... and with genuine measurements of every shape it would be (its layout and references are consistent)
-        Overlay o=new Overlay().put("models/submariner_126610/alignment/genuine_track.csv",read("models/submariner_124060/alignment/genuine_track.csv"));
-        assertTrue(ModelRegistry.check(o,"submariner_126610").problem,ModelRegistry.check(o,"submariner_126610").ok());
     }
 
     @Test public void tooFewGenuineMeasurementsOfAShapeIsNotValidated(){
@@ -110,7 +109,7 @@ public class ModelRegistryTest {
         Overlay o=new Overlay().put("models/submariner_124060/alignment/luminous_alignment.json",lum)
                 .put("models/submariner_124060/alignment/genuine_track.csv",null);
         List<ModelRegistry.Family> fs=ModelRegistry.supported(ModelRegistry.discover(o,ids(),"gmt_126710"));
-        assertEquals(1,fs.size());
+        assertEquals(2,fs.size());assertEquals("submariner_126610",fs.get(1).id());
         ModelRegistry.Family after=fs.get(0);
         assertEquals("gmt_126710",after.id());
         for(ModelSpec.Shape s:ModelSpec.Shape.values()){
@@ -119,9 +118,10 @@ public class ModelRegistryTest {
         }
         assertEquals(before.alignment.hours.keySet(),after.alignment.hours.keySet());
         assertEquals(before.genuine.triangle.nominalRadialR,after.genuine.triangle.nominalRadialR,0);
-        // and each family's own values differ where the families differ
-        ModelRegistry.Family sub=ModelRegistry.check(TestModels.files(),"submariner_124060").family;
-        assertNotEquals(before.alignment.shape(ModelSpec.Shape.TRIANGLE).insetR,sub.alignment.shape(ModelSpec.Shape.TRIANGLE).insetR,1e-9);
+        // and the GMT's values are its own file's: the Submariner Date values by the owner's choice (ThreeOptionsTest)
+        ModelRegistry.Family date=ModelRegistry.check(TestModels.files(),"submariner_126610").family;
+        assertEquals(date.alignment.shape(ModelSpec.Shape.TRIANGLE).insetR,before.alignment.shape(ModelSpec.Shape.TRIANGLE).insetR,0);
+        assertEquals("gmt_126710",before.alignment.model);
     }
 
     @Test public void dateAndNoDateLayouts(){
