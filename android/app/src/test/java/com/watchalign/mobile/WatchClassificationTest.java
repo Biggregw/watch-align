@@ -220,4 +220,83 @@ public class WatchClassificationTest {
         WatchClassification.Result c=WatchClassification.classify(r,model,null);
         assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);assertFalse(c.partial);
     }
+
+    // ---- 1.6.6: the refit of an uncertain baton beside a confirmed hand (owner's genuine Submariner Date, 6 baton) ----
+
+    static final double BATON_LIMIT=100*ClearlyOff.Limits.genuine().batonPosR+ALLOW,TILT_LIMIT=ClearlyOff.Limits.genuine().batonTiltDeg;
+    static double uPos(){return 100*MetalFit.ALT_U_POS_R;}
+    static double uRot(){return MetalFit.ALT_U_ROT_DEG;}
+    /** until the one-side uncertainty is measured on the genuine photos the refit is never used (and these tests skip) */
+    static void validated(){org.junit.Assume.assumeTrue(Double.isFinite(uPos())&&Double.isFinite(uRot())&&Double.isFinite(MetalFit.ALT_LUME_AGREE_R));}
+
+    /** the owner's 6 baton: its own reading pulled by the seconds hand (0.60 % R, rough 1.4 px edge), within replica QC;
+     *  the refit without the hand's side at the given numbers, agreeing with the lume */
+    static ClearlyOff.Result ownersSix(ModelSpec model,double side,double inout,double tilt){
+        ClearlyOff.Result r=watch(model);ClearlyOff.Marker m=r.at(6);
+        m.sidePct=-0.60;m.inoutPct=-0.03;m.tiltDeg=-0.06;
+        m.uncertain="its visible edge is rough (1.4 px); 66% of its visible edge is inconsistent (shadowed or reflecting metal)";
+        m.altSide=0;m.altSidePct=side;m.altInoutPct=inout;m.altTiltDeg=tilt;m.altLumeDiffPct=0.05;
+        return judge(r);
+    }
+
+    @Test public void theValidatedRefitLetsTheOwnersSixBatonCount(){
+        validated();
+        ModelSpec model=date();ClearlyOff.Result r=ownersSix(model,-0.04,-0.03,-0.24);
+        assertEquals("its own replica-QC answer is unchanged (the green tick)",ClearlyOff.State.NO_VISIBLE_ISSUE,r.at(6).state);
+        WatchClassification.Result c=WatchClassification.classify(r,model,null);
+        assertEquals(WatchClassification.Verdict.GENUINE,c.verdict);
+        assertEquals(WatchClassification.Alt.PASS,c.at(6).alt);assertFalse(c.at(6).reliable);
+        assertTrue(WatchClassification.line(c.at(6)).contains("without the edge beside the hand"));
+        assertEquals("the reading itself is not changed",-0.60,r.at(6).sidePct,0);
+        // without the refit the same marker leaves the watch undetermined (1.6.6 test build)
+        r=ownersSix(model,-0.04,-0.03,-0.24);r.at(6).altSide=-1;
+        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(r,model));
+    }
+
+    @Test public void aRefitWhoseUncertaintyCouldCrossALimitIsUndecided(){
+        validated();ModelSpec model=date();
+        WatchClassification.Result c=WatchClassification.classify(ownersSix(model,BATON_LIMIT-uPos()/2,0,0.10),model,null);
+        assertEquals(WatchClassification.Alt.UNDECIDED,c.at(6).alt);assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);
+        c=WatchClassification.classify(ownersSix(model,0.05,0,TILT_LIMIT-uRot()/2),model,null);
+        assertEquals("rotation too",WatchClassification.Alt.UNDECIDED,c.at(6).alt);
+        c=WatchClassification.classify(ownersSix(model,BATON_LIMIT-uPos()-0.01,0,TILT_LIMIT-uRot()-0.01),model,null);
+        assertEquals("inside both by more than the uncertainty",WatchClassification.Alt.PASS,c.at(6).alt);
+    }
+
+    @Test public void aRefitOutsideByMoreThanItsUncertaintyIsReplica(){
+        validated();ModelSpec model=date();
+        WatchClassification.Result c=WatchClassification.classify(ownersSix(model,BATON_LIMIT+uPos()+0.02,0,0.10),model,null);
+        assertEquals(WatchClassification.Alt.FAIL,c.at(6).alt);assertEquals(WatchClassification.Verdict.REPLICA,c.verdict);
+        c=WatchClassification.classify(ownersSix(model,0.05,0,TILT_LIMIT+uRot()+0.05),model,null);
+        assertEquals(WatchClassification.Verdict.REPLICA,c.verdict);
+    }
+
+    @Test public void theRefitIsRefusedWithoutTheLumeOrOverAQcLimitOrForAReliableReading(){
+        ModelSpec model=date();
+        ClearlyOff.Result r=ownersSix(model,-0.04,-0.03,-0.24);r.at(6).altLumeDiffPct=100*MetalFit.ALT_LUME_AGREE_R+0.01;
+        assertEquals("the lume disagrees",WatchClassification.Verdict.CANT_DETERMINE,verdict(r,model));
+        r=ownersSix(model,-0.04,-0.03,-0.24);r.at(6).altLumeDiffPct=Double.NaN;
+        assertEquals("the lume was not measured",WatchClassification.Verdict.CANT_DETERMINE,verdict(r,model));
+        // the uncertain reading over the replica-QC limit: Possible, inspect; the refit does not overrule it
+        r=watch(model);ClearlyOff.Marker m=r.at(6);m.sidePct=-1.40;m.uncertain="its visible edge is rough (1.4 px)";
+        m.altSide=0;m.altSidePct=-0.04;m.altInoutPct=-0.03;m.altTiltDeg=-0.24;m.altLumeDiffPct=0.05;judge(r);
+        assertEquals(ClearlyOff.State.POSSIBLE,m.state);
+        WatchClassification.Result c=WatchClassification.classify(r,model,null);
+        assertEquals(WatchClassification.Alt.NONE,c.at(6).alt);assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);
+        // a reliable reading is judged on itself; refit numbers are ignored
+        r=watch(model);m=r.at(6);m.altSide=0;m.altSidePct=5;m.altInoutPct=5;m.altTiltDeg=5;m.altLumeDiffPct=0.05;judge(r);
+        c=WatchClassification.classify(r,model,null);
+        assertEquals(WatchClassification.Alt.NONE,c.at(6).alt);assertEquals(WatchClassification.Verdict.GENUINE,c.verdict);
+        // only batons
+        r=watch(model);m=r.at(4);m.uncertain="its visible edge is rough (0.9 px)";m.altSide=0;m.altSidePct=0;m.altInoutPct=0;m.altTiltDeg=0;m.altLumeDiffPct=0;judge(r);
+        assertEquals(WatchClassification.Alt.NONE,WatchClassification.classify(r,model,null).at(4).alt);
+    }
+
+    @Test public void theRefitDoesNotTouchReplicaQc(){
+        ModelSpec model=date();ClearlyOff.Result r=ownersSix(model,-0.04,-0.03,-0.24);
+        r.at(8).sidePct=1.40;r.at(8).inoutPct=0;judge(r);
+        assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,verdict(r,model));
+        ClearlyOff.Marker k=r.at(6).copy();
+        assertEquals(0,k.altSide);assertEquals(-0.24,k.altTiltDeg,0);assertEquals(0.05,k.altLumeDiffPct,0);
+    }
 }
