@@ -8,9 +8,10 @@
     "model": "126710BLNR",
     "analysis_model": "gmt_126710",
     "hour": 6,
-    "expected_tilt": 0.3794,
-    "expected_side": -0.083,
-    "expected_inout": 0.3418
+    "expected_tilt": 0.3853,
+    "expected_side": -0.0835,
+    "expected_inout": -0.0431,
+    "expected_note": "20 Oct 2026: the GMT option measures with the Submariner Date geometry (owner's three options). Its 6 baton reference radius moved 0.40 % R outward, so in/out moved from +0.3418 to -0.0431 (desktop and emulator agree); sideways and tilt moved by under 0.01."
   },
   {
     "photo_id": "d15ed6cf309dec1f",
