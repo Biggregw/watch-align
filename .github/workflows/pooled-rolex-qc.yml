@@ -1,0 +1,32 @@
+name: Shared Rolex pooled calibration research
+on:
+  push:
+    branches: [research/pooled-rolex-qc-calibration]
+    paths:
+      - .github/workflows/pooled-rolex-qc.yml
+      - tools/research/pooled_qc/**
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate script syntax
+        run: python3 -m py_compile tools/research/pooled_qc/pooled_calibration.py
+      - name: Calculate watch-weighted pooled statistics and holdout comparisons
+        run: python3 tools/research/pooled_qc/pooled_calibration.py
+      - name: Report
+        run: cat pooled-calibration-output/REPORT.md
+      - name: Keep evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pooled-rolex-calibration-evidence
+          if-no-files-found: error
+          retention-days: 28
+          path: pooled-calibration-output/
