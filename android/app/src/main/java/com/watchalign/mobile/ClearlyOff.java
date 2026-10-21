@@ -253,11 +253,7 @@ final class ClearlyOff {
                     // Owner-approved 21 Oct 2026 calibration. A usable, single-edge consensus measures radial placement
                     // directly, replacing (NOT being OR-ed with) the diagonals' centre-derived radial result.
                     // Keep the old measurement as a fallback when the top edge cannot be located independently.
-                    if(rpx>=LOW_RES_RPX&&r.topEdge!=null&&r.topEdge.ok()&&!r.topEdge.ambiguous()){
-                        r.radialFromTopEdge=true;
-                        r.inoutPct=r.topEdge.radialPct-TriangleTopEdge.CALIBRATION_OFFSET_PCT;
-                        r.inoutPx=r.inoutPct*rpx/100.0;
-                    }
+                    useCalibratedTopEdge(r,rpx);
                     gap(r,m,ticks,res.lines,img,rpx);
                     if(mf!=null&&mf.ok()){if(!Double.isFinite(r.gapPct))gapFromFit(r,mf,ticks,res.lines,img,rpx);metalTriangleRotation(r,mf,ticks);}
                     else triangleRotation(r,m,ticks,res.lines,img,rpx);
@@ -277,6 +273,17 @@ final class ClearlyOff {
             for(Marker r:res.markers)decide(r,rpx,in,L);
         }finally{f.release();}
         return res;
+    }
+
+    /** Owner-approved calibrated top-edge radial measurement. The old full-outline centre is a fallback only
+     *  when the edge is unavailable/ambiguous or the dial is below the existing 200 px radius quality gate.
+     *  Never OR the two radial failures: an unreliable sloping-side fit would reintroduce the known false positive. */
+    static void useCalibratedTopEdge(Marker r,double rpx){
+        r.radialFromTopEdge=false;
+        if(r.shape!=ModelSpec.Shape.TRIANGLE||rpx<LOW_RES_RPX||r.topEdge==null||!r.topEdge.ok()||r.topEdge.ambiguous())return;
+        r.radialFromTopEdge=true;
+        r.inoutPct=r.topEdge.radialPct-TriangleTopEdge.CALIBRATION_OFFSET_PCT;
+        r.inoutPx=r.inoutPct*rpx/100.0;
     }
 
     // ------------------------------------------------------------------------------------------------ decision
