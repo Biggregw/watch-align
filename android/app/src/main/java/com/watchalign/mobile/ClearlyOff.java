@@ -148,6 +148,9 @@ final class ClearlyOff {
         double altLumeDiffPct=Double.NaN;
         /** 1.6.6: the independent per-marker check found a hand at this marker (MetalFit.handConfirmed) */
         boolean handConfirmed;
+        /** EXPERIMENTAL (12 triangle, research only; never used for a verdict): the radial position from the outer metal
+         *  top edge against the ring of the other markers (TriangleTopEdge) */
+        TriangleTopEdge.Result topEdge;
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
         /** a copy to judge against other limits without changing the shown answer (calibration screen) */
         Marker copy(){Marker m=new Marker(hour,shape);m.state=state;m.reason=reason;m.gate.addAll(gate);
@@ -156,7 +159,7 @@ final class ClearlyOff {
             m.tiltCentroidDeg=tiltCentroidDeg;m.rotLeftDeg=rotLeftDeg;m.rotRightDeg=rotRightDeg;m.rotRmsPx=rotRmsPx;m.rotNote=rotNote;
             m.uncertain=uncertain;m.source=source;m.cover=cover;m.fitRmsPx=fitRmsPx;m.badFrac=badFrac;m.sePosPct=sePosPct;m.seRotDeg=seRotDeg;
             m.fitTiltDeg=fitTiltDeg;m.yellow=yellow;m.fitPoly=fitPoly;m.fitPts=fitPts;m.fitStatus=fitStatus;m.tick59=tick59;m.tick01=tick01;
-            m.gapFromFit=gapFromFit;m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;m.altLumeDiffPct=altLumeDiffPct;m.handConfirmed=handConfirmed;return m;}
+            m.gapFromFit=gapFromFit;m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;m.altLumeDiffPct=altLumeDiffPct;m.handConfirmed=handConfirmed;m.topEdge=topEdge;return m;}
         boolean measured(){return Double.isFinite(sidePct)||Double.isFinite(inoutPct);}
     }
 
@@ -242,6 +245,7 @@ final class ClearlyOff {
                         r.altLumeDiffPct=100*lumeAcross(lc.d[0]-(mf.alt.cObs[0]-mf.alt.cGen[0]),lc.d[1]-(mf.alt.cObs[1]-mf.alt.cGen[1]),m.yellow,mf.altSide);
                 }
                 if(m.shape==ModelSpec.Shape.TRIANGLE){
+                    try{r.topEdge=topEdge(m,ticks,res.lines,img,base,fits,in,res.edgeBiasPx,rpx);}catch(Throwable t){r.topEdge=null;}   // experimental, no verdict
                     gap(r,m,ticks,res.lines,img,rpx);
                     if(mf!=null&&mf.ok()){if(!Double.isFinite(r.gapPct))gapFromFit(r,mf,ticks,res.lines,img,rpx);metalTriangleRotation(r,mf,ticks);}
                     else triangleRotation(r,m,ticks,res.lines,img,rpx);
@@ -422,6 +426,23 @@ final class ClearlyOff {
     /** track.outer_gap: the owner's gap, the clear dial between the triangle's outer edge and the inner ends of the
      *  minute ticks above it, along rays between the ticks. The edge is where the bright surround falls half way to the
      *  dial; the tick ends are this photo's own (median of the clean ticks near the hour). */
+    /** EXPERIMENTAL: TriangleTopEdge for the 12 triangle. The reference circle comes from the round markers only (never
+     *  the triangle itself), reliably fitted ones preferred; the tick inner ends above it as gap() takes them. */
+    static TriangleTopEdge.Result topEdge(Input m,List<Tick> ticks,Map<Integer,Double> L,Img img,Map<Integer,Base> base,
+                                          Map<Integer,MetalFit.Fit> fits,List<Input> in,Map<ModelSpec.Shape,Double> edgeBiasPx,double rpx){
+        List<double[]> rel=new ArrayList<>(),all=new ArrayList<>();
+        for(Input o:in){if(o.hour==m.hour||o.shape!=ModelSpec.Shape.ROUND)continue;Base b=base.get(o.hour);
+            if(b==null||!b.gate.isEmpty()||b.cObs==null)continue;double[] q={norm(b.cObs),norm(b.cGen)};all.add(q);
+            MetalFit.Fit f=fits.get(o.hour);if(f==null||(f.uncertain.isEmpty()&&rpx>=LOW_RES_RPX))rel.add(q);}
+        double[] sc=TriangleTopEdge.ringScale(rel,all,MIN_RING);
+        Double a0=L.get(m.hour%12);
+        int k0=(5*m.hour)%60;List<Double> rin=new ArrayList<>();
+        for(int dk=-2;dk<=2;dk++){Tick t=ticks.get((int)pmod(k0+dk,60));if(t.bad.isEmpty())rin.add(t.rIn);}
+        double rt=rin.size()<3?Double.NaN:median(toArray(rin));
+        Double rb=edgeBiasPx.get(ModelSpec.Shape.ROUND);
+        return TriangleTopEdge.measure(img,m.yellow,a0==null?Double.NaN:a0,rt,sc[0],(int)sc[1],sc[2]>0,rb==null?0:rb/rpx,rpx);
+    }
+
     static void gap(Marker r,Input m,List<Tick> ticks,Map<Integer,Double> L,Img img,double rpx){
         Double a0=L.get(m.hour%12);
         if(a0==null||m.yellow==null||m.yellow.length<3)return;
