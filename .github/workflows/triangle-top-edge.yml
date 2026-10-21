@@ -5,7 +5,7 @@
 name: Triangle top edge (experimental) - genuine, QC and known moves
 on:
   push:
-    branches: [claude/triangle-top-edge-experiment]
+    branches: [claude/triangle-top-edge-experiment, feature/android-167-calibrated-topedge]
     paths: ['.github/workflows/triangle-top-edge.yml', 'tools/research/triangle_top_edge/**', 'tools/desktop-harness/drivers/TopEdge.java',
             'android/app/src/main/java/com/watchalign/mobile/TriangleTopEdge.java', 'android/app/src/main/java/com/watchalign/mobile/ClearlyOff.java']
   workflow_dispatch:
