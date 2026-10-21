@@ -218,21 +218,22 @@ APP_MIN_DIAL_RADIUS_PX = 200   # frozen app reliability floor (AlignmentDecision
 MIN_DIAL_RADIUS_PX = 250
 
 # The app's soft edge-fit warnings (MetalFit, ClearlyOff uncertain text), as classes. Evidence on reviewed genuine
-# markers (FACE-ON-VALIDATION.md, section "Marker reliability"): 'inconsistent' alone (part of the edge shadowed or
-# reflecting) measures like a reliable marker (Mann-Whitney p = 0.55, 0 of 43 outside the strict genuine limits);
-# 'rough' shifts the readings (p = 0.001) and rough + inconsistent puts 17 % outside them. Only 'inconsistent' is
-# harmless; every other or unknown warning makes the marker unreliable for the calibration archive.
+# round markers (FACE-ON-VALIDATION.md section 4, CI run 39679462444): 'inconsistent' alone (part of the edge shadowed
+# or reflecting) measures like a reliable fully seen marker (Mann-Whitney p = 0.92); 'rough' shifts the readings
+# (p = 6e-4) and rough + inconsistent strongly (p = 1e-12). Only 'inconsistent' is harmless; every other or unknown
+# warning makes the marker unreliable for the calibration archive.
 SOFT_CLASSES = (('hidden', re.compile(r'of its outline is visible, the rest is reconstructed')),
                 ('rough', re.compile(r'its visible edge is rough')),
                 ('inconsistent', re.compile(r'\d+% of its visible edge is inconsistent')),
                 ('low_resolution', re.compile(r"resolution is low")))
 HARMLESS = {'inconsistent'}
 
-# Marker outline coverage envelope (reliable genuine round markers, CI run 39673334481; FACE-ON-VALIDATION.md): readings
-# with >= 90 % of the outline seen are indistinguishable from fully seen ones (Mann-Whitney p = 0.45 / 0.19); below
-# 80 % they shift (p = 0.014 at 70-80 %, 4e-6 at 50-70 %; almost all the minute hand at 10:10); 80-90 % is a weak,
-# not significant trend (p = 0.14) and is withheld as untested. The app's own 50 % reconstruction bound
-# (MetalFit.MIN_COVER) let a bar leaving 50-52 % of the outline visible through.
+# Marker outline coverage envelope (reliable genuine round markers, CI run 39679462444; FACE-ON-VALIDATION.md section 3):
+# readings with 90-99 % of the outline seen are indistinguishable from fully seen ones (Mann-Whitney p = 0.51); at
+# 80-90 % they begin to shift (p = 0.017) and below 80 % clearly (p = 2e-6; almost all the minute hand at 10:10).
+# 80-90 % is withheld (inconclusive), < 80 % obstructed. The app's own 50 % reconstruction bound (MetalFit.MIN_COVER)
+# let a bar leaving 50-52 % of the outline visible through. A hand confirmed by the app shifts readings even at full
+# coverage (p = 7e-12), so it always makes the marker obstructed.
 COVER_PASS, COVER_FAIL = 0.90, 0.80
 
 

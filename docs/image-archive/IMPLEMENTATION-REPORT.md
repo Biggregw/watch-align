@@ -8,15 +8,16 @@ logic, its 200 px floor, measurements and tolerances are unchanged. The rules ar
 - the app's own per-marker hand check and an outline-coverage envelope for obstruction;
 - of the soft edge warnings, only the harmless "inconsistent edge" (reflection) class is accepted.
 
-At 250 px:
-- **15 photographs (15 watches; Date 9, No-Date 6, GMT 0)** pass with every marker unobstructed.
-- 178 pass if partly hand-covered markers and all soft warnings are allowed.
-- 123 pass if every marker must meet the app's reliability standard; that standard still lets hands through.
+At 250 px (final CI run 39679462444):
+- **13 photographs (13 watches; Date 7, No-Date 6, GMT 0)** pass with every marker unobstructed.
+- 194 pass (173 watches) if partly hand-covered markers and all soft warnings are allowed.
+- 127 pass if every marker must meet the app's reliability standard; that standard still lets hands through.
 
 In most dealer photographs the 10:10 minute hand lies across the 2 marker, and the evidence shows such readings shift.
 
-Counterexamples: all 85 artificial obstructions of previously usable markers are detected, with 0 false accepts.
-The recovery pilot found 56 of 100 exact originals, none suitable. No Microsoft account was connected and nothing
+Counterexamples: 240 copies of the 24 pinned originals (including the original 144) give 0 false accepts, and all 89
+artificial obstructions of previously usable markers are detected. The recovery pilot found 57 of 100 exact originals
+over two runs, none suitable. No Microsoft account was connected and nothing
 was uploaded or migrated.
 
 ## What was built
@@ -55,6 +56,11 @@ and the app's hand check now catch every tested bar. All 12 public controls are 
 - 94ad as oblique and low resolution;
 - the other 11 for a hand-covered or unreliable marker, mostly the minute hand at 2 or a rough 12 triangle.
 
+The evidence for the rules is in FACE-ON-VALIDATION.md §3–4:
+- Hand-confirmed markers shift even at full coverage (p = 7e-12).
+- Reliable markers shift below 90 % coverage (p = 0.017 at 80–90 %, p = 2e-6 below 80 %).
+- "Inconsistent edge" alone does not shift (p = 0.92); rough edges do (p = 6e-4).
+
 ## Historical recovery
 
 The inventory covers 12,725 overlapping catalogue/association rows and 3,026 distinct
@@ -70,13 +76,13 @@ verified independent watches; 37 shared-photo identity conflicts need review.
 | Original hash still missing | 2,642 |
 
 Exact-hash refetch from the catalogued URL also recovers originals. The approved pilot of 100 catalogued missing
-originals:
-- recovered 56 exact originals (55 GMT, 1 Date; 23 watches);
-- found 43 now served with different bytes, 39 of them from Bob's;
-- found 1 gone.
+originals ran twice:
+- 57 exact originals were recovered over both runs (56 and 40 per run; 56 GMT, 1 Date; 24 watches);
+- the rest were served with different bytes (43 and 59 per run), mostly Bob's re-encoded Submariner images;
+- 1 was gone.
 
-None of the 56 is a suitable face-on photograph: half are gallery shots with no dial. The originals are drifting:
-21 previously admitted photographs are no longer served byte-exact. A wider recovery needs owner approval.
+None of the 57 is a suitable face-on photograph: half are gallery shots with no dial. Sources drift between runs, so
+a verified original can disappear. A wider recovery needs owner approval.
 Current per-photo outcomes under face-on-v3 are in [face-on-evidence.jsonl](face-on-evidence.jsonl).
 
 Four pinned public fixtures plus ten originals in the existing review ZIP yield
@@ -99,8 +105,8 @@ artifact names/sizes do not count as recovered photographs.
 
 ## Verification
 
-- 175 Python archive/harvester/calibrator tests pass, including the native JDK 17/OpenCV photographic tests
-  (`ARCHIVE_NATIVE_PHOTO_TESTS=1`). They cover the face-on-v2 geometry and envelope, marker obstruction, the public
+- 182 Python archive/harvester/calibrator tests pass, including the native JDK 17/OpenCV photographic tests
+  (`ARCHIVE_NATIVE_PHOTO_TESTS=1`). They cover the face-on-v3 geometry and envelope, marker obstruction and coverage, soft-warning classes, the public
   controls and the committed validation counts. The original 158 tests are retained.
 - Two photographic test cases passed with JDK 17/OpenCV (including a live re-analysis
   of the frontal GMT and oblique Submariner controls).

@@ -30,12 +30,12 @@ def test_every_reviewer_ineligible_photo_with_bytes_is_rejected_and_no_reviewed_
 def test_documented_counts():
     from tools.image_archive.analyse_validation import unique
     E = unique(records())
-    assert sum(decide(e)[0] == 'pass' for e in E) == 15
-    assert Counter(e['model'] for e in E if decide(e)[0] == 'pass') == Counter({'submariner_126610': 9, 'submariner_124060': 6})
+    assert sum(decide(e)[0] == 'pass' for e in E) == 13
+    assert Counter(e['model'] for e in E if decide(e)[0] == 'pass') == Counter({'submariner_126610': 7, 'submariner_124060': 6})
     bad = [e for e in E if (e.get('eligible') == 'no' or e.get('near_frontal') == 'no') and not e.get('error')]
-    assert len(bad) == 35 and all(decide(e)[0] == 'fail' for e in bad)
+    assert len(bad) == 40 and all(decide(e)[0] == 'fail' for e in bad)
     pilot = [e for e in records() if e['set'] == 'pilot']
-    assert sum(1 for e in pilot if not e.get('error')) == 56 and not any(decide(e)[0] == 'pass' for e in pilot)
+    assert sum(1 for e in pilot if not e.get('error')) == 57 and not any(decide(e)[0] == 'pass' for e in pilot)
 
 
 def test_the_dark_bar_false_accept_is_now_rejected_by_outline_coverage():
