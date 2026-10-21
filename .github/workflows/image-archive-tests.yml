@@ -1,0 +1,29 @@
+name: Image archive offline tests
+on:
+  pull_request:
+    paths:
+      - 'tools/image_archive/**'
+      - 'tools/dataset_harvester/**'
+      - 'tools/watch_calibrator/acquire.py'
+      - 'docs/image-archive/**'
+      - '.github/workflows/image-archive-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: pip install -r tools/image_archive/requirements.txt pytest
+      - name: Archive, acquisition and calibration regression tests
+        env:
+          ARCHIVE_NATIVE_PHOTO_TESTS: '1'
+        run: python -m pytest tools/image_archive/tests tools/dataset_harvester/tests tools/watch_calibrator/tests -q

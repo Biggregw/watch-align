@@ -243,7 +243,7 @@ def write_csv(path: Path, fieldnames: list[str], data: list[dict]) -> None:
         w.writerows(data)
 
 
-def run(pool, out: Path, max_images: int = 12) -> dict:
+def run(pool, out: Path, max_images: int = 12, *, archive=None) -> dict:
     pools = [Path(p) for p in (pool if isinstance(pool, (list, tuple)) else [pool])]
     out.mkdir(parents=True, exist_ok=True)
     images_dir = out / "images"
@@ -259,6 +259,7 @@ def run(pool, out: Path, max_images: int = 12) -> dict:
                 and (r.get("model") or "").upper() in allowed]
 
     acquired: list[Acquired] = []
+    archive_candidates = set()
     summary: list[dict] = []
     first_sha: dict[str, str] = {}
     counts = Counter()
@@ -302,6 +303,7 @@ def run(pool, out: Path, max_images: int = 12) -> dict:
             dest.parent.mkdir(parents=True, exist_ok=True)
             if not dest.exists():
                 dest.write_bytes(data)
+                archive_candidates.add(str(dest.relative_to(out)))
             rec = Acquired(
                 candidate_id=cid,
                 class_label=normalize_class(row.get("class", "")),
@@ -395,6 +397,17 @@ def run(pool, out: Path, max_images: int = 12) -> dict:
         f.write(f"- Candidate watches by class: {dict(sorted(by_class.items()))}\n")
         f.write(f"- Candidate watches by model: {dict(sorted(by_model.items()))}\n\n")
         f.write("This stage is acquisition only. No GMT pose/QC thresholds or authenticity classifier are used.\n")
+    if archive is not None:
+        # Optional research archive sidecar; original manifests/measurements stay unchanged.
+        archive_results = []
+        for image in acquired:
+            if image.local_path not in archive_candidates:
+                continue
+            try:
+                archive_results.append(archive.put_verified(out / image.local_path, image.sha256, image.__dict__))
+            except Exception as exc:
+                archive_results.append({"status": "pending", "reason": type(exc).__name__, "sha256": image.sha256})
+        (out / "archive_results.json").write_text(json.dumps(archive_results, indent=2) + "\n", encoding="utf-8")
     return report
 
 

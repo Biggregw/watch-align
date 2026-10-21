@@ -1,0 +1,32 @@
+name: Image archive synthetic connection test
+on:
+  workflow_dispatch:
+    inputs:
+      authorized:
+        description: Owner has explicitly authorized Microsoft connection (synthetic data only)
+        required: true
+        default: false
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: onedrive-cache-renewal
+  cancel-in-progress: false
+jobs:
+  synthetic:
+    if: inputs.authorized
+    environment: onedrive-archive
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r tools/image_archive/requirements.txt
+      - name: Synthetic write, verified restore, owned-file cleanup
+        env:
+          ONEDRIVE_CLIENT_ID: ${{ vars.ONEDRIVE_CLIENT_ID }}
+          ONEDRIVE_MSAL_CACHE: ${{ secrets.ONEDRIVE_MSAL_CACHE }}
+          GH_TOKEN: ${{ secrets.ONEDRIVE_CACHE_WRITE_TOKEN }}
+          ARCHIVE_REPOSITORY: ${{ github.repository }}
+        run: python -m tools.image_archive smoke --authorized --renew-github-secret "$ARCHIVE_REPOSITORY"
