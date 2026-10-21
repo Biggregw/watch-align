@@ -1168,6 +1168,8 @@ final class ClearlyOff {
                 100*r.cover,r.fitRmsPx,100*r.badFrac,r.sePosPct,Double.isFinite(r.seRotDeg)?String.format(Locale.US,", rotation ± %.2f°",r.seRotDeg):""));
         if(!r.uncertain.isEmpty())b.append("\nUncertain: ").append(r.uncertain).append('.');
         if(!r.gate.isEmpty())b.append(b.length()>0?"\n":"").append("Withheld: ").append(String.join("; ",r.gate)).append('.');
+        // research only (triangle top-edge experiment): shown beside the measurement above, never used in any verdict
+        if(tri&&r.topEdge!=null)b.append(b.length()>0?"\n":"").append("Experimental, not used in any result: ").append(r.topEdge.summary()).append('.');
         return b.toString();
     }
 
