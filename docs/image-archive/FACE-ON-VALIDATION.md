@@ -150,7 +150,22 @@ Precision degrades smoothly. There is no cliff above the frozen floor.
 
 **Controlled counterexamples.** These are known-bad copies of admitted photos, screened end to end
 (`tools/image_archive/degrade.py`): blur σ 3 and 8 px, an hour-hand-sized bar over the 4 marker, a near-opaque glare
-over a third of the dial, the frame cut through the 12, and a 150 px dial. Results: DEGRADE_RESULTS.
+over a third of the dial, the frame cut through the 12, and a 150 px dial. Results: in CI run `39657616336`, 24 admitted
+originals (8 per model) all passed end to end through the production screener, in agreement with the offline
+evaluation. Of the 144 degraded copies, **143 were rejected and 1 was admitted**:
+
+| Copy | Rejected | Admitted |
+|---|---:|---:|
+| blur σ 3 px | 24 (13 fail, 11 inconclusive) | 0 |
+| blur σ 8 px | 24 (1 fail, 23 inconclusive) | 0 |
+| hand-sized bar over the 4 | 23 (fail: marker 4 hidden) | **1** (No-Date `17484cbe61baaa1a`) |
+| glare over a third of the dial | 24 (fail: markers 9–11 withheld) | 0 |
+| frame cut through the 12 | 24 (inconclusive: no dial registered) | 0 |
+| 150 px dial | 24 (fail: resolution) | 0 |
+
+The one false accept is a known limitation. The app did not mark the 4 marker as hidden on that photo; it is likely
+that more than half of the marker's outline stayed visible beside the bar. The screening was not changed for this
+pack.
 
 ## 5. Limitations (read before relying on the profile)
 
@@ -160,20 +175,21 @@ over a third of the dial, the frame cut through the 12, and a 150 px dial. Resul
 - **The fail bound rests on 3 watches.** All are Phillips auction shots, so tilt is confounded with that one
   photographic source. 10.6–13.3° is untested and stays inconclusive.
 - **Blur, glare and hands are not reviewer-labelled.** No reviewer-labelled photos of these exist in the repository.
-  Their evidence is the app's own per-marker gates and the controlled counterexamples above.
+  Their evidence is the app's own per-marker gates and the controlled counterexamples above, which include one false
+  accept (a dark bar over a marker that the app did not see as hiding it).
 - **Envelope bounds are sample extremes.** They are conservative: they withhold rather than admit.
 - **Bob's CDN re-encoding.** It has made the 228-photo additional review set (39 of the 44 oblique labels)
   unrecoverable as exact originals.
 
 ## 6. Owner decisions
 
-1. **Review the admitted photos.** Check a contact sheet of the 212 unique admitted photos (CI artifacts
-   `faceon-evidence-*`, numbers only; thumbnails can be produced on request) before any pilot upload.
-2. **Resolution floor.** Keep the frozen 200 px dial-radius floor (212 admitted), or require more: 250 px admits 187,
-   300 px admits 156.
+1. **Review the admitted photos.** Check the 217 unique admitted photos in the visual review pack (workflow
+   *Image archive visual review pack*, a private artifact) before any pilot upload.
+2. **Resolution floor.** Keep the frozen 200 px dial-radius floor (217 admitted), or require more: 250 px admits 192,
+   300 px admits 161.
 3. **Marker standard.**
-   - (a) As implemented: every marker measured and unobstructed, with soft edge warnings recorded but allowed (212).
-   - (b) Every marker fully reliable, the app's genuine-pass standard (146).
+   - (a) As implemented: every marker measured and unobstructed, with soft edge warnings recorded but allowed (217).
+   - (b) Every marker fully reliable, the app's genuine-pass standard (148).
    - (c) Partial-marker admission with a per-marker mask, which would keep the 53 hand-at-10:10 photos.
 4. **Tilt range 10.6–13.3°.** It stays inconclusive unless new reviewed photographs there are measured.
 5. **Then the Microsoft steps.** Connection consent, the synthetic smoke test, and a small approved real-photo pilot.

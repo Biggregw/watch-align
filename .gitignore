@@ -83,3 +83,4 @@ datasets/harvest/
 
 # Local eligible-image archive (originals, metadata and staging; never credentials)
 .image-archive/
+review-pack/

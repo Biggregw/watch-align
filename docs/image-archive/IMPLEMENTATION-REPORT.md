@@ -3,8 +3,8 @@
 **Review status: draft.** Update (21 Oct 2026, continued): the face-on admission profile
 `face-on-v2` is validated and promoted (evidence: [FACE-ON-VALIDATION.md](FACE-ON-VALIDATION.md)).
 It admits 56 of the 384 recovered historical originals and 204 of 273 reviewer-eligible
-photographs. Every reviewer-ineligible photograph is rejected, and there are no false accepts
-among the controlled counterexamples. No personal Microsoft account was connected and nothing
+photographs, 217 unique photographs in all. Every reviewer-ineligible photograph is rejected. Of 144
+controlled counterexamples, one was admitted (a dark bar over a marker); see the validation document. No personal Microsoft account was connected and nothing
 was uploaded or migrated. The owner decisions are listed in that document.
 
 ## What was built
