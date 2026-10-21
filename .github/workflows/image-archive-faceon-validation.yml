@@ -1,0 +1,66 @@
+# Image archive (research): face-on admission evidence on reviewed and recovered originals. Read-only: photos are fetched
+# by exact SHA-256 (or read from the existing calibrator artifact), analysed with the production pipeline, and only
+# numbers are logged and kept (EVJ / PREC lines and a JSONL artifact). No archive, OneDrive or Git writes.
+name: Image archive face-on validation (research)
+on:
+  # workflow_dispatch needs the file on the default branch; while this is a draft PR it runs on pushes that change it
+  push:
+    branches: [feature/unified-image-archive-20261021]
+    paths: ['.github/workflows/image-archive-faceon-validation.yml', 'tools/image_archive/faceon.py',
+            'tools/image_archive/collect_evidence.py', 'tools/image_archive/precision.py',
+            'tools/image_archive/validation_items.py', 'tools/desktop-harness/drivers/ArchiveEvidence.java']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {model: submariner_126610, manifests: 'date-verified.csv checkpoint/date-expanded-verified.csv', historical: 1}
+          - {model: gmt_126710, manifests: 'gmt-verified.csv', historical: 1}
+          - {model: submariner_124060, manifests: 'nodate-verified.csv', historical: 1}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -q -r tools/image_archive/requirements.txt
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Reviewed originals (exact SHA-256 refetch; a changed or re-encoded file is not used)
+        run: |
+          set -e
+          args=""
+          for m in ${{ matrix.manifests }}; do
+            d="g/$(echo $m | tr '/' '_')"; mkdir -p "$d"
+            python3 tools/research/alpha96_calibration/fetch_verified.py "tools/research/marker_audit/results/$m" "$d/img" "$d/fetch_log.csv" | tail -3
+            args="$args --fetched $m=$d/img"
+          done
+          echo "FETCHED=$args" >> "$GITHUB_ENV"
+      - name: Recovered originals (watch-calibrator-124060 artifact 11300604104, SHA-addressed)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: watch-calibrator-124060-37194686346
+          run-id: 37194686346
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: h
+      - name: Evidence (production pipeline, numbers only)
+        run: |
+          python3 -m tools.image_archive.validation_items $FETCHED --historical h --model ${{ matrix.model }} items.csv
+          python3 -m tools.image_archive.collect_evidence items.csv evidence.jsonl --log
+      - name: Resolution sensitivity (reviewed face-on photos resampled to smaller dials)
+        run: python3 -m tools.image_archive.precision evidence.jsonl items.csv prec precision.jsonl --targets 350,300,250,225,200,175,150 --max 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: faceon-evidence-${{ matrix.model }}
+          path: |
+            evidence.jsonl
+            precision.jsonl
+          retention-days: 30
