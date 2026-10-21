@@ -166,6 +166,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 AlignmentResultsActivity.Store.closeups.clear();AlignmentResultsActivity.Store.closeups.putAll(fo.alignmentCloseups);
                 AlignmentResultsActivity.Store.technical=fo.alignmentTechnical;AlignmentResultsActivity.Store.legacyTechnical=fo.technical;
                 AlignmentResultsActivity.Store.H=q.homography;AlignmentResultsActivity.Store.clearlyOff=fo.clearlyOff;AlignmentResultsActivity.Store.recordId=null;
+                AlignmentResultsActivity.Store.analysisFailure=fo.clearlyOffError;
                 if(fo.alignment!=null&&fo.clearlyOff!=null&&fo.model!=null){
                     // 1.6.2: keep this photo's measured numbers (and a small picture) on the phone for calibration
                     long now=System.currentTimeMillis();String id=Long.toString(now);

@@ -164,7 +164,10 @@ public class CalibrateActivity extends Activity {
         verdictLine=text("",12,MUTED,false);root.addView(verdictLine,lp(-1,-2,2));
 
         // sliders
-        root.addView(text("Limits",16,Color.WHITE,true),lp(-1,-2,16));
+        // 1.6.6: the two standards, kept apart: the fixed strict genuine standard and these adjustable replica-QC limits
+        root.addView(text("Strict genuine standard (fixed)",16,Color.WHITE,true),lp(-1,-2,16));
+        root.addView(text(WatchClassification.standardText(),12,MUTED,false),lp(-1,-2,4));
+        root.addView(text("Replica QC limits (adjustable)",16,Color.WHITE,true),lp(-1,-2,16));
         for(Calibration.Param p:Calibration.params(shape))root.addView(slider(p),lp(-1,-2,8));
         genuineLine=text("",14,Color.WHITE,true);root.addView(genuineLine,lp(-1,-2,12));
         photosLine=text("",13,MUTED,false);root.addView(photosLine,lp(-1,-2,8));

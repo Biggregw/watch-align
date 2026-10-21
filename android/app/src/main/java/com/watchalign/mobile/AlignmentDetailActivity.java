@@ -100,6 +100,13 @@ public class AlignmentDetailActivity extends Activity {
             root.addView(iv,lp(-1,-2,12));
             root.addView(text(TRACK_LEGEND+"  Tap to zoom.",12,AlignmentResultsActivity.MUTED,false),lp(-1,-2,4));
         }
+        // 1.6.6: the measurements against both standards
+        WatchClassification.Result cls=WatchClassification.classify(AlignmentResultsActivity.Store.clearlyOff,AlignmentResultsActivity.Store.model,AlignmentResultsActivity.Store.analysisFailure,AlignmentResultsActivity.Store.result==null?null:AlignmentResultsActivity.Store.result.photoReason);
+        WatchClassification.MarkerCheck chk=cls.at(m.hour);
+        if(chk!=null){
+            root.addView(text(WatchClassification.line(chk),15,chk.genuineFail()?AlignmentResultsActivity.AMBER:Color.WHITE,true),lp(-1,-2,12));
+            root.addView(text(String.join("\n",WatchClassification.measures(chk)),13,AlignmentResultsActivity.MUTED,false),lp(-1,-2,4));
+        }
         if(AlignmentResultsActivity.Store.clearlyOff!=null&&AlignmentResultsActivity.Store.clearlyOff.at(m.hour)!=null){
             Button cal=new Button(this);cal.setAllCaps(false);cal.setText("Calibrate  ·  your verdict and limits");final int hr=m.hour;
             cal.setOnClickListener(v->{Intent i=new Intent(this,CalibrateActivity.class);i.putExtra(CalibrateActivity.EXTRA_HOUR,hr);startActivity(i);});

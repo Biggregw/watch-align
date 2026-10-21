@@ -85,16 +85,23 @@ final class ClearlyOff {
      *   round, baton  POSITION: distance of the centre from where it should be (hour line x ring), any direction
      *   baton         TILT against the hour line
      *   triangle      SIDEWAYS from the hour line, GAP under the minute track, TILT (not judged by default: NaN)
-     * The triangle's centre in/out limit (INOUT_TRIANGLE_LIMIT_R) is not adjustable: it catches a triangle sunk towards
-     * the centre, which the one-sided gap does not.
+     * The triangle's centre in/out limit (INOUT_TRIANGLE_LIMIT_R) is not adjustable by the owner: it catches a triangle sunk
+     * towards the centre, which the one-sided gap does not. It is a field (1.6.6) only so that the fixed strict genuine
+     * standard (genuine()) can judge it at its own value; it is not saved with the owner's limits.
      */
     static final class Limits {
-        double roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg;
+        double roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg,triInoutR=INOUT_TRIANGLE_LIMIT_R;
         static Limits defaults(){Limits l=new Limits();l.roundPosR=POS_LIMIT_R;l.batonPosR=POS_LIMIT_R;l.batonTiltDeg=TILT_LIMIT_DEG;
             l.triSideR=SIDE_LIMIT_R;l.triGapR=GAP_TRIANGLE_LIMIT_R;l.triTiltDeg=TRI_ROT_LIMIT_DEG;return l;}
+        /** 1.6.6 strict genuine standard (owner, pooled genuine Rolex research, PR #64): experimental statistical screening
+         *  limits, not manufacturer specifications. Fixed: never taken from or written to the owner's saved limits. Judged
+         *  by the same decide() as the replica-QC limits, so the 0.5 px allowance is applied once, in the same direction
+         *  (added to every maximum, subtracted from the gap minimum). */
+        static Limits genuine(){Limits l=new Limits();l.roundPosR=0.00671;l.batonPosR=0.00752;l.batonTiltDeg=1.096;
+            l.triSideR=0.00437;l.triInoutR=0.00373;l.triTiltDeg=1.174;l.triGapR=0.02810;return l;}
         Limits copy(){Limits l=new Limits();l.roundPosR=roundPosR;l.batonPosR=batonPosR;l.batonTiltDeg=batonTiltDeg;
-            l.triSideR=triSideR;l.triGapR=triGapR;l.triTiltDeg=triTiltDeg;return l;}
-        double[] values(){return new double[]{roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg};}
+            l.triSideR=triSideR;l.triGapR=triGapR;l.triTiltDeg=triTiltDeg;l.triInoutR=triInoutR;return l;}
+        double[] values(){return new double[]{roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg,triInoutR};}
         boolean same(Limits o){double[] a=values(),b=o.values();for(int i=0;i<a.length;i++){if(Double.isNaN(a[i])!=Double.isNaN(b[i]))return false;
             if(!Double.isNaN(a[i])&&Math.abs(a[i]-b[i])>1e-9)return false;}return true;}
         boolean isDefault(){return same(defaults());}
@@ -132,6 +139,15 @@ final class ClearlyOff {
         String uncertain="",source="lume";
         double cover=Double.NaN,fitRmsPx=Double.NaN,badFrac=Double.NaN,sePosPct=Double.NaN,seRotDeg=Double.NaN,fitTiltDeg=Double.NaN;
         double[][] yellow,fitPoly,fitPts;byte[] fitStatus;double[] tick59,tick01;boolean gapFromFit;
+        /** 1.6.6: the clean refit without the side beside a confirmed hand (MetalFit.Fit.alt), measured like the reading
+         *  above; only the strict genuine standard uses it (WatchClassification). altSide: that side, -1 when none */
+        double altSidePct=Double.NaN,altInoutPct=Double.NaN,altTiltDeg=Double.NaN;int altSide=-1;
+        /** the independent cross-check of that refit: how far (% R) the luminous centre's displacement differs from the
+         *  refit's, across the side left out (the coordinate that side would have fixed); NaN when the lume could not be
+         *  measured */
+        double altLumeDiffPct=Double.NaN;
+        /** 1.6.6: the independent per-marker check found a hand at this marker (MetalFit.handConfirmed) */
+        boolean handConfirmed;
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
         /** a copy to judge against other limits without changing the shown answer (calibration screen) */
         Marker copy(){Marker m=new Marker(hour,shape);m.state=state;m.reason=reason;m.gate.addAll(gate);
@@ -140,7 +156,7 @@ final class ClearlyOff {
             m.tiltCentroidDeg=tiltCentroidDeg;m.rotLeftDeg=rotLeftDeg;m.rotRightDeg=rotRightDeg;m.rotRmsPx=rotRmsPx;m.rotNote=rotNote;
             m.uncertain=uncertain;m.source=source;m.cover=cover;m.fitRmsPx=fitRmsPx;m.badFrac=badFrac;m.sePosPct=sePosPct;m.seRotDeg=seRotDeg;
             m.fitTiltDeg=fitTiltDeg;m.yellow=yellow;m.fitPoly=fitPoly;m.fitPts=fitPts;m.fitStatus=fitStatus;m.tick59=tick59;m.tick01=tick01;
-            m.gapFromFit=gapFromFit;return m;}
+            m.gapFromFit=gapFromFit;m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;m.altLumeDiffPct=altLumeDiffPct;m.handConfirmed=handConfirmed;return m;}
         boolean measured(){return Double.isFinite(sidePct)||Double.isFinite(inoutPct);}
     }
 
@@ -207,11 +223,24 @@ final class ClearlyOff {
                 Base b=base.get(m.hour);r.gate.addAll(b.gate);
                 if(!res.lines.containsKey(m.hour%12))r.gate.add("minute ticks near it hidden");
                 metrics(r,b,res.lines,img,ringScale(base,in,m.hour),rpx);
-                MetalFit.Fit mf=fits.get(m.hour);r.yellow=m.yellow;
+                MetalFit.Fit mf=fits.get(m.hour);r.yellow=m.yellow;r.handConfirmed=MetalFit.handConfirmed(m);
                 if(mf!=null&&mf.cObs!=null&&rpx<LOW_RES_RPX)   // a small dial: measured, its findings to inspect
                     mf.uncertain=(mf.uncertain.isEmpty()?"":mf.uncertain+"; ")+String.format(Locale.US,"the photo's resolution is low (the dial is %.0f px across)",2*rpx);
                 if(mf!=null&&mf.cObs!=null){r.source="outer metal";r.uncertain=mf.uncertain;r.cover=mf.cover;r.fitRmsPx=mf.rmsPx;r.badFrac=mf.badFrac;
                     r.sePosPct=100*mf.sePos;r.seRotDeg=mf.seRot;r.fitTiltDeg=mf.tiltDeg;r.fitPoly=mf.poly;r.fitPts=mf.pts;r.fitStatus=mf.status;}
+                if(LUME_PROBE!=null&&m.shape==ModelSpec.Shape.BATON&&mf!=null&&mf.ok()&&mf.uncertain.isEmpty()&&b.gate.isEmpty()&&insets.get(m.shape)!=null){
+                    Centroid lc=centroidFit(img,m,insets.get(m.shape),rpx);   // research: lume vs a reliable metal fit
+                    if("measured".equals(lc.status)){double ex=lc.d[0]-(mf.cObs[0]-mf.cGen[0]),ey=lc.d[1]-(mf.cObs[1]-mf.cGen[1]);double[] ax=longAxis(m.yellow);
+                        LUME_PROBE.add(new double[]{m.hour,100*Math.hypot(ex,ey),100*Math.abs(ex*ax[1]-ey*ax[0]),100*Math.abs(ex*ax[0]+ey*ax[1])});}
+                }
+                if(mf!=null&&mf.ok()&&mf.alt!=null&&rpx>=LOW_RES_RPX&&b.gate.isEmpty()){   // 1.6.6: the side-beside-the-hand refit
+                    Base ab=new Base();ab.cGen=mf.alt.cGen;ab.cObs=mf.alt.cObs;ab.tiltDeg=mf.alt.tiltDeg;
+                    Marker t=new Marker(m.hour,m.shape);metrics(t,ab,res.lines,img,ringScale(base,in,m.hour),rpx);
+                    r.altSidePct=t.sidePct;r.altInoutPct=t.inoutPct;r.altTiltDeg=t.tiltDeg;r.altSide=mf.altSide;
+                    Double inset=insets.get(m.shape);Centroid lc=inset==null?null:centroidFit(img,m,inset,rpx);
+                    if(lc!=null&&"measured".equals(lc.status))
+                        r.altLumeDiffPct=100*lumeAcross(lc.d[0]-(mf.alt.cObs[0]-mf.alt.cGen[0]),lc.d[1]-(mf.alt.cObs[1]-mf.alt.cGen[1]),m.yellow,mf.altSide);
+                }
                 if(m.shape==ModelSpec.Shape.TRIANGLE){
                     gap(r,m,ticks,res.lines,img,rpx);
                     if(mf!=null&&mf.ok()){if(!Double.isFinite(r.gapPct))gapFromFit(r,mf,ticks,res.lines,img,rpx);metalTriangleRotation(r,mf,ticks);}
@@ -243,7 +272,7 @@ final class ClearlyOff {
         double allow=100*LOWRES_ALLOWANCE_PX/rpx;
         boolean tri=r.shape==ModelSpec.Shape.TRIANGLE,baton=r.shape==ModelSpec.Shape.BATON;
         r.sideLimitPct=tri?100*L.triSideR+allow:Double.NaN;
-        r.inoutLimitPct=tri?100*INOUT_TRIANGLE_LIMIT_R+allow:Double.NaN;
+        r.inoutLimitPct=tri?100*L.triInoutR+allow:Double.NaN;
         r.posLimitPct=tri?Double.NaN:100*(baton?L.batonPosR:L.roundPosR)+allow;
         r.tiltLimitDeg=baton?L.batonTiltDeg:tri?L.triTiltDeg:Double.NaN;
         r.gapLimitPct=tri?100*L.triGapR-allow:Double.NaN;
@@ -813,6 +842,17 @@ final class ClearlyOff {
 
     // ------------------------------------------------------------------------------------------------ lume centre
 
+    /** research only (null in the app): {hour, % R total, across the baton, along it} how far the luminous centre's
+     *  displacement is from a reliable baton metal fit's (tools/desktop-harness/drivers/SideDrop.java) */
+    static List<double[]> LUME_PROBE=null;
+    /** unit vector along a polygon's longest side (a baton's axis) */
+    static double[] longAxis(double[][] p){double best=-1,ux=0,uy=1;
+        for(int i=0;i<p.length;i++){double[] a=p[i],b=p[(i+1)%p.length];double L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L>best){best=L;ux=(b[0]-a[0])/L;uy=(b[1]-a[1])/L;}}
+        return new double[]{ux,uy};}
+    /** the component of (ex, ey) along the normal of polygon side s */
+    static double lumeAcross(double ex,double ey,double[][] p,int s){
+        double[] a=p[s],b=p[(s+1)%p.length];double L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L<=0)return Double.NaN;
+        return Math.abs(ex*(b[1]-a[1])/L-ey*(b[0]-a[0])/L);}
     static final class Centroid {String status;double[] cpoly,d;double th;double sizeRatio=Double.NaN;}
 
     /** The lume's brightness-weighted centre (region connected to the marker's middle), area-checked; batons and the

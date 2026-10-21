@@ -39,22 +39,47 @@ Apply two independent tiers:
 Whole-watch display labels, explicitly approved by the owner:
 
 - **Genuine:** all required hour markers are reliably assessed and all meet the strict genuine-alignment standard.
-- **Replica:** all required markers are reliably assessed; at least one fails the strict genuine standard, but none
-  fails the acceptable replica-QC standard.
-- **Replica — QC Issues:** all required markers are reliably assessed and at least one fails acceptable replica QC;
-  show the specific marker(s) and magnified evidence.
-- **Can't Determine:** a required marker or the photo's pose cannot be assessed reliably, including hand obstruction,
-  blur, glare, ambiguous metal edges, missing measurements or an internal analysis failure. Report reliable individual
-  findings without inferring that unmeasured markers pass.
+- **Replica:** at least one credible measurement falls outside the strict genuine standard, and no credible measurement
+  fails the acceptable replica-QC standard. One marker is enough.
+- **Replica — QC Issues:** at least one credible measurement fails acceptable replica QC; show the specific
+  marker(s) and magnified evidence.
+- **Can't Determine:** no confirmed failure and a required marker cannot be assessed reliably (hand obstruction, blur,
+  glare, ambiguous metal edges, missing measurements), or a photo-wide pose or internal analysis failure.
+
+Decision order (owner, 20 Oct 2026: a confirmed failure takes precedence over unrelated unreadable markers):
+
+1. A photo-wide pose or analysis failure is always **Can't Determine**.
+2. Any credible measurement over the replica-QC limits → **Replica — QC Issues**, even if another marker is
+   obscured or uncertain.
+3. Otherwise, any credible measurement outside the strict genuine limits → **Replica**, even if another marker
+   cannot be assessed.
+4. Otherwise, any required marker missing or unreliable → **Can't Determine**.
+5. **Genuine** only when every required marker is reliably measured and passes every strict genuine limit.
+
+**Credible measurement (owner, 21-22 Oct 2026):** a completed measurement outside a frozen limit decides, even with
+a soft edge-fit uncertainty warning; no reliability threshold (RMS, inconsistency, coverage) is added for this. Not
+credible, and never a failure: missing or non-finite values, anything withheld (Can't check, hand gate), a photo-wide
+failure, or a triangle gap placed from the outline rather than measured. A known out-of-range reading is flagged
+whatever else failed, even beside a confirmed hand (owner, 21 Oct 2026); Can't Determine is shown only when no marker
+has such a reading. A genuine pass still needs every marker reliable. The
+genuine and replica-QC tolerances are frozen; do not recalibrate them. When a Replica or Replica — QC Issues result
+rests on partial marker coverage, show a warning that some markers could not be assessed and additional QC issues may
+exist.
 
 Require 12 physical hour markers for No-Date models and 11 for models with a date aperture. Never average individual
-defects away, count an unmeasured marker as a pass, or classify a watch as a replica based only on an uncertain edge fit.
+defects away, count an unmeasured marker as a pass, or classify a watch as a replica from a missing or corrupted
+measurement.
 Check photo quality first; invite a new, straight-on photo when the result is unexpected.
 
 **Interpretation is mandatory:** "Genuine" and "Replica" are owner-approved *alignment-based screening predictions*,
 not verification of authenticity, manufacturing origin or movement. Display a visible, concise disclaimer that real
 Rolex watches can fail these strict limits and well-aligned replicas can pass. Never present the label as a conclusive
 authentication or invent a confidence percentage.
+
+**Frozen calibration baseline:** `docs/CALIBRATION_BASELINE_2026-10-20.md` records every genuine and replica-QC
+tolerance, the resolution allowance, the reliability and credibility rules and the classification order, with their
+source constants. Any change to a tolerance or rule there needs the owner's explicit approval and must be documented
+with its old and new values, date and commit.
 
 Keep strict-genuine and adjustable-replica calibration settings separate, preserve the old individual-marker QC
 behaviour, and do not alter source/reference data merely to improve classification rates. Implement using the existing
