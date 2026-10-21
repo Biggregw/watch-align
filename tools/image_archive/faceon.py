@@ -122,6 +122,8 @@ def summarise(ev, image=None):
     # its known shape. The app still reports the reading (credible); for the archive the marker is partly hidden.
     out['partly_hidden'] = [hr for hr in required if markers.get(hr, {}).get('credible')
                             and isinstance(markers[hr].get('cover'), (int, float)) and markers[hr]['cover'] < MIN_COVER]
+    # outline coverage of each measured marker (MetalFit: share of its outer-metal outline seen)
+    out['cover'] = {hr: markers[hr].get('cover') for hr in required if markers.get(hr, {}).get('credible')}
     # the app's independent per-marker hand check (MetalFit.handConfirmed) found a hand at this marker
     out['hand_confirmed'] = [hr for hr in required if markers.get(hr, {}).get('credible') and markers[hr].get('hand_confirmed')]
     out['soft'] = {hr: markers[hr].get('uncertain') for hr in required
@@ -226,6 +228,13 @@ SOFT_CLASSES = (('hidden', re.compile(r'of its outline is visible, the rest is r
                 ('low_resolution', re.compile(r"resolution is low")))
 HARMLESS = {'inconsistent'}
 
+# Marker outline coverage envelope (reliable genuine round markers, CI run 39673334481; FACE-ON-VALIDATION.md): readings
+# with >= 90 % of the outline seen are indistinguishable from fully seen ones (Mann-Whitney p = 0.45 / 0.19); below
+# 80 % they shift (p = 0.014 at 70-80 %, 4e-6 at 50-70 %; almost all the minute hand at 10:10); 80-90 % is a weak,
+# not significant trend (p = 0.14) and is withheld as untested. The app's own 50 % reconstruction bound
+# (MetalFit.MIN_COVER) let a bar leaving 50-52 % of the outline visible through.
+COVER_PASS, COVER_FAIL = 0.90, 0.80
+
 
 def soft_classes(text):
     """Classes of one marker's soft warnings; an unrecognised clause is 'other' (never harmless)."""
@@ -299,12 +308,15 @@ def evaluate(s):
     reliable = set(s.get('reliable') or ())
     soft = {int(k): v for k, v in (s.get('soft') or {}).items()}
     for hr in s.get('required') or ():
-        if hr in hidden or hr in hands:
-            # under half its outline seen, or the app's own hand check found a hand at it: obstructed
+        cov = _num((s.get('cover') or {}).get(hr, (s.get('cover') or {}).get(str(hr))))
+        if hr in hidden or hr in hands or (cov is not None and cov < COVER_FAIL):
+            # outline mostly hidden, or the app's own hand check found a hand at it: obstructed
             markers[str(hr)] = False
         elif hr in (s.get('credible') or ()):
             # reliable, or its only soft warning is the harmless 'inconsistent' (reflection) class
-            markers[str(hr)] = hr in reliable or bool(soft.get(hr)) and soft_classes(soft[hr]) <= HARMLESS
+            ok = hr in reliable or bool(soft.get(hr)) and soft_classes(soft[hr]) <= HARMLESS
+            # a clean reading still needs its outline inside the validated coverage envelope (untested otherwise)
+            markers[str(hr)] = (None if cov is None or cov < COVER_PASS else True) if ok else False
         else:
             markers[str(hr)] = False if (hr in withheld or str(hr) in withheld) else None
     return checks, markers

@@ -95,6 +95,8 @@ def marker(decision, hour):
     m = (ev.get('markers') or {}).get(hour) or (ev.get('markers') or {}).get(str(hour)) or {}
     out = {k: m.get(k) for k in MARKER_KEYS}
     out['withheld'] = (ev.get('withheld') or {}).get(hour) or (ev.get('withheld') or {}).get(str(hour))
+    # the screen's own per-marker verdict: True usable, False obstructed / unreliable, None untested
+    out['archive_usable'] = ((decision.metrics.get('analysis') or {}).get('markers') or {}).get(str(hour))
     out['credible'] = hour in (ev.get('credible') or [])
     out['reliable'] = hour in (ev.get('reliable') or [])
     return out
@@ -153,6 +155,20 @@ def run(evidence_path, items, out, limit, pinned=None):
         print('DEGRADE ' + json.dumps(r, separators=(',', ':')))
     for (name, status), n in sorted(counts.items()):
         print('DEGRADE-SUMMARY %s %s %d' % (name, status, n))
+    # marker level, independent of whether the whole original was admitted: a bar over a marker that was usable in
+    # the original must make it not usable
+    level = Counter()
+    for r in rows:
+        if 'target' in r:
+            if r['marker_original'].get('archive_usable') is not True:
+                level[(r['variant'], 'original marker not usable')] += 1
+            else:
+                level[(r['variant'], {True: 'MISSED', False: 'detected', None: 'withheld (untested)'}[r['marker'].get('archive_usable')])] += 1
+    for (name, what), n in sorted(level.items()):
+        print('DEGRADE-MARKER %s %s %d' % (name, what, n))
+    print('DEGRADE-MARKER missed obstructions %d of %d' % (
+        sum(n for (_, w), n in level.items() if w == 'MISSED'),
+        sum(n for (_, w), n in level.items() if w != 'original marker not usable')))
     false_accepts = sum(n for (name, status), n in counts.items() if name != 'original' and status == 'pass')
     print('DEGRADE-SUMMARY false accepts %d; originals admitted %d of %d' % (
         false_accepts, counts[('original', 'pass')], len(chosen)))

@@ -31,6 +31,12 @@ def prepare(e):
     if 'partly_hidden' not in e:
         e['partly_hidden'] = [int(h) for h, t in (e.get('soft') or {}).items() if HIDDEN in str(t)]
     e['withheld'] = {int(k): v for k, v in (e.get('withheld') or {}).items()}
+    # per-marker arrays [side, in/out, tilt, position, coverage, edge RMS, inconsistent share, hand confirmed]
+    m = e.get('m') or {}
+    if 'cover' not in e and any(len(v) > 4 for v in m.values()):
+        e['cover'] = {int(h): v[4] for h, v in m.items() if len(v) > 4}
+    if 'hand_confirmed' not in e and any(len(v) > 7 for v in m.values()):
+        e['hand_confirmed'] = [int(h) for h, v in m.items() if len(v) > 7 and v[7] and int(h) in (e.get('credible') or [])]
     return e
 
 
@@ -70,7 +76,7 @@ def primary(status, reasons):
 
 
 def over_strict(model, hour, m):
-    side, inout, tilt, pos = m
+    side, inout, tilt, pos = m[:4]
     s = SHAPES[model].get(hour, 'r')
     if s == 'r':
         return pos is not None and pos > STRICT['round_pos']
@@ -92,80 +98,127 @@ def spearman(x, y):
         sum((a - mx) ** 2 for a in rx) * sum((b - my) ** 2 for b in ry))
 
 
+def unique(E):
+    """one record per photograph: a record with evidence beats one whose bytes were not fetched"""
+    best = {}
+    for e in E:
+        if e['sha256'] not in best or (best[e['sha256']].get('error') and not e.get('error')):
+            best[e['sha256']] = e
+    return list(best.values())
+
+
+def watch_ids():
+    """sha256 -> declared physical-watch ids from every repository catalogue (aliases are not merged)"""
+    from pathlib import Path
+    from .inventory import catalogue_rows
+    out = defaultdict(set)
+    for _, r in catalogue_rows(Path(__file__).resolve().parents[2]):
+        if r.get('physical_watch_id'):
+            out[(r.get('sha256') or '').lower()].add(r['physical_watch_id'])
+    return out
+
+
+def marker_rule(name):
+    """evaluate() with the marker standard swapped (photo-level checks unchanged) for the rule comparison"""
+    def ev(s):
+        checks, markers = faceon.evaluate(s)
+        if name == 'face-on-v3':
+            return checks, markers
+        req, cred, rel = s.get('required') or [], set(s.get('credible') or []), set(s.get('reliable') or [])
+        hidden, w = set(s.get('partly_hidden') or []), s.get('withheld') or {}
+        keep = cred if name == 'measured (soft warnings allowed)' else rel
+        return checks, {str(h): False if h in hidden else True if h in keep else False if (h in cred or h in w) else None
+                        for h in req}
+    return ev
+
+
+def by_family(E, ids):
+    photos, watches = Counter(), defaultdict(set)
+    for e in E:
+        photos[e['model']] += 1
+        watches[e['model']].add(min(ids.get(e['sha256']) or {e.get('physical_watch_id') or 'photo:' + e['sha256'][:12]}))
+    return photos, {k: len(v) for k, v in watches.items()}
+
+
 def main(path):
-    E = [json.loads(l) for l in open(path)]
+    global evaluate
+    E = unique([json.loads(l) for l in open(path)])
     for e in E:
         e['_status'], e['_reasons'] = decide(e)
         e['_primary'] = primary(e['_status'], e['_reasons'])
-    rev = [e for e in E if e['set'].startswith('reviewed')]
-    print('# Agreement with the reviewed labels (offline contact-sheet review)')
+    ids = watch_ids()
+    analysed = [e for e in E if not e.get('error')]
+    print('# %d unique photographs, %d with exact original bytes analysed' % (len(E), len(analysed)))
+
+    print('\n# Admitted at the archive 250 px floor, by marker standard (photo-level checks identical)')
+    base = evaluate
+    try:
+        for name in ('measured (soft warnings allowed)', 'every marker reliable (app genuine standard)', 'face-on-v3'):
+            evaluate = marker_rule(name)
+            ok = [e for e in analysed if decide(e)[0] == 'pass']
+            p, w = by_family(ok, ids)
+            print('%-46s photos %3d %s; watches %3d %s' % (name, len(ok), dict(p), sum(w.values()), w))
+    finally:
+        evaluate = base
+
+    print('\n# face-on-v3 outcomes')
+    rev = [e for e in E if e['set'].startswith('reviewed') or e['set'] == 'committed']
     groups = defaultdict(Counter)
     for e in rev:
-        groups['near_frontal=%s eligible=%s' % (e['near_frontal'], e['eligible'] or '-')][e['_primary']] += 1
+        if e.get('near_frontal'):
+            groups['reviewed near_frontal=%s eligible=%s' % (e['near_frontal'], e['eligible'] or '-')][e['_primary']] += 1
+    for e in E:
+        if e['set'] == 'historical' or 'historical' in e['set']:
+            groups['historical artifact'][e['_primary']] += 1
+        if e['set'] == 'pilot':
+            groups['recovery pilot'][e['_primary']] += 1
     for g, c in sorted(groups.items()):
-        print('%-34s %4d  %s' % (g, sum(c.values()), dict(c.most_common())))
+        print('%-40s %4d  %s' % (g, sum(c.values()), dict(c.most_common())))
 
-    print('\n# Pose sensitivity: reviewed near-frontal genuine photos, dial radius >= 200 px')
-    good = [e for e in rev if not e.get('error') and e['near_frontal'] == 'yes' and (e.get('rpx') or 0) >= 200]
+    print('\n# Pose sensitivity (reviewed near-frontal genuine, dial radius >= 200 px)')
+    good = [e for e in rev if not e.get('error') and e.get('near_frontal') == 'yes' and (e.get('rpx') or 0) >= 200]
     for model in SHAPES:
         g = [e for e in good if e['model'] == model]
-        if not g:
-            continue
         for lo, hi in ((0, 4), (4, 8), (8, 12), (12, 20)):
             b = [e for e in g if lo <= e['tilt_deg'] < hi]
-            if not b:
+            if b:
+                n = sum(1 for e in b for h in e['m'] if int(h) in e['credible'])
+                o = sum(over_strict(model, int(h), m) for e in b for h, m in e['m'].items() if int(h) in e['credible'])
+                print('%-18s tilt %2d-%2d deg: photos %3d  markers outside strict genuine %3d/%4d' % (model, lo, hi, len(b), o, n))
+
+    print('\n# Marker evidence (reviewed near-frontal genuine, radius >= 250 px, tilt <= 10.6 deg): round-marker position')
+    G = [prepare(e) for e in good if (e.get('rpx') or 0) >= 250 and e['tilt_deg'] <= 10.6]
+    bands = defaultdict(list)
+    for e in G:
+        soft = {int(k): v for k, v in (e.get('soft') or {}).items()}
+        for h, m in e['m'].items():
+            h = int(h)
+            if h not in e['credible'] or SHAPES[e['model']].get(h, 'r') != 'r' or m[3] is None or len(m) < 8:
                 continue
-            n = sum(1 for e in b for h in e['m'] if int(h) in e['credible'])
-            o = sum(over_strict(model, int(h), m) for e in b for h, m in e['m'].items() if int(h) in e['credible'])
-            p = sum(any(over_strict(model, int(h), m) for h, m in e['m'].items() if int(h) in e['credible']) for e in b)
-            w = len({e.get('physical_watch_id') or e['photo_id'] for e in b})
-            print('%-18s tilt %2d-%2d deg: photos %3d (watches %3d)  markers outside strict genuine %3d/%4d  photos with any %3d'
-                  % (model, lo, hi, len(b), w, o, n, p))
-        xs, ys = [], []
-        for e in g:
-            v = [m[3] for h, m in e['m'].items() if SHAPES[model].get(int(h), 'r') == 'r' and int(h) in e['credible'] and m[3] is not None]
-            if v:
-                xs.append(e['tilt_deg'])
-                ys.append(st.median(v))
-        print('%-18s Spearman(tilt, median round-marker position error) = %.2f over %d photos' % (model, spearman(xs, ys), len(xs)))
-
-    print('\n# Leave-one-watch-out envelope (reviewed near-frontal photos with bytes)')
-    pos = [e for e in rev if not e.get('error') and e['near_frontal'] == 'yes']
-    base = dict(faceon.ENVELOPE)
-
-    def envelope(train):
-        ok = [e for e in train if (e.get('rpx') or 0) >= 200 and e.get('pose_valid') and e['tilt_deg'] < 10.611]
-        col = lambda k: [e[k] for e in ok]
-        d = dict(base, tilt_deg_pass=max(col('tilt_deg')), edge_ellipse_ratio_min=min(col('edge_ellipse_ratio')),
-                 v_gradient=(min(col('v_gradient')), max(col('v_gradient'))),
-                 h_gradient=(min(col('h_gradient')), max(col('h_gradient'))), sharpness_min=min(col('sharpness')),
-                 crushed_max=max(col('crushed_fraction')), blown_max=max(col('blown_fraction')),
-                 glare_max=max(col('glare_fraction')))
-        return d
-    watches = defaultdict(list)
-    for e in pos:
-        watches[e.get('physical_watch_id') or e['photo_id']].append(e)
-    held = Counter()
-    try:
-        for w, es in watches.items():
-            faceon.ENVELOPE.clear()
-            faceon.ENVELOPE.update(envelope([e for e in pos if (e.get('physical_watch_id') or e['photo_id']) != w]))
-            for e in es:
-                held[decide(e)[0]] += 1
-    finally:
-        faceon.ENVELOPE.clear()
-        faceon.ENVELOPE.update(base)
-    print('in-sample %s; held out %s; %d photos / %d watches' % (
-        dict(Counter(e['_status'] for e in pos)), dict(held), len(pos), len(watches)))
-
-    print('\n# Historical originals (calibrator artifact 11300604104 and committed public originals)')
-    hist = {}
-    for e in E:
-        if 'historical' in e['set'] or e['set'] == 'committed':
-            hist.setdefault(e['sha256'], e)
-    print('unique originals %d: %s' % (len(hist), dict(Counter(e['_status'] for e in hist.values()))))
-    print('  ', dict(Counter(e['_primary'] for e in hist.values()).most_common()))
+            warn = '+'.join(sorted(faceon.soft_classes(soft.get(h)))) if h not in e['reliable'] else 'reliable'
+            cov = m[4] if m[4] is not None else 0
+            band = '>=0.99' if cov >= 0.99 else '0.90-0.99' if cov >= 0.9 else '0.80-0.90' if cov >= 0.8 else '<0.80'
+            bands[(warn, band)].append(m[3])
+            bands[(warn, 'all')].append(m[3])
+            bands[('hand' if m[7] else 'no hand', band)].append(m[3])
+    ref = bands[('reliable', '>=0.99')]
+    for k in sorted(bands):
+        v = sorted(bands[k])
+        if len(v) >= 5:
+            print('%-32s n %4d median %.3f p95 %.3f  vs reliable fully seen: p=%.2g' % (
+                ' / '.join(k), len(v), st.median(v), v[int(.95 * len(v))], mann_whitney(v, ref)))
     return E
+
+
+def mann_whitney(a, b):
+    """two-sided p (normal approximation)"""
+    if a is b or not a or not b:
+        return 1.0
+    pooled = sorted([(x, 0) for x in a] + [(x, 1) for x in b])
+    r = sum(i + 1 for i, (_, g) in enumerate(pooled) if g == 0)
+    n1, n2 = len(a), len(b)
+    z = (r - n1 * (n1 + 1) / 2 - n1 * n2 / 2) / math.sqrt(n1 * n2 * (n1 + n2 + 1) / 12)
+    return math.erfc(abs(z) / math.sqrt(2))
 
 
 if __name__ == '__main__':

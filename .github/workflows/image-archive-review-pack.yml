@@ -6,7 +6,8 @@ on:
   # workflow_dispatch needs the file on the default branch; while this is a draft PR it runs on pushes that change it
   push:
     branches: [feature/unified-image-archive-20261021]
-    paths: ['.github/workflows/image-archive-review-pack.yml', 'tools/image_archive/review_pack.py']
+    paths: ['.github/workflows/image-archive-review-pack.yml', 'tools/image_archive/review_pack.py',
+            'docs/image-archive/face-on-evidence.jsonl']
   workflow_dispatch:
 permissions:
   contents: read

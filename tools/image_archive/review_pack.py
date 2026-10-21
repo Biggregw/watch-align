@@ -137,8 +137,9 @@ BORDERLINE = (  # (primary reason, how many per model, what it shows)
     ('inconclusive_face_on_rehaut_horizontal', 3, 'perspective gradient outside the tested envelope'),
     ('inconclusive_exposure', 2, 'exposure outside the tested envelope'),
     ('inconclusive_sharp_boundaries', 3, 'sharpness below the tested envelope'),
-    ('fail_marker', 6, 'a hand withholds or hides most of a marker (full-watch rule)'),
-    ('fail_original_resolution', 4, 'dial below the frozen 200 px radius floor'),
+    ('fail_marker', 8, 'a marker obstructed (app hand check, < 80 % outline) or unreliable (rough edge)'),
+    ('inconclusive_marker', 3, 'a marker with 80-90 % of its outline visible (untested band)'),
+    ('fail_original_resolution', 4, 'dial below the archive 250 px radius floor'),
     ('inconclusive_dial_not_registered', 4, 'no readable dial found by the production analysis'),
 )
 

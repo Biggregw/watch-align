@@ -28,12 +28,18 @@ def test_every_reviewer_ineligible_photo_with_bytes_is_rejected_and_no_reviewed_
 
 
 def test_documented_counts():
-    E = records()
-    elig = Counter(decide(e)[0] for e in E if e['set'].startswith('reviewed') and e['eligible'] == 'yes' and not e.get('error'))
-    assert elig == Counter({'pass': 204, 'fail': 63, 'inconclusive': 6})
-    hist = {}
-    for e in E:
-        if 'historical' in e['set'] or e['set'] == 'committed':
-            hist.setdefault(e['sha256'], e)
-    assert len(hist) == 384
-    assert Counter(decide(e)[0] for e in hist.values()) == Counter({'pass': 56, 'fail': 118, 'inconclusive': 210})
+    from tools.image_archive.analyse_validation import unique
+    E = unique(records())
+    assert sum(decide(e)[0] == 'pass' for e in E) == 15
+    assert Counter(e['model'] for e in E if decide(e)[0] == 'pass') == Counter({'submariner_126610': 9, 'submariner_124060': 6})
+    bad = [e for e in E if (e.get('eligible') == 'no' or e.get('near_frontal') == 'no') and not e.get('error')]
+    assert len(bad) == 35 and all(decide(e)[0] == 'fail' for e in bad)
+    pilot = [e for e in records() if e['set'] == 'pilot']
+    assert sum(1 for e in pilot if not e.get('error')) == 56 and not any(decide(e)[0] == 'pass' for e in pilot)
+
+
+def test_the_dark_bar_false_accept_is_now_rejected_by_outline_coverage():
+    from tools.image_archive.faceon import COVER_FAIL
+    # 17484cbe61baaa1a hand_4 copy, CI run 39673334481: the bar left 51.6 % of the 4 marker's outline visible, above
+    # the app's 50 % reconstruction bound and without a hand confirmation
+    assert 0.516 < COVER_FAIL

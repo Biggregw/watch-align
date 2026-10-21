@@ -66,6 +66,8 @@ def build(fetched, historical, model, out):
                 for r in rows:
                     if r['sha256'] == sha:
                         r['set'] += '+historical'
+                        if not r['path']:   # the source no longer serves the exact bytes: use the artifact original
+                            r['path'] = str(p)
                 continue
             seen.add(sha)
             rows.append({'photo_id': sha[:16], 'sha256': sha, 'family': f, 'path': str(p), 'set': 'historical',

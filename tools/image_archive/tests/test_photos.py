@@ -18,7 +18,7 @@ def originals():
     return data
 
 
-def test_reviewed_photographic_controls_have_verified_bytes_and_expected_face_on_v2_decisions():
+def test_reviewed_photographic_controls_have_verified_bytes_and_expected_face_on_v3_decisions():
     data=originals()
     report=json.loads((ROOT/'docs/image-archive/photographic-validation.json').read_text())
     assert len(report)==12
@@ -33,12 +33,11 @@ def test_reviewed_photographic_controls_have_verified_bytes_and_expected_face_on
             assert set(d['usable_marker_ids'])==set(d['required_marker_ids'])
     angled=next(r for r in report if r['photo_id'].startswith('94ad'))
     assert angled['reviewed_label']['near_frontal']=='no'
-    assert angled['decision']['status']=='fail'
     assert {'fail_original_resolution','fail_face_on_ellipse'} <= set(angled['decision']['reasons'])
-    status={r['photo_id'][:8]:r['decision']['status'] for r in report}
-    # a hand over most of a marker's outline (2, 12, 2) withholds the full-watch admission
-    assert [k for k,v in sorted(status.items()) if v=='fail']==['02d7c97e','22060f9a','800cd260','94ad771e']
-    assert sum(v=='pass' for v in status.values())==8
+    # 10:10 dealer photos: the minute hand lies across the 2 (the app's own hand check), so no full-watch admission
+    gmt=next(r for r in report if r['photo_id'].startswith('49ba'))['decision']
+    assert gmt['status']=='fail' and gmt['reasons']==['fail_marker_2_obstructed_or_unreliable']
+    assert all(r['decision']['status']=='fail' for r in report)
 
 
 @pytest.mark.skipif(os.environ.get('ARCHIVE_NATIVE_PHOTO_TESTS')!='1',reason='opt-in JDK17/OpenCV photographic analysis')
@@ -46,8 +45,9 @@ def test_rerun_real_frontal_and_angled_photos():
     from tools.image_archive.faceon import production_screener
     screen=production_screener()
     data=originals()
-    for photo,family,expected in [('49ba843c0a7e19d7.jpg','126710BLNR','pass'),('94ad771e9e2aedde.jpg','126613LB','fail'),
-                                  ('2802b4a30cfb277b.jpg','126613LB','pass'),('800cd2600f322aa5.jpg','126613LN','fail')]:
+    for photo,family,reasons in [('49ba843c0a7e19d7.jpg','126710BLNR',{'fail_marker_2_obstructed_or_unreliable'}),
+                                 ('94ad771e9e2aedde.jpg','126613LB',{'fail_original_resolution','fail_face_on_ellipse'}),
+                                 ('ee07ceedbb6f0bd3.jpg','126610',{'fail_marker_6_obstructed_or_unreliable'})]:
         d=screen.assess_bytes(data[photo],family)
-        assert d.status==expected, (photo, d.reasons)
+        assert d.status=='fail' and reasons <= set(d.reasons), (photo, d.reasons)
         assert 'inconclusive_analysis_failed' not in d.reasons

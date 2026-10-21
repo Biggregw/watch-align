@@ -41,7 +41,7 @@ def summary(**kw):
              h_gradient=1.0, marker_branch_turn=0, hour_lines=12, dial_margin_r=0.48, rpx=430.0, sharpness=3000.0,
              crushed_fraction=0.0, blown_fraction=0.004, glare_fraction=0.02, required=list(REQUIRED['submariner_126610']),
              credible=list(REQUIRED['submariner_126610']), reliable=list(REQUIRED['submariner_126610']), withheld={},
-             partly_hidden=[], hand_confirmed=[], soft={})
+             partly_hidden=[], hand_confirmed=[], soft={}, cover={h: 1.0 for h in REQUIRED['submariner_126610']})
     s.update(kw)
     return s
 
@@ -91,6 +91,19 @@ def test_the_apps_hand_check_and_unreliable_edges_withhold_a_marker_but_a_reflec
     assert status(both) == 'fail'
     assert status(summary(reliable=rest, soft={4: 'something the archive does not know'})) == 'fail'
     assert status(summary(reliable=rest, soft={})) == 'fail'             # unreliable without a stated reason
+
+
+def test_outline_coverage_envelope():
+    def cov(c):
+        d = {h: 1.0 for h in REQUIRED['submariner_126610']}
+        d[2] = c
+        return summary(cover=d)
+    assert status(cov(0.95)) == 'pass'
+    assert status(cov(0.90)) == 'pass'
+    assert status(cov(0.85)) == 'inconclusive'                           # 80-90 %: untested
+    assert status(cov(0.79)) == 'fail'                                   # readings shift below 80 %
+    assert status(cov(0.516)) == 'fail'                                  # the dark-bar false accept (17484cbe)
+    assert status(summary(cover={})) == 'inconclusive'                   # coverage unknown
 
 
 def test_soft_warning_classes():

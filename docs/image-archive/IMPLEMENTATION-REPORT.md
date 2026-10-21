@@ -1,11 +1,23 @@
 # Unified image archive implementation — 21 October 2026
 
-**Review status: draft.** Update (21 Oct 2026, continued): the face-on admission profile
-`face-on-v2` is validated and promoted (evidence: [FACE-ON-VALIDATION.md](FACE-ON-VALIDATION.md)).
-It admits 56 of the 384 recovered historical originals and 204 of 273 reviewer-eligible
-photographs, 217 unique photographs in all. Every reviewer-ineligible photograph is rejected. Of 144
-controlled counterexamples, one was admitted (a dark bar over a marker); see the validation document. No personal Microsoft account was connected and nothing
-was uploaded or migrated. The owner decisions are listed in that document.
+**Review status: draft.** Update (21 Oct 2026, owner refinements): the archive admission profile is now
+`face-on-v3` (evidence: [FACE-ON-VALIDATION.md](FACE-ON-VALIDATION.md)). It is archive-only; the Android app's QC
+logic, its 200 px floor, measurements and tolerances are unchanged. The rules are:
+
+- an archive floor of 250 px dial radius;
+- the app's own per-marker hand check and an outline-coverage envelope for obstruction;
+- of the soft edge warnings, only the harmless "inconsistent edge" (reflection) class is accepted.
+
+At 250 px:
+- **15 photographs (15 watches; Date 9, No-Date 6, GMT 0)** pass with every marker unobstructed.
+- 178 pass if partly hand-covered markers and all soft warnings are allowed.
+- 123 pass if every marker must meet the app's reliability standard; that standard still lets hands through.
+
+In most dealer photographs the 10:10 minute hand lies across the 2 marker, and the evidence shows such readings shift.
+
+Counterexamples: all 85 artificial obstructions of previously usable markers are detected, with 0 false accepts.
+The recovery pilot found 56 of 100 exact originals, none suitable. No Microsoft account was connected and nothing
+was uploaded or migrated.
 
 ## What was built
 
@@ -28,22 +40,20 @@ QC decisions and measurements were not changed.
 
 ## Photograph rules and results
 
-Superseded by [FACE-ON-VALIDATION.md](FACE-ON-VALIDATION.md). In summary, a PASS needs every required signal
-affirmatively true inside the envelope of 263 reviewed near-frontal genuine photographs (217 watches) whose production
-measurements stayed clean. A known failure rejects, and anything untested is inconclusive. Required for a PASS:
+See [FACE-ON-VALIDATION.md](FACE-ON-VALIDATION.md). A PASS needs every required signal affirmatively true:
 
-- **Tilt:** at most 10.60°. From 13.29° up, every reviewed genuine photograph produced strict-genuine false failures.
-- **Resolution:** the frozen 200 px dial-radius floor.
-- **Framing:** a whole dial and all 12 hour lines placed from the minute track.
-- **Image quality:** harvester and envelope sharpness, exposure and glare bounds.
-- **Markers:** every required marker measured, not withheld and not more than half hidden.
+- **Pose:** tilt ≤ 10.60°; ≥ 13.29° rejected.
+- **Resolution:** an archive dial radius of at least 250 px.
+- **Framing:** a whole dial and all 12 hour lines placed.
+- **Image quality:** sharpness, exposure and glare inside the envelope.
+- **Markers:** every required marker measured; not withheld, not hand-confirmed, at least 90 % of its outline seen
+  (80–90 % inconclusive); no soft edge warning other than "inconsistent edge".
 
-The first version admitted no photograph because of two defects:
-- it required a tilt from round markers, which have none;
-- it treated a soft edge-fit warning as an obstruction.
-
-All 12 public controls now match their reviews: 8 pass, and 4 fail. The 4 failures are the oblique 94ad, and three with
-a hand over a marker.
+The first versions admitted the dark-bar counterexample: a bar left 51.6 % of a marker's outline, above the app's 50 %
+reconstruction bound, and no hand was confirmed. The coverage envelope, from genuine readings that shift below 80 %,
+and the app's hand check now catch every tested bar. All 12 public controls are rejected:
+- 94ad as oblique and low resolution;
+- the other 11 for a hand-covered or unreliable marker, mostly the minute hand at 2 or a rough 12 triangle.
 
 ## Historical recovery
 
@@ -51,7 +61,7 @@ The inventory covers 12,725 overlapping catalogue/association rows and 3,026 dis
 SHA-256 identities. Do not add dataset totals or interpret 785 declared watch IDs as
 verified independent watches; 37 shared-photo identity conflicts need review.
 
-| Exact photographs (face-on-v2) | Count |
+| Exact photographs (face-on-v2, before the owner refinements) | Count |
 | --- | ---: |
 | Recoverable in inspected files/artifact | 384 |
 | Suitable (pass) | 56 |
@@ -59,9 +69,15 @@ verified independent watches; 37 shared-photo identity conflicts need review.
 | Inconclusive (197 no readable dial in a gallery shot, 13 just outside the tested envelope) | 210 |
 | Original hash still missing | 2,642 |
 
-Exact-hash refetch from the catalogued URL also recovers originals. It recovered 313 of the 556 reviewed photographs;
-Bob's image CDN now serves different bytes for most of the 228-photo additional review. Running it over the 2,642
-missing hashes is a further recovery step for the owner to approve.
+Exact-hash refetch from the catalogued URL also recovers originals. The approved pilot of 100 catalogued missing
+originals:
+- recovered 56 exact originals (55 GMT, 1 Date; 23 watches);
+- found 43 now served with different bytes, 39 of them from Bob's;
+- found 1 gone.
+
+None of the 56 is a suitable face-on photograph: half are gallery shots with no dial. The originals are drifting:
+21 previously admitted photographs are no longer served byte-exact. A wider recovery needs owner approval.
+Current per-photo outcomes under face-on-v3 are in [face-on-evidence.jsonl](face-on-evidence.jsonl).
 
 Four pinned public fixtures plus ten originals in the existing review ZIP yield
 12 unique committed originals. GitHub artifact `11300604104`,

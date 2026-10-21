@@ -2,7 +2,7 @@
 
 **Draft.** Storage, Graph transport, credential renewal, acquisition hooks and calibration
 restoration are implemented. The production screener uses the validated face-on admission
-profile `face-on-v2` (GMT 126710, Submariner Date 126610 family and No-Date 124060); its
+profile `face-on-v3` (GMT 126710, Submariner Date 126610 family and No-Date 124060); its
 evidence and limitations are in [FACE-ON-VALIDATION.md](../../docs/image-archive/FACE-ON-VALIDATION.md).
 Live collection still needs the owner decisions listed there and explicit Microsoft
 authorization.
@@ -40,26 +40,26 @@ sidecar. Bob's Watches output uses the same manifest adapter; generic extracted 
 originals must have an explicit metadata manifest and pass the same screen. No new
 acquisition mechanism or APK changes are introduced.
 
-## Admission contract (face-on-v2)
+## Admission contract (face-on-v3, archive only)
 
 A PASS needs affirmative evidence for **all** of:
 
 1. **Face-on.** The dial tilt from the minute-track registration is at most 10.60°, and the dial-edge ellipse and both
    perspective gradients are inside the validated envelope. The hour markers confirm the pose.
 2. **Complete dial and minute track.** The whole dial edge is in the frame and all 12 hour lines are placed.
-3. **Resolution.** The dial radius is at least 200 px (the frozen app floor) and the short side at least 400 px.
+3. **Resolution.** The archive floor is a dial radius of at least 250 px, so the short side must be at least 500 px.
+   The app keeps its own 200 px floor.
 4. **Image quality.** Sharpness, exposure and glare are inside the validated envelope, and no marker is withheld for
    glare.
-5. **Every actual hour marker** (12 on No-Date, 11 excluding 3 on Date layouts) is measured. None may be withheld (hand,
-   glare, Can't check) or have less than half of its outline seen.
+5. **Every actual hour marker** (12 on No-Date, 11 excluding 3 on Date layouts) is usable:
+   - measured, and not withheld by the app;
+   - no hand confirmed by the app's per-marker hand check;
+   - at least 90 % of its outline seen (80–90 % is inconclusive, under 80 % obstructed);
+   - no soft edge warning other than "inconsistent edge", a harmless reflection.
 6. **Identity.** Exact model, physical-watch identity, source URL and accepted provenance/class.
 
-How the bounds are set:
-- Every bound comes from `faceon.ENVELOPE`, the evidence in FACE-ON-VALIDATION.md, or an existing documented bound.
-- Beyond a failure bound (for example, tilt of 13.29° or more) the photo is rejected.
-- Between the envelope and a failure bound, the range is untested, so the photo is **inconclusive**. Missing,
-  non-finite, unsupported and ambiguous evidence is also inconclusive.
-- The historical `suitable` flag and the `GOOD`/`CORRECTABLE` pose labels never admit an image.
+Every bound comes from `faceon.ENVELOPE`, `COVER_PASS`/`COVER_FAIL`, `HARMLESS`, `MIN_DIAL_RADIUS_PX` and the evidence
+in FACE-ON-VALIDATION.md. A photo beyond a failure bound is rejected; an untested range is **inconclusive**.
 
 `faceon.VALIDATED_PROFILES` is the only registry. No CLI option, environment variable or manifest field changes it.
 Tests also inject a test-only synthetic analyzer to exercise storage. Yacht-Master and other unsupported layouts remain
