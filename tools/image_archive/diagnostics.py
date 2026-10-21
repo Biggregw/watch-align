@@ -51,10 +51,7 @@ class FamilyDiagnostics:
     registry stays unpromoted until rehaut, ellipse, perimeter and precision gates
     have held-out validation. No family is silently analyzed as GMT.
     """
-    MODELS = {'gmt_126710':'gmt_126710', '126710BLNR':'gmt_126710', '126710BLRO':'gmt_126710',
-              '124060':'submariner_124060', 'submariner_124060':'submariner_124060',
-              '126610':'submariner_126610', '126610LN':'submariner_126610', '126610LV':'submariner_126610', '126610LN/LV':'submariner_126610',
-              '126613LB':'submariner_126610', '126613LN':'submariner_126610', 'submariner_126610':'submariner_126610'}
+    from .faceon import MODELS  # the reference families the reviewed marker audit measured with each model
 
     def __init__(self, harness=None):
         self.harness = harness or Harness(shards=1)

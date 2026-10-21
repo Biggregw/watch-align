@@ -21,12 +21,16 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-MODELS = {'gmt_126710': 'gmt_126710', '126710BLNR': 'gmt_126710', '126710BLRO': 'gmt_126710',
+# The same reference families the reviewed marker audit measured with each model (tools/research/marker_audit/results/
+# *-verified.csv): every 126710 bezel variant with the GMT dial, every 41 mm Submariner Date reference with the Date dial.
+MODELS = {'gmt_126710': 'gmt_126710', '126710BLNR': 'gmt_126710', '126710BLRO': 'gmt_126710', '126710GRNR': 'gmt_126710',
           'GMT-Master II': 'gmt_126710',
           '124060': 'submariner_124060', 'submariner_124060': 'submariner_124060',
           '126610': 'submariner_126610', '126610LN': 'submariner_126610', '126610LV': 'submariner_126610',
           '126610LN/LV': 'submariner_126610', '126613LB': 'submariner_126610', '126613LN': 'submariner_126610',
-          '126613': 'submariner_126610', '126618LB': 'submariner_126610', 'submariner_126610': 'submariner_126610'}
+          '126613': 'submariner_126610', '126618LB': 'submariner_126610', '126618': 'submariner_126610',
+          '126618LN': 'submariner_126610', '126619': 'submariner_126610', '126619LB': 'submariner_126610',
+          'submariner_126610': 'submariner_126610'}
 
 # 12 hour markers on No-Date dials; Date dials have no 3 (the date window is not a marker)
 REQUIRED = {'gmt_126710': tuple(h for h in range(1, 13) if h != 3),

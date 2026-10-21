@@ -72,8 +72,11 @@ def collect(items, out, log=False, chunk=40):
             r.pop('path', None)
             f.write(json.dumps(r, sort_keys=True) + '\n')
             if log:
-                print('EVJ ' + json.dumps(_round({k: v for k, v in r.items() if k not in COMPACT_DROP}), sort_keys=True,
-                                          separators=(',', ':')))
+                c = {k: v for k, v in r.items() if k not in COMPACT_DROP}
+                # per marker [side %R, in/out %R, tilt deg, position %R] for the pose-sensitivity analysis
+                c['m'] = {h: [m.get(k) for k in ('side_pct', 'inout_pct', 'tilt_deg', 'pos_pct')]
+                          for h, m in (r.get('markers') or {}).items()}
+                print('EVJ ' + json.dumps(_round(c), sort_keys=True, separators=(',', ':')))
     return records
 
 
