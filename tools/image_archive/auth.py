@@ -68,20 +68,26 @@ def device_login(app, cache, save_cache, display=print):
     save_cache(cache.serialize())
 
 
-def github_cache_writer(repository, secret_name='ONEDRIVE_MSAL_CACHE'):
-    """Persist rotated cache using gh's encrypted repository-secret API.
+ENVIRONMENT = 'onedrive-archive'
 
+
+def github_cache_writer(repository, secret_name='ONEDRIVE_MSAL_CACHE', environment=ENVIRONMENT):
+    """Persist rotated cache using gh's encrypted ENVIRONMENT-secret API.
+
+    The cache is an environment secret of `onedrive-archive`, so only jobs that pass
+    that environment's protection rules (required reviewers) can read it; a repository
+    secret would be readable by any workflow on any branch of this public repository.
     GH_TOKEN must be a fine-grained credential restricted to this repository with
-    Secrets:write. No token is passed as an argument or emitted on error.
+    Environments: read and write. No token is passed as an argument or emitted on error.
     """
     import re
     import subprocess
     if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', repository):
         raise ValueError('invalid repository')
-    if secret_name != 'ONEDRIVE_MSAL_CACHE':
-        raise ValueError('unexpected secret name')
+    if secret_name != 'ONEDRIVE_MSAL_CACHE' or environment != ENVIRONMENT:
+        raise ValueError('unexpected secret name or environment')
     def save(text):
-        result = subprocess.run(['gh', 'secret', 'set', secret_name, '--repo', repository],
+        result = subprocess.run(['gh', 'secret', 'set', secret_name, '--env', environment, '--repo', repository],
                                 input=text, text=True, capture_output=True)
         if result.returncode:
             raise RuntimeError('encrypted cache renewal failed; token use withheld')

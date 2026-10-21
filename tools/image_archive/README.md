@@ -178,31 +178,36 @@ by the CLI while the photographic admission profile is unvalidated.
    stop; the app-folder consumer permission is preview and cannot be assumed to work
    for every registration. No permission expansion is attempted.
 5. For optional unattended synthetic tests, create the `onedrive-archive` GitHub
-   Environment and configure required reviewers if available. In repository Settings:
+   Environment and configure **required reviewers** (yourself). This repository is
+   public, so every credential lives in that protected environment. In repository Settings:
 
    | Name | Kind | Purpose |
    | --- | --- | --- |
    | `ONEDRIVE_CLIENT_ID` | Repository variable | Public application ID |
-   | `ONEDRIVE_MSAL_CACHE` | **Repository secret** | Serialized delegated MSAL cache |
-   | `ONEDRIVE_CACHE_WRITE_TOKEN` | Environment secret | Fine-grained GitHub PAT for this repository only, Secrets write |
+   | `ONEDRIVE_MSAL_CACHE` | **Environment secret** (`onedrive-archive`) | Serialized delegated MSAL cache |
+   | `ONEDRIVE_CACHE_WRITE_TOKEN` | Environment secret (`onedrive-archive`) | Fine-grained GitHub PAT for this repository only, Environments: read and write |
 
-   Keep the cache a repository secret, not an environment override: the renewal writer
-   updates the repository secret. `GITHUB_TOKEN` cannot write Actions secrets. Upload
-   the cache directly from the trusted terminal, without printing its contents:
+   Keep the cache an environment secret, never a repository secret: a repository secret
+   is readable by any workflow on any branch, while the environment secret is released
+   only to a job you approve. The renewal writer updates that environment secret
+   (`gh secret set --env onedrive-archive`). `GITHUB_TOKEN` cannot write Actions secrets.
+   Upload the cache directly from the trusted terminal, without printing its contents:
 
    ```sh
-   gh secret set ONEDRIVE_MSAL_CACHE --repo Biggregw/watch-align < /tmp/watch-align-private/msal-cache.json
+   gh secret set ONEDRIVE_MSAL_CACHE --env onedrive-archive --repo Biggregw/watch-align < /tmp/watch-align-private/msal-cache.json
    ```
 
    Enter the fine-grained PAT via GitHub's secret UI. It is a GitHub credential, not a
    request for broader Microsoft permissions. Use the narrowest repository selection
    and expiry, and keep its renewal separate from Microsoft consent.
 6. On the phone, open Actions → **Image archive synthetic connection test** → Run
-   workflow. Select the reviewed feature branch while the PR is draft. Tick the
+   workflow. GitHub lists a manually dispatched workflow only once its file is on the
+   default branch, so this step becomes available after the archive is merged; until
+   then use the local synthetic test in step 4. Tick the
    explicit authorization input only after approval. The job uses no photograph inputs
    and publishes no credential artifacts.
 
-Refresh-cache changes are encrypted into the GitHub repository secret **before an
+Refresh-cache changes are encrypted into the GitHub environment secret **before an
 access token is released to Graph**. Jobs share a non-cancelling concurrency group to
 avoid refresh-token rotation races. Every future OneDrive workflow must use the same
 group. An external concurrent cache writer is unsupported. A failed secret update,

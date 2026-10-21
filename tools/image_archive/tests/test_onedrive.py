@@ -216,6 +216,8 @@ def test_encrypted_github_cache_writer_never_command_line_secret(monkeypatch):
     assert 'rotated-secret' not in repr(calls[0][0])
     assert calls[0][1]['input'] == 'rotated-secret'
     assert calls[0][1]['capture_output'] is True
+    # environment-scoped (protected by the onedrive-archive environment), never a repository-wide secret
+    assert calls[0][0][calls[0][0].index('--env') + 1] == 'onedrive-archive'
 
 
 def test_remote_object_listing_paginates_and_descends():
