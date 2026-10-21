@@ -31,8 +31,8 @@ def collect(items, out, log=False, chunk=40):
     records = []
     for r in rows:
         rec = dict(r)
-        p = Path(r['path'])
-        if not p.exists():
+        p = Path(r['path']) if r['path'] else None
+        if p is None or not p.is_file():
             rec['error'] = 'missing'
         else:
             data = p.read_bytes()
