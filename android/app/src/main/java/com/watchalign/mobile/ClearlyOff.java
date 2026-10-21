@@ -91,6 +91,8 @@ final class ClearlyOff {
      */
     static final class Limits {
         double roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg,triInoutR=INOUT_TRIANGLE_LIMIT_R;
+        /** Classifier-only: the genuinely calibrated top-edge radial limit is independent of the legacy centre limit. */
+        boolean strictGenuine;
         static Limits defaults(){Limits l=new Limits();l.roundPosR=POS_LIMIT_R;l.batonPosR=POS_LIMIT_R;l.batonTiltDeg=TILT_LIMIT_DEG;
             l.triSideR=SIDE_LIMIT_R;l.triGapR=GAP_TRIANGLE_LIMIT_R;l.triTiltDeg=TRI_ROT_LIMIT_DEG;return l;}
         /** 1.6.6 strict genuine standard (owner, pooled genuine Rolex research, PR #64): experimental statistical screening
@@ -98,9 +100,9 @@ final class ClearlyOff {
          *  by the same decide() as the replica-QC limits, so the 0.5 px allowance is applied once, in the same direction
          *  (added to every maximum, subtracted from the gap minimum). */
         static Limits genuine(){Limits l=new Limits();l.roundPosR=0.00671;l.batonPosR=0.00752;l.batonTiltDeg=1.096;
-            l.triSideR=0.00437;l.triInoutR=0.00373;l.triTiltDeg=1.174;l.triGapR=0.02810;return l;}
+            l.triSideR=0.00437;l.triInoutR=0.00373;l.triTiltDeg=1.174;l.triGapR=0.02810;l.strictGenuine=true;return l;}
         Limits copy(){Limits l=new Limits();l.roundPosR=roundPosR;l.batonPosR=batonPosR;l.batonTiltDeg=batonTiltDeg;
-            l.triSideR=triSideR;l.triGapR=triGapR;l.triTiltDeg=triTiltDeg;l.triInoutR=triInoutR;return l;}
+            l.triSideR=triSideR;l.triGapR=triGapR;l.triTiltDeg=triTiltDeg;l.triInoutR=triInoutR;l.strictGenuine=strictGenuine;return l;}
         double[] values(){return new double[]{roundPosR,batonPosR,batonTiltDeg,triSideR,triGapR,triTiltDeg,triInoutR};}
         boolean same(Limits o){double[] a=values(),b=o.values();for(int i=0;i<a.length;i++){if(Double.isNaN(a[i])!=Double.isNaN(b[i]))return false;
             if(!Double.isNaN(a[i])&&Math.abs(a[i]-b[i])>1e-9)return false;}return true;}
@@ -148,6 +150,11 @@ final class ClearlyOff {
         double altLumeDiffPct=Double.NaN;
         /** 1.6.6: the independent per-marker check found a hand at this marker (MetalFit.handConfirmed) */
         boolean handConfirmed;
+        /** EXPERIMENTAL (12 triangle, research only; never used for a verdict): the radial position from the outer metal
+         *  top edge against the ring of the other markers (TriangleTopEdge) */
+        TriangleTopEdge.Result topEdge;
+        /** Calibrated top-edge radial measurement has replaced the old centre-derived radial reading. */
+        boolean radialFromTopEdge;
         Marker(int hour,ModelSpec.Shape shape){this.hour=hour;this.shape=shape;}
         /** a copy to judge against other limits without changing the shown answer (calibration screen) */
         Marker copy(){Marker m=new Marker(hour,shape);m.state=state;m.reason=reason;m.gate.addAll(gate);
@@ -156,7 +163,7 @@ final class ClearlyOff {
             m.tiltCentroidDeg=tiltCentroidDeg;m.rotLeftDeg=rotLeftDeg;m.rotRightDeg=rotRightDeg;m.rotRmsPx=rotRmsPx;m.rotNote=rotNote;
             m.uncertain=uncertain;m.source=source;m.cover=cover;m.fitRmsPx=fitRmsPx;m.badFrac=badFrac;m.sePosPct=sePosPct;m.seRotDeg=seRotDeg;
             m.fitTiltDeg=fitTiltDeg;m.yellow=yellow;m.fitPoly=fitPoly;m.fitPts=fitPts;m.fitStatus=fitStatus;m.tick59=tick59;m.tick01=tick01;
-            m.gapFromFit=gapFromFit;m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;m.altLumeDiffPct=altLumeDiffPct;m.handConfirmed=handConfirmed;return m;}
+            m.gapFromFit=gapFromFit;m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;m.altLumeDiffPct=altLumeDiffPct;m.handConfirmed=handConfirmed;m.topEdge=topEdge;m.radialFromTopEdge=radialFromTopEdge;return m;}
         boolean measured(){return Double.isFinite(sidePct)||Double.isFinite(inoutPct);}
     }
 
@@ -242,6 +249,11 @@ final class ClearlyOff {
                         r.altLumeDiffPct=100*lumeAcross(lc.d[0]-(mf.alt.cObs[0]-mf.alt.cGen[0]),lc.d[1]-(mf.alt.cObs[1]-mf.alt.cGen[1]),m.yellow,mf.altSide);
                 }
                 if(m.shape==ModelSpec.Shape.TRIANGLE){
+                    try{r.topEdge=topEdge(m,ticks,res.lines,img,base,fits,in,res.edgeBiasPx,rpx);}catch(Throwable t){r.topEdge=null;}
+                    // Owner-approved 21 Oct 2026 calibration. A usable, single-edge consensus measures radial placement
+                    // directly, replacing (NOT being OR-ed with) the diagonals' centre-derived radial result.
+                    // Keep the old measurement as a fallback when the top edge cannot be located independently.
+                    useCalibratedTopEdge(r,rpx);
                     gap(r,m,ticks,res.lines,img,rpx);
                     if(mf!=null&&mf.ok()){if(!Double.isFinite(r.gapPct))gapFromFit(r,mf,ticks,res.lines,img,rpx);metalTriangleRotation(r,mf,ticks);}
                     else triangleRotation(r,m,ticks,res.lines,img,rpx);
@@ -263,6 +275,17 @@ final class ClearlyOff {
         return res;
     }
 
+    /** Owner-approved calibrated top-edge radial measurement. The old full-outline centre is a fallback only
+     *  when the edge is unavailable/ambiguous or the dial is below the existing 200 px radius quality gate.
+     *  Never OR the two radial failures: an unreliable sloping-side fit would reintroduce the known false positive. */
+    static void useCalibratedTopEdge(Marker r,double rpx){
+        r.radialFromTopEdge=false;
+        if(r.shape!=ModelSpec.Shape.TRIANGLE||rpx<LOW_RES_RPX||r.topEdge==null||!r.topEdge.ok()||r.topEdge.ambiguous())return;
+        r.radialFromTopEdge=true;
+        r.inoutPct=r.topEdge.radialPct-TriangleTopEdge.CALIBRATION_OFFSET_PCT;
+        r.inoutPx=r.inoutPct*rpx/100.0;
+    }
+
     // ------------------------------------------------------------------------------------------------ decision
 
     static void decide(Marker r,double rpx,List<Input> in){decide(r,rpx,in,Limits.defaults());}
@@ -272,7 +295,7 @@ final class ClearlyOff {
         double allow=100*LOWRES_ALLOWANCE_PX/rpx;
         boolean tri=r.shape==ModelSpec.Shape.TRIANGLE,baton=r.shape==ModelSpec.Shape.BATON;
         r.sideLimitPct=tri?100*L.triSideR+allow:Double.NaN;
-        r.inoutLimitPct=tri?100*L.triInoutR+allow:Double.NaN;
+        r.inoutLimitPct=tri?(L.strictGenuine&&r.radialFromTopEdge?TriangleTopEdge.GENUINE_RADIAL_LIMIT_PCT:100*L.triInoutR)+allow:Double.NaN;
         r.posLimitPct=tri?Double.NaN:100*(baton?L.batonPosR:L.roundPosR)+allow;
         r.tiltLimitDeg=baton?L.batonTiltDeg:tri?L.triTiltDeg:Double.NaN;
         r.gapLimitPct=tri?100*L.triGapR-allow:Double.NaN;
@@ -422,6 +445,23 @@ final class ClearlyOff {
     /** track.outer_gap: the owner's gap, the clear dial between the triangle's outer edge and the inner ends of the
      *  minute ticks above it, along rays between the ticks. The edge is where the bright surround falls half way to the
      *  dial; the tick ends are this photo's own (median of the clean ticks near the hour). */
+    /** EXPERIMENTAL: TriangleTopEdge for the 12 triangle. The reference circle comes from the round markers only (never
+     *  the triangle itself), reliably fitted ones preferred; the tick inner ends above it as gap() takes them. */
+    static TriangleTopEdge.Result topEdge(Input m,List<Tick> ticks,Map<Integer,Double> L,Img img,Map<Integer,Base> base,
+                                          Map<Integer,MetalFit.Fit> fits,List<Input> in,Map<ModelSpec.Shape,Double> edgeBiasPx,double rpx){
+        List<double[]> rel=new ArrayList<>(),all=new ArrayList<>();
+        for(Input o:in){if(o.hour==m.hour||o.shape!=ModelSpec.Shape.ROUND)continue;Base b=base.get(o.hour);
+            if(b==null||!b.gate.isEmpty()||b.cObs==null)continue;double[] q={norm(b.cObs),norm(b.cGen)};all.add(q);
+            MetalFit.Fit f=fits.get(o.hour);if(f==null||(f.uncertain.isEmpty()&&rpx>=LOW_RES_RPX))rel.add(q);}
+        double[] sc=TriangleTopEdge.ringScale(rel,all,MIN_RING);
+        Double a0=L.get(m.hour%12);
+        int k0=(5*m.hour)%60;List<Double> rin=new ArrayList<>();
+        for(int dk=-2;dk<=2;dk++){Tick t=ticks.get((int)pmod(k0+dk,60));if(t.bad.isEmpty())rin.add(t.rIn);}
+        double rt=rin.size()<3?Double.NaN:median(toArray(rin));
+        Double rb=edgeBiasPx.get(ModelSpec.Shape.ROUND);
+        return TriangleTopEdge.measure(img,m.yellow,a0==null?Double.NaN:a0,rt,sc[0],(int)sc[1],sc[2]>0,rb==null?0:rb/rpx,rpx);
+    }
+
     static void gap(Marker r,Input m,List<Tick> ticks,Map<Integer,Double> L,Img img,double rpx){
         Double a0=L.get(m.hour%12);
         if(a0==null||m.yellow==null||m.yellow.length<3)return;
@@ -1147,6 +1187,8 @@ final class ClearlyOff {
                 100*r.cover,r.fitRmsPx,100*r.badFrac,r.sePosPct,Double.isFinite(r.seRotDeg)?String.format(Locale.US,", rotation ± %.2f°",r.seRotDeg):""));
         if(!r.uncertain.isEmpty())b.append("\nUncertain: ").append(r.uncertain).append('.');
         if(!r.gate.isEmpty())b.append(b.length()>0?"\n":"").append("Withheld: ").append(String.join("; ",r.gate)).append('.');
+        // The new calibrated top-edge radial reading is used when sound; otherwise the old centre-derived radial remains.
+        if(tri&&r.topEdge!=null)b.append(b.length()>0?"\n":"").append(r.radialFromTopEdge?"Calibrated radial position from top edge (used): ":"Top edge not used; original centre-derived radial used: ").append(r.topEdge.summary()).append('.');
         return b.toString();
     }
 
