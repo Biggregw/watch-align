@@ -52,7 +52,6 @@ def credible(r):
     if not USE_CREDIBLE: return False
     if r['state'] == 'CANT_CHECK' or r['gate']: return False
     if not (math.isfinite(_f(r['side_pct'])) or math.isfinite(_f(r['inout_pct']))): return False
-    if r.get('hand_confirmed') and r['uncertain']: return False
     return True
 
 

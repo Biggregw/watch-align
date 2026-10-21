@@ -87,14 +87,15 @@ public class WatchClassificationTest {
         assertEquals(ClearlyOff.State.POSSIBLE,r.at(10).state);
         assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,c.verdict);assertTrue(c.at(10).qcFail());assertFalse(c.at(10).reliable);
         // owner, 22 Oct 2026: no reliability threshold is added - however rough, inconsistent or partly reconstructed the
-        // fit, a completed reading decides; only an uncertain fit beside a confirmed hand does not (the refit decides it)
+        // fit, a completed reading decides; owner, 21 Oct 2026: even beside a confirmed hand (a known replica is flagged
+        // whatever else failed)
         for(int k=0;k<3;k++){r=watch(model);ClearlyOff.Marker m=r.at(10);m.uncertain="its visible edge is rough";m.sidePct=3.0;
             if(k==0)m.fitRmsPx=1.4;if(k==1)m.badFrac=0.66;if(k==2)m.cover=0.40;
             c=WatchClassification.classify(judge(r),model,null);
             assertEquals("case "+k,WatchClassification.Verdict.REPLICA_QC_ISSUES,c.verdict);assertTrue(c.at(10).credible);}
         r=watch(model);ClearlyOff.Marker m=r.at(10);m.uncertain="its visible edge is rough";m.sidePct=3.0;m.handConfirmed=true;m.fitRmsPx=0.6;
         c=WatchClassification.classify(judge(r),model,null);
-        assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);assertFalse(c.at(10).credible);
+        assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,c.verdict);assertTrue(c.at(10).credible);
         r=watch(model);r.at(10).gate.add("a hand covers most of its outline");
         assertEquals(WatchClassification.Verdict.CANT_DETERMINE,verdict(judge(r),model));
         r=watch(model);r.at(10).sidePct=Double.NaN;r.at(10).inoutPct=Double.NaN;   // not measured
@@ -292,12 +293,13 @@ public class WatchClassificationTest {
         assertEquals("the lume disagrees",WatchClassification.Verdict.CANT_DETERMINE,verdict(r,model));
         r=ownersSix(model,-0.04,-0.03,-0.24);r.at(6).altLumeDiffPct=Double.NaN;
         assertEquals("the lume was not measured",WatchClassification.Verdict.CANT_DETERMINE,verdict(r,model));
-        // the uncertain reading over the replica-QC limit: Possible, inspect; the refit does not overrule it
+        // the uncertain reading over the replica-QC limit beside a hand: it decides (owner, 21 Oct 2026); the refit does not
+        // overrule it
         r=watch(model);ClearlyOff.Marker m=r.at(6);m.sidePct=-1.40;m.uncertain="its visible edge is rough (1.4 px)";m.fitRmsPx=1.4;m.handConfirmed=true;
         m.altSide=0;m.altSidePct=-0.04;m.altInoutPct=-0.03;m.altTiltDeg=-0.24;m.altLumeDiffPct=0.05;judge(r);
         assertEquals(ClearlyOff.State.POSSIBLE,m.state);
         WatchClassification.Result c=WatchClassification.classify(r,model,null);
-        assertEquals(WatchClassification.Alt.NONE,c.at(6).alt);assertEquals(WatchClassification.Verdict.CANT_DETERMINE,c.verdict);
+        assertEquals(WatchClassification.Alt.NONE,c.at(6).alt);assertEquals(WatchClassification.Verdict.REPLICA_QC_ISSUES,c.verdict);
         // a reliable reading is judged on itself; refit numbers are ignored
         r=watch(model);m=r.at(6);m.altSide=0;m.altSidePct=5;m.altInoutPct=5;m.altTiltDeg=5;m.altLumeDiffPct=0.05;judge(r);
         c=WatchClassification.classify(r,model,null);

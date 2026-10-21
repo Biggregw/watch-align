@@ -116,16 +116,14 @@ final class WatchClassification {
     }
 
     /**
-     * Owner, 21 Oct 2026: a completed measurement outside a frozen limit decides, even with a soft edge-fit warning
-     * (rough, inconsistent, partly reconstructed, loosely fixed, low resolution); no reliability threshold is added.
-     * NOT credible (unavailable or invalid): no reading, anything withheld (Can't check, a gate), no finite
-     * measurement, or an uncertain fit at a marker where the per-marker check confirmed a hand (a hand can pull the
-     * fit: owner's genuine Submariner Date, 6 baton; the hand-interference refit decides those). A genuine PASS still
-     * needs a reliable reading (reliable()).
+     * Owner, 21-22 Oct 2026: a completed measurement outside a frozen limit decides, even with a soft edge-fit warning
+     * (rough, inconsistent, partly reconstructed, loosely fixed, low resolution) and even beside a confirmed hand: a
+     * known out-of-range reading is flagged whatever else failed. NOT credible (unavailable or invalid): no reading,
+     * anything withheld (Can't check, a gate) or no finite measurement. A genuine PASS still needs a reliable reading
+     * (reliable()), or the validated hand-interference refit.
      */
     static boolean credible(ClearlyOff.Marker m){
         if(m==null||m.state==ClearlyOff.State.CANT_CHECK||!m.gate.isEmpty()||!m.measured())return false;
-        if(m.handConfirmed&&m.uncertain!=null&&!m.uncertain.isEmpty())return false;
         return true;
     }
 
@@ -233,7 +231,7 @@ final class WatchClassification {
                 +"; the reading is outside the range above and counts.");
         else if(!c.reliable)out.add(q.state==ClearlyOff.State.CANT_CHECK?"Not used for the genuine standard: "+q.reason+"."
                 :"Not enough for a genuine pass: measured from an uncertain edge"+(q.uncertain==null||q.uncertain.isEmpty()?"":" ("+q.uncertain+")")
-                +(c.credible?".":"; not used to decide a failure either (a hand is beside it)."));
+                +".");
         return out;
     }
     static String row(String name,double v,String unit,String kind,double genuineLimit,double qcLimit){

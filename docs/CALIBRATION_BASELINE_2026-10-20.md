@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| App | Watch Align 1.6.6 (versionCode 13170), applicationId `com.watchalign.mobile.poc` |
+| App | Watch Align 1.6.6 (versionCode 13171), applicationId `com.watchalign.mobile.poc` |
 | Branch | `claude/calibration-measurement-contract-epunh5` |
 | Code commit the values are read from | `64a5e58` (tolerances and engine); the credibility rule was simplified on 22 Oct 2026 in the commit that updated this file (no tolerance changed) |
 | Date | 20 October 2026 (classification rules of 21–22 Oct 2026 included) |
@@ -124,8 +124,10 @@ measured rather than placed from the outline (`gapFromFit`). **Only reliable rea
 reliable reading is credible. An uncertain reading is credible too, **however rough or inconsistent its edge fit**: no
 RMS, inconsistency or coverage threshold applies. It is **not** credible when any of these apply:
 - it is Can't check or gated;
-- it has no finite measurement;
-- the per-marker check confirmed a hand at it (the one-side refit below decides those).
+- it has no finite measurement.
+
+A reading beside a confirmed hand counts as well (owner, 21 Oct 2026: a known out-of-range reading is flagged whatever
+else failed). Can't Determine is shown only when no marker has a credible out-of-range reading.
 
 **Drawn guide lines** (`GuideLines`, owner 21 Oct 2026): before the per-marker hand / glare check, thin, long,
 strongly coloured lines of a single hue drawn on the photo are painted out of a copy that only the hand check reads.
