@@ -76,10 +76,12 @@ not verification of authenticity, manufacturing origin or movement. Display a vi
 Rolex watches can fail these strict limits and well-aligned replicas can pass. Never present the label as a conclusive
 authentication or invent a confidence percentage.
 
-**Frozen calibration baseline:** `docs/CALIBRATION_BASELINE_2026-10-20.md` records every genuine and replica-QC
+**Calibration history:** `docs/CALIBRATION_BASELINE_2026-10-20.md` preserves the original frozen genuine and replica-QC
 tolerance, the resolution allowance, the reliability and credibility rules and the classification order, with their
 source constants. Any change to a tolerance or rule there needs the owner's explicit approval and must be documented
 with its old and new values, date and commit.
+
+**Owner-approved 12 triangle top-edge calibration (21 Oct 2026):** `docs/CALIBRATION_BASELINE_2026-10-21_TOP_EDGE.md` records the calibration explicitly approved after research. On a usable, unambiguous top-edge fit and an existing eligible dial radius >=200 px, the measured top-edge radial replaces the older whole-triangle centre radial: subtract 0.44015% R and test against +/-0.40% R (+ existing 0.5 px allowance) for strict genuine; existing replica-QC radial and all sideways, shape, gap and rotation limits stay unchanged. Where top edge cannot be used, the legacy centre radial and its frozen +/-0.373% R strict genuine limit remain. Do not OR old and new radial failures. Never silently recalibrate these constants again; preserve the 20 Oct original baseline. This is the owner's approved exception to the older 'no second detection engine' guidance below.
 
 Keep strict-genuine and adjustable-replica calibration settings separate, preserve the old individual-marker QC
 behaviour, and do not alter source/reference data merely to improve classification rates. Implement using the existing
