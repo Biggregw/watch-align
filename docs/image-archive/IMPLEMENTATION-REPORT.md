@@ -1,10 +1,11 @@
 # Unified image archive implementation — 21 October 2026
 
-**Review status: draft; the full acceptance baseline is not yet satisfied.**
-The archive infrastructure is implemented, but no photographic admission profile
-has enough validated evidence to be promoted. It currently admits zero real images.
-This prevents an unsafe library, but does not yet deliver a usable positive-admission
-system for ongoing collection. No personal Microsoft account was connected.
+**Review status: draft.** Update (21 Oct 2026, continued): the face-on admission profile
+`face-on-v2` is validated and promoted (evidence: [FACE-ON-VALIDATION.md](FACE-ON-VALIDATION.md)).
+It admits 56 of the 384 recovered historical originals and 204 of 273 reviewer-eligible
+photographs. Every reviewer-ineligible photograph is rejected, and there are no false accepts
+among the controlled counterexamples. No personal Microsoft account was connected and nothing
+was uploaded or migrated. The owner decisions are listed in that document.
 
 ## What was built
 
@@ -27,28 +28,22 @@ QC decisions and measurements were not changed.
 
 ## Photograph rules and results
 
-A PASS requires all applicable face-on cues (ellipse, both rehaut axes and marker
-lattice), complete dial/minute perimeter, original precision resolution, sharp
-boundaries, adequate exposure, limited glare/reflection, reliable landmarks and
-all 11 Date or 12 No-Date hour markers. Unknown evidence is withheld. Partial-marker
-admission is disabled because the legacy calibrator cannot enforce masks.
+Superseded by [FACE-ON-VALIDATION.md](FACE-ON-VALIDATION.md). In summary, a PASS needs every required signal
+affirmatively true inside the envelope of 263 reviewed near-frontal genuine photographs (217 watches) whose production
+measurements stayed clean. A known failure rejects, and anything untested is inconclusive. Required for a PASS:
 
-The existing reviewed 400-pixel dial floor is used only to identify definite
-insufficient-resolution cases. No new arbitrary pose cutoff is represented as
-validated. No production resolution gate or tolerance changes.
+- **Tilt:** at most 10.60°. From 13.29° up, every reviewed genuine photograph produced strict-genuine false failures.
+- **Resolution:** the frozen 200 px dial-radius floor.
+- **Framing:** a whole dial and all 12 hour lines placed from the minute track.
+- **Image quality:** harvester and envelope sharpness, exposure and glare bounds.
+- **Markers:** every required marker measured, not withheld and not more than half hidden.
 
-Twelve existing public originals were inspected with exact hashes:
+The first version admitted no photograph because of two defects:
+- it required a tilt from round markers, which have none;
+- it treated a soft edge-fit warning as an obstruction.
 
-- Eleven have prior near-frontal pose/resolution labels. Nine fail stricter
-  marker-visibility/reliability checks; two layouts are unsupported/inconclusive.
-- The documented oblique `94ad771e9e2aedde` image fails resolution and marker checks.
-- No image passes. This is **not** an estimate of a validated classifier's false-accept
-  rate: the production positive-admission registry is empty.
-- The GMT `49ba843c0a7e19d7` control is historically `suitable=true` with `CORRECTABLE`
-  pose. Its top/bottom rehaut ratio is 0.483 and left/right ratio 1.647. The archive
-  diagnostic withholds it rather than treating that historical flag as proof.
-
-[Full photographic metrics](photographic-validation.json) contain no new image bytes.
+All 12 public controls now match their reviews: 8 pass, and 4 fail. The 4 failures are the oblique 94ad, and three with
+a hand over a marker.
 
 ## Historical recovery
 
@@ -56,13 +51,17 @@ The inventory covers 12,725 overlapping catalogue/association rows and 3,026 dis
 SHA-256 identities. Do not add dataset totals or interpret 785 declared watch IDs as
 verified independent watches; 37 shared-photo identity conflicts need review.
 
-| Exact photographs | Count |
+| Exact photographs (face-on-v2) | Count |
 | --- | ---: |
 | Recoverable in inspected files/artifact | 384 |
-| Fail current diagnostic checks | 108 |
-| Inconclusive | 276 |
-| Suitable/admitted | 0 |
+| Suitable (pass) | 56 |
+| Fail (96 resolution, 21 hidden or withheld marker, 1 landmarks) | 118 |
+| Inconclusive (197 no readable dial in a gallery shot, 13 just outside the tested envelope) | 210 |
 | Original hash still missing | 2,642 |
+
+Exact-hash refetch from the catalogued URL also recovers originals. It recovered 313 of the 556 reviewed photographs;
+Bob's image CDN now serves different bytes for most of the 228-photo additional review. Running it over the 2,642
+missing hashes is a further recovery step for the owner to approve.
 
 Four pinned public fixtures plus ten originals in the existing review ZIP yield
 12 unique committed originals. GitHub artifact `11300604104`,
@@ -72,6 +71,10 @@ re-encoded substitution was used. The native run made 464 image/model assessment
 with zero analyzer exceptions; unique-photo status gives failed assessments precedence
 over inconclusive ones, so photo totals are mutually exclusive.
 
+[historical-inventory.json](historical-inventory.json) is the original dry run, made under the unpromoted profile:
+its suitable=0 predates face-on-v2. The current per-photo outcomes are in
+[face-on-evidence.jsonl](face-on-evidence.jsonl), reproduced by `python -m tools.image_archive.analyse_validation`.
+
 All 1,941 currently listed artifacts and 55 caches were enumerated. Eight image caches
 are listed, but their contents were not fetched through an Actions runner. Other
 artifact names/sizes do not count as recovered photographs.
@@ -80,8 +83,9 @@ artifact names/sizes do not count as recovered photographs.
 
 ## Verification
 
-- 158 Python archive/harvester/calibrator tests passed; the optional native test is
-  separately run, not weakened or deleted.
+- 175 Python archive/harvester/calibrator tests pass, including the native JDK 17/OpenCV photographic tests
+  (`ARCHIVE_NATIVE_PHOTO_TESTS=1`). They cover the face-on-v2 geometry and envelope, marker obstruction, the public
+  controls and the committed validation counts. The original 158 tests are retained.
 - Two photographic test cases passed with JDK 17/OpenCV (including a live re-analysis
   of the frontal GMT and oblique Submariner controls).
 - Five existing marker-audit integrity tests passed.
@@ -103,7 +107,7 @@ artifact names/sizes do not count as recovered photographs.
 are included. Only delegated `Files.ReadWrite.AppFolder` is requested; a 403 stops the
 process without escalation. The workflow contains no real-photo upload step.
 
-Before real collection: validate/promote the full-watch admission profile, then obtain
-explicit owner authorization for the personal-account synthetic test and two-runner
+Before real collection: owner review of the admitted photographs and decisions in
+FACE-ON-VALIDATION.md §6, then explicit owner authorization for the personal-account synthetic test and two-runner
 renewal test, followed by an approved small real-photo pilot. Bulk migration requires
 separate approval. This branch is not merged and no migration was executed.

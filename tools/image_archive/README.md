@@ -1,11 +1,11 @@
 # Eligible original-image archive (research infrastructure)
 
-**Draft, admission locked.** Storage, Graph transport, credential renewal, acquisition
-hooks and calibration restoration are implemented. No family has a promoted,
-empirically validated full-watch archive profile. Production configuration therefore
-admits **zero real photographs**. This is a material incomplete acceptance criterion,
-not a claim that all photographs are unsuitable. Do not enable this for live collection
-until the screening evidence gap below is resolved.
+**Draft.** Storage, Graph transport, credential renewal, acquisition hooks and calibration
+restoration are implemented. The production screener uses the validated face-on admission
+profile `face-on-v2` (GMT 126710, Submariner Date 126610 family and No-Date 124060); its
+evidence and limitations are in [FACE-ON-VALIDATION.md](../../docs/image-archive/FACE-ON-VALIDATION.md).
+Live collection still needs the owner decisions listed there and explicit Microsoft
+authorization.
 
 This implements the committed [handoff](../../docs/architecture/onedrive-image-archive-handoff-2026-10-21.md)
 on a branch based on audit commit `d585fb3e`. The owner's current request extends the
@@ -40,39 +40,30 @@ sidecar. Bob's Watches output uses the same manifest adapter; generic extracted 
 originals must have an explicit metadata manifest and pass the same screen. No new
 acquisition mechanism or APK changes are introduced.
 
-## Admission contract and current evidence gap
+## Admission contract (face-on-v2)
 
-A PASS needs affirmative, validated evidence for **all** of:
+A PASS needs affirmative evidence for **all** of:
 
-1. Ellipse/foreshortening, vertical and horizontal rehaut, marker-lattice pose.
-2. Complete dial and complete minute-track perimeter.
-3. Adequate original precision resolution and sharp marker boundaries.
-4. Exposure, glare, reflections and reliable landmarks.
-5. Every actual hour marker: 12 on No-Date, 11 excluding 3 on Date layouts.
-6. Exact model, physical-watch identity, source URL and accepted provenance/class.
+1. **Face-on.** The dial tilt from the minute-track registration is at most 10.60°, and the dial-edge ellipse and both
+   perspective gradients are inside the validated envelope. The hour markers confirm the pose.
+2. **Complete dial and minute track.** The whole dial edge is in the frame and all 12 hour lines are placed.
+3. **Resolution.** The dial radius is at least 200 px (the frozen app floor) and the short side at least 400 px.
+4. **Image quality.** Sharpness, exposure and glare are inside the validated envelope, and no marker is withheld for
+   glare.
+5. **Every actual hour marker** (12 on No-Date, 11 excluding 3 on Date layouts) is measured. None may be withheld (hand,
+   glare, Can't check) or have less than half of its outline seen.
+6. **Identity.** Exact model, physical-watch identity, source URL and accepted provenance/class.
 
-Missing, non-finite, failed, unsupported and ambiguous evidence is inconclusive.
-Known failed checks reject. The historical `suitable` flag and `GOOD` pose label
-cannot admit an image; `CORRECTABLE` is not proof of a face-on photograph.
-The GMT diagnostic adapter explicitly withholds it.
+How the bounds are set:
+- Every bound comes from `faceon.ENVELOPE`, the evidence in FACE-ON-VALIDATION.md, or an existing documented bound.
+- Beyond a failure bound (for example, tilt of 13.29° or more) the photo is rejected.
+- Between the envelope and a failure bound, the range is untested, so the photo is **inconclusive**. Missing,
+  non-finite, unsupported and ambiguous evidence is also inconclusive.
+- The historical `suitable` flag and the `GOOD`/`CORRECTABLE` pose labels never admit an image.
 
-The archive uses the **existing reviewed 400-pixel dial-diameter floor only as a
-necessary rejection bound**. It is not claimed to establish sufficient precision,
-and is not changed in the app. No arbitrary ellipse, rehaut or tilt cutoff has been
-promoted. Their joint predictive performance, precision-resolution floor and
-per-marker obstruction detection need a separately reviewed, held-out photographic
-corpus. Existing near-frontal labels describe pose/resolution, not full-watch
-marker eligibility. The twelve public controls contain only one explicitly labelled
-oblique counterexample and do not validate all these gates.
-
-`Screener.validated_profiles` is empty in production. There is no CLI, environment
-variable or candidate-manifest field that turns a profile on. Tests inject a clearly
-named **test-only synthetic analyzer** to exercise successful storage; that is not
-photographic validation. Promoting a real adapter requires a reviewed code change,
-versioned evidence and held-out false-accept analysis. In particular, the current
-model adapters do not establish full minute-track visibility or validate glass
-reflection, ellipse and rehaut bounds for every family. Yacht-Master and other
-unsupported layouts remain inconclusive.
+`faceon.VALIDATED_PROFILES` is the only registry. No CLI option, environment variable or manifest field changes it.
+Tests also inject a test-only synthetic analyzer to exercise storage. Yacht-Master and other unsupported layouts remain
+inconclusive.
 
 Partial-marker admission is deliberately disabled. The legacy calibrator cannot
 honour a marker eligibility mask, so it must not receive partial-coverage images.
@@ -145,7 +136,7 @@ from a read-only object-tree listing; it never deletes anything. Local `pending/
 **Do not do these steps until the owner authorizes account connection.** No live
 Microsoft connection was made during implementation. The workflow is manual-only and
 uses synthetic text, never research photographs. Real-image remote sync is not exposed
-by the CLI while the photographic admission profile is unvalidated.
+by the CLI; it needs the owner decisions in FACE-ON-VALIDATION.md and approval first.
 
 1. In a mobile browser (desktop-site mode can help), open the Microsoft Entra app
    registration portal. Create an application supporting personal Microsoft accounts;
