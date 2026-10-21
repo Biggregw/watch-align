@@ -9,7 +9,8 @@ on:
     paths: ['.github/workflows/three-options.yml', 'tools/research/shared_engine/compare_options.py',
             'android/app/src/main/java/com/watchalign/mobile/MetalFit.java', 'android/app/src/main/java/com/watchalign/mobile/ClearlyOff.java',
             'android/app/src/main/java/com/watchalign/mobile/WatchClassification.java', 'tools/research/shared_engine/classify.py',
-            'tools/desktop-harness/drivers/SideDrop.java', 'tools/desktop-harness/drivers/RefitTraps.java']
+            'tools/desktop-harness/drivers/SideDrop.java', 'tools/desktop-harness/drivers/RefitTraps.java',
+            'android/app/src/main/java/com/watchalign/mobile/GuideLines.java', 'android/app/src/main/java/com/watchalign/mobile/Alpha99Pipeline.java']
   workflow_dispatch:
 permissions: {contents: write}   # stores each option's genuine numbers (genuine_track.csv) on this working branch
 jobs:
@@ -110,7 +111,7 @@ jobs:
       - name: 1.6.6 one-side refit beside a confirmed hand (validation, read-only)
         run: |
           J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
-          if [ "${{ matrix.model }}" = submariner_126610 ]; then java -cp $J:cls com.watchalign.mobile.RefitTraps; fi
+          if [ "${{ matrix.model }}" = submariner_126610 ]; then java -cp $J:cls com.watchalign.mobile.RefitTraps; java -cp $J:cls com.watchalign.mobile.GuideLineTraps; fi
           for s in genuine qc; do
             [ -f out/$s.csv ] || continue
             echo "== $s ${{ matrix.model }}: classification before (reliable failures only) and after (credible failures)"

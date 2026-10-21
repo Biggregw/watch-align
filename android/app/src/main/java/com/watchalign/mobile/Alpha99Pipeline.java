@@ -65,7 +65,11 @@ final class Alpha99Pipeline {
         catch(Throwable t){o.diagnosticOverlay=o.pose.overlay;}
         Mat rgba=new Mat(),gray=new Mat();Utils.bitmapToMat(photo,rgba);Imgproc.cvtColor(rgba,gray,Imgproc.COLOR_RGBA2GRAY);
         try{o.date=model.date==null?null:Alpha98DateWindow.analyse(gray,H,model.date);}catch(Throwable t){o.date=null;}
-        try{o.checks=Alpha99MarkerInterference.analyse(gray,H,model);}catch(Throwable t){o.checks=null;}
+        // 1.6.6: drawn coloured guide lines are not hands (GuideLines; the hand / glare check only)
+        Mat handGray=gray;
+        try{handGray=GuideLines.forHandCheck(rgba,gray,Alpha99MarkerInterference.pxPerR(H));}catch(Throwable t){handGray=gray;}
+        try{o.checks=Alpha99MarkerInterference.analyse(handGray,H,model);}catch(Throwable t){o.checks=null;}
+        if(handGray!=gray)handGray.release();
         try{o.partial=partialRounds(photo,H,o.measurement,o.checks,model);}catch(Throwable t){o.partial=null;}
         o.summary=Alpha99Findings.build(o.measurement,o.date,o.checks,o.partial,model,ref);
         // Watch Align alignment-only layer: reads the frozen pose, the measured ring of the OTHER markers and the hand /
