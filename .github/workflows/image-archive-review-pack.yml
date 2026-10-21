@@ -1,4 +1,4 @@
-# Image archive (research): visual review pack of the photographs face-on-v2 admits, for the owner's approval before
+# Image archive (research): visual review pack of the photographs face-on-v3 admits, for the owner's approval before
 # any permanent archiving. Exact-SHA-verified originals only (refetched by hash, the calibrator artifact, committed
 # public originals). The contact sheets go to a workflow artifact only: never committed, never uploaded to OneDrive.
 name: Image archive visual review pack (research)
@@ -56,7 +56,7 @@ jobs:
           ls -la review-pack
       - uses: actions/upload-artifact@v4
         with:
-          name: face-on-v2-review-pack
+          name: face-on-v3-review-pack
           path: review-pack/
           retention-days: 30
           if-no-files-found: error
