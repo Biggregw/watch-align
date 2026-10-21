@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from .archive import Archive
 from .auth import client, device_login, external_cache_writer, github_cache_writer, token_provider
-from .diagnostics import FamilyDiagnostics, LegacyGMTDiagnostics
+from .diagnostics import LegacyGMTDiagnostics
 from .integration import restore_acquired, submit_acquired
 from .inventory import inventory, native_inventory, write_report
 from .onedrive import OneDriveBackend
@@ -43,7 +43,8 @@ def main():
         p.add_argument('--renew-github-secret', metavar='OWNER/REPO')
     args = parser.parse_args()
     if args.command == 'assess':
-        screen = Screener(LegacyGMTDiagnostics() if args.gmt_diagnostics else FamilyDiagnostics())
+        from .faceon import production_screener
+        screen = Screener(LegacyGMTDiagnostics()) if args.gmt_diagnostics else production_screener()
         result = screen.assess_candidate(args.image, args.family).record()
     elif args.command == 'inventory':
         result = (native_inventory if args.native_diagnostics else inventory)(args.repo, args.scan)

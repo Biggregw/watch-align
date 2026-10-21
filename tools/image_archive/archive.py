@@ -81,8 +81,8 @@ class Archive:
         self.root.mkdir(parents=True, exist_ok=True)
         self.backend = backend or FilesystemBackend(self.root / 'storage')
         if screener is None:
-            from .diagnostics import FamilyDiagnostics
-            screener = Screener(FamilyDiagnostics())
+            from .faceon import production_screener
+            screener = production_screener()
         self.screener = screener
         self.db = sqlite3.connect(self.root / 'catalogue.sqlite', timeout=30)
         self.db.executescript('''

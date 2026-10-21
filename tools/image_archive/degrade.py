@@ -1,0 +1,125 @@
+"""Controlled counterexamples for the face-on-v2 screen (read-only research).
+
+    python -m tools.image_archive.degrade evidence.jsonl items.csv out.jsonl [--max 8]
+
+Takes reviewed near-frontal photographs that the screen admits, checks that the full
+Screener (FaceOnAnalyzer, the production analysis) admits the original too (parity
+with the offline evaluation), then makes known-bad copies of each and screens them:
+
+  blur_s3 / blur_s8   Gaussian blur, sigma 3 / 8 px at the original's scale
+  hand_4              a dark hour-hand-sized bar from the centre fully across the 4 o'clock marker
+  glare               a near-opaque bright veil over a third of the dial, across the 9-11 markers
+  crop_12             the frame cut through the 12 o'clock marker (incomplete dial)
+  small_150           resampled to a 150 px dial radius (below the frozen 200 px floor)
+
+Every copy must be FAIL or INCONCLUSIVE; one admitted copy is a false accept.
+Prints DEGRADE lines; no image is kept or uploaded.
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import math
+from collections import Counter
+from hashlib import sha256
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFilter, ImageOps
+
+from .faceon import Driver, FaceOnAnalyzer, MODELS, PROFILE, evaluate
+from .screening import REQUIRED_CHECKS, Screener
+
+
+def offline_pass(e):
+    if e.get('error') or min(e.get('orig_w') or 0, e.get('orig_h') or 0) < 400:
+        return False
+    c, m = evaluate(e)
+    return all(c.get(k) is True for k in REQUIRED_CHECKS) and all(v is True for v in m.values())
+
+
+def canon(h, x, y):
+    w = h[6] * x + h[7] * y + h[8]
+    return (h[0] * x + h[1] * y + h[2]) / w, (h[3] * x + h[4] * y + h[5]) / w
+
+
+def variants(img, h, k):
+    """Known-bad copies; h maps canonical dial coordinates to analysed pixels, k = original px per analysed px."""
+    P = lambda r, deg: tuple(v * k for v in canon(h, r * math.sin(math.radians(deg)), -r * math.cos(math.radians(deg))))
+    cx, cy = P(0, 0)
+    rad = math.dist((cx, cy), P(1, 0))
+    out = {'blur_s3': img.filter(ImageFilter.GaussianBlur(3)), 'blur_s8': img.filter(ImageFilter.GaussianBlur(8))}
+    hand = img.copy()
+    d = ImageDraw.Draw(hand)
+    # an hour-hand-sized dark bar (0.14 R wide) from the centre fully across the 4 o'clock marker
+    a, b = P(0.0, 120), P(0.92, 120)
+    d.line([a, b], fill=(38, 38, 40), width=max(8, int(0.14 * rad)))
+    out['hand_4'] = hand
+    glare = img.copy().convert('RGBA')
+    veil = Image.new('RGBA', glare.size, (0, 0, 0, 0))
+    # a near-opaque veil over about a third of the dial (0.65 R x 0.5 R half-axes), across the 9-11 markers
+    gx, gy = P(0.6, 300)
+    ImageDraw.Draw(veil).ellipse([gx - 0.65 * rad, gy - 0.5 * rad, gx + 0.65 * rad, gy + 0.5 * rad], fill=(250, 250, 250, 235))
+    out['glare'] = Image.alpha_composite(glare, veil.filter(ImageFilter.GaussianBlur(0.05 * rad))).convert('RGB')
+    top = P(0.80, 0)
+    # keep everything below a horizontal cut through the 12 marker (rotate first so 12 is up in the frame)
+    turn = math.degrees(math.atan2(top[0] - cx, -(top[1] - cy)))
+    up = img.rotate(turn, center=(cx, cy), resample=Image.Resampling.BICUBIC, expand=False)
+    out['crop_12'] = up.crop((0, int(cy - 0.80 * rad), up.size[0], up.size[1]))
+    s = 150.0 / rad
+    out['small_150'] = img.resize((max(1, round(img.size[0] * s)), max(1, round(img.size[1] * s))), Image.Resampling.LANCZOS)
+    return out
+
+
+def run(evidence_path, items, out, limit):
+    paths = {r['photo_id']: r for r in csv.DictReader(open(items))}
+    chosen = [e for e in map(json.loads, open(evidence_path))
+              if e.get('set', '').startswith('reviewed') and e.get('near_frontal') == 'yes' and offline_pass(e)]
+    chosen.sort(key=lambda e: e['photo_id'])
+    chosen = chosen[:limit]
+    driver = Driver()
+    screen = Screener(FaceOnAnalyzer(driver), validated_profiles={PROFILE + '/' + m for m in set(MODELS.values())})
+    rows, counts = [], Counter()
+    for e in chosen:
+        path = paths[e['photo_id']]['path']
+        data = Path(path).read_bytes()
+        d = screen.assess_bytes(data, e['family'])
+        rows.append({'photo_id': e['photo_id'], 'variant': 'original', 'status': d.status, 'reasons': d.reasons})
+        counts[('original', d.status)] += 1
+        ev = driver.run(MODELS[e['family']], [('o', path)]).get('o') or {}
+        if not ev.get('homography'):
+            continue
+        with Image.open(path) as im:
+            img = ImageOps.exif_transpose(im).convert('RGB')
+        k = img.size[0] / float(ev['work_w'])
+        work = Path(out).parent / 'degrade-tmp'
+        work.mkdir(exist_ok=True)
+        for name, v in variants(img, ev['homography'], k).items():
+            p = work / (e['photo_id'] + '_' + name + '.png')
+            v.save(p)
+            dv = screen.assess_bytes(p.read_bytes(), e['family'])
+            p.unlink()
+            rows.append({'photo_id': e['photo_id'], 'variant': name, 'status': dv.status,
+                         'reasons': [r for r in dv.reasons if not r.startswith('inconclusive_marker_')][:12]})
+            counts[(name, dv.status)] += 1
+    with open(out, 'w') as f:
+        for r in rows:
+            f.write(json.dumps(r) + '\n')
+    for r in rows:
+        print('DEGRADE ' + json.dumps(r, separators=(',', ':')))
+    for (name, status), n in sorted(counts.items()):
+        print('DEGRADE-SUMMARY %s %s %d' % (name, status, n))
+    false_accepts = sum(n for (name, status), n in counts.items() if name != 'original' and status == 'pass')
+    print('DEGRADE-SUMMARY false accepts %d; originals admitted %d of %d' % (
+        false_accepts, counts[('original', 'pass')], len(chosen)))
+    return rows
+
+
+if __name__ == '__main__':
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('evidence')
+    ap.add_argument('items')
+    ap.add_argument('out')
+    ap.add_argument('--max', type=int, default=8)
+    a = ap.parse_args()
+    run(a.evidence, a.items, a.out, a.max)

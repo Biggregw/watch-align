@@ -122,7 +122,7 @@ def inventory(repo, roots=(), screener=None, decision_cache=None):
     return {'schema_version': 1, 'dry_run': True,
             'notes': ['Dataset counts overlap; do not sum them.', 'Declared identities are not validated independent watch counts.',
                       'Missing means exact original hash unavailable in scanned locations; no source refetch attempted.',
-                      'No validated archive profile: suitable=0 until evidence supports promotion.'],
+                      'Suitable = PASS under the validated face-on-v2 profile (docs/image-archive/FACE-ON-VALIDATION.md).'],
             'total': summary(all_rows), 'datasets': {name: summary(rows) for name, rows in datasets.items()},
             'by_model_provenance_source': [{'model': k[0], 'provenance': k[1], 'source': k[2], **summary(rows)} for k, rows in groups.items()],
             'available_decisions': [{'sha256': h, 'family': f, **d.record()} for (h, f), d in decisions.items()]}
@@ -131,16 +131,15 @@ def inventory(repo, roots=(), screener=None, decision_cache=None):
 def native_inventory(repo, roots=(), workers=3):
     """Read-only native inspection of each available exact original/model association."""
     from concurrent.futures import ThreadPoolExecutor
-    from .diagnostics import FamilyDiagnostics
+    from .faceon import MODELS, production_screener
     repo = Path(repo)
     found = available_originals([repo, *roots])
     keys = sorted({(r['sha256'].lower(), r.get('model') or r.get('family') or 'unknown')
                    for _, r in catalogue_rows(repo) if r.get('sha256', '').lower() in found})
-    adapter = FamilyDiagnostics()
-    screen = Screener(adapter)
+    screen = production_screener()
     cache = {}
     # Compile once before concurrent readers use the same immutable native classes.
-    first = next((k for k in keys if k[1] in adapter.MODELS), None)
+    first = next((k for k in keys if k[1] in MODELS), None)
     if first:
         cache[first] = screen.assess_bytes(read_original(found[first[0]]), first[1])
     def assess(key):

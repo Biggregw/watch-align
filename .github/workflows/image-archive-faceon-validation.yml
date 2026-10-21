@@ -8,7 +8,8 @@ on:
     branches: [feature/unified-image-archive-20261021]
     paths: ['.github/workflows/image-archive-faceon-validation.yml', 'tools/image_archive/faceon.py',
             'tools/image_archive/collect_evidence.py', 'tools/image_archive/precision.py',
-            'tools/image_archive/validation_items.py', 'tools/desktop-harness/drivers/ArchiveEvidence.java']
+            'tools/image_archive/validation_items.py', 'tools/image_archive/degrade.py',
+            'tools/desktop-harness/drivers/ArchiveEvidence.java']
   workflow_dispatch:
 permissions:
   contents: read
@@ -57,10 +58,13 @@ jobs:
           python3 -m tools.image_archive.collect_evidence items.csv evidence.jsonl --log
       - name: Resolution sensitivity (reviewed face-on photos resampled to smaller dials)
         run: python3 -m tools.image_archive.precision evidence.jsonl items.csv prec precision.jsonl --targets 350,300,250,225,200,175,150 --max 30
+      - name: Controlled counterexamples through the production screener (blur, hand, glare, crop, small)
+        run: python3 -m tools.image_archive.degrade evidence.jsonl items.csv degrade.jsonl --max 8
       - uses: actions/upload-artifact@v4
         with:
           name: faceon-evidence-${{ matrix.model }}
           path: |
             evidence.jsonl
             precision.jsonl
+            degrade.jsonl
           retention-days: 30

@@ -1,4 +1,4 @@
-"""Reproduce strict-screen evidence against the existing twelve public originals.
+"""Reproduce face-on-v2 screen evidence against the existing twelve public originals.
 
 No network and no image output. Requires JDK 17 and the existing desktop harness.
 """
@@ -8,7 +8,8 @@ from pathlib import Path
 import csv
 import json
 import zipfile
-from .diagnostics import FamilyDiagnostics, LegacyGMTDiagnostics
+from .diagnostics import LegacyGMTDiagnostics
+from .faceon import production_screener
 from .screening import Screener
 
 
@@ -24,19 +25,17 @@ def validate(repo, output):
         for name in z.namelist():
             if name.startswith('originals/'):
                 originals[Path(name).name] = z.read(name)
-    adapter = FamilyDiagnostics()
+    screen = production_screener()
     # Compile once before sharing the read-only harness classes across workers.
-    from PIL import Image
-    import io
-    adapter(Image.open(io.BytesIO(next(iter(originals.values())))), '126613LB', 'full_watch')
+    screen.analyzer.driver._compile()
     def assess(item):
         name, data = item
         digest = sha256(data).hexdigest()
         row = catalogue[digest]
-        decision = Screener(adapter).assess_bytes(data, row['model'])
+        decision = screen.assess_bytes(data, row['model'])
         record = {'photo_id': name, 'reviewed_label': labels.get(digest, {}), 'decision': decision.record()}
         if row['model'].startswith('126710'):
-            record['legacy_gmt_comparison'] = Screener(LegacyGMTDiagnostics(adapter.harness)).assess_bytes(data, row['model']).record()
+            record['legacy_gmt_comparison'] = Screener(LegacyGMTDiagnostics(screen.analyzer.driver.harness)).assess_bytes(data, row['model']).record()
         return record
     with ThreadPoolExecutor(3) as pool:
         records = list(pool.map(assess, sorted(originals.items())))

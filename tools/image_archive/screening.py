@@ -1,8 +1,10 @@
 """Independent fail-closed admission; existing suitable flags are never admission evidence.
 
-No numerical archive profile is promoted yet. A profile needs held-out photographic
-validation of every required signal, including per-marker occlusion. Diagnostic-only
-adapters can reject obvious failures but cannot manufacture a PASS.
+The production profile is face-on-v2 (faceon.py; evidence in
+docs/image-archive/FACE-ON-VALIDATION.md). Every required signal must be affirmatively
+true inside its validated envelope; a known failure rejects; anything untested,
+missing or non-finite is inconclusive. Diagnostic-only adapters can reject obvious
+failures but cannot manufacture a PASS.
 """
 from __future__ import annotations
 
@@ -13,7 +15,7 @@ from pathlib import Path
 import math
 from PIL import Image, ImageOps
 
-POLICY_VERSION = 'face-on-v1-review'
+POLICY_VERSION = 'face-on-v2'
 # Frozen app reliability floor (dial radius in analysed pixels); below it every reading is uncertain
 MIN_DIAL_RADIUS_PX = 200
 REQUIRED_CHECKS = ('face_on_ellipse', 'face_on_rehaut_vertical', 'face_on_rehaut_horizontal',

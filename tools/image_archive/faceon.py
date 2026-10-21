@@ -37,6 +37,8 @@ REQUIRED = {'gmt_126710': tuple(h for h in range(1, 13) if h != 3),
             'submariner_126610': tuple(h for h in range(1, 13) if h != 3),
             'submariner_124060': tuple(range(1, 13))}
 
+MIN_COVER = 0.5   # MetalFit.MIN_COVER
+
 DRIVERS = ('ArchiveEvidence.java', 'HarnessModel.java', 'AlignmentCalib.java', 'Alpha96Calib.java', 'Load.java')
 
 
@@ -115,6 +117,10 @@ def summarise(ev, image=None):
     out['reliable'] = [hr for hr in required if markers.get(hr, {}).get('reliable')]
     out['withheld'] = {hr: (markers[hr].get('gate') or markers[hr].get('reason') or markers[hr].get('state'))
                        for hr in required if hr in markers and not markers[hr].get('credible')}
+    # MetalFit.MIN_COVER (0.5): under half of the marker's outer-metal outline is seen and the rest is reconstructed from
+    # its known shape. The app still reports the reading (credible); for the archive the marker is partly hidden.
+    out['partly_hidden'] = [hr for hr in required if markers.get(hr, {}).get('credible')
+                            and isinstance(markers[hr].get('cover'), (int, float)) and markers[hr]['cover'] < MIN_COVER]
     out['soft'] = {hr: markers[hr].get('uncertain') for hr in required
                    if hr in markers and markers[hr].get('credible') and not markers[hr].get('reliable')}
     out['markers'] = {hr: {k: markers[hr].get(k) for k in ('state', 'side_pct', 'inout_pct', 'tilt_deg', 'pos_pct', 'gap_pct')}
@@ -177,3 +183,129 @@ class Driver:
             if res.returncode or not (root / 'out.jsonl').exists():
                 raise RuntimeError('ArchiveEvidence analysis failed')
             return {d['photo_id']: d for d in map(json.loads, (root / 'out.jsonl').read_text().splitlines())}
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Profile face-on-v2 (21 Oct 2026). Evidence: docs/image-archive/FACE-ON-VALIDATION.md and face-on-evidence.jsonl
+# (CI run 39651765901). A check PASSES only inside the envelope covered by the reviewed near-frontal genuine photographs
+# whose production measurements stayed clean (263 photos / 217 watches: reviewed near_frontal=yes, dial radius >= 200
+# px, dial tilt <= 10.60 deg). It FAILS where the evidence shows harm (or an existing, documented rejection bound), and
+# is INCONCLUSIVE in between: that range was not tested, so it is withheld rather than guessed.
+PROFILE = 'face-on-v2'
+ENVELOPE = {
+    # dial-plane tilt from the minute-track registration (acos of the minor/major local scale at the centre). Largest
+    # reviewed near-frontal tilt with clean measurements, and below the smallest reviewed-oblique tilt (10.61 deg).
+    'tilt_deg_pass': 10.60,
+    # from this tilt every reviewed genuine photo (11 photos, 3 watches) put markers outside the strict genuine limits
+    'tilt_deg_fail': 13.29,
+    'edge_ellipse_ratio_min': 0.981,        # app's dial-edge ellipse (independent of the minute track)
+    'v_gradient': (0.9743, 1.012),          # scale at 12 / at 6 (perspective gradient, top-bottom)
+    'h_gradient': (0.9893, 1.017),          # scale at 3 / at 9 (left-right)
+    'sharpness_min': 1963.0,                # harvester dial sharpness (Laplacian variance at 512 px)
+    'crushed_max': 0.7502, 'blown_max': 0.1004, 'glare_max': 0.1289,
+}
+# existing documented rejection bounds (tools/dataset_harvester/harvester/config.py Thresholds)
+HARVESTER = {'sharpness_min': 25.0, 'crushed_max': 0.95, 'blown_max': 0.25, 'glare_max': 0.30}
+MIN_DIAL_RADIUS_PX = 200   # frozen app reliability floor (AlignmentDecision.MIN_DIAL_RADIUS_PX)
+
+
+def _num(v):
+    return v if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) else None
+
+
+def _band(v, ok, bad):
+    """True inside the validated envelope, False beyond a failure bound, None (untested) otherwise or when missing."""
+    if v is None:
+        return None
+    if ok(v):
+        return True
+    return False if bad(v) else None
+
+
+def evaluate(s):
+    """Archive checks and per-marker availability from one summarise() record."""
+    e = ENVELOPE
+    checks = {}
+    pose = bool(s.get('pose_valid')) and bool(s.get('projective_accepted'))
+    tilt, ell = _num(s.get('tilt_deg')), _num(s.get('edge_ellipse_ratio'))
+    vg, hg = _num(s.get('v_gradient')), _num(s.get('h_gradient'))
+    if not pose:
+        # the production analysis could not register the dial: nothing about the pose is known
+        for k in ('face_on_ellipse', 'face_on_rehaut_vertical', 'face_on_rehaut_horizontal', 'face_on_marker_lattice', 'landmarks'):
+            checks[k] = None
+    else:
+        tilt_ok = _band(tilt, lambda v: v <= e['tilt_deg_pass'], lambda v: v >= e['tilt_deg_fail'])
+        if tilt_ok is False:
+            checks['face_on_ellipse'] = False
+        elif tilt_ok is None or ell is None:
+            checks['face_on_ellipse'] = None
+        else:   # the independent dial-edge ellipse must agree; outside its envelope it is untested
+            checks['face_on_ellipse'] = True if ell >= e['edge_ellipse_ratio_min'] else None
+        checks['face_on_rehaut_vertical'] = _band(vg, lambda v: e['v_gradient'][0] <= v <= e['v_gradient'][1], lambda v: False)
+        checks['face_on_rehaut_horizontal'] = _band(hg, lambda v: e['h_gradient'][0] <= v <= e['h_gradient'][1], lambda v: False)
+        # the hour markers confirmed the 12 direction the minute-track registration chose
+        checks['face_on_marker_lattice'] = s.get('marker_branch_turn') == 0
+        checks['landmarks'] = s.get('hour_lines') == 12 and s.get('marker_branch_turn') == 0
+    margin = _num(s.get('dial_margin_r'))
+    checks['complete_dial'] = None if margin is None else margin >= 0
+    checks['complete_minute_track'] = None if margin is None or s.get('hour_lines') is None else \
+        (margin >= 0 and s.get('hour_lines') == 12)
+    rpx = _num(s.get('rpx'))
+    checks['original_resolution'] = None if rpx is None else rpx >= MIN_DIAL_RADIUS_PX
+    h = HARVESTER
+    checks['sharp_boundaries'] = _band(_num(s.get('sharpness')), lambda v: v >= e['sharpness_min'], lambda v: v < h['sharpness_min'])
+    crushed, blown = _num(s.get('crushed_fraction')), _num(s.get('blown_fraction'))
+    if crushed is None or blown is None:
+        checks['exposure'] = None
+    elif crushed > h['crushed_max'] or blown > h['blown_max']:
+        checks['exposure'] = False
+    else:
+        checks['exposure'] = True if crushed <= e['crushed_max'] and blown <= e['blown_max'] else None
+    checks['glare'] = _band(_num(s.get('glare_fraction')), lambda v: v <= e['glare_max'], lambda v: v > h['glare_max'])
+    # reflections on the markers: the app withholds a marker it sees glare or a reflection on (Alpha99 interference)
+    withheld = s.get('withheld') or {}
+    glary = [hr for hr, why in withheld.items() if any(w in str(why).lower() for w in ('glare', 'reflect', 'bright'))]
+    checks['reflections'] = None if not s.get('required') else not glary
+    markers = {}
+    hidden = set(s.get('partly_hidden') or ())
+    for hr in s.get('required') or ():
+        if hr in hidden:
+            markers[str(hr)] = False      # partly hidden (a hand or other object over most of its outline)
+        elif hr in (s.get('credible') or ()):
+            markers[str(hr)] = True
+        else:
+            markers[str(hr)] = False if (hr in withheld or str(hr) in withheld) else None
+    return checks, markers
+
+
+class FaceOnAnalyzer:
+    """Screener analyzer for profile face-on-v2: the production analysis of the decoded original (read-only)."""
+
+    def __init__(self, driver=None):
+        self.driver = driver or Driver()
+
+    def __call__(self, img, family, purpose):
+        model = MODELS.get(family)
+        if not model:
+            return {'profile': 'unsupported-layout', 'checks': {}}
+        with tempfile.TemporaryDirectory(prefix='watch-align-faceon-') as work:
+            p = Path(work) / 'analysis.png'
+            img.save(p)  # analysis copy only (lossless); the archive keeps the original bytes
+            ev = self.driver.run(model, [('analysis', str(p))]).get('analysis')
+        if ev is None:
+            raise RuntimeError('no evidence')
+        s = summarise(ev, img)
+        checks, markers = evaluate(s)
+        s.pop('markers', None)
+        return {'profile': PROFILE + '/' + model, 'checks': checks, 'required_marker_ids': list(REQUIRED[model]),
+                'markers': markers, 'evidence': s}
+
+
+# Profiles promoted after the validation in docs/image-archive/FACE-ON-VALIDATION.md. Application-controlled: never
+# taken from a candidate, manifest, environment variable or harvester flag.
+VALIDATED_PROFILES = frozenset(PROFILE + '/' + m for m in REQUIRED)
+
+
+def production_screener(driver=None):
+    from .screening import Screener
+    return Screener(FaceOnAnalyzer(driver), VALIDATED_PROFILES)
