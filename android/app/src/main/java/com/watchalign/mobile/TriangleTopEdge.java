@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * EXPERIMENTAL (owner, 21 Oct 2026; research only, never used for a verdict): the 12 triangle's radial position from
+ * Owner-approved calibrated top-edge radial reference (21 Oct 2026): the 12 triangle's radial position from
  * its outer metal TOP edge (the wide edge nearest the minute track), measured directly, against a reference circle
  * established independently from the other markers of the same photo.
  *
@@ -52,6 +52,10 @@ final class TriangleTopEdge {
     static final double MIN_FRAC=0.5,MIN_SPAN=0.3;
     /** a second consensus line with at least this share of the first's inliers, more than 1 px away: two candidate edges */
     static final double SECOND_FRAC=0.5;
+
+    /** Shared genuine-population calibration, approved 21 Oct 2026. Percent of dial radius. */
+    static final double CALIBRATION_OFFSET_PCT=0.44015;
+    static final double GENUINE_RADIAL_LIMIT_PCT=0.40;
 
     static final class Result {
         /** empty when measured; otherwise why not (plain words) */
