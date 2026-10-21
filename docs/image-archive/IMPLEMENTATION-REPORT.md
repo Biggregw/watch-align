@@ -91,6 +91,9 @@ artifact names/sizes do not count as recovered photographs.
   credential separation, pagination, synthetic cleanup and exact byte preservation.
 - Source diff against `d585fb3e` confirms no changes under `android/` or `calibration/`,
   or to `production_measure.py`, calibration/envelope code or calibrator `run.py`.
+- The pre-existing calibrator PR workflow was cancelled during unit tests before
+  autonomous discovery/calibration. Its calibration and image-cache steps are now
+  manual-dispatch-only; PR regression tests remain enabled.
 - Existing Pillow deprecation warnings remain. No live Microsoft behaviour or
   real-photo archive-to-calibrator measurement parity is claimed.
 

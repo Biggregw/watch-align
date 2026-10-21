@@ -113,7 +113,8 @@ Python consumers can pass `Archive('/private/archive')` to `Pipeline(archive=...
 `submariner_acquire.run(..., archive=...)` or `watch_calibrator.acquire.run(..., archive=...)`.
 Calls are explicit opt-ins and submit only new acquisitions from that run, never the
 whole historical state. Historical imports require an explicitly selected local manifest.
-No existing schedules or calibrator workflow is altered.
+Existing acquisition schedules are unchanged. The calibrator workflow retains PR
+regression tests but requires manual dispatch for autonomous acquisition/calibration.
 `--fresh` still affects only the calibrator's workspace. Restoring never starts a
 measurement or recalibration job.
 
