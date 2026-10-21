@@ -1,4 +1,4 @@
-"""Reproduce the face-on-v2 validation tables from committed numbers only.
+"""Reproduce the face-on-v3 validation tables from committed numbers only.
 
     python -m tools.image_archive.analyse_validation docs/image-archive/face-on-evidence.jsonl
 

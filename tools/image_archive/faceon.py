@@ -16,6 +16,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+import re
 import os
 import subprocess
 import tempfile
@@ -121,9 +122,12 @@ def summarise(ev, image=None):
     # its known shape. The app still reports the reading (credible); for the archive the marker is partly hidden.
     out['partly_hidden'] = [hr for hr in required if markers.get(hr, {}).get('credible')
                             and isinstance(markers[hr].get('cover'), (int, float)) and markers[hr]['cover'] < MIN_COVER]
+    # the app's independent per-marker hand check (MetalFit.handConfirmed) found a hand at this marker
+    out['hand_confirmed'] = [hr for hr in required if markers.get(hr, {}).get('credible') and markers[hr].get('hand_confirmed')]
     out['soft'] = {hr: markers[hr].get('uncertain') for hr in required
                    if hr in markers and markers[hr].get('credible') and not markers[hr].get('reliable')}
-    out['markers'] = {hr: {k: markers[hr].get(k) for k in ('state', 'side_pct', 'inout_pct', 'tilt_deg', 'pos_pct', 'gap_pct')}
+    out['markers'] = {hr: {k: markers[hr].get(k) for k in ('state', 'side_pct', 'inout_pct', 'tilt_deg', 'pos_pct', 'gap_pct',
+                                                            'cover', 'fit_rms_px', 'bad_frac', 'hand_confirmed', 'uncertain')}
                       for hr in required if hr in markers}
     if image is not None:
         out['orig_w'], out['orig_h'] = image.size
@@ -186,12 +190,12 @@ class Driver:
 
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Profile face-on-v2 (21 Oct 2026). Evidence: docs/image-archive/FACE-ON-VALIDATION.md and face-on-evidence.jsonl
+# Profile face-on-v3 (21 Oct 2026; v2 + archive 250 px floor, hand check and soft-warning classes). Evidence: docs/image-archive/FACE-ON-VALIDATION.md and face-on-evidence.jsonl
 # (CI run 39651765901). A check PASSES only inside the envelope covered by the reviewed near-frontal genuine photographs
 # whose production measurements stayed clean (263 photos / 217 watches: reviewed near_frontal=yes, dial radius >= 200
 # px, dial tilt <= 10.60 deg). It FAILS where the evidence shows harm (or an existing, documented rejection bound), and
 # is INCONCLUSIVE in between: that range was not tested, so it is withheld rather than guessed.
-PROFILE = 'face-on-v2'
+PROFILE = 'face-on-v3'
 ENVELOPE = {
     # dial-plane tilt from the minute-track registration (acos of the minor/major local scale at the centre). Largest
     # reviewed near-frontal tilt with clean measurements, and below the smallest reviewed-oblique tilt (10.61 deg).
@@ -206,7 +210,30 @@ ENVELOPE = {
 }
 # existing documented rejection bounds (tools/dataset_harvester/harvester/config.py Thresholds)
 HARVESTER = {'sharpness_min': 25.0, 'crushed_max': 0.95, 'blown_max': 0.25, 'glare_max': 0.30}
-MIN_DIAL_RADIUS_PX = 200   # frozen app reliability floor (AlignmentDecision.MIN_DIAL_RADIUS_PX)
+APP_MIN_DIAL_RADIUS_PX = 200   # frozen app reliability floor (AlignmentDecision.MIN_DIAL_RADIUS_PX); unchanged
+# Archive-only admission floor (owner, 21 Oct 2026): 250 px dial radius. Resampling evidence (FACE-ON-VALIDATION.md):
+# 95th-percentile in/out change 0.11-0.13 % R at 250 px against 0.14-0.17 at 200 px. Not an app requirement.
+MIN_DIAL_RADIUS_PX = 250
+
+# The app's soft edge-fit warnings (MetalFit, ClearlyOff uncertain text), as classes. Evidence on reviewed genuine
+# markers (FACE-ON-VALIDATION.md, section "Marker reliability"): 'inconsistent' alone (part of the edge shadowed or
+# reflecting) measures like a reliable marker (Mann-Whitney p = 0.55, 0 of 43 outside the strict genuine limits);
+# 'rough' shifts the readings (p = 0.001) and rough + inconsistent puts 17 % outside them. Only 'inconsistent' is
+# harmless; every other or unknown warning makes the marker unreliable for the calibration archive.
+SOFT_CLASSES = (('hidden', re.compile(r'of its outline is visible, the rest is reconstructed')),
+                ('rough', re.compile(r'its visible edge is rough')),
+                ('inconsistent', re.compile(r'\d+% of its visible edge is inconsistent')),
+                ('low_resolution', re.compile(r"resolution is low")))
+HARMLESS = {'inconsistent'}
+
+
+def soft_classes(text):
+    """Classes of one marker's soft warnings; an unrecognised clause is 'other' (never harmless)."""
+    out = set()
+    for clause in filter(None, (c.strip() for c in str(text or '').split(';'))):
+        hit = [name for name, rx in SOFT_CLASSES if rx.search(clause)]
+        out.update(hit or ['other'])
+    return out
 
 
 def _num(v):
@@ -251,7 +278,7 @@ def evaluate(s):
     checks['complete_minute_track'] = None if margin is None or s.get('hour_lines') is None else \
         (margin >= 0 and s.get('hour_lines') == 12)
     rpx = _num(s.get('rpx'))
-    checks['original_resolution'] = None if rpx is None else rpx >= MIN_DIAL_RADIUS_PX
+    checks['original_resolution'] = None if rpx is None else rpx >= MIN_DIAL_RADIUS_PX   # archive floor, 250 px
     h = HARVESTER
     checks['sharp_boundaries'] = _band(_num(s.get('sharpness')), lambda v: v >= e['sharpness_min'], lambda v: v < h['sharpness_min'])
     crushed, blown = _num(s.get('crushed_fraction')), _num(s.get('blown_fraction'))
@@ -268,18 +295,23 @@ def evaluate(s):
     checks['reflections'] = None if not s.get('required') else not glary
     markers = {}
     hidden = set(s.get('partly_hidden') or ())
+    hands = set(s.get('hand_confirmed') or ())
+    reliable = set(s.get('reliable') or ())
+    soft = {int(k): v for k, v in (s.get('soft') or {}).items()}
     for hr in s.get('required') or ():
-        if hr in hidden:
-            markers[str(hr)] = False      # partly hidden (a hand or other object over most of its outline)
+        if hr in hidden or hr in hands:
+            # under half its outline seen, or the app's own hand check found a hand at it: obstructed
+            markers[str(hr)] = False
         elif hr in (s.get('credible') or ()):
-            markers[str(hr)] = True
+            # reliable, or its only soft warning is the harmless 'inconsistent' (reflection) class
+            markers[str(hr)] = hr in reliable or bool(soft.get(hr)) and soft_classes(soft[hr]) <= HARMLESS
         else:
             markers[str(hr)] = False if (hr in withheld or str(hr) in withheld) else None
     return checks, markers
 
 
 class FaceOnAnalyzer:
-    """Screener analyzer for profile face-on-v2: the production analysis of the decoded original (read-only)."""
+    """Screener analyzer for profile face-on-v3: the production analysis of the decoded original (read-only)."""
 
     def __init__(self, driver=None):
         self.driver = driver or Driver()
@@ -296,7 +328,6 @@ class FaceOnAnalyzer:
             raise RuntimeError('no evidence')
         s = summarise(ev, img)
         checks, markers = evaluate(s)
-        s.pop('markers', None)
         return {'profile': PROFILE + '/' + model, 'checks': checks, 'required_marker_ids': list(REQUIRED[model]),
                 'markers': markers, 'evidence': s}
 

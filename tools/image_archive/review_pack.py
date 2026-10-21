@@ -1,4 +1,4 @@
-"""Visual review pack of the photographs face-on-v2 admits (for the owner's approval).
+"""Visual review pack of the photographs face-on-v3 admits (for the owner's approval).
 
     python -m tools.image_archive.review_pack EVIDENCE.jsonl OUT_DIR --items items.csv [--items ...] [--fixtures DIR]
 
@@ -219,8 +219,8 @@ def run(evidence, out, items, fixtures):
         w.writeheader()
         w.writerows(index)
     (out / 'README.txt').write_text(
-        'Watch Align image archive - visual review pack (profile face-on-v2)\n\n'
-        'accepted_*.pdf        every photograph face-on-v2 admits, by model, 12 per page (whole photo, aspect kept)\n'
+        'Watch Align image archive - visual review pack (profile face-on-v3)\n\n'
+        'accepted_*.pdf        every photograph face-on-v3 admits, by model, 12 per page (whole photo, aspect kept)\n'
         'accepted_*_dials.pdf  the same photographs, dial close-ups, 16 per page\n'
         'comparison_*.pdf      a sample of borderline rejected / inconclusive photographs, with the reason\n'
         'index.csv             cell id -> photo id, full SHA-256, reference, tilt, dial radius, image size,\n'

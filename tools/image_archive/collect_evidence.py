@@ -73,8 +73,10 @@ def collect(items, out, log=False, chunk=40):
             f.write(json.dumps(r, sort_keys=True) + '\n')
             if log:
                 c = {k: v for k, v in r.items() if k not in COMPACT_DROP}
-                # per marker [side %R, in/out %R, tilt deg, position %R] for the pose-sensitivity analysis
-                c['m'] = {h: [m.get(k) for k in ('side_pct', 'inout_pct', 'tilt_deg', 'pos_pct')]
+                # per marker [side %R, in/out %R, tilt deg, position %R, outline coverage, edge RMS px, inconsistent
+                # share, hand confirmed] for the pose-sensitivity and obstruction analyses
+                c['m'] = {h: [m.get(k) for k in ('side_pct', 'inout_pct', 'tilt_deg', 'pos_pct', 'cover', 'fit_rms_px',
+                                                  'bad_frac', 'hand_confirmed')]
                           for h, m in (r.get('markers') or {}).items()}
                 print('EVJ ' + json.dumps(_round(c), sort_keys=True, separators=(',', ':')))
     return records

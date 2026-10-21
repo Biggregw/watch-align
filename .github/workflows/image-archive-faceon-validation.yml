@@ -9,7 +9,8 @@ on:
     paths: ['.github/workflows/image-archive-faceon-validation.yml', 'tools/image_archive/faceon.py',
             'tools/image_archive/collect_evidence.py', 'tools/image_archive/precision.py',
             'tools/image_archive/validation_items.py', 'tools/image_archive/degrade.py',
-            'tools/desktop-harness/drivers/ArchiveEvidence.java']
+            'tools/image_archive/recovery_pilot.py', 'docs/image-archive/recovery-pilot-manifest.csv',
+            'docs/image-archive/degrade-pinned.csv', 'tools/desktop-harness/drivers/ArchiveEvidence.java']
   workflow_dispatch:
 permissions:
   contents: read
@@ -59,7 +60,7 @@ jobs:
       - name: Resolution sensitivity (reviewed face-on photos resampled to smaller dials)
         run: python3 -m tools.image_archive.precision evidence.jsonl items.csv prec precision.jsonl --targets 350,300,250,225,200,175,150 --max 30
       - name: Controlled counterexamples through the production screener (blur, hand, glare, crop, small)
-        run: python3 -m tools.image_archive.degrade evidence.jsonl items.csv degrade.jsonl --max 8
+        run: python3 -m tools.image_archive.degrade evidence.jsonl items.csv degrade.jsonl --pinned docs/image-archive/degrade-pinned.csv
       - uses: actions/upload-artifact@v4
         with:
           name: faceon-evidence-${{ matrix.model }}
@@ -67,4 +68,44 @@ jobs:
             evidence.jsonl
             precision.jsonl
             degrade.jsonl
+          retention-days: 30
+
+  # Owner-approved bounded recovery pilot: at most 100 catalogued missing originals, fetched once by the existing
+  # fetch_verified.py (harvester HTTP client, robots.txt, per-host interval); kept only on an exact SHA-256 match.
+  recovery-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -q -r tools/image_archive/requirements.txt
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Fetch the pilot (exact SHA-256 only)
+        run: |
+          M=docs/image-archive/recovery-pilot-manifest.csv
+          test "$(($(wc -l < $M) - 1))" -le 100
+          python3 tools/research/alpha96_calibration/fetch_verified.py $M p p/fetch_log.csv | tail -4
+      - name: Face-on evidence on the recovered originals
+        run: |
+          python3 - <<'PY'
+          import csv, pathlib
+          rows = list(csv.DictReader(open('docs/image-archive/recovery-pilot-manifest.csv')))
+          with open('pilot_items.csv', 'w', newline='') as f:
+              w = csv.writer(f); w.writerow(['photo_id', 'sha256', 'path', 'family', 'set', 'near_frontal', 'eligible', 'physical_watch_id'])
+              for r in rows:
+                  p = pathlib.Path('p') / r['local_path']
+                  w.writerow([r['photo_id'], r['sha256'], str(p) if p.exists() else '', r['model'], 'pilot', '', '', r['physical_watch_id']])
+          PY
+          python3 -m tools.image_archive.collect_evidence pilot_items.csv pilot_evidence.jsonl --log
+          python3 -m tools.image_archive.recovery_pilot report docs/image-archive/recovery-pilot-manifest.csv p/fetch_log.csv pilot_evidence.jsonl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: recovery-pilot-evidence
+          path: |
+            pilot_evidence.jsonl
+            p/fetch_log.csv
           retention-days: 30

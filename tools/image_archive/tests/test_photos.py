@@ -26,7 +26,7 @@ def test_reviewed_photographic_controls_have_verified_bytes_and_expected_face_on
         d=r['decision']
         assert hashlib.sha256(data[r['photo_id']]).hexdigest()==d['sha256']
         assert r['reviewed_label']['sha256']==d['sha256']
-        assert d['archive_policy_version']=='face-on-v2' and d['profile'].startswith('face-on-v2/')
+        assert d['archive_policy_version']=='face-on-v3' and d['profile'].startswith('face-on-v3/')
         assert 'inconclusive_analysis_failed' not in d['reasons']
         if d['status']=='pass':
             assert r['reviewed_label']['near_frontal']=='yes' and r['reviewed_label']['eligible']=='yes'

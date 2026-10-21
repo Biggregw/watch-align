@@ -1,4 +1,4 @@
-"""face-on-v2 profile: homography geometry and the validated-envelope decision (no native code)."""
+"""face-on-v3 profile: homography geometry and the validated-envelope decision (no native code)."""
 import math
 
 import pytest
@@ -40,7 +40,8 @@ def summary(**kw):
     s = dict(pose_valid=True, projective_accepted=True, tilt_deg=4.0, edge_ellipse_ratio=0.995, v_gradient=0.995,
              h_gradient=1.0, marker_branch_turn=0, hour_lines=12, dial_margin_r=0.48, rpx=430.0, sharpness=3000.0,
              crushed_fraction=0.0, blown_fraction=0.004, glare_fraction=0.02, required=list(REQUIRED['submariner_126610']),
-             credible=list(REQUIRED['submariner_126610']), withheld={}, partly_hidden=[])
+             credible=list(REQUIRED['submariner_126610']), reliable=list(REQUIRED['submariner_126610']), withheld={},
+             partly_hidden=[], hand_confirmed=[], soft={})
     s.update(kw)
     return s
 
@@ -78,8 +79,33 @@ def test_hidden_withheld_or_missing_markers():
     assert evaluate(glare)[0]['reflections'] is False
 
 
+def test_the_apps_hand_check_and_unreliable_edges_withhold_a_marker_but_a_reflection_does_not():
+    req = REQUIRED['submariner_126610']
+    rest = [h for h in req if h != 4]
+    assert status(summary(hand_confirmed=[4])) == 'fail'                 # MetalFit.handConfirmed at the marker
+    refl = summary(reliable=rest, soft={4: '18% of its visible edge is inconsistent (shadowed or reflecting metal)'})
+    assert status(refl) == 'pass'                                        # harmless: reflection only
+    rough = summary(reliable=rest, soft={4: 'its visible edge is rough (1.6 px)'})
+    assert status(rough) == 'fail'
+    both = summary(reliable=rest, soft={4: 'its visible edge is rough (2.2 px); 73% of its visible edge is inconsistent (shadowed or reflecting metal)'})
+    assert status(both) == 'fail'
+    assert status(summary(reliable=rest, soft={4: 'something the archive does not know'})) == 'fail'
+    assert status(summary(reliable=rest, soft={})) == 'fail'             # unreliable without a stated reason
+
+
+def test_soft_warning_classes():
+    from tools.image_archive.faceon import soft_classes
+    assert soft_classes('18% of its visible edge is inconsistent (shadowed or reflecting metal)') == {'inconsistent'}
+    assert soft_classes('its visible edge is rough (1.5 px); 67% of its visible edge is inconsistent (x)') == {'rough', 'inconsistent'}
+    assert soft_classes('only 46% of its outline is visible, the rest is reconstructed') == {'hidden'}
+    assert soft_classes("the photo's resolution is low (the dial is 255 px across)") == {'low_resolution'}
+    assert soft_classes('new wording') == {'other'}
+
+
 def test_photo_quality_bounds():
-    assert status(summary(rpx=199.0)) == 'fail'                          # frozen 200 px reliability floor
+    assert status(summary(rpx=199.0)) == 'fail'                          # below the app's frozen 200 px floor
+    assert status(summary(rpx=249.0)) == 'fail'                          # archive-only 250 px floor
+    assert status(summary(rpx=250.0)) == 'pass'
     assert status(summary(dial_margin_r=-0.01)) == 'fail'
     assert status(summary(hour_lines=11)) == 'fail'
     assert status(summary(sharpness=20.0)) == 'fail'                     # existing harvester blur bound
@@ -98,7 +124,8 @@ def test_no_registered_dial_is_never_admitted():
 
 def test_the_production_registry_is_the_validated_profile_and_admits_through_the_screener(tmp_path):
     from PIL import Image
-    assert faceon.VALIDATED_PROFILES == {'face-on-v2/gmt_126710', 'face-on-v2/submariner_124060', 'face-on-v2/submariner_126610'}
+    assert faceon.VALIDATED_PROFILES == {'face-on-v3/gmt_126710', 'face-on-v3/submariner_124060', 'face-on-v3/submariner_126610'}
+    assert faceon.APP_MIN_DIAL_RADIUS_PX == 200 and faceon.MIN_DIAL_RADIUS_PX == 250
 
     class Stub(faceon.FaceOnAnalyzer):
         def __init__(self, s):

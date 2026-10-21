@@ -1,4 +1,4 @@
-"""The documented face-on-v2 validation counts are reproduced from the committed evidence (numbers only)."""
+"""The documented face-on-v3 validation counts are reproduced from the committed evidence (numbers only)."""
 import json
 from collections import Counter
 from pathlib import Path

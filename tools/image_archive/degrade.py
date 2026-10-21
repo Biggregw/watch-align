@@ -1,8 +1,9 @@
-"""Controlled counterexamples for the face-on-v2 screen (read-only research).
+"""Controlled counterexamples for the face-on-v3 screen (read-only research).
 
-    python -m tools.image_archive.degrade evidence.jsonl items.csv out.jsonl [--max 8]
+    python -m tools.image_archive.degrade evidence.jsonl items.csv out.jsonl [--max 8] [--pinned docs/image-archive/degrade-pinned.csv]
 
-Takes reviewed near-frontal photographs that the screen admits, checks that the full
+Takes reviewed near-frontal photographs that the screen admits (or, with --pinned, the fixed list
+of originals the first counterexample run used, so a retest repeats exactly the same copies), checks that the full
 Screener (FaceOnAnalyzer, the production analysis) admits the original too (parity
 with the offline evaluation), then makes known-bad copies of each and screens them:
 
@@ -11,6 +12,15 @@ with the offline evaluation), then makes known-bad copies of each and screens th
   glare               a near-opaque bright veil over a third of the dial, across the 9-11 markers
   crop_12             the frame cut through the 12 o'clock marker (incomplete dial)
   small_150           resampled to a 150 px dial radius (below the frozen 200 px floor)
+
+Extended obstruction set (owner, 21 Oct 2026: how robust is the marker obstruction check?):
+
+  hand_8              the same dark bar across the 8 o'clock marker
+  hand_4_narrow       a narrower dark bar (0.08 R, minute-hand width) across the 4 o'clock marker
+  steel_2 / steel_10  a polished-steel-grey bar (0.14 R) across the 2 / 10 o'clock marker
+
+For every hand-type copy the targeted marker's own evidence (state, gate, outline coverage,
+edge fit, hand check, position change) is logged next to the original's.
 
 Every copy must be FAIL or INCONCLUSIVE; one admitted copy is a false accept.
 Prints DEGRADE lines; no image is kept or uploaded.
@@ -55,6 +65,11 @@ def variants(img, h, k):
     a, b = P(0.0, 120), P(0.92, 120)
     d.line([a, b], fill=(38, 38, 40), width=max(8, int(0.14 * rad)))
     out['hand_4'] = hand
+    for name, deg, colour, width in (('hand_8', 240, (38, 38, 40), 0.14), ('hand_4_narrow', 120, (38, 38, 40), 0.08),
+                                     ('steel_2', 60, (190, 192, 196), 0.14), ('steel_10', 300, (190, 192, 196), 0.14)):
+        v = img.copy()
+        ImageDraw.Draw(v).line([P(0.0, deg), P(0.92, deg)], fill=colour, width=max(6, int(width * rad)))
+        out[name] = v
     glare = img.copy().convert('RGBA')
     veil = Image.new('RGBA', glare.size, (0, 0, 0, 0))
     # a near-opaque veil over about a third of the dial (0.65 R x 0.5 R half-axes), across the 9-11 markers
@@ -71,12 +86,34 @@ def variants(img, h, k):
     return out
 
 
-def run(evidence_path, items, out, limit):
+TARGET = {'hand_4': 4, 'hand_8': 8, 'hand_4_narrow': 4, 'steel_2': 2, 'steel_10': 10}
+MARKER_KEYS = ('state', 'cover', 'fit_rms_px', 'bad_frac', 'hand_confirmed', 'uncertain', 'pos_pct', 'side_pct', 'inout_pct')
+
+
+def marker(decision, hour):
+    ev = (decision.metrics.get('analysis') or {}).get('evidence') or {}
+    m = (ev.get('markers') or {}).get(hour) or (ev.get('markers') or {}).get(str(hour)) or {}
+    out = {k: m.get(k) for k in MARKER_KEYS}
+    out['withheld'] = (ev.get('withheld') or {}).get(hour) or (ev.get('withheld') or {}).get(str(hour))
+    out['credible'] = hour in (ev.get('credible') or [])
+    out['reliable'] = hour in (ev.get('reliable') or [])
+    return out
+
+
+def run(evidence_path, items, out, limit, pinned=None):
     paths = {r['photo_id']: r for r in csv.DictReader(open(items))}
-    chosen = [e for e in map(json.loads, open(evidence_path))
-              if e.get('set', '').startswith('reviewed') and e.get('near_frontal') == 'yes' and offline_pass(e)]
-    chosen.sort(key=lambda e: e['photo_id'])
-    chosen = chosen[:limit]
+    if pinned:
+        want = {r['sha256'] for r in csv.DictReader(open(pinned))}
+        best = {}
+        for e in map(json.loads, open(evidence_path)):
+            if e['sha256'] in want and e['photo_id'] in paths and not e.get('error'):
+                best.setdefault(e['sha256'], e)
+        chosen = sorted(best.values(), key=lambda e: e['photo_id'])
+    else:
+        chosen = [e for e in map(json.loads, open(evidence_path))
+                  if e.get('set', '').startswith('reviewed') and e.get('near_frontal') == 'yes' and offline_pass(e)]
+        chosen.sort(key=lambda e: e['photo_id'])
+        chosen = chosen[:limit]
     driver = Driver()
     screen = Screener(FaceOnAnalyzer(driver), validated_profiles={PROFILE + '/' + m for m in set(MODELS.values())})
     rows, counts = [], Counter()
@@ -84,7 +121,9 @@ def run(evidence_path, items, out, limit):
         path = paths[e['photo_id']]['path']
         data = Path(path).read_bytes()
         d = screen.assess_bytes(data, e['family'])
-        rows.append({'photo_id': e['photo_id'], 'variant': 'original', 'status': d.status, 'reasons': d.reasons})
+        rows.append({'photo_id': e['photo_id'], 'variant': 'original', 'status': d.status, 'reasons': d.reasons,
+                     'markers': {h: marker(d, h) for h in sorted(set(TARGET.values()))}})
+        original = rows[-1]
         counts[('original', d.status)] += 1
         ev = driver.run(MODELS[e['family']], [('o', path)]).get('o') or {}
         if not ev.get('homography'):
@@ -99,8 +138,13 @@ def run(evidence_path, items, out, limit):
             v.save(p)
             dv = screen.assess_bytes(p.read_bytes(), e['family'])
             p.unlink()
-            rows.append({'photo_id': e['photo_id'], 'variant': name, 'status': dv.status,
-                         'reasons': [r for r in dv.reasons if not r.startswith('inconclusive_marker_')][:12]})
+            row = {'photo_id': e['photo_id'], 'variant': name, 'status': dv.status,
+                   'reasons': [r for r in dv.reasons if not r.startswith('inconclusive_marker_')][:12]}
+            if name in TARGET:
+                row['target'] = TARGET[name]
+                row['marker'] = marker(dv, TARGET[name])
+                row['marker_original'] = original['markers'][TARGET[name]]
+            rows.append(row)
             counts[(name, dv.status)] += 1
     with open(out, 'w') as f:
         for r in rows:
@@ -121,5 +165,6 @@ if __name__ == '__main__':
     ap.add_argument('items')
     ap.add_argument('out')
     ap.add_argument('--max', type=int, default=8)
+    ap.add_argument('--pinned')
     a = ap.parse_args()
-    run(a.evidence, a.items, a.out, a.max)
+    run(a.evidence, a.items, a.out, a.max, a.pinned)

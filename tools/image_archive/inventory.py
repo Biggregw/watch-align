@@ -122,7 +122,7 @@ def inventory(repo, roots=(), screener=None, decision_cache=None):
     return {'schema_version': 1, 'dry_run': True,
             'notes': ['Dataset counts overlap; do not sum them.', 'Declared identities are not validated independent watch counts.',
                       'Missing means exact original hash unavailable in scanned locations; no source refetch attempted.',
-                      'Suitable = PASS under the validated face-on-v2 profile (docs/image-archive/FACE-ON-VALIDATION.md).'],
+                      'Suitable = PASS under the validated face-on-v3 profile (docs/image-archive/FACE-ON-VALIDATION.md).'],
             'total': summary(all_rows), 'datasets': {name: summary(rows) for name, rows in datasets.items()},
             'by_model_provenance_source': [{'model': k[0], 'provenance': k[1], 'source': k[2], **summary(rows)} for k, rows in groups.items()],
             'available_decisions': [{'sha256': h, 'family': f, **d.record()} for (h, f), d in decisions.items()]}

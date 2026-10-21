@@ -60,7 +60,7 @@ public class ArchiveEvidence {
                         bool(j,"finite",Double.isFinite(m.sidePct)&&Double.isFinite(m.inoutPct)&&Double.isFinite(m.tiltDeg));
                         bool(j,"reliable",WatchClassification.reliable(m));bool(j,"credible",WatchClassification.credible(m));
                         num(j,"side_pct",m.sidePct);num(j,"inout_pct",m.inoutPct);num(j,"tilt_deg",m.tiltDeg);num(j,"pos_pct",m.posPct);num(j,"gap_pct",m.gapPct);
-                        num(j,"fit_rms_px",m.fitRmsPx);num(j,"cover",m.cover);
+                        num(j,"fit_rms_px",m.fitRmsPx);num(j,"cover",m.cover);num(j,"bad_frac",m.badFrac);kv(j,"source",m.source==null?"":m.source);
                         kv(j,"reason",m.reason);
                         trim(j);j.append('}');
                     }
