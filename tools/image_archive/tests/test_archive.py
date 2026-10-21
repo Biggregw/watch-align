@@ -224,3 +224,34 @@ def test_repeated_assessment_is_not_another_image(photo,tmp_path):
     assert report['assessment_events']==2
     assert report['decisions']=={'pass':1}
     assert report['unique_photographs_by_status']['pass']==1
+
+
+def test_a_photo_too_small_for_the_frozen_dial_floor_fails_resolution(tmp_path):
+    # Every other signal passes: a 300 px photo cannot hold a dial 400 px across (frozen 200 px radius floor).
+    path = tmp_path / 'thumb.png'
+    Image.new('RGB', (300, 600), 'gray').save(path)
+    decision = screener().assess_candidate(path, 'test')
+    assert decision.status == 'fail'
+    assert 'fail_original_resolution' in decision.reasons
+
+
+def test_round_markers_need_no_tilt_and_a_withheld_marker_is_unavailable():
+    from tools.image_archive.diagnostics import marker_eligibility
+    rows = [{'hour': '1', 'shape': 'round', 'state': 'NO_VISIBLE_ISSUE', 'gate': '', 'side_pct': '0.1', 'inout_pct': '0.2', 'tilt_line_deg': ''},
+            {'hour': '6', 'shape': 'baton', 'state': 'NO_VISIBLE_ISSUE', 'gate': '', 'side_pct': '0.1', 'inout_pct': '0.2', 'tilt_line_deg': ''},
+            {'hour': '9', 'shape': 'baton', 'state': 'NO_VISIBLE_ISSUE', 'gate': '', 'uncertain': 'rough', 'side_pct': '0.1', 'inout_pct': '0.2', 'tilt_line_deg': '0.3'},
+            {'hour': '12', 'shape': 'triangle', 'state': 'CANT_CHECK', 'gate': 'hand', 'side_pct': '', 'inout_pct': '', 'tilt_line_deg': ''}]
+    assert marker_eligibility(rows) == {'1': True, '6': None, '9': True, '12': False}
+
+
+def test_restore_never_replaces_a_different_file(photo, tmp_path):
+    archive = Archive(tmp_path / 'archive', screener=screener())
+    digest = put(archive, photo)['sha256']
+    dest = tmp_path / 'consumer' / 'images' / 'x.png'
+    dest.parent.mkdir(parents=True)
+    dest.write_bytes(b'someone else')
+    with pytest.raises(IntegrityError):
+        archive.restore(digest, dest)
+    assert dest.read_bytes() == b'someone else'
+    dest.write_bytes(photo.read_bytes())
+    assert archive.restore(digest, dest) == dest   # identical original already in place: nothing rewritten

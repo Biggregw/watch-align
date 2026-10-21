@@ -1,4 +1,5 @@
 """Opt-in bridges over existing acquisition outputs; never acquires or measures."""
+from hashlib import sha256
 from pathlib import Path
 import csv
 import json
@@ -45,7 +46,11 @@ def restore_acquired(archive, manifest, root):
                    and r['purpose'] == 'full_watch' and r['required_marker_ids']
                    and set(r['usable_marker_ids']) == set(r['required_marker_ids']) for r in records):
             raise IntegrityError('full-watch marker eligibility required')
-        plan.append((digest, safe_destination(root, row['local_path'])))
+        dest = safe_destination(root, row['local_path'])
+        # Checked for every row before anything is written: a different existing file is never replaced.
+        if dest.exists() and (not dest.is_file() or sha256(dest.read_bytes()).hexdigest() != digest):
+            raise IntegrityError('restore destination holds different content')
+        plan.append((digest, dest))
     for digest, dest in plan:
         archive.restore(digest, dest)
     return {'restored': len(plan), 'distinct_watches': len({r['physical_watch_id'] for r in rows})}

@@ -14,6 +14,8 @@ import math
 from PIL import Image, ImageOps
 
 POLICY_VERSION = 'face-on-v1-review'
+# Frozen app reliability floor (dial radius in analysed pixels); below it every reading is uncertain
+MIN_DIAL_RADIUS_PX = 200
 REQUIRED_CHECKS = ('face_on_ellipse', 'face_on_rehaut_vertical', 'face_on_rehaut_horizontal',
                    'face_on_marker_lattice', 'complete_dial', 'complete_minute_track',
                    'original_resolution', 'sharp_boundaries', 'exposure', 'glare',
@@ -68,6 +70,10 @@ class Screener:
         except Exception:
             return Decision(digest, 'fail', ('fail_image_integrity',), POLICY_VERSION,
                             family, purpose, profile, (), (), metrics)
+        # The dial cannot be wider than the photo: below the frozen 200 px dial-radius reliability floor
+        # (AlignmentDecision.MIN_DIAL_RADIUS_PX, docs/CALIBRATION_BASELINE_2026-10-20.md) whatever is in it.
+        if min(metrics['width'], metrics['height']) < 2 * MIN_DIAL_RADIUS_PX:
+            reasons.append('fail_original_resolution')
         if purpose != 'full_watch':
             reasons.append('inconclusive_partial_marker_use_not_enabled')
         try:

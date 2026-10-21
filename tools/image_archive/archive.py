@@ -190,10 +190,16 @@ class Archive:
         row = self.db.execute('SELECT key,status FROM objects WHERE sha=?', (digest,)).fetchone()
         if not row or row[1] != 'archived':
             raise ValueError('no verified archived object')
+        destination = Path(destination)
+        if destination.exists():
+            # Never replace a different existing file at a consumer's path; an identical original is already restored.
+            if destination.is_file() and sha256(destination.read_bytes()).hexdigest() == digest:
+                return destination
+            raise IntegrityError('restore destination holds different content')
         data = self.backend.get(row[0])
         verify(data, digest)
         atomic_write(destination, data)
-        return Path(destination)
+        return destination
 
     def import_snapshot(self, key):
         """Rebuild catalogue on a new runner from a selected immutable remote snapshot."""

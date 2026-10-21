@@ -101,15 +101,21 @@ class FamilyDiagnostics:
 
 
 def marker_eligibility(rows):
-    """Conservative visibility/measurement completeness, separate from QC verdicts."""
+    """Per-marker availability, separate from QC verdicts (owner rule WatchClassification.credible()).
+
+    False: withheld by the app (a hand, glare or Can't check gate) - the marker is obstructed or unreadable.
+    True: a completed measurement. Round markers have no tilt (only position), so a tilt is required only of
+    batons and the triangle; a soft edge-fit warning does not make a measured marker unavailable.
+    None: not reported or not finite.
+    """
     import math
     markers = {}
     for row in rows:
-        blocked = bool(row.get('gate') or row.get('uncertain') or row.get('hand_confirmed'))
-        missing = row.get('state') in {'CANNOT_ASSESS', 'NOT_ASSESSED'}
+        withheld = bool(row.get('gate')) or row.get('state') in {'CANT_CHECK', 'CANNOT_ASSESS', 'NOT_ASSESSED'}
+        keys = ('side_pct', 'inout_pct') + (() if row.get('shape') == 'round' else ('tilt_line_deg',))
         try:
-            complete = all(math.isfinite(float(row[k])) for k in ('side_pct', 'inout_pct', 'tilt_line_deg'))
+            complete = all(math.isfinite(float(row[k])) for k in keys)
         except (ValueError, KeyError, TypeError):
             complete = False
-        markers[row['hour']] = False if blocked else None if missing or not complete else True
+        markers[row['hour']] = False if withheld else True if complete else None
     return markers
