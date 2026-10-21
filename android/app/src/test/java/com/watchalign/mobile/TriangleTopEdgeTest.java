@@ -130,4 +130,74 @@ public class TriangleTopEdgeTest {
         assertEquals(5,(int)s[1]);assertEquals(1,(int)s[2]);   // too few reliable: all, said so
         assertTrue(Double.isNaN(TriangleTopEdge.ringScale(rel.subList(0,1),all.subList(0,2),3)[0]));
     }
+
+    /** Production integration of the owner-approved population calibration, without changing the legacy strict limit. */
+    static ClearlyOff.Marker markerWithEdge(double rawPct){
+        ClearlyOff.Marker m=new ClearlyOff.Marker(12,ModelSpec.Shape.TRIANGLE);
+        m.inoutPct=-0.617; m.inoutPx=-2.468; // old erroneous whole-outline radial reading
+        m.sidePct=0.10; m.tiltDeg=0.30; m.gapPct=3.4;
+        TriangleTopEdge.Result t=new TriangleTopEdge.Result();
+        t.radialPct=rawPct;
+        m.topEdge=t;
+        return m;
+    }
+
+    @Test public void calibratedReadingReplacesNotOrsTheOldRadialFailure(){
+        ClearlyOff.Marker m=markerWithEdge(0.470);
+        ClearlyOff.useCalibratedTopEdge(m,400);
+        assertTrue(m.radialFromTopEdge);
+        assertEquals(0.02985,m.inoutPct,1e-8);
+        assertEquals(0.1194,m.inoutPx,1e-6);
+        assertEquals(0.10,m.sidePct,0); assertEquals(0.30,m.tiltDeg,0);
+        ClearlyOff.Limits genuine=ClearlyOff.Limits.genuine();
+        ClearlyOff.decide(m,400,null,genuine);
+        assertEquals(0.525,m.inoutLimitPct,1e-9); // 0.40% + existing 0.5px allowance
+        assertFalse("the old -0.617 reading must not still trigger Replica",m.inoutOff);
+        ClearlyOff.Marker copy=m.copy();
+        assertTrue("classifier's strict copy must preserve source",copy.radialFromTopEdge);
+        ClearlyOff.decide(copy,400,null,genuine);
+        assertFalse(copy.inoutOff);
+        assertEquals(m.inoutPct,copy.inoutPct,0);
+        ClearlyOff.decide(m,400,null,ClearlyOff.Limits.defaults());
+        assertEquals(1.375,m.inoutLimitPct,1e-9); // frozen replica-QC limit 1.25 + allowance
+    }
+
+    @Test public void realRadialDisplacementStillFailsFrozenStandards(){
+        ClearlyOff.Marker m=markerWithEdge(1.44015); // actual top-edge is 1% R outward
+        ClearlyOff.useCalibratedTopEdge(m,400);
+        assertEquals(1.0,m.inoutPct,1e-8);
+        ClearlyOff.decide(m,400,null,ClearlyOff.Limits.genuine());
+        assertTrue("genuine threshold must detect a +1% shift",m.inoutOff);
+        ClearlyOff.decide(m,400,null,ClearlyOff.Limits.defaults());
+        assertFalse("replica QC still has its original 1.25% + pixel allowance",m.inoutOff);
+        ClearlyOff.Marker qc=markerWithEdge(1.94015); // +1.5% shift
+        ClearlyOff.useCalibratedTopEdge(qc,400);
+        ClearlyOff.decide(qc,400,null,ClearlyOff.Limits.defaults());
+        assertTrue("large radial defects still fail replica QC",qc.inoutOff);
+    }
+
+    @Test public void ambiguousMissingAndLowResolutionEdgesKeepLegacyFallback(){
+        ClearlyOff.Marker bad=markerWithEdge(0.470);
+        bad.topEdge.secondFrac=0.75;
+        ClearlyOff.useCalibratedTopEdge(bad,400);
+        assertFalse(bad.radialFromTopEdge);
+        assertEquals(-0.617,bad.inoutPct,0);
+        ClearlyOff.Marker low=markerWithEdge(0.470);
+        ClearlyOff.useCalibratedTopEdge(low,170);
+        assertFalse(low.radialFromTopEdge);
+        assertEquals(-0.617,low.inoutPct,0);
+        ClearlyOff.Marker missing=markerWithEdge(Double.NaN);
+        ClearlyOff.useCalibratedTopEdge(missing,400);
+        assertFalse(missing.radialFromTopEdge);
+        assertEquals(-0.617,missing.inoutPct,0);
+    }
+
+    @Test public void strictGenuineAndReplicaLimitsRemainDistinct(){
+        ClearlyOff.Limits genuine=ClearlyOff.Limits.genuine();
+        assertTrue(genuine.copy().strictGenuine);
+        assertEquals(0.00373,genuine.triInoutR,1e-12); // frozen legacy centre threshold unchanged
+        assertEquals(0.0040,TriangleTopEdge.GENUINE_RADIAL_LIMIT_PCT/100,1e-12);
+        assertEquals(0.44015,TriangleTopEdge.CALIBRATION_OFFSET_PCT,1e-12);
+        assertFalse(ClearlyOff.Limits.defaults().strictGenuine);
+    }
 }
