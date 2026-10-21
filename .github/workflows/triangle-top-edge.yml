@@ -1,0 +1,114 @@
+# EXPERIMENTAL (owner, 21 Oct 2026): the 12 triangle's radial position from its measured outer metal top edge against the
+# ring of the other markers (TriangleTopEdge), side by side with the existing whole-outline fit (MetalFit, production),
+# on the sha256-verified genuine photos, the pinned public QC photos and known moves made in the photos. Read-only: no
+# verdict, tolerance or asset changes. Numbers in the log; CSVs and annotated close-ups as a private run artifact.
+name: Triangle top edge (experimental) - genuine, QC and known moves
+on:
+  push:
+    branches: [claude/triangle-top-edge-experiment]
+    paths: ['.github/workflows/triangle-top-edge.yml', 'tools/research/triangle_top_edge/**', 'tools/desktop-harness/drivers/TopEdge.java',
+            'android/app/src/main/java/com/watchalign/mobile/TriangleTopEdge.java', 'android/app/src/main/java/com/watchalign/mobile/ClearlyOff.java']
+  workflow_dispatch:
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {model: submariner_126610, verified: date-verified.csv, qc: '', limit: 0, synth: 40}
+          - {model: gmt_126710, verified: gmt-verified.csv, qc: gmt_126710, limit: 0, synth: 30}
+          - {model: submariner_124060, verified: nodate-verified.csv, qc: submariner_124060, limit: 0, synth: 40}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 50}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q requests numpy scipy opencv-python-headless pillow==12.3.0
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Verified genuine photos (sha256-checked)
+        run: |
+          mkdir -p g out
+          python3 - <<'PY'
+          import csv
+          rows = list(csv.DictReader(open('tools/research/marker_audit/results/${{ matrix.verified }}')))
+          if ${{ matrix.limit }}: rows = rows[:${{ matrix.limit }}]
+          w = csv.DictWriter(open('g/manifest.csv', 'w', newline=''), fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+          PY
+          python3 tools/research/alpha96_calibration/fetch_verified.py g/manifest.csv g/img g/fetch_log.csv | tail -3
+      - name: Public QC photos (sha256-pinned)
+        if: matrix.qc != ''
+        run: |
+          mkdir -p q/img
+          python3 - <<'PY'
+          import requests, hashlib, csv, pathlib
+          ids = [r['photo_id'] for r in csv.DictReader(open('tools/research/marker_audit/results/qc/${{ matrix.qc }}.csv'))]
+          cases = {
+           'GMT_crooked6_1s4cszq': ('https://i.redd.it/zsgyaaky0frg1.jpg', 'c36f1af94be604ec9153e77b42322d0396634af0eb955c2ab7d3841dce4bb6cd'),
+           'GMT_accepted6_18vdgh0': ('https://i.redd.it/tqmt3k1f8o9c1.jpg', 'a041d20d14d7c9f105991496b539bb73d63182d75e3b61b6d5a8f0590ecd6c13'),
+           'GMT_accepted6_18vdgh0_photo2': ('https://i.redd.it/fobj8k1f8o9c1.jpg', '77245a16744f3fb1369bdaef2101593bd6b52de3a0f031946e3cd84ea9fe8217'),
+           'SUB_rejected12_1wgfy7k': ('https://i.redd.it/0rx4t01hujph1.jpg', '7c9f2b50f8e89b860bf567cebdc7a86f3268c5c5e04397f44314bbf5f3f2e0ba'),
+           'SUB_accepted12_1w848xb': ('https://i.redd.it/wdaw7dp93qnh1.jpg', '2fe59ac6f06f8effed25c288075ee931b608c874c66d536c6255524ae7a7f91f'),
+           'SUB_accepted12_1w848xb_photo5': ('https://i.redd.it/zm5wgcp93qnh1.jpg', '4c4f8cd97ef5e2c3aa8fe2f3a729f3e462b0bf3cd83ea38793419ea7313b2561'),
+           'SUB_control12_1kqn8ub': ('https://i.redd.it/o3xibqc50t1f1.jpg', '471e927748db033d97e3a0087f3cf66dbe2a374246185c72852488c18157a3b2')}
+          s = requests.Session(); s.headers.update({'User-Agent': 'Mozilla/5.0 WatchAlignResearch/1.0', 'Referer': 'https://www.reddit.com/'})
+          w = csv.writer(open('q/manifest.csv', 'w', newline='')); w.writerow(['photo_id', 'local_path', 'physical_watch_id'])
+          for name in ids:
+              url, sha = cases[name]
+              try:
+                  data = s.get(url, timeout=20).content
+                  if hashlib.sha256(data).hexdigest() != sha: raise ValueError('sha256')
+                  (pathlib.Path('q/img') / (name + '.jpg')).write_bytes(data); w.writerow([name, name + '.jpg', name])
+              except Exception as e: print('QC NOT AVAILABLE (not tested):', name, e)
+          PY
+      - name: The owner's genuine Submariner Date d3a2b077 (provenance and resolution)
+        if: matrix.model == 'submariner_126610'
+        run: |
+          python3 - <<'PY'
+          import csv, hashlib, pathlib
+          from PIL import Image
+          r = [r for r in csv.DictReader(open('g/manifest.csv')) if r['photo_id'] == 'd3a2b077fcf388c3'][0]
+          print('PROVENANCE', r['physical_watch_id'], r['model'], r['source'], r['listing_url'], r['image_url'])
+          p = pathlib.Path('g/img') / r['local_path']
+          if p.exists():
+              h = hashlib.sha256(p.read_bytes()).hexdigest(); im = Image.open(p)
+              print('PHOTO sha256 %s (manifest %s, %s) size %dx%d px, %d bytes' % (h, r['sha256'], 'MATCH' if h == r['sha256'] else 'MISMATCH', im.size[0], im.size[1], p.stat().st_size))
+          else: print('PHOTO NOT AVAILABLE (download failed; see fetch log)')
+          PY
+      - name: Both methods on the photos
+        run: |
+          J=tools/desktop-harness/.cache/opencv-4.9.0-0.jar
+          if [ ! -f "$J" ] || [ "$(stat -c %s "$J")" -lt 1000000 ]; then mkdir -p $(dirname $J); curl -fsSL -o "$J" https://repo1.maven.org/maven2/org/openpnp/opencv/4.9.0-0/opencv-4.9.0-0.jar; fi
+          mkdir -p cls out/closeups_genuine out/closeups_qc
+          javac -encoding UTF-8 -nowarn -cp $J -sourcepath "tools/desktop-harness/shim:android/app/src/main/java" -d cls tools/desktop-harness/drivers/*.java
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TopEdge dump g/manifest.csv g/img out/genuine.csv out/closeups_genuine | grep -c TOPEDGE
+          if [ -f q/manifest.csv ]; then java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TopEdge dump q/manifest.csv q/img out/qc.csv out/closeups_qc | grep TOPEDGE; fi
+          java -Xmx3g -Dwatchalign.model=${{ matrix.model }} -cp $J:cls com.watchalign.mobile.TopEdge synth g/manifest.csv g/img out/synth.csv ${{ matrix.synth }} | grep -c TOPEDGE
+      - name: Comparison (measurements only, no limits)
+        run: |
+          python3 tools/research/triangle_top_edge/compare.py out/genuine.csv out/synth.csv "genuine ${{ matrix.model }}"
+          if [ -f out/qc.csv ]; then python3 tools/research/triangle_top_edge/compare.py out/qc.csv - "QC ${{ matrix.model }}"; fi
+          # keep the close-ups the owner asked for and the disagreements; the rest are not uploaded
+          python3 - <<'PY'
+          import csv, math, pathlib
+          keep = {'d3a2b077fcf388c3'}
+          for r in csv.DictReader(open('out/genuine.csv')):
+              try: d = abs(float(r['new_radial_pct']) - float(r['old_inout_pct']))
+              except ValueError: d = 0
+              if d > 0.4 or (r['second_frac'] and float(r['second_frac']) >= 0.5): keep.add(r['photo_id'])
+          n = 0
+          for p in pathlib.Path('out/closeups_genuine').glob('*.png'):
+              if p.name.split('_12_')[0] not in keep: p.unlink()
+              else: n += 1
+          print('close-ups kept', n, 'of genuine:', sorted(keep)[:40])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: triangle-top-edge-${{ matrix.model }}
+          path: out/
+          retention-days: 14
