@@ -5,7 +5,7 @@ on:
   push:
     branches: [feature/unified-image-archive-20261021]
     paths: ['.github/workflows/measurement-architecture-compare.yml', 'tools/research/measurement_architecture/evaluate.py',
-            'tools/research/measurement_architecture/methods.py']
+            'tools/research/measurement_architecture/methods.py', 'tools/research/measurement_architecture/phase_a.py']
 permissions:
   contents: read
   actions: read
@@ -28,3 +28,8 @@ jobs:
         run: |
           python3 -m tools.research.measurement_architecture.evaluate --items arch/items_*.csv --base arch/base_*.jsonl \
             --synth arch/synth_*.jsonl --json summary.json
+      - name: Phase A research validation (multi-defect, proposed limits, per-hour table, triangle gap)
+        if: env.MEASURE_RUN != '0'
+        run: |
+          python3 -m tools.research.measurement_architecture.phase_a --items arch/items_*.csv --base arch/base_*.jsonl \
+            --json phase_a.json
