@@ -195,6 +195,24 @@ def limits(gen, k_loo):
     return prop, table
 
 
+def watch_rates(gen, k_loo, prop):
+    """share of genuine watches with ANY eligible marker over the per-shape p99 position limit, and the common scale of
+    those limits that flags 5 % / 1 % of genuine watches (a whole-watch classification counts watches, not markers)"""
+    lim = {s: prop['position ' + s]['p99'] for s in ('round', 'baton', 'triangle') if 'position ' + s in prop}
+    worst = defaultdict(list)
+    for r, it in gen:
+        if it.get('class_label') != 'gen':
+            continue
+        out, _ = M.measure(r, k_loo.get(it['physical_watch_id']))
+        ratios = [math.hypot(x['LB'][0], x['LB'][1]) / lim[x['shape']] for x in out.values()
+                  if x['status'] == el.ELIGIBLE and 'LB' in x and x['LB'][0] is not None and x['shape'] in lim]
+        if ratios:
+            worst[it['physical_watch_id']].append(max(ratios))
+    w = np.array([float(np.median(v)) for v in worst.values()])
+    return {'watches': len(w), 'flagged_at_p99': float((w > 1).mean()), 'scale_for_5pct': q(w, 95),
+            'scale_for_1pct': q(w, 99)}
+
+
 def gap_parallax(gen, k_loo):
     """triangle clear gap (production, % R) against the parallax of the raised triangle along the 12 axis"""
     g, pred = [], []
@@ -259,6 +277,10 @@ def main(argv=None):
         print('%s: %s' % (model, ', '.join('%d %+.3f/%+.3f%s (%d)' % (
             h, v['tang'], v['rad'], '*' if abs(v['tang']) >= 3 * v['se_tang'] or abs(v['rad']) >= 3 * v['se_rad'] else '',
             v['watches']) for h, v in sorted(hs.items()))))
+    wr = watch_rates(gen, k_loo, prop)
+    print('\nwhole-watch: %.1f %% of %d genuine watches have a marker over the per-marker p99 limits; scaling every limit by '
+          '%.2f flags 5 %% of watches, by %.2f flags 1 %%' % (100 * wr['flagged_at_p99'], wr['watches'], wr['scale_for_5pct'],
+                                                         wr['scale_for_1pct']))
     gp = gap_parallax(gen, k_loo)
     print('\n## 4. Triangle clear gap against parallax along the 12 axis')
     if gp:
@@ -267,7 +289,7 @@ def main(argv=None):
                                           gp['p1_corrected'], gp['min'], gp['min_corrected']))
     if a.json:
         json.dump({'thresholds': thr, 'multi_defect': {'%s/%s' % k: v for k, v in md.items()}, 'limits': prop,
-                   'per_hour': table, 'gap': gp, 'k': k_all}, open(a.json, 'w'), indent=1)
+                   'per_hour': table, 'gap': gp, 'k': k_all, 'watch_rates': wr}, open(a.json, 'w'), indent=1)
 
 
 if __name__ == '__main__':
