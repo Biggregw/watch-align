@@ -17,6 +17,8 @@ limits is changed. Existing acquisition and calibration commands work unchanged.
 
 - `screening.py`: independent image-level PASS / FAIL / INCONCLUSIVE, exact byte hash,
   decode/integrity, policy/profile, all required checks, per-marker eligibility.
+- `eligibility.py`: per-marker statuses (ELIGIBLE / OBSTRUCTED / UNRELIABLE / INCONCLUSIVE /
+  NOT_APPLICABLE) with evidence and reasons, and the SHA-bound, versioned eligibility mask.
 - `diagnostics.py`: reuses existing `Suit`, quality diagnostics and model-specific
   `TrackDump`. These are read-only observations, never a production geometry change.
 - `archive.py`: SQLite decision/association ledger, SHA-addressed immutable originals,
@@ -40,7 +42,14 @@ sidecar. Bob's Watches output uses the same manifest adapter; generic extracted 
 originals must have an explicit metadata manifest and pass the same screen. No new
 acquisition mechanism or APK changes are introduced.
 
-## Admission contract (face-on-v3, archive only)
+## Admission contract (face-on-v3 + marker-mask-v1, archive only)
+
+Two purposes share the same photo-level checks (1–4 and 6 below). The archive admits on `marker_masked`:
+
+- **`marker_masked`** (archive default): the photograph must pass every photo-level check. Each marker then gets a
+  status under rule 5, and the photograph is kept with a SHA-bound eligibility mask. At most 2 required markers may
+  be excluded: at least 10 of 12 eligible on No-Date, 9 of 11 on Date and GMT (evidence: FACE-ON-VALIDATION.md §10).
+- **`full_watch`** (strict, `Archive(..., purpose='full_watch')`): every required marker must be ELIGIBLE.
 
 A PASS needs affirmative evidence for **all** of:
 
@@ -51,7 +60,8 @@ A PASS needs affirmative evidence for **all** of:
    The app keeps its own 200 px floor.
 4. **Image quality.** Sharpness, exposure and glare are inside the validated envelope, and no marker is withheld for
    glare.
-5. **Every actual hour marker** (12 on No-Date, 11 excluding 3 on Date layouts) is usable:
+5. **Every actual hour marker** (12 on No-Date, 11 excluding 3 on Date layouts) is usable (`full_watch`), or
+   enough markers are usable (`marker_masked`). A marker is ELIGIBLE only if it is:
    - measured, and not withheld by the app;
    - no hand confirmed by the app's per-marker hand check;
    - at least 90 % of its outline seen (80–90 % is inconclusive, under 80 % obstructed);
@@ -65,11 +75,18 @@ in FACE-ON-VALIDATION.md. A photo beyond a failure bound is rejected; an unteste
 Tests also inject a test-only synthetic analyzer to exercise storage. Yacht-Master and other unsupported layouts remain
 inconclusive.
 
-Partial-marker admission is deliberately disabled. The legacy calibrator cannot
-honour a marker eligibility mask, so it must not receive partial-coverage images.
-The decision still records precisely which markers are observed usable. Production
-QC may assess partial photographs as before; this separate archive policy does not
-alter that behaviour.
+**Masks.** `eligibility.validate()` refuses a mask that is missing, of an unknown policy version, bound to another
+SHA-256, incomplete, internally inconsistent, not derivable from its own evidence, digest-changed or below the minimum.
+The archive stores the mask with the decision and in each manifest snapshot. It re-derives the mask from the bytes on
+every sync and refuses snapshots with an invalid mask.
+
+**Restoring for the calibrator:**
+
+- `restore_acquired(archive, manifest, root)` (legacy) still requires full-watch eligibility.
+- `restore_acquired(..., purpose='marker_masked')` also writes `root/eligibility_masks.jsonl`. The watch-family
+  calibrator enforces those masks (`tools/watch_calibrator/marker_mask.py`) and refuses to run unmasked on such a root.
+
+Production QC is not affected by any of this.
 
 Accepted provenance is reused from the harvester's source rules or explicit trusted
 association: established dealer, auction house, Rolex CPO, official, owner-verified,

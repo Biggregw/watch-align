@@ -1,5 +1,33 @@
 # Unified image archive implementation — 21 October 2026
 
+**Update (22 Oct 2026): per-marker calibration eligibility** ([FACE-ON-VALIDATION.md §10](FACE-ON-VALIDATION.md)).
+
+The archive now separates two decisions:
+- **photographic suitability**, under the unchanged face-on-v3 photo-level checks;
+- **per-marker eligibility**: a status for each hour position, kept in a SHA-bound, versioned mask
+  (`marker-mask-v1`).
+
+A photograph is kept if it is suitable and at most 2 required markers are excluded. That minimum comes from evidence:
+with 3 or more excluded, the remaining markers shift.
+
+Admitted from the committed evidence (genuine only):
+
+| Family | Photos | Declared watches |
+|---|---:|---:|
+| GMT | 26 | 24 |
+| No-Date | 64 | 56 |
+| Date | 96 | 96 |
+| **Total** | **186** | **176** |
+
+The strict full-watch set is unchanged at 13.
+
+The watch-family calibrator enforces masks where it consumes measurements, and fails closed. Composite metrics are
+kept only when every marker they depend on is eligible. The legacy unmasked path refuses masked inputs.
+
+The 2 marker remains the weakest: 6 GMT, 11 No-Date and 16 Date watches. All Date evidence is from one source.
+
+No production code, tolerance or measurement changed. Nothing was uploaded.
+
 **Review status: draft.** Update (21 Oct 2026, owner refinements): the archive admission profile is now
 `face-on-v3` (evidence: [FACE-ON-VALIDATION.md](FACE-ON-VALIDATION.md)). It is archive-only; the Android app's QC
 logic, its 200 px floor, measurements and tolerances are unchanged. The rules are:
@@ -28,7 +56,7 @@ was uploaded or migrated.
 | B — archive | SHA-256 immutable originals, transactional metadata, exact dedup, identity conflicts, pending retries, restoration, manifest recovery and reconciliation | Real-photo positive-path pilot after profile validation |
 | C — OneDrive | App-folder Graph upload sessions, chunk/retry/conflict/quota handling, verified downloads, synthetic cleanup, MSAL device consent and encrypted refresh-cache renewal | Owner-authorized personal-account smoke test and renewal across two fresh runners |
 | D — harvesters | Optional common archive hooks for new acquisitions; CSV adapter for existing/Bob's output; existing schemas retained | No live sync enabled |
-| E — calibration | Restore selected originals to existing CSV `local_path`; full marker eligibility and identity checks | No real-photo archive pilot; no recalibration triggered |
+| E — calibration | Restore selected originals to existing CSV `local_path` with identity checks; full-watch restore for the legacy calibrator, masked restore writing `eligibility_masks.jsonl`; mask enforcement and per-marker populations in the watch-family calibrator | No real-photo archive pilot; no recalibration triggered; per-marker calibrator metrics not yet emitted by `CalibMeasure` |
 | F — history | Dry-run inventory across current catalogues, historical branches, ZIP originals, GitHub artifact and cache availability | Other artifact contents/cache originals not assumed recovered; no migration |
 
 ## Reused components
@@ -105,6 +133,9 @@ artifact names/sizes do not count as recovered photographs.
 
 ## Verification
 
+- 22 Oct 2026: **267 Python tests pass**: archive, harvester and calibrator, including the native JDK 17/OpenCV photographic tests; the calibrator suite also passes under `unittest` (71), as its CI runs it. They add per-marker eligibility, mask tampering and bypass, masked archive
+  and restore, calibrator mask enforcement, legacy-path guards, strict-dataset parity and watch aggregation tests.
+  The native photographic tests re-analyse the public controls under both purposes.
 - 182 Python archive/harvester/calibrator tests pass, including the native JDK 17/OpenCV photographic tests
   (`ARCHIVE_NATIVE_PHOTO_TESTS=1`). They cover the face-on-v3 geometry and envelope, marker obstruction and coverage, soft-warning classes, the public
   controls and the committed validation counts. The original 158 tests are retained.

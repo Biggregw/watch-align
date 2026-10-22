@@ -11,6 +11,25 @@ Config: `calibration/models/<MODEL>.json`. CI: `.github/workflows/watch-family-c
 The original run that produced the alpha72 bands is preserved at branch
 `archive/watch-family-calibrator-8337fd9`.
 
+## Per-marker eligibility masks (research, opt-in)
+
+Photographs restored from the image archive with `purpose='marker_masked'` carry a SHA-bound eligibility mask
+(`tools/image_archive/eligibility.py`) in `eligibility_masks.jsonl` beside `acquired_images.csv`.
+
+**Masked run.** Declared in the model config with `"marker_eligibility": {"policy": "marker-mask-v1"}`:
+
+- `marker_mask.apply` verifies every measured photo's bytes against its mask's SHA-256.
+- It blanks every value whose markers are not all ELIGIBLE (dependency map in `marker_mask.dependencies`; the round
+  composites need every round marker) and logs exclusions by marker and status.
+- `production_measure.summarise` and `genuine_envelope` re-check every row before any statistic.
+- A missing, tampered or mismatched mask, or an undeclared metric dependency, stops the run. There is no fallback.
+
+**Unmasked (legacy) run.** Unchanged, but it refuses an acquisition root holding masks and any masked row.
+
+**Populations.** `marker_population.py` reports independent genuine-watch counts per layout, marker and quantity (one
+median per physical watch, eligible photos only, watch-level split, source diversity). It computes no tolerance.
+Results: `docs/image-archive/FACE-ON-VALIDATION.md` §10.
+
 ## Product rule
 
 Watch Align is replica QC, not a perfection grader and not an authenticity classifier. A reliable
