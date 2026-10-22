@@ -162,6 +162,34 @@ def pooled_table(per):
     return out
 
 
+def corrected_pool(per, methods=('P', 'LB', 'LR', 'FP')):
+    """per-(family, hour) mean removed, learned on the OTHER watches (held-out reference-geometry correction); and the
+    agreement of the per-hour means between families (is a shared per-hour correction justified?)"""
+    out, agree = {}, {}
+    for (name, shape, model, comp), vals in per.items():
+        if name not in methods or comp not in ('tang', 'rad', 'tilt'):
+            continue
+        by_h = defaultdict(dict)
+        for (w, h), v in vals.items():
+            by_h[h][w] = float(np.median(v))
+        for h, ws in by_h.items():
+            for w, x in ws.items():
+                others = [y for v, y in ws.items() if v != w]
+                if len(others) >= 5:
+                    out.setdefault((name, shape, comp), []).append(x - float(np.mean(others)))
+        agree[(name, shape, comp, model)] = {h: float(np.mean(list(ws.values()))) for h, ws in by_h.items() if len(ws) >= 8}
+    rows = {k: {'n': len(v), 'sd': float(np.std(v)), 'p95': q(np.abs(v), 95), 'p99': q(np.abs(v), 99)} for k, v in out.items()}
+    pairs = {}
+    for (name, shape, comp, model), means in agree.items():
+        for (n2, s2, c2, m2), means2 in agree.items():
+            if (n2, s2, c2) == (name, shape, comp) and model < m2:
+                hs = sorted(set(means) & set(means2))
+                if len(hs) >= 3:
+                    a, b = np.array([means[h] for h in hs]), np.array([means2[h] for h in hs])
+                    pairs[(name, shape, comp, model, m2)] = (float(np.corrcoef(a, b)[0, 1]), float(np.mean(np.abs(a - b))), len(hs))
+    return rows, pairs
+
+
 def tilt_dependence(photo_rows):
     out = {}
     by = defaultdict(list)
@@ -301,6 +329,43 @@ def detection(per, synth_res_raw, base, synth, items, k_all, k_loo, fp_q=99.0):
     return thr, hit
 
 
+def reference_geometry(gen, k_loo, err=0.003, scale=0.005):
+    """errors in the model's genuine reference (offline: the dumped reference positions perturbed): one marker's reference
+    moved tangentially by err (R), and every reference scaled by (1 + scale). Change of each method's reading."""
+    res = defaultdict(list)
+    for r, it in gen:
+        if it.get('class_label') != 'gen':
+            continue
+        k = k_loo.get(it['physical_watch_id'])
+        base, _ = M.measure(r, k)
+        elig = [h for h, x in base.items() if x['status'] == el.ELIGIBLE and x['shape'] != 'triangle']
+        if not elig:
+            continue
+        target = sorted(elig)[len(r['photo_id']) % len(elig)]
+        for kind in ('one', 'scale'):
+            rr = json.loads(json.dumps(r))
+            for m in rr['markers']:
+                if m.get('fix') is None:
+                    continue
+                if kind == 'one' and int(m['h']) == target:
+                    t = M.tangent(target)
+                    m['fix'] = [m['fix'][0] + err * t[0], m['fix'][1] + err * t[1]]
+                if kind == 'scale':
+                    m['fix'] = [m['fix'][0] * (1 + scale), m['fix'][1] * (1 + scale)]
+            out, _ = M.measure(rr, k)
+            for h in elig:
+                if h not in out:
+                    continue
+                role = 'target' if (kind == 'one' and h == target) else 'other'
+                for name in ('C', 'F', 'FP', 'LR', 'LB', 'LT'):
+                    if name in out[h] and name in base[h]:
+                        for i, c in enumerate(('tang', 'rad')):
+                            a, b = out[h][name][i], base[h][name][i]
+                            if a is not None and b is not None:
+                                res[(kind, role, name, c)].append(a - b)
+    return res
+
+
 # ------------------------------------------------------------------------------------------------ report
 
 def fmt(x, d=3):
@@ -364,6 +429,17 @@ def main(argv=None):
         print('\n## Hour-line pair deviation from the registered frame (|dev|, deg; production subtracts it from the '
               'ring-relative tilt): median %.3f p95 %.3f max %.3f (n %d)' % (np.median(devs), q(devs, 95), max(devs), len(devs)))
         summary['hour_line_dev'] = {'median': float(np.median(devs)), 'p95': q(devs, 95), 'max': float(max(devs))}
+    corr, pairs = corrected_pool(per)
+    print('\n## Held-out per-hour reference correction (per-family hour means from OTHER watches removed)')
+    print('| method | shape | comp | n | sd | p95 | p99 |')
+    print('|---|---|---|---:|---:|---:|---:|')
+    for (name, shape, comp), r in sorted(corr.items()):
+        if not (shape == 'round' and comp == 'tilt'):
+            print('| %s | %s | %s | %d | %s | %s | %s |' % (name, shape, comp, r['n'], fmt(r['sd']), fmt(r['p95']), fmt(r['p99'])))
+    print('\n## Agreement of per-hour means between families (r, mean |difference| %R, hours)')
+    for k, v in sorted(pairs.items()):
+        print('%s %s %s %s~%s: r %+.2f, mean |diff| %.3f (%d hours)' % (k[0], k[1], k[2], k[3].split('_')[-1], k[4].split('_')[-1], *v))
+    summary['corrected'] = {'%s/%s/%s' % k: v for k, v in corr.items()}
     td = tilt_dependence(photo_rows)
     print('\n## Position size against photo tilt (Pearson r, genuine photos)')
     print(' '.join('%s/%s %+.2f' % (k[0], k[1], v) for k, v in sorted(td.items())))
@@ -374,6 +450,13 @@ def main(argv=None):
             s = sorted([x for x in r['hour_bias'] if abs(x[3]) >= 3], key=lambda x: (x[0], x[1]))
             print('%s %s: %s' % (r['method'], r['shape'], ', '.join('%s %d %+.3f (t %.1f)' % (m.split('_')[-1], h, mu, t)
                                                                       for m, h, mu, t, n in s) or 'none'))
+    rg = reference_geometry(gen, k_loo)
+    if rg:
+        print('\n## Reference-geometry errors (offline): change of the reading (%% R, mean / p95 |change|); production P: '
+              'sideways does not use the reference; its in/out takes a reference error 1:1')
+        for key in sorted(rg):
+            v = np.array(rg[key])
+            print('%-6s %-6s %-3s %-4s mean %+.3f p95 %.3f (n %d)' % (key[0], key[1], key[2], key[3], v.mean(), q(np.abs(v), 95), len(v)))
     if synth:
         res, ring_err, fails = synthetic(base, synth, items, k_all, k_loo)
         rows = summarise_errors(res)
@@ -415,6 +498,14 @@ def replicas(rep, k, per):
     """replica photos: per independent photo of a watch, every method's reading of each marker; and agreement between
     independent photos of the same watch (a physical defect repeats, a photographic artefact does not)"""
     print('\n## Replica photographs (%d)' % len(rep))
+    thr = {}
+    pool = defaultdict(list)
+    for (name, shape, model, comp), vals in per.items():
+        if comp == 'pos':
+            pool[(name, shape)] += [float(np.median(v)) for v in vals.values()]
+    for key, v in pool.items():
+        thr[key] = q(np.abs(v), 99)
+    flags = defaultdict(lambda: [0, 0, 0])   # method -> [flagged in both photos, in one only, markers compared]
     by = defaultdict(list)
     for r, it in rep:
         out, ring = M.measure(r, k)
@@ -435,6 +526,12 @@ def replicas(rep, k, per):
                         for name in M.METHODS:
                             if name in a[h] and name in b[h]:
                                 pa, pb = pos_of(a[h][name], a[h]['shape']), pos_of(b[h][name], b[h]['shape'])
+                                t = thr.get((name, a[h]['shape']))
+                                if pa is not None and pb is not None and t is not None:
+                                    fa, fb = pa > t, pb > t
+                                    flags[name][2] += 1
+                                    flags[name][0] += fa and fb
+                                    flags[name][1] += fa != fb
                                 ta, tb = a[h][name][0], b[h][name][0]
                                 if ta is not None and tb is not None:
                                     diffs[name].append(abs(ta - tb))
@@ -442,6 +539,18 @@ def replicas(rep, k, per):
     print('agreement between independent photos of one replica watch, tangential |difference| (%R):')
     for name, v in sorted(diffs.items()):
         print('  %-3s n %3d median %.3f p90 %.3f' % (name, len(v), np.median(v), q(v, 90)))
+    print('markers over the method\'s genuine p99 position: flagged in both independent photos / in only one / compared')
+    for name, (both, one, n) in sorted(flags.items()):
+        print('  %-3s %d / %d / %d' % (name, both, one, n))
+    print('per replica photo, markers over the genuine p99 (method: hours):')
+    for w, ps in sorted(by.items()):
+        for tilt, out, pid in ps:
+            cells = []
+            for name in ('P', 'FP', 'LB'):
+                hs = [h for h, r in sorted(out.items()) if r['status'] == el.ELIGIBLE and name in r
+                      and pos_of(r[name], r['shape']) is not None and pos_of(r[name], r['shape']) > thr.get((name, r['shape']), 9)]
+                cells.append('%s %s' % (name, hs))
+            print('  %s %s tilt %.1f: %s' % (w, pid[:10], tilt, '; '.join(cells)))
 
 
 if __name__ == '__main__':
