@@ -10,7 +10,8 @@ permissions:
   contents: read
   actions: read
 env:
-  GCAL_RUN: '0'   # run id of a finished genuine-calibration run; 0 = nothing to analyse yet
+  GCAL_RUN: '39833195097'   # run id of a finished genuine-calibration run; 0 = nothing to analyse yet
+  REP_RUN: '39827340472'    # a measurement-architecture run whose ArchMeasure records hold the exact-SHA replica originals
 jobs:
   analyse:
     runs-on: ubuntu-latest
@@ -23,10 +24,15 @@ jobs:
       - uses: actions/download-artifact@v4
         if: env.GCAL_RUN != '0'
         with: {pattern: 'gcal-*_*', path: gcal, merge-multiple: true, run-id: '${{ env.GCAL_RUN }}', github-token: '${{ secrets.GITHUB_TOKEN }}'}
+      - uses: actions/download-artifact@v4
+        if: env.GCAL_RUN != '0'
+        continue-on-error: true
+        with: {name: 'arch-submariner_124060', path: rep, run-id: '${{ env.REP_RUN }}', github-token: '${{ secrets.GITHUB_TOKEN }}'}
       - name: Analyse
         if: env.GCAL_RUN != '0'
         run: |
-          python3 -m tools.research.genuine_calibration.analyse gcal --json gcal/calibration.json --md gcal/calibration.md
+          rep=""; [ -f rep/base_submariner_124060.jsonl ] && rep="--replicas rep/base_submariner_124060.jsonl rep/items_submariner_124060.csv"
+          python3 -m tools.research.genuine_calibration.analyse gcal $rep --json gcal/calibration.json --md gcal/calibration.md
           cat gcal/calibration.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: env.GCAL_RUN != '0'

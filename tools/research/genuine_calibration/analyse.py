@@ -387,7 +387,7 @@ def solve_q(groups, scheme, devs, target, watches=None):
 def calibrate(obs, groups, scheme, partition_of, boot, folds=5):
     devs = photo_devs(obs, groups, scheme)
     all_w = sorted({w for w, _ in devs.values()})
-    out = {}
+    out = {'scheme': list(scheme), 'method': 'quantile'}
     for target in TARGETS:
         q = solve_q(groups, scheme, devs, target)
         L = limits_at(groups, scheme, q)
@@ -430,6 +430,105 @@ def calibrate(obs, groups, scheme, partition_of, boot, folds=5):
                             'readings_per_photo': float(np.mean([len(r) for _, r in devs.values()]))}
     out['p99_per_reading'] = {'limits': limits_at(groups, scheme, 0.01),
                               'whole_watch_fa': alarm_rates(devs, limits_at(groups, scheme, 0.01))[0]}
+    return out
+
+
+# ------------------------------------------------------------------------ standardised whole-watch calibration
+
+MAGNITUDES = {'round.pos', 'baton.pos', 'marker.pos', 'ring.place'}
+
+
+def scale(G, watches=None):
+    """robust genuine scale sigma of a group: watch-weighted median deviation / 0.6745 (half-normal) for signed
+    readings, / 1.1774 (Rayleigh) for 2-D distances (positions, ring placement)"""
+    keep = [i for i, o in enumerate(G.obs) if watches is None or o['watch'] in watches]
+    if not keep:
+        return float('nan')
+    m = wquantile(G.d[keep], weights([G.obs[i]['watch'] for i in keep]), 0.5)
+    return m / (1.1774 if G.name in MAGNITUDES else 0.6745)
+
+
+def photo_max_z(devs, sig, watches=None):
+    """per photo: (watch, the largest standardised deviation d / sigma over its readings, the group giving it)"""
+    out = []
+    for sha, (w, rows) in devs.items():
+        if watches is not None and w not in watches:
+            continue
+        z = [(d / sig[g], g) for g, d, _ in rows if sig.get(g, 0) > 0]
+        if z:
+            m = max(z)
+            out.append((w, m[0], m[1]))
+    return out
+
+
+def k_at(pm, target):
+    """the multiplier k with the target share of genuine watch photos (watch-weighted) having max z > k"""
+    if not pm:
+        return float('nan')
+    return wquantile([z for _, z, _ in pm], weights([w for w, _, _ in pm]), 1 - target)
+
+
+def fa_at(pm, k):
+    by = defaultdict(list)
+    for w, z, _ in pm:
+        by[w].append(z > k)
+    return float(np.mean([np.mean(v) for v in by.values()])) if by else float('nan')
+
+
+def calibrate_maxz(obs, groups, scheme, partition_of, boot, folds=5):
+    """one multiplier k on every group's robust genuine scale: limit_g = k * sigma_g. k is calibrated on the per-photo
+    maximum standardised deviation, a single photo-level statistic, so a whole-watch false-alarm target is estimated at
+    the 5 % / 1 % level directly instead of at a per-reading 0.3 % tail"""
+    devs = photo_devs(obs, groups, scheme)
+    all_w = sorted({w for w, _ in devs.values()})
+    sig = {g: scale(groups[g]) for g in scheme}
+    pm = photo_max_z(devs, sig)
+    out = {'scheme': list(scheme), 'method': 'maxz', 'sigma': sig}
+    per = defaultdict(list)
+    for g in scheme:
+        for i, o in enumerate(groups[g].obs):
+            per[(g, o['watch'])].append(i)
+    order = sorted(all_w, key=lambda w: hashlib.sha256(('fold' + w).encode()).hexdigest())
+    devval = {w for w in all_w if partition_of.get(w) in ('development', 'validation')}
+    hold = {w for w in all_w if partition_of.get(w) == 'holdout'}
+    for target in TARGETS:
+        k = k_at(pm, target)
+        L = {g: k * sig[g] for g in scheme}
+        draws = defaultdict(list)
+        for _ in range(boot):
+            pick = [all_w[i] for i in RNG.integers(0, len(all_w), len(all_w))]
+            cnt = Counter(pick)
+            sb = {}
+            for g in scheme:
+                ii, ww = [], []
+                for w, c in cnt.items():
+                    idx = per.get((g, w), [])
+                    ii += idx * c
+                    ww += [1.0 / len(idx)] * (len(idx) * c) if idx else []
+                if ii:
+                    sb[g] = wquantile(groups[g].d[ii], ww, 0.5) / (1.1774 if g in MAGNITUDES else 0.6745)
+            pmb = [(w + '#%d' % j, z, g) for w, c in cnt.items() for j in range(c)
+                   for (ww_, z, g) in photo_max_z({s_: v for s_, v in devs.items() if v[0] == w}, sb)]
+            kb = k_at(pmb, target)
+            for g in sb:
+                draws[g].append(kb * sb[g])
+        ci = {g: (float(np.percentile(v, 5)), float(np.percentile(v, 95))) for g, v in draws.items()}
+        cv_pm = []
+        for f in range(folds):
+            test = set(order[f::folds])
+            train = set(all_w) - test
+            st = {g: scale(groups[g], train) for g in scheme}
+            kt = k_at(photo_max_z(devs, st, train), target)
+            cv_pm += [(w, z / kt, g) for w, z, g in photo_max_z(devs, st, test)]
+        sd = {g: scale(groups[g], devval) for g in scheme}
+        kd = k_at(photo_max_z(devs, sd, devval), target)
+        hpm = photo_max_z(devs, sd, hold)
+        share = Counter(g for _, z, g in pm if z > k)
+        _, per_reading = alarm_rates(devs, L)
+        out[str(target)] = {'k': k, 'limits': L, 'limits_90ci': ci, 'whole_watch_fa': fa_at(pm, k),
+                            'per_reading_fa': per_reading, 'cv_whole_watch_fa': fa_at(cv_pm, 1.0),
+                            'holdout_watches': len(hold), 'holdout_whole_watch_fa': fa_at(hpm, kd),
+                            'alarm_groups': dict(share.most_common())}
     return out
 
 
@@ -537,7 +636,7 @@ def synthetic(fam, groups, calib):
             for scheme, cal in calib.items():
                 for target in TARGETS:
                     L = cal[str(target)]['limits']
-                    S = SCHEMES[scheme]
+                    S = cal['scheme']
                     if kind in ('single', 'multi'):
                         moved = {h for h, _, _ in moves}
                         hits = []
@@ -552,7 +651,7 @@ def synthetic(fam, groups, calib):
                             hits.append(hit)
                             res[key]['detected'][0] += hit
                             res[key]['detected'][1] += 1
-                            if scheme == 'axis' and target == TARGETS[0]:
+                            if scheme == 'axis/quantile' and target == TARGETS[0]:
                                 s, c = pf.get(h, (False, False))
                                 res[('production', None, kind, shape, k, amt)]['strict_genuine'][0] += s
                                 res[('production', None, kind, shape, k, amt)]['strict_genuine'][1] += 1
@@ -768,27 +867,51 @@ def withheld(fam):
     return out
 
 
-def replicas(fam, groups, calib):
-    out = []
+def replica_records(fam, extra=()):
+    """replica photographs as (layout, item, record, eligible hours). From this run's restored replicas (archive mask)
+    and from earlier ArchMeasure runs on exact-SHA replica originals (extra: [(records.jsonl, items.csv)]), judged as the
+    app would judge one photo: dial registered, dial radius >= 200 px (the app's floor), eligible markers only (the
+    MarkerGeometry eligibility, which equals the archive mask rules: crosscheck)."""
+    out, seen = [], set()
     for layout, F in fam.items():
         for rec in F['base']:
             it = F['items'].get(rec.get('photo_id'), {})
-            if it.get('class_label') != 'rep' or not rec.get('ok'):
+            if it.get('class_label') == 'rep' and rec.get('ok'):
+                mask = F['masks'].get(it.get('sha256'))
+                mk, _ = record_values(rec, layout)
+                e = {h for h in mk if mask is None or el.eligible(mask, h)}
+                out.append((layout, it, rec, e))
+                seen.add(it.get('sha256'))
+    for recs, items in extra:
+        its = {r['photo_id']: r for r in _csv(items)}
+        for rec in _jsonl(recs):
+            it = its.get(rec.get('photo_id'), {})
+            layout = it.get('model') or rec.get('model')
+            if (rec.get('variant', 'base') != 'base' or it.get('class_label') != 'rep' or not rec.get('ok')
+                    or layout not in REQUIRED or it.get('sha256') in seen or (rec.get('rpx') or 0) < 200):
                 continue
-            mask = F['masks'].get(it.get('sha256'))
-            mk, ring = record_values(rec, layout)
-            if mask:
-                mk = {h: v for h, v in mk.items() if el.eligible(mask, h)}
-            row = {'layout': layout, 'watch': it.get('physical_watch_id'), 'photo': rec['photo_id'], 'eligible_markers': len(mk)}
-            for scheme, cal in calib.items():
-                for target in TARGETS:
-                    L = cal[str(target)]['limits']
-                    row['%s@%g' % (scheme, target)] = sorted(h for h, v in mk.items() if flagged(v, groups, L, SCHEMES[scheme])) + \
-                        (['ring'] if ring and flagged(ring, groups, L, SCHEMES[scheme]) else [])
-            pf = prod_flags(rec, set(mk))
-            row['production_strict'] = sorted(h for h, (s, _) in pf.items() if s)
-            row['production_clearly_off'] = sorted(h for h, (_, c) in pf.items() if c)
-            out.append(row)
+            seen.add(it.get('sha256'))
+            mk, _ = record_values(rec, layout)
+            out.append((layout, it, rec, set(mk)))
+    return out
+
+
+def replicas(fam, groups, calib, extra=()):
+    out = []
+    for layout, it, rec, e in replica_records(fam, extra):
+        mk, ring = record_values(rec, layout)
+        mk = {h: v for h, v in mk.items() if h in e}
+        row = {'layout': layout, 'watch': it.get('physical_watch_id'), 'photo': rec['photo_id'], 'rpx': rec.get('rpx'),
+               'eligible_markers': len(mk)}
+        for scheme, cal in calib.items():
+            for target in TARGETS:
+                L = cal[str(target)]['limits']
+                row['%s@%g' % (scheme, target)] = sorted(h for h, v in mk.items() if flagged(v, groups, L, cal['scheme'])) + \
+                    (['ring'] if ring and flagged(ring, groups, L, cal['scheme']) else [])
+        pf = prod_flags(rec, set(mk))
+        row['production_strict'] = sorted(h for h, (s_, _) in pf.items() if s_)
+        row['production_clearly_off'] = sorted(h for h, (_, c) in pf.items() if c)
+        out.append(row)
     return out
 
 
@@ -802,7 +925,7 @@ def parity_check(fam):
 
 # --------------------------------------------------------------------------------------------------------- report
 
-def run(root, boot=400):
+def run(root, boot=400, extra=()):
     fam = load(root)
     obs = observations(fam)
     groups = build_groups(obs)
@@ -816,11 +939,14 @@ def run(root, boot=400):
             continue
         out['groups'][g] = {'summary': describe(G, boot), 'components': components(G), 'by_family': by_family(G, boot),
                             'by_hour': by_hour(G), 'sensitivity': sensitivity(G), 'conditions': conditions(G)}
-    calib = {s: calibrate(obs, groups, SCHEMES[s], partition_of, boot) for s in SCHEMES}
+    calib = {}
+    for sch in SCHEMES:
+        calib[sch + '/quantile'] = calibrate(obs, groups, SCHEMES[sch], partition_of, boot)
+        calib[sch + '/maxz'] = calibrate_maxz(obs, groups, SCHEMES[sch], partition_of, boot)
     out['calibration'] = calib
     out['production_on_genuine'] = genuine_production(fam, obs)
     out['synthetic'] = synthetic(fam, groups, calib)
-    out['replicas'] = replicas(fam, groups, calib)
+    out['replicas'] = replicas(fam, groups, calib, extra)
     out['top_edge'] = top_edge(fam, groups)
     out['ring_quality'] = ring_quality(obs, groups)
     out['crosscheck'] = crosscheck(fam)
@@ -874,20 +1000,28 @@ def markdown(out):
         L.append('| %s | %s | %s | %s |' % (g, _r(s['p99']), ', '.join('%s %s' % (k, _r(x)) for k, x in s['p99_without_source'].items()),
                                              _r(s['max_p99_change_one_watch'])))
     L += ['', '## Candidate limits and false alarms', '']
-    for scheme, cal in out['calibration'].items():
-        L.append('### Scheme `%s` (%s)' % (scheme, ', '.join(SCHEMES[scheme])))
+    for name, cal in out['calibration'].items():
+        S = cal['scheme']
+        if cal['method'] == 'quantile':
+            how = ('common per-reading exceedance q; per-reading p99 limits alone give whole-watch false alarms %s'
+                   % _r(cal['p99_per_reading']['whole_watch_fa']))
+            par = lambda c: 'q %.5f' % c['q_per_reading']
+        else:
+            how = 'one multiplier k on robust genuine scales (sigma: %s)' % ', '.join('%s %s' % (g, _r(cal['sigma'][g])) for g in S)
+            par = lambda c: 'k %.2f' % c['k']
+        L.append('### `%s`: %s' % (name, how))
         L.append('')
-        L.append('Per-reading p99 limits alone: whole-watch false alarms %s.' % _r(cal['p99_per_reading']['whole_watch_fa']))
-        L.append('')
-        L.append('| Target whole-watch FA | q per reading | In-sample FA | 5-fold CV FA | Holdout FA (watches) | Per-reading FA | ' +
-                 ' | '.join(SCHEMES[scheme]) + ' |')
-        L.append('|---|---:|---:|---:|---:|---:|' + '---|' * len(SCHEMES[scheme]))
+        L.append('| Target whole-watch FA | Parameter | In-sample FA | 5-fold CV FA | Holdout FA (watches) | Per-reading FA | ' +
+                 ' | '.join(S) + ' |')
+        L.append('|---|---|---:|---:|---:|---:|' + '---|' * len(S))
         for t in TARGETS:
             c = cal[str(t)]
-            L.append('| %g | %.5f | %s | %s | %s (%d) | %s | %s |' % (t, c['q_per_reading'], _r(c['whole_watch_fa']),
+            L.append('| %g | %s | %s | %s | %s (%d) | %s | %s |' % (t, par(c), _r(c['whole_watch_fa']),
                      _r(c['cv_whole_watch_fa']), _r(c['holdout_whole_watch_fa']), c['holdout_watches'], _r(c['per_reading_fa'], 4),
                      ' | '.join('%s [%s, %s]' % (_r(c['limits'][g]), _r(c['limits_90ci'].get(g, (None,))[0]),
-                                                 _r(c['limits_90ci'].get(g, (None, None))[1])) for g in SCHEMES[scheme])))
+                                                 _r(c['limits_90ci'].get(g, (None, None))[1])) for g in S)))
+            if c.get('alarm_groups'):
+                L.append('|  | alarms by group at this k: %s |' % ', '.join('%s %d' % kv for kv in c['alarm_groups'].items()))
         L.append('')
     p = out['production_on_genuine']
     L += ['Production on the same admitted genuine photos and eligible markers: strict genuine whole-watch FA %s '
@@ -895,7 +1029,8 @@ def markdown(out):
               _r(p['strict']['whole_watch_fa']), _r(p['strict']['per_marker_fa'], 4), _r(p['clearly_off']['whole_watch_fa']),
               _r(p['clearly_off']['per_marker_fa'], 4)), '']
     L += ['## Synthetic defects (image-level moves on admitted genuine photos; detected / assessable)', '']
-    cols = ['%s@%g' % (sc, t) for sc in SCHEMES for t in TARGETS] + ['production strict', 'production Clearly off']
+    shown = [n for n in out['calibration'] if n.endswith('/maxz')] + ['shared/quantile']
+    cols = ['%s@%g' % (sc, t) for sc in shown for t in TARGETS] + ['production strict', 'production Clearly off']
     piv = defaultdict(dict)
     na = Counter()
     for r in out['synthetic']['table']:
@@ -905,7 +1040,7 @@ def markdown(out):
             piv[key]['production Clearly off'] = r.get('clearly_off')
         else:
             piv[key]['%s@%g' % (r['scheme'], r['target'])] = r.get('detected') or r.get('new_false_flag')
-            if r['scheme'] == 'axis' and r['target'] == TARGETS[0]:
+            if r['scheme'] == 'axis/quantile' and r['target'] == TARGETS[0]:
                 na[key] = (r.get('not_assessable') or [0, 0])[1]
     L.append('| Kind | Shape | Move | Amount | Not assessable | ' + ' | '.join(cols) + ' |')
     L.append('|---|---|---|---:|---:|' + '---:|' * len(cols))
@@ -924,11 +1059,11 @@ def markdown(out):
           '', 'Ring translation recovery error: median %s, p95 %s %% R (n %d)' % (
               _r(s['ring_translation_recovery']['median_error']), _r(s['ring_translation_recovery']['p95_error']),
               s['ring_translation_recovery']['n']), '']
-    L += ['## Replica photographs', '', '| Layout | Watch | Photo | Eligible | ' + ' | '.join('%s@%g' % (sc, t) for sc in SCHEMES for t in TARGETS) +
-          ' | Production strict | Production Clearly off |', '|---|---|---|---:|' + '---|' * (len(SCHEMES) * len(TARGETS) + 2)]
+    L += ['## Replica photographs (markers flagged; eligible markers only)', '', '| Layout | Watch | Photo | rpx | Eligible | ' + ' | '.join('%s@%g' % (sc, t) for sc in shown for t in TARGETS) +
+          ' | Production strict | Production Clearly off |', '|---|---|---|---:|---:|' + '---|' * (len(shown) * len(TARGETS) + 2)]
     for r in out['replicas']:
-        L.append('| %s | %s | %s | %d | %s | %s | %s |' % (r['layout'], r['watch'], r['photo'], r['eligible_markers'],
-                 ' | '.join(' '.join(map(str, r['%s@%g' % (sc, t)])) or '—' for sc in SCHEMES for t in TARGETS),
+        L.append('| %s | %s | %s | %s | %d | %s | %s | %s |' % (r['layout'], r['watch'], r['photo'], _r(r.get('rpx'), 0), r['eligible_markers'],
+                 ' | '.join(' '.join(map(str, r['%s@%g' % (sc, t)])) or '—' for sc in shown for t in TARGETS),
                  ' '.join(map(str, r['production_strict'])) or '—', ' '.join(map(str, r['production_clearly_off'])) or '—'))
     t = out['top_edge']
     L += ['', '## Triangle: approved top edge against MarkerGeometry radial', '', '```', json.dumps(t, indent=1), '```',
@@ -944,8 +1079,10 @@ def main(argv=None):
     ap.add_argument('--json')
     ap.add_argument('--md')
     ap.add_argument('--boot', type=int, default=400)
+    ap.add_argument('--replicas', nargs=2, action='append', default=[], metavar=('RECORDS_JSONL', 'ITEMS_CSV'),
+                    help='earlier ArchMeasure records and items holding exact-SHA replica originals')
     a = ap.parse_args(argv)
-    out = run(a.root, a.boot)
+    out = run(a.root, a.boot, [tuple(x) for x in a.replicas])
     md = markdown(out)
     if a.json:
         Path(a.json).write_text(json.dumps(out, indent=1, default=float) + '\n')
