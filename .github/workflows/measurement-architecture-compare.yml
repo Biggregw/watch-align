@@ -10,7 +10,7 @@ permissions:
   contents: read
   actions: read
 env:
-  MEASURE_RUN: '0'   # run id of a finished 'Measurement architecture review (research)' run; 0 = nothing to compare yet
+  MEASURE_RUN: '39735723021'   # run id of a finished 'Measurement architecture review (research)' run; 0 = nothing to compare yet
 jobs:
   compare:
     if: ${{ vars.SKIP_ARCH_COMPARE != '1' }}
