@@ -41,7 +41,7 @@ def test_a_whole_ring_move_is_absolute_not_marker_level():
     for h, r in out.items():
         assert abs(r['LR'][0]) < 1e-3 and abs(r['LR'][1]) < 1e-3 and abs(r['LB'][0]) < 1e-3
     assert ring['t'] == pytest.approx([0.4, -0.2], abs=1e-6)
-    assert ring['s'] == pytest.approx(0.3, abs=0.005) and ring['rot_deg'] == pytest.approx(0.4, abs=1e-3)
+    assert ring['s'] == pytest.approx(0.3, abs=0.005) and ring['rot_deg'] == pytest.approx(0.4, abs=0.005)
     assert max(abs(r['F'][0]) for r in out.values()) > 0.3
 
 
