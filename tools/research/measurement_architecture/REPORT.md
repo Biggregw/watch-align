@@ -513,7 +513,7 @@ within noise.
 | Parity, unit level: 35 ArchMeasure records of the committed public photographs (originals and synthetic moves), 386 marker rows, inputs and Python results; plus known-geometry tests | `android/app/src/test/java/com/watchalign/mobile/MarkerGeometryTest.java`, `android/app/src/test/resources/marker_geometry/parity.csv` |
 | Parity, every CI record: `ArchMeasure` emits the Java output (`mg`, `mg_ring`) beside the raw measurement, and the workflow fails on any difference | `tools/research/measurement_architecture/parity.py`, `.github/workflows/measurement-architecture.yml` |
 | Archive validation reads the same measurement: `mg_tang_pct`, `mg_rad_pct`, `mg_tilt_deg`, `mg_eligible` per marker; `mg_ring` per photo | `tools/desktop-harness/drivers/ArchiveEvidence.java` |
-| Calibrator adapter `marker_geometry_v1`: driver `GeometryMeasure` writes `marker.<hour>.tang/rad/tilt` and `ring.place_x/place_y/rot_deg/scale_pct`, eligible markers only; `ring.*` declares every round marker and baton as dependencies, so masks fail closed | `tools/desktop-harness/drivers/GeometryMeasure.java`, `tools/watch_calibrator/production_measure.py`, `run.py`, `marker_mask.py`, `tests/test_geometry_adapter.py` |
+| Calibrator adapter `marker_geometry_v1`: driver `GeometryMeasure` writes `marker.<hour>.tang/rad/tilt` and `ring.place_x/place_y/rot_deg/scale_pct`, eligible markers only; `ring.*` depends on exactly the markers its ring fit used (`ring.markers`), checked against the photo's mask; a missing or invalid list fails closed | `tools/desktop-harness/drivers/GeometryMeasure.java`, `tools/watch_calibrator/production_measure.py`, `run.py`, `marker_mask.py`, `tests/test_geometry_adapter.py` |
 
 **Parity:** the largest \|Java − Python\| on the local records is 9.3e-11 % R (1,057 values), with eligibility identical.
 
@@ -523,3 +523,19 @@ within noise.
 - New or migrated configs should use `marker_geometry_v1`.
 - Retiring the legacy adapter, and any production use of the new readings or their limits (Phase C), needs the owner's
   approval and a new dated calibration baseline.
+
+**Correction (22 Oct 2026): whole-ring measurements were being discarded.** The first Phase B version made every
+`ring.*` metric depend on all round markers and batons, so a masked calibration dropped a photo's ring measurement
+whenever any one marker was excluded.
+- **Impact:** of the 186 photographs admitted for masked calibration, 186 have enough eligible markers (at least 5) for
+  a ring fit, but only **14** would have kept their ring value. 92 % were discarded, mostly because the minute hand
+  covers the 2.
+- **Why it was unnecessary:** the ring fit already uses only eligible markers.
+- **Fix:**
+  - `GeometryMeasure` writes the hours the fit used (`ring.markers`, from `MarkerGeometry.Ring.hours`).
+  - `marker_mask` keeps the ring value when every one of those markers is ELIGIBLE in the photo's SHA-bound mask.
+  - A ring that used an excluded marker is still blanked and logged.
+  - A missing or invalid list, fewer than 5 markers, or the triangle or the date window in the list stops the run.
+- **Tests:** `tests/test_geometry_adapter.py`.
+- The legacy `round.*` composites (`CalibMeasure`) still need every round marker, because that engine does not report
+  which markers it used. This is one more reason to retire it.

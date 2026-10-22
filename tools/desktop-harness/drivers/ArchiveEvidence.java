@@ -57,7 +57,9 @@ public class ArchiveEvidence {
                 if(c!=null&&p!=null&&p.homography!=null)try{g=MarkerGeometry.fromPipeline(c,o.measurement,model,metal,p.homography);}catch(Throwable t){g=null;}
                 if(g!=null&&g.ring.ok){
                     j.append("\"mg_ring\":{");num(j,"place_x_pct",g.ring.placeXPct);num(j,"place_y_pct",g.ring.placeYPct);
-                    num(j,"rot_deg",g.ring.rotDeg);num(j,"scale_pct",g.ring.scalePct);num(j,"n",g.ring.n);trim(j);j.append("},");
+                    num(j,"rot_deg",g.ring.rotDeg);num(j,"scale_pct",g.ring.scalePct);num(j,"n",g.ring.n);
+                    j.append("\"markers\":[");for(int i=0;i<g.ring.hours.length;i++)j.append(i>0?",":"").append(g.ring.hours[i]);j.append("],");
+                    trim(j);j.append("},");
                 }
                 if(c!=null){
                     num(j,"rpx",c.rpx);num(j,"bad_ticks",c.badTicks);num(j,"ring_turn_pct",c.ringTurnPct);num(j,"track_scale",c.trackScale);num(j,"hour_lines",c.lines.size());

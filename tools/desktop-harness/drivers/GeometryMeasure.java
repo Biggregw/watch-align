@@ -22,7 +22,8 @@ import java.util.Locale;
  *
  * Columns: physical_watch_id, path, dial_source, dial_reproducible, pose_tilt_deg, then marker.<hour>.tang / .rad (% R)
  * and .tilt (deg, batons and the triangle) for hours 1-12, then ring.place_x / ring.place_y (% R, translation minus
- * parallax), ring.rot_deg and ring.scale_pct.
+ * parallax), ring.rot_deg and ring.scale_pct, and ring.markers: the hours the ring fit used (space-separated), so a
+ * masked calibration keeps the ring value whenever every marker it used is eligible (tools/watch_calibrator/marker_mask.py).
  */
 public class GeometryMeasure {
     static final String[] Q={"tang","rad","tilt"};
@@ -42,12 +43,12 @@ public class GeometryMeasure {
         if(ref!=null){Path mf=refFile.resolveSibling("metal_alignment.properties");if(Files.exists(mf))ref.metalExtra=MetalAlignment.parse(Files.readString(mf));}
         List<String> keys=keys();
         try(PrintWriter w=new PrintWriter(new FileWriter(a[1]))){
-            w.println("physical_watch_id,path,dial_source,dial_reproducible,pose_tilt_deg,"+String.join(",",keys));
+            w.println("physical_watch_id,path,dial_source,dial_reproducible,pose_tilt_deg,"+String.join(",",keys)+",ring.markers");
             for(String line:Files.readAllLines(Path.of(a[0]))){
                 String[] f=line.split("\t");if(f.length<2||f[1].trim().isEmpty())continue;
                 String id=f[0].trim(),p=f[1].trim();
                 String[] v=new String[keys.size()];java.util.Arrays.fill(v,"");
-                String src="unreadable";double tilt=Double.NaN;
+                String src="unreadable";double tilt=Double.NaN;String used="";
                 try{
                     Bitmap b=Alpha96Calib.loadAlpha96(p);
                     if(b!=null){
@@ -62,11 +63,12 @@ public class GeometryMeasure {
                                 v[i]=fmt(m.tangPct);v[i+1]=fmt(m.radPct);v[i+2]=fmt(m.tiltDeg);
                             }
                             if(g.ring.ok){int i=keys.indexOf("ring.place_x");
-                                v[i]=fmt(g.ring.placeXPct);v[i+1]=fmt(g.ring.placeYPct);v[i+2]=fmt(g.ring.rotDeg);v[i+3]=fmt(g.ring.scalePct);}
+                                v[i]=fmt(g.ring.placeXPct);v[i+1]=fmt(g.ring.placeYPct);v[i+2]=fmt(g.ring.rotDeg);v[i+3]=fmt(g.ring.scalePct);
+                                StringBuilder u=new StringBuilder();for(int h:g.ring.hours)u.append(u.length()>0?" ":"").append(h);used=u.toString();}
                         }else src="no_pose";
                     }
                 }catch(Throwable t){src="error:"+t.getClass().getSimpleName();}
-                w.println(id+","+p.replace(',',';')+","+src+",,"+fmt(tilt)+","+String.join(",",v));w.flush();
+                w.println(id+","+p.replace(',',';')+","+src+",,"+fmt(tilt)+","+String.join(",",v)+","+used);w.flush();
             }
         }
     }

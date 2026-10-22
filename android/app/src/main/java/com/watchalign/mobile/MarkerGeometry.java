@@ -56,6 +56,8 @@ final class MarkerGeometry {
 
     static final class Ring {
         boolean ok;int n;
+        /** the hours the ring fit used (eligible round markers and batons), ascending */
+        int[] hours=new int[0];
         double txPct=Double.NaN,tyPct=Double.NaN,scalePct=Double.NaN,rotDeg=Double.NaN,tiltDeg=Double.NaN,farX,farY;
         /** translation minus the parallax prediction (% R, canonical x right / y down) */
         double placeXPct=Double.NaN,placeYPct=Double.NaN;
@@ -141,6 +143,7 @@ final class MarkerGeometry {
             double[] sol=huber(ring,rpx);
             if(sol!=null){
                 Ring g=res.ring;g.ok=true;g.n=ring.size();
+                g.hours=new int[ring.size()];for(int i=0;i<g.hours.length;i++)g.hours[i]=ring.get(i).hour;java.util.Arrays.sort(g.hours);
                 g.txPct=100*sol[0];g.tyPct=100*sol[1];g.scalePct=100*sol[2];g.rotDeg=Math.toDegrees(sol[3]);
                 double[] p=pose(H);
                 g.tiltDeg=Math.toDegrees(p[0]);g.farX=p[1];g.farY=p[2];

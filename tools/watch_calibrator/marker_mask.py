@@ -53,8 +53,17 @@ def layout(config: dict) -> str:
     return model
 
 
-def dependencies(metric: str, model: str) -> frozenset[int]:
-    """Hour markers whose readings a calibrator metric is computed from (Sub124060Calibration.assess)."""
+RING_MARKERS = "ring.markers"   # GeometryMeasure: the hours the photo's ring fit actually used
+MIN_RING = 5
+
+
+def dependencies(metric: str, model: str, row: dict | None = None) -> frozenset[int]:
+    """Hour markers whose readings a calibrator metric is computed from (Sub124060Calibration.assess; MarkerGeometry).
+
+    A ring-level metric depends on exactly the markers its photo's ring fit used (row[RING_MARKERS]): the fit already
+    leaves out ineligible markers, so a hand at one marker does not discard the whole-ring measurement. Without a valid
+    list (at least MIN_RING round markers / batons of the layout) the value cannot be verified and the run stops.
+    """
     shapes = el.SHAPES[model]
     m = PER_MARKER.match(metric)
     if m:
@@ -70,8 +79,17 @@ def dependencies(metric: str, model: str) -> frozenset[int]:
         return frozenset({3, 9})
     if metric == "axis.12_6_line_offset_r":
         return frozenset({12, 6})
-    if metric.startswith("ring."):         # MarkerGeometry ring level: fitted from every eligible round marker and baton
-        return frozenset(h for h, s in shapes.items() if s in ("round", "baton"))
+    if metric.startswith("ring."):
+        if row is None:
+            raise MaskError("a ring metric needs the list of markers its ring fit used")
+        try:
+            used = frozenset(int(x) for x in (row.get(RING_MARKERS) or "").split())
+        except ValueError:
+            raise MaskError("invalid ring marker list")
+        allowed = {h for h, s in shapes.items() if s in ("round", "baton")}
+        if len(used) < MIN_RING or not used <= allowed:
+            raise MaskError("ring value without a valid list of the markers it used")
+        return used
     raise MaskError("no marker dependency declared for metric %s" % metric)
 
 
@@ -116,7 +134,9 @@ def apply(config: dict, acq_root: Path, raw_csv: Path, out_csv: Path, exclusions
     """Mask one CalibMeasure photo CSV: verify each photo's bytes against its mask, blank ineligible values."""
     model = layout(config)
     metrics = [s["metric"] for s in config["calibration_metrics"]]
-    deps = {m: dependencies(m, model) for m in metrics}
+    for m in metrics:   # every metric must declare its markers (ring metrics per row, below)
+        if not m.startswith("ring."):
+            dependencies(m, model)
     masks = load(acq_root / MASKS_FILE)
     sha_by_path: dict[Path, str] = {}
     with (acq_root / "acquired_images.csv").open(newline="", encoding="utf-8") as fh:
@@ -151,7 +171,7 @@ def apply(config: dict, acq_root: Path, raw_csv: Path, out_csv: Path, exclusions
         for metric in metrics:
             if not math.isfinite(_f(r.get(metric))):
                 continue
-            missing = sorted(deps[metric] - ok)
+            missing = sorted(dependencies(metric, model, r) - ok)
             if missing:
                 r[metric] = ""
                 excluded += 1
@@ -191,5 +211,5 @@ def check_rows(rows: list[dict], metrics: list[str], config: dict | None) -> Non
             raise MaskError("invalid eligible marker list")
         model = layout(config)
         for metric in metrics:
-            if math.isfinite(_f(r.get(metric))) and not dependencies(metric, model) <= ok:
+            if math.isfinite(_f(r.get(metric))) and not dependencies(metric, model, r) <= ok:
                 raise MaskError("an ineligible marker's value reached calibration (%s)" % metric)
