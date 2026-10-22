@@ -1,0 +1,30 @@
+# RESEARCH ONLY: re-run the method comparison (tools/research/measurement_architecture) on the raw measurements of a
+# finished measurement-architecture run, without measuring again. Numbers only.
+name: Measurement architecture comparison (research)
+on:
+  push:
+    branches: [feature/unified-image-archive-20261021]
+    paths: ['.github/workflows/measurement-architecture-compare.yml', 'tools/research/measurement_architecture/evaluate.py',
+            'tools/research/measurement_architecture/methods.py']
+permissions:
+  contents: read
+  actions: read
+env:
+  MEASURE_RUN: '0'   # run id of a finished 'Measurement architecture review (research)' run; 0 = nothing to compare yet
+jobs:
+  compare:
+    if: ${{ vars.SKIP_ARCH_COMPARE != '1' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -q -r tools/image_archive/requirements.txt
+      - uses: actions/download-artifact@v4
+        if: env.MEASURE_RUN != '0'
+        with: {pattern: 'arch-*_*', path: arch, merge-multiple: true, run-id: '${{ env.MEASURE_RUN }}', github-token: '${{ secrets.GITHUB_TOKEN }}'}
+      - name: Compare methods
+        if: env.MEASURE_RUN != '0'
+        run: |
+          python3 -m tools.research.measurement_architecture.evaluate --items arch/items_*.csv --base arch/base_*.jsonl \
+            --synth arch/synth_*.jsonl --json summary.json
