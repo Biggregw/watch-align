@@ -1,0 +1,108 @@
+# RESEARCH ONLY: owner-approved genuine calibration of the shared MarkerGeometry measurement (marker_geometry_v1),
+# tools/research/genuine_calibration. Verified originals are refetched by exact SHA-256 (or read from the existing
+# calibrator artifact), admitted through a fresh, job-local image archive (production face-on-v3 screener, SHA-bound
+# per-marker masks), restored with their masks and measured through the watch calibrator's masked path (GeometryMeasure);
+# the research driver ArchMeasure adds production readings, the top edge and image-level synthetic defects. Numbers only:
+# no photograph is uploaded, committed or published, and nothing is deployed.
+name: Genuine calibration, MarkerGeometry (research)
+on:
+  # workflow_dispatch needs the file on the default branch; while this is a draft PR it runs on pushes that change it
+  push:
+    branches: [feature/unified-image-archive-20261021]
+    paths: ['.github/workflows/genuine-calibration.yml', 'tools/research/genuine_calibration/prepare.py',
+             'tools/research/genuine_calibration/measure.py', 'tools/research/genuine_calibration/configs.py',
+             'tools/desktop-harness/drivers/ArchMeasure.java']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {model: submariner_126610, manifests: 'date-verified.csv checkpoint/date-expanded-verified.csv'}
+          - {model: gmt_126710, manifests: 'gmt-verified.csv'}
+          - {model: submariner_124060, manifests: 'nodate-verified.csv'}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - run: git fetch -q origin data/harvest data/collected testset-inbox || true
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -q -r tools/image_archive/requirements.txt
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Reviewed originals (exact SHA-256 refetch; a changed or re-encoded file is not used)
+        run: |
+          set -e
+          args=""
+          for m in ${{ matrix.manifests }}; do
+            d="g/$(echo $m | tr '/' '_')"; mkdir -p "$d"
+            python3 tools/research/alpha96_calibration/fetch_verified.py "tools/research/marker_audit/results/$m" "$d/img" "$d/fetch_log.csv" | tail -3
+            args="$args --fetched $m=$d/img"
+          done
+          echo "FETCHED=$args" >> "$GITHUB_ENV"
+      - name: Recovered originals (watch-calibrator-124060 artifact, SHA-addressed)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: watch-calibrator-124060-37194686346
+          run-id: 37194686346
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: h
+      - name: Archive admission (production face-on-v3 screener, SHA-bound masks) and masked restore
+        run: |
+          python3 -m tools.image_archive.validation_items $FETCHED --historical h --model ${{ matrix.model }} items.csv
+          python3 -m tools.research.genuine_calibration.prepare items.csv work --model ${{ matrix.model }} --synth-max 40
+      - name: Masked calibrator measurement (marker_geometry_v1, GeometryMeasure; fails closed)
+        run: python3 -m tools.research.genuine_calibration.measure work --model ${{ matrix.model }}
+      - name: Research driver on the same photographs (production readings, top edge, synthetic defects)
+        env:
+          JAVA_TOOL_OPTIONS: -Dwatchalign.model=${{ matrix.model }} -Xmx2500m
+        run: |
+          tools/desktop-harness/run.sh ArchMeasure work/arch_items.csv work/arch_base.jsonl 100000 0 | grep -c ARCH
+          tools/desktop-harness/run.sh ArchMeasure work/synth_items.csv work/arch_synth.jsonl 100000 2 | grep -c ARCH
+      - name: Collect numbers (no photographs)
+        run: |
+          o=out/${{ matrix.model }}; mkdir -p $o/geom
+          cp work/geom/*.csv $o/geom/ ; rm -f $o/geom/*.list.tsv
+          cp work/acq/acquired_images.csv work/acq/locked_split.csv work/acq/eligibility_masks.jsonl $o/
+          cp work/admission.json work/measure.json work/arch_items.csv work/arch_base.jsonl work/arch_synth.jsonl work/replica_masks.jsonl $o/
+          ls -la $o
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gcal-${{ matrix.model }}
+          path: out/
+          retention-days: 30
+
+  analyse:
+    needs: measure
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -q -r tools/image_archive/requirements.txt scipy pytest
+      - name: Unit tests of the research statistics
+        run: python -m pytest -q tools/research/genuine_calibration
+      - uses: actions/download-artifact@v4
+        with: {pattern: 'gcal-*', path: gcal, merge-multiple: true}
+      - name: Pooled calibration, false alarms, defects, production and top-edge comparison, parity
+        run: |
+          ls gcal
+          python3 -m tools.research.genuine_calibration.analyse gcal --json gcal/calibration.json --md gcal/calibration.md
+          cat gcal/calibration.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gcal-summary
+          path: |
+            gcal/calibration.json
+            gcal/calibration.md
+          retention-days: 30

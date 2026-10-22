@@ -34,9 +34,17 @@ import java.util.Random;
  * One JSON line per (photo, variant). Coordinates are canonical (dial-plane, minute-track registered; R units, x right,
  * y down). Nothing here changes a production class, threshold or reference.
  *
- *   ArchMeasure items.csv out.jsonl [max_photos] [synthetic 0|1]
+ *   ArchMeasure items.csv out.jsonl [max_photos] [synthetic 0|1|2]
+ *
+ * Synthetic 2 (genuine calibration, tools/research/genuine_calibration): a grid of known defects on the same photo, only
+ * on markers the MarkerGeometry stage finds eligible. Every eligible marker is moved once (tangential or radial,
+ * amplitude cycling through CAL_MOVE_R), every baton and triangle is also turned once (CAL_TURN_DEG); two variants move
+ * two markers and one moves three (CAL_MULTI_R each, "mm:H:t|r:AMT|H:..."); the whole applied-marker set is moved by
+ * CAL_RING_T (two sizes), turned and scaled.
  */
 public class ArchMeasure {
+    static final double[] CAL_MOVE_R={0.0025,0.005,0.0075,0.010},CAL_TURN_DEG={1.0,2.0,3.0},CAL_RING_T={0.003,0.006};
+    static final double CAL_MULTI_R=0.005;
     static final double MOVE_R=0.005,TURN_DEG=1.0,RING_T=0.004,RING_ROT_DEG=0.4,RING_SCALE=0.005,REG_T=0.003,REG_ROT_DEG=0.3,REG_SCALE=0.005,PERSP_DEG=8;
 
     static ModelSpec model;static ModelReference metal;static AlignmentReference ref;
@@ -49,6 +57,7 @@ public class ArchMeasure {
         if(ref!=null){Path mf=refFile.resolveSibling("metal_alignment.properties");if(Files.exists(mf))ref.metalExtra=MetalAlignment.parse(Files.readString(mf));}
         List<Map<String,String>> rows=AlignmentCalib.csv(Files.readAllLines(Path.of(a[0])));
         int max=a.length>2?Integer.parseInt(a[2]):Integer.MAX_VALUE;boolean synth=a.length>3&&"1".equals(a[3]);
+        boolean grid=a.length>3&&"2".equals(a[3]);
         int done=0;
         try(PrintWriter w=new PrintWriter(Files.newBufferedWriter(Path.of(a[1])))){
             for(Map<String,String> r:rows){
@@ -63,6 +72,7 @@ public class ArchMeasure {
                 Run base=run(b,H);
                 w.println(base.json(id,"base",H,true));w.flush();done++;
                 System.out.println("ARCH "+id);
+                if(grid&&base.co!=null&&base.geo!=null){calibrationGrid(w,id,b,H,base,new Random(id.hashCode()));continue;}
                 if(!synth||base.co==null)continue;
                 long seed=id.hashCode();Random rng=new Random(seed);
                 // single-marker moves (pose unchanged: the minute track is untouched)
@@ -100,6 +110,39 @@ public class ArchMeasure {
         }
     }
 
+    /** synthetic mode 2: known single, multiple and whole-ring defects on the eligible markers of one genuine photo */
+    static void calibrationGrid(PrintWriter w,String id,Bitmap b,double[] H,Run base,Random rng){
+        List<ClearlyOff.Marker> ok=new ArrayList<>();
+        for(ClearlyOff.Marker m:base.co.markers){MarkerGeometry.Marker g=base.geo.at(m.hour);if(g!=null&&g.eligible&&m.yellow!=null)ok.add(m);}
+        int k=rng.nextInt(CAL_MOVE_R.length),kt=rng.nextInt(CAL_TURN_DEG.length);
+        for(ClearlyOff.Marker m:ok){
+            double sg=rng.nextBoolean()?1:-1,amp=CAL_MOVE_R[k++%CAL_MOVE_R.length];boolean tang=rng.nextBoolean();
+            double[] d=dir(m.hour,tang);
+            emit(w,id,"mv:"+m.hour+":"+(tang?"t":"r")+":"+f(sg*amp),b,H,new double[][]{{m.hour,sg*amp*d[0],sg*amp*d[1],0}});
+            if(m.shape!=ModelSpec.Shape.ROUND){double t=(rng.nextBoolean()?1:-1)*CAL_TURN_DEG[kt++%CAL_TURN_DEG.length];
+                emit(w,id,"mv:"+m.hour+":rot:"+f(t),b,H,new double[][]{{m.hour,0,0,Math.toRadians(t)}});}
+        }
+        for(int n:new int[]{2,2,3}){
+            if(ok.size()<n+5)continue;
+            List<ClearlyOff.Marker> pick=new ArrayList<>(ok);java.util.Collections.shuffle(pick,rng);pick=pick.subList(0,n);
+            double[][] mv=new double[n][];StringBuilder v=new StringBuilder("mm:");
+            for(int i=0;i<n;i++){ClearlyOff.Marker m=pick.get(i);double sg=rng.nextBoolean()?1:-1;boolean tang=rng.nextBoolean();
+                double[] d=dir(m.hour,tang);mv[i]=new double[]{m.hour,sg*CAL_MULTI_R*d[0],sg*CAL_MULTI_R*d[1],0};
+                v.append(i>0?"|":"").append(m.hour).append(':').append(tang?"t":"r").append(':').append(f(sg*CAL_MULTI_R));}
+            emit(w,id,v.toString(),b,H,mv);
+        }
+        for(double t:CAL_RING_T){double ang=rng.nextDouble()*2*Math.PI;
+            emit(w,id,"ring:t:"+f(t*Math.cos(ang))+":"+f(t*Math.sin(ang)),b,H,ringMove(base,t*Math.cos(ang),t*Math.sin(ang),0,0));}
+        emit(w,id,"ring:rot:"+f(RING_ROT_DEG),b,H,ringMove(base,0,0,Math.toRadians(RING_ROT_DEG),0));
+        emit(w,id,"ring:scale:"+f(RING_SCALE),b,H,ringMove(base,0,0,0,RING_SCALE));
+    }
+
+    /** canonical unit direction at a marker: tangential (clockwise) or radial (outward); y down */
+    static double[] dir(int hour,boolean tang){
+        double ah=Math.toRadians(30*(hour%12));
+        return tang?new double[]{Math.cos(ah),Math.sin(ah)}:new double[]{Math.sin(ah),-Math.cos(ah)};
+    }
+
     // ------------------------------------------------------------------------------------------------ one measurement
 
     static final class Run {
@@ -127,6 +170,7 @@ public class ArchMeasure {
                 j.append("\"mg_ring\":[").append(f(geo.ring.txPct)).append(',').append(f(geo.ring.tyPct)).append(',')
                  .append(f(geo.ring.scalePct)).append(',').append(f(geo.ring.rotDeg)).append(',').append(f(geo.ring.placeXPct)).append(',')
                  .append(f(geo.ring.placeYPct)).append(',').append(geo.ring.n).append("],");
+                j.append("\"mg_ring_hours\":[");for(int i=0;i<geo.ring.hours.length;i++)j.append(i>0?",":"").append(geo.ring.hours[i]);j.append("],");
             }
             if(co!=null){
                 j.append("\"markers\":[");boolean first=true;
