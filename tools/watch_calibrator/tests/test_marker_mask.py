@@ -2,10 +2,14 @@
 import csv
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
-import pytest
+import tempfile
+import unittest
+from contextlib import contextmanager
+
 from PIL import Image
 
 HERE = Path(__file__).resolve().parents[1]
@@ -46,8 +50,7 @@ def read(path):
         return list(csv.DictReader(fh))
 
 
-@pytest.fixture
-def acq(tmp_path):
+def make_acq(tmp_path):
     """Acquisition root: photos of watches a, a, b (2 obstructed in a/0), c; masks; raw CalibMeasure rows."""
     root = tmp_path / "acq"
     plan = [("a", 0, (2,)), ("a", 1, ()), ("b", 0, ()), ("c", 0, (2, 6))]
@@ -69,6 +72,17 @@ def acq(tmp_path):
     return root
 
 
+@contextmanager
+def raises(exc, match=None):
+    try:
+        yield
+    except exc as e:
+        if match is not None and not re.search(match, str(e)):
+            raise AssertionError("%r does not match %r" % (str(e), match))
+        return
+    raise AssertionError("%s not raised" % exc.__name__)
+
+
 def masked(tmp_path, acq):
     out = tmp_path / "photo.csv"
     summary = marker_mask.apply(MASKED, acq, tmp_path / "raw.csv", out, tmp_path / "excl.csv")
@@ -77,7 +91,7 @@ def masked(tmp_path, acq):
 
 # --- masked inputs ------------------------------------------------------------------------------------------------
 
-def test_an_obstructed_2_never_reaches_round_statistics_but_its_other_markers_do(tmp_path, acq):
+def check_an_obstructed_2_never_reaches_round_statistics_but_its_other_markers_do(tmp_path, acq):
     out, summary = masked(tmp_path, acq)
     rows = {(r["physical_watch_id"], Path(r["path"]).name): r for r in read(out)}
     a0 = rows[("a", "0.png")]
@@ -99,7 +113,7 @@ def test_an_obstructed_2_never_reaches_round_statistics_but_its_other_markers_do
     assert {r["value"] for r in env["round.ring_rho"]} == {3.2, 3.3}
 
 
-def test_several_photos_of_one_watch_are_one_independent_sample(tmp_path, acq):
+def check_several_photos_of_one_watch_are_one_independent_sample(tmp_path, acq):
     out, _ = masked(tmp_path, acq)
     pm.summarise(out, METRICS, tmp_path / "w.csv", tmp_path / "r.csv", {}, MASKED)
     rot = [r for r in read(tmp_path / "w.csv") if r["metric"] == "twelve.rotation_deg"]
@@ -108,99 +122,103 @@ def test_several_photos_of_one_watch_are_one_independent_sample(tmp_path, acq):
 
 # --- fail closed -------------------------------------------------------------------------------------------------
 
-def test_missing_masks_or_a_photo_without_a_mask_stop_the_run(tmp_path, acq):
+def check_missing_masks_or_a_photo_without_a_mask_stop_the_run(tmp_path, acq):
     lines = (acq / marker_mask.MASKS_FILE).read_text().splitlines()
     (acq / marker_mask.MASKS_FILE).write_text("\n".join(lines[1:]) + "\n")
-    with pytest.raises(el.MaskError, match="no eligibility mask"):
+    with raises(el.MaskError, match="no eligibility mask"):
         masked(tmp_path, acq)
     (acq / marker_mask.MASKS_FILE).write_text("")
-    with pytest.raises(el.MaskError):
+    with raises(el.MaskError):
         masked(tmp_path, acq)
     (acq / marker_mask.MASKS_FILE).unlink()
-    with pytest.raises(el.MaskError):
+    with raises(el.MaskError):
         masked(tmp_path, acq)
 
 
-def test_photo_and_mask_must_share_the_verified_sha256(tmp_path, acq):
+def check_photo_and_mask_must_share_the_verified_sha256(tmp_path, acq):
     Image.new("RGB", (8, 8), "white").save(acq / "images/b/0.png")                       # bytes replaced
-    with pytest.raises(el.MaskError, match="SHA-256"):
+    with raises(el.MaskError, match="SHA-256"):
         masked(tmp_path, acq)
 
 
-@pytest.mark.parametrize("edit", [
+EDITS = [
     lambda m: m["markers"]["2"].update(status="ELIGIBLE"),
     lambda m: m.update(eligible_marker_ids=list(range(1, 13))),
     lambda m: m.update(mask_policy_version="none"),
     lambda m: m.update(mask_digest="0" * 64),
     lambda m: m["markers"]["2"]["evidence"].update(hand_confirmed=False),
-])
-def test_a_tampered_mask_file_is_refused(tmp_path, acq, edit):
-    masks = [json.loads(line) for line in (acq / marker_mask.MASKS_FILE).read_text().splitlines()]
-    edit(masks[0])
-    (acq / marker_mask.MASKS_FILE).write_text("".join(json.dumps(m) + "\n" for m in masks))
-    with pytest.raises(el.MaskError):
-        masked(tmp_path, acq)
+]
 
 
-def test_a_mask_for_another_layout_or_two_masks_for_one_photo_are_refused(tmp_path, acq):
+def check_a_tampered_mask_file_is_refused(tmp_path, acq):
+    original = (acq / marker_mask.MASKS_FILE).read_text()
+    for edit in EDITS:
+        masks = [json.loads(line) for line in original.splitlines()]
+        edit(masks[0])
+        (acq / marker_mask.MASKS_FILE).write_text("".join(json.dumps(m) + "\n" for m in masks))
+        with raises(el.MaskError):
+            masked(tmp_path, acq)
+
+
+def check_a_mask_for_another_layout_or_two_masks_for_one_photo_are_refused(tmp_path, acq):
     masks = [json.loads(line) for line in (acq / marker_mask.MASKS_FILE).read_text().splitlines()]
     date = el.build(masks[0]["sha256"], "126610", statuses(model="submariner_126610"), "face-on-v3")
     (acq / marker_mask.MASKS_FILE).write_text("".join(json.dumps(m) + "\n" for m in [date] + masks[1:]))
-    with pytest.raises(el.MaskError, match="layout"):
+    with raises(el.MaskError, match="layout"):
         masked(tmp_path, acq)
     other = el.build(masks[0]["sha256"], "124060", statuses((4,)), "face-on-v3")
     (acq / marker_mask.MASKS_FILE).write_text("".join(json.dumps(m) + "\n" for m in masks + [other]))
-    with pytest.raises(el.MaskError, match="two different masks"):
+    with raises(el.MaskError, match="two different masks"):
         masked(tmp_path, acq)
 
 
-def test_unknown_policies_and_undeclared_metric_dependencies_fail_closed(tmp_path, acq):
-    with pytest.raises(el.MaskError):
+def check_unknown_policies_and_undeclared_metric_dependencies_fail_closed(tmp_path, acq):
+    with raises(el.MaskError):
         marker_mask.required(dict(LEGACY, marker_eligibility={"policy": "v0"}))
     cfg = dict(MASKED, calibration_metrics=LEGACY["calibration_metrics"] + [{"metric": "new.metric"}])
-    with pytest.raises(el.MaskError, match="dependency"):
+    with raises(el.MaskError, match="dependency"):
         marker_mask.apply(cfg, acq, tmp_path / "raw.csv", tmp_path / "o.csv", tmp_path / "e.csv")
-    with pytest.raises(el.MaskError):
+    with raises(el.MaskError):
         marker_mask.dependencies("marker.3.pos", "submariner_126610")                    # the date window
 
 
 # --- bypass of the consumption check ------------------------------------------------------------------------------
 
-def test_reinserting_an_excluded_value_or_stripping_mask_columns_is_caught_before_statistics(tmp_path, acq):
+def check_reinserting_an_excluded_value_or_stripping_mask_columns_is_caught_before_statistics(tmp_path, acq):
     out, _ = masked(tmp_path, acq)
     rows = read(out)
     fields = list(rows[0])
     rows[0]["round.ring_rho"] = "0.9"                                    # the excluded 2-dependent value, put back
     write(out, rows, fields)
-    with pytest.raises(el.MaskError, match="ineligible"):
+    with raises(el.MaskError, match="ineligible"):
         pm.summarise(out, METRICS, tmp_path / "w.csv", tmp_path / "r.csv", {}, MASKED)
-    with pytest.raises(el.MaskError, match="ineligible"):
+    with raises(el.MaskError, match="ineligible"):
         genuine_envelope._collect({"development": out}, METRICS, MASKED)
     rows[0]["round.ring_rho"] = ""
     rows[0]["eligible_marker_ids"] = " ".join(map(str, range(1, 13)))   # widening the list needs a valid digest
     rows[0]["mask_digest"] = "nope"
     write(out, rows, fields)
-    with pytest.raises(el.MaskError):
+    with raises(el.MaskError):
         pm.summarise(out, METRICS, tmp_path / "w.csv", tmp_path / "r.csv", {}, MASKED)
     stripped = [{k: v for k, v in r.items() if k not in marker_mask.MASK_COLUMNS} for r in read(tmp_path / "raw.csv")]
     write(out, stripped)
-    with pytest.raises(el.MaskError, match="unmasked"):
+    with raises(el.MaskError, match="unmasked"):
         pm.summarise(out, METRICS, tmp_path / "w.csv", tmp_path / "r.csv", {}, MASKED)
 
 
 # --- the legacy, unmasked path ------------------------------------------------------------------------------------
 
-def test_partially_eligible_photos_cannot_enter_the_unmasked_legacy_path(tmp_path, acq):
-    with pytest.raises(el.MaskError, match="legacy"):
+def check_partially_eligible_photos_cannot_enter_the_unmasked_legacy_path(tmp_path, acq):
+    with raises(el.MaskError, match="legacy"):
         pm.measure(LEGACY, acq, tmp_path / "split.csv", tmp_path / "geom", "development", "gen")
     out, _ = masked(tmp_path, acq)
-    with pytest.raises(el.MaskError, match="legacy"):
+    with raises(el.MaskError, match="legacy"):
         pm.summarise(out, METRICS, tmp_path / "w.csv", tmp_path / "r.csv", {}, LEGACY)
-    with pytest.raises(el.MaskError, match="legacy"):
+    with raises(el.MaskError, match="legacy"):
         genuine_envelope.build(LEGACY, {"development": out}, tmp_path / "none.csv")
 
 
-def test_the_strict_fully_eligible_dataset_calibrates_exactly_as_before(tmp_path, acq):
+def check_the_strict_fully_eligible_dataset_calibrates_exactly_as_before(tmp_path, acq):
     """Property 10: with every marker eligible, the masked pipeline gives the legacy result."""
     masks = [json.loads(line) for line in (acq / marker_mask.MASKS_FILE).read_text().splitlines()]
     full = [el.build(m["sha256"], "124060", statuses(), "face-on-v3", m["profile"]) for m in masks]
@@ -218,7 +236,7 @@ def test_the_strict_fully_eligible_dataset_calibrates_exactly_as_before(tmp_path
     assert read(tmp_path / "w0.csv") == read(tmp_path / "w1.csv")
 
 
-def test_source_diversity_is_still_enforced_on_masked_values(tmp_path, acq):
+def check_source_diversity_is_still_enforced_on_masked_values(tmp_path, acq):
     out, _ = masked(tmp_path, acq)
     split_csv = tmp_path / "split.csv"
     write(split_csv, [{"physical_watch_id": w, "partition": "development", "source_name": "one dealer"} for w in "abc"])
@@ -237,7 +255,7 @@ def photo(sha, wid, hands=(), cls="gen", source="dealer-a", value=0.1):
             el.build(sha, "124060", st, "face-on-v3"))
 
 
-def test_population_counts_watches_per_marker_only_where_the_marker_is_eligible():
+def check_population_counts_watches_per_marker_only_where_the_marker_is_eligible():
     items = [photo("1" * 64, "w1", (2,), value=0.1), photo("2" * 64, "w1", (), value=0.3),
              photo("3" * 64, "w2", (2,)), photo("4" * 64, "w3", (), source="dealer-b"),
              photo("5" * 64, None), photo("6" * 64, "w4", cls="rep"),
@@ -258,13 +276,13 @@ def test_population_counts_watches_per_marker_only_where_the_marker_is_eligible(
             assert sum(q["watches_by_partition"].values()) == q["genuine_watches"]
 
 
-def test_population_refuses_a_mask_bound_to_another_photograph():
+def check_population_refuses_a_mask_bound_to_another_photograph():
     p, m = photo("1" * 64, "w1")
-    with pytest.raises(el.MaskError):
+    with raises(el.MaskError):
         marker_population.population([p], {"1" * 64: dict(m, sha256="2" * 64)})
 
 
-def test_real_evidence_populations_keep_the_strict_13_and_admit_only_masked_photos():
+def check_real_evidence_populations_keep_the_strict_13_and_admit_only_masked_photos():
     records = marker_population.from_evidence(REPO / "docs/image-archive/face-on-evidence.jsonl", catalogue=[])
     admitted = [r for r in records if r["admitted"]]
     assert all(not r["photo_reasons"] and len(r["mask"]["eligible_marker_ids"]) >= el.min_eligible(r["model"])
@@ -273,3 +291,75 @@ def test_real_evidence_populations_keep_the_strict_13_and_admit_only_masked_phot
     assert all(r["mask"] is None for r in records if r["photo_reasons"])          # no mask excuses a photo failure
     two = [r for r in admitted if el.eligible(r["mask"], 2)]
     assert 0 < len(two) < len(admitted) / 3
+
+
+class MarkerMaskTest(unittest.TestCase):
+    """unittest entry points (the calibrator CI runs unittest discovery without pytest)."""
+
+    def test_an_obstructed_2_never_reaches_round_statistics_but_its_other_markers_do(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            check_an_obstructed_2_never_reaches_round_statistics_but_its_other_markers_do(p, make_acq(p))
+
+    def test_several_photos_of_one_watch_are_one_independent_sample(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            check_several_photos_of_one_watch_are_one_independent_sample(p, make_acq(p))
+
+    def test_missing_masks_or_a_photo_without_a_mask_stop_the_run(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            check_missing_masks_or_a_photo_without_a_mask_stop_the_run(p, make_acq(p))
+
+    def test_photo_and_mask_must_share_the_verified_sha256(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            check_photo_and_mask_must_share_the_verified_sha256(p, make_acq(p))
+
+    def test_a_tampered_mask_file_is_refused(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            check_a_tampered_mask_file_is_refused(p, make_acq(p))
+
+    def test_a_mask_for_another_layout_or_two_masks_for_one_photo_are_refused(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            check_a_mask_for_another_layout_or_two_masks_for_one_photo_are_refused(p, make_acq(p))
+
+    def test_unknown_policies_and_undeclared_metric_dependencies_fail_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            check_unknown_policies_and_undeclared_metric_dependencies_fail_closed(p, make_acq(p))
+
+    def test_reinserting_an_excluded_value_or_stripping_mask_columns_is_caught_before_statistics(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            check_reinserting_an_excluded_value_or_stripping_mask_columns_is_caught_before_statistics(p, make_acq(p))
+
+    def test_partially_eligible_photos_cannot_enter_the_unmasked_legacy_path(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            check_partially_eligible_photos_cannot_enter_the_unmasked_legacy_path(p, make_acq(p))
+
+    def test_the_strict_fully_eligible_dataset_calibrates_exactly_as_before(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            check_the_strict_fully_eligible_dataset_calibrates_exactly_as_before(p, make_acq(p))
+
+    def test_source_diversity_is_still_enforced_on_masked_values(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            check_source_diversity_is_still_enforced_on_masked_values(p, make_acq(p))
+
+    def test_population_counts_watches_per_marker_only_where_the_marker_is_eligible(self):
+        check_population_counts_watches_per_marker_only_where_the_marker_is_eligible()
+
+    def test_population_refuses_a_mask_bound_to_another_photograph(self):
+        check_population_refuses_a_mask_bound_to_another_photograph()
+
+    def test_real_evidence_populations_keep_the_strict_13_and_admit_only_masked_photos(self):
+        check_real_evidence_populations_keep_the_strict_13_and_admit_only_masked_photos()
+
+
+if __name__ == "__main__":
+    unittest.main()
