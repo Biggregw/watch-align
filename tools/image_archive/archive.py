@@ -10,6 +10,7 @@ import re
 import sqlite3
 import tempfile
 import uuid
+from . import eligibility
 from .screening import POLICY_VERSION, Screener
 
 
@@ -75,8 +76,22 @@ class FilesystemBackend:
             raise IntegrityError('stored object differs')
 
 
+def _valid_mask(body):
+    """An archived marker_masked admission must carry a valid mask bound to its own SHA-256."""
+    try:
+        eligibility.validate(body.get('marker_eligibility'), body['sha256'])
+    except eligibility.MaskError:
+        return False
+    return set(body['marker_eligibility']['eligible_marker_ids']) == set(body.get('usable_marker_ids') or ())
+
+
 class Archive:
-    def __init__(self, root, backend=None, screener=None):
+    # Admission purpose (owner, 22 Oct 2026): photographic suitability plus a SHA-bound per-marker eligibility mask.
+    # 'full_watch' keeps the strict all-markers admission.
+    PURPOSE = 'marker_masked'
+
+    def __init__(self, root, backend=None, screener=None, purpose=None):
+        self.purpose = purpose or self.PURPOSE
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
         self.backend = backend or FilesystemBackend(self.root / 'storage')
@@ -104,7 +119,7 @@ class Archive:
             if inferred.class_label == association.get('class_label'):
                 association['provenance'] = inferred.provenance
                 association['provenance_evidence'] = inferred.evidence
-        decision = self.screener.assess_bytes(data, association.get('model') or association.get('family', ''), 'full_watch')
+        decision = self.screener.assess_bytes(data, association.get('model') or association.get('family', ''), self.purpose)
         reasons = list(decision.reasons)
         if not all(association.get(k) for k in ('model', 'physical_watch_id', 'source_url', 'provenance')):
             reasons.append('inconclusive_source_identity')
@@ -122,6 +137,8 @@ class Archive:
             reasons.append('inconclusive_sample_role')
         body = decision.record()
         body['association'] = association
+        if body['purpose'] == 'marker_masked' and body['status'] == 'pass' and not _valid_mask(body):
+            reasons.append('inconclusive_marker_mask_invalid')
         body['reasons'] = sorted(set(reasons))
         if reasons and body['status'] == 'pass':
             body['status'] = 'inconclusive'
@@ -180,7 +197,9 @@ class Archive:
                 continue
             # Reassess bytes on every retry, rather than trusting stale PASS metadata.
             decisions = [self.screener.assess_bytes(data, r['family'], r['purpose']) for r in rows]
-            if any(d.status != 'pass' for d in decisions):
+            # the mask must also reproduce: a stored mask is never trusted over the bytes
+            if any(d.status != 'pass' or d.marker_eligibility.get('mask_digest') != (r.get('marker_eligibility') or {}).get('mask_digest')
+                   for d, r in zip(decisions, rows)):
                 results.append({'sha256': digest, 'status': 'withheld_reassessment'})
                 continue
             results.append(self._upload(digest, key, data))
@@ -211,6 +230,8 @@ class Archive:
         for body in doc['associations']:
             if body['sha256'] != digest or body['status'] != 'pass':
                 raise IntegrityError('invalid admission record')
+            if body.get('purpose') == 'marker_masked' and not _valid_mask(body):
+                raise IntegrityError('invalid eligibility mask')
         with self.db:
             self.db.execute('INSERT OR REPLACE INTO objects VALUES (?,?,?,?)', (digest, object_key, 'archived', ''))
             for body in doc['associations']:
@@ -255,6 +276,10 @@ class Archive:
                 'reasons': dict(Counter(r for d in decisions for r in d['reasons'])),
                 'objects': dict(Counter(r[0] for r in self.db.execute('SELECT status FROM objects'))),
                 'distinct_watch_ids': len(watches),
+                'archived_by_eligibility': dict(Counter(
+                    'full_watch' if (json.loads(r[0]).get('marker_eligibility') or {}).get('full_watch') else
+                    'marker_masked' if json.loads(r[0]).get('marker_eligibility') else 'no_mask'
+                    for r in self.db.execute("SELECT body FROM associations JOIN objects USING(sha) WHERE status='archived'"))),
                 'identity_note': 'Explicit identities only; shared photos are conflicts, not independent watch evidence.',
                 'shared_photo_conflicts': self._identity_conflicts(),
                 'unconflicted_watch_ids': len(watches - {w for ids in self._identity_conflicts().values() for w in ids}),

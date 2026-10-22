@@ -97,6 +97,8 @@ def marker(decision, hour):
     out['withheld'] = (ev.get('withheld') or {}).get(hour) or (ev.get('withheld') or {}).get(str(hour))
     # the screen's own per-marker verdict: True usable, False obstructed / unreliable, None untested
     out['archive_usable'] = ((decision.metrics.get('analysis') or {}).get('markers') or {}).get(str(hour))
+    # the photograph's SHA-bound eligibility mask: the obstructed marker must never be ELIGIBLE in it
+    out['mask_status'] = ((decision.marker_eligibility.get('markers') or {}).get(str(hour)) or {}).get('status')
     out['credible'] = hour in (ev.get('credible') or [])
     out['reliable'] = hour in (ev.get('reliable') or [])
     return out
@@ -118,15 +120,18 @@ def run(evidence_path, items, out, limit, pinned=None):
         chosen = chosen[:limit]
     driver = Driver()
     screen = Screener(FaceOnAnalyzer(driver), validated_profiles={PROFILE + '/' + m for m in set(MODELS.values())})
-    rows, counts = [], Counter()
+    rows, counts, masked = [], Counter(), Counter()
     for e in chosen:
         path = paths[e['photo_id']]['path']
         data = Path(path).read_bytes()
         d = screen.assess_bytes(data, e['family'])
+        dm = screen.assess_bytes(data, e['family'], 'marker_masked')
         rows.append({'photo_id': e['photo_id'], 'variant': 'original', 'status': d.status, 'reasons': d.reasons,
+                     'masked_status': dm.status, 'eligible': list(dm.usable_marker_ids),
                      'markers': {h: marker(d, h) for h in sorted(set(TARGET.values()))}})
         original = rows[-1]
         counts[('original', d.status)] += 1
+        masked[('original', dm.status)] += 1
         ev = driver.run(MODELS[e['family']], [('o', path)]).get('o') or {}
         if not ev.get('homography'):
             continue
@@ -139,12 +144,16 @@ def run(evidence_path, items, out, limit, pinned=None):
             p = work / (e['photo_id'] + '_' + name + '.png')
             v.save(p)
             dv = screen.assess_bytes(p.read_bytes(), e['family'])
+            dvm = screen.assess_bytes(p.read_bytes(), e['family'], 'marker_masked')
             p.unlink()
-            row = {'photo_id': e['photo_id'], 'variant': name, 'status': dv.status,
+            masked[(name, dvm.status)] += 1
+            row = {'photo_id': e['photo_id'], 'variant': name, 'status': dv.status, 'masked_status': dvm.status,
+                   'eligible': list(dvm.usable_marker_ids),
                    'reasons': [r for r in dv.reasons if not r.startswith('inconclusive_marker_')][:12]}
             if name in TARGET:
                 row['target'] = TARGET[name]
                 row['marker'] = marker(dv, TARGET[name])
+                row['marker']['mask_status'] = marker(dvm, TARGET[name])['mask_status']
                 row['marker_original'] = original['markers'][TARGET[name]]
             rows.append(row)
             counts[(name, dv.status)] += 1
@@ -169,6 +178,16 @@ def run(evidence_path, items, out, limit, pinned=None):
     print('DEGRADE-MARKER missed obstructions %d of %d' % (
         sum(n for (_, w), n in level.items() if w == 'MISSED'),
         sum(n for (_, w), n in level.items() if w != 'original marker not usable')))
+    # per-marker masked admission: a photo-wide degradation must not be admitted at all, and a bar over a marker that
+    # was ELIGIBLE in the original must leave that marker out of the mask
+    for (name, status), n in sorted(masked.items()):
+        print('DEGRADE-MASKED %s %s %d' % (name, status, n))
+    leaks = [r for r in rows if 'target' in r and r['marker_original'].get('mask_status') == 'ELIGIBLE'
+             and r['marker'].get('mask_status') == 'ELIGIBLE']
+    tested = [r for r in rows if 'target' in r and r['marker_original'].get('mask_status') == 'ELIGIBLE']
+    print('DEGRADE-MASKED obstructed marker left ELIGIBLE %d of %d' % (len(leaks), len(tested)))
+    photo_wide = sum(n for (name, status), n in masked.items() if name not in TARGET and name != 'original' and status == 'pass')
+    print('DEGRADE-MASKED photo-wide degradations admitted %d' % photo_wide)
     false_accepts = sum(n for (name, status), n in counts.items() if name != 'original' and status == 'pass')
     print('DEGRADE-SUMMARY false accepts %d; originals admitted %d of %d' % (
         false_accepts, counts[('original', 'pass')], len(chosen)))

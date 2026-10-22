@@ -4,7 +4,7 @@ on:
     paths:
       - 'tools/image_archive/**'
       - 'tools/dataset_harvester/**'
-      - 'tools/watch_calibrator/acquire.py'
+      - 'tools/watch_calibrator/**'
       - 'docs/image-archive/**'
       - '.github/workflows/image-archive-tests.yml'
   workflow_dispatch:

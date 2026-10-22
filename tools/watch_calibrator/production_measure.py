@@ -20,6 +20,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import split as locked_split
+import marker_mask
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
@@ -103,9 +104,11 @@ def run_harness(photos: list[tuple[str, Path]], out_csv: Path) -> None:
 
 
 def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: Path,
-              source_by_watch: dict[str, str] | None = None) -> dict:
+              source_by_watch: dict[str, str] | None = None, config: dict | None = None) -> dict:
     with photo_csv.open(newline="", encoding="utf-8") as fh:
         rows = list(csv.DictReader(fh))
+    # fail closed before any statistic: a masked run sees only proven-eligible values, the legacy run no masked rows
+    marker_mask.check_rows(rows, metrics, config)
     source_by_watch = source_by_watch or {}
     by_watch: dict[str, dict[str, list[tuple[float, float]]]] = defaultdict(lambda: defaultdict(list))
     for r in rows:
@@ -173,18 +176,31 @@ def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: 
 
 def measure(config: dict, acq_root: Path, split_csv: Path, out_dir: Path, partition: str, cls: str) -> dict:
     metrics = [s["metric"] for s in config["calibration_metrics"]]
+    marker_mask.guard_legacy(config, acq_root)
+    masked = marker_mask.required(config)
     pref = out_dir / f"{config['model']}_{partition}_{cls}"
     photos = photo_list(acq_root, split_csv, partition, cls)
     photo_csv = Path(f"{pref}_photo.csv")
-    if photos:
+    mask_summary = None
+    if photos and masked:
+        # per-marker eligibility (marker_mask.py): the raw gated values are masked before anything reads them
+        raw = Path(f"{pref}_photo.unmasked.csv")
+        run_harness(photos, raw)
+        mask_summary = marker_mask.apply(config, acq_root, raw, photo_csv, Path(f"{pref}_mask_exclusions.csv"))
+        raw.unlink()
+    elif photos:
         run_harness(photos, photo_csv)
     else:
         out_dir.mkdir(parents=True, exist_ok=True)
         photo_csv.write_text("physical_watch_id,path\n", encoding="utf-8")
-    return summarise(
+    result = summarise(
         photo_csv,
         metrics,
         Path(f"{pref}_watch.csv"),
         Path(f"{pref}_repeatability.csv"),
         source_map(split_csv),
+        config,
     )
+    if mask_summary is not None:
+        result["marker_mask"] = mask_summary
+    return result

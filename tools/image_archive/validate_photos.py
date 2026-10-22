@@ -1,4 +1,4 @@
-"""Reproduce face-on-v2 screen evidence against the existing twelve public originals.
+"""Reproduce face-on-v3 screen evidence (full-watch and per-marker masked decisions) against the existing twelve public originals.
 
 No network and no image output. Requires JDK 17 and the existing desktop harness.
 """
@@ -33,7 +33,8 @@ def validate(repo, output):
         digest = sha256(data).hexdigest()
         row = catalogue[digest]
         decision = screen.assess_bytes(data, row['model'])
-        record = {'photo_id': name, 'reviewed_label': labels.get(digest, {}), 'decision': decision.record()}
+        record = {'photo_id': name, 'reviewed_label': labels.get(digest, {}), 'decision': decision.record(),
+                  'masked_decision': screen.assess_bytes(data, row['model'], 'marker_masked').record()}
         if row['model'].startswith('126710'):
             record['legacy_gmt_comparison'] = Screener(LegacyGMTDiagnostics(screen.analyzer.driver.harness)).assess_bytes(data, row['model']).record()
         return record

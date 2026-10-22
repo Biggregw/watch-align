@@ -20,6 +20,8 @@ import statistics
 from collections import defaultdict
 from pathlib import Path
 
+import marker_mask
+
 MAD_TO_SIGMA = 1.4826
 
 
@@ -62,10 +64,12 @@ def _source_map(split_csv: Path) -> dict[str, str]:
     return out
 
 
-def _collect(photo_files: dict[str, Path], metrics: list[str]) -> dict[str, list[dict]]:
+def _collect(photo_files: dict[str, Path], metrics: list[str], config: dict | None = None) -> dict[str, list[dict]]:
     out: dict[str, list[dict]] = {m: [] for m in metrics}
     for partition, path in photo_files.items():
-        for r in _rows(path):
+        rows = _rows(path)
+        marker_mask.check_rows(rows, metrics, config)   # fail closed: no ineligible marker value enters the envelope
+        for r in rows:
             wid = (r.get("physical_watch_id") or "").strip()
             if not wid:
                 continue
@@ -233,8 +237,8 @@ def build(config: dict,
           replica_photo_files: dict[str, Path] | None = None) -> dict:
     metrics = [s["metric"] for s in config["calibration_metrics"]]
     specs = {s["metric"]: s for s in config["calibration_metrics"]}
-    genuine = _collect(genuine_photo_files, metrics)
-    replica = _collect(replica_photo_files or {}, metrics)
+    genuine = _collect(genuine_photo_files, metrics, config)
+    replica = _collect(replica_photo_files or {}, metrics, config)
     source_by_watch = _source_map(split_csv)
     pose_sensitive = _pose_sensitive_metrics(repeatability_files or {})
     policy = config.get("calibration_policy") or {}

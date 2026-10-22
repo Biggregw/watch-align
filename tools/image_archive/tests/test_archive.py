@@ -11,6 +11,19 @@ from tools.image_archive import Archive, FilesystemBackend, Screener
 from tools.image_archive.screening import REQUIRED_CHECKS
 from tools.image_archive.archive import IntegrityError
 from tools.image_archive.integration import restore_acquired, safe_destination
+from tools.image_archive import eligibility
+from tools.image_archive.faceon import REQUIRED
+
+MODEL = 'submariner_124060'
+
+
+def statuses(blocked=(), hand=(), model=MODEL):
+    """Synthetic per-marker statuses from evidence: `blocked` withheld by the app, `hand` hand-confirmed."""
+    req = REQUIRED[model]
+    s = {'required': list(req), 'present': list(req), 'credible': [h for h in req if h not in blocked],
+         'reliable': [h for h in req if h not in blocked], 'cover': {h: 1.0 for h in req if h not in blocked},
+         'withheld': {h: 'Can\'t check' for h in blocked}, 'hand_confirmed': list(hand), 'soft': {}}
+    return eligibility.marker_statuses(s, model)
 
 
 @pytest.fixture
@@ -23,7 +36,8 @@ def photo(tmp_path):
 def evidence(img, family, purpose):
     # Synthetic contract fixture ONLY: never installed in the production registry.
     return {'profile': 'test-only', 'checks': dict.fromkeys(REQUIRED_CHECKS, True),
-            'required_marker_ids': list(range(1, 13)), 'markers': {str(m): True for m in range(1, 13)}}
+            'required_marker_ids': list(range(1, 13)), 'markers': {str(m): True for m in range(1, 13)},
+            'marker_status': statuses()}
 
 
 def screener():
@@ -31,7 +45,7 @@ def screener():
 
 
 def association(**kw):
-    return dict({'family': 'test', 'model': 'test_model', 'physical_watch_id': 'watch1',
+    return dict({'family': '124060', 'model': '124060', 'physical_watch_id': 'watch1',
                  'source_url': 'https://example.test/listing/1', 'provenance': 'owner_verified', 'class_label': 'gen'}, **kw)
 
 
@@ -75,12 +89,13 @@ def test_marker_occlusion_never_silent(photo):
     def analyze(*args):
         doc = evidence(*args)
         doc['markers']['6'] = False
+        doc['marker_status'] = statuses(blocked=(6,))
         return doc
     screen = Screener(analyze, ['test-only'])
-    decision = screen.assess_candidate(photo, 'test')
+    decision = screen.assess_candidate(photo, '124060', 'full_watch')
     assert decision.status == 'fail'
     assert 6 not in decision.usable_marker_ids
-    assert 'inconclusive_partial_marker_use_not_enabled' in screen.assess_candidate(photo, 'test', 'partial').reasons
+    assert 'inconclusive_unknown_purpose' in screen.assess_candidate(photo, '124060', 'partial').reasons
 
 
 def test_exact_bytes_dedup_restore_and_watches(photo, tmp_path):
@@ -152,10 +167,10 @@ def test_restore_calibrator_paths_and_manifest_unchanged(photo, tmp_path):
     archive = Archive(tmp_path / 'archive', screener=screener())
     result = put(archive, photo)
     manifest = tmp_path / 'acquired_images.csv'
-    manifest.write_text('sha256,physical_watch_id,model,local_path\n' + result['sha256'] + ',watch1,test_model,images/candidate/0_original.png\n')
+    manifest.write_text('sha256,physical_watch_id,model,local_path\n' + result['sha256'] + ',watch1,124060,images/candidate/0_original.png\n')
     before = manifest.read_bytes()
     restored = restore_acquired(archive, manifest, tmp_path / 'acquisition')
-    assert restored == {'restored': 1, 'distinct_watches': 1}
+    assert restored == {'restored': 1, 'distinct_watches': 1, 'masks': 0}
     assert manifest.read_bytes() == before
     assert (tmp_path / 'acquisition/images/candidate/0_original.png').read_bytes() == photo.read_bytes()
     put(archive, photo, physical_watch_id='another')

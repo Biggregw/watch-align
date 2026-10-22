@@ -303,23 +303,13 @@ def evaluate(s):
     withheld = s.get('withheld') or {}
     glary = [hr for hr, why in withheld.items() if any(w in str(why).lower() for w in ('glare', 'reflect', 'bright'))]
     checks['reflections'] = None if not s.get('required') else not glary
+    # per-marker availability: the named statuses of eligibility.py (one rule set). Full-watch admission needs every
+    # required marker ELIGIBLE (True); OBSTRUCTED and UNRELIABLE are False; INCONCLUSIVE (untested) is None.
+    from .eligibility import ELIGIBLE, INCONCLUSIVE, marker_evidence, status_from_evidence
     markers = {}
-    hidden = set(s.get('partly_hidden') or ())
-    hands = set(s.get('hand_confirmed') or ())
-    reliable = set(s.get('reliable') or ())
-    soft = {int(k): v for k, v in (s.get('soft') or {}).items()}
     for hr in s.get('required') or ():
-        cov = _num((s.get('cover') or {}).get(hr, (s.get('cover') or {}).get(str(hr))))
-        if hr in hidden or hr in hands or (cov is not None and cov < COVER_FAIL):
-            # outline mostly hidden, or the app's own hand check found a hand at it: obstructed
-            markers[str(hr)] = False
-        elif hr in (s.get('credible') or ()):
-            # reliable, or its only soft warning is the harmless 'inconsistent' (reflection) class
-            ok = hr in reliable or bool(soft.get(hr)) and soft_classes(soft[hr]) <= HARMLESS
-            # a clean reading still needs its outline inside the validated coverage envelope (untested otherwise)
-            markers[str(hr)] = (None if cov is None or cov < COVER_PASS else True) if ok else False
-        else:
-            markers[str(hr)] = False if (hr in withheld or str(hr) in withheld) else None
+        status, _ = status_from_evidence(marker_evidence(s, hr))
+        markers[str(hr)] = True if status == ELIGIBLE else None if status == INCONCLUSIVE else False
     return checks, markers
 
 
@@ -341,8 +331,9 @@ class FaceOnAnalyzer:
             raise RuntimeError('no evidence')
         s = summarise(ev, img)
         checks, markers = evaluate(s)
+        from .eligibility import marker_statuses
         return {'profile': PROFILE + '/' + model, 'checks': checks, 'required_marker_ids': list(REQUIRED[model]),
-                'markers': markers, 'evidence': s}
+                'markers': markers, 'marker_status': marker_statuses(s, model), 'evidence': s}
 
 
 # Profiles promoted after the validation in docs/image-archive/FACE-ON-VALIDATION.md. Application-controlled: never

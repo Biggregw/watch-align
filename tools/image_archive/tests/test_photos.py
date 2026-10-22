@@ -38,6 +38,18 @@ def test_reviewed_photographic_controls_have_verified_bytes_and_expected_face_on
     gmt=next(r for r in report if r['photo_id'].startswith('49ba'))['decision']
     assert gmt['status']=='fail' and gmt['reasons']==['fail_marker_2_obstructed_or_unreliable']
     assert all(r['decision']['status']=='fail' for r in report)
+    # per-marker masking: the same photographs, photographic suitability first, then a SHA-bound mask
+    masked={r['photo_id'][:4]:r['masked_decision'] for r in report}
+    assert masked['49ba']['status']=='pass' and 2 not in masked['49ba']['usable_marker_ids']
+    assert masked['94ad']['status']=='fail'                    # the angled photograph: masking excuses nothing
+    for r in report:
+        m=r['masked_decision']
+        assert m['sha256']==r['decision']['sha256'] and m['purpose']=='marker_masked'
+        if m['status']=='pass':
+            assert r['reviewed_label']['near_frontal']=='yes'
+            assert m['marker_eligibility']['sha256']==m['sha256']
+            assert m['usable_marker_ids']==m['marker_eligibility']['eligible_marker_ids']
+    assert sum(m['status']=='pass' for m in masked.values())==8
 
 
 @pytest.mark.skipif(os.environ.get('ARCHIVE_NATIVE_PHOTO_TESTS')!='1',reason='opt-in JDK17/OpenCV photographic analysis')
@@ -51,3 +63,9 @@ def test_rerun_real_frontal_and_angled_photos():
         d=screen.assess_bytes(data[photo],family)
         assert d.status=='fail' and reasons <= set(d.reasons), (photo, d.reasons)
         assert 'inconclusive_analysis_failed' not in d.reasons
+        m=screen.assess_bytes(data[photo],family,'marker_masked')
+        if photo.startswith('94ad'):
+            assert m.status=='fail' and 'fail_face_on_ellipse' in m.reasons
+        else:   # only the obstructed marker is excluded; the photograph is kept
+            hour=int(next(iter(reasons)).split('_')[2])
+            assert m.status=='pass' and hour not in m.usable_marker_ids and len(m.usable_marker_ids)==len(m.required_marker_ids)-1
