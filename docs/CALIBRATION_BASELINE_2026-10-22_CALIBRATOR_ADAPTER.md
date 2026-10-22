@@ -46,8 +46,8 @@ are not app tolerances.
 
 ## Commit
 
-The change is introduced by the commit that adds this file, on branch `feature/unified-image-archive-20261021`
-(PR #69); `git log --diff-filter=A -- docs/CALIBRATION_BASELINE_2026-10-22_CALIBRATOR_ADAPTER.md` shows it.
+`061276f` ("Calibration: retire the legacy CalibMeasure route; 124060 calibrates with marker_geometry_v1"), on branch
+`feature/unified-image-archive-20261021` (PR #69), 22 Oct 2026.
 
 ## Change control
 
