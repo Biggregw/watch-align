@@ -108,9 +108,11 @@ def observations(fam):
     """one record per (photo, marker or ring, quantity): the calibration population"""
     obs = []
     for layout, F in fam.items():
+        rpx = {r.get('photo_id'): r.get('rpx') for r in F['base']}
         for p in F['photos']:
             r = p['row']
-            key = dict(layout=layout, sha=p['sha'], watch=p['watch'], source=p['source'], partition=p['partition'])
+            key = dict(layout=layout, sha=p['sha'], watch=p['watch'], source=p['source'], partition=p['partition'],
+                       rpx=rpx.get(p['sha'][:16]), tilt=_f(r.get('pose_tilt_deg')))
             for h in REQUIRED[layout]:
                 shape = SHAPES[layout][h]
                 t, rd, tl = (_f(r.get('marker.%d.%s' % (h, q))) for q in ('tang', 'rad', 'tilt'))
@@ -295,6 +297,20 @@ def by_hour(G):
     except Exception:
         kw = None
     return {'cells': out, 'kruskal_p_hours': kw}
+
+
+def conditions(G):
+    """p95 of the deviation by dial radius (px) and by dial-plane tilt (deg): photographic uncertainty"""
+    out = {}
+    for name, key, bins in (('rpx', 'rpx', ((250, 350), (350, 500), (500, 1e9))),
+                            ('tilt', 'tilt', ((0, 3), (3, 6), (6, 11)))):
+        for lo, hi in bins:
+            keep = [i for i, o in enumerate(G.obs) if o.get(key) is not None and lo <= o[key] < hi]
+            if keep:
+                w = weights([G.obs[i]['watch'] for i in keep])
+                out['%s %g-%g' % (name, lo, hi if hi < 1e8 else float('inf'))] = {
+                    'watches': len({G.obs[i]['watch'] for i in keep}), 'p95': wquantile(G.d[keep], w, 0.95)}
+    return out
 
 
 def sensitivity(G):
@@ -799,7 +815,7 @@ def run(root, boot=400):
         if not G.obs:
             continue
         out['groups'][g] = {'summary': describe(G, boot), 'components': components(G), 'by_family': by_family(G, boot),
-                            'by_hour': by_hour(G), 'sensitivity': sensitivity(G)}
+                            'by_hour': by_hour(G), 'sensitivity': sensitivity(G), 'conditions': conditions(G)}
     calib = {s: calibrate(obs, groups, SCHEMES[s], partition_of, boot) for s in SCHEMES}
     out['calibration'] = calib
     out['production_on_genuine'] = genuine_production(fam, obs)
@@ -848,6 +864,10 @@ def markdown(out):
         L.append('')
         L.append(' · '.join('%s: n %d, med %s, p95 %s' % (k, c['watches'], _r(c['signed_median']), _r(c['p95_dev'])) for k, c in v['cells'].items()))
         L.append('')
+    L += ['## Photographic conditions (p95 of the deviation; watches)', '']
+    for g, v in out['groups'].items():
+        L.append('- **%s**: %s' % (g, '; '.join('%s: %s (%d)' % (k, _r(c['p95']), c['watches']) for k, c in v['conditions'].items())))
+    L += ['']
     L += ['## Source and watch sensitivity of p99', '', '| Group | p99 | p99 without each source | Largest change from one watch |', '|---|---:|---|---:|']
     for g, v in out['groups'].items():
         s = v['sensitivity']

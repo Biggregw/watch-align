@@ -1,0 +1,38 @@
+# RESEARCH ONLY: re-run the genuine-calibration analysis (tools/research/genuine_calibration/analyse.py) on the numbers
+# of a finished 'Genuine calibration, MarkerGeometry (research)' run, without measuring again. Numbers only.
+name: Genuine calibration analysis (research)
+on:
+  push:
+    branches: [feature/unified-image-archive-20261021]
+    paths: ['.github/workflows/genuine-calibration-analyse.yml', 'tools/research/genuine_calibration/analyse.py',
+            'tools/research/genuine_calibration/test_genuine_calibration.py']
+permissions:
+  contents: read
+  actions: read
+env:
+  GCAL_RUN: '0'   # run id of a finished genuine-calibration run; 0 = nothing to analyse yet
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -q -r tools/image_archive/requirements.txt scipy pytest
+      - run: python -m pytest -q tools/research/genuine_calibration
+      - uses: actions/download-artifact@v4
+        if: env.GCAL_RUN != '0'
+        with: {pattern: 'gcal-*_*', path: gcal, merge-multiple: true, run-id: '${{ env.GCAL_RUN }}', github-token: '${{ secrets.GITHUB_TOKEN }}'}
+      - name: Analyse
+        if: env.GCAL_RUN != '0'
+        run: |
+          python3 -m tools.research.genuine_calibration.analyse gcal --json gcal/calibration.json --md gcal/calibration.md
+          cat gcal/calibration.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: env.GCAL_RUN != '0'
+        with:
+          name: gcal-analysis
+          path: |
+            gcal/calibration.json
+            gcal/calibration.md
+          retention-days: 30
