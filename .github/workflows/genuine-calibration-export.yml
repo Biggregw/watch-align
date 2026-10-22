@@ -1,0 +1,32 @@
+# RESEARCH ONLY: print the numeric artifacts of a finished genuine-calibration run (and the replica ArchMeasure records)
+# into the job log as compressed base64, so offline research can use the same numbers where artifact storage is not
+# reachable. Numbers only: measurement CSV/JSON(L), no photograph.
+name: Genuine calibration numbers export (research)
+on:
+  push:
+    branches: [feature/unified-image-archive-20261021]
+    paths: ['.github/workflows/genuine-calibration-export.yml']
+permissions:
+  contents: read
+  actions: read
+env:
+  GCAL_RUN: '39833195097'
+  REP_RUN: '39827340472'
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        part: [gmt_126710, submariner_124060, submariner_126610, replicas]
+    steps:
+      - uses: actions/download-artifact@v4
+        if: matrix.part != 'replicas'
+        with: {name: 'gcal-${{ matrix.part }}', path: d, run-id: '${{ env.GCAL_RUN }}', github-token: '${{ secrets.GITHUB_TOKEN }}'}
+      - uses: actions/download-artifact@v4
+        if: matrix.part == 'replicas'
+        with: {name: 'arch-submariner_124060', path: d, run-id: '${{ env.REP_RUN }}', github-token: '${{ secrets.GITHUB_TOKEN }}'}
+      - name: Export
+        run: |
+          find d -type f | sort
+          tar -C d -cf - . | xz -9e | base64 -w 4000 > blob.txt
+          echo "BLOB-BEGIN $(wc -c < blob.txt)"; cat blob.txt; echo "BLOB-END"
