@@ -405,3 +405,92 @@ Only the reliability rules and the statistical limits differ by purpose.
 1. App QC reads `MarkerGeometry`, with new limits approved under change control and the old readings kept in the
    technical details.
 2. Regression against every verified genuine photograph and the replica set; release only after review.
+
+---
+
+## Addendum: Phase A research validation (22 October 2026)
+
+Source:
+- `phase_a.py`, on the same measurement run `39735723021`; comparison run `39766088665`.
+- 185 genuine photographs (173 watches) have at least 8 eligible ring markers. The limits use all 199–203 genuine
+  watches with eligible readings.
+- Nothing here is deployed.
+
+### A.1 Several defective markers on one dial, and biweight tuning
+
+0.5 % R displacements in random directions were added to the measured centres of eligible genuine markers. This was
+done offline; §4.2 showed that a moved marker's centre is measured to 0.02 % R. Each cell gives detection of the
+displaced markers / false flags on the clean markers, at the fit's own genuine p99:
+
+| Ring fit | 1 marker | 2 adjacent | 2 opposite | 3 adjacent | 3 random | 4 random |
+|---|---|---|---|---|---|---|
+| Huber (production weights) | 100 % / 3.4 % | 99 % / 9.3 % | 100 % / 10.3 % | 99 % / 13.8 % | 99 % / 16.2 % | 98 % / 22.5 % |
+| **biweight c = 0.30 % R** | **100 % / 1.5 %** | **100 % / 3.1 %** | **100 % / 2.5 %** | **100 % / 6.9 %** | **100 % / 7.6 %** | **99 % / 14.2 %** |
+| biweight c = 0.45 % R (§3) | 100 % / 1.6 % | 100 % / 3.6 % | 100 % / 2.8 % | 100 % / 11.0 % | 100 % / 10.4 % | 99 % / 21.3 % |
+| biweight c = 0.60 % R | 100 % / 2.0 % | 100 % / 5.5 % | 100 % / 4.9 % | 99 % / 16.4 % | 99 % / 15.3 % | 98 % / 28.3 % |
+| biweight c = 0.90 % R | 100 % / 2.8 % | 99 % / 8.5 % | 100 % / 8.9 % | 99 % / 16.8 % | 99 % / 17.5 % | 97 % / 26.3 % |
+
+Findings:
+- Every displaced marker is still found, with three or four defects on one dial.
+- The cost of several defects is extra flags on clean markers.
+- The tighter biweight (c = 0.30 % R) halves those extra flags without changing the genuine thresholds (round p99
+  0.259 against 0.254). **Recommended for Phase B: c = 0.30 % R.**
+- With four or more defective markers, about 1 in 7 clean markers is also flagged. The watch is a QC failure anyway,
+  but the close-ups must show each marker's own evidence.
+
+### A.2 Proposed genuine limits for the recommended readings (for owner review; NOT deployed)
+
+Watch-level p99, pooled across the three families, with a 90 % bootstrap interval over watches:
+
+| Reading | Watches / values | p99 | 90 % interval | Max | Current strict genuine limit (production reading) |
+|---|---:|---:|---|---:|---|
+| Round position (LB) | 195 / 1,268 | 0.254 % R | 0.234–0.264 | 0.368 | 0.671 % R |
+| … per-hour corrected | 195 / 1,263 | 0.240 % R | 0.218–0.257 | 0.379 | |
+| Baton position (LB) | 195 / 425 | 0.289 % R | 0.253–0.315 | 0.327 | 0.752 % R |
+| Triangle position (LB) | 188 / 188 | 0.328 % R | 0.257–0.433 | 0.433 | sideways 0.437, radial 0.373 % R |
+| Baton tilt (LB) | 195 / 425 | 0.76° | 0.72–0.78 | 0.82 | 1.096° |
+| Triangle rotation against ticks 59–1 (production) | 188 | 1.07° | 1.00–1.22 | 1.22 | 1.174° |
+| Ring placement \|t − parallax\| | 199 | 0.338 % R | 0.26–0.44 | 0.44 | none |
+| Ring rotation | 199 | 0.172° | 0.13–0.17 | 0.17 | none |
+| Ring scale | 199 | 0.288 % | 0.25–0.32 | 0.32 | none |
+
+**Whole-watch false-alarm rate.**
+- A per-marker p99 flags 1 % of genuine markers, but **10.1 % of 199 genuine watches** have at least one eligible
+  marker over these limits (about 11 markers per watch).
+- Scaling all position limits by **1.09** flags 5 % of genuine watches; by **1.28**, 1 %.
+- At the 1 % level the position limits are about **0.33 % R (round), 0.37 % R (baton) and 0.42 % R (triangle)**.
+  That is roughly half the current round and baton limits.
+- The owner's acceptance that some genuine watches fail the strict standard decides which level is used. That decision
+  is the owner's, under `CALIBRATION_BASELINE` change control.
+
+The per-hour reference correction helps only the round markers (p99 0.254 → 0.240); for batons and the triangle it is
+within noise.
+
+### A.3 Per-hour reference offsets (mean LB residual, tangential/radial, % R; * = |mean| ≥ 3 se)
+
+| Model | Offsets |
+|---|---|
+| GMT 126710 | 1 −0.077/+0.028*, 4 +0.044/+0.014*, 5 +0.041/+0.060*, **6 +0.035/−0.095***, 8 −0.049/+0.022*; others within ±0.04 |
+| No-Date 124060 | 4 −0.034/−0.004*, 6 −0.000/+0.053*, 10 +0.007/−0.028*; others within ±0.04 |
+| Date 126610 family | 1 −0.046/+0.035*, **2 −0.061/+0.084*** (14 watches), 4 +0.022/−0.011*, 5 +0.053/−0.023*, 8 −0.055/−0.007*, 9 −0.033/+0.008*, 10 +0.039/−0.001*, 11 +0.043/−0.010* |
+
+- The offsets are small (all below 0.1 % R) but real, and they differ by model.
+- They belong in a model-specific reference correction stored with the model geometry. That is a reference-geometry
+  change, so it needs the owner's approval before any production use.
+
+### A.4 The triangle's clear gap and parallax
+
+- The gap (production reading, 213 genuine triangles) correlates with the predicted outward parallax shift of the raised
+  triangle (r = −0.33, slope −2.1). The slope is about twice the shift itself, consistent with the visible side wall of
+  a tilted triangle also narrowing the gap.
+- Correcting for it narrows the spread only slightly (sd 0.588 → 0.564 % R) and raises the genuine minimum from 2.34 to
+  2.45 % R.
+- Genuine variation dominates the gap. A parallax correction is worth applying, but it will not make the gap a much
+  tighter test.
+
+### A.5 Still open (needs new data)
+
+1. Independent photographs of the same genuine watch, at different tilts.
+2. More replica and owner-reviewed defect photographs in all three families.
+3. Confirmation that the triangle's top edge behaves under the LB reading as it does under the owner's top-edge
+   calibration.
