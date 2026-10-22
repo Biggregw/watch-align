@@ -373,7 +373,7 @@ The 2 is obstructed in most photographs (Date: 91 below 80 % coverage, 81 hand-c
 | 1, 10 | The strict 13 are unchanged and fully eligible; strict results unchanged | full-watch counts still 13 (6 + 7) with all markers eligible; the 12 public controls' full-watch decisions are byte-identical apart from the added mask fields; with all markers eligible the masked calibrator gives exactly the legacy envelope and watch medians (`check_the_strict_fully_eligible_dataset…`) |
 | 2 | A genuine photo with the 2 obscured contributes its other markers | public GMT `49ba…` (native rerun): full-watch fails only on the 2; masked admission passes with markers 1, 4–12 eligible. 8 of the 11 reviewed-frontal public photos are now admitted, 94ad (angled) is still rejected |
 | 3 | The obscured 2 never enters a statistic | calibrator tests: 2-dependent composites are blanked, absent from watch medians and the envelope; re-inserting the value or stripping mask columns stops the run |
-| 4 | Dark-bar and steel-bar obstructions stay excluded | counterexample rerun under masked admission (10.7) |
+| 4 | Dark-bar and steel-bar obstructions stay excluded | CI run 39708201218: 0 of 89 bars over an eligible marker left it ELIGIBLE; 0 of 120 photo-wide degradations admitted (10.7) |
 | 5 | Inconclusive markers stay excluded | `6f07…` stays inconclusive with its 80–90 % marker 10 excluded; unit tests |
 | 6 | Round markers need no tilt | tests; round quantities are side, in/out and position |
 | 7 | Harmless reflections are not rejected | "inconsistent edge" only → ELIGIBLE (tests; §4 evidence) |
@@ -383,7 +383,22 @@ The 2 is obstructed in most photographs (Date: 91 below 80 % coverage, 81 hand-c
 
 ### 10.7 Counterexamples under masked admission
 
-COUNTEREXAMPLE_RESULTS
+CI run `39708201218` repeated the counterexamples on the same 24 pinned originals, with the final code:
+`degrade.py` now also assesses every copy with `purpose='marker_masked'` and reads the target marker's status from its
+mask.
+
+| | Date | GMT | No-Date | Total |
+|---|---:|---:|---:|---:|
+| Originals admitted under masking (full-watch: 0) | 8 of 8 | 5 of 8 | 4 of 8 | **17 of 24** |
+| Bars over a marker ELIGIBLE in its original | 32 | 29 | 28 | **89** |
+| … that left that marker ELIGIBLE in the copy's mask | 0 | 0 | 0 | **0** |
+| Photo-wide degradations admitted (blur ×2, glare, crop at the 12, 150 px; 120 copies) | 0 | 0 | 0 | **0** |
+| Full-watch false accepts (unchanged rule) | 0 | 0 | 0 | **0** |
+
+A copy with a bar is admitted only when its target marker is OBSTRUCTED and no more than two markers are excluded
+(for example a Date original with the minute hand at 2 and a bar at 4: markers 2 and 4 excluded, nine eligible). The
+other bar copies fail or stay inconclusive because the bar made a third marker unusable. The steel bar at the 2 lands
+on markers that are already obstructed in every Date original.
 
 ### 10.8 Limitations
 

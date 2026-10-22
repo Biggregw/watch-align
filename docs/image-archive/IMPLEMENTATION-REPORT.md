@@ -24,6 +24,11 @@ The strict full-watch set is unchanged at 13.
 The watch-family calibrator enforces masks where it consumes measurements, and fails closed. Composite metrics are
 kept only when every marker they depend on is eligible. The legacy unmasked path refuses masked inputs.
 
+Counterexamples (CI run 39708201218):
+- 17 of the 24 pinned originals are admitted under masking;
+- 0 of 89 artificial bars over an eligible marker left that marker ELIGIBLE;
+- 0 of 120 photo-wide degradations were admitted.
+
 The 2 marker remains the weakest: 6 GMT, 11 No-Date and 16 Date watches. All Date evidence is from one source.
 
 No production code, tolerance or measurement changed. Nothing was uploaded.
