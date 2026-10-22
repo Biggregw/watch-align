@@ -403,8 +403,15 @@ def main(argv=None):
                   np.median(np.linalg.norm(t1, axis=1)), q(np.linalg.norm(t1, axis=1), 95),
                   t0[:, 0].std(), t0[:, 1].std(), t1[:, 0].std(), t1[:, 1].std(),
                   np.std([r[2] for r in res]), np.std([r[3] for r in res])))
+        rot = np.abs([r[2] for r in res])
+        sc = np.abs([r[3] for r in res])
+        print('ring placement percentiles (genuine, watch photos): |t - parallax| p99 %.3f max %.3f %% R; |rotation| p95 %.3f '
+              'p99 %.3f max %.3f deg; |scale| p95 %.3f p99 %.3f max %.3f %%' % (
+                  q(np.linalg.norm(t1, axis=1), 99), np.linalg.norm(t1, axis=1).max(), q(rot, 95), q(rot, 99), rot.max(),
+                  q(sc, 95), q(sc, 99), sc.max()))
         summary['ring'] = {'n': len(res), 't_median': float(np.median(np.linalg.norm(t0, axis=1))),
-                           't_corrected_p95': q(np.linalg.norm(t1, axis=1), 95)}
+                           't_corrected_p95': q(np.linalg.norm(t1, axis=1), 95),
+                           't_corrected_p99': q(np.linalg.norm(t1, axis=1), 99), 'rot_p99': q(rot, 99), 'scale_p99': q(sc, 99)}
     per, photo_rows = population(gen, k_loo)
     pooled = pooled_table(per)
     summary['pooled'] = pooled
@@ -510,6 +517,10 @@ def replicas(rep, k, per):
     for r, it in rep:
         out, ring = M.measure(r, k)
         by[it['physical_watch_id']].append((math.degrees(M.pose(r['H'])[0]), out, r['photo_id']))
+        if ring:
+            print('  ring %s %s tilt %.1f: t-parallax (%+.3f, %+.3f) %%R, rotation %+.3f deg, scale %+.3f %% (n %d)' % (
+                it['physical_watch_id'], r['photo_id'][:10], ring['tilt_deg'], *ring['t_minus_parallax'], ring['rot_deg'],
+                ring['s'], ring['n']))
     diffs = defaultdict(list)
     for w, ps in sorted(by.items()):
         ps.sort(key=lambda x: x[0])
