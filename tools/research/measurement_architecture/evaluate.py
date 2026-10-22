@@ -496,6 +496,11 @@ def main(argv=None):
     rep = [(r, it) for r, it in gen if it.get('class_label') == 'rep']
     if rep:
         replicas(rep, k_all, per)
+    print('\n## Key numbers')
+    if summary.get('ring'):
+        print('genuine ring placement: |t - parallax| p95 %.3f p99 %.3f %% R; |rotation| p99 %.3f deg; |scale| p99 %.3f %%; k %.4f' % (
+            summary['ring']['t_corrected_p95'], summary['ring']['t_corrected_p99'], summary['ring']['rot_p99'],
+            summary['ring']['scale_p99'], summary['k_all']))
     if a.json:
         json.dump(summary, open(a.json, 'w'), indent=1, default=lambda o: o.tolist() if hasattr(o, 'tolist') else str(o))
     return summary
