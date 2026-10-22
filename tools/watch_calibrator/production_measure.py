@@ -1,9 +1,10 @@
 """Measure calibrator photos through the production app route and summarise per watch.
 
-Replaces the research-path adapter (subresearch.geometry124060 with an empty review), which
-measured values the app itself would withhold. Here every value comes from the desktop harness
-driver CalibMeasure, which runs WatchAlignCoreV13 for the model and keeps only measurements that
-pass the app's own reliability gates. Gated-out values are blank and never reach calibration.
+Every value comes from a desktop-harness driver that keeps only measurements the app's own reliability gates would
+expose. The measurement adapter is marker_geometry_v1 (GeometryMeasure: the app's Alpha99Pipeline read through
+MarkerGeometry). The legacy production_app_route_v1 (CalibMeasure, the 124060-only WatchAlignCoreV13 engine) was
+retired with the owner's approval on 22 Oct 2026 and is refused unless explicitly requested to reproduce historical
+results (RETIRED_ENV). Gated-out values are blank and never reach calibration.
 
 Outputs, per (partition, class):
   {model}_{partition}_{class}_photo.csv         one row per photo (gated values)
@@ -30,6 +31,10 @@ HARNESS = REPO / "tools" / "desktop-harness" / "run.sh"
 # (WatchAlignCoreV13 composites, CalibMeasure); marker_geometry_v1 (Phase B, owner-approved 22 Oct 2026) is the app's own
 # analysis read through MarkerGeometry (per-marker residuals against the ring of the other markers, and ring placement).
 ADAPTERS = {"production_app_route_v1": "CalibMeasure", "marker_geometry_v1": "GeometryMeasure"}
+# retired adapters (docs/CALIBRATION_BASELINE_2026-10-22_CALIBRATOR_ADAPTER.md): usable only to reproduce a historical
+# run, by setting RETIRED_ENV to the adapter's name
+RETIRED = {"production_app_route_v1"}
+RETIRED_ENV = "WATCH_CALIBRATOR_REPRODUCE_RETIRED"
 MIN_POSE_PHOTOS = 8
 POSE_RHO = 0.5
 
@@ -106,10 +111,13 @@ def adapter(config: dict) -> tuple[str, str | None]:
     name = config.get("measurement_adapter")
     if name not in ADAPTERS:
         raise SystemExit(f"Unsupported measurement adapter {name}")
+    if name in RETIRED and os.environ.get(RETIRED_ENV) != name:
+        raise SystemExit(f"Measurement adapter {name} is retired (22 Oct 2026); use marker_geometry_v1, or set "
+                         f"{RETIRED_ENV}={name} only to reproduce a historical run")
     return ADAPTERS[name], (marker_mask.layout(config) if name == "marker_geometry_v1" else None)
 
 
-def run_harness(photos: list[tuple[str, Path]], out_csv: Path, driver: str = "CalibMeasure", layout: str | None = None) -> None:
+def run_harness(photos: list[tuple[str, Path]], out_csv: Path, driver: str = "GeometryMeasure", layout: str | None = None) -> None:
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     lst = out_csv.with_suffix(".list.tsv")
     lst.write_text("".join(f"{w}\t{p}\n" for w, p in photos), encoding="utf-8")

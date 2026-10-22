@@ -6,9 +6,9 @@ masks only from <acquisition root>/eligibility_masks.jsonl (written by tools.ima
 its own bytes, a mask for another layout, or a metric with no declared marker dependency stops the run. There is no
 fallback to unmasked values.
 
-Calibrator metrics are composites computed by the app (Sub124060Calibration.assess) over several markers, so a value
-is kept only when every marker it depends on is ELIGIBLE. Per-marker values (marker.<hour>.<quantity>) depend on
-their own marker only. Excluded values are blanked before any statistic and logged by marker and reason, never by
+A value is kept only when every marker it depends on is ELIGIBLE. Per-marker values (marker.<hour>.<quantity>) depend
+on their own marker only; ring values (ring.*) on the markers their photo's ring fit used. The composites of the
+retired legacy adapter (Sub124060Calibration.assess) depend on several markers. Excluded values are blanked before any statistic and logged by marker and reason, never by
 value.
 
 The unmasked legacy path is unchanged, except that it refuses an acquisition root that holds masks (a partially
@@ -131,7 +131,7 @@ def _f(v) -> float:
 
 
 def apply(config: dict, acq_root: Path, raw_csv: Path, out_csv: Path, exclusions_csv: Path) -> dict:
-    """Mask one CalibMeasure photo CSV: verify each photo's bytes against its mask, blank ineligible values."""
+    """Mask one measurement photo CSV: verify each photo's bytes against its mask, blank ineligible values."""
     model = layout(config)
     metrics = [s["metric"] for s in config["calibration_metrics"]]
     for m in metrics:   # every metric must declare its markers (ring metrics per row, below)

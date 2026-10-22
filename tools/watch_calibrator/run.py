@@ -2,8 +2,8 @@
 """End-to-end autonomous Watch Align family calibrator.
 
 Input is a model id only. The model config defines approved source discovery, layout, measurement
-adapter and calibration metrics. Measurement runs the production app route (desktop harness
-CalibMeasure), so only values that pass the app's reliability gates can shape a limit.
+adapter and calibration metrics. Measurement runs the app's own analysis (desktop harness GeometryMeasure,
+adapter marker_geometry_v1), so only values that pass the app's reliability gates can shape a limit.
 
 The locked development/validation/holdout split is retained as a diagnostic for generalisation, but
 it no longer decides which genuine observations count as normal. After all three genuine partitions
@@ -23,7 +23,7 @@ sys.path.insert(0,str(HERE))
 from discover import discover  # noqa: E402
 from reddit_evidence import enrich as enrich_reddit_evidence  # noqa: E402
 import split as locked_split  # noqa: E402
-from production_measure import measure as production_measure  # noqa: E402
+from production_measure import adapter, measure as production_measure  # noqa: E402
 from calibrate import propose as legacy_propose, finalize as legacy_finalize, save as save_legacy  # noqa: E402
 from genuine_envelope import build as build_genuine_envelope, save as save_genuine_envelope  # noqa: E402
 
@@ -113,8 +113,7 @@ def run(model: str, root: Path, fresh=False) -> dict:
 
     # 4) Measure every genuine partition through the production app route. A value exists only if
     # the app's reliability gates would expose it to the user.
-    if config.get("measurement_adapter") not in ("production_app_route_v1","marker_geometry_v1"):
-        raise SystemExit(f"Unsupported measurement adapter {config.get('measurement_adapter')}")
+    adapter(config)   # refuses an unknown or retired measurement adapter before any measurement
     gd=production_measure(config,P["acq"],P["split"],P["geom"],"development","gen")
     gv=production_measure(config,P["acq"],P["split"],P["geom"],"validation","gen")
     gh=production_measure(config,P["acq"],P["split"],P["geom"],"holdout","gen")

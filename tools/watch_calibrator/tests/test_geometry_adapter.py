@@ -16,19 +16,54 @@ import marker_mask  # noqa: E402
 import production_measure as pm  # noqa: E402
 import genuine_envelope  # noqa: E402
 
-LEGACY = json.loads((REPO / "calibration/models/124060.json").read_text())
+LEGACY = json.loads((REPO / "calibration/models/retired/124060_production_app_route_v1.json").read_text())
 GEOMETRY = dict(LEGACY, measurement_adapter="marker_geometry_v1",
                 calibration_metrics=[{"metric": "marker.4.tang", "minimum_half_width": 0.05},
                                      {"metric": "marker.6.tilt", "minimum_half_width": 0.2},
                                      {"metric": "ring.place_x", "minimum_half_width": 0.05}])
 
 
+def pm_columns():
+    """metric columns GeometryMeasure.java writes (its keys())"""
+    cols = [f"marker.{h}.{q}" for h in range(1, 13) for q in ("tang", "rad", "tilt")]
+    return cols + ["ring.place_x", "ring.place_y", "ring.rot_deg", "ring.scale_pct"]
+
+
 class GeometryAdapterTest(unittest.TestCase):
     def test_adapters_select_their_driver_and_layout(self):
-        self.assertEqual(("CalibMeasure", None), pm.adapter(LEGACY))
         self.assertEqual(("GeometryMeasure", "submariner_124060"), pm.adapter(GEOMETRY))
         with self.assertRaises(SystemExit):
             pm.adapter(dict(LEGACY, measurement_adapter="anything"))
+
+    def test_the_legacy_adapter_is_retired_except_to_reproduce_a_historical_run(self):
+        with mock.patch.dict(pm.os.environ, {}, clear=False):
+            pm.os.environ.pop(pm.RETIRED_ENV, None)
+            with self.assertRaises(SystemExit):
+                pm.adapter(LEGACY)
+            pm.os.environ[pm.RETIRED_ENV] = "something_else"
+            with self.assertRaises(SystemExit):
+                pm.adapter(LEGACY)
+            pm.os.environ[pm.RETIRED_ENV] = "production_app_route_v1"
+            self.assertEqual(("CalibMeasure", None), pm.adapter(LEGACY))
+
+    def test_the_124060_config_measures_with_marker_geometry(self):
+        cfg = json.loads((REPO / "calibration/models/124060.json").read_text())
+        self.assertEqual(("GeometryMeasure", "submariner_124060"), pm.adapter(cfg))
+        metrics = [s["metric"] for s in cfg["calibration_metrics"]]
+        self.assertEqual(len(metrics), len(set(metrics)))
+        cols = set(pm_columns())
+        self.assertTrue(set(metrics) <= cols, set(metrics) - cols)   # every metric is a GeometryMeasure column
+        ring = {"ring.markers": "1 2 3 4 5 6 7 8 9 10 11"}
+        for m in metrics:                                           # and declares the markers it depends on
+            self.assertTrue(marker_mask.dependencies(m, "submariner_124060", ring))
+        for h in range(1, 13):
+            self.assertIn(f"marker.{h}.tang", metrics)
+            self.assertIn(f"marker.{h}.rad", metrics)
+        self.assertEqual({3, 6, 9, 12}, {int(m.split(".")[1]) for m in metrics if m.endswith(".tilt")})
+        # the retired config is kept unchanged apart from its retirement record
+        self.assertEqual("production_app_route_v1", LEGACY["measurement_adapter"])
+        self.assertEqual("2026-10-22", LEGACY["retired"]["date"])
+        self.assertEqual(7, len(LEGACY["accepted_provisional"]["metrics"]))
 
     def test_the_layout_reaches_the_harness(self):
         with tempfile.TemporaryDirectory() as td, mock.patch.object(pm.subprocess, "run") as run:

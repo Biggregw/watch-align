@@ -518,11 +518,13 @@ within noise.
 **Parity:** the largest \|Java − Python\| on the local records is 9.3e-11 % R (1,057 values), with eligibility identical.
 
 **Legacy calibrator route.**
-- `CalibMeasure` (`production_app_route_v1`, `WatchAlignCoreV13`) is kept only so the existing
-  `calibration/models/124060.json` is not migrated (assets unchanged, as instructed).
-- New or migrated configs should use `marker_geometry_v1`.
-- Retiring the legacy adapter, and any production use of the new readings or their limits (Phase C), needs the owner's
-  approval and a new dated calibration baseline.
+- Retired on 22 Oct 2026 with the owner's approval: `calibration/models/124060.json` now uses `marker_geometry_v1`
+  (per-marker `tang`/`rad`/`tilt` and `ring.*` metrics). The old config is preserved at
+  `calibration/models/retired/124060_production_app_route_v1.json`, and `production_app_route_v1` (`CalibMeasure`,
+  `WatchAlignCoreV13`) is refused unless explicitly requested to reproduce a historical run. Record, with old and new
+  values: `docs/CALIBRATION_BASELINE_2026-10-22_CALIBRATOR_ADAPTER.md`.
+- No calibration was run and no limit changed. Any production use of the new readings or their limits (Phase C) still
+  needs the owner's approval and a new dated calibration baseline.
 
 **Correction (22 Oct 2026): whole-ring measurements were being discarded.** The first Phase B version made every
 `ring.*` metric depend on all round markers and batons, so a masked calibration dropped a photo's ring measurement
@@ -537,5 +539,5 @@ whenever any one marker was excluded.
   - A ring that used an excluded marker is still blanked and logged.
   - A missing or invalid list, fewer than 5 markers, or the triangle or the date window in the list stops the run.
 - **Tests:** `tests/test_geometry_adapter.py`.
-- The legacy `round.*` composites (`CalibMeasure`) still need every round marker, because that engine does not report
-  which markers it used. This is one more reason to retire it.
+- The legacy `round.*` composites (`CalibMeasure`) need every round marker, because that engine does not report
+  which markers it used. That route has since been retired (above).

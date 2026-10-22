@@ -24,8 +24,9 @@ import production_measure as pm  # noqa: E402
 from tools.image_archive import eligibility as el  # noqa: E402
 from tools.image_archive.faceon import REQUIRED  # noqa: E402
 
-LEGACY = json.loads((REPO / "calibration/models/124060.json").read_text())
+LEGACY = json.loads((REPO / "calibration/models/retired/124060_production_app_route_v1.json").read_text())
 METRICS = [s["metric"] for s in LEGACY["calibration_metrics"]]
+CURRENT = json.loads((REPO / "calibration/models/124060.json").read_text())
 MASKED = dict(LEGACY, marker_eligibility={"policy": el.MASK_POLICY_VERSION})
 MODEL = "submariner_124060"
 
@@ -209,8 +210,8 @@ def check_reinserting_an_excluded_value_or_stripping_mask_columns_is_caught_befo
 # --- the legacy, unmasked path ------------------------------------------------------------------------------------
 
 def check_partially_eligible_photos_cannot_enter_the_unmasked_legacy_path(tmp_path, acq):
-    with raises(el.MaskError, match="legacy"):
-        pm.measure(LEGACY, acq, tmp_path / "split.csv", tmp_path / "geom", "development", "gen")
+    with raises(el.MaskError, match="legacy"):     # the current (unmasked) 124060 config, marker_geometry_v1
+        pm.measure(CURRENT, acq, tmp_path / "split.csv", tmp_path / "geom", "development", "gen")
     out, _ = masked(tmp_path, acq)
     with raises(el.MaskError, match="legacy"):
         pm.summarise(out, METRICS, tmp_path / "w.csv", tmp_path / "r.csv", {}, LEGACY)
