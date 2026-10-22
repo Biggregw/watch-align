@@ -1,0 +1,41 @@
+# RESEARCH ONLY: fetch the originals of the owner's visual QC review pack (public Reddit QC photos by exact SHA-256 via
+# tools/research/alpha105g/fetch_qc.py, and the SHA-addressed replica originals of rep_124060_clean_1lnn2kz from the
+# 124060 calibrator artifact) and print them ENCRYPTED to the log. The key is wrapped with
+# tools/research/genuine_calibration/review_pack_pub.pem, whose private half exists only in the research session, so the
+# public log carries no readable photograph. Nothing is uploaded as an artifact or committed.
+name: Review pack fetch (research, encrypted)
+on:
+  push:
+    branches: [feature/unified-image-archive-20261021]
+    paths: ['.github/workflows/review-pack-fetch.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -q requests
+      - run: python3 tools/research/alpha105g/fetch_qc.py pack/reddit
+      - uses: actions/download-artifact@v4
+        with: {name: watch-calibrator-124060-37194686346, run-id: '37194686346', path: h, github-token: '${{ secrets.GITHUB_TOKEN }}'}
+      - name: Replica watch rep_124060_clean_1lnn2kz (exact SHA-256)
+        run: |
+          mkdir -p pack/clean_1lnn2kz
+          grep ',rep_124060_clean_1lnn2kz,' tools/research/sub124060/catalogue_124060.csv | cut -d, -f13 | while read sha; do
+            f=$(find h -type f -name "$sha*" | head -1)
+            if [ -n "$f" ] && [ "$(sha256sum "$f" | cut -c1-64)" = "$sha" ]; then cp "$f" pack/clean_1lnn2kz/; echo "verified $sha"; else echo "missing $sha"; fi
+          done
+      - name: Encrypt and print
+        run: |
+          find pack -type f | sort
+          tar -cf - pack | xz -6 > pack.tar.xz
+          openssl rand 32 > key.bin
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in pack.tar.xz -out pack.enc -pass file:key.bin
+          openssl pkeyutl -encrypt -pubin -inkey tools/research/genuine_calibration/review_pack_pub.pem -pkeyopt rsa_padding_mode:oaep -in key.bin -out key.enc
+          rm key.bin pack.tar.xz
+          echo "KEY-BEGIN"; base64 -w 4000 key.enc; echo "KEY-END"
+          echo "BLOB-BEGIN $(stat -c %s pack.enc)"; base64 -w 4000 pack.enc; echo "BLOB-END"
