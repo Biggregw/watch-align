@@ -37,6 +37,8 @@ public class AlignmentResultsActivity extends Activity {
         static double[] H;static ClearlyOff.Result clearlyOff;static String recordId;
         /** 1.6.6: why the clearly-off check failed on this photo as a whole, or null */
         static String analysisFailure;
+        /** research only (off by default): the shared MarkerGeometry readings of this photo, or null */
+        static MarkerGeometry.Result geometry;
         private Store(){}
     }
 
@@ -113,6 +115,13 @@ public class AlignmentResultsActivity extends Activity {
         Button saved=new Button(this);saved.setAllCaps(false);saved.setText("Saved photos and calibration");
         saved.setOnClickListener(v->startActivity(new Intent(this,SavedPhotosActivity.class)));root.addView(saved,lp(-1,dp(48),18));
         root.addView(toggle("Technical details",tech),lp(-1,dp(48),8));root.addView(tech,lp(-1,-2,4));
+        if(Store.geometry!=null){   // research comparison: shown only when switched on; never changes the result above
+            LinearLayout res=new LinearLayout(this);res.setOrientation(LinearLayout.VERTICAL);res.setVisibility(View.GONE);
+            res.addView(text(ResearchComparison.NOTE,12,AMBER,false),lp(-1,-2,4));
+            TextView cmp=text(ResearchComparison.text(cls,Store.geometry),12,MUTED,false);cmp.setTextIsSelectable(true);
+            res.addView(cmp,lp(-1,-2,6));
+            root.addView(toggle("Research comparison (not used for the result)",res),lp(-1,dp(48),8));root.addView(res,lp(-1,-2,4));
+        }
         root.addView(text(DISCLAIMER,12,MUTED,false),lp(-1,-2,14));
         return scroll;
     }

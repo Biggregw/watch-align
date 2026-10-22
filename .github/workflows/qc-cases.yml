@@ -6,7 +6,8 @@ name: Reviewed QC cases (research)
 on:
   push:
     branches: [feature/unified-image-archive-20261021]
-    paths: ['.github/workflows/qc-cases.yml', 'tools/research/genuine_calibration/qc_cases.csv']
+    paths: ['.github/workflows/qc-cases.yml', 'tools/research/genuine_calibration/qc_cases.csv',
+            'tools/desktop-harness/drivers/ResearchCompare.java', 'android/app/src/main/java/com/watchalign/mobile/ResearchComparison.java']
 permissions:
   contents: read
 jobs:
@@ -29,7 +30,9 @@ jobs:
             [ -f qc/$m/manifest.csv ] || continue
             python3 -c "import csv,os,sys; r=list(csv.DictReader(open('qc/$m/manifest.csv'))); w=csv.writer(open('qc/$m/items.csv','w',newline='')); w.writerow(['photo_id','path']); [w.writerow([x['photo_id'],os.path.abspath('qc/'+x['local_path'])]) for x in r]"
             JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m -Xmx2500m" tools/desktop-harness/run.sh ArchMeasure qc/$m/items.csv qc/$m/base.jsonl 100 0 | grep -c ARCH
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m -Xmx2500m -Dstdout.encoding=UTF-8" tools/desktop-harness/run.sh ResearchCompare qc/$m/items.csv > qc/$m/compare.txt
           done
       - name: Records (numbers only)
         run: |
+          cat qc/*/compare.txt
           for f in qc/*/base.jsonl; do echo "RECORDS $f"; python3 -c "import json,sys; [print('QCREC '+json.dumps({k:v for k,v in json.loads(l).items() if k!='ticks'})) for l in open('$f')]" ; done

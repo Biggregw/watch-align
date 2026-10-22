@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -36,7 +37,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
      *  to the app's assets only once its genuine reference has passed validation (docs/ADDING_A_MODEL.md). */
     static final String MODEL_ID="gmt_126710";
     private String modelId=MODEL_ID;
-    private static final String PREFS="watchalign",PREF_MODEL="model";
+    private static final String PREFS="watchalign",PREF_MODEL="model",PREF_RESEARCH="research_comparison";
     private final List<String> modelIds=new ArrayList<>(),modelLabels=new ArrayList<>();
     /** The validated families (ModelRegistry), by model id: a check never uses another model's geometry or references. */
     private final java.util.Map<String,ModelRegistry.Family> families=new java.util.HashMap<>();
@@ -88,6 +89,15 @@ public class PerspectiveOverlayPocActivity extends Activity {
         inspectButton=button("Show last results");inspectButton.setEnabled(false);inspectButton.setOnClickListener(v->openInspector());root.addView(inspectButton,lp(-1,dp(48),6));
         status=text("Upload a sharp photo taken straight on, with the whole dial visible.",14,MUTED);root.addView(status,lp(-1,-2,12));
         preview=new ImageView(this);preview.setAdjustViewBounds(true);preview.setScaleType(ImageView.ScaleType.FIT_CENTER);preview.setBackgroundColor(BG);root.addView(preview,lp(-1,-2,8));
+        // research only, off by default: adds a side-by-side comparison with the shared MarkerGeometry readings to the
+        // results screen; the results and the classification are unchanged
+        CheckBox research=new CheckBox(this);research.setText("Research: compare with the new marker measurement (does not change results)");
+        research.setTextColor(MUTED);research.setTextSize(12);
+        boolean on=false;try{on=getSharedPreferences(PREFS,MODE_PRIVATE).getBoolean(PREF_RESEARCH,false);}catch(Exception ignored){}
+        research.setChecked(on);MarkerGeometry.ENABLED=on||MarkerGeometry.ENABLED;
+        research.setOnCheckedChangeListener((b,checked)->{MarkerGeometry.ENABLED=checked;
+            try{getSharedPreferences(PREFS,MODE_PRIVATE).edit().putBoolean(PREF_RESEARCH,checked).apply();}catch(Exception ignored){}});
+        root.addView(research,lp(-1,-2,12));
         updateModelText();
         return scroll;
     }
@@ -167,6 +177,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
                 AlignmentResultsActivity.Store.technical=fo.alignmentTechnical;AlignmentResultsActivity.Store.legacyTechnical=fo.technical;
                 AlignmentResultsActivity.Store.H=q.homography;AlignmentResultsActivity.Store.clearlyOff=fo.clearlyOff;AlignmentResultsActivity.Store.recordId=null;
                 AlignmentResultsActivity.Store.analysisFailure=fo.clearlyOffError;
+                AlignmentResultsActivity.Store.geometry=fo.geometry;
                 if(fo.alignment!=null&&fo.clearlyOff!=null&&fo.model!=null){
                     // 1.6.2: keep this photo's measured numbers (and a small picture) on the phone for calibration
                     long now=System.currentTimeMillis();String id=Long.toString(now);

@@ -27,8 +27,9 @@ import java.util.regex.Pattern;
 final class MarkerGeometry {
     private MarkerGeometry(){}
 
-    /** off by default: the app's results are unchanged unless this is switched on explicitly */
-    static final boolean ENABLED="on".equals(System.getProperty("watchalign.markergeometry"));
+    /** off by default: the app's results are unchanged unless this is switched on explicitly (system property, or the
+     *  start screen's research switch, which only adds the research comparison and never changes a result) */
+    static volatile boolean ENABLED="on".equals(System.getProperty("watchalign.markergeometry"));
     /** Tukey biweight tuning (R), REPORT.md addendum A.1 */
     static final double BIWEIGHT_C=0.0030;
     /** effective height of the raised markers above the printed minute track (R per unit tan(tilt)); 217 genuine photos,
