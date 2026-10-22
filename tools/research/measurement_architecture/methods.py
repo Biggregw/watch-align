@@ -90,8 +90,10 @@ def similarity(rows, rpx, iters=10):
     return sol
 
 
-# Tukey biweight tuning (R): about 4.7 x the genuine per-marker noise (sd ~0.0009 R, ring-relative)
-BIWEIGHT_C = 0.0045
+# Tukey biweight tuning (R). Phase A (REPORT.md addendum A.1): 0.30 % R keeps every displaced marker detected and halves
+# the false flags on clean markers of a dial with several defects, compared with 0.45 % R (the value used in REPORT.md
+# sections 3-4); genuine thresholds are unchanged. The Java MarkerGeometry stage uses the same constant.
+BIWEIGHT_C = 0.0030
 
 
 def biweight(rows, rpx, iters=20, c=BIWEIGHT_C):

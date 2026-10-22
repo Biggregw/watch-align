@@ -105,6 +105,8 @@ public class ArchMeasure {
     static final class Run {
         double rpx=Double.NaN;Alpha94MarkerMeasurement.Report a94;ClearlyOff.Result co;
         List<double[]> ticks;Map<Integer,double[]> loo=new java.util.HashMap<>();String error;
+        /** Phase B: the Java MarkerGeometry stage on the same measurement (parity with methods.py) */
+        MarkerGeometry.Result geo;
         String json(String id,String variant,double[] H,boolean withTicks){
             StringBuilder j=new StringBuilder("{");kv(j,"photo_id",id);kv(j,"variant",variant);kv(j,"model",model.id);
             boolean ok=co!=null;j.append("\"ok\":").append(ok).append(',');
@@ -121,6 +123,11 @@ public class ArchMeasure {
                 for(Alpha94MarkerMeasurement.Marker m:a94.markers){if(!m.usable||!Double.isFinite(m.canonDx))continue;
                     j.append(first?"":",").append('[').append(m.hour).append(',').append(f(m.canonDx)).append(',').append(f(m.canonDy)).append(']');first=false;}
                 j.append("],");}
+            if(geo!=null&&geo.ring.ok){
+                j.append("\"mg_ring\":[").append(f(geo.ring.txPct)).append(',').append(f(geo.ring.tyPct)).append(',')
+                 .append(f(geo.ring.scalePct)).append(',').append(f(geo.ring.rotDeg)).append(',').append(f(geo.ring.placeXPct)).append(',')
+                 .append(f(geo.ring.placeYPct)).append(',').append(geo.ring.n).append("],");
+            }
             if(co!=null){
                 j.append("\"markers\":[");boolean first=true;
                 for(ClearlyOff.Marker m:co.markers){
@@ -135,6 +142,10 @@ public class ArchMeasure {
                     num(j,"ft",m.fitTiltDeg);num(j,"side",m.sidePct);num(j,"inout",m.inoutPct);num(j,"tilt",m.tiltDeg);
                     num(j,"pos",m.posPct);num(j,"gap",m.gapPct);
                     j.append("\"top\":").append(m.radialFromTopEdge).append(',');
+                    MarkerGeometry.Marker g=geo==null?null:geo.at(m.hour);
+                    if(g!=null){j.append("\"mg\":[").append(Double.isFinite(g.tangPct)?f(g.tangPct):"null").append(',')
+                        .append(Double.isFinite(g.radPct)?f(g.radPct):"null").append(',').append(Double.isFinite(g.tiltDeg)?f(g.tiltDeg):"null")
+                        .append(',').append(g.eligible).append("],");}
                     trim(j);j.append('}');
                 }
                 j.append("],");
@@ -160,6 +171,7 @@ public class ArchMeasure {
             AlignmentAnalysis.Output al=AlignmentAnalysis.run((mk,ring)->AlignmentAnalysis.image(g,H,mk,ring),H,o.a94,checks,model,metal,ref,su);
             for(ModelSpec.Marker mk:model.markers)o.loo.put(mk.hour,LuminousAlignment.ringWithout(o.a94,mk.hour));
             o.co=ClearlyOff.analyse(gray,H,o.rpx,Alpha99Pipeline.clearlyOffInputs(al,checks),Alpha99Pipeline.insets(ref),model.minuteTrackInnerR,ClearlyOff.Limits.defaults());
+            try{o.geo=MarkerGeometry.fromPipeline(o.co,o.a94,model,metal,H);}catch(Throwable t){o.geo=null;}
             Mat fl=new Mat();gray.convertTo(fl,CvType.CV_32F);
             List<ClearlyOff.Tick> ts=ClearlyOff.tickTrack(new ClearlyOff.Img(fl,H),o.rpx);fl.release();
             o.ticks=new ArrayList<>();for(ClearlyOff.Tick t:ts)o.ticks.add(new double[]{t.a,t.rIn,t.bad.isEmpty()?0:1});
@@ -249,5 +261,5 @@ public class ArchMeasure {
     static void kv(StringBuilder j,String k,String v){j.append('"').append(k).append("\":\"").append(v.replace("\\","\\\\").replace("\"","\\\"")).append("\",");}
     static void num(StringBuilder j,String k,double v){j.append('"').append(k).append("\":").append(Double.isFinite(v)?f(v):"null").append(',');}
     static void arr(StringBuilder j,String k,double[] v){if(v==null)return;j.append('"').append(k).append("\":[");for(int i=0;i<v.length;i++)j.append(i>0?",":"").append(Double.isFinite(v[i])?f(v[i]):"null");j.append("],");}
-    static String f(double v){return String.format(Locale.US,"%.6g",v);}
+    static String f(double v){return String.format(Locale.US,"%.12g",v);}
 }

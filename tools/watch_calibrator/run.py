@@ -113,7 +113,7 @@ def run(model: str, root: Path, fresh=False) -> dict:
 
     # 4) Measure every genuine partition through the production app route. A value exists only if
     # the app's reliability gates would expose it to the user.
-    if config.get("measurement_adapter")!="production_app_route_v1":
+    if config.get("measurement_adapter") not in ("production_app_route_v1","marker_geometry_v1"):
         raise SystemExit(f"Unsupported measurement adapter {config.get('measurement_adapter')}")
     gd=production_measure(config,P["acq"],P["split"],P["geom"],"development","gen")
     gv=production_measure(config,P["acq"],P["split"],P["geom"],"validation","gen")

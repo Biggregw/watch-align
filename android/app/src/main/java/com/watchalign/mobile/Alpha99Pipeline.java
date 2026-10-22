@@ -44,6 +44,8 @@ final class Alpha99Pipeline {
         ClearlyOff.Result clearlyOff;
         /** 1.6.6: why the clearly-off check failed on this photo as a whole (exception type and message), or null */
         String clearlyOffError;
+        /** Phase B (research, off by default): the two-level marker geometry (MarkerGeometry); never used for a result */
+        MarkerGeometry.Result geometry;
         boolean ok(){return pose!=null&&pose.valid&&pose.homography!=null&&summary!=null;}
     }
 
@@ -83,11 +85,15 @@ final class Alpha99Pipeline {
             o.alignmentTechnical=AlignmentAnalysis.technical(o.alignment,align);
             try{o.clearlyOff=ClearlyOff.analyse(gray,H,o.measurement.dialRadiusPx,clearlyOffInputs(o.alignment,o.checks),insets(align),model.minuteTrackInnerR,ClearlyOff.forModel(model.id));}
             catch(Throwable t){o.clearlyOff=null;o.clearlyOffError=failure(t);}   // 1.6.6: reported, not masked
+            if(MarkerGeometry.ENABLED&&o.clearlyOff!=null){   // research measurement only: the answers below never read it
+                try{o.geometry=MarkerGeometry.fromPipeline(o.clearlyOff,o.measurement,model,ref,H);}catch(Throwable t){o.geometry=null;}
+            }
             // 1.6.0: the clearly-off check decides the answers; earlier results stay in the technical details
             String legacy=o.alignmentTechnical;
             AlignmentDecision.applyClearlyOff(o.alignment.markers,o.clearlyOff,o.alignment.photoReason);
             o.alignmentTechnical=(o.clearlyOff==null?"Marker alignment check: could not be run on this photo"+(o.clearlyOffError==null?".":" (internal analysis failure: "+o.clearlyOffError+")."):ClearlyOff.technical(o.clearlyOff))
                     +"\n\nEarlier luminous / outer-metal analysis (kept for reference; not used for the results above):\n"+legacy;
+            if(o.geometry!=null)o.alignmentTechnical+="\n\n"+MarkerGeometry.summary(o.geometry);
             o.alignmentCloseups.clear();
             for(AlignmentDecision.Marker am:o.alignment.markers){
                 try{o.alignmentCloseups.put(am.hour,ClearlyOffEvidence.render(rgba,H,model,o.clearlyOff,am));}catch(Throwable t){/* evidence picture optional */}

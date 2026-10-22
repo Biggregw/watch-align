@@ -494,3 +494,32 @@ within noise.
 2. More replica and owner-reviewed defect photographs in all three families.
 3. Confirmation that the triangle's top edge behaves under the LB reading as it does under the owner's top-edge
    calibration.
+
+---
+
+## Phase B: shared implementation behind a flag (owner-approved 22 October 2026)
+
+**Production behaviour is unchanged.**
+- The new stage judges nothing, and `ClearlyOff` still decides every answer.
+- It runs in the app only with `-Dwatchalign.markergeometry=on`. It is off by default; a unit test pins that.
+- Even when enabled, it only adds a "Marker geometry (research, not judged)" block to the technical details.
+- The 12 public photographs' archive decisions were re-run natively with the change and are byte-identical.
+
+| Item | Where |
+|---|---|
+| The stage (Java, no Android/OpenCV dependency): per-marker biweight leave-one-out residuals (c = 0.30 % R), ring placement minus parallax (k = 2.28 % R per unit tan(tilt)), rotation, scale; archive eligibility rules | `android/app/src/main/java/com/watchalign/mobile/MarkerGeometry.java` |
+| Flagged hook (`Output.geometry`) | `Alpha99Pipeline.java` |
+| Research reference, same constant | `tools/research/measurement_architecture/methods.py` (`BIWEIGHT_C = 0.0030`) |
+| Parity, unit level: 35 ArchMeasure records of the committed public photographs (originals and synthetic moves), 386 marker rows, inputs and Python results; plus known-geometry tests | `android/app/src/test/java/com/watchalign/mobile/MarkerGeometryTest.java`, `android/app/src/test/resources/marker_geometry/parity.csv` |
+| Parity, every CI record: `ArchMeasure` emits the Java output (`mg`, `mg_ring`) beside the raw measurement, and the workflow fails on any difference | `tools/research/measurement_architecture/parity.py`, `.github/workflows/measurement-architecture.yml` |
+| Archive validation reads the same measurement: `mg_tang_pct`, `mg_rad_pct`, `mg_tilt_deg`, `mg_eligible` per marker; `mg_ring` per photo | `tools/desktop-harness/drivers/ArchiveEvidence.java` |
+| Calibrator adapter `marker_geometry_v1`: driver `GeometryMeasure` writes `marker.<hour>.tang/rad/tilt` and `ring.place_x/place_y/rot_deg/scale_pct`, eligible markers only; `ring.*` declares every round marker and baton as dependencies, so masks fail closed | `tools/desktop-harness/drivers/GeometryMeasure.java`, `tools/watch_calibrator/production_measure.py`, `run.py`, `marker_mask.py`, `tests/test_geometry_adapter.py` |
+
+**Parity:** the largest \|Java − Python\| on the local records is 9.3e-11 % R (1,057 values), with eligibility identical.
+
+**Legacy calibrator route.**
+- `CalibMeasure` (`production_app_route_v1`, `WatchAlignCoreV13`) is kept only so the existing
+  `calibration/models/124060.json` is not migrated (assets unchanged, as instructed).
+- New or migrated configs should use `marker_geometry_v1`.
+- Retiring the legacy adapter, and any production use of the new readings or their limits (Phase C), needs the owner's
+  approval and a new dated calibration baseline.

@@ -8,7 +8,8 @@ on:
   push:
     branches: [feature/unified-image-archive-20261021]
     paths: ['.github/workflows/measurement-architecture.yml', 'tools/desktop-harness/drivers/ArchMeasure.java',
-            'tools/research/measurement_architecture/select_items.py']
+            'tools/research/measurement_architecture/select_items.py',
+            'android/app/src/main/java/com/watchalign/mobile/MarkerGeometry.java']
   workflow_dispatch:
 permissions:
   contents: read
@@ -84,6 +85,8 @@ jobs:
       - run: pip install -q -r tools/image_archive/requirements.txt
       - uses: actions/download-artifact@v4
         with: {pattern: 'arch-*', path: arch, merge-multiple: true}
+      - name: Phase B parity (Java MarkerGeometry against methods.py on every record; fails on any difference)
+        run: python3 -m tools.research.measurement_architecture.parity arch/base_*.jsonl arch/synth_*.jsonl
       - name: Compare methods (all families pooled where the geometry is the same)
         run: |
           ls -la arch

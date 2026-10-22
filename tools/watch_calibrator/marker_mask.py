@@ -70,6 +70,8 @@ def dependencies(metric: str, model: str) -> frozenset[int]:
         return frozenset({3, 9})
     if metric == "axis.12_6_line_offset_r":
         return frozenset({12, 6})
+    if metric.startswith("ring."):         # MarkerGeometry ring level: fitted from every eligible round marker and baton
+        return frozenset(h for h, s in shapes.items() if s in ("round", "baton"))
     raise MaskError("no marker dependency declared for metric %s" % metric)
 
 

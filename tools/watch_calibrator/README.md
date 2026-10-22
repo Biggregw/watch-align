@@ -30,6 +30,18 @@ Photographs restored from the image archive with `purpose='marker_masked'` carry
 median per physical watch, eligible photos only, watch-level split, source diversity). It computes no tolerance.
 Results: `docs/image-archive/FACE-ON-VALIDATION.md` §10.
 
+## Measurement adapters
+
+- **`production_app_route_v1`** (legacy, kept for the existing 124060 config): driver `CalibMeasure`. It runs the legacy
+  124060-only `WatchAlignCoreV13` engine, which the app no longer uses.
+- **`marker_geometry_v1`** (Phase B, 22 Oct 2026): driver `GeometryMeasure`. It runs the app's own analysis
+  (`Alpha99Pipeline`), read through `MarkerGeometry`, for any supported layout:
+  - per-marker metrics `marker.<hour>.tang`, `.rad` (% R) and `.tilt` (deg): each marker against the ring of the other
+    eligible markers;
+  - ring metrics `ring.place_x`, `ring.place_y` (translation minus parallax), `ring.rot_deg` and `ring.scale_pct`.
+
+  Values are written for eligible markers only. See `tools/research/measurement_architecture/REPORT.md`.
+
 ## Product rule
 
 Watch Align is replica QC, not a perfection grader and not an authenticity classifier. A reliable

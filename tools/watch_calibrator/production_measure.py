@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import csv
 import math
+import os
 import statistics
 import subprocess
 from collections import defaultdict
@@ -25,6 +26,10 @@ import marker_mask
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 HARNESS = REPO / "tools" / "desktop-harness" / "run.sh"
+# measurement adapters: harness driver per adapter. production_app_route_v1 is the legacy 124060 engine
+# (WatchAlignCoreV13 composites, CalibMeasure); marker_geometry_v1 (Phase B, owner-approved 22 Oct 2026) is the app's own
+# analysis read through MarkerGeometry (per-marker residuals against the ring of the other markers, and ring placement).
+ADAPTERS = {"production_app_route_v1": "CalibMeasure", "marker_geometry_v1": "GeometryMeasure"}
 MIN_POSE_PHOTOS = 8
 POSE_RHO = 0.5
 
@@ -96,11 +101,22 @@ def photo_list(acq_root: Path, split_csv: Path, partition: str, cls: str) -> lis
     return out
 
 
-def run_harness(photos: list[tuple[str, Path]], out_csv: Path) -> None:
+def adapter(config: dict) -> tuple[str, str | None]:
+    """(harness driver, layout for -Dwatchalign.model or None) of the config's measurement adapter"""
+    name = config.get("measurement_adapter")
+    if name not in ADAPTERS:
+        raise SystemExit(f"Unsupported measurement adapter {name}")
+    return ADAPTERS[name], (marker_mask.layout(config) if name == "marker_geometry_v1" else None)
+
+
+def run_harness(photos: list[tuple[str, Path]], out_csv: Path, driver: str = "CalibMeasure", layout: str | None = None) -> None:
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     lst = out_csv.with_suffix(".list.tsv")
     lst.write_text("".join(f"{w}\t{p}\n" for w, p in photos), encoding="utf-8")
-    subprocess.run(["bash", str(HARNESS), "CalibMeasure", str(lst), str(out_csv)], cwd=REPO, check=True)
+    env = dict(os.environ)
+    if layout:
+        env["JAVA_TOOL_OPTIONS"] = (env.get("JAVA_TOOL_OPTIONS", "") + f" -Dwatchalign.model={layout}").strip()
+    subprocess.run(["bash", str(HARNESS), driver, str(lst), str(out_csv)], cwd=REPO, check=True, env=env)
 
 
 def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: Path,
@@ -176,6 +192,7 @@ def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: 
 
 def measure(config: dict, acq_root: Path, split_csv: Path, out_dir: Path, partition: str, cls: str) -> dict:
     metrics = [s["metric"] for s in config["calibration_metrics"]]
+    driver, layout = adapter(config)
     marker_mask.guard_legacy(config, acq_root)
     masked = marker_mask.required(config)
     pref = out_dir / f"{config['model']}_{partition}_{cls}"
@@ -185,11 +202,11 @@ def measure(config: dict, acq_root: Path, split_csv: Path, out_dir: Path, partit
     if photos and masked:
         # per-marker eligibility (marker_mask.py): the raw gated values are masked before anything reads them
         raw = Path(f"{pref}_photo.unmasked.csv")
-        run_harness(photos, raw)
+        run_harness(photos, raw, driver, layout)
         mask_summary = marker_mask.apply(config, acq_root, raw, photo_csv, Path(f"{pref}_mask_exclusions.csv"))
         raw.unlink()
     elif photos:
-        run_harness(photos, photo_csv)
+        run_harness(photos, photo_csv, driver, layout)
     else:
         out_dir.mkdir(parents=True, exist_ok=True)
         photo_csv.write_text("physical_watch_id,path\n", encoding="utf-8")

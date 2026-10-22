@@ -15,6 +15,8 @@ import java.util.Map;
  * The dial pose (AutomaticDialOverlay: dial-edge ellipse, minute-tick lattice, canonical-to-image homography, whether
  * the hour markers confirmed the 12 direction) and, per marker, the clearly-off state, gate, uncertainty and whether
  * its numbers are finite, with the app's own WatchClassification.reliable() / credible() (owner rules, 21-22 Oct 2026).
+ * Phase B (22 Oct 2026): per marker also the recommended two-level measurement (MarkerGeometry: the outer-metal centre
+ * against the ring of the other eligible markers, mg_*) and the ring's placement on the dial (mg_ring).
  * Nothing is decided here and no QC threshold or measurement is changed.
  */
 public class ArchiveEvidence {
@@ -50,6 +52,13 @@ public class ArchiveEvidence {
                 if(o!=null&&o.clearlyOffError!=null)kv(j,"clearly_off_error",o.clearlyOffError);
                 if(o!=null&&o.alignment!=null&&o.alignment.photoReason!=null)kv(j,"photo_reason",o.alignment.photoReason);
                 ClearlyOff.Result c=o==null?null:o.clearlyOff;
+                // Phase B: the recommended two-level measurement on the same analysis (research reading; decides nothing)
+                MarkerGeometry.Result g=null;
+                if(c!=null&&p!=null&&p.homography!=null)try{g=MarkerGeometry.fromPipeline(c,o.measurement,model,metal,p.homography);}catch(Throwable t){g=null;}
+                if(g!=null&&g.ring.ok){
+                    j.append("\"mg_ring\":{");num(j,"place_x_pct",g.ring.placeXPct);num(j,"place_y_pct",g.ring.placeYPct);
+                    num(j,"rot_deg",g.ring.rotDeg);num(j,"scale_pct",g.ring.scalePct);num(j,"n",g.ring.n);trim(j);j.append("},");
+                }
                 if(c!=null){
                     num(j,"rpx",c.rpx);num(j,"bad_ticks",c.badTicks);num(j,"ring_turn_pct",c.ringTurnPct);num(j,"track_scale",c.trackScale);num(j,"hour_lines",c.lines.size());
                     j.append("\"markers\":[");boolean first=true;
@@ -62,6 +71,8 @@ public class ArchiveEvidence {
                         num(j,"side_pct",m.sidePct);num(j,"inout_pct",m.inoutPct);num(j,"tilt_deg",m.tiltDeg);num(j,"pos_pct",m.posPct);num(j,"gap_pct",m.gapPct);
                         num(j,"fit_rms_px",m.fitRmsPx);num(j,"cover",m.cover);num(j,"bad_frac",m.badFrac);kv(j,"source",m.source==null?"":m.source);
                         kv(j,"reason",m.reason);
+                        MarkerGeometry.Marker mg=g==null?null:g.at(m.hour);
+                        if(mg!=null){num(j,"mg_tang_pct",mg.tangPct);num(j,"mg_rad_pct",mg.radPct);num(j,"mg_tilt_deg",mg.tiltDeg);bool(j,"mg_eligible",mg.eligible);}
                         trim(j);j.append('}');
                     }
                     j.append("],");
