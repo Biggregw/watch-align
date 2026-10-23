@@ -98,7 +98,9 @@ def validate_selection(doc, *, name="selection"):
             raise SelectionError(f"{where}: give at least one photo-level reason for not_suitable")
         if "other" in reasons and not str(e.get("comment", "")).strip():
             raise SelectionError(f"{where}: reason 'other' needs a comment")
-        clean = {"sha256": digest, "model": model, "suitability": suitability, "reasons": list(reasons),
+        # Every other field the reviewer supplied (e.g. primary-example flags, watch ids, view notes) is kept
+        # verbatim in the audit: nothing is added, dropped or reinterpreted.
+        clean = {**e, "sha256": digest, "model": model, "suitability": suitability, "reasons": list(reasons),
                  "comment": str(e.get("comment", ""))}
         if digest in chosen:
             before = chosen[digest]
@@ -149,7 +151,10 @@ def plan(selection, duplicates, index, copies):
         item = index.get(digest)
         cat = sorted({f for f in (catalogue_family(a.get("model")) for a in (item or {}).get("associations") or [])
                       if f})
-        rec = {**e, "catalogue_families": cat}
+        rec = {**e, "catalogue_families": cat,
+               # recorded from the archive index, never inferred: e.g. dealer listing or curated replica seed
+               "catalogue_provenance": sorted({a.get("provenance") or "unknown"
+                                               for a in (item or {}).get("associations") or []})}
         if e["suitability"] != "suitable":
             rec["action"] = "excluded"
             if digest in copies:
@@ -175,8 +180,16 @@ def plan(selection, duplicates, index, copies):
 
 
 def apply(drive, repo, selection_path, *, dry_run=False, now=None):
-    """Apply one reviewed selection. Returns the run audit (also written to OneDrive unless dry_run)."""
+    """Apply one reviewed selection and return the full run audit (the request result in archive/results/).
+
+    status is "complete" only when every planned copy is verified AND the OneDrive audit record has been written
+    and read back with the same SHA-256; "dry_run" when nothing was written (sources are still re-hashed);
+    "incomplete" when any copy or the audit record failed (retry with a new request: verified copies are no-ops);
+    "refused" when the selection could not be recorded (for example an id re-used with different content), in
+    which case nothing is copied.
+    """
     from .cloud_jobs import remote_index
+    from .archive import IntegrityError
     doc, raw = load_selection(selection_path, repo)
     selection, duplicates = validate_selection(doc, name=Path(selection_path).name)
     sid = doc["selection_id"]
@@ -187,21 +200,38 @@ def apply(drive, repo, selection_path, *, dry_run=False, now=None):
     audit = {"schema": RUN_SCHEMA, "selection_id": sid, "selection_sha256": sha256(raw).hexdigest(),
              "reviewer": doc["reviewer"], "reviewed_at": doc["reviewed_at"], "started": started,
              "dry_run": bool(dry_run), "duplicate_entries": duplicates, "photos": actions}
+    refused = None
     if not dry_run:
-        # The applied selection is immutable: re-using an id with different content is refused.
-        drive.put(f"{AUDIT}/{sid}/selection.json", raw)
+        # The applied selection is immutable: re-using an id with different content is refused, and nothing is
+        # copied unless the selection itself is recorded and verified.
+        try:
+            key = f"{AUDIT}/{sid}/selection.json"
+            drive.put(key, raw)
+            if drive.get(key) != raw:
+                raise IntegrityError("stored selection differs from the committed selection")
+            audit["selection_record"] = "written_verified"
+        except IntegrityError as exc:
+            refused = f"selection id {sid} already holds different content in OneDrive: {str(exc)[:120]}"
+        except Exception as exc:
+            refused = f"selection could not be recorded in OneDrive ({type(exc).__name__}: {str(exc)[:120]})"
+        if refused:
+            audit["selection_record"] = "failed"
+            audit["error"] = refused
+            for rec in actions:
+                if rec["action"] == "copy":
+                    rec["result"] = "not_attempted"
     try:
         for rec in actions:
-            if rec["action"] != "copy":
-                continue
-            if dry_run:
-                rec["result"] = "would_copy"
+            if rec["action"] != "copy" or refused:
                 continue
             try:
                 data = drive.get(rec["source"])
                 if sha256(data).hexdigest() != rec["sha256"] or len(data) != rec["size"]:
                     rec["result"] = "failed"
                     rec["error"] = "source original failed SHA-256 verification; not copied"
+                    continue
+                if dry_run:
+                    rec["result"] = "would_copy_source_verified"
                     continue
                 already = rec["sha256"] in copies
                 drive.put(rec["destination"], data)          # immutable: never overwrites different bytes
@@ -217,17 +247,35 @@ def apply(drive, repo, selection_path, *, dry_run=False, now=None):
     finally:
         audit["finished"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
         audit["summary"] = summarise(actions)
-        audit["status"] = ("dry_run" if dry_run else "complete" if not audit["summary"]["failed"]
-                           and all("result" in r for r in actions if r["action"] == "copy") else "incomplete")
-        if not dry_run:
-            payload = json.dumps(audit, indent=2, ensure_ascii=False, sort_keys=True).encode()
-            stamp = audit["finished"].replace(":", "").replace("-", "")
-            try:
-                drive.put(f"{AUDIT}/{sid}/run-{stamp}-{sha256(payload).hexdigest()[:8]}.json", payload)
-                audit["audit_written"] = True
-            except Exception:
-                audit["audit_written"] = False   # the repository result still carries the full audit
+        pending = [r for r in actions if r["action"] == "copy"
+                   and r.get("result") not in ("copied_verified", "already_present_verified",
+                                               "would_copy_source_verified")]
+        audit["copy_status"] = "refused" if refused else "incomplete" if pending else "complete"
+        if dry_run:
+            audit["audit_record"] = "not_written_dry_run"
+            audit["status"] = "dry_run" if not pending else "incomplete"
+        else:
+            audit["audit_record"] = write_audit(drive, sid, audit)
+            audit["audit_written"] = audit["audit_record"] == "written_verified"
+            audit["status"] = ("refused" if refused else
+                               "complete" if not pending and audit["audit_written"] else "incomplete")
     return audit
+
+
+def write_audit(drive, sid, audit):
+    """Write the run record to OneDrive and read it back; any failure is reported, never hidden."""
+    record = {k: v for k, v in audit.items() if k not in ("status", "audit_record", "audit_written")}
+    payload = json.dumps(record, indent=2, ensure_ascii=False, sort_keys=True).encode()
+    stamp = audit["finished"].replace(":", "").replace("-", "")
+    key = f"{AUDIT}/{sid}/run-{stamp}-{sha256(payload).hexdigest()[:8]}.json"
+    try:
+        drive.put(key, payload)
+        if sha256(drive.get(key)).hexdigest() != sha256(payload).hexdigest():
+            return f"failed: {key} read back with different bytes"
+        audit["audit_key"] = key
+        return "written_verified"
+    except Exception as exc:
+        return f"failed: {type(exc).__name__}: {str(exc)[:160]}"
 
 
 def summarise(actions):
@@ -245,8 +293,81 @@ def summarise(actions):
             s["already_present"] += 1
         elif res == "failed":
             s["failed"] += 1
-        elif res == "would_copy":
+        elif res == "would_copy_source_verified":
             s["would_copy"] += 1
-        if res in ("copied_verified", "already_present_verified", "would_copy"):
+        if res in ("copied_verified", "already_present_verified", "would_copy_source_verified"):
             s["by_model"][FOLDERS[r["model"]]] = s["by_model"].get(FOLDERS[r["model"]], 0) + 1
     return s
+
+
+# ------------------------------------------------------------------------------------------- offline check
+
+def check(doc, catalogue):
+    """Offline report for a selection: every problem at once, nothing corrected or invented.
+
+    catalogue: sha256 -> catalogue associations (unreviewed.provenance). Archive membership itself can only be
+    confirmed against the live OneDrive index (a protected dry run).
+    """
+    report = {"schema_errors": [], "entries": 0, "by_suitability": {}, "by_model": {}, "suitable_by_model": {},
+              "duplicates": 0, "contradictory_duplicates": [], "not_in_repository_catalogue": [],
+              "catalogue_model_conflicts": [], "extra_fields": {}}
+    top = {k: doc.get(k) for k in ("schema", "selection_id", "reviewer", "reviewed_at")}
+    try:
+        validate_selection({**top, "photos": [{"sha256": "0" * 64, "model": "unknown", "suitability": "uncertain"}]})
+    except SelectionError as exc:
+        report["schema_errors"].append(str(exc))
+    seen = {}
+    for i, e in enumerate(doc.get("photos") or []):
+        report["entries"] += 1
+        try:
+            validate_selection({**top, "schema": SCHEMA, "selection_id": "sel-20000101-check", "reviewer": "owner",
+                                "reviewed_at": "2000-01-01T00:00:00Z", "photos": [e]}, name=f"photos[{i}]")
+        except SelectionError as exc:
+            report["schema_errors"].append(str(exc))
+        if not isinstance(e, dict):
+            continue
+        for k in e:
+            if k not in ("sha256", "model", "suitability", "reasons", "comment"):
+                report["extra_fields"][k] = report["extra_fields"].get(k, 0) + 1
+        digest, model, suit = str(e.get("sha256", "")), e.get("model"), e.get("suitability")
+        report["by_suitability"][str(suit)] = report["by_suitability"].get(str(suit), 0) + 1
+        report["by_model"][str(model)] = report["by_model"].get(str(model), 0) + 1
+        if suit == "suitable":
+            report["suitable_by_model"][str(model)] = report["suitable_by_model"].get(str(model), 0) + 1
+        if digest in seen:
+            report["duplicates"] += 1
+            if seen[digest] != (model, suit):
+                report["contradictory_duplicates"].append(digest)
+            continue
+        seen[digest] = (model, suit)
+        rows = catalogue.get(digest)
+        if not rows:
+            report["not_in_repository_catalogue"].append({"sha256": digest, "model": model, "suitability": suit})
+            continue
+        fams = sorted({f for f in (catalogue_family(r.get("model")) for r in rows) if f})
+        if model in FOLDERS and model != "unknown" and fams and model not in fams:
+            report["catalogue_model_conflicts"].append({"sha256": digest, "selection_model": model,
+                                                        "catalogue_families": fams, "suitability": suit,
+                                                        "catalogue_models": sorted({r.get("model") for r in rows})})
+    report["unique_photos"] = len(seen)
+    report["compatible"] = not report["schema_errors"] and not report["contradictory_duplicates"]
+    report["suitable_ready_offline"] = sum(1 for d, (m, s) in seen.items() if s == "suitable" and d not in
+                                           {c["sha256"] for c in report["catalogue_model_conflicts"]})
+    return report
+
+
+def main(argv=None):
+    import argparse
+    from .unreviewed import provenance
+    ap = argparse.ArgumentParser(description="Offline check of a Suitable Photos selection manifest")
+    ap.add_argument("selection", type=Path)
+    ap.add_argument("--repo", type=Path, default=Path.cwd())
+    a = ap.parse_args(argv)
+    doc = json.loads(a.selection.read_text(encoding="utf-8"))
+    report = check(doc, provenance(a.repo.resolve()))
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+    return report
+
+
+if __name__ == "__main__":
+    main()

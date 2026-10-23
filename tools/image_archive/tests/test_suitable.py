@@ -202,17 +202,81 @@ def test_selection_ids_are_immutable(archive):
     path = selection(repo, "sel-20261024-fixed", [entry(h[0], "submariner_124060")])
     S.apply(drive, repo, path)
     selection(repo, "sel-20261024-fixed", [entry(h[1], "submariner_126610")])
-    with pytest.raises(IntegrityError):
-        S.apply(drive, repo, path)
+    audit = S.apply(drive, repo, path)
+    assert audit["status"] == "refused" and "different content" in audit["error"]
+    assert audit["photos"][0]["result"] == "not_attempted"
     assert not any(h[1] in k for k in copies(drive))
 
 
-def test_dry_run_writes_nothing(archive):
+def test_dry_run_writes_nothing_but_verifies_sources(archive):
     drive, repo, photos, h, originals = archive
     before = dict(drive.files)
     audit = S.apply(drive, repo, standard(repo, h), dry_run=True)
     assert audit["status"] == "dry_run" and audit["summary"]["would_copy"] == 3
+    assert {p["result"] for p in audit["photos"] if p["action"] == "copy"} == {"would_copy_source_verified"}
     assert drive.files == before
+    drive.corrupt.add(f"unreviewed/objects/{h[0][:2]}/{h[0]}.jpg")
+    bad = S.apply(drive, repo, standard(repo, h), dry_run=True)
+    assert bad["status"] == "incomplete" and drive.files == before
+
+
+# ----------------------------------------------------------------------------- audit record failures
+
+def test_failed_audit_write_is_incomplete_and_retry_completes(archive):
+    drive, repo, photos, h, originals = archive
+    path = standard(repo, h)
+    drive.fail_put_keys.add("Suitable Photos/_audit/sel-20261024-first/run-")
+    first = S.apply(drive, repo, path)
+    assert first["copy_status"] == "complete" and first["audit_written"] is False
+    assert first["status"] == "incomplete" and first["audit_record"].startswith("failed")
+    made = copies(drive)
+    assert len(made) == 3 and all(sha256(v).hexdigest() == Path(k).stem for k, v in made.items())
+    drive.fail_put_keys.clear()
+    second = S.apply(drive, repo, path)
+    assert second["status"] == "complete" and second["audit_written"] is True
+    assert second["summary"]["already_present"] == 3 and second["summary"]["copied"] == 0
+    assert copies(drive) == made                              # nothing duplicated or overwritten
+    assert drive.files[second["audit_key"]]                   # verified record now exists
+    assert {k: v for k, v in drive.files.items() if k.startswith("unreviewed/")} == originals
+
+
+def test_audit_record_that_reads_back_wrong_is_not_a_success(archive):
+    drive, repo, photos, h, originals = archive
+    drive.corrupt_reads.add("Suitable Photos/_audit/sel-20261024-first/run-")
+    audit = S.apply(drive, repo, standard(repo, h))
+    assert audit["status"] == "incomplete" and "read back" in audit["audit_record"]
+
+
+def test_unrecorded_selection_copies_nothing(archive):
+    drive, repo, photos, h, originals = archive
+    drive.fail_put_keys.add("Suitable Photos/_audit/sel-20261024-first/selection.json")
+    audit = S.apply(drive, repo, standard(repo, h))
+    assert audit["status"] == "refused" and "could not be recorded" in audit["error"]
+    assert copies(drive) == {}
+
+
+def test_failed_audit_fails_the_request_and_keeps_the_full_audit_in_results(archive):
+    drive, repo, photos, h, originals = archive
+    path = standard(repo, h)
+    drive.fail_put_keys.add("Suitable Photos/_audit/")
+    code, result = run_request(repo, "suitable-audit.json", {"selection": path}, drive)
+    assert code == 1 and result["status"] == "refused"        # the selection record itself failed
+    drive.fail_put_keys = {"Suitable Photos/_audit/sel-20261024-first/run-"}
+    code, result = run_request(repo, "suitable-audit-retry1.json", {"selection": path}, drive)
+    assert code == 1 and result["status"] == "incomplete"
+    assert result["result"]["audit_written"] is False and len(result["result"]["photos"]) == 5
+    assert result["result"]["summary"]["copied"] == 3
+    drive.fail_put_keys.clear()
+    code, result = run_request(repo, "suitable-audit-retry2.json", {"selection": path}, drive)
+    assert code == 0 and result["status"] == "done" and result["result"]["status"] == "complete"
+    assert result["result"]["summary"]["already_present"] == 3
+
+
+def test_dry_run_request_succeeds_without_any_write(archive):
+    drive, repo, photos, h, originals = archive
+    before = dict(drive.files)
+    code, result = run_request(repo, "suitable-dry.json", {"selection": standard(repo, h), "dry_run": True}, drive)
+    assert code == 0 and result["result"]["status"] == "dry_run" and drive.files == before
 
 
 @pytest.mark.parametrize("mutate,match", [
@@ -329,3 +393,62 @@ def test_documented_selection_example_is_valid():
     path = REPO_ROOT / "docs/image-archive/examples/selections/sel-20261024-example.json"
     chosen, duplicates = S.validate_selection(json.loads(path.read_text()), name=path.name)
     assert len(chosen) == 4 and duplicates == 0
+
+
+def test_reviewer_metadata_is_preserved_verbatim(archive):
+    drive, repo, photos, h, originals = archive
+    e = entry(h[0], "submariner_124060")
+    e.update(primary_example=True, watch_group="bobs-124060-17", view="front, hands at 10:10")
+    audit = S.apply(drive, repo, selection(repo, "sel-20261024-meta", [e, {**entry(h[1], "submariner_126610"),
+                                                                           "primary_example": False}]))
+    rec = {p["sha256"]: p for p in audit["photos"]}
+    assert rec[h[0]]["primary_example"] is True and rec[h[0]]["watch_group"] == "bobs-124060-17"
+    assert rec[h[1]]["primary_example"] is False and "watch_group" not in rec[h[1]]
+    assert audit["summary"]["copied"] == 2          # secondary views of a watch are copied too
+
+
+def test_offline_check_reports_every_problem_without_correcting_it():
+    cat = {"a" * 64: [{"model": "124060"}], "b" * 64: [{"model": "126710BLNR"}]}
+    doc = {"schema": S.SCHEMA, "selection_id": "sel-20261023-screened-373", "reviewer": "chatgpt",
+           "reviewed_at": "2026-10-23T20:00:00Z", "photos": [
+               {**entry("a" * 64, "submariner_124060"), "primary_example": True},
+               entry("b" * 64, "submariner_124060"),                        # contradicts the catalogue
+               entry("c" * 64, "unknown"),                                  # not catalogued in the repository
+               entry("d" * 64, "gmt_126710", "unsuitable"),                 # not a schema value
+               entry("a" * 64, "submariner_124060", "not_suitable", ["blurred"]),
+           ]}
+    r = S.check(doc, cat)
+    assert r["entries"] == 5 and r["unique_photos"] == 4
+    assert r["compatible"] is False
+    assert any("suitability must be" in e for e in r["schema_errors"])
+    assert r["contradictory_duplicates"] == ["a" * 64]
+    assert r["catalogue_model_conflicts"][0]["sha256"] == "b" * 64
+    assert {x["sha256"] for x in r["not_in_repository_catalogue"]} == {"c" * 64, "d" * 64}
+    assert r["extra_fields"] == {"primary_example": 1}
+    assert doc["photos"][3]["suitability"] == "unsuitable"            # nothing rewritten
+
+
+def test_chatgpt_screened_373_selection_is_committed_unaltered_and_valid():
+    path = REPO_ROOT / "archive/selections/sel-20261023-screened-373.json"
+    assert sha256(path.read_bytes()).hexdigest() == "7734af95d203af97b88ed57978ac4a343e24282cbd9d5558682b5c53654b22ab"
+    doc, _ = S.load_selection(path, REPO_ROOT)
+    chosen, duplicates = S.validate_selection(doc, name=path.name)
+    counts = {}
+    for e in chosen.values():
+        counts[e["suitability"]] = counts.get(e["suitability"], 0) + 1
+    assert duplicates == 0 and len(chosen) == 373
+    assert counts == {"suitable": 86, "uncertain": 26, "not_suitable": 261}
+    # primary and alternate views alike are suitable: all 86 are eligible for the collection
+    primaries = [e for e in chosen.values() if "primary selected view" in e["comment"]]
+    alternates = [e for e in chosen.values() if "alternate view" in e["comment"]]
+    assert len(primaries) == 38 and len(alternates) == 45
+    assert all(e["suitability"] == "suitable" for e in primaries + alternates)
+
+
+def test_provenance_is_recorded_from_the_index_not_inferred(archive):
+    drive, repo, photos, h, originals = archive
+    audit = S.apply(drive, repo, selection(repo, "sel-20261024-prov", [entry(h[4], "unknown"),
+                                                                       entry(h[0], "submariner_124060")]))
+    rec = {p["sha256"]: p for p in audit["photos"]}
+    assert rec[h[0]]["catalogue_provenance"] == ["dealer"]
+    assert rec[h[4]]["catalogue_provenance"] == []          # no catalogue rows: nothing invented

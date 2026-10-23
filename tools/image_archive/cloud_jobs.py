@@ -488,8 +488,8 @@ def run_requests(args):
                 drive = drive or drive_from_protected_environment()
                 result, status = run_request(task, options, args.repo, drive, scan=args.scan,
                                              local_copy=args.local_copy), "done"
-                if isinstance(result, dict) and result.get("status") == "incomplete":
-                    status = "incomplete"   # some copies failed: commit a new request to retry
+                if isinstance(result, dict) and result.get("status") in ("incomplete", "refused"):
+                    status = result["status"]   # some copies or the audit record failed: a new request retries
         except Exception as exc:  # report the failure class and message, never credentials
             task = locals().get("task", "unknown")
             result, status = {"error": type(exc).__name__, "message": str(exc)[:300]}, "failed"
@@ -498,7 +498,7 @@ def run_requests(args):
         out.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         reports.append(report)
     print(json.dumps(reports, indent=2))
-    if any(r.get("status") in ("failed", "incomplete") for r in reports):
+    if any(r.get("status") in ("failed", "incomplete", "refused") for r in reports):
         raise SystemExit(1)
     return reports
 
