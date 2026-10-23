@@ -1,0 +1,62 @@
+# Image archive (research): visual review pack of the photographs face-on-v3 admits, for the owner's approval before
+# any permanent archiving. Exact-SHA-verified originals only (refetched by hash, the calibrator artifact, committed
+# public originals). The contact sheets go to a workflow artifact only: never committed, never uploaded to OneDrive.
+name: Image archive visual review pack (research)
+on:
+  # workflow_dispatch needs the file on the default branch; while this is a draft PR it runs on pushes that change it
+  push:
+    branches: [feature/unified-image-archive-20261021]
+    paths: ['.github/workflows/image-archive-review-pack.yml', 'tools/image_archive/review_pack.py',
+            'docs/image-archive/face-on-evidence.jsonl']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: |
+          pip install -q -r tools/image_archive/requirements.txt
+          sudo apt-get install -y -q fonts-dejavu-core >/dev/null || true
+      - name: Exact originals by SHA-256 refetch (a changed or re-encoded file is never used)
+        run: |
+          set -e
+          args=""
+          for m in date-verified.csv gmt-verified.csv nodate-verified.csv checkpoint/date-expanded-verified.csv; do
+            d="g/$(echo $m | tr '/' '_')"; mkdir -p "$d"
+            python3 tools/research/alpha96_calibration/fetch_verified.py "tools/research/marker_audit/results/$m" "$d/img" "$d/fetch_log.csv" | tail -2
+            args="$args --fetched $m=$d/img"
+          done
+          echo "FETCHED=$args" >> "$GITHUB_ENV"
+      - name: Recovered originals (watch-calibrator-124060 artifact 11300604104, SHA-addressed)
+        uses: actions/download-artifact@v4
+        with:
+          name: watch-calibrator-124060-37194686346
+          run-id: 37194686346
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: h
+      - name: Committed public originals
+        run: |
+          mkdir -p fx
+          cp tools/research/marker_audit/fixtures/*.jpg fx/
+          unzip -oqj tools/research/marker_audit/review-bundle.zip 'originals/*' -d fx </dev/null
+      - name: Contact sheets (every file re-hashed before use)
+        run: |
+          items=""
+          for model in gmt_126710 submariner_124060 submariner_126610; do
+            python3 -m tools.image_archive.validation_items $FETCHED --historical h --model $model items_$model.csv
+            items="$items --items items_$model.csv"
+          done
+          python3 -m tools.image_archive.review_pack docs/image-archive/face-on-evidence.jsonl review-pack $items --fixtures fx
+          ls -la review-pack
+      - uses: actions/upload-artifact@v4
+        with:
+          name: face-on-v3-review-pack
+          path: review-pack/
+          retention-days: 30
+          if-no-files-found: error

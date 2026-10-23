@@ -1,0 +1,96 @@
+# RESEARCH ONLY: measurement-architecture review (tools/research/measurement_architecture/REPORT.md). Runs the unchanged
+# production measurement chain on exact-SHA-verified genuine and replica photographs and on controlled perturbations of
+# genuine ones (tools/desktop-harness/drivers/ArchMeasure.java), then compares competing measurement methods on the same
+# raw measurements. Numbers only; no photograph is committed or published. Changes no production behaviour.
+name: Measurement architecture review (research)
+on:
+  # workflow_dispatch needs the file on the default branch; while this is a draft PR it runs on pushes that change it
+  push:
+    branches: [feature/unified-image-archive-20261021]
+    paths: ['.github/workflows/measurement-architecture.yml', 'tools/desktop-harness/drivers/ArchMeasure.java',
+            'tools/research/measurement_architecture/select_items.py',
+            'android/app/src/main/java/com/watchalign/mobile/MarkerGeometry.java']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {model: submariner_126610, manifests: 'date-verified.csv checkpoint/date-expanded-verified.csv'}
+          - {model: gmt_126710, manifests: 'gmt-verified.csv'}
+          - {model: submariner_124060, manifests: 'nodate-verified.csv'}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - run: git fetch -q origin data/harvest data/collected testset-inbox || true
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -q -r tools/image_archive/requirements.txt
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Reviewed originals (exact SHA-256 refetch; a changed or re-encoded file is not used)
+        run: |
+          set -e
+          args=""
+          for m in ${{ matrix.manifests }}; do
+            d="g/$(echo $m | tr '/' '_')"; mkdir -p "$d"
+            python3 tools/research/alpha96_calibration/fetch_verified.py "tools/research/marker_audit/results/$m" "$d/img" "$d/fetch_log.csv" | tail -3
+            args="$args --fetched $m=$d/img"
+          done
+          echo "FETCHED=$args" >> "$GITHUB_ENV"
+      - name: Recovered originals (watch-calibrator-124060 artifact 11300604104, SHA-addressed)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: watch-calibrator-124060-37194686346
+          run-id: 37194686346
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: h
+      - name: Select photographs
+        run: |
+          python3 -m tools.image_archive.validation_items $FETCHED --historical h --model ${{ matrix.model }} items.csv
+          python3 -m tools.research.measurement_architecture.select_items items.csv base_items.csv synth_items.csv --synth-max 30
+      - name: Measure (production chain, raw per-marker quantities)
+        env:
+          JAVA_TOOL_OPTIONS: -Dwatchalign.model=${{ matrix.model }} -Xmx2500m
+        run: |
+          tools/desktop-harness/run.sh ArchMeasure base_items.csv base_${{ matrix.model }}.jsonl 100000 0 | grep -c ARCH
+          tools/desktop-harness/run.sh ArchMeasure synth_items.csv synth_${{ matrix.model }}.jsonl 100000 1 | grep -c ARCH
+          cp base_items.csv items_${{ matrix.model }}.csv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch-${{ matrix.model }}
+          path: |
+            base_${{ matrix.model }}.jsonl
+            synth_${{ matrix.model }}.jsonl
+            items_${{ matrix.model }}.csv
+          retention-days: 30
+
+  compare:
+    needs: measure
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -q -r tools/image_archive/requirements.txt
+      - uses: actions/download-artifact@v4
+        with: {pattern: 'arch-*', path: arch, merge-multiple: true}
+      - name: Phase B parity (Java MarkerGeometry against methods.py on every record; fails on any difference)
+        run: python3 -m tools.research.measurement_architecture.parity arch/base_*.jsonl arch/synth_*.jsonl
+      - name: Compare methods (all families pooled where the geometry is the same)
+        run: |
+          ls -la arch
+          python3 -m tools.research.measurement_architecture.evaluate --items arch/items_*.csv --base arch/base_*.jsonl \
+            --synth arch/synth_*.jsonl --json arch/summary.json
+      - uses: actions/upload-artifact@v4
+        with: {name: arch-summary, path: arch/summary.json, retention-days: 30}

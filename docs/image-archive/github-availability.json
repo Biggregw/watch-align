@@ -1,0 +1,75 @@
+{
+  "observed_at": "2026-10-21",
+  "artifacts_listed": 1941,
+  "expired": 0,
+  "caches_listed": 55,
+  "image_caches": [
+    {
+      "id": 9265321637,
+      "key": "harvest-images-39570878729",
+      "last_accessed_at": "2026-10-21T08:40:05.154867Z",
+      "ref": "refs/heads/main",
+      "size_in_bytes": 66990915
+    },
+    {
+      "id": 9206339872,
+      "key": "harvest-images-39394782390",
+      "last_accessed_at": "2026-10-21T08:39:29.921735Z",
+      "ref": "refs/heads/main",
+      "size_in_bytes": 64862481
+    },
+    {
+      "id": 9151287245,
+      "key": "harvest-images-39226703006",
+      "last_accessed_at": "2026-10-20T08:38:15.280076Z",
+      "ref": "refs/heads/main",
+      "size_in_bytes": 64862337
+    },
+    {
+      "id": 9113585970,
+      "key": "harvest-images-39110184234",
+      "last_accessed_at": "2026-10-19T08:59:44.853301Z",
+      "ref": "refs/heads/main",
+      "size_in_bytes": 64862641
+    },
+    {
+      "id": 9084268391,
+      "key": "harvest-images-39015242489",
+      "last_accessed_at": "2026-10-18T08:07:03.004498Z",
+      "ref": "refs/heads/main",
+      "size_in_bytes": 62055481
+    },
+    {
+      "id": 9038114771,
+      "key": "harvest-images-38872472625",
+      "last_accessed_at": "2026-10-17T07:52:36.279026Z",
+      "ref": "refs/heads/main",
+      "size_in_bytes": 51070617
+    },
+    {
+      "id": 8982949583,
+      "key": "harvest-images-38705265133",
+      "last_accessed_at": "2026-10-16T08:15:48.445681Z",
+      "ref": "refs/heads/main",
+      "size_in_bytes": 51070918
+    },
+    {
+      "id": 8928036803,
+      "key": "harvest-images-38537645019",
+      "last_accessed_at": "2026-10-15T08:23:26.052544Z",
+      "ref": "refs/heads/main",
+      "size_in_bytes": 51070752
+    }
+  ],
+  "inspected_artifact": {
+    "id": 11300604104,
+    "name": "watch-calibrator-124060-37194686346",
+    "members": 471,
+    "status": "downloaded through GitHub connector; exact original hash inventory performed"
+  },
+  "limitations": [
+    "Other artifacts are listed, not assumed to contain photographs.",
+    "Cache contents unavailable via GitHub public cache listing API; no workflow dispatched.",
+    "No private photos or archive ZIP bytes are committed."
+  ]
+}

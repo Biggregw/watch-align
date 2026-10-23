@@ -11,6 +11,40 @@ Config: `calibration/models/<MODEL>.json`. CI: `.github/workflows/watch-family-c
 The original run that produced the alpha72 bands is preserved at branch
 `archive/watch-family-calibrator-8337fd9`.
 
+## Per-marker eligibility masks (research, opt-in)
+
+Photographs restored from the image archive with `purpose='marker_masked'` carry a SHA-bound eligibility mask
+(`tools/image_archive/eligibility.py`) in `eligibility_masks.jsonl` beside `acquired_images.csv`.
+
+**Masked run.** Declared in the model config with `"marker_eligibility": {"policy": "marker-mask-v1"}`:
+
+- `marker_mask.apply` verifies every measured photo's bytes against its mask's SHA-256.
+- It blanks every value whose markers are not all ELIGIBLE (dependency map in `marker_mask.dependencies`: a per-marker
+  value needs its own marker, a ring value the markers its fit used; the retired round composites need every round marker) and logs exclusions by marker and status.
+- `production_measure.summarise` and `genuine_envelope` re-check every row before any statistic.
+- A missing, tampered or mismatched mask, or an undeclared metric dependency, stops the run. There is no fallback.
+
+**Unmasked (legacy) run.** Unchanged, but it refuses an acquisition root holding masks and any masked row.
+
+**Populations.** `marker_population.py` reports independent genuine-watch counts per layout, marker and quantity (one
+median per physical watch, eligible photos only, watch-level split, source diversity). It computes no tolerance.
+Results: `docs/image-archive/FACE-ON-VALIDATION.md` §10.
+
+## Measurement adapters
+
+- **`marker_geometry_v1`** (Phase B, 22 Oct 2026; used by `calibration/models/124060.json`): driver `GeometryMeasure`. It runs the app's own analysis
+  (`Alpha99Pipeline`), read through `MarkerGeometry`, for any supported layout:
+  - per-marker metrics `marker.<hour>.tang`, `.rad` (% R) and `.tilt` (deg): each marker against the ring of the other
+    eligible markers;
+  - ring metrics `ring.place_x`, `ring.place_y` (translation minus parallax), `ring.rot_deg` and `ring.scale_pct`.
+
+  Values are written for eligible markers only. See `tools/research/measurement_architecture/REPORT.md`.
+- **`production_app_route_v1`** (retired 22 Oct 2026 with the owner's approval): driver `CalibMeasure`, the legacy
+  124060-only `WatchAlignCoreV13` engine, which the app no longer uses. Its config is preserved at
+  `calibration/models/retired/124060_production_app_route_v1.json`. It is refused unless
+  `WATCH_CALIBRATOR_REPRODUCE_RETIRED=production_app_route_v1` is set to reproduce a historical run. Record:
+  `docs/CALIBRATION_BASELINE_2026-10-22_CALIBRATOR_ADAPTER.md`.
+
 ## Product rule
 
 Watch Align is replica QC, not a perfection grader and not an authenticity classifier. A reliable
@@ -62,8 +96,8 @@ the final envelope.
 
 ## Measurement
 
-`production_measure.py` runs the desktop-harness driver `CalibMeasure`, which is the app's own
-`WatchAlignCoreV13` model route. A value is written only if it passes the app's production reliability
+`production_measure.py` runs the desktop-harness driver of the config's measurement adapter (`GeometryMeasure` for
+`marker_geometry_v1`; see Measurement adapters). A value is written only if it passes the app's production reliability
 gates; otherwise it is blank and cannot shape an envelope.
 
 Both photo-level and per-watch summaries are kept. The final genuine-envelope calibration uses the

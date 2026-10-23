@@ -80,3 +80,7 @@ android/app/src/androidTest/assets/marker_regression/
 
 # Dataset harvester data directory (its own branch, data/harvest; images never committed)
 datasets/harvest/
+
+# Local eligible-image archive (originals, metadata and staging; never credentials)
+.image-archive/
+review-pack/

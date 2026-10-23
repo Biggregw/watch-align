@@ -1,9 +1,10 @@
 """Measure calibrator photos through the production app route and summarise per watch.
 
-Replaces the research-path adapter (subresearch.geometry124060 with an empty review), which
-measured values the app itself would withhold. Here every value comes from the desktop harness
-driver CalibMeasure, which runs WatchAlignCoreV13 for the model and keeps only measurements that
-pass the app's own reliability gates. Gated-out values are blank and never reach calibration.
+Every value comes from a desktop-harness driver that keeps only measurements the app's own reliability gates would
+expose. The measurement adapter is marker_geometry_v1 (GeometryMeasure: the app's Alpha99Pipeline read through
+MarkerGeometry). The legacy production_app_route_v1 (CalibMeasure, the 124060-only WatchAlignCoreV13 engine) was
+retired with the owner's approval on 22 Oct 2026 and is refused unless explicitly requested to reproduce historical
+results (RETIRED_ENV). Gated-out values are blank and never reach calibration.
 
 Outputs, per (partition, class):
   {model}_{partition}_{class}_photo.csv         one row per photo (gated values)
@@ -14,16 +15,26 @@ from __future__ import annotations
 
 import csv
 import math
+import os
 import statistics
 import subprocess
 from collections import defaultdict
 from pathlib import Path
 
 import split as locked_split
+import marker_mask
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 HARNESS = REPO / "tools" / "desktop-harness" / "run.sh"
+# measurement adapters: harness driver per adapter. production_app_route_v1 is the legacy 124060 engine
+# (WatchAlignCoreV13 composites, CalibMeasure); marker_geometry_v1 (Phase B, owner-approved 22 Oct 2026) is the app's own
+# analysis read through MarkerGeometry (per-marker residuals against the ring of the other markers, and ring placement).
+ADAPTERS = {"production_app_route_v1": "CalibMeasure", "marker_geometry_v1": "GeometryMeasure"}
+# retired adapters (docs/CALIBRATION_BASELINE_2026-10-22_CALIBRATOR_ADAPTER.md): usable only to reproduce a historical
+# run, by setting RETIRED_ENV to the adapter's name
+RETIRED = {"production_app_route_v1"}
+RETIRED_ENV = "WATCH_CALIBRATOR_REPRODUCE_RETIRED"
 MIN_POSE_PHOTOS = 8
 POSE_RHO = 0.5
 
@@ -95,17 +106,33 @@ def photo_list(acq_root: Path, split_csv: Path, partition: str, cls: str) -> lis
     return out
 
 
-def run_harness(photos: list[tuple[str, Path]], out_csv: Path) -> None:
+def adapter(config: dict) -> tuple[str, str | None]:
+    """(harness driver, layout for -Dwatchalign.model or None) of the config's measurement adapter"""
+    name = config.get("measurement_adapter")
+    if name not in ADAPTERS:
+        raise SystemExit(f"Unsupported measurement adapter {name}")
+    if name in RETIRED and os.environ.get(RETIRED_ENV) != name:
+        raise SystemExit(f"Measurement adapter {name} is retired (22 Oct 2026); use marker_geometry_v1, or set "
+                         f"{RETIRED_ENV}={name} only to reproduce a historical run")
+    return ADAPTERS[name], (marker_mask.layout(config) if name == "marker_geometry_v1" else None)
+
+
+def run_harness(photos: list[tuple[str, Path]], out_csv: Path, driver: str = "GeometryMeasure", layout: str | None = None) -> None:
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     lst = out_csv.with_suffix(".list.tsv")
     lst.write_text("".join(f"{w}\t{p}\n" for w, p in photos), encoding="utf-8")
-    subprocess.run(["bash", str(HARNESS), "CalibMeasure", str(lst), str(out_csv)], cwd=REPO, check=True)
+    env = dict(os.environ)
+    if layout:
+        env["JAVA_TOOL_OPTIONS"] = (env.get("JAVA_TOOL_OPTIONS", "") + f" -Dwatchalign.model={layout}").strip()
+    subprocess.run(["bash", str(HARNESS), driver, str(lst), str(out_csv)], cwd=REPO, check=True, env=env)
 
 
 def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: Path,
-              source_by_watch: dict[str, str] | None = None) -> dict:
+              source_by_watch: dict[str, str] | None = None, config: dict | None = None) -> dict:
     with photo_csv.open(newline="", encoding="utf-8") as fh:
         rows = list(csv.DictReader(fh))
+    # fail closed before any statistic: a masked run sees only proven-eligible values, the legacy run no masked rows
+    marker_mask.check_rows(rows, metrics, config)
     source_by_watch = source_by_watch or {}
     by_watch: dict[str, dict[str, list[tuple[float, float]]]] = defaultdict(lambda: defaultdict(list))
     for r in rows:
@@ -173,18 +200,32 @@ def summarise(photo_csv: Path, metrics: list[str], watch_csv: Path, repeat_csv: 
 
 def measure(config: dict, acq_root: Path, split_csv: Path, out_dir: Path, partition: str, cls: str) -> dict:
     metrics = [s["metric"] for s in config["calibration_metrics"]]
+    driver, layout = adapter(config)
+    marker_mask.guard_legacy(config, acq_root)
+    masked = marker_mask.required(config)
     pref = out_dir / f"{config['model']}_{partition}_{cls}"
     photos = photo_list(acq_root, split_csv, partition, cls)
     photo_csv = Path(f"{pref}_photo.csv")
-    if photos:
-        run_harness(photos, photo_csv)
+    mask_summary = None
+    if photos and masked:
+        # per-marker eligibility (marker_mask.py): the raw gated values are masked before anything reads them
+        raw = Path(f"{pref}_photo.unmasked.csv")
+        run_harness(photos, raw, driver, layout)
+        mask_summary = marker_mask.apply(config, acq_root, raw, photo_csv, Path(f"{pref}_mask_exclusions.csv"))
+        raw.unlink()
+    elif photos:
+        run_harness(photos, photo_csv, driver, layout)
     else:
         out_dir.mkdir(parents=True, exist_ok=True)
         photo_csv.write_text("physical_watch_id,path\n", encoding="utf-8")
-    return summarise(
+    result = summarise(
         photo_csv,
         metrics,
         Path(f"{pref}_watch.csv"),
         Path(f"{pref}_repeatability.csv"),
         source_map(split_csv),
+        config,
     )
+    if mask_summary is not None:
+        result["marker_mask"] = mask_summary
+    return result

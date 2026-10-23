@@ -2,7 +2,7 @@
   "model": "124060",
   "family": "submariner_12",
   "acquisition_adapter": "submariner_acquire_v3",
-  "measurement_adapter": "production_app_route_v1",
+  "measurement_adapter": "marker_geometry_v1",
   "layout": {
     "triangle": [12],
     "batons": [3, 6, 9],
@@ -223,20 +223,43 @@
     "defect_flag_rate_min": 1.0
   },
   "calibration_metrics": [
-    {"metric": "twelve.rotation_deg", "app_key": "twelve.rotation_deg", "sided": "two", "minimum_half_width": 0.2, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
-    {"metric": "twelve.gap_r", "app_key": "twelve.gap_r", "sided": "two", "minimum_half_width": 0.002, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
-    {"metric": "twelve.centring_w", "app_key": "twelve.centring_w", "sided": "two", "minimum_half_width": 0.01, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
-    {"metric": "round.ring_rho", "app_key": "round.ring_rho", "sided": "two", "minimum_half_width": 0.002, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
-    {"metric": "round.spacing_rms_deg", "app_key": "round.spacing_rms_deg", "sided": "upper", "minimum_half_width": 0.1, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
-    {"metric": "baton.3_9_line_offset_r", "app_key": "baton.3_9_line_offset_r", "sided": "upper", "minimum_half_width": 0.002, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
-    {"metric": "axis.12_6_line_offset_r", "app_key": "axis.12_6_line_offset_r", "sided": "upper", "minimum_half_width": 0.002, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null}
+    {"metric": "marker.1.tang", "app_key": "marker.1.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.1.rad", "app_key": "marker.1.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.2.tang", "app_key": "marker.2.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.2.rad", "app_key": "marker.2.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.3.tang", "app_key": "marker.3.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.3.rad", "app_key": "marker.3.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.3.tilt", "app_key": "marker.3.tilt", "sided": "two", "minimum_half_width": 0.2, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.4.tang", "app_key": "marker.4.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.4.rad", "app_key": "marker.4.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.5.tang", "app_key": "marker.5.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.5.rad", "app_key": "marker.5.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.6.tang", "app_key": "marker.6.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.6.rad", "app_key": "marker.6.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.6.tilt", "app_key": "marker.6.tilt", "sided": "two", "minimum_half_width": 0.2, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.7.tang", "app_key": "marker.7.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.7.rad", "app_key": "marker.7.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.8.tang", "app_key": "marker.8.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.8.rad", "app_key": "marker.8.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.9.tang", "app_key": "marker.9.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.9.rad", "app_key": "marker.9.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.9.tilt", "app_key": "marker.9.tilt", "sided": "two", "minimum_half_width": 0.2, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.10.tang", "app_key": "marker.10.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.10.rad", "app_key": "marker.10.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.11.tang", "app_key": "marker.11.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.11.rad", "app_key": "marker.11.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.12.tang", "app_key": "marker.12.tang", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.12.rad", "app_key": "marker.12.rad", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "marker.12.tilt", "app_key": "marker.12.tilt", "sided": "two", "minimum_half_width": 0.2, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "ring.place_x", "app_key": "ring.place_x", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "ring.place_y", "app_key": "ring.place_y", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "ring.rot_deg", "app_key": "ring.rot_deg", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null},
+    {"metric": "ring.scale_pct", "app_key": "ring.scale_pct", "sided": "two", "minimum_half_width": 0.05, "allow_pose_sensitive": false, "max_clear_half_width": null, "defect_evidence": null}
   ],
   "sensitivity_note": "max_clear_half_width (the largest clear band that is still useful for QC) and defect_evidence (CSV of metric,value for confirmed defective watches) are product decisions, deliberately left null. Until one is set for a metric it can reach at most HOLDOUT_PASSED_SENSITIVITY_UNPROVEN, never CALIBRATED.",
-  "accepted_provisional": {
-    "run": 37008521836,
-    "date": "2026-10-02",
-    "by": "product owner",
-    "metrics": ["twelve.rotation_deg", "twelve.gap_r", "twelve.centring_w", "round.ring_rho", "round.spacing_rms_deg", "baton.3_9_line_offset_r", "axis.12_6_line_offset_r"],
-    "note": "All seven bands frozen into Sub124060Calibration (alpha75) as provisional QC prompts; sensitivity not yet proven (no replica/defect evidence). This historical run predates the acquired-source-diversity gate."
+  "units_note": "marker_geometry_v1 (owner-approved 22 Oct 2026; docs/CALIBRATION_BASELINE_2026-10-22_CALIBRATOR_ADAPTER.md): marker.<hour>.tang/.rad and ring.place_x/.place_y in % of dial radius, .tilt and ring.rot_deg in degrees, ring.scale_pct in %. minimum_half_width values are calibrator resolution floors, not app tolerances. No band from these metrics is deployed.",
+  "retired_config": {
+    "path": "calibration/models/retired/124060_production_app_route_v1.json",
+    "note": "The legacy production_app_route_v1 composites behind the seven provisional bands frozen in Sub124060Calibration (accepted 2 Oct 2026, run 37008521836), kept for reproducing those results only."
   }
 }

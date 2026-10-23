@@ -3,6 +3,8 @@ METADATA -> MEASURE -> ASSESS VALUE -> ACCEPT/QUARANTINE/REJECT -> SAVE STATE ->
 from __future__ import annotations
 
 import hashlib
+import json
+from dataclasses import asdict
 import io
 import os
 import shutil
@@ -66,7 +68,9 @@ def provenance_overrides() -> dict:
 class Pipeline:
     def __init__(self, paths: Paths | None = None, http: Http | None = None, harness: Harness | None = None,
                  adapters: dict | None = None, dry_run: bool = False, reprocess: bool = False,
-                 max_sources: int = LIMITS.default_max_sources, chunk: int = 8, log=print, should_stop=lambda: False):
+                 max_sources: int = LIMITS.default_max_sources, chunk: int = 8, log=print, should_stop=lambda: False, archive=None):
+        self.archive = archive
+        self.archive_candidates = set()
         self.paths = paths or Paths()
         self.dry_run = dry_run
         self.http = http or Http(offline=dry_run)
@@ -329,6 +333,8 @@ class Pipeline:
                     if kind == "near":
                         break
         self.state.images[h] = rec
+        if self.archive is not None and (not ref.path or self.paths.work_dir.resolve() in Path(ref.path).resolve().parents):
+            self.archive_candidates.add((s.key, h))
         return h
 
     def _store(self, h: str, data: bytes) -> Path:
@@ -448,9 +454,32 @@ class Pipeline:
 
     # ------------------------------------------------------------------------------------- outputs
     def write_outputs(self) -> None:
+        if self.archive is not None and not self.dry_run:
+            (self.paths.state_dir / "archive_results.json").write_text(
+                json.dumps(self.archive_images(), indent=2) + "\n", encoding="utf-8")
         write_csv(self.paths.manifest, MANIFEST_COLUMNS, manifest_rows(self.state))
         write_csv(self.paths.watches, WATCH_COLUMNS, watch_rows(self.state))
         write_csv(self.paths.watch_measurements, watch_measurement_columns(), watch_measurement_rows(self.state))
+
+    def archive_images(self) -> list[dict]:
+        """Explicit post-acquisition hook; never trust historical suitable/duplicate flags."""
+        if self.archive is None or self.dry_run:
+            return []
+        results = []
+        for source in self.state.sources.values():
+            for digest in source.image_shas:
+                if (source.key, digest) not in self.archive_candidates:
+                    continue
+                image = self.state.images[digest]
+                association = asdict(source)
+                association.update(source_url=source.url, image_url=image.image_url,
+                                   family=source.meta.get("family", "gmt_126710"))
+                try:
+                    results.append(self.archive.put_verified(absolute(image.local_path), digest, association))
+                except Exception as exc:
+                    results.append({"sha256": digest, "status": "pending", "reason": type(exc).__name__})
+        self.archive_candidates.clear()
+        return results
 
     COUNTERS = ("sources_discovered_new", "sources_already_known", "sources_pending_total", "sources_examined", "sources_deferred",
                 "sources_failed", "images_downloaded", "images_local", "images_restored", "images_unreadable", "exact_duplicates", "near_duplicates",

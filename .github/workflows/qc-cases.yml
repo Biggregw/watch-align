@@ -1,0 +1,38 @@
+# RESEARCH ONLY: measure the reviewed public QC cases (tools/research/alpha105g/fetch_qc.py: nine Reddit QC photos kept
+# only on an exact SHA-256 match) with the production chain and the shared MarkerGeometry readings (ArchMeasure), for the
+# labelled defect-validation set (tools/research/genuine_calibration/qc_cases.csv). Numbers only; no photograph is
+# uploaded or committed. The records are printed to the log for offline research.
+name: Reviewed QC cases (research)
+on:
+  push:
+    branches: [feature/unified-image-archive-20261021]
+    paths: ['.github/workflows/qc-cases.yml', 'tools/research/genuine_calibration/qc_cases.csv',
+            'tools/desktop-harness/drivers/ResearchCompare.java', 'android/app/src/main/java/com/watchalign/mobile/ResearchComparison.java']
+permissions:
+  contents: read
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -q requests
+      - uses: actions/cache@v4
+        with: {path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar, key: opencv-4.9.0-0-jar}
+      - name: Fetch (exact SHA-256 only)
+        run: python3 tools/research/alpha105g/fetch_qc.py qc
+      - name: Measure
+        run: |
+          for m in gmt_126710 submariner_124060; do
+            [ -f qc/$m/manifest.csv ] || continue
+            python3 -c "import csv,os,sys; r=list(csv.DictReader(open('qc/$m/manifest.csv'))); w=csv.writer(open('qc/$m/items.csv','w',newline='')); w.writerow(['photo_id','path']); [w.writerow([x['photo_id'],os.path.abspath('qc/'+x['local_path'])]) for x in r]"
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m -Xmx2500m" tools/desktop-harness/run.sh ArchMeasure qc/$m/items.csv qc/$m/base.jsonl 100 0 | grep -c ARCH
+            JAVA_TOOL_OPTIONS="-Dwatchalign.model=$m -Xmx2500m -Dstdout.encoding=UTF-8" tools/desktop-harness/run.sh ResearchCompare qc/$m/items.csv > qc/$m/compare.txt
+          done
+      - name: Records (numbers only)
+        run: |
+          cat qc/*/compare.txt
+          for f in qc/*/base.jsonl; do echo "RECORDS $f"; python3 -c "import json,sys; [print('QCREC '+json.dumps({k:v for k,v in json.loads(l).items() if k!='ticks'})) for l in open('$f')]" ; done

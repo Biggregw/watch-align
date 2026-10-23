@@ -203,11 +203,11 @@ def _config_for_pool(pool) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def run(pool, out: Path, max_images: int = 12) -> dict:
+def run(pool, out: Path, max_images: int = 12, *, archive=None) -> dict:
     original = base.resolve_candidate
     base.resolve_candidate = resolve_candidate
     try:
-        result = base.run(pool, out, max_images)
+        result = base.run(pool, out, max_images, **({"archive": archive} if archive is not None else {}))
     finally:
         base.resolve_candidate = original
 

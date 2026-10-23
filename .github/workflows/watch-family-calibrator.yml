@@ -67,6 +67,7 @@ jobs:
           path: tools/desktop-harness/.cache/opencv-4.9.0-0.jar
           key: opencv-4.9.0-0-jar
       - name: Restore autonomous image cache
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/cache@v4
         with:
           path: datasets/watch_calibrator/${{ env.MODEL }}/dataset/images
@@ -75,12 +76,13 @@ jobs:
             watch-calibrator-${{ env.MODEL }}-images-
             submariner-research-images-
       - name: End-to-end autonomous discovery, measurement and calibration
+        if: github.event_name == 'workflow_dispatch'
         run: |
           fresh=""
           if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event.inputs.fresh }}" = "true" ]; then fresh="--fresh"; fi
           python3 tools/watch_calibrator/run.py "$MODEL" $fresh | tee watch-calibrator.log
       - name: Summary
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         run: |
           F="datasets/watch_calibrator/$MODEL/calibration.md"
           S="datasets/watch_calibrator/$MODEL/run_status.json"
@@ -91,7 +93,7 @@ jobs:
           if [ -f "$R" ]; then echo '### Replica stress evidence' >> "$GITHUB_STEP_SUMMARY"; echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$R" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
           if [ -f "$S" ]; then echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat "$S" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Upload complete calibration evidence
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: watch-calibrator-${{ env.MODEL }}-${{ github.run_id }}

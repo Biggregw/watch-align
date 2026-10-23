@@ -1,0 +1,3966 @@
+{
+ "accounting": {
+  "gmt_126710": {
+   "admitted_for_masked_calibration": 26,
+   "eligible_photos_by_marker_in_admitted": {
+    "1": 25,
+    "2": 6,
+    "4": 26,
+    "5": 14,
+    "6": 25,
+    "7": 26,
+    "8": 25,
+    "9": 25,
+    "10": 25,
+    "11": 20,
+    "12": 25
+   },
+   "full_watch_photos": 0,
+   "genuine_photos_analysed": 122,
+   "non_eligible_reasons_by_marker_in_suitable": {
+    "1": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 3,
+     "OBSTRUCTED:hand_confirmed_by_app": 2,
+     "UNRELIABLE:edge_warning_rough": 1
+    },
+    "2": {
+     "OBSTRUCTED:hand_confirmed_by_app": 18,
+     "OBSTRUCTED:outline_cover_below_0.80": 19,
+     "OBSTRUCTED:withheld_by_app_hand": 7
+    },
+    "4": {
+     "OBSTRUCTED:hand_confirmed_by_app": 3,
+     "OBSTRUCTED:outline_cover_below_0.80": 2,
+     "OBSTRUCTED:withheld_by_app_hand": 1
+    },
+    "5": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 1,
+     "OBSTRUCTED:hand_confirmed_by_app": 15,
+     "OBSTRUCTED:outline_cover_below_0.80": 12,
+     "OBSTRUCTED:outline_mostly_reconstructed": 7
+    },
+    "6": {
+     "OBSTRUCTED:hand_confirmed_by_app": 1,
+     "OBSTRUCTED:outline_cover_below_0.80": 1
+    },
+    "7": {
+     "OBSTRUCTED:hand_confirmed_by_app": 3,
+     "OBSTRUCTED:outline_cover_below_0.80": 3
+    },
+    "8": {
+     "OBSTRUCTED:hand_confirmed_by_app": 4,
+     "OBSTRUCTED:outline_cover_below_0.80": 2
+    },
+    "9": {
+     "OBSTRUCTED:hand_confirmed_by_app": 4,
+     "OBSTRUCTED:outline_cover_below_0.80": 1
+    },
+    "10": {
+     "OBSTRUCTED:hand_confirmed_by_app": 4,
+     "OBSTRUCTED:outline_cover_below_0.80": 1
+    },
+    "11": {
+     "OBSTRUCTED:hand_confirmed_by_app": 5,
+     "OBSTRUCTED:outline_cover_below_0.80": 5,
+     "OBSTRUCTED:outline_mostly_reconstructed": 4,
+     "OBSTRUCTED:withheld_by_app_hand": 1,
+     "UNRELIABLE:edge_warning_rough": 2
+    },
+    "12": {
+     "OBSTRUCTED:hand_confirmed_by_app": 1
+    }
+   },
+   "photo_level_rejections": {
+    "fail_face_on_ellipse": 5,
+    "fail_landmarks": 1,
+    "fail_original_resolution": 53,
+    "inconclusive_dial_not_registered": 28,
+    "inconclusive_face_on_ellipse": 1
+   },
+   "photographic_suitability_pass": 34,
+   "rejected_too_many_excluded_markers": 8,
+   "with_at_least_one_eligible_marker": 34
+  },
+  "submariner_124060": {
+   "admitted_for_masked_calibration": 64,
+   "eligible_photos_by_marker_in_admitted": {
+    "1": 60,
+    "2": 12,
+    "3": 62,
+    "4": 60,
+    "5": 60,
+    "6": 60,
+    "7": 60,
+    "8": 58,
+    "9": 63,
+    "10": 62,
+    "11": 59,
+    "12": 63
+   },
+   "full_watch_photos": 6,
+   "genuine_photos_analysed": 384,
+   "non_eligible_reasons_by_marker_in_suitable": {
+    "1": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 1,
+     "OBSTRUCTED:hand_confirmed_by_app": 15,
+     "OBSTRUCTED:outline_cover_below_0.80": 4,
+     "UNRELIABLE:edge_warning_rough": 6
+    },
+    "2": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 1,
+     "OBSTRUCTED:hand_confirmed_by_app": 64,
+     "OBSTRUCTED:outline_cover_below_0.80": 59,
+     "OBSTRUCTED:outline_mostly_reconstructed": 7,
+     "OBSTRUCTED:withheld_by_app_hand": 10
+    },
+    "3": {
+     "OBSTRUCTED:hand_confirmed_by_app": 8,
+     "OBSTRUCTED:outline_cover_below_0.80": 2
+    },
+    "4": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 3,
+     "OBSTRUCTED:hand_confirmed_by_app": 12,
+     "OBSTRUCTED:outline_cover_below_0.80": 4,
+     "UNRELIABLE:edge_warning_rough": 2
+    },
+    "5": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 2,
+     "OBSTRUCTED:hand_confirmed_by_app": 17,
+     "OBSTRUCTED:outline_cover_below_0.80": 3,
+     "UNRELIABLE:edge_warning_rough": 1
+    },
+    "6": {
+     "OBSTRUCTED:hand_confirmed_by_app": 16,
+     "OBSTRUCTED:outline_cover_below_0.80": 11,
+     "OBSTRUCTED:withheld_by_app_hand": 1,
+     "UNRELIABLE:edge_warning_rough": 1
+    },
+    "7": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 2,
+     "OBSTRUCTED:hand_confirmed_by_app": 16,
+     "OBSTRUCTED:outline_cover_below_0.80": 4,
+     "UNRELIABLE:edge_warning_rough": 3
+    },
+    "8": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 5,
+     "OBSTRUCTED:hand_confirmed_by_app": 16,
+     "OBSTRUCTED:outline_cover_below_0.80": 4,
+     "UNRELIABLE:edge_warning_rough": 2
+    },
+    "9": {
+     "OBSTRUCTED:hand_confirmed_by_app": 7,
+     "OBSTRUCTED:outline_cover_below_0.80": 1,
+     "UNRELIABLE:edge_warning_rough": 2
+    },
+    "10": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 3,
+     "OBSTRUCTED:hand_confirmed_by_app": 11,
+     "UNRELIABLE:edge_warning_rough": 5
+    },
+    "11": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 1,
+     "OBSTRUCTED:hand_confirmed_by_app": 10,
+     "OBSTRUCTED:outline_cover_below_0.80": 3,
+     "UNRELIABLE:edge_warning_rough": 12
+    },
+    "12": {
+     "OBSTRUCTED:hand_confirmed_by_app": 4,
+     "OBSTRUCTED:outline_cover_below_0.80": 1
+    }
+   },
+   "photo_level_rejections": {
+    "fail_original_resolution": 126,
+    "inconclusive_dial_not_registered": 162,
+    "inconclusive_exposure": 1,
+    "inconclusive_face_on_ellipse": 1,
+    "inconclusive_face_on_rehaut_horizontal": 1,
+    "inconclusive_face_on_rehaut_vertical": 4,
+    "inconclusive_glare": 1
+   },
+   "photographic_suitability_pass": 88,
+   "rejected_too_many_excluded_markers": 24,
+   "with_at_least_one_eligible_marker": 86
+  },
+  "submariner_126610": {
+   "admitted_for_masked_calibration": 96,
+   "eligible_photos_by_marker_in_admitted": {
+    "1": 91,
+    "2": 16,
+    "4": 91,
+    "5": 87,
+    "6": 88,
+    "7": 87,
+    "8": 93,
+    "9": 93,
+    "10": 93,
+    "11": 92,
+    "12": 85
+   },
+   "full_watch_photos": 7,
+   "genuine_photos_analysed": 121,
+   "non_eligible_reasons_by_marker_in_suitable": {
+    "1": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 1,
+     "OBSTRUCTED:hand_confirmed_by_app": 7,
+     "OBSTRUCTED:outline_cover_below_0.80": 4,
+     "UNRELIABLE:edge_warning_rough": 5
+    },
+    "2": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 1,
+     "OBSTRUCTED:hand_confirmed_by_app": 81,
+     "OBSTRUCTED:outline_cover_below_0.80": 91,
+     "OBSTRUCTED:outline_mostly_reconstructed": 4,
+     "OBSTRUCTED:withheld_by_app_hand": 7
+    },
+    "4": {
+     "OBSTRUCTED:hand_confirmed_by_app": 9,
+     "OBSTRUCTED:outline_cover_below_0.80": 7
+    },
+    "5": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 3,
+     "OBSTRUCTED:hand_confirmed_by_app": 15,
+     "OBSTRUCTED:outline_cover_below_0.80": 5,
+     "UNRELIABLE:edge_warning_rough": 2
+    },
+    "6": {
+     "OBSTRUCTED:hand_confirmed_by_app": 5,
+     "OBSTRUCTED:outline_cover_below_0.80": 5,
+     "UNRELIABLE:edge_warning_rough": 13
+    },
+    "7": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 1,
+     "OBSTRUCTED:hand_confirmed_by_app": 9,
+     "OBSTRUCTED:outline_cover_below_0.80": 5,
+     "OBSTRUCTED:withheld_by_app_hand": 1
+    },
+    "8": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 4,
+     "OBSTRUCTED:hand_confirmed_by_app": 3,
+     "OBSTRUCTED:outline_cover_below_0.80": 3
+    },
+    "9": {
+     "OBSTRUCTED:hand_confirmed_by_app": 4,
+     "OBSTRUCTED:outline_cover_below_0.80": 2
+    },
+    "10": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 3,
+     "OBSTRUCTED:hand_confirmed_by_app": 3,
+     "OBSTRUCTED:outline_cover_below_0.80": 5,
+     "OBSTRUCTED:outline_mostly_reconstructed": 2,
+     "UNRELIABLE:edge_warning_rough": 1
+    },
+    "11": {
+     "INCONCLUSIVE:outline_cover_0.80_0.90_untested": 3,
+     "OBSTRUCTED:hand_confirmed_by_app": 6,
+     "OBSTRUCTED:outline_cover_below_0.80": 3,
+     "UNRELIABLE:edge_warning_rough": 5
+    },
+    "12": {
+     "OBSTRUCTED:hand_confirmed_by_app": 12,
+     "OBSTRUCTED:outline_cover_below_0.80": 11,
+     "OBSTRUCTED:outline_mostly_reconstructed": 1
+    }
+   },
+   "photo_level_rejections": {
+    "fail_original_resolution": 1,
+    "inconclusive_sharp_boundaries": 1
+   },
+   "photographic_suitability_pass": 119,
+   "rejected_too_many_excluded_markers": 23,
+   "with_at_least_one_eligible_marker": 119
+  }
+ },
+ "full_watch": {
+  "partition_of_watch": {
+   "bobs_124060_182386": "holdout",
+   "bobs_124060_182762": "validation",
+   "bobs_124060_190126": "development",
+   "bobs_126610LN_190095": "development",
+   "bobs_126610LV_181136": "validation",
+   "bobs_126610LV_181353": "development",
+   "bobs_126613LB_191447": "development",
+   "bobs_126613LN_181162": "holdout",
+   "bobs_126613_183323": "development",
+   "bobs_126613_187705": "development",
+   "ewc_124060_55139": "validation",
+   "ewc_124060_57290": "development",
+   "ewc_124060_62088": "development"
+  },
+  "photos_excluded": {},
+  "photos_used": 13,
+  "policy": {
+   "aggregation": "median per physical watch per marker per quantity, eligible photos only",
+   "mask_policy_version": "marker-mask-v1",
+   "max_excluded_markers": 2,
+   "min_sources": 3,
+   "min_watches": 8
+  },
+  "populations": {
+   "submariner_124060": {
+    "1": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.04344,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.14328,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.05701,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    },
+    "2": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.07057,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.14914,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.11502,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    },
+    "3": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.10013,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.16499,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.06336,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "tilt": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.16931,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    },
+    "4": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.01174,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.14596,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.06128,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    },
+    "5": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.00419,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.07391,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.02831,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    },
+    "6": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.0343,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.1074,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.03064,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "tilt": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.05866,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    },
+    "7": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.01096,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.16395,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.01169,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    },
+    "8": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.09218,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.15735,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.09536,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    },
+    "9": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.03313,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.12401,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.03255,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "tilt": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.017,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    },
+    "10": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.00735,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.14618,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.06035,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    },
+    "11": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.0587,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.13811,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.08006,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    },
+    "12": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.028,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.08186,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      },
+      "tilt": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.07494,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 3,
+        "holdout": 1,
+        "validation": 2
+       },
+       "watches_by_source": {
+        "bobswatches.com": 3,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "triangle",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6
+     }
+    }
+   },
+   "submariner_126610": {
+    "1": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.03965,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "pos": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.12514,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "side": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.09302,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 7
+     }
+    },
+    "2": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.06972,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "pos": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.21751,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "side": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.16343,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 7
+     }
+    },
+    "4": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.03904,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "pos": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.16243,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "side": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.10232,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 7
+     }
+    },
+    "5": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.10777,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "pos": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.11055,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "side": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.00384,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 7
+     }
+    },
+    "6": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.03984,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "pos": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.12397,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "side": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.05051,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "tilt": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.09849,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 7
+     }
+    },
+    "7": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.04051,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "pos": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.09401,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "side": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.00303,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 7
+     }
+    },
+    "8": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.02823,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "pos": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.08895,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "side": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.01752,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 7
+     }
+    },
+    "9": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.03852,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "pos": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.15366,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "side": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.09561,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "tilt": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.08704,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 7
+     }
+    },
+    "10": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.03986,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "pos": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.23208,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "side": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.22863,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 7
+     }
+    },
+    "11": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.08526,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "pos": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.15801,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "side": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.14097,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 7
+     }
+    },
+    "12": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": 0.05338,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "side": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.11585,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      },
+      "tilt": {
+       "genuine_watches": 7,
+       "median_of_watch_medians": -0.30529,
+       "photos": 7,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 1,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7
+       }
+      }
+     },
+     "shape": "triangle",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 7
+     }
+    }
+   }
+  },
+  "watches_used": 13,
+  "watches_used_by_model": {
+   "submariner_124060": 6,
+   "submariner_126610": 7
+  }
+ },
+ "marker_masked": {
+  "partition_of_watch": {
+   "auto_bobs_124060_03e9c7f833e7": "development",
+   "auto_bobs_124060_0831b5e1a2b9": "validation",
+   "auto_bobs_124060_2905d2d5bc5c": "validation",
+   "auto_bobs_124060_3d1f0a3378e2": "development",
+   "auto_bobs_124060_51facf8c751c": "holdout",
+   "auto_bobs_124060_53360dc3b324": "holdout",
+   "auto_bobs_124060_7f1b144ca515": "development",
+   "auto_bobs_124060_acb8dd97ca70": "development",
+   "auto_bobs_124060_bad22cadcb43": "development",
+   "auto_bobs_124060_d758a78acef9": "development",
+   "auto_davidsw_124060_36185ea2c96c": "validation",
+   "auto_davidsw_124060_911ce140f7b9": "development",
+   "auto_davidsw_124060_e840fd0e1afd": "development",
+   "auto_ewc_124060_7761710b6ccf": "development",
+   "auto_ewc_124060_ad749eab5fe7": "holdout",
+   "auto_ewc_124060_ceb5b8d52802": "validation",
+   "auto_ewc_124060_dd10dd8bfba9": "holdout",
+   "auto_swe_124060_053392110b92": "validation",
+   "auto_swe_124060_b769fc6369b0": "development",
+   "bobs_124060_180527": "development",
+   "bobs_124060_182059": "holdout",
+   "bobs_124060_182386": "holdout",
+   "bobs_124060_182762": "validation",
+   "bobs_124060_185429": "validation",
+   "bobs_124060_186406": "development",
+   "bobs_124060_187661": "development",
+   "bobs_124060_188850": "development",
+   "bobs_124060_189182": "development",
+   "bobs_124060_189885": "validation",
+   "bobs_124060_190126": "validation",
+   "bobs_124060_190835": "validation",
+   "bobs_124060_190837": "development",
+   "bobs_124060_194255": "development",
+   "bobs_126610LN_180634": "holdout",
+   "bobs_126610LN_187222": "development",
+   "bobs_126610LN_187573": "holdout",
+   "bobs_126610LN_187904": "development",
+   "bobs_126610LN_188326": "development",
+   "bobs_126610LN_188473": "development",
+   "bobs_126610LN_189415": "validation",
+   "bobs_126610LN_189973": "development",
+   "bobs_126610LN_190095": "development",
+   "bobs_126610LN_191104": "validation",
+   "bobs_126610LN_191814": "validation",
+   "bobs_126610LN_192183": "development",
+   "bobs_126610LN_193274": "development",
+   "bobs_126610LV_181090": "development",
+   "bobs_126610LV_181136": "validation",
+   "bobs_126610LV_181353": "development",
+   "bobs_126610LV_184394": "development",
+   "bobs_126610LV_184634": "development",
+   "bobs_126610LV_189184": "holdout",
+   "bobs_126610LV_191583": "development",
+   "bobs_126610LV_193218": "development",
+   "bobs_126610LV_193764": "development",
+   "bobs_126610LV_194077": "development",
+   "bobs_126610LV_194310": "development",
+   "bobs_126610LV_194330": "holdout",
+   "bobs_126610_180692": "holdout",
+   "bobs_126610_180760": "development",
+   "bobs_126610_181036": "development",
+   "bobs_126610_182143": "development",
+   "bobs_126610_182437": "development",
+   "bobs_126610_182922": "holdout",
+   "bobs_126610_183641": "development",
+   "bobs_126610_184157": "development",
+   "bobs_126610_184253": "development",
+   "bobs_126610_186928": "development",
+   "bobs_126610_189258": "holdout",
+   "bobs_126610_189357": "development",
+   "bobs_126610_189514": "development",
+   "bobs_126610_189635": "development",
+   "bobs_126610_190823": "development",
+   "bobs_126610_191335": "validation",
+   "bobs_126610_191969": "validation",
+   "bobs_126610_192295": "development",
+   "bobs_126610_193556": "holdout",
+   "bobs_126610_193855": "development",
+   "bobs_126610_194507": "holdout",
+   "bobs_126613LB_180707": "development",
+   "bobs_126613LB_181123": "validation",
+   "bobs_126613LB_182290": "validation",
+   "bobs_126613LB_185523": "development",
+   "bobs_126613LB_186320": "development",
+   "bobs_126613LB_188116": "holdout",
+   "bobs_126613LB_188118": "development",
+   "bobs_126613LB_188577": "development",
+   "bobs_126613LB_188787": "holdout",
+   "bobs_126613LB_189214": "holdout",
+   "bobs_126613LB_190173": "development",
+   "bobs_126613LB_191447": "development",
+   "bobs_126613LB_193029": "development",
+   "bobs_126613LB_193690": "development",
+   "bobs_126613LB_193777": "holdout",
+   "bobs_126613LN_180472": "development",
+   "bobs_126613LN_181162": "holdout",
+   "bobs_126613LN_185571": "development",
+   "bobs_126613LN_186978": "development",
+   "bobs_126613LN_187665": "validation",
+   "bobs_126613LN_190021": "development",
+   "bobs_126613LN_191741": "validation",
+   "bobs_126613_180963": "development",
+   "bobs_126613_182345": "holdout",
+   "bobs_126613_183254": "development",
+   "bobs_126613_183323": "validation",
+   "bobs_126613_186189": "development",
+   "bobs_126613_187401": "development",
+   "bobs_126613_187705": "development",
+   "bobs_126613_188496": "validation",
+   "bobs_126613_191115": "development",
+   "bobs_126613_193801": "development",
+   "bobs_126618LB_188239": "development",
+   "bobs_126618LB_188539": "validation",
+   "bobs_126618LB_191553": "development",
+   "bobs_126618LN_188710": "validation",
+   "bobs_126618LN_193932": "validation",
+   "bobs_126618_186721": "development",
+   "bobs_126618_190213": "holdout",
+   "bobs_126618_190792": "development",
+   "bobs_126618_191239": "holdout",
+   "bobs_126618_193277": "validation",
+   "bobs_126619LB_180619": "holdout",
+   "bobs_126619LB_186599": "development",
+   "bobs_126619LB_191434": "development",
+   "bobs_126619_183451": "development",
+   "bobs_126619_183920": "development",
+   "bobs_126619_184809": "development",
+   "bobs_126619_186615": "development",
+   "bobs_126619_188956": "validation",
+   "bobs_175818": "development",
+   "bobs_185749": "development",
+   "ewc_124060_42174": "holdout",
+   "ewc_124060_44294": "development",
+   "ewc_124060_46174": "development",
+   "ewc_124060_47106": "development",
+   "ewc_124060_47706": "development",
+   "ewc_124060_48227": "development",
+   "ewc_124060_50093": "development",
+   "ewc_124060_51884": "development",
+   "ewc_124060_55139": "validation",
+   "ewc_124060_55297": "validation",
+   "ewc_124060_57290": "development",
+   "ewc_124060_57714": "validation",
+   "ewc_124060_58030": "development",
+   "ewc_124060_58150": "development",
+   "ewc_124060_58678": "holdout",
+   "ewc_124060_59112_59921_62175": "development",
+   "ewc_124060_59697": "development",
+   "ewc_124060_62088": "development",
+   "ewc_124060_62097": "development",
+   "ewc_124060_64518": "holdout",
+   "ewc_124060_65028": "validation",
+   "ewc_124060_67390": "validation",
+   "ewc_124060_71823": "development",
+   "gen_126710BLRO_phillips_146213": "development",
+   "hv_page_0acf303e92": "development",
+   "hv_page_27e47d86af": "holdout",
+   "hv_page_2986d0208d": "holdout",
+   "hv_page_2ad168c21c": "development",
+   "hv_page_2f4b4ff78a": "validation",
+   "hv_page_2f9546b899": "development",
+   "hv_page_3b6fda6742": "validation",
+   "hv_page_592b43d499": "development",
+   "hv_page_6c7e84c33d": "development",
+   "hv_page_6dddbcb3b9": "development",
+   "hv_page_79c4638087": "holdout",
+   "hv_page_7c3b9f9d87": "holdout",
+   "hv_page_7fdfdab90c": "validation",
+   "hv_page_8ef1c41f5a": "holdout",
+   "hv_page_b25aaeffa2": "holdout",
+   "hv_page_b2ff5f4520": "development",
+   "hv_page_b8db5ee0c6": "development",
+   "hv_page_bb3af8f2d9": "validation",
+   "hv_page_ee91bc679b": "validation",
+   "hv_page_fa59e58578": "development",
+   "wos_cpo_40616911": "development"
+  },
+  "photos_excluded": {},
+  "photos_used": 186,
+  "policy": {
+   "aggregation": "median per physical watch per marker per quantity, eligible photos only",
+   "mask_policy_version": "marker-mask-v1",
+   "max_excluded_markers": 2,
+   "min_sources": 3,
+   "min_watches": 8
+  },
+  "populations": {
+   "gmt_126710": {
+    "1": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": -0.00559,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 12,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "pos": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": 0.17704,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 12,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "side": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": -0.13087,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 12,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 25,
+      "OBSTRUCTED": 1
+     }
+    },
+    "2": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.02985,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 0,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 5,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "pos": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": 0.27746,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 0,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 5,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "side": {
+       "genuine_watches": 6,
+       "median_of_watch_medians": -0.27717,
+       "photos": 6,
+       "sources": 2,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 5,
+        "holdout": 0,
+        "validation": 1
+       },
+       "watches_by_source": {
+        "bobswatches.com": 5,
+        "watchesofswitzerland.com": 1
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 6,
+      "OBSTRUCTED": 20
+     }
+    },
+    "4": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 24,
+       "median_of_watch_medians": 0.02017,
+       "photos": 26,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "pos": {
+       "genuine_watches": 24,
+       "median_of_watch_medians": 0.1342,
+       "photos": 26,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "side": {
+       "genuine_watches": 24,
+       "median_of_watch_medians": -0.07326,
+       "photos": 26,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 26
+     }
+    },
+    "5": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 14,
+       "median_of_watch_medians": 0.0553,
+       "photos": 14,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 8,
+        "holdout": 3,
+        "validation": 3
+       },
+       "watches_by_source": {
+        "bobswatches.com": 14
+       }
+      },
+      "pos": {
+       "genuine_watches": 14,
+       "median_of_watch_medians": 0.15314,
+       "photos": 14,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 8,
+        "holdout": 3,
+        "validation": 3
+       },
+       "watches_by_source": {
+        "bobswatches.com": 14
+       }
+      },
+      "side": {
+       "genuine_watches": 14,
+       "median_of_watch_medians": -0.04564,
+       "photos": 14,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 8,
+        "holdout": 3,
+        "validation": 3
+       },
+       "watches_by_source": {
+        "bobswatches.com": 14
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 14,
+      "INCONCLUSIVE": 1,
+      "OBSTRUCTED": 11
+     }
+    },
+    "6": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": -0.10377,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 4
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "pos": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": 0.17108,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 4
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "side": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": 0.01625,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 4
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "tilt": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": -0.04337,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 4
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 25,
+      "OBSTRUCTED": 1
+     }
+    },
+    "7": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 24,
+       "median_of_watch_medians": 0.022,
+       "photos": 26,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "pos": {
+       "genuine_watches": 24,
+       "median_of_watch_medians": 0.13999,
+       "photos": 26,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "side": {
+       "genuine_watches": 24,
+       "median_of_watch_medians": 0.06125,
+       "photos": 26,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 26
+     }
+    },
+    "8": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": -0.02434,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 4
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "pos": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": 0.14448,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 4
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "side": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": 0.09258,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 6,
+        "validation": 4
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 25,
+      "OBSTRUCTED": 1
+     }
+    },
+    "9": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": -0.07641,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 5,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "pos": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": 0.18329,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 5,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "side": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": 0.1578,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 5,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "tilt": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": -0.0233,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 13,
+        "holdout": 5,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 25,
+      "OBSTRUCTED": 1
+     }
+    },
+    "10": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": -0.04621,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 12,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "pos": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": 0.21982,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 12,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "side": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": 0.17003,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 12,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 25,
+      "OBSTRUCTED": 1
+     }
+    },
+    "11": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 18,
+       "median_of_watch_medians": -0.04914,
+       "photos": 20,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 9,
+        "holdout": 5,
+        "validation": 4
+       },
+       "watches_by_source": {
+        "bobswatches.com": 16,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "pos": {
+       "genuine_watches": 18,
+       "median_of_watch_medians": 0.18986,
+       "photos": 20,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 9,
+        "holdout": 5,
+        "validation": 4
+       },
+       "watches_by_source": {
+        "bobswatches.com": 16,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "side": {
+       "genuine_watches": 18,
+       "median_of_watch_medians": 0.10753,
+       "photos": 20,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 9,
+        "holdout": 5,
+        "validation": 4
+       },
+       "watches_by_source": {
+        "bobswatches.com": 16,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 20,
+      "OBSTRUCTED": 6
+     }
+    },
+    "12": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": -0.05594,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 12,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "side": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": -0.08019,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 12,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      },
+      "tilt": {
+       "genuine_watches": 23,
+       "median_of_watch_medians": -0.11577,
+       "photos": 25,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 12,
+        "holdout": 6,
+        "validation": 5
+       },
+       "watches_by_source": {
+        "bobswatches.com": 21,
+        "phillips.com": 1,
+        "watchesofswitzerland.com": 1
+       }
+      }
+     },
+     "shape": "triangle",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 25,
+      "OBSTRUCTED": 1
+     }
+    }
+   },
+   "submariner_124060": {
+    "1": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": 0.00351,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 31,
+        "holdout": 7,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 24,
+        "davidsw.com": 2,
+        "europeanwatch.com": 24,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "pos": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": 0.14331,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 31,
+        "holdout": 7,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 24,
+        "davidsw.com": 2,
+        "europeanwatch.com": 24,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "side": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": -0.01864,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 31,
+        "holdout": 7,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 24,
+        "davidsw.com": 2,
+        "europeanwatch.com": 24,
+        "swisswatchexpo.com": 2
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 60,
+      "OBSTRUCTED": 4
+     }
+    },
+    "2": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 11,
+       "median_of_watch_medians": 0.07632,
+       "photos": 12,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 6,
+        "holdout": 2,
+        "validation": 3
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7,
+        "davidsw.com": 1,
+        "europeanwatch.com": 3
+       }
+      },
+      "pos": {
+       "genuine_watches": 11,
+       "median_of_watch_medians": 0.16026,
+       "photos": 12,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 6,
+        "holdout": 2,
+        "validation": 3
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7,
+        "davidsw.com": 1,
+        "europeanwatch.com": 3
+       }
+      },
+      "side": {
+       "genuine_watches": 11,
+       "median_of_watch_medians": -0.12868,
+       "photos": 12,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 6,
+        "holdout": 2,
+        "validation": 3
+       },
+       "watches_by_source": {
+        "bobswatches.com": 7,
+        "davidsw.com": 1,
+        "europeanwatch.com": 3
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 12,
+      "INCONCLUSIVE": 1,
+      "OBSTRUCTED": 51
+     }
+    },
+    "3": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 55,
+       "median_of_watch_medians": 0.04686,
+       "photos": 62,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 32,
+        "holdout": 8,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "pos": {
+       "genuine_watches": 55,
+       "median_of_watch_medians": 0.17669,
+       "photos": 62,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 32,
+        "holdout": 8,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "side": {
+       "genuine_watches": 55,
+       "median_of_watch_medians": -0.00069,
+       "photos": 62,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 32,
+        "holdout": 8,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "tilt": {
+       "genuine_watches": 55,
+       "median_of_watch_medians": -0.11626,
+       "photos": 62,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 32,
+        "holdout": 8,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 62,
+      "OBSTRUCTED": 2
+     }
+    },
+    "4": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": 0.02023,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 8,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 2,
+        "europeanwatch.com": 25,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "pos": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": 0.17353,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 8,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 2,
+        "europeanwatch.com": 25,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "side": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": -0.07158,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 8,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 2,
+        "europeanwatch.com": 25,
+        "swisswatchexpo.com": 2
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 60,
+      "INCONCLUSIVE": 1,
+      "OBSTRUCTED": 3
+     }
+    },
+    "5": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 53,
+       "median_of_watch_medians": -0.03099,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 29,
+        "holdout": 9,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 3,
+        "europeanwatch.com": 25,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "pos": {
+       "genuine_watches": 53,
+       "median_of_watch_medians": 0.15196,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 29,
+        "holdout": 9,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 3,
+        "europeanwatch.com": 25,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "side": {
+       "genuine_watches": 53,
+       "median_of_watch_medians": -0.02379,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 29,
+        "holdout": 9,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 3,
+        "europeanwatch.com": 25,
+        "swisswatchexpo.com": 2
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 60,
+      "OBSTRUCTED": 4
+     }
+    },
+    "6": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": 0.04434,
+       "photos": 60,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 9,
+        "validation": 13
+       },
+       "watches_by_source": {
+        "bobswatches.com": 24,
+        "davidsw.com": 3,
+        "europeanwatch.com": 25
+       }
+      },
+      "pos": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": 0.14862,
+       "photos": 60,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 9,
+        "validation": 13
+       },
+       "watches_by_source": {
+        "bobswatches.com": 24,
+        "davidsw.com": 3,
+        "europeanwatch.com": 25
+       }
+      },
+      "side": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": -0.02238,
+       "photos": 60,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 9,
+        "validation": 13
+       },
+       "watches_by_source": {
+        "bobswatches.com": 24,
+        "davidsw.com": 3,
+        "europeanwatch.com": 25
+       }
+      },
+      "tilt": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": -0.05536,
+       "photos": 60,
+       "sources": 3,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 9,
+        "validation": 13
+       },
+       "watches_by_source": {
+        "bobswatches.com": 24,
+        "davidsw.com": 3,
+        "europeanwatch.com": 25
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 60,
+      "OBSTRUCTED": 4
+     }
+    },
+    "7": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 53,
+       "median_of_watch_medians": -0.01225,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 9,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "davidsw.com": 3,
+        "europeanwatch.com": 26,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "pos": {
+       "genuine_watches": 53,
+       "median_of_watch_medians": 0.1303,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 9,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "davidsw.com": 3,
+        "europeanwatch.com": 26,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "side": {
+       "genuine_watches": 53,
+       "median_of_watch_medians": -0.01633,
+       "photos": 60,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 9,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "davidsw.com": 3,
+        "europeanwatch.com": 26,
+        "swisswatchexpo.com": 2
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 60,
+      "OBSTRUCTED": 4
+     }
+    },
+    "8": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": -0.02603,
+       "photos": 58,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 29,
+        "holdout": 8,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 20,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "pos": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": 0.16982,
+       "photos": 58,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 29,
+        "holdout": 8,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 20,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "side": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": 0.01752,
+       "photos": 58,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 29,
+        "holdout": 8,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 20,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 58,
+      "INCONCLUSIVE": 2,
+      "OBSTRUCTED": 4
+     }
+    },
+    "9": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 55,
+       "median_of_watch_medians": 0.00886,
+       "photos": 63,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 32,
+        "holdout": 9,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 24,
+        "davidsw.com": 3,
+        "europeanwatch.com": 26,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "pos": {
+       "genuine_watches": 55,
+       "median_of_watch_medians": 0.16382,
+       "photos": 63,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 32,
+        "holdout": 9,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 24,
+        "davidsw.com": 3,
+        "europeanwatch.com": 26,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "side": {
+       "genuine_watches": 55,
+       "median_of_watch_medians": 0.02267,
+       "photos": 63,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 32,
+        "holdout": 9,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 24,
+        "davidsw.com": 3,
+        "europeanwatch.com": 26,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "tilt": {
+       "genuine_watches": 55,
+       "median_of_watch_medians": -0.03521,
+       "photos": 63,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 32,
+        "holdout": 9,
+        "validation": 14
+       },
+       "watches_by_source": {
+        "bobswatches.com": 24,
+        "davidsw.com": 3,
+        "europeanwatch.com": 26,
+        "swisswatchexpo.com": 2
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 63,
+      "OBSTRUCTED": 1
+     }
+    },
+    "10": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 54,
+       "median_of_watch_medians": -0.0024,
+       "photos": 62,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 9,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "pos": {
+       "genuine_watches": 54,
+       "median_of_watch_medians": 0.15971,
+       "photos": 62,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 9,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "side": {
+       "genuine_watches": 54,
+       "median_of_watch_medians": 0.04474,
+       "photos": 62,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 30,
+        "holdout": 9,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 62,
+      "OBSTRUCTED": 1,
+      "UNRELIABLE": 1
+     }
+    },
+    "11": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": 0.01844,
+       "photos": 59,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 29,
+        "holdout": 8,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "davidsw.com": 3,
+        "europeanwatch.com": 25,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "pos": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": 0.12792,
+       "photos": 59,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 29,
+        "holdout": 8,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "davidsw.com": 3,
+        "europeanwatch.com": 25,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "side": {
+       "genuine_watches": 52,
+       "median_of_watch_medians": 0.06357,
+       "photos": 59,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 29,
+        "holdout": 8,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 22,
+        "davidsw.com": 3,
+        "europeanwatch.com": 25,
+        "swisswatchexpo.com": 2
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 59,
+      "OBSTRUCTED": 2,
+      "UNRELIABLE": 3
+     }
+    },
+    "12": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 55,
+       "median_of_watch_medians": 0.02986,
+       "photos": 63,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 31,
+        "holdout": 9,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "side": {
+       "genuine_watches": 55,
+       "median_of_watch_medians": -0.0477,
+       "photos": 63,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 31,
+        "holdout": 9,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      },
+      "tilt": {
+       "genuine_watches": 55,
+       "median_of_watch_medians": 0.20661,
+       "photos": 63,
+       "sources": 4,
+       "underrepresented": false,
+       "watches_by_partition": {
+        "development": 31,
+        "holdout": 9,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 23,
+        "davidsw.com": 3,
+        "europeanwatch.com": 27,
+        "swisswatchexpo.com": 2
+       }
+      }
+     },
+     "shape": "triangle",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 63,
+      "OBSTRUCTED": 1
+     }
+    }
+   },
+   "submariner_126610": {
+    "1": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 91,
+       "median_of_watch_medians": 0.02434,
+       "photos": 91,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 59,
+        "holdout": 16,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 91
+       }
+      },
+      "pos": {
+       "genuine_watches": 91,
+       "median_of_watch_medians": 0.13415,
+       "photos": 91,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 59,
+        "holdout": 16,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 91
+       }
+      },
+      "side": {
+       "genuine_watches": 91,
+       "median_of_watch_medians": -0.06968,
+       "photos": 91,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 59,
+        "holdout": 16,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 91
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 91,
+      "INCONCLUSIVE": 1,
+      "OBSTRUCTED": 4
+     }
+    },
+    "2": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 16,
+       "median_of_watch_medians": 0.05188,
+       "photos": 16,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 8,
+        "holdout": 5,
+        "validation": 3
+       },
+       "watches_by_source": {
+        "bobswatches.com": 16
+       }
+      },
+      "pos": {
+       "genuine_watches": 16,
+       "median_of_watch_medians": 0.24306,
+       "photos": 16,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 8,
+        "holdout": 5,
+        "validation": 3
+       },
+       "watches_by_source": {
+        "bobswatches.com": 16
+       }
+      },
+      "side": {
+       "genuine_watches": 16,
+       "median_of_watch_medians": -0.18774,
+       "photos": 16,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 8,
+        "holdout": 5,
+        "validation": 3
+       },
+       "watches_by_source": {
+        "bobswatches.com": 16
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 16,
+      "INCONCLUSIVE": 1,
+      "OBSTRUCTED": 79
+     }
+    },
+    "4": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 91,
+       "median_of_watch_medians": 0.00031,
+       "photos": 91,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 57,
+        "holdout": 18,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 91
+       }
+      },
+      "pos": {
+       "genuine_watches": 91,
+       "median_of_watch_medians": 0.16415,
+       "photos": 91,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 57,
+        "holdout": 18,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 91
+       }
+      },
+      "side": {
+       "genuine_watches": 91,
+       "median_of_watch_medians": -0.12408,
+       "photos": 91,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 57,
+        "holdout": 18,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 91
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 91,
+      "OBSTRUCTED": 5
+     }
+    },
+    "5": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 87,
+       "median_of_watch_medians": -0.01336,
+       "photos": 87,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 57,
+        "holdout": 15,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 87
+       }
+      },
+      "pos": {
+       "genuine_watches": 87,
+       "median_of_watch_medians": 0.12044,
+       "photos": 87,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 57,
+        "holdout": 15,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 87
+       }
+      },
+      "side": {
+       "genuine_watches": 87,
+       "median_of_watch_medians": -0.05715,
+       "photos": 87,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 57,
+        "holdout": 15,
+        "validation": 15
+       },
+       "watches_by_source": {
+        "bobswatches.com": 87
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 87,
+      "OBSTRUCTED": 9
+     }
+    },
+    "6": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 88,
+       "median_of_watch_medians": 0.00232,
+       "photos": 88,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 55,
+        "holdout": 16,
+        "validation": 17
+       },
+       "watches_by_source": {
+        "bobswatches.com": 88
+       }
+      },
+      "pos": {
+       "genuine_watches": 88,
+       "median_of_watch_medians": 0.12473,
+       "photos": 88,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 55,
+        "holdout": 16,
+        "validation": 17
+       },
+       "watches_by_source": {
+        "bobswatches.com": 88
+       }
+      },
+      "side": {
+       "genuine_watches": 88,
+       "median_of_watch_medians": -0.0022,
+       "photos": 88,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 55,
+        "holdout": 16,
+        "validation": 17
+       },
+       "watches_by_source": {
+        "bobswatches.com": 88
+       }
+      },
+      "tilt": {
+       "genuine_watches": 88,
+       "median_of_watch_medians": 0.00088,
+       "photos": 88,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 55,
+        "holdout": 16,
+        "validation": 17
+       },
+       "watches_by_source": {
+        "bobswatches.com": 88
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 88,
+      "OBSTRUCTED": 4,
+      "UNRELIABLE": 4
+     }
+    },
+    "7": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 87,
+       "median_of_watch_medians": -0.00181,
+       "photos": 87,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 54,
+        "holdout": 16,
+        "validation": 17
+       },
+       "watches_by_source": {
+        "bobswatches.com": 87
+       }
+      },
+      "pos": {
+       "genuine_watches": 87,
+       "median_of_watch_medians": 0.13061,
+       "photos": 87,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 54,
+        "holdout": 16,
+        "validation": 17
+       },
+       "watches_by_source": {
+        "bobswatches.com": 87
+       }
+      },
+      "side": {
+       "genuine_watches": 87,
+       "median_of_watch_medians": 0.05978,
+       "photos": 87,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 54,
+        "holdout": 16,
+        "validation": 17
+       },
+       "watches_by_source": {
+        "bobswatches.com": 87
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 87,
+      "OBSTRUCTED": 9
+     }
+    },
+    "8": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 93,
+       "median_of_watch_medians": -0.02076,
+       "photos": 93,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 58,
+        "holdout": 18,
+        "validation": 17
+       },
+       "watches_by_source": {
+        "bobswatches.com": 93
+       }
+      },
+      "pos": {
+       "genuine_watches": 93,
+       "median_of_watch_medians": 0.15722,
+       "photos": 93,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 58,
+        "holdout": 18,
+        "validation": 17
+       },
+       "watches_by_source": {
+        "bobswatches.com": 93
+       }
+      },
+      "side": {
+       "genuine_watches": 93,
+       "median_of_watch_medians": 0.09491,
+       "photos": 93,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 58,
+        "holdout": 18,
+        "validation": 17
+       },
+       "watches_by_source": {
+        "bobswatches.com": 93
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 93,
+      "INCONCLUSIVE": 1,
+      "OBSTRUCTED": 2
+     }
+    },
+    "9": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 93,
+       "median_of_watch_medians": 0.00655,
+       "photos": 93,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 59,
+        "holdout": 18,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 93
+       }
+      },
+      "pos": {
+       "genuine_watches": 93,
+       "median_of_watch_medians": 0.21078,
+       "photos": 93,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 59,
+        "holdout": 18,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 93
+       }
+      },
+      "side": {
+       "genuine_watches": 93,
+       "median_of_watch_medians": 0.17958,
+       "photos": 93,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 59,
+        "holdout": 18,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 93
+       }
+      },
+      "tilt": {
+       "genuine_watches": 93,
+       "median_of_watch_medians": 0.05573,
+       "photos": 93,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 59,
+        "holdout": 18,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 93
+       }
+      }
+     },
+     "shape": "baton",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 93,
+      "OBSTRUCTED": 3
+     }
+    },
+    "10": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 93,
+       "median_of_watch_medians": -0.02421,
+       "photos": 93,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 61,
+        "holdout": 16,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 93
+       }
+      },
+      "pos": {
+       "genuine_watches": 93,
+       "median_of_watch_medians": 0.25171,
+       "photos": 93,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 61,
+        "holdout": 16,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 93
+       }
+      },
+      "side": {
+       "genuine_watches": 93,
+       "median_of_watch_medians": 0.22057,
+       "photos": 93,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 61,
+        "holdout": 16,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 93
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 93,
+      "OBSTRUCTED": 3
+     }
+    },
+    "11": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 92,
+       "median_of_watch_medians": -0.02849,
+       "photos": 92,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 58,
+        "holdout": 18,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 92
+       }
+      },
+      "pos": {
+       "genuine_watches": 92,
+       "median_of_watch_medians": 0.17391,
+       "photos": 92,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 58,
+        "holdout": 18,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 92
+       }
+      },
+      "side": {
+       "genuine_watches": 92,
+       "median_of_watch_medians": 0.14044,
+       "photos": 92,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 58,
+        "holdout": 18,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 92
+       }
+      }
+     },
+     "shape": "round",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 92,
+      "OBSTRUCTED": 4
+     }
+    },
+    "12": {
+     "metrics": {
+      "inout": {
+       "genuine_watches": 85,
+       "median_of_watch_medians": 0.00198,
+       "photos": 85,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 52,
+        "holdout": 17,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 85
+       }
+      },
+      "side": {
+       "genuine_watches": 85,
+       "median_of_watch_medians": -0.05048,
+       "photos": 85,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 52,
+        "holdout": 17,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 85
+       }
+      },
+      "tilt": {
+       "genuine_watches": 85,
+       "median_of_watch_medians": -0.10886,
+       "photos": 85,
+       "sources": 1,
+       "underrepresented": true,
+       "watches_by_partition": {
+        "development": 52,
+        "holdout": 17,
+        "validation": 16
+       },
+       "watches_by_source": {
+        "bobswatches.com": 85
+       }
+      }
+     },
+     "shape": "triangle",
+     "statuses_in_admitted_photos": {
+      "ELIGIBLE": 85,
+      "OBSTRUCTED": 11
+     }
+    }
+   }
+  },
+  "watches_used": 176,
+  "watches_used_by_model": {
+   "gmt_126710": 24,
+   "submariner_124060": 56,
+   "submariner_126610": 96
+  }
+ }
+}
