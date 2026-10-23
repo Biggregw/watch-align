@@ -1,0 +1,16 @@
+{
+  "request": "review-remaining-44-20261023.json",
+  "task": "review_batch",
+  "status": "done",
+  "started": "2026-10-23T20:47:15+00:00",
+  "finished": "2026-10-23T20:52:10+00:00",
+  "result": {
+    "review_batch": "b20261023T204727Z-3c45e8",
+    "review_photos": 44,
+    "onedrive_folder": "WatchAlign/review/batches/b20261023T204727Z-3c45e8",
+    "calibration_approved": false,
+    "indexed_originals": 417,
+    "excluded_previously_screened": 373,
+    "remaining_after_selection": 44
+  }
+}
