@@ -42,6 +42,8 @@ final class Alpha99Pipeline {
         String alignmentTechnical;AlignmentReference alignmentReference;Bitmap alignmentOverview;
         /** Watch Align 1.6.0: clearly-off check against the printed minute track (decides the alignment results). */
         ClearlyOff.Result clearlyOff;
+        /** Internal shadow only: never used by classifications, technical text, or evidence overlays. */
+        Map<Integer,PositionReferenceFit.Reading> positionReferenceShadow=java.util.Collections.emptyMap();
         /** 1.6.6: why the clearly-off check failed on this photo as a whole (exception type and message), or null */
         String clearlyOffError;
         boolean ok(){return pose!=null&&pose.valid&&pose.homography!=null&&summary!=null;}
@@ -86,6 +88,8 @@ final class Alpha99Pipeline {
             // 1.6.0: the clearly-off check decides the answers; earlier results stay in the technical details
             String legacy=o.alignmentTechnical;
             AlignmentDecision.applyClearlyOff(o.alignment.markers,o.clearlyOff,o.alignment.photoReason);
+            try{o.positionReferenceShadow=PositionReferenceShadow.measure(o.clearlyOff,model,ref,o.alignment.photoReason);}
+            catch(Throwable t){/* optional shadow failure, including class loading, cannot fail the analysis */}
             o.alignmentTechnical=(o.clearlyOff==null?"Marker alignment check: could not be run on this photo"+(o.clearlyOffError==null?".":" (internal analysis failure: "+o.clearlyOffError+")."):ClearlyOff.technical(o.clearlyOff))
                     +"\n\nEarlier luminous / outer-metal analysis (kept for reference; not used for the results above):\n"+legacy;
             o.alignmentCloseups.clear();
