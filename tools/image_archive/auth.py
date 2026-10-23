@@ -61,7 +61,8 @@ def device_login(app, cache, save_cache, display=print):
     if not flow.get('user_code'):
         raise RuntimeError('device authorization unavailable')
     # Display only user interaction fields, never raw flow/token payloads.
-    display('Open https://microsoft.com/devicelogin and enter: ' + flow['user_code'])
+    # Use Microsoft's actual verification URI: consumer sessions return /link, not /devicelogin.
+    display('Open ' + flow.get('verification_uri', 'https://www.microsoft.com/link') + ' and enter: ' + flow['user_code'])
     result = app.acquire_token_by_device_flow(flow)
     if 'access_token' not in result:
         raise RuntimeError('Microsoft consent failed')
