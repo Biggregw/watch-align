@@ -415,8 +415,12 @@ def test_setup_hands_over_the_cache_without_printing_it(tmp_path, capsys):
     secret = [c for c in calls if c[0][:3] == ["gh", "secret", "set"]]
     assert len(secret) == 1 and "refresh-token-value" in secret[0][1]
     assert all("refresh-token-value" not in " ".join(c[0]) for c in calls)
-    policy = [c for c in calls if c[0][-4:] == ["-f", "name=experiment/archive-first-onedrive-20261023", "-f", "type=branch"]]
-    assert policy, "environment must be restricted to the archive branch"
+    assert len(calls) == 3
+    assert all(c[0][:3] in (["gh", "variable", "set"], ["gh", "secret", "set"]) for c in calls), (
+        "handover must never overwrite the owner's reviewer/branch protection rules"
+    )
+    assert not any("api" in c[0] or "-X" in c[0] for c in calls)
+    assert all("--env" in c[0] and "onedrive-archive" in c[0] for c in calls)
 
 
 def test_documented_examples_are_valid():
