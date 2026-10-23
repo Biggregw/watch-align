@@ -1,6 +1,6 @@
 # Dataset harvester
 
-Run 20261022T084139Z · 2026-10-22T08:41:39Z → 2026-10-22T08:41:52Z
+Run 20261023T083742Z · 2026-10-23T08:37:42Z → 2026-10-23T08:37:49Z
 
 ## Adapters
 
@@ -15,29 +15,24 @@ Search results filtered before storing: not_gmt 12
 
 - 1 new sources discovered (179 already known)
 - 1 sources examined (0 deferred, 0 failed)
-- 1 images downloaded, 0 used from local copies
+- 0 images downloaded, 0 used from local copies
 - 0 exact and 0 near duplicates
-- 1 images rejected, 0 inconclusive
+- 0 images rejected, 0 inconclusive
 - 0 measurement-quality images
 - 0 physical watches accepted
 - 0 quarantined
 - 1 rejected
 
-Images rejected or inconclusive, by reason:
-
-- reject_no_dial: 1
-
 Watch decisions, by reason:
 
-- reject_unusable_imagery: 1
-- reject_no_dial: 1
+- reject_no_images: 1
 
 ## Dataset now (accepted, independent physical watches)
 
 - Genuine: 13 independent watches
 - Replica: 28 independent watches
 - Usable images in accepted watches: 78 (images are views, not independent samples)
-- Quarantined watches: 165 · rejected watches: 172
+- Quarantined watches: 165 · rejected watches: 173
 - Reference-only (not counted as population): official_catalogue_2026
 
 Replica watches by factory:
