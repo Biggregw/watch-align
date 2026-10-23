@@ -84,6 +84,7 @@ def test_device_login_uses_microsoft_issued_url():
             return {'user_code': 'test-only', 'verification_uri': 'https://www.microsoft.com/link'}
         def acquire_token_by_device_flow(self, flow):
             return {'access_token': 'not-for-output'}
+        def get_accounts(self): return [{'username': 'owner@example.test'}]
     class Cache:
         def serialize(self): return 'not-for-output'
     printed = []

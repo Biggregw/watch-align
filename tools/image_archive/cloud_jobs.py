@@ -20,7 +20,8 @@ import zipfile
 from .auth import client, github_cache_writer, token_provider
 from .inventory import read_original
 from .onedrive import GRAPH, OneDriveBackend
-from .unreviewed import backup, candidates, image_extension, public_record, summary
+from . import review as R
+from .unreviewed import backup, candidates, image_extension, provenance, public_record, summary
 
 OBJECT_KEY = re.compile(r"^unreviewed/objects/[0-9a-f]{2}/([0-9a-f]{64})\.(jpg|png|webp|tif)$")
 MANIFEST_PREFIX = "unreviewed/manifests/runs"
@@ -36,6 +37,9 @@ def drive_from_protected_environment(environ=None):
         raise RuntimeError("protected OneDrive environment has not been configured")
     if not env.get("CI"):
         raise RuntimeError("remote cloud operations are restricted to protected CI")
+    pin = env.get("ONEDRIVE_ACCOUNT_SHA256") or ""
+    if pin and not re.fullmatch(r"[0-9a-f]{64}", pin.strip().lower()):
+        raise RuntimeError("ONEDRIVE_ACCOUNT_SHA256 must be a SHA-256 hex digest")
     application, cache = client(env["ONEDRIVE_CLIENT_ID"], env["ONEDRIVE_MSAL_CACHE"])
     # GitHub CLI uses the narrowly scoped secret-writer credential only to update
     # an encrypted environment secret when MSAL refreshes; never print it.
@@ -49,25 +53,32 @@ def drive_from_protected_environment(environ=None):
                 os.environ.pop("GH_TOKEN", None)
             else:
                 os.environ["GH_TOKEN"] = old
-    return OneDriveBackend(token_provider(application, cache, persist), authorized=True)
+    return OneDriveBackend(token_provider(application, cache, persist, pin or None), authorized=True)
+
+
+def configured(environ=None):
+    env = environ if environ is not None else os.environ
+    return all(env.get(n) for n in ("ONEDRIVE_CLIENT_ID", "ONEDRIVE_MSAL_CACHE", "ONEDRIVE_CACHE_WRITE_TOKEN"))
 
 
 def manifest_keys(drive):
-    url = drive._item(MANIFEST_PREFIX) + ":/children"
-    result = []
-    while url:
-        response = drive._request("GET", url, allowed=(200, 404))
-        if response.status_code == 404:
-            break
-        body = response.json()
-        for entry in body.get("value", []):
-            name = entry.get("name", "")
-            if "file" in entry and re.fullmatch(r"[A-Za-z0-9_.-]+\.json", name):
-                result.append(MANIFEST_PREFIX + "/" + name)
-        url = body.get("@odata.nextLink")
-        if url and not url.startswith(GRAPH + "/"):
-            raise RuntimeError("unexpected OneDrive pagination host")
-    return sorted(set(result))
+    return sorted({MANIFEST_PREFIX + "/" + name for name, is_file, _ in drive.list_children(MANIFEST_PREFIX)
+                   if is_file and re.fullmatch(r"[A-Za-z0-9_.-]+\.json", name)})
+
+
+def remote_objects(drive):
+    """Every original actually stored: sha256 -> (key, size). Foreign or malformed names fail closed."""
+    found = {}
+    for prefix, is_dir, _ in drive.list_children("unreviewed/objects"):
+        if is_dir or not re.fullmatch(r"[0-9a-f]{2}", prefix):
+            raise ValueError("unexpected entry in the originals folder")
+        for name, is_file, size in drive.list_children("unreviewed/objects/" + prefix):
+            key = f"unreviewed/objects/{prefix}/{name}"
+            match = OBJECT_KEY.fullmatch(key)
+            if not is_file or not match or match.group(1)[:2] != prefix:
+                raise ValueError("unexpected original-photo object name")
+            found[match.group(1)] = (key, size)
+    return found
 
 
 def remote_index(drive):
@@ -165,15 +176,257 @@ def export_review_batch(drive, destination, *, limit=20, offset=0, max_bytes=22_
             "output": str(destination), "calibration_approved": False}
 
 
+# ----------------------------------------------------------------------------------- reconciliation
+
+def reconcile(drive, repo, *, repair=False, job_id=None):
+    """Compare stored originals with the manifests. Repair writes a manifest for verified orphans only.
+
+    An interrupted upload can leave originals stored but not yet listed in a manifest (the manifest is
+    written every 20 photos). Each orphan is downloaded, re-hashed and format-checked before it is listed;
+    a corrupt orphan is reported, never listed or deleted.
+    """
+    indexed = remote_index(drive)
+    stored = remote_objects(drive)
+    orphans = sorted(set(stored) - set(indexed))
+    missing = sorted(d for d in indexed if d not in stored)
+    size_mismatch = sorted(d for d in indexed if d in stored and stored[d][1] and stored[d][1] != indexed[d]["size"])
+    report = {"indexed_originals": len(indexed), "stored_originals": len(stored),
+              "orphans": len(orphans), "missing_objects": len(missing), "size_mismatch": len(size_mismatch),
+              "missing_sha256": missing, "size_mismatch_sha256": size_mismatch, "calibration_approved": False}
+    if not repair or not orphans:
+        report["repaired"] = 0
+        return report
+    sources = provenance(Path(repo))
+    items, corrupt = [], []
+    for digest in orphans:
+        key, size = stored[digest]
+        raw = drive.get(key)
+        ext = image_extension(raw)
+        if sha256(raw).hexdigest() != digest or ext != OBJECT_KEY.fullmatch(key).group(2):
+            corrupt.append(digest)
+            continue
+        rows = sources.get(digest, [])
+        items.append({"sha256": digest, "key": key, "size": len(raw), "format": ext,
+                      "review_status": "unreviewed", "calibration_approved": False,
+                      "physical_watch_identity_conflict": len({r["physical_watch_id"] for r in rows
+                                                               if r["physical_watch_id"]}) > 1,
+                      "associations": rows, "recovered_by": "reconcile"})
+    keys = []
+    job_id = job_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-recovered"
+    for n in range(0, len(items), 20):
+        key = f"{MANIFEST_PREFIX}/{job_id}-{n // 20:04d}.json"
+        drive.put(key, json.dumps({"schema_version": 1, "purpose": SCHEMA_PURPOSE, "calibration_approved": False,
+                                   "review_status": "unreviewed", "items": items[n:n + 20]},
+                                  sort_keys=True, ensure_ascii=False).encode("utf-8"))
+        keys.append(key)
+    report.update({"repaired": len(items), "corrupt_orphans": corrupt, "recovery_manifests": keys})
+    return report
+
+
+def incremental_backup(drive, records):
+    """Upload only originals not already stored; list stored-but-unindexed ones after verification.
+
+    Re-running after an interruption costs one folder listing instead of re-downloading every photo.
+    """
+    stored = remote_objects(drive)
+    indexed = remote_index(drive)
+    upload, list_only, skipped = [], [], 0
+    for r in records:
+        if r["sha256"] in indexed and r["sha256"] in stored:
+            skipped += 1
+        elif r["sha256"] in stored:
+            if stored[r["sha256"]][1] not in (0, r["size"]):
+                raise ValueError("a stored original differs in size from the recovered bytes; not overwritten")
+            list_only.append(r)
+        else:
+            upload.append(r)
+    # backup() re-verifies bytes for list_only items too (put() of identical bytes is a no-op check).
+    result = backup(drive, upload + list_only) if (upload or list_only) else {"manifest_keys": []}
+    return {"already_archived": skipped, "uploaded": len(upload), "indexed_existing": len(list_only),
+            "manifest_keys": result["manifest_keys"], "review_status": "unreviewed",
+            "calibration_approved": False}
+
+
+# ----------------------------------------------------------------------------------- review
+
+def repo_paths(repo):
+    base = Path(repo) / "archive"
+    return {"batches": base / "batches", "decisions": base / "decisions", "results": base / "results",
+            "evidence": base / "approved-evidence.json", "requests": base / "requests"}
+
+
+def create_review_batch(drive, repo, *, size=20, family_filter=None, local_copy=None, now=None):
+    """Make the next review batch: viewing copies in OneDrive, the batch index in the repository."""
+    paths = repo_paths(repo)
+    batches = R.load_batches(paths["batches"]) if paths["batches"].exists() else {}
+    decisions = R.load_decisions(paths["decisions"], batches) if paths["decisions"].exists() else []
+    reviewed, waiting = R.reviewed_and_batched(batches, R.ledger(decisions), now=now)
+    entries = R.batch_entries(remote_index(drive), reviewed, waiting, size=size, family_filter=family_filter)
+    if not entries:
+        return {"review_batch": None, "review_photos": 0, "reason": "no unreviewed originals left"}
+    batch = R.batch_document(R.new_batch_id(now), entries)
+    files = R.build_batch_files(batch, drive.get)
+    for rel, data in files.items():
+        drive.put(f"review/batches/{batch['batch_id']}/{rel}", data)
+        if local_copy:
+            out = Path(local_copy) / batch["batch_id"] / rel
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_bytes(data)
+    paths["batches"].mkdir(parents=True, exist_ok=True)
+    (paths["batches"] / f"{batch['batch_id']}.json").write_text(
+        json.dumps(batch, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return {"review_batch": batch["batch_id"], "review_photos": len(entries),
+            "onedrive_folder": batch["onedrive_folder"], "calibration_approved": False}
+
+
+def ingest_decisions(repo, drive=None):
+    """Validate every decision file, rebuild approved evidence, and mirror both to OneDrive when connected."""
+    paths = repo_paths(repo)
+    batches = R.load_batches(paths["batches"]) if paths["batches"].exists() else {}
+    decisions = R.load_decisions(paths["decisions"], batches) if paths["decisions"].exists() else []
+    effective = R.ledger(decisions)
+    evidence = R.approved_evidence(effective, batches)
+    paths["evidence"].parent.mkdir(parents=True, exist_ok=True)
+    paths["evidence"].write_text(json.dumps(evidence, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    mirrored = 0
+    if drive is not None:
+        for name, doc in decisions:
+            drive.put(f"review/decisions/{name}", json.dumps(doc, indent=2, sort_keys=True).encode())
+            mirrored += 1
+        payload = paths["evidence"].read_bytes()
+        drive.put(f"review/approved/approved-evidence-{sha256(payload).hexdigest()[:16]}.json", payload)
+    return {"decision_files": len(decisions), "reviewed_photos": len(effective),
+            "approved_photos": evidence["approved_photos"], "withheld": evidence["withheld"],
+            "mirrored_to_onedrive": mirrored}
+
+
+# ----------------------------------------------------------------------------------- credentials
+
+def keepalive(drive, environ=None, session=None):
+    """Use the refresh token (persisting the rotated cache) and report the cache-writer token's expiry."""
+    import requests
+    env = environ if environ is not None else os.environ
+    drive._root()
+    report = {"microsoft_connection": "renewed_and_saved"}
+    response = (session or requests).get("https://api.github.com/repos/" + env.get("GITHUB_REPOSITORY", ""),
+                                         headers={"Authorization": "Bearer " + env.get("ONEDRIVE_CACHE_WRITE_TOKEN", ""),
+                                                  "Accept": "application/vnd.github+json"}, timeout=30)
+    expiry = response.headers.get("github-authentication-token-expiration")
+    report["cache_writer_token"] = "valid" if response.status_code == 200 else f"http_{response.status_code}"
+    if expiry:
+        try:
+            when = datetime.strptime(expiry.replace(" UTC", " +0000"), "%Y-%m-%d %H:%M:%S %z")
+            days = (when - datetime.now(timezone.utc)).days
+            report["cache_writer_token_days_left"] = days
+            report["cache_writer_token_warning"] = days < 30
+        except ValueError:
+            report["cache_writer_token_days_left"] = None
+    return report
+
+
+def reauthorize(environ=None, *, device_login=None, writer=None, display=None):
+    """Renew consent from a phone when the refresh token has lapsed (no Codespace needed).
+
+    The Microsoft code appears in the Actions log; anyone could read it, so the new cache is saved ONLY if the
+    signed-in account matches the configured owner pin (ONEDRIVE_ACCOUNT_SHA256). Scope stays Files.ReadWrite.AppFolder.
+    """
+    from . import auth
+    env = environ if environ is not None else os.environ
+    pin = (env.get("ONEDRIVE_ACCOUNT_SHA256") or "").strip().lower()
+    if not re.fullmatch(r"[0-9a-f]{64}", pin):
+        raise RuntimeError("set the ONEDRIVE_ACCOUNT_SHA256 variable before re-authorising from CI")
+    if not (env.get("ONEDRIVE_CLIENT_ID") and env.get("ONEDRIVE_CACHE_WRITE_TOKEN") and env.get("GITHUB_REPOSITORY")):
+        raise RuntimeError("protected OneDrive environment has not been configured")
+    application, cache = client(env["ONEDRIVE_CLIENT_ID"])
+    def persist(serialized):
+        old = os.environ.get("GH_TOKEN")
+        try:
+            os.environ["GH_TOKEN"] = env["ONEDRIVE_CACHE_WRITE_TOKEN"]
+            (writer or github_cache_writer(env["GITHUB_REPOSITORY"]))(serialized)
+        finally:
+            if old is None:
+                os.environ.pop("GH_TOKEN", None)
+            else:
+                os.environ["GH_TOKEN"] = old
+    import sys
+    show = display or (lambda text: print(text, file=sys.stderr, flush=True))  # live in the log, not the report
+    (device_login or auth.device_login)(application, cache, persist, show, expected_fingerprint=pin)
+    return {"microsoft_connection": "reauthorised_and_saved", "scope": "Files.ReadWrite.AppFolder"}
+
+
+# ----------------------------------------------------------------------------------- requests
+
+TASKS = ("verify", "reconcile", "recover", "review_batch", "keepalive", "ingest", "reauthorize")
+REQUEST_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,80}\.json$")
+
+
+def parse_request(path):
+    path = Path(path)
+    if not REQUEST_NAME.fullmatch(path.name):
+        raise ValueError("request file name must be letters, digits, '.', '_' or '-' ending in .json")
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(doc, dict) or doc.get("task") not in TASKS:
+        raise ValueError(f"request task must be one of {TASKS}")
+    options = doc.get("options") or {}
+    allowed = {"verify": {"max_photos"}, "reconcile": {"repair"}, "keepalive": set(), "ingest": set(),
+               "reauthorize": set(),
+               "recover": {"sources", "confirm_no_other_transfer", "limit"},
+               "review_batch": {"size", "family"}}[doc["task"]]
+    if set(options) - allowed:
+        raise ValueError(f"unsupported options for {doc['task']}: {sorted(set(options) - allowed)}")
+    if doc["task"] == "recover":
+        if options.get("confirm_no_other_transfer") is not True:
+            raise ValueError("recover needs options.confirm_no_other_transfer=true (no other upload may be running)")
+        for src in options.get("sources") or []:
+            if not (isinstance(src, dict) and re.fullmatch(r"\d{5,20}", str(src.get("run_id", "")))
+                    and re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", str(src.get("artifact", "")))):
+                raise ValueError("recover sources must be {run_id: digits, artifact: name}")
+    if doc["task"] == "review_batch":
+        if not 1 <= int(options.get("size", 20)) <= 60:
+            raise ValueError("review_batch size must be 1..60")
+        if options.get("family") not in (None, *R.FAMILY_HOURS):
+            raise ValueError("unknown family")
+    return doc["task"], options
+
+
+def run_request(task, options, repo, drive, *, scan=(), local_copy=None):
+    if task == "verify":
+        return {**verify_remote(drive, max_photos=options.get("max_photos")),
+                **{k: v for k, v in reconcile(drive, repo).items() if k != "calibration_approved"}}
+    if task == "reconcile":
+        return reconcile(drive, repo, repair=bool(options.get("repair")))
+    if task == "recover":
+        records = candidates(repo, scan)
+        if options.get("limit"):
+            records = records[:int(options["limit"])]
+        return {**summary(records), **incremental_backup(drive, records)}
+    if task == "review_batch":
+        return create_review_batch(drive, repo, size=int(options.get("size", 20)),
+                                   family_filter=options.get("family"), local_copy=local_copy)
+    if task == "keepalive":
+        return keepalive(drive)
+    return ingest_decisions(repo, drive)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("action", choices=("preflight", "pilot", "upload", "verify", "review"))
+    ap.add_argument("action", choices=("preflight", "pilot", "upload", "verify", "review", "request",
+                                       "validate-decisions"))
+    ap.add_argument("--request", type=Path, action="append", default=[], help="archive/requests/*.json to run")
+    ap.add_argument("--results", type=Path, help="Write each request result here (default archive/results)")
+    ap.add_argument("--local-copy", type=Path, help="Also keep review-batch files here (for an encrypted artifact)")
     ap.add_argument("--repo", type=Path, default=Path.cwd())
     ap.add_argument("--scan", type=Path, action="append", default=[])
     ap.add_argument("--limit", type=int, default=3)
     ap.add_argument("--offset", type=int, default=0, help="Skip N catalogued-first originals for review batches")
     ap.add_argument("--output", type=Path, default=Path("/tmp/watch-align-review.zip"))
     args = ap.parse_args(argv)
+    if args.action == "validate-decisions":
+        report = {"action": "validate-decisions", **ingest_decisions(args.repo)}
+        print(json.dumps(report, indent=2))
+        return report
+    if args.action == "request":
+        return run_requests(args)
     if args.action in ("preflight", "pilot", "upload"):
         for root in args.scan:
             if not root.exists():
@@ -199,6 +452,44 @@ def main(argv=None):
             drive, args.output, limit=args.limit, offset=args.offset)}
     print(json.dumps(report, indent=2))
     return report
+
+
+def run_requests(args):
+    """Run each pending request; write its result (counts and hashes only) for the repository."""
+    results_dir = args.results or repo_paths(args.repo)["results"]
+    results_dir.mkdir(parents=True, exist_ok=True)
+    drive = None
+    reports = []
+    for path in args.request:
+        out = results_dir / path.name
+        if out.exists():
+            reports.append({"request": path.name, "status": "already_done"})
+            continue
+        started = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        try:
+            task, options = parse_request(path)
+            if task == "reauthorize":
+                result, status = reauthorize(), "done"
+            elif task == "ingest" and not configured():
+                result = ingest_decisions(args.repo)
+                status = "done_without_onedrive"
+            elif not configured():
+                result, status = {}, "not_configured"
+            else:
+                drive = drive or drive_from_protected_environment()
+                result, status = run_request(task, options, args.repo, drive, scan=args.scan,
+                                             local_copy=args.local_copy), "done"
+        except Exception as exc:  # report the failure class and message, never credentials
+            task = locals().get("task", "unknown")
+            result, status = {"error": type(exc).__name__, "message": str(exc)[:300]}, "failed"
+        report = {"request": path.name, "task": task, "status": status, "started": started,
+                  "finished": datetime.now(timezone.utc).isoformat(timespec="seconds"), "result": result}
+        out.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        reports.append(report)
+    print(json.dumps(reports, indent=2))
+    if any(r.get("status") == "failed" for r in reports):
+        raise SystemExit(1)
+    return reports
 
 
 if __name__ == "__main__":

@@ -24,28 +24,28 @@ def item():
                               "physical_watch_id": "example-watch"}]}
 
 
-class Drive:
+from tools.image_archive.tests.fake_drive import FakeDrive
+
+MANIFEST = "unreviewed/manifests/runs/test-manifest.json"
+
+
+class Drive(FakeDrive):
+    """One archived original and its manifest; `records` / `payloads` stay editable like the old fake."""
     def __init__(self, records=None):
+        super().__init__()
         self.records = records or [item()]
         self.payloads = {self.records[0]["key"]: picture()}
-        self.manifest_keys = ["unreviewed/manifests/runs/test-manifest.json"]
-        self.requests = []
-    def _item(self, key):
-        return "https://graph.microsoft.com/v1.0/me/drive/items/root:/" + key
-    def _request(self, method, url, allowed):
-        self.requests.append((method, url))
-        class Response:
-            status_code = 200
-            def json(s):
-                return {"value": [{"name": "test-manifest.json", "file": {}}]}
-        return Response()
+    def _sync(self):
+        self.files = dict(self.payloads)
+        self.files[MANIFEST] = json.dumps({"schema_version": 1, "purpose": "unaltered_original_backup_only",
+                                           "calibration_approved": False, "review_status": "unreviewed",
+                                           "items": self.records}).encode()
     def get(self, key):
-        if key in self.manifest_keys:
-            return json.dumps({"schema_version": 1,
-                               "purpose": "unaltered_original_backup_only",
-                               "calibration_approved": False, "review_status": "unreviewed",
-                               "items": self.records}).encode()
-        return self.payloads[key]
+        self._sync()
+        return super().get(key)
+    def list_children(self, prefix):
+        self._sync()
+        return super().list_children(prefix)
 
 
 def test_missing_protected_credentials_never_connects():
@@ -111,12 +111,22 @@ def test_preflight_needs_no_one_drive_credentials(tmp_path):
     assert report["unique_originals"] == 1
 
 
-def test_paginated_manifest_refuses_foreign_server():
-    remote = Drive()
-    class Bad:
+def test_paginated_listing_refuses_foreign_server():
+    from tools.image_archive.onedrive import OneDriveBackend, GraphError
+    class Response:
         status_code = 200
-        def json(self):
-            return {"value": [], "@odata.nextLink": "https://attacker.test/leak"}
-    remote._request = lambda *args, **kwargs: Bad()
-    with pytest.raises(RuntimeError, match="pagination host"):
-        jobs.manifest_keys(remote)
+        headers = {}
+        def __init__(self, doc): self.doc = doc
+        def json(self): return self.doc
+    class Session:
+        def __init__(self):
+            self.docs = [{"id": "root"}, {"value": [], "@odata.nextLink": "https://attacker.test/leak"}]
+            self.urls = []
+        def request(self, method, url, **kw):
+            self.urls.append(url)
+            return Response(self.docs.pop(0))
+    session = Session()
+    drive = OneDriveBackend(lambda: "secret", authorized=True, session=session, sleep=lambda _: None)
+    with pytest.raises(GraphError, match="pagination host"):
+        jobs.manifest_keys(drive)
+    assert not any("attacker" in u for u in session.urls)

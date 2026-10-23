@@ -1,7 +1,22 @@
 name: Watch Align OneDrive archive (protected)
 
-# Manual-only until protection, storage renewal and review access are verified.
+# How it runs (no Codespace needed):
+#   * push to this branch adding archive/requests/*.json  -> runs each new request (verify, reconcile,
+#     recover, review_batch, keepalive, ingest) and commits its result to archive/results/
+#   * push changing archive/decisions/*.json              -> validates every review decision, rebuilds
+#     archive/approved-evidence.json and mirrors both to OneDrive
+#   * schedule / workflow_dispatch                        -> only once this file is on the default branch
+#     (GitHub limitation): weekly token keep-alive + verification, and manual operations.
+# Credentials exist only in the `onedrive-archive` environment (restricted to this branch). Without them every
+# request reports "not_configured" and nothing contacts Microsoft.
 on:
+  push:
+    branches: [experiment/archive-first-onedrive-20261023]
+    paths: ['archive/requests/*.json', 'archive/decisions/*.json']
+  pull_request:
+    paths: ['archive/**', 'tools/image_archive/**', '.github/workflows/watch-align-onedrive-archive.yml']
+  schedule:
+    - cron: '17 4 * * 1'
   workflow_dispatch:
     inputs:
       task:
@@ -14,32 +29,44 @@ on:
           - pilot
           - upload
           - verify
-          - review
+          - requests
       pilot_count:
-        description: "Pilot/review photo count (pilot 1-10; review 1-100)"
+        description: "Pilot photo count (1-10)"
         type: number
         required: false
         default: 3
-      review_offset:
-        description: "Skip this many photos in a review batch; 0, 20, 40, etc."
-        type: number
-        required: false
-        default: 0
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
   group: watch-align-personal-onedrive-archive
   cancel-in-progress: false
 
 jobs:
+  tests:
+    name: Archive tests and decision validation (no secrets)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r tools/image_archive/requirements.txt pytest pyyaml
+      - run: python -m pytest -q tools/image_archive/tests
+      - name: Every committed review decision must validate
+        run: python -m tools.image_archive.cloud_jobs validate-decisions --repo "$GITHUB_WORKSPACE"
+
   preflight:
     name: Read-only recovered originals inventory
-    if: ${{ inputs.task == 'preflight' }}
+    needs: tests
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'preflight' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -47,85 +74,184 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install existing archive requirements
-        run: python -m pip install -r tools/image_archive/requirements.txt
+      - run: python -m pip install -r tools/image_archive/requirements.txt
+      - name: Catalogue evidence branches (read-only)
+        run: git fetch --depth=1 origin data/harvest:refs/remotes/origin/data/harvest data/collected:refs/remotes/origin/data/collected testset-inbox:refs/remotes/origin/testset-inbox || true
       - name: Download pre-existing original-photo artifact
         run: |
           mkdir -p "$RUNNER_TEMP/watch-align-originals"
-          gh run download 37194686346 \
-            --name watch-calibrator-124060-37194686346 \
-            --dir "$RUNNER_TEMP/watch-align-originals"
+          gh run download 37194686346 --name watch-calibrator-124060-37194686346 \
+            --dir "$RUNNER_TEMP/watch-align-originals" || echo "::warning::source artifact unavailable"
       - name: Original byte inventory only
         run: |
           python -m tools.image_archive.cloud_jobs preflight \
             --repo "$GITHUB_WORKSPACE" --scan "$RUNNER_TEMP/watch-align-originals"
 
-  protected-archive:
-    name: OneDrive (owner-protected environment)
-    if: ${{ inputs.task != 'preflight' }}
+  manual-transfer:
+    name: OneDrive pilot / upload / verify (manual, protected)
+    needs: tests
+    if: ${{ github.event_name == 'workflow_dispatch' && contains(fromJSON('["pilot","upload","verify"]'), inputs.task) }}
     environment: onedrive-archive
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
-    env:
-      GH_TOKEN: ${{ github.token }}
-      ONEDRIVE_CLIENT_ID: ${{ vars.ONEDRIVE_CLIENT_ID }}
-      ONEDRIVE_MSAL_CACHE: ${{ secrets.ONEDRIVE_MSAL_CACHE }}
-      ONEDRIVE_CACHE_WRITE_TOKEN: ${{ secrets.ONEDRIVE_CACHE_WRITE_TOKEN }}
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install archive requirements and test runner
-        run: python -m pip install -r tools/image_archive/requirements.txt pytest
-      - name: Regression tests (no network or secrets)
-        run: python -m pytest -q tools/image_archive/tests/test_unreviewed.py tools/image_archive/tests/test_cloud_jobs.py
-      - name: Ensure protected environment is configured
-        env:
-          CHECK_CLIENT: ${{ vars.ONEDRIVE_CLIENT_ID }}
-          CHECK_CACHE: ${{ secrets.ONEDRIVE_MSAL_CACHE }}
-          CHECK_WRITER: ${{ secrets.ONEDRIVE_CACHE_WRITE_TOKEN }}
-        run: |
-          test -n "$CHECK_CLIENT" || { echo 'Missing ONEDRIVE_CLIENT_ID variable'; exit 1; }
-          test -n "$CHECK_CACHE" || { echo 'Missing ONEDRIVE_MSAL_CACHE environment secret'; exit 1; }
-          test -n "$CHECK_WRITER" || { echo 'Missing ONEDRIVE_CACHE_WRITE_TOKEN environment secret'; exit 1; }
+      - run: python -m pip install -r tools/image_archive/requirements.txt
+      - name: Catalogue evidence branches (read-only)
+        run: git fetch --depth=1 origin data/harvest:refs/remotes/origin/data/harvest data/collected:refs/remotes/origin/data/collected testset-inbox:refs/remotes/origin/testset-inbox || true
       - name: Recover existing catalogued originals
-        if: ${{ inputs.task == 'pilot' || inputs.task == 'upload' }}
+        if: ${{ inputs.task != 'verify' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p "$RUNNER_TEMP/watch-align-originals"
-          gh run download 37194686346 \
-            --name watch-calibrator-124060-37194686346 \
+          gh run download 37194686346 --name watch-calibrator-124060-37194686346 \
             --dir "$RUNNER_TEMP/watch-align-originals"
-      - name: Upload small pilot (only when explicitly selected)
-        if: ${{ inputs.task == 'pilot' }}
+      - name: Run the selected operation
         env:
+          TASK: ${{ inputs.task }}
           PILOT_COUNT: ${{ inputs.pilot_count }}
+          ONEDRIVE_CLIENT_ID: ${{ vars.ONEDRIVE_CLIENT_ID }}
+          ONEDRIVE_ACCOUNT_SHA256: ${{ vars.ONEDRIVE_ACCOUNT_SHA256 }}
+          ONEDRIVE_MSAL_CACHE: ${{ secrets.ONEDRIVE_MSAL_CACHE }}
+          ONEDRIVE_CACHE_WRITE_TOKEN: ${{ secrets.ONEDRIVE_CACHE_WRITE_TOKEN }}
         run: |
-          python -m tools.image_archive.cloud_jobs pilot \
-            --repo "$GITHUB_WORKSPACE" --scan "$RUNNER_TEMP/watch-align-originals" \
-            --limit "$PILOT_COUNT"
-      - name: Upload all recovered original photos (explicit selection only)
-        if: ${{ inputs.task == 'upload' }}
-        run: |
-          python -m tools.image_archive.cloud_jobs upload \
-            --repo "$GITHUB_WORKSPACE" --scan "$RUNNER_TEMP/watch-align-originals"
-      - name: Verify every indexed original by downloading and SHA-256
-        if: ${{ inputs.task == 'verify' }}
-        run: python -m tools.image_archive.cloud_jobs verify
-      - name: Prepare a bounded photo-review ZIP (explicit selection only)
-        if: ${{ inputs.task == 'review' }}
+          case "$TASK" in
+            pilot)  python -m tools.image_archive.cloud_jobs pilot --repo "$GITHUB_WORKSPACE" \
+                      --scan "$RUNNER_TEMP/watch-align-originals" --limit "$PILOT_COUNT" ;;
+            upload) python -m tools.image_archive.cloud_jobs upload --repo "$GITHUB_WORKSPACE" \
+                      --scan "$RUNNER_TEMP/watch-align-originals" ;;
+            verify) python -m tools.image_archive.cloud_jobs verify ;;
+          esac
+
+  automation:
+    name: Archive requests and review decisions (protected)
+    needs: tests
+    if: >-
+      ${{ github.event_name == 'push' || github.event_name == 'schedule' ||
+          (github.event_name == 'workflow_dispatch' && inputs.task == 'requests') }}
+    environment: onedrive-archive
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    permissions:
+      contents: write   # commit results (counts and hashes only, never photos) back to this branch
+      actions: read     # download source artifacts named in a recover request
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r tools/image_archive/requirements.txt
+      - name: Catalogue evidence branches (read-only)
+        run: git fetch --depth=1 origin data/harvest:refs/remotes/origin/data/harvest data/collected:refs/remotes/origin/data/collected testset-inbox:refs/remotes/origin/testset-inbox || true
+      - name: Work out which requests to run
+        id: plan
         env:
-          REVIEW_COUNT: ${{ inputs.pilot_count }}
-          REVIEW_OFFSET: ${{ inputs.review_offset }}
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
         run: |
-          python -m tools.image_archive.cloud_jobs review \
-            --limit "$REVIEW_COUNT" --offset "$REVIEW_OFFSET" \
-            --output "$RUNNER_TEMP/watch-align-review.zip"
-      - name: Publish manually requested review batch as an Actions artifact
-        if: ${{ inputs.task == 'review' }}
+          mkdir -p archive/requests
+          stamp=$(date -u +%Y%m%dT%H%M%SZ)
+          if [ "$EVENT" = push ]; then
+            if git cat-file -e "$BEFORE" 2>/dev/null; then range="$BEFORE $AFTER"; else range="$AFTER~1 $AFTER"; fi
+            git diff --name-only --diff-filter=A $range -- 'archive/requests/*.json' > "$RUNNER_TEMP/requests.txt" || true
+            if git diff --name-only $range -- 'archive/decisions/*.json' | grep -q .; then
+              f="archive/requests/ingest-$stamp.json"; echo '{"task": "ingest"}' > "$f"; echo "$f" >> "$RUNNER_TEMP/requests.txt"
+            fi
+          elif [ "$EVENT" = schedule ]; then
+            echo '{"task": "keepalive"}' > "archive/requests/keepalive-$stamp.json"
+            echo '{"task": "verify"}' > "archive/requests/verify-$stamp.json"
+            printf '%s\n' "archive/requests/keepalive-$stamp.json" "archive/requests/verify-$stamp.json" > "$RUNNER_TEMP/requests.txt"
+          else
+            for f in archive/requests/*.json; do [ -e "$f" ] && [ ! -e "archive/results/$(basename "$f")" ] && echo "$f"; done > "$RUNNER_TEMP/requests.txt" || true
+          fi
+          sort -u -o "$RUNNER_TEMP/requests.txt" "$RUNNER_TEMP/requests.txt"
+          echo "Requests:"; cat "$RUNNER_TEMP/requests.txt"
+          echo "count=$(grep -c . "$RUNNER_TEMP/requests.txt" || true)" >> "$GITHUB_OUTPUT"
+      - name: Download source artifacts named by recover requests
+        if: ${{ steps.plan.outputs.count != '0' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/originals"
+          python - "$RUNNER_TEMP/requests.txt" > "$RUNNER_TEMP/sources.txt" <<'PY'
+          import json, re, sys
+          for path in filter(None, open(sys.argv[1]).read().split()):
+              doc = json.load(open(path))
+              if doc.get("task") == "recover":
+                  for s in (doc.get("options") or {}).get("sources") or []:
+                      run, name = str(s.get("run_id", "")), str(s.get("artifact", ""))
+                      if re.fullmatch(r"\d{5,20}", run) and re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", name):
+                          print(run, name)
+          PY
+          while read -r run name; do
+            gh run download "$run" --name "$name" --dir "$RUNNER_TEMP/originals/$run-$name" \
+              || echo "::warning::artifact $name of run $run is unavailable (expired or removed)"
+          done < "$RUNNER_TEMP/sources.txt"
+      - name: Run requests
+        id: run
+        if: ${{ steps.plan.outputs.count != '0' }}
+        env:
+          ONEDRIVE_CLIENT_ID: ${{ vars.ONEDRIVE_CLIENT_ID }}
+          ONEDRIVE_ACCOUNT_SHA256: ${{ vars.ONEDRIVE_ACCOUNT_SHA256 }}
+          ONEDRIVE_MSAL_CACHE: ${{ secrets.ONEDRIVE_MSAL_CACHE }}
+          ONEDRIVE_CACHE_WRITE_TOKEN: ${{ secrets.ONEDRIVE_CACHE_WRITE_TOKEN }}
+        run: |
+          set +e
+          args=()
+          while read -r f; do [ -n "$f" ] && args+=(--request "$f"); done < "$RUNNER_TEMP/requests.txt"
+          python -m tools.image_archive.cloud_jobs request --repo "$GITHUB_WORKSPACE" \
+            --scan "$RUNNER_TEMP/originals" --local-copy "$RUNNER_TEMP/review" "${args[@]}" | tee "$RUNNER_TEMP/report.json"
+          code=${PIPESTATUS[0]}
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+      - name: Encrypt new review batch for an AI reviewer (only if a public key is configured)
+        id: seal
+        if: ${{ vars.REVIEW_PUBLIC_KEY_PEM != '' && steps.plan.outputs.count != '0' }}
+        env:
+          REVIEW_PUBLIC_KEY_PEM: ${{ vars.REVIEW_PUBLIC_KEY_PEM }}
+        run: |
+          if [ ! -d "$RUNNER_TEMP/review" ]; then echo "no new batch"; exit 0; fi
+          cd "$RUNNER_TEMP" && mkdir -p sealed
+          printf '%s\n' "$REVIEW_PUBLIC_KEY_PEM" > reviewer.pem
+          tar -cf - review | xz -6 > review.tar.xz
+          openssl rand 32 > key.bin
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in review.tar.xz -out sealed/review.tar.xz.enc -pass file:key.bin
+          openssl pkeyutl -encrypt -pubin -inkey reviewer.pem -pkeyopt rsa_padding_mode:oaep -in key.bin -out sealed/key.bin.enc
+          rm -f key.bin review.tar.xz
+          echo "sealed=1" >> "$GITHUB_OUTPUT"
+      - name: Publish the sealed batch (unreadable without the reviewer's private key)
+        if: ${{ steps.seal.outputs.sealed == '1' }}
         uses: actions/upload-artifact@v4
         with:
-          name: watch-align-unreviewed-visual-review
-          path: ${{ runner.temp }}/watch-align-review.zip
-          retention-days: 3
-          if-no-files-found: error
+          name: watch-align-review-batch-sealed
+          path: ${{ runner.temp }}/sealed/
+          retention-days: 14
+          if-no-files-found: ignore
+      - name: Commit results, batch indexes and approved evidence (no photographs)
+        if: ${{ always() && steps.plan.outputs.count != '0' }}
+        run: |
+          git config user.name "watch-align-archive[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add archive/requests archive/results archive/batches archive/approved-evidence.json 2>/dev/null || true
+          # Guard: never commit image bytes.
+          if git diff --cached --name-only | grep -Eiq '\.(jpe?g|png|webp|tiff?|heic|zip|enc)$'; then
+            echo "refusing to commit image or archive files"; exit 1; fi
+          git diff --cached --quiet && { echo "nothing to commit"; exit 0; }
+          git commit -q -m "Archive automation: results for run ${{ github.run_id }}"
+          for i in 1 2 3 4; do
+            git pull -q --rebase origin "${GITHUB_REF_NAME}" && git push -q origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((i * 5))
+          done
+          exit 1
+      - name: Fail the run if any request failed
+        if: ${{ steps.run.outputs.code != '' && steps.run.outputs.code != '0' }}
+        run: exit 1
