@@ -61,6 +61,19 @@ Examples are in `docs/image-archive/examples/`. A request runs once (its result 
   request and enter the code shown in the run log at microsoft.com/link — no Codespace.
 - Logs and results never contain tokens, signed download URLs or the cache; the commit step refuses image files.
 
+### Check the Codespace transfer first (read-only, optional)
+
+In the Codespace, with the cache already used for the transfer:
+
+```bash
+git pull && python -m tools.image_archive.unreviewed --scan /tmp/watch-align-originals --verify --authorized \
+  --client-id 06a3bb10-a5d3-4dde-9654-1e61de7cd064 --cache /tmp/watch-align-private/msal-cache.json
+```
+
+It downloads and re-hashes every archived original and reports `indexed_originals`, `stored_originals`, `orphans`
+(stored but not in a manifest) and `missing_objects`. Add `--repair` to list re-hashed orphans in a recovery manifest.
+Nothing is deleted or overwritten.
+
 ### One-time hand-over (≈5 minutes, after the Codespace transfer has finished)
 
 1. github.com → Settings → Developer settings → Fine-grained tokens → *Generate*: repository `Biggregw/watch-align` only;

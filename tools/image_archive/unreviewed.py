@@ -145,7 +145,23 @@ def main(argv=None):
     parser.add_argument("--authorized", action="store_true", help="Owner has authorized OneDrive backup")
     parser.add_argument("--client-id", help="Public Entra application ID")
     parser.add_argument("--cache", type=Path, help="Local MSAL cache outside the Git repository")
+    parser.add_argument("--verify", action="store_true",
+                        help="Read-only: re-hash every archived original and report photos missing from the manifests")
+    parser.add_argument("--repair", action="store_true",
+                        help="With --verify: list re-hashed orphans in a recovery manifest (never deletes or overwrites)")
     args = parser.parse_args(argv)
+    if args.verify:
+        if not args.authorized or not args.client_id or not args.cache or not args.cache.is_file():
+            parser.error("--verify requires --authorized, --client-id and existing --cache")
+        from .cloud_jobs import reconcile, verify_remote
+        save = external_cache_writer(args.cache, args.repo)
+        app, cache = client(args.client_id, args.cache.read_text(encoding="utf-8"))
+        drive = OneDriveBackend(token_provider(app, cache, save), authorized=True)
+        state = reconcile(drive, args.repo.resolve(), repair=args.repair)
+        result = {"mode": "verify", **verify_remote(drive), **{k: v for k, v in state.items()
+                                                              if k != "calibration_approved"}}
+        print(json.dumps(result, indent=2))
+        return result
     for scan in args.scan:
         if not scan.exists():
             parser.error(f"scan directory or ZIP does not exist: {scan}")

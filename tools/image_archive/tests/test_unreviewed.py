@@ -92,3 +92,35 @@ def test_device_login_uses_microsoft_issued_url():
     assert len(printed) == 1
     assert 'https://www.microsoft.com/link' in printed[0]
     assert 'not-for-output' not in printed[0]
+
+
+def test_codespace_verify_is_read_only_and_reports_orphans(tmp_path):
+    import json as _json
+    from unittest.mock import patch
+    from tools.image_archive import unreviewed
+    from tools.image_archive.tests.fake_drive import FakeDrive
+    raw = b"\xff\xd8\xff" + b"photo" * 40
+    digest = hashlib.sha256(raw).hexdigest()
+    drive = FakeDrive()
+    key = f"unreviewed/objects/{digest[:2]}/{digest}.jpg"
+    drive.files[key] = raw
+    drive.files["unreviewed/manifests/runs/x-0000.json"] = _json.dumps({
+        "schema_version": 1, "purpose": "unaltered_original_backup_only", "calibration_approved": False,
+        "review_status": "unreviewed", "items": [{"sha256": digest, "key": key, "size": len(raw), "format": "jpg",
+                                                   "review_status": "unreviewed", "calibration_approved": False}]}).encode()
+    orphan = b"\xff\xd8\xff" + b"orphan" * 40
+    od = hashlib.sha256(orphan).hexdigest()
+    drive.files[f"unreviewed/objects/{od[:2]}/{od}.jpg"] = orphan
+    (tmp_path / "repo").mkdir()
+    cache = tmp_path / "private" / "cache.json"
+    cache.parent.mkdir()
+    cache.write_text("{}")
+    before = dict(drive.files)
+    with patch.object(unreviewed, "OneDriveBackend", return_value=drive), \
+         patch.object(unreviewed, "client", return_value=(None, None)), \
+         patch.object(unreviewed, "token_provider", return_value=lambda: "t"):
+        result = unreviewed.main(["--repo", str(tmp_path / "repo"), "--verify", "--authorized", "--client-id", "id",
+                                  "--cache", str(cache)])
+    assert result["all_indexed_verified"] and result["indexed_originals"] == 1
+    assert result["orphans"] == 1 and result["repaired"] == 0
+    assert drive.files == before
