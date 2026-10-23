@@ -144,6 +144,9 @@ def main(argv=None):
     parser.add_argument("--client-id", help="Public Entra application ID")
     parser.add_argument("--cache", type=Path, help="Local MSAL cache outside the Git repository")
     args = parser.parse_args(argv)
+    for scan in args.scan:
+        if not scan.exists():
+            parser.error(f"scan directory or ZIP does not exist: {scan}")
     records = candidates(args.repo, args.scan)
     if args.limit is not None:
         if args.limit < 1:
