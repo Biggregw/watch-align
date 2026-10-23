@@ -1,5 +1,9 @@
 # Watch Align — archive originals first, review for calibration later
 
+> **Superseded for day-to-day operation (24 Oct 2026):** the archive now runs from GitHub Actions without a
+> Codespace, and has a visual review pipeline and ChatGPT access routes. See [AUTOMATION.md](AUTOMATION.md). The
+> one-time Codespace commands below remain valid for the transfer already in progress.
+
 ## Design boundary
 
 This branch is based on draft PR #69; it is **not** an Android change and must not be merged into main as a shortcut.

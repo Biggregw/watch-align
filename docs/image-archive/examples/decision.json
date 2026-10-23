@@ -1,0 +1,32 @@
+{
+  "schema": "watch-align-review-decision/1",
+  "batch_id": "b20261024T090000Z-1a2b3c",
+  "reviewer": "chatgpt",
+  "reviewed_at": "2026-10-24T09:30:00Z",
+  "photos": [
+    {
+      "id": "0123456789",
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "decision": "approved",
+      "family": "gmt_126710",
+      "view": "face_on",
+      "authenticity": "genuine_dealer",
+      "physical_watch_id": "bobs-126710blnr-123",
+      "reasons": [],
+      "comment": "Sharp, straight-on. Hands cover 10 and 2.",
+      "markers": {
+        "1": {"decision": "approved", "reason": ""},
+        "2": {"decision": "excluded", "reason": "hour hand over the marker"},
+        "4": {"decision": "approved", "reason": ""},
+        "5": {"decision": "approved", "reason": ""},
+        "6": {"decision": "approved", "reason": ""},
+        "7": {"decision": "approved", "reason": ""},
+        "8": {"decision": "approved", "reason": ""},
+        "9": {"decision": "approved", "reason": ""},
+        "10": {"decision": "excluded", "reason": "minute hand over the marker"},
+        "11": {"decision": "approved", "reason": ""},
+        "12": {"decision": "cant_assess", "reason": "glare on the triangle"}
+      }
+    }
+  ]
+}
