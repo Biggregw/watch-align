@@ -21,6 +21,9 @@ class MemoryDrive:
     def put(self, key, data):
         self.writes[key] = data
 
+    def get(self, key):
+        return self.writes[key]
+
 
 def archive_fixture(tmp_path):
     """Simulate the real 373 selected SHA identities, plus 44 independent remaining originals."""
