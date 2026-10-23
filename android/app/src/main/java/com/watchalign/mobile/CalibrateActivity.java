@@ -57,6 +57,7 @@ public class CalibrateActivity extends Activity {
         hour=getIntent().getIntExtra(EXTRA_HOUR,-1);
         ClearlyOff.Result r=AlignmentResultsActivity.Store.clearlyOff;ModelSpec ms=AlignmentResultsActivity.Store.model;
         ClearlyOff.Marker shown=r==null?null:r.at(hour);live=shown==null?null:shown.copy();
+        if(live!=null){live.relativePositionPct=shown.relativePositionPct;live.relativePositionUsed=shown.relativePositionUsed;}
         if(live==null||ms==null){finish();return;}
         shape=live.shape;model=ms.id;
         saved=ClearlyOff.forModel(model);draft=saved.copy();
