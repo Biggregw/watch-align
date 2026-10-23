@@ -78,7 +78,7 @@ public class CalibrationTest {
         ClearlyOff.Marker replay=Calibration.judge(loaded,loaded.at(6),ClearlyOff.Limits.defaults());
         assertEquals(production.posPct,replay.posPct,0);
         assertEquals(production.state,replay.state);
-        ClearlyOff.Limits tighter=ClearlyOff.Limits.defaults();tighter.batonPosR=0.006;
+        ClearlyOff.Limits tighter=ClearlyOff.Limits.defaults();tighter.batonPosR=0.0055; // 0.55% + 0.10% pixel allowance stays below 0.70%
         assertEquals(ClearlyOff.State.CLEARLY_OFF,Calibration.state(loaded,loaded.at(6),tighter));
         ClearlyOff.Marker genuine=Calibration.judge(loaded,loaded.at(6),ClearlyOff.Limits.genuine());
         assertEquals("strict genuine retains legacy calibration",Math.hypot(.25,1.9),genuine.posPct,1e-12);
