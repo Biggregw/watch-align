@@ -1,0 +1,26 @@
+{
+  "request": "verify-first-20261023.json",
+  "task": "verify",
+  "status": "done",
+  "started": "2026-10-23T18:00:49+00:00",
+  "finished": "2026-10-23T18:07:24+00:00",
+  "result": {
+    "indexed_originals": 417,
+    "checked_originals": 417,
+    "all_indexed_verified": true,
+    "calibration_approved": false,
+    "stored_originals": 417,
+    "orphans": 0,
+    "missing_objects": 0,
+    "size_mismatch": 0,
+    "missing_sha256": [],
+    "size_mismatch_sha256": [],
+    "repaired": 0
+  },
+  "provenance": {
+    "source": "GitHub Actions verified job log; reconstructed because results staging skipped an absent optional path",
+    "run_id": 39998835893,
+    "job_id": 120569511124,
+    "run_url": "https://github.com/Biggregw/watch-align/actions/runs/39998835893"
+  }
+}
