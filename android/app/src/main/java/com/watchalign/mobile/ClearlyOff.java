@@ -168,7 +168,8 @@ final class ClearlyOff {
             m.tiltCentroidDeg=tiltCentroidDeg;m.rotLeftDeg=rotLeftDeg;m.rotRightDeg=rotRightDeg;m.rotRmsPx=rotRmsPx;m.rotNote=rotNote;
             m.uncertain=uncertain;m.source=source;m.cover=cover;m.fitRmsPx=fitRmsPx;m.badFrac=badFrac;m.sePosPct=sePosPct;m.seRotDeg=seRotDeg;
             m.fitTiltDeg=fitTiltDeg;m.yellow=yellow;m.fitPoly=fitPoly;m.fitPts=fitPts;m.fitStatus=fitStatus;m.tick59=tick59;m.tick01=tick01;
-            m.gapFromFit=gapFromFit;m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;m.altLumeDiffPct=altLumeDiffPct;m.handConfirmed=handConfirmed;m.topEdge=topEdge;m.radialFromTopEdge=radialFromTopEdge;return m;}
+            m.gapFromFit=gapFromFit;m.relativePositionPct=relativePositionPct;m.relativePositionUsed=relativePositionUsed;
+            m.altSidePct=altSidePct;m.altInoutPct=altInoutPct;m.altTiltDeg=altTiltDeg;m.altSide=altSide;m.altLumeDiffPct=altLumeDiffPct;m.handConfirmed=handConfirmed;m.topEdge=topEdge;m.radialFromTopEdge=radialFromTopEdge;return m;}
         boolean measured(){return Double.isFinite(sidePct)||Double.isFinite(inoutPct);}
     }
 
