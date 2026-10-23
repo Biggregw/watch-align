@@ -75,3 +75,19 @@ def test_dry_run_never_connects_to_onedrive(tmp_path):
         result = unreviewed.main(['--repo', str(repo)])
     assert result['mode'] == 'dry_run'
     assert result['unique_originals'] == 1
+
+
+def test_device_login_uses_microsoft_issued_url():
+    from tools.image_archive.auth import device_login
+    class App:
+        def initiate_device_flow(self, scopes):
+            return {'user_code': 'test-only', 'verification_uri': 'https://www.microsoft.com/link'}
+        def acquire_token_by_device_flow(self, flow):
+            return {'access_token': 'not-for-output'}
+    class Cache:
+        def serialize(self): return 'not-for-output'
+    printed = []
+    device_login(App(), Cache(), lambda _: None, printed.append)
+    assert len(printed) == 1
+    assert 'https://www.microsoft.com/link' in printed[0]
+    assert 'not-for-output' not in printed[0]
