@@ -39,8 +39,11 @@ on:
 permissions:
   contents: read
 
+# PR validation uses no OneDrive secrets. Keep it in a separate queue so a PR check
+# cannot replace a pending owner-approved push run (GitHub cancels older pending runs
+# even when cancel-in-progress is false). Cloud operations remain serialized.
 concurrency:
-  group: watch-align-personal-onedrive-archive
+  group: watch-align-personal-onedrive-archive-${{ github.event_name == 'pull_request' && 'pr-checks' || 'cloud' }}
   cancel-in-progress: false
 
 jobs:
