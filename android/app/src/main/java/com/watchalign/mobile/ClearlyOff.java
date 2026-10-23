@@ -125,6 +125,11 @@ final class ClearlyOff {
         /** round / baton: distance from where it should be (% R) and its limit; tilt limit used (NaN = not judged) */
         double posPct=Double.NaN,posLimitPct=Double.NaN,tiltLimitDeg=Double.NaN;
         boolean posOff;
+        /** Replica-QC only: robust leave-one-out position (% dial radius) from other credible metal markers.
+         *  The absolute printed-minute-track sideways reading remains a separate floor. Strict genuine
+         *  rescoring always uses the existing calibrated position computation. */
+        double relativePositionPct=Double.NaN;
+        boolean relativePositionUsed;
         /** triangle rotation: the earlier lume-axis reading (kept for the details), the two half-edge readings, the edge fit
          *  roughness (px) and, when withheld, why */
         double tiltCentroidDeg=Double.NaN,rotLeftDeg=Double.NaN,rotRightDeg=Double.NaN,rotRmsPx=Double.NaN;String rotNote="";
@@ -310,6 +315,11 @@ final class ClearlyOff {
             // what is measured of the position counts (a clearly-off reading stands when the other component is missing)
             double a=Double.isFinite(r.sidePct)?r.sidePct:0,b=Double.isFinite(r.inoutPct)?r.inoutPct:0;
             if(Double.isFinite(r.sidePct)||Double.isFinite(r.inoutPct))r.posPct=Math.hypot(a,b);
+            // The relative ring can erase a whole-ring translation/rotation/scale, so retain the
+            // independent absolute minute-track sideways displacement as a minimum.
+            if(!L.strictGenuine&&r.relativePositionUsed&&Double.isFinite(r.relativePositionPct)
+                    &&Double.isFinite(r.sidePct)&&Double.isFinite(r.inoutPct))
+                r.posPct=Math.max(Math.abs(r.sidePct),r.relativePositionPct);
             r.posOff=Double.isFinite(r.posPct)&&r.posPct>r.posLimitPct;
         }
         r.tiltOff=Double.isFinite(r.tiltLimitDeg)&&Double.isFinite(r.tiltDeg)&&Math.abs(r.tiltDeg)>r.tiltLimitDeg;
@@ -1156,6 +1166,9 @@ final class ClearlyOff {
         String side=Double.isFinite(r.sidePct)?fmtPct(r.sidePct)+(r.sidePct>0?" clockwise of its hour line":" anticlockwise of its hour line"):null;
         String io=Double.isFinite(r.inoutPct)?fmtPct(r.inoutPct)+(r.inoutPct>0?" too far out":" too far in"):null;
         boolean sideFirst=!Double.isFinite(r.inoutPct)||(Double.isFinite(r.sidePct)&&Math.abs(r.sidePct)>=Math.abs(r.inoutPct));
+        if(r.relativePositionUsed)return String.format(Locale.US,
+                "%.2f%% relative to its other markers; %.2f%% against the printed minute-track hour line",
+                r.relativePositionPct,Math.abs(r.sidePct));
         if(sideFirst){if(side!=null)w.add(side);if(io!=null)w.add(io);}else{if(io!=null)w.add(io);if(side!=null)w.add(side);}
         return String.join(", ",w);
     }
@@ -1165,6 +1178,9 @@ final class ClearlyOff {
         StringBuilder b=new StringBuilder();
         boolean tri=r.shape==ModelSpec.Shape.TRIANGLE;
         if(!tri&&Double.isFinite(r.posPct))b.append(String.format(Locale.US,"From where it should be: %.2f%% of the dial radius; flagged for review beyond %.2f%%.",r.posPct,r.posLimitPct));
+        if(r.relativePositionUsed)b.append(String.format(Locale.US,
+                "\nReplica-QC position uses %.2f%% relative to other measured markers and independently retains the %.2f%% absolute minute-track sideways reading. Original ring-relative in/out below remains reference only.",
+                r.relativePositionPct,Math.abs(r.sidePct)));
         if(Double.isFinite(r.sidePct)){if(b.length()>0)b.append('\n');
             b.append(String.format(Locale.US,"Sideways from the hour line: %+.2f%% of the dial radius (%+.1f px)",r.sidePct,r.sidePx))
              .append(tri?String.format(Locale.US,"; flagged for review beyond %.2f%%.",r.sideLimitPct):".");}

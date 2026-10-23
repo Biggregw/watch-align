@@ -87,9 +87,11 @@ final class Alpha99Pipeline {
             catch(Throwable t){o.clearlyOff=null;o.clearlyOffError=failure(t);}   // 1.6.6: reported, not masked
             // 1.6.0: the clearly-off check decides the answers; earlier results stay in the technical details
             String legacy=o.alignmentTechnical;
+            try{
+                o.positionReferenceShadow=PositionReferenceShadow.measure(o.clearlyOff,model,ref,o.alignment.photoReason);
+                PositionReferenceProduction.apply(o.clearlyOff,o.positionReferenceShadow,o.alignment.photoReason);
+            }catch(Throwable t){/* measurement enhancement can never prevent an original QC reading */}
             AlignmentDecision.applyClearlyOff(o.alignment.markers,o.clearlyOff,o.alignment.photoReason);
-            try{o.positionReferenceShadow=PositionReferenceShadow.measure(o.clearlyOff,model,ref,o.alignment.photoReason);}
-            catch(Throwable t){/* optional shadow failure, including class loading, cannot fail the analysis */}
             o.alignmentTechnical=(o.clearlyOff==null?"Marker alignment check: could not be run on this photo"+(o.clearlyOffError==null?".":" (internal analysis failure: "+o.clearlyOffError+")."):ClearlyOff.technical(o.clearlyOff))
                     +"\n\nEarlier luminous / outer-metal analysis (kept for reference; not used for the results above):\n"+legacy;
             o.alignmentCloseups.clear();
