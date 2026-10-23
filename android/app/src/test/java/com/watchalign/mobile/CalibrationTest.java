@@ -82,8 +82,8 @@ public class CalibrationTest {
         assertEquals(ClearlyOff.State.CLEARLY_OFF,Calibration.state(loaded,loaded.at(6),tighter));
         ClearlyOff.Marker genuine=Calibration.judge(loaded,loaded.at(6),ClearlyOff.Limits.genuine());
         assertEquals("strict genuine retains legacy calibration",Math.hypot(.25,1.9),genuine.posPct,1e-12);
-        assertEquals("copy for calibration sliders retains relative decision",0.7,production.copy().relativePositionPct,0);
-        assertTrue(production.copy().relativePositionUsed);
+        // The strict-genuine copy deliberately does not carry a replica-QC position override.
+        assertFalse(WatchClassification.strict(production,measured.rpx).relativePositionUsed);
     }
 
     @Test public void oldAndFallbackRecordsRemainLegacy(){
