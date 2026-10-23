@@ -57,6 +57,7 @@ public class CalibrateActivity extends Activity {
         hour=getIntent().getIntExtra(EXTRA_HOUR,-1);
         ClearlyOff.Result r=AlignmentResultsActivity.Store.clearlyOff;ModelSpec ms=AlignmentResultsActivity.Store.model;
         ClearlyOff.Marker shown=r==null?null:r.at(hour);live=shown==null?null:shown.copy();
+        if(live!=null){live.relativePositionPct=shown.relativePositionPct;live.relativePositionUsed=shown.relativePositionUsed;}
         if(live==null||ms==null){finish();return;}
         shape=live.shape;model=ms.id;
         saved=ClearlyOff.forModel(model);draft=saved.copy();
@@ -109,7 +110,7 @@ public class CalibrateActivity extends Activity {
                 if(Double.isFinite(live.gapLimitPct))arc(cv,live.gapTrackR-live.gapLimitPct/100,a,dashed);
                 if(Double.isFinite(live.gapEdgeR))arc(cv,live.gapEdgeR,a,meas);
             }
-        }else if(c!=null&&Double.isFinite(live.posLimitPct)){
+        }else if(c!=null&&!live.relativePositionUsed&&Double.isFinite(live.posLimitPct)){
             // position: a circle around where the centre should be
             double re=Double.isFinite(live.scale)&&live.cGen!=null?live.scale*ClearlyOff.norm(live.cGen):ClearlyOff.norm(c);
             double[] e=ClearlyOff.cpt(re,a);
@@ -184,7 +185,9 @@ public class CalibrateActivity extends Activity {
 
     private String legend(){
         if(shape==ModelSpec.Shape.TRIANGLE)return "Blue: the hour line and the minute-track tick ends. Amber: the sideways limits either side of the line, and (dashed) the line the triangle's top edge must stay below. Coloured arc: the measured top edge. Cross: the measured centre.";
-        String s="Blue: the hour line. Amber circle: how far the centre may be from where it should be. Cross: the measured centre (red flagged for review, green no visible issue).";
+        String s=live.relativePositionUsed
+                ?"Blue: the printed minute-track hour line. The position limit is scored against the other credible markers and that absolute hour line; a legacy centre-circle would be misleading, so none is drawn. Cross: observed centre."
+                :"Blue: the hour line. Amber circle: the legacy centre limit (used when a relative fit is unavailable). Cross: measured centre.";
         if(shape==ModelSpec.Shape.BATON)s+=" Dashed amber: the rotation limit either side of the line; coloured line: the measured baton axis.";
         return s;
     }
@@ -225,7 +228,11 @@ public class CalibrateActivity extends Activity {
         answer.setTextColor(live.state==ClearlyOff.State.CLEARLY_OFF?RED:live.state==ClearlyOff.State.POSSIBLE?AMBER:live.state==ClearlyOff.State.NO_VISIBLE_ISSUE?GREEN:GREY);
         Bitmap z=drawZone();if(z!=null)picture.setImageBitmap(z);
         if(genuine==null||genuine.total(shape)==0){genuineLine.setText("No verified genuine numbers for this model yet: be careful not to set limits that real watches would fail.");genuineLine.setTextColor(AMBER);}
-        else{int n=genuine.flagged(shape,draft),t=genuine.total(shape);
+        else if(shape!=ModelSpec.Shape.TRIANGLE&&genuine.totalComparable(shape)==0){
+            genuineLine.setText("Verified genuine reference numbers use the old positional metric. These cannot safely validate the new 1.6.8 position limit; automatic suggestions are unavailable until matching measurements exist.");
+            genuineLine.setTextColor(AMBER);
+        }
+        else{int n=genuine.flaggedComparable(shape,draft),t=genuine.totalComparable(shape);
             genuineLine.setText(String.format(Locale.UK,"Genuine watches: %d of %,d measured %s would be flagged for review at these limits.",n,t,shape==ModelSpec.Shape.TRIANGLE?"12 o'clock triangles":typeName()));
             genuineLine.setTextColor(n>0?RED:GREEN);}
         refreshVerdict();
@@ -271,6 +278,10 @@ public class CalibrateActivity extends Activity {
     }
 
     private void suggest(){
+        if(shape!=ModelSpec.Shape.TRIANGLE&&(genuine==null||genuine.totalComparable(shape)==0)){
+            Toast.makeText(this,"Position suggestions require genuine references measured by the same 1.6.8 engine.",Toast.LENGTH_LONG).show();
+            return;
+        }
         ClearlyOff.Limits s=Calibration.suggest(records,model,shape,draft,genuine);
         if(s==null){Toast.makeText(this,"Record Pass or Fail on some "+typeName()+" first.",Toast.LENGTH_LONG).show();return;}
         for(Calibration.Param p:Calibration.params(shape))p.set(draft,p.get(s));

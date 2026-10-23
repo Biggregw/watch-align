@@ -38,8 +38,9 @@ public class CalibrationTest {
     }
 
     @Test public void genuineCountAndVerdicts(){
-        Calibration.Genuine gen=Calibration.Genuine.parse("shape,rpx,side,inout,tilt,gap\nround,400,0.50,0.40,,\nround,400,0.85,0.10,,\ntriangle,400,0.1,0.2,0.5,2.6\n");
+        Calibration.Genuine gen=Calibration.Genuine.parse("shape,rpx,side,inout,tilt,gap,relative_pct,relative_used,position_method\nround,400,0.50,0.40,,,0.64,true,position-reference-fit-v1\nround,400,0.85,0.10,,,0.86,true,position-reference-fit-v1\ntriangle,400,0.1,0.2,0.5,2.6,,false,legacy-position-v1\n");
         assertEquals(2,gen.total(ModelSpec.Shape.ROUND));assertEquals(1,gen.total(ModelSpec.Shape.TRIANGLE));
+        assertEquals(2,gen.totalComparable(ModelSpec.Shape.ROUND));
         ClearlyOff.Limits d=ClearlyOff.Limits.defaults();
         assertEquals(0,gen.flagged(ModelSpec.Shape.ROUND,d));
         ClearlyOff.Limits t=d.copy();t.roundPosR=0.007;assertEquals(1,gen.flagged(ModelSpec.Shape.ROUND,t));
@@ -56,6 +57,64 @@ public class CalibrationTest {
         assertEquals(0,gen.flagged(ModelSpec.Shape.ROUND,s));
         assertTrue(s.roundPosR*100<0.95&&s.roundPosR*100>=0.86);
         assertNull("no verdicts, no suggestion",Calibration.suggest(recs,"gmt_126710",ModelSpec.Shape.BATON,d,gen));
+        Calibration.Genuine legacy=Calibration.Genuine.parse("shape,rpx,side,inout,tilt,gap\nround,400,0.85,0.10,,\n");
+        assertEquals(0,legacy.totalComparable(ModelSpec.Shape.ROUND));
+        assertNull("legacy genuine catalogue must not constrain a new position suggestion",
+                Calibration.suggest(recs,"gmt_126710",ModelSpec.Shape.ROUND,d,legacy));
+    }
+
+    @Test public void productionReplayUsesExactlyProductionPositionScore(){
+        ClearlyOff.Result measured=new ClearlyOff.Result();measured.rpx=500;
+        ClearlyOff.Marker production=new ClearlyOff.Marker(6,ModelSpec.Shape.BATON);
+        production.source="outer metal";production.sidePct=0.25;production.inoutPct=1.9;production.tiltDeg=0;
+        production.relativePositionPct=0.7;production.relativePositionUsed=true;
+        ClearlyOff.decide(production,measured.rpx,null,ClearlyOff.Limits.defaults());
+        measured.markers.add(production);
+        Calibration.Record saved=Calibration.of("51",51L,"submariner_124060","case",measured,null);
+        assertEquals(Calibration.CURRENT_MEASUREMENT_VERSION,saved.measurementVersion);
+        assertEquals(Calibration.POSITION_REFERENCE_V1,saved.at(6).positionMethod);
+        assertTrue(saved.at(6).relativePositionUsed);
+        Calibration.Record loaded=Calibration.recordFromJson(Calibration.toJson(saved));
+        ClearlyOff.Marker replay=Calibration.judge(loaded,loaded.at(6),ClearlyOff.Limits.defaults());
+        assertEquals(production.posPct,replay.posPct,0);
+        assertEquals(production.state,replay.state);
+        ClearlyOff.Limits tighter=ClearlyOff.Limits.defaults();tighter.batonPosR=0.0055; // 0.55% + 0.10% pixel allowance stays below 0.70%
+        assertEquals(ClearlyOff.State.CLEARLY_OFF,Calibration.state(loaded,loaded.at(6),tighter));
+        ClearlyOff.Marker genuine=Calibration.judge(loaded,loaded.at(6),ClearlyOff.Limits.genuine());
+        assertEquals("strict genuine retains legacy calibration",Math.hypot(.25,1.9),genuine.posPct,1e-12);
+        // The strict-genuine copy deliberately does not carry a replica-QC position override.
+        assertFalse(WatchClassification.strict(production,measured.rpx).relativePositionUsed);
+    }
+
+    @Test public void oldAndFallbackRecordsRemainLegacy(){
+        Calibration.Record old=Calibration.recordFromJson(
+                "{\"id\":\"62\",\"model\":\"gmt_126710\",\"label\":\"old\",\"time\":62,\"rpx\":500,"
+                +"\"marks\":[{\"hour\":1,\"shape\":\"round\",\"gate\":\"\",\"reason\":\"\","
+                +"\"side\":0.5,\"inout\":1.2,\"tilt\":null,\"gap\":null}]}");
+        assertEquals(Calibration.LEGACY_POSITION_V1,old.measurementVersion);
+        assertFalse(old.at(1).relativePositionUsed);
+        assertEquals(Math.hypot(.5,1.2),Calibration.judge(old,old.at(1),ClearlyOff.Limits.defaults()).posPct,1e-12);
+        assertFalse(Calibration.recordFromJson(Calibration.toJson(old)).at(1).relativePositionUsed);
+        ClearlyOff.Result measured=new ClearlyOff.Result();measured.rpx=500;
+        ClearlyOff.Marker fallback=new ClearlyOff.Marker(1,ModelSpec.Shape.ROUND);
+        fallback.sidePct=.4;fallback.inoutPct=.8;
+        measured.markers.add(fallback);
+        Calibration.Record rec=Calibration.of("63",63L,"gmt_126710","fallback",measured,null);
+        assertFalse(rec.at(1).relativePositionUsed);
+        assertEquals(Calibration.LEGACY_POSITION_V1,rec.at(1).positionMethod);
+        assertEquals(Math.hypot(.4,.8),Calibration.judge(rec,rec.at(1),ClearlyOff.Limits.defaults()).posPct,1e-12);
+    }
+
+    @Test public void savedDiagnosticDoesNotForceProductionUsage(){
+        ClearlyOff.Result measured=new ClearlyOff.Result();measured.rpx=500;
+        ClearlyOff.Marker m=new ClearlyOff.Marker(1,ModelSpec.Shape.ROUND);
+        m.sidePct=.2;m.inoutPct=.7;m.relativePositionPct=.35;m.relativePositionUsed=false;
+        measured.markers.add(m);
+        Calibration.Record rec=Calibration.of("66",66,"gmt_126710","diagnostic",measured,null);
+        Calibration.Mark k=Calibration.recordFromJson(Calibration.toJson(rec)).at(1);
+        assertEquals(Calibration.POSITION_REFERENCE_V1,k.positionMethod);
+        assertFalse(k.relativePositionUsed);
+        assertEquals(Math.hypot(.2,.7),Calibration.judge(rec,k,ClearlyOff.Limits.defaults()).posPct,1e-12);
     }
 
     @Test public void filesRoundTrip(){

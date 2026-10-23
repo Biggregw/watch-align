@@ -171,7 +171,7 @@ public class PerspectiveOverlayPocActivity extends Activity {
                     // 1.6.2: keep this photo's measured numbers (and a small picture) on the phone for calibration
                     long now=System.currentTimeMillis();String id=Long.toString(now);
                     String label=new java.text.SimpleDateFormat("d MMM HH:mm",java.util.Locale.UK).format(new java.util.Date(now))+" · "+fo.model.label;
-                    Calibration.Record rec=Calibration.of(id,now,fo.model.id,label,fo.clearlyOff,fo.alignment.photoReason);
+                    Calibration.Record rec=Calibration.of(id,now,fo.model.id,label,fo.clearlyOff,fo.alignment.photoReason,fo.positionReferenceShadow);
                     final android.graphics.Bitmap th=fo.alignmentOverview;
                     AlignmentResultsActivity.Store.recordId=id;
                     worker.submit(()->CalibrationStore.save(this,rec,th));

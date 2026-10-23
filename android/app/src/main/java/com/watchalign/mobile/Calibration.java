@@ -21,6 +21,11 @@ import java.util.Map;
 final class Calibration {
     private Calibration(){}
 
+    /** Exact production positional metric recorded for future limit replays. */
+    static final String POSITION_REFERENCE_V1="position-reference-fit-v1";
+    static final String LEGACY_POSITION_V1="legacy-position-v1";
+    static final String CURRENT_MEASUREMENT_VERSION="1.6.8-position-v1";
+
     enum Verdict{PASS,FAIL,UNSURE}
 
     static final class Mark {
@@ -29,22 +34,42 @@ final class Calibration {
          *  from the fitted outline; a reading over a limit then stays "Possible misalignment - inspect" when re-judged */
         String uncertain="";boolean gapFromFit;
         double side=Double.NaN,inout=Double.NaN,tilt=Double.NaN,gap=Double.NaN;
+        /** Optional new relative reading; used==false preserves the original production fallback. */
+        double relativePosPct=Double.NaN;
+        boolean relativePositionUsed;
+        String positionMethod=LEGACY_POSITION_V1;
         Verdict verdict;
     }
 
     static final class Record {
         String id,model,label;long time;double rpx;String photoReason;
+        /** Old records lack this field and remain explicitly legacy. */
+        String measurementVersion=LEGACY_POSITION_V1;
         final List<Mark> marks=new ArrayList<>();
         Mark at(int h){for(Mark m:marks)if(m.hour==h)return m;return null;}
     }
 
     /** a record of one analysed photo (null when the check did not run) */
     static Record of(String id,long time,String model,String label,ClearlyOff.Result r,String photoReason){
+        return of(id,time,model,label,r,photoReason,null);
+    }
+
+    /** Save production-chosen position and optional fit diagnostics without recomputing images. */
+    static Record of(String id,long time,String model,String label,ClearlyOff.Result r,String photoReason,
+                     Map<Integer,PositionReferenceFit.Reading> shadow){
         if(r==null)return null;
-        Record rec=new Record();rec.id=id;rec.time=time;rec.model=model;rec.label=label;rec.rpx=r.rpx;rec.photoReason=photoReason;
+        Record rec=new Record();rec.id=id;rec.time=time;rec.model=model;rec.label=label;rec.rpx=r.rpx;rec.photoReason=photoReason;rec.measurementVersion=CURRENT_MEASUREMENT_VERSION;
         for(ClearlyOff.Marker m:r.markers){
             Mark k=new Mark();k.hour=m.hour;k.shape=m.shape;k.gate=String.join("; ",m.gate);k.reason=m.gate.isEmpty()?"":m.reason;
-            k.side=m.sidePct;k.inout=m.inoutPct;k.tilt=m.tiltDeg;k.gap=m.gapPct;k.uncertain=m.uncertain;k.gapFromFit=m.gapFromFit;rec.marks.add(k);
+            k.side=m.sidePct;k.inout=m.inoutPct;k.tilt=m.tiltDeg;k.gap=m.gapPct;k.uncertain=m.uncertain;k.gapFromFit=m.gapFromFit;
+            k.relativePosPct=m.relativePositionPct;
+            PositionReferenceFit.Reading reading=shadow==null?null:shadow.get(m.hour);
+            if(reading!=null&&reading.available&&Double.isFinite(reading.distancePctR()))
+                k.relativePosPct=reading.distancePctR();
+            if(Double.isFinite(k.relativePosPct))k.positionMethod=POSITION_REFERENCE_V1;
+            k.relativePositionUsed=m.relativePositionUsed&&POSITION_REFERENCE_V1.equals(k.positionMethod)
+                    &&Double.isFinite(k.relativePosPct);
+            rec.marks.add(k);
         }
         return rec;
     }
@@ -53,6 +78,10 @@ final class Calibration {
     static ClearlyOff.Marker judge(Record rec,Mark k,ClearlyOff.Limits L){
         ClearlyOff.Marker m=new ClearlyOff.Marker(k.hour,k.shape);
         m.sidePct=k.side;m.inoutPct=k.inout;m.tiltDeg=k.tilt;m.gapPct=k.gap;m.uncertain=k.uncertain;m.gapFromFit=k.gapFromFit;
+        m.relativePositionPct=k.relativePosPct;
+        // The version and per-marker production selection must BOTH match before using the new formula.
+        m.relativePositionUsed=k.relativePositionUsed&&POSITION_REFERENCE_V1.equals(k.positionMethod)
+                &&Double.isFinite(k.relativePosPct)&&k.relativePosPct>=0;
         if(!k.gate.isEmpty())for(String g:k.gate.split("; "))m.gate.add(g);
         ClearlyOff.decide(m,rec.rpx,null,L);
         if(!k.gate.isEmpty()&&!k.reason.isEmpty())m.reason=k.reason;
@@ -67,6 +96,19 @@ final class Calibration {
     static final class Genuine {
         final List<Mark> marks=new ArrayList<>();final List<Double> rpx=new ArrayList<>();
         int total(ModelSpec.Shape s){int n=0;for(Mark m:marks)if(m.shape==s)n++;return n;}
+        /** Legacy genuine_track.csv rows cannot constrain limits for the new replica-QC position metric. */
+        int totalComparable(ModelSpec.Shape s){
+            if(s==ModelSpec.Shape.TRIANGLE)return total(s);
+            int n=0;for(Mark m:marks)if(m.shape==s&&comparablePosition(m))n++;return n;
+        }
+        int flaggedComparable(ModelSpec.Shape s,ClearlyOff.Limits L){
+            if(s==ModelSpec.Shape.TRIANGLE)return flagged(s,L);
+            int n=0;Record r=new Record();
+            for(int i=0;i<marks.size();i++){Mark m=marks.get(i);
+                if(m.shape!=s||!comparablePosition(m))continue;r.rpx=rpx.get(i);
+                if(Calibration.flagged(state(r,m,L)))n++;}
+            return n;
+        }
         int flagged(ModelSpec.Shape s,ClearlyOff.Limits L){
             int n=0;Record r=new Record();
             for(int i=0;i<marks.size();i++){Mark m=marks.get(i);if(m.shape!=s)continue;r.rpx=rpx.get(i);
@@ -80,10 +122,20 @@ final class Calibration {
                 String[] f=line.split(",",-1);if(f.length<6)continue;
                 Mark m=new Mark();m.shape=AlignmentReference.shape(f[0]);if(m.shape==null)continue;
                 m.side=num(f[2]);m.inout=num(f[3]);m.tilt=num(f[4]);m.gap=num(f[5]);
+                // Optional appended columns: relative_pct, relative_used, position_method.
+                // Existing six-column reference assets remain legacy (not comparable for new position).
+                if(f.length>=9){m.relativePosPct=num(f[6]);m.relativePositionUsed=Boolean.parseBoolean(f[7]);
+                    m.positionMethod=f[8];}
                 g.marks.add(m);g.rpx.add(num(f[1]));
             }
             return g;
         }
+    }
+
+    static boolean comparablePosition(Mark m){
+        return m!=null&&POSITION_REFERENCE_V1.equals(m.positionMethod)&&m.relativePositionUsed
+                &&Double.isFinite(m.relativePosPct)&&m.relativePosPct>=0
+                &&Double.isFinite(m.side)&&Double.isFinite(m.inout);
     }
 
     // ------------------------------------------------------------------------------------------------ verdicts
@@ -151,6 +203,8 @@ final class Calibration {
      */
     static ClearlyOff.Limits suggest(List<Record> recs,String model,ModelSpec.Shape shape,ClearlyOff.Limits start,Genuine gen){
         if(agreement(recs,model,shape,start).total==0)return null;
+        // Fail closed: do not optimise a relative position limit using old absolute/legacy controls.
+        if(shape!=ModelSpec.Shape.TRIANGLE&&(gen==null||gen.totalComparable(shape)==0))return null;
         ClearlyOff.Limits best=start.copy();
         List<Param> ps=params(shape);
         for(int round=0;round<3;round++)for(Param p:ps){
@@ -160,7 +214,7 @@ final class Calibration {
             for(double v=p.min;v<=p.max+1e-9;v+=p.step)cands.add(Math.round(v*100)/100.0);
             for(double v:cands){
                 ClearlyOff.Limits L=best.copy();p.set(L,v);
-                if(gen!=null&&gen.total(shape)>0&&gen.flagged(shape,L)>0)continue;
+                if(gen!=null&&gen.totalComparable(shape)>0&&gen.flaggedComparable(shape,L)>0)continue;
                 Agreement a=agreement(recs,model,shape,L);
                 double dist=Double.isNaN(v)||Double.isNaN(cur)?(Double.isNaN(v)==Double.isNaN(cur)?0:1):Math.abs(v-cur)/(p.max-p.min);
                 double score=a.agree-0.01*dist;
@@ -178,12 +232,18 @@ final class Calibration {
         kv(b,"id",r.id).append(',');kv(b,"model",r.model).append(',');kv(b,"label",r.label).append(',');
         b.append("\"time\":").append(r.time).append(",\"rpx\":").append(n(r.rpx)).append(',');
         if(r.photoReason!=null)kv(b,"photoReason",r.photoReason).append(',');
+        kv(b,"measurementVersion",r.measurementVersion).append(',');
         b.append("\"marks\":[");
         for(int i=0;i<r.marks.size();i++){Mark k=r.marks.get(i);if(i>0)b.append(',');
             b.append("{\"hour\":").append(k.hour).append(',');kv(b,"shape",AlignmentReference.key(k.shape)).append(',');
             kv(b,"gate",k.gate).append(',');kv(b,"reason",k.reason).append(',');
             b.append("\"side\":").append(n(k.side)).append(",\"inout\":").append(n(k.inout)).append(",\"tilt\":").append(n(k.tilt))
              .append(",\"gap\":").append(n(k.gap));
+            if(Double.isFinite(k.relativePosPct)){
+                b.append(",\"relativePosPct\":").append(n(k.relativePosPct))
+                 .append(",\"relativeUsed\":").append(k.relativePositionUsed);
+                b.append(',');kv(b,"positionMethod",k.positionMethod);
+            }
             if(!k.uncertain.isEmpty()){b.append(',');kv(b,"uncertain",k.uncertain);}
             if(k.gapFromFit)b.append(",\"gapFit\":true");
             if(k.verdict!=null)b.append(',').append("\"verdict\":\"").append(k.verdict.name()).append('"');
@@ -195,9 +255,15 @@ final class Calibration {
         Map<String,Object> o=(Map<String,Object>)MiniJson.parse(s);
         Record r=new Record();r.id=str(o.get("id"));r.model=str(o.get("model"));r.label=str(o.get("label"));
         r.time=(long)dbl(o.get("time"));r.rpx=dbl(o.get("rpx"));r.photoReason=(String)o.get("photoReason");
+        r.measurementVersion=o.containsKey("measurementVersion")?str(o.get("measurementVersion")):LEGACY_POSITION_V1;
         for(Object x:(List<Object>)o.get("marks")){Map<String,Object> m=(Map<String,Object>)x;Mark k=new Mark();
             k.hour=(int)dbl(m.get("hour"));k.shape=AlignmentReference.shape(str(m.get("shape")));k.gate=str(m.get("gate"));k.reason=str(m.get("reason"));
             k.side=dbl(m.get("side"));k.inout=dbl(m.get("inout"));k.tilt=dbl(m.get("tilt"));k.gap=dbl(m.get("gap"));
+            k.relativePosPct=dbl(m.get("relativePosPct"));
+            k.positionMethod=m.containsKey("positionMethod")?str(m.get("positionMethod")):LEGACY_POSITION_V1;
+            k.relativePositionUsed=Boolean.TRUE.equals(m.get("relativeUsed"))
+                    &&POSITION_REFERENCE_V1.equals(k.positionMethod)
+                    &&Double.isFinite(k.relativePosPct)&&k.relativePosPct>=0;
             Object v=m.get("verdict");k.verdict=v==null?null:Verdict.valueOf((String)v);
             Object u=m.get("uncertain");k.uncertain=u==null?"":(String)u;k.gapFromFit=Boolean.TRUE.equals(m.get("gapFit"));
             if(k.shape!=null)r.marks.add(k);}
@@ -231,13 +297,15 @@ final class Calibration {
         for(Map.Entry<String,ClearlyOff.Limits> e:limits.entrySet()){ClearlyOff.Limits L=e.getValue();
             b.append(e.getKey()).append(',').append(f(100*L.roundPosR)).append(',').append(f(100*L.batonPosR)).append(',').append(f(L.batonTiltDeg))
              .append(',').append(f(100*L.triSideR)).append(',').append(f(100*L.triGapR)).append(',').append(f(L.triTiltDeg)).append('\n');}
-        b.append("\nmarkers\nphoto,time,model,dial_radius_px,hour,shape,withheld,side_pct,inout_pct,tilt_deg,gap_pct,your_verdict,app_answer\n");
+        b.append("\nmarkers\nphoto,time,model,dial_radius_px,hour,shape,withheld,side_pct,inout_pct,tilt_deg,gap_pct,your_verdict,app_answer,measurement_version,position_method,relative_pct,relative_used\n");
         for(Record r:recs){ClearlyOff.Limits L=limits.containsKey(r.model)?limits.get(r.model):ClearlyOff.Limits.defaults();
             for(Mark k:r.marks){
                 b.append(r.label.replace(",",";")).append(',').append(r.time).append(',').append(r.model).append(',').append(f(r.rpx)).append(',').append(k.hour).append(',')
                  .append(AlignmentReference.key(k.shape)).append(',').append((r.photoReason!=null?r.photoReason:k.gate).replace(",",";")).append(',')
                  .append(f(k.side)).append(',').append(f(k.inout)).append(',').append(f(k.tilt)).append(',').append(f(k.gap)).append(',')
-                 .append(k.verdict==null?"":k.verdict.name().toLowerCase(Locale.US)).append(',').append(word(state(r,k,L))).append('\n');}}
+                 .append(k.verdict==null?"":k.verdict.name().toLowerCase(Locale.US)).append(',').append(word(state(r,k,L))).append(',')
+                 .append(r.measurementVersion).append(',').append(k.positionMethod).append(',').append(f(k.relativePosPct)).append(',')
+                 .append(k.relativePositionUsed).append('\n');}}
         return b.toString();
     }
 
