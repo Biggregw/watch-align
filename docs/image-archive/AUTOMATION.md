@@ -78,10 +78,15 @@ Nothing is deleted or overwritten.
 
 1. github.com → Settings → Developer settings → Fine-grained tokens → *Generate*: repository `Biggregw/watch-align` only;
    permissions **Secrets: Read and write**, **Environments: Read and write**; longest expiry offered.
-2. In the Codespace (once): `gh auth login` (your account), then
-   `python -m tools.image_archive.setup_ci --cache /tmp/watch-align-private/msal-cache.json` (dry run, prints the pin)
-   and the same with `--apply`. This creates the `onedrive-archive` environment **restricted to this branch**, sets
-   `ONEDRIVE_CLIENT_ID` and `ONEDRIVE_ACCOUNT_SHA256`, and stores the cache secret.
+2. **Before hand-over, manually create and protect** the `onedrive-archive` environment through GitHub Settings:
+   required reviewer = owner, prevent self-review = off, administrator bypass = off,
+   and allow only `experiment/archive-first-onedrive-20261023`. Save and refresh to confirm.
+   The hand-over helper **does not create, PUT, or alter** environment protection rules (doing so could reset them).
+   In the Codespace (once), authenticate GitHub CLI with a user token that has permission to write
+   environment secrets and variables; the Codespace's automatic integration token may return HTTP 403.
+   Run `python -m tools.image_archive.setup_ci --cache /tmp/watch-align-private/msal-cache.json` first
+   (dry run), then the same with `--apply`. This sets only
+   `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_ACCOUNT_SHA256`, and the encrypted `ONEDRIVE_MSAL_CACHE`.
 3. Repository → Settings → Environments → `onedrive-archive` → add secret `ONEDRIVE_CACHE_WRITE_TOKEN` = the token from step 1.
 4. Stop using the Codespace cache (one active holder of the refresh token). Commit `archive/requests/verify-first.json`
    containing `{"task": "verify"}` to confirm.
