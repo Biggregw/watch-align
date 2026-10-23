@@ -41,7 +41,7 @@ python -m tools.image_archive.unreviewed --scan /tmp/watch-align-originals --lim
   --cache /tmp/watch-align-private/msal-cache.json
 \`\`\`
 
-This command uploads the first three content-hash-sorted original images (not three validated genuine watches), verifies every remote original against its exact local bytes, and writes an immutable catalogue manifest.
+This command uploads the first three catalogued originals in hash order (or uncatalogued images if none are catalogued) (not three validated genuine watches), verifies every remote original against its exact local bytes, and writes an immutable catalogue manifest.
 
 Do **not** publish the MSAL cache, browser consent codes, or bearer/refresh tokens in chat, Git, build logs, or public Actions artifacts.
 
