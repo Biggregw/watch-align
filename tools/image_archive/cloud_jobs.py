@@ -112,16 +112,16 @@ def verify_remote(drive, *, max_photos=None):
             raise ValueError("OneDrive original byte verification failed")
         verified += 1
     return {"indexed_originals": len(indexed), "checked_originals": verified,
-            "all_indexed_verified": verified == len(indexed),
+            "all_indexed_verified": bool(indexed) and verified == len(indexed),
             "calibration_approved": False}
 
 
-def export_review_batch(drive, destination, *, limit=20, max_bytes=22_000_000):
+def export_review_batch(drive, destination, *, limit=20, offset=0, max_bytes=22_000_000):
     """Retrieve existing originals into one bounded review ZIP, without changing OneDrive."""
-    if not 1 <= limit <= 100 or not 1_000_000 <= max_bytes <= 28_000_000:
+    if not 1 <= limit <= 100 or offset < 0 or not 1_000_000 <= max_bytes <= 28_000_000:
         raise ValueError("review batch limits outside supported range")
     photos = remote_index(drive)
-    ordered = sorted(photos.values(), key=lambda x: (not bool(x.get("associations")), x["sha256"]))
+    ordered = sorted(photos.values(), key=lambda x: (not bool(x.get("associations")), x["sha256"]))[offset:]
     chosen = []
     consumed = 0
     destination = Path(destination)
@@ -161,7 +161,7 @@ def export_review_batch(drive, destination, *, limit=20, max_bytes=22_000_000):
         os.replace(tmp, destination)
     finally:
         tmp.unlink(missing_ok=True)
-    return {"review_photos": len(chosen), "review_bytes": consumed,
+    return {"review_photos": len(chosen), "review_bytes": consumed, "review_offset": offset,
             "output": str(destination), "calibration_approved": False}
 
 
@@ -171,6 +171,7 @@ def main(argv=None):
     ap.add_argument("--repo", type=Path, default=Path.cwd())
     ap.add_argument("--scan", type=Path, action="append", default=[])
     ap.add_argument("--limit", type=int, default=3)
+    ap.add_argument("--offset", type=int, default=0, help="Skip N catalogued-first originals for review batches")
     ap.add_argument("--output", type=Path, default=Path("/tmp/watch-align-review.zip"))
     args = ap.parse_args(argv)
     if args.action in ("preflight", "pilot", "upload"):
@@ -195,7 +196,7 @@ def main(argv=None):
     else:
         drive = drive_from_protected_environment()
         report = {"action": "review", **export_review_batch(
-            drive, args.output, limit=args.limit)}
+            drive, args.output, limit=args.limit, offset=args.offset)}
     print(json.dumps(report, indent=2))
     return report
 
