@@ -255,15 +255,36 @@ def repo_paths(repo):
             "evidence": base / "approved-evidence.json", "requests": base / "requests"}
 
 
-def create_review_batch(drive, repo, *, size=20, family_filter=None, local_copy=None, now=None):
-    """Make the next review batch: viewing copies in OneDrive, the batch index in the repository."""
+def create_review_batch(drive, repo, *, size=20, family_filter=None, local_copy=None, now=None,
+                        exclude_selection=None, expected_remaining=None):
+    """Create private viewing copies; optionally skip every photo in a prior suitability selection.
+
+    The selection contains SHA-256 hashes of *all* previously screened originals, regardless
+    of their outcome. It is not calibration approval. Fail closed if any selected hash is
+    absent from the live manifest or if the remaining archive size differs from the expected
+    count. All checks occur before any viewing copies are written.
+    """
     paths = repo_paths(repo)
     batches = R.load_batches(paths["batches"]) if paths["batches"].exists() else {}
     decisions = R.load_decisions(paths["decisions"], batches) if paths["decisions"].exists() else []
     reviewed, waiting = R.reviewed_and_batched(batches, R.ledger(decisions), now=now)
-    entries = R.batch_entries(remote_index(drive), reviewed, waiting, size=size, family_filter=family_filter)
+    indexed = remote_index(drive)
+    summary = {"indexed_originals": len(indexed)}
+    if exclude_selection is not None:
+        from .suitable import load_selection, validate_selection
+        doc, _ = load_selection(exclude_selection, repo)
+        screening, _ = validate_selection(doc)
+        missing = set(screening) - set(indexed)
+        if missing:
+            raise ValueError(f"previously screened selection has {len(missing)} hashes absent from live archive")
+        indexed = {digest: item for digest, item in indexed.items() if digest not in screening}
+        summary["excluded_previously_screened"] = len(screening)
+        summary["remaining_after_selection"] = len(indexed)
+    if expected_remaining is not None and len(indexed) != expected_remaining:
+        raise ValueError(f"expected {expected_remaining} remaining originals; found {len(indexed)}; no batch created")
+    entries = R.batch_entries(indexed, reviewed, waiting, size=size, family_filter=family_filter)
     if not entries:
-        return {"review_batch": None, "review_photos": 0, "reason": "no unreviewed originals left"}
+        return {"review_batch": None, "review_photos": 0, "reason": "no unreviewed originals left", **summary}
     batch = R.batch_document(R.new_batch_id(now), entries)
     files = R.build_batch_files(batch, drive.get)
     for rel, data in files.items():
@@ -276,7 +297,7 @@ def create_review_batch(drive, repo, *, size=20, family_filter=None, local_copy=
     (paths["batches"] / f"{batch['batch_id']}.json").write_text(
         json.dumps(batch, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return {"review_batch": batch["batch_id"], "review_photos": len(entries),
-            "onedrive_folder": batch["onedrive_folder"], "calibration_approved": False}
+            "onedrive_folder": batch["onedrive_folder"], "calibration_approved": False, **summary}
 
 
 def ingest_decisions(repo, drive=None):
@@ -372,7 +393,7 @@ def parse_request(path):
     allowed = {"verify": {"max_photos"}, "reconcile": {"repair"}, "keepalive": set(), "ingest": set(),
                "reauthorize": set(), "suitable_copy": {"selection", "dry_run"},
                "recover": {"sources", "confirm_no_other_transfer", "limit"},
-               "review_batch": {"size", "family"}}[doc["task"]]
+               "review_batch": {"size", "family", "exclude_selection", "expected_remaining"}}[doc["task"]]
     if set(options) - allowed:
         raise ValueError(f"unsupported options for {doc['task']}: {sorted(set(options) - allowed)}")
     if doc["task"] == "recover":
@@ -392,6 +413,13 @@ def parse_request(path):
             raise ValueError("review_batch size must be 1..60")
         if options.get("family") not in (None, *R.FAMILY_HOURS):
             raise ValueError("unknown family")
+        exclusion = options.get("exclude_selection")
+        if exclusion is not None and not SELECTION_PATH.fullmatch(str(exclusion)):
+            raise ValueError("review_batch exclude_selection must be a safe archive/selections/ path")
+        remaining = options.get("expected_remaining")
+        if remaining is not None:
+            if exclusion is None or type(remaining) is not int or not 0 <= remaining <= 2000:
+                raise ValueError("expected_remaining requires exclude_selection and an integer from 0 to 2000")
     return doc["task"], options
 
 
@@ -408,7 +436,9 @@ def run_request(task, options, repo, drive, *, scan=(), local_copy=None):
         return {**summary(records), **incremental_backup(drive, records)}
     if task == "review_batch":
         return create_review_batch(drive, repo, size=int(options.get("size", 20)),
-                                   family_filter=options.get("family"), local_copy=local_copy)
+                                   family_filter=options.get("family"), local_copy=local_copy,
+                                   exclude_selection=options.get("exclude_selection"),
+                                   expected_remaining=options.get("expected_remaining"))
     if task == "keepalive":
         return keepalive(drive)
     if task == "suitable_copy":
