@@ -84,6 +84,8 @@ def candidates(repo, scan_paths):
             "associations": rows,
             "local_location": location,
         })
+    # Pilot from catalogued harvested originals first; preserve unknowns for later manual review.
+    records.sort(key=lambda item: (not bool(item["associations"]), item["sha256"]))
     return records
 
 
