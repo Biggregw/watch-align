@@ -4,7 +4,8 @@
 
 Without --apply it only prints what it would do and the account pin (a SHA-256, never the email address).
 With --apply, using your own `gh auth login` session (repository admin), it:
-  1. creates or updates the `onedrive-archive` environment, usable only from the archive branch;
+  1. REQUIRES the owner to pre-create the protected `onedrive-archive` environment in GitHub UI;
+     this script NEVER changes the reviewers, bypass settings, or allowed branches;
   2. sets environment variables ONEDRIVE_CLIENT_ID and ONEDRIVE_ACCOUNT_SHA256 (owner pin);
   3. stores the MSAL cache as the encrypted environment secret ONEDRIVE_MSAL_CACHE (read from the file, piped to gh,
      never printed or passed on a command line).
@@ -14,7 +15,6 @@ Run it only after the Codespace transfer has finished, then stop using the Codes
 from __future__ import annotations
 
 import argparse
-import json
 import subprocess
 from pathlib import Path
 
@@ -33,11 +33,13 @@ def pin_from_cache(cache_text, client_id=CLIENT_ID, msal_module=None):
 
 
 def plan(repo, client_id, pin):
-    env = f"repos/{repo}/environments/{ENVIRONMENT}"
+    """Update variables/secrets only; the owner manages all environment protection in GitHub UI.
+
+    Never create or PUT the environment here: a PUT that omits reviewer rules can
+    unintentionally reset protection. The owner must configure required reviewers,
+    disabled admin bypass, and the exact allowed branch *before* --apply.
+    """
     return [
-        (["gh", "api", "-X", "PUT", env, "--input", "-"],
-         json.dumps({"deployment_branch_policy": {"protected_branches": False, "custom_branch_policies": True}})),
-        (["gh", "api", "-X", "POST", env + "/deployment-branch-policies", "-f", f"name={BRANCH}", "-f", "type=branch"], None),
         (["gh", "variable", "set", "ONEDRIVE_CLIENT_ID", "--env", ENVIRONMENT, "--repo", repo, "--body", client_id], None),
         (["gh", "variable", "set", "ONEDRIVE_ACCOUNT_SHA256", "--env", ENVIRONMENT, "--repo", repo, "--body", pin], None),
         (["gh", "secret", "set", "ONEDRIVE_MSAL_CACHE", "--env", ENVIRONMENT, "--repo", repo], "<cache file>"),
@@ -49,12 +51,15 @@ def main(argv=None, run=subprocess.run):
     ap.add_argument("--cache", type=Path, required=True)
     ap.add_argument("--repo", default="Biggregw/watch-align")
     ap.add_argument("--client-id", default=CLIENT_ID)
-    ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--apply", action="store_true",
+                    help="Only after the protected environment is created and verified in the GitHub UI")
     a = ap.parse_args(argv)
     text = a.cache.read_text(encoding="utf-8")
     pin = pin_from_cache(text, a.client_id)
     print("Owner account pin (SHA-256 of the sign-in name):", pin)
     steps = plan(a.repo, a.client_id, pin)
+    print("This helper does NOT configure deployment protection. Confirm Required reviewers,")
+    print("administrator bypass OFF, and the exact allowed branch in GitHub before --apply.")
     for cmd, body in steps:
         print(("running: " if a.apply else "would run: ") + " ".join(cmd))
         if not a.apply:
