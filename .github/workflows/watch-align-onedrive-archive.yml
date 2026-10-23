@@ -241,7 +241,13 @@ jobs:
         run: |
           git config user.name "watch-align-archive[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add archive/requests archive/results archive/batches archive/approved-evidence.json 2>/dev/null || true
+          # Stage existing archive paths individually. Git add rejects the entire multi-path
+          # command if an optional path (such as archive/batches) is still absent.
+          for path in archive/requests archive/results archive/batches archive/approved-evidence.json; do
+            if [ -e "$path" ]; then
+              git add -A -- "$path"
+            fi
+          done
           # Guard: never commit image bytes.
           if git diff --cached --name-only | grep -Eiq '\.(jpe?g|png|webp|tiff?|heic|zip|enc)$'; then
             echo "refusing to commit image or archive files"; exit 1; fi
