@@ -20,6 +20,11 @@ on:
         type: number
         required: false
         default: 3
+      review_offset:
+        description: "Skip this many photos in a review batch; 0, 20, 40, etc."
+        type: number
+        required: false
+        default: 0
 
 permissions:
   contents: read
@@ -111,9 +116,10 @@ jobs:
         if: ${{ inputs.task == 'review' }}
         env:
           REVIEW_COUNT: ${{ inputs.pilot_count }}
+          REVIEW_OFFSET: ${{ inputs.review_offset }}
         run: |
           python -m tools.image_archive.cloud_jobs review \
-            --limit "$REVIEW_COUNT" \
+            --limit "$REVIEW_COUNT" --offset "$REVIEW_OFFSET" \
             --output "$RUNNER_TEMP/watch-align-review.zip"
       - name: Publish manually requested review batch as an Actions artifact
         if: ${{ inputs.task == 'review' }}
