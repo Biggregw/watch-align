@@ -356,7 +356,8 @@ def reauthorize(environ=None, *, device_login=None, writer=None, display=None):
 
 # ----------------------------------------------------------------------------------- requests
 
-TASKS = ("verify", "reconcile", "recover", "review_batch", "keepalive", "ingest", "reauthorize")
+TASKS = ("verify", "reconcile", "recover", "review_batch", "keepalive", "ingest", "reauthorize", "suitable_copy")
+SELECTION_PATH = re.compile(r"^archive/selections/sel-[0-9]{8}-[a-z0-9][a-z0-9-]{0,40}\.json$")
 REQUEST_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,80}\.json$")
 
 
@@ -369,7 +370,7 @@ def parse_request(path):
         raise ValueError(f"request task must be one of {TASKS}")
     options = doc.get("options") or {}
     allowed = {"verify": {"max_photos"}, "reconcile": {"repair"}, "keepalive": set(), "ingest": set(),
-               "reauthorize": set(),
+               "reauthorize": set(), "suitable_copy": {"selection", "dry_run"},
                "recover": {"sources", "confirm_no_other_transfer", "limit"},
                "review_batch": {"size", "family"}}[doc["task"]]
     if set(options) - allowed:
@@ -381,6 +382,11 @@ def parse_request(path):
             if not (isinstance(src, dict) and re.fullmatch(r"\d{5,20}", str(src.get("run_id", "")))
                     and re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", str(src.get("artifact", "")))):
                 raise ValueError("recover sources must be {run_id: digits, artifact: name}")
+    if doc["task"] == "suitable_copy":
+        if not SELECTION_PATH.fullmatch(str(options.get("selection", ""))):
+            raise ValueError("suitable_copy needs options.selection = archive/selections/sel-YYYYMMDD-<name>.json")
+        if not isinstance(options.get("dry_run", False), bool):
+            raise ValueError("dry_run must be true or false")
     if doc["task"] == "review_batch":
         if not 1 <= int(options.get("size", 20)) <= 60:
             raise ValueError("review_batch size must be 1..60")
@@ -405,6 +411,9 @@ def run_request(task, options, repo, drive, *, scan=(), local_copy=None):
                                    family_filter=options.get("family"), local_copy=local_copy)
     if task == "keepalive":
         return keepalive(drive)
+    if task == "suitable_copy":
+        from .suitable import apply
+        return apply(drive, repo, options["selection"], dry_run=bool(options.get("dry_run")))
     return ingest_decisions(repo, drive)
 
 
@@ -479,6 +488,8 @@ def run_requests(args):
                 drive = drive or drive_from_protected_environment()
                 result, status = run_request(task, options, args.repo, drive, scan=args.scan,
                                              local_copy=args.local_copy), "done"
+                if isinstance(result, dict) and result.get("status") == "incomplete":
+                    status = "incomplete"   # some copies failed: commit a new request to retry
         except Exception as exc:  # report the failure class and message, never credentials
             task = locals().get("task", "unknown")
             result, status = {"error": type(exc).__name__, "message": str(exc)[:300]}, "failed"
@@ -487,7 +498,7 @@ def run_requests(args):
         out.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         reports.append(report)
     print(json.dumps(reports, indent=2))
-    if any(r.get("status") == "failed" for r in reports):
+    if any(r.get("status") in ("failed", "incomplete") for r in reports):
         raise SystemExit(1)
     return reports
 
