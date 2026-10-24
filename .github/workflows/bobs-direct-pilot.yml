@@ -1,9 +1,7 @@
 name: Research selected direct image pilot
 
 on:
-  push:
-    branches: [research/dropbox-inbox-acquisition-20261024]
-    paths: [tools/research/bobs_direct_pilot.trigger]
+  workflow_dispatch:
 
 permissions:
   contents: read
