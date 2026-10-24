@@ -164,6 +164,12 @@ def main():
              "listings_with_verified_images":sum(x.get("verified_images",0)>0 for x in outcomes),
              "total_new_verified_images":sum(x.get("verified_images",0) for x in outcomes),
              "unreviewed_only":True,"calibration_modified":False}
+    batch_name="_bobs_research_intake_"+datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")+".json"
+    report_bytes=(json.dumps({"summary":summary,"listings":outcomes},ensure_ascii=False,indent=2)+"\n").encode()
+    report_path=ROOT+"/"+batch_name
+    dbx.upload(session,token,report_path,report_bytes)
+    dbx.verify_readback(session,token,report_path,report_bytes)
+    summary["report_path"]=report_path
     print("BATCH_SUMMARY "+json.dumps(summary),flush=True)
     return 0 if summary["total_new_verified_images"] else 1
 
