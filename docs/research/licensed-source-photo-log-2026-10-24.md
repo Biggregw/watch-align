@@ -73,7 +73,7 @@ The eleven staged CPO photographs are being retained only for the personal-use s
 
 The personal-use terms are distinct from permission to publish or distribute. Bob's current terms grant a limited, revocable, non-sublicensable, nontransferable right to access and use content for personal enjoyment, and preserve Bob's/third-party intellectual property rights. On that wording, copying Bob's listing photographs into this research archive is not clearly permitted, so those URLs and public metadata are retained as leads only. Official Rolex terms similarly reserve image rights and allow limited noncommercial hard-copy printing; the official render is not independent-watch evidence. These conclusions follow the current source terms and listing descriptions, not a legal opinion.
 
-No exact-reference photograph with both reliable genuine provenance and an explicit reusable license was found in this pass. Two CC0 false positives were excluded as replicas. The search is still constrained by personal-use-only retailer permissions and OneDrive access; no claim is made that all public web sources have been exhaustively searched.
+No additional exact-reference image with a license broad enough for public, distributed-app, or commercial calibration use was found in this pass. The Watches of Switzerland and Goldsmiths personal-use-only images remain limited to private personal research. Two CC0 false positives were excluded as replicas. The search is still constrained by personal-use-only retailer permissions and OneDrive access; no claim is made that all public web sources have been exhaustively searched.
 
 
 ## Additional 126610LN source lead
