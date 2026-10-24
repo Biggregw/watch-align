@@ -1,9 +1,7 @@
 name: Research - save Bob's visual review indexes in Dropbox
 
 on:
-  push:
-    branches: [research/dropbox-inbox-acquisition-20261024]
-    paths: [tools/research/review/bobs_review_to_dropbox.trigger]
+  workflow_dispatch:
 
 permissions:
   contents: read
