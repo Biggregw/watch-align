@@ -1,1 +1,1 @@
-One-time 30 individually stock-identified watches across 124060, 126610LN, 126610LV, 126710BLNR, 126710BLRO, 126622. Acquisition-only into private Dropbox staging, owner reports explicit dealer permission. Do not promote into calibration.
+Second bounded acquisition pass (50 stock-identified watches): correct image URL parsing, recover original galleries from previous 30 and add 20 new. No production or calibration changes. Owner states explicit Bob's permission for research acquisition.
