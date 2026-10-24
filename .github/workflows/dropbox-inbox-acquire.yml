@@ -1,6 +1,11 @@
 name: Research photo intake to Dropbox
 
 on:
+  push:
+    branches:
+      - research/dropbox-inbox-acquisition-20261024
+    paths:
+      - tools/research/dropbox_inbox_pilot.trigger
   workflow_dispatch:
     inputs:
       limit:
@@ -42,6 +47,10 @@ jobs:
           DROPBOX_APP_KEY: ${{ secrets.WATCHALIGN_DROPBOX_APP_KEY }}
           DROPBOX_APP_SECRET: ${{ secrets.WATCHALIGN_DROPBOX_APP_SECRET }}
         run: |
-          args=(--limit '${{ inputs.limit }}')
-          if [[ '${{ inputs.dry_run }}' == 'true' ]]; then args+=(--dry-run); fi
+          if [[ '${{ github.event_name }}' == 'push' ]]; then
+            args=(--limit 1)
+          else
+            args=(--limit '${{ inputs.limit }}')
+            if [[ '${{ inputs.dry_run }}' == 'true' ]]; then args+=(--dry-run); fi
+          fi
           python tools/research/dropbox_inbox_acquire.py "${args[@]}"
