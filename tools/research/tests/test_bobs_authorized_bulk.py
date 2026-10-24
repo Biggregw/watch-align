@@ -36,6 +36,10 @@ class Tests(unittest.TestCase):
     def test_filename_boundary(self):
         self.assertEqual(mod.stock_image("/images/SKU1193749.jpg",FakeReply.url,"193749"),"")
         self.assertNotEqual(mod.stock_image("/images/SKU193749-side.jpg",FakeReply.url,"193749"),"")
+    def test_transformation_fragments_rejected(self):
+        bad="/format=avif/images/Used-Rolex-SKU193749.jpg"
+        self.assertEqual(mod.stock_image(bad,FakeReply.url,"193749"),"")
+        self.assertEqual(mod.stock_image("/sharpen=0.5/images/Used-SKU193749.jpg",FakeReply.url,"193749"),"")
     def test_no_calibration_promotion(self):
         self.assertEqual(mod.ROOT,"/Watch Align/Incoming Photos")
 if __name__=="__main__":unittest.main()
