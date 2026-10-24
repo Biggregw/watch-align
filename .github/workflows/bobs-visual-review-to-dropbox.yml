@@ -1,0 +1,43 @@
+name: Research - save Bob's visual review indexes in Dropbox
+
+on:
+  push:
+    branches: [research/dropbox-inbox-acquisition-20261024]
+    paths: [tools/research/review/bobs_review_to_dropbox.trigger]
+
+permissions:
+  contents: read
+
+jobs:
+  upload-reviewed-indexes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q 'requests>=2.32,<3' 'Pillow>=10,<12'
+      - name: Save indexes only, and SHA-256 verify Dropbox read-back
+        env:
+          DROPBOX_ACCESS_TOKEN: ${{ secrets.WATCHALIGN_DROPBOX_ACCESS_TOKEN }}
+        run: |
+          python - <<'PY'
+          import hashlib, os, requests, sys
+          from pathlib import Path
+          sys.path.insert(0, 'tools/research')
+          import dropbox_inbox_acquire as dbx
+          session=requests.Session()
+          token=dbx.token(session,os.environ)
+          sources=[
+             'tools/research/review/bobs_49_faceon_visual_shortlist_20261024.csv',
+             'tools/research/review/bobs_314_visual_photo_index_20261024.csv',
+             'tools/research/review/bobs_photo_review_summary_20261024.md'
+          ]
+          for filename in sources:
+              content=Path(filename).read_bytes()
+              dest='/Watch Align/Incoming Photos/_reviewed_'+Path(filename).name
+              dbx.upload(session,token,dest,content)
+              dbx.verify_readback(session,token,dest,content)
+              print('UPLOADED_AND_VERIFIED',dest,len(content),hashlib.sha256(content).hexdigest(),flush=True)
+          PY
