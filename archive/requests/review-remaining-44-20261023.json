@@ -1,0 +1,8 @@
+{
+  "task": "review_batch",
+  "options": {
+    "size": 44,
+    "exclude_selection": "archive/selections/sel-20261023-screened-373.json",
+    "expected_remaining": 44
+  }
+}

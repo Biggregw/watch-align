@@ -77,16 +77,50 @@ def test_chunk_upload_verified_and_no_bearer_on_upload_url():
 
 
 def test_existing_remote_must_match():
-    drive, session = backend([Response(doc={'id':'root'}), Response(content=b'wrong')])
+    # same size, different bytes: compared byte for byte, never overwritten
+    drive, session = backend([Response(doc={'id':'root'}), Response(doc={'file': {}, 'size': 5}),
+                              Response(content=b'wrong')])
     with pytest.raises(IntegrityError):
         drive.put('objects/a', b'right')
     assert all(c[0] == 'GET' for c in session.calls)
 
 
-def test_existing_identical_is_incremental():
-    drive, session = backend([Response(doc={'id':'root'}), Response(content=b'exact')])
-    drive.put('objects/a', b'exact')
+def test_existing_different_size_conflicts_without_download():
+    drive, session = backend([Response(doc={'id':'root'}), Response(doc={'file': {}, 'size': 99})])
+    with pytest.raises(IntegrityError):
+        drive.put('objects/a', b'right')
+    assert len(session.calls) == 2 and not any(c[1].endswith(':/content') for c in session.calls)
+
+
+def test_expired_access_token_is_renewed_once():
+    tokens = []
+    def provider(force=False):
+        tokens.append(force)
+        return 'renewed' if force else 'expired'
+    provider.supports_force_refresh = True
+    session = Session([Response(401), Response(doc={'id': 'root'})])
+    drive = OneDriveBackend(provider, authorized=True, session=session, sleep=lambda _: None)
+    drive._root()
+    assert tokens == [False, True]
+    assert session.calls[-1][2]['headers']['Authorization'] == 'Bearer renewed'
+
+
+def test_revoked_consent_is_not_retried_forever():
+    def provider(force=False):
+        return 'x'
+    provider.supports_force_refresh = True
+    session = Session([Response(401), Response(401)])
+    drive = OneDriveBackend(provider, authorized=True, session=session, sleep=lambda _: None)
+    with pytest.raises(GraphError, match='401'):
+        drive._root()
     assert len(session.calls) == 2
+
+
+def test_existing_identical_is_incremental():
+    drive, session = backend([Response(doc={'id':'root'}), Response(doc={'file': {}, 'size': 5}),
+                              Response(content=b'exact')])
+    drive.put('objects/a', b'exact')
+    assert len(session.calls) == 3
 
 
 def test_pagination_rejects_credential_exfiltration():
@@ -115,7 +149,7 @@ def test_cache_rotation_persisted_before_token_use():
         def serialize(self): return 'rotated'
     class App:
         def get_accounts(self): return ['account']
-        def acquire_token_silent(self, scopes, account):
+        def acquire_token_silent(self, scopes, account, **kw):
             assert scopes == ['Files.ReadWrite.AppFolder']
             return {'access_token':'access'}
     saved = []
@@ -139,12 +173,40 @@ def test_device_auth_displays_no_tokens():
     class App:
         def initiate_device_flow(self, scopes): return {'user_code':'ABCD', 'device_code':'hidden'}
         def acquire_token_by_device_flow(self, flow): return {'access_token':'hidden'}
+        def get_accounts(self): return [{'username': 'owner@example.test'}]
     class Cache:
         def serialize(self): return 'hidden'
     output, saved = [], []
     device_login(App(), Cache(), saved.append, output.append)
     assert 'hidden' not in ''.join(output)
     assert saved == ['hidden']
+
+
+def test_device_login_for_another_account_is_never_saved():
+    from tools.image_archive.auth import account_fingerprint
+    class App:
+        def initiate_device_flow(self, scopes): return {'user_code': 'ABCD'}
+        def acquire_token_by_device_flow(self, flow): return {'access_token': 'hidden'}
+        def get_accounts(self): return [{'username': 'someone-else@example.test'}]
+    class Cache:
+        def serialize(self): return 'hidden'
+    saved = []
+    with pytest.raises(RuntimeError, match='pinned archive owner'):
+        device_login(App(), Cache(), saved.append, lambda _: None,
+                     expected_fingerprint=account_fingerprint('Owner@Example.test'))
+    assert saved == []
+
+
+def test_pinned_account_is_required_for_every_token():
+    from tools.image_archive.auth import account_fingerprint
+    class App:
+        def get_accounts(self): return [{'username': 'intruder@example.test'}]
+        def acquire_token_silent(self, *a, **kw): pytest.fail('token requested for an unpinned account')
+    class Cache:
+        has_state_changed = False
+    acquire = token_provider(App(), Cache(), lambda _: None, account_fingerprint('owner@example.test'))
+    with pytest.raises(RuntimeError, match='pinned'):
+        acquire()
 
 
 def test_interrupted_chunk_progress_is_resumed():

@@ -20,18 +20,32 @@ def client(client_id, cache_text='', *, msal_module=None):
     return app, cache
 
 
-def token_provider(app, cache, save_cache):
+def account_fingerprint(username):
+    """SHA-256 of the lower-case sign-in name: pins the archive owner without publishing an email address."""
+    from hashlib import sha256
+    return sha256((username or '').strip().lower().encode('utf-8')).hexdigest()
+
+
+def check_account(app, expected_fingerprint):
+    """The cache must hold exactly one account and, when a pin is configured, it must be the owner's."""
+    accounts = app.get_accounts()
+    if len(accounts) != 1:
+        raise RuntimeError('exactly one consented consumer account required; reauthorize')
+    if expected_fingerprint and account_fingerprint(accounts[0].get('username')) != expected_fingerprint.strip().lower():
+        raise RuntimeError('Microsoft account does not match the pinned archive owner; refusing to use it')
+    return accounts[0]
+
+
+def token_provider(app, cache, save_cache, expected_fingerprint=None):
     pending_cache = None
-    def acquire():
+    def acquire(force=False):
         nonlocal pending_cache
         if pending_cache is not None:
             save_cache(pending_cache)
             pending_cache = None
-        accounts = app.get_accounts()
-        if len(accounts) != 1:
-            raise RuntimeError('exactly one consented consumer account required; reauthorize')
+        account = check_account(app, expected_fingerprint)
         try:
-            result = app.acquire_token_silent(SCOPES, account=accounts[0]) or {}
+            result = app.acquire_token_silent(SCOPES, account=account, force_refresh=bool(force)) or {}
         except Exception:
             raise RuntimeError('Microsoft token renewal failed; reauthorize or retry') from None
         if cache.has_state_changed:
@@ -42,6 +56,7 @@ def token_provider(app, cache, save_cache):
         if 'access_token' not in result:
             raise RuntimeError('Microsoft consent expired or revoked; reauthorize')
         return result['access_token']
+    acquire.supports_force_refresh = True
     return acquire
 
 
@@ -56,15 +71,19 @@ def external_cache_writer(path, repository_root):
     return save
 
 
-def device_login(app, cache, save_cache, display=print):
+def device_login(app, cache, save_cache, display=print, expected_fingerprint=None):
     flow = app.initiate_device_flow(scopes=SCOPES)
     if not flow.get('user_code'):
         raise RuntimeError('device authorization unavailable')
     # Display only user interaction fields, never raw flow/token payloads.
-    display('Open https://microsoft.com/devicelogin and enter: ' + flow['user_code'])
+    # Use Microsoft's actual verification URI: consumer sessions return /link, not /devicelogin.
+    display('Open ' + flow.get('verification_uri', 'https://www.microsoft.com/link') + ' and enter: ' + flow['user_code'])
     result = app.acquire_token_by_device_flow(flow)
     if 'access_token' not in result:
         raise RuntimeError('Microsoft consent failed')
+    # A device code shown in a public log could be redeemed by someone else's account:
+    # never persist a cache that is not the pinned owner's.
+    check_account(app, expected_fingerprint)
     save_cache(cache.serialize())
 
 

@@ -38,9 +38,14 @@ class OneDriveBackend:
         if urlparse(url).scheme != 'https':
             raise GraphError('HTTPS required')
         headers = dict(kwargs.pop('headers', {}))
-        for attempt in range(self.attempts):
+        refreshed = False
+        attempt = 0
+        while attempt < self.attempts:
             if authenticated:
-                headers['Authorization'] = 'Bearer ' + self.token_provider()
+                headers['Authorization'] = 'Bearer ' + (self.token_provider(True) if refreshed == 'now'
+                                                        else self.token_provider())
+                if refreshed == 'now':
+                    refreshed = True
             try:
                 response = self.session.request(method, url, headers=headers, timeout=(15, 120),
                                                 allow_redirects=False, **kwargs)
@@ -48,9 +53,15 @@ class OneDriveBackend:
                 if attempt + 1 == self.attempts:
                     raise GraphError('transport failure; pending') from None
                 self.sleep(min(2 ** attempt, 30))
+                attempt += 1
                 continue
             if response.status_code in allowed:
                 return response
+            if (response.status_code == 401 and authenticated and not refreshed
+                    and getattr(self.token_provider, 'supports_force_refresh', False)):
+                # An access token can expire or be revoked mid-run: renew once, never loop.
+                refreshed = 'now'
+                continue
             if response.status_code in (429, 500, 502, 503, 504):
                 if attempt + 1 < self.attempts:
                     try:
@@ -65,6 +76,7 @@ class OneDriveBackend:
                     if delay > 60:
                         raise GraphError('retry later; pending')
                     self.sleep(max(0, delay))
+                    attempt += 1
                     continue
             # Do not include response bodies, signed URLs or bearer tokens in errors.
             raise GraphError(f'Graph HTTP {response.status_code}; pending (no permission escalation)',
@@ -106,9 +118,39 @@ class OneDriveBackend:
             response = self._request('GET', response.headers['Location'], authenticated=False)
         return response.content
 
+    def metadata(self, key):
+        """Item metadata (size, file facet) or None; never content."""
+        response = self._request('GET', self._item(key), allowed=(200, 404))
+        if response.status_code == 404:
+            return None
+        return response.json()
+
+    def list_children(self, prefix):
+        """Direct children of an archive folder: [(name, is_file, size)]; missing folder -> []."""
+        url = self._item(prefix) + ':/children'
+        found = []
+        while url:
+            if not url.startswith(GRAPH + '/'):
+                raise GraphError('unexpected OneDrive pagination host')
+            response = self._request('GET', url, allowed=(200, 404))
+            if response.status_code == 404:
+                break
+            doc = response.json()
+            for item in doc.get('value', []):
+                name = item.get('name', '')
+                if not name or '/' in name or name in ('.', '..'):
+                    raise IntegrityError('invalid remote object name')
+                found.append((name, 'file' in item, int(item.get('size') or 0)))
+            url = doc.get('@odata.nextLink')
+        return found
+
     def put(self, key, data):
+        meta = self.metadata(key)
+        if meta is not None and 'file' in meta and int(meta.get('size', -1)) != len(data):
+            # Different bytes under an immutable key: never overwrite, no download needed.
+            raise IntegrityError('immutable remote object conflict')
         try:
-            current = self.get(key)
+            current = self.get(key) if meta is not None else None
         except FileNotFoundError:
             current = None
         if current is not None:

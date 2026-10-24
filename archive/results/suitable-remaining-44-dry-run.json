@@ -1,0 +1,665 @@
+{
+  "request": "suitable-remaining-44-dry-run.json",
+  "task": "suitable_copy",
+  "status": "done",
+  "started": "2026-10-23T21:26:35+00:00",
+  "finished": "2026-10-23T21:27:17+00:00",
+  "result": {
+    "schema": "watch-align-suitable-copy-run/1",
+    "selection_id": "sel-20261023-remaining-44",
+    "selection_sha256": "0ec09b59c46de0411ea84adc6c06cac925f8bfb62fb314ee94902783f6a1d0a6",
+    "reviewer": "chatgpt",
+    "reviewed_at": "2026-10-23T21:24:13Z",
+    "started": "2026-10-23T21:26:35+00:00",
+    "dry_run": true,
+    "duplicate_entries": 0,
+    "photos": [
+      {
+        "sha256": "01c0026acb44070ac7d1957c0bfb9c09131986c90abd905ef4b4f85118737108",
+        "model": "unknown",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, near face-on Rolex dial photograph. Model and provenance are absent from the catalogue; retained as unknown and authenticity is not inferred.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "copy",
+        "source": "unreviewed/objects/01/01c0026acb44070ac7d1957c0bfb9c09131986c90abd905ef4b4f85118737108.jpg",
+        "destination": "Suitable Photos/Unknown model/01c0026acb44070ac7d1957c0bfb9c09131986c90abd905ef4b4f85118737108.jpg",
+        "size": 297241,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "02d7c97e429c698451fbd54e5ccd2e5f0b51aca5e0a78479fd08308c28a826b0",
+        "model": "submariner_126610",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, reasonably face-on full-watch product photograph. Catalogue records established_dealer provenance; appearance alone does not certify genuine or replica status.",
+        "catalogue_families": [
+          "submariner_126610"
+        ],
+        "catalogue_provenance": [
+          "established_dealer",
+          "unknown"
+        ],
+        "action": "copy",
+        "source": "unreviewed/objects/02/02d7c97e429c698451fbd54e5ccd2e5f0b51aca5e0a78479fd08308c28a826b0.jpg",
+        "destination": "Suitable Photos/Submariner Date 126610/02d7c97e429c698451fbd54e5ccd2e5f0b51aca5e0a78479fd08308c28a826b0.jpg",
+        "size": 2651831,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "093e778fbb54ee0b86af97ae435bf045d21efea47e4fe9d96c74b03d346f47b1",
+        "model": "unknown",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, near face-on Rolex dial photograph. Model and provenance are absent from the catalogue; retained as unknown and authenticity is not inferred.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "copy",
+        "source": "unreviewed/objects/09/093e778fbb54ee0b86af97ae435bf045d21efea47e4fe9d96c74b03d346f47b1.jpg",
+        "destination": "Suitable Photos/Unknown model/093e778fbb54ee0b86af97ae435bf045d21efea47e4fe9d96c74b03d346f47b1.jpg",
+        "size": 343152,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "0c0e8e34a90a2faad3e8b476abdf41a2cdf55c96205b0f080b1a68abf9b46a34",
+        "model": "unknown",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, near face-on Rolex dial photograph. Model and provenance are absent from the catalogue; retained as unknown and authenticity is not inferred.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "copy",
+        "source": "unreviewed/objects/0c/0c0e8e34a90a2faad3e8b476abdf41a2cdf55c96205b0f080b1a68abf9b46a34.png",
+        "destination": "Suitable Photos/Unknown model/0c0e8e34a90a2faad3e8b476abdf41a2cdf55c96205b0f080b1a68abf9b46a34.png",
+        "size": 505614,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "10957966e59eaf2be35bbc59eb2f0aced8243234f2cb52dde848232fbc6d4480",
+        "model": "unknown",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, near face-on Rolex dial photograph. Model and provenance are absent from the catalogue; retained as unknown and authenticity is not inferred.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "copy",
+        "source": "unreviewed/objects/10/10957966e59eaf2be35bbc59eb2f0aced8243234f2cb52dde848232fbc6d4480.png",
+        "destination": "Suitable Photos/Unknown model/10957966e59eaf2be35bbc59eb2f0aced8243234f2cb52dde848232fbc6d4480.png",
+        "size": 600768,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "14766c0f45dca0a1a6b790346a84783bb9f9234107a7c050bb7171004fa706b6",
+        "model": "unknown",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, near face-on Rolex dial photograph. Model and provenance are absent from the catalogue; retained as unknown and authenticity is not inferred.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "copy",
+        "source": "unreviewed/objects/14/14766c0f45dca0a1a6b790346a84783bb9f9234107a7c050bb7171004fa706b6.png",
+        "destination": "Suitable Photos/Unknown model/14766c0f45dca0a1a6b790346a84783bb9f9234107a7c050bb7171004fa706b6.png",
+        "size": 35301,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "21a1a55e2c1127d8472717b353864868eb063ec920c3564158681518e9f88ccd",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "22060f9a8f867d358d7dd60fa4e19389cac1b0ebf81fedc8174ba682940af978",
+        "model": "submariner_126610",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, reasonably face-on full-watch product photograph. Catalogue records established_dealer provenance; appearance alone does not certify genuine or replica status.",
+        "catalogue_families": [
+          "submariner_126610"
+        ],
+        "catalogue_provenance": [
+          "established_dealer",
+          "unknown"
+        ],
+        "action": "copy",
+        "source": "unreviewed/objects/22/22060f9a8f867d358d7dd60fa4e19389cac1b0ebf81fedc8174ba682940af978.jpg",
+        "destination": "Suitable Photos/Submariner Date 126610/22060f9a8f867d358d7dd60fa4e19389cac1b0ebf81fedc8174ba682940af978.jpg",
+        "size": 344787,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "2802b4a30cfb277bcf16079466bc7926bce1a9912a325b10cceb4c845d054bef",
+        "model": "submariner_126610",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, reasonably face-on full-watch product photograph. Catalogue records established_dealer provenance; appearance alone does not certify genuine or replica status.",
+        "catalogue_families": [
+          "submariner_126610"
+        ],
+        "catalogue_provenance": [
+          "established_dealer",
+          "unknown"
+        ],
+        "action": "copy",
+        "source": "unreviewed/objects/28/2802b4a30cfb277bcf16079466bc7926bce1a9912a325b10cceb4c845d054bef.jpg",
+        "destination": "Suitable Photos/Submariner Date 126610/2802b4a30cfb277bcf16079466bc7926bce1a9912a325b10cceb4c845d054bef.jpg",
+        "size": 574245,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "3464a19ebdcc2b0ac2ced205c366eba28a2a63be3c79791070440250e6011221",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "448656168bd9193d669a9cd64f65bab3a39c07529b8edbe594bc82f7693fc1d9",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "482e344ce9c60e61f3f3c6d7a1be6a9c6c83841c07f1417b1b2652ecc701538c",
+        "model": "submariner_126610",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, reasonably face-on full-watch product photograph. Catalogue records established_dealer provenance; appearance alone does not certify genuine or replica status.",
+        "catalogue_families": [
+          "submariner_126610"
+        ],
+        "catalogue_provenance": [
+          "established_dealer",
+          "unknown"
+        ],
+        "action": "copy",
+        "source": "unreviewed/objects/48/482e344ce9c60e61f3f3c6d7a1be6a9c6c83841c07f1417b1b2652ecc701538c.jpg",
+        "destination": "Suitable Photos/Submariner Date 126610/482e344ce9c60e61f3f3c6d7a1be6a9c6c83841c07f1417b1b2652ecc701538c.jpg",
+        "size": 2133939,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "4996cfb6b01d26e2e42d4afb8b992a1d90ae6d265fe52ebf110771891649c09f",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "49ba843c0a7e19d7ca00fd558a3d7f14544925f55d6d0ac7047fe4a4208fce81",
+        "model": "gmt_126710",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, reasonably face-on full-watch product photograph. Catalogue records established_dealer provenance; appearance alone does not certify genuine or replica status.",
+        "catalogue_families": [
+          "gmt_126710"
+        ],
+        "catalogue_provenance": [
+          "established_dealer",
+          "unknown"
+        ],
+        "action": "copy",
+        "source": "unreviewed/objects/49/49ba843c0a7e19d7ca00fd558a3d7f14544925f55d6d0ac7047fe4a4208fce81.jpg",
+        "destination": "Suitable Photos/GMT-Master II 126710/49ba843c0a7e19d7ca00fd558a3d7f14544925f55d6d0ac7047fe4a4208fce81.jpg",
+        "size": 332147,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "4c78f1d9115eed8fd57fb8b11443777f53cde48298b669fc251f10741c9ca245",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "5acb9488e32a5e93714b019f595796a1a836c5e53934de1334ce4f3035b80641",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "5ca39d9fa2451433f3d25fef0b87074f67656949d504f80e457fec8a7a3cd425",
+        "model": "unknown",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, near face-on Rolex dial photograph. Model and provenance are absent from the catalogue; retained as unknown and authenticity is not inferred.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "copy",
+        "source": "unreviewed/objects/5c/5ca39d9fa2451433f3d25fef0b87074f67656949d504f80e457fec8a7a3cd425.jpg",
+        "destination": "Suitable Photos/Unknown model/5ca39d9fa2451433f3d25fef0b87074f67656949d504f80e457fec8a7a3cd425.jpg",
+        "size": 373430,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "5e1b6ad261eb1f62e26b26b8b461ac63d8cbeccbb3c1a3b930931cd46db1dd52",
+        "model": "unknown",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, near face-on Rolex dial photograph. Model and provenance are absent from the catalogue; retained as unknown and authenticity is not inferred.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "copy",
+        "source": "unreviewed/objects/5e/5e1b6ad261eb1f62e26b26b8b461ac63d8cbeccbb3c1a3b930931cd46db1dd52.jpg",
+        "destination": "Suitable Photos/Unknown model/5e1b6ad261eb1f62e26b26b8b461ac63d8cbeccbb3c1a3b930931cd46db1dd52.jpg",
+        "size": 373527,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "61878e45ffc2e043766631477c084226dfe31f8c05be8f402bcf0a957776aa99",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "6c897639ef12265c127daec7d59b1860a03328c00be23f7eae4930c86f99e7cd",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "6f071d93608b9081d9a1ff908fe4f8f749a1aad42c70826c6ee596b652bf7517",
+        "model": "submariner_126610",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, reasonably face-on full-watch product photograph. Catalogue records established_dealer provenance; appearance alone does not certify genuine or replica status.",
+        "catalogue_families": [
+          "submariner_126610"
+        ],
+        "catalogue_provenance": [
+          "established_dealer",
+          "unknown"
+        ],
+        "action": "copy",
+        "source": "unreviewed/objects/6f/6f071d93608b9081d9a1ff908fe4f8f749a1aad42c70826c6ee596b652bf7517.jpg",
+        "destination": "Suitable Photos/Submariner Date 126610/6f071d93608b9081d9a1ff908fe4f8f749a1aad42c70826c6ee596b652bf7517.jpg",
+        "size": 332599,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "6fa5f7c145b5a472bacec5fabfae539e55c2bf5fda4f41757b713cd6a74d6a5c",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "78847d37cd6db809c18bbc01891a50bb6aee82db0f09fef3ec792e1ef5a7ace5",
+        "model": "unknown",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, near face-on Rolex dial photograph. Model and provenance are absent from the catalogue; retained as unknown and authenticity is not inferred.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "copy",
+        "source": "unreviewed/objects/78/78847d37cd6db809c18bbc01891a50bb6aee82db0f09fef3ec792e1ef5a7ace5.jpg",
+        "destination": "Suitable Photos/Unknown model/78847d37cd6db809c18bbc01891a50bb6aee82db0f09fef3ec792e1ef5a7ace5.jpg",
+        "size": 297245,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "800cd2600f322aa5cd6fdfdbb9162ce0cfbae7abfe57a9c58405730b98be349b",
+        "model": "submariner_126610",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, reasonably face-on full-watch product photograph. Catalogue records established_dealer provenance; appearance alone does not certify genuine or replica status.",
+        "catalogue_families": [
+          "submariner_126610"
+        ],
+        "catalogue_provenance": [
+          "established_dealer",
+          "unknown"
+        ],
+        "action": "copy",
+        "source": "unreviewed/objects/80/800cd2600f322aa5cd6fdfdbb9162ce0cfbae7abfe57a9c58405730b98be349b.jpg",
+        "destination": "Suitable Photos/Submariner Date 126610/800cd2600f322aa5cd6fdfdbb9162ce0cfbae7abfe57a9c58405730b98be349b.jpg",
+        "size": 2247213,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "84471c56ea78a693ead614cfb223a7930060b92cc67631f764c8046c0e158b94",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "8855a704ce7feff6edefef01a71ab702f772ff835d437e48baa26be810ceb089",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "8936080b0f6afb5e6bc9d997fbb1019612cb957a80674f7fb97e4eaaf349d95c",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "8ed13afd9469832e230c75e4c6741f8166c6a1c6a2598ffe8443bfbc6f1fc400",
+        "model": "unknown",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, near face-on Rolex dial photograph. Model and provenance are absent from the catalogue; retained as unknown and authenticity is not inferred.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "copy",
+        "source": "unreviewed/objects/8e/8ed13afd9469832e230c75e4c6741f8166c6a1c6a2598ffe8443bfbc6f1fc400.jpg",
+        "destination": "Suitable Photos/Unknown model/8ed13afd9469832e230c75e4c6741f8166c6a1c6a2598ffe8443bfbc6f1fc400.jpg",
+        "size": 256424,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "93c3cd4ffa3b8f7ceecfd5f65cf0060883749b0fef084fc5b16b79699ccbafd9",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "94ad771e9e2aedde628b6ed98ac337afe58bb45b3f297564b40f4d6fd64aaf21",
+        "model": "submariner_126610",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, reasonably face-on full-watch product photograph. Catalogue records established_dealer provenance; appearance alone does not certify genuine or replica status.",
+        "catalogue_families": [
+          "submariner_126610"
+        ],
+        "catalogue_provenance": [
+          "established_dealer",
+          "unknown"
+        ],
+        "action": "copy",
+        "source": "unreviewed/objects/94/94ad771e9e2aedde628b6ed98ac337afe58bb45b3f297564b40f4d6fd64aaf21.jpg",
+        "destination": "Suitable Photos/Submariner Date 126610/94ad771e9e2aedde628b6ed98ac337afe58bb45b3f297564b40f4d6fd64aaf21.jpg",
+        "size": 70241,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "9a9080c403a3747952cb72b54aacc20e575b5f4db0b4dccd68c948774d665137",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "9afb4ac0966fe01acd078d874db7f114d60286af07276439c0875797b6bea245",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "a43dbd11b36fddb850693caf144ca39e787d3d8335a6a6c4ee56d0be4aa68f8f",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "ab3bc40c93439cdef7e26e6941ca053dc4fa344e5586e684ebd6da997ab26081",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "befd34de32680d66e635a35f3cbabc0f43c7f00a6a9740e80c05994efa3748fb",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "c11761654b5192227942084daf8584ec142a4f5a5c7bfe731b7d579fd9a842b0",
+        "model": "submariner_126610",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, reasonably face-on full-watch product photograph. Catalogue records established_dealer provenance; appearance alone does not certify genuine or replica status.",
+        "catalogue_families": [
+          "submariner_126610"
+        ],
+        "catalogue_provenance": [
+          "established_dealer",
+          "unknown"
+        ],
+        "action": "copy",
+        "source": "unreviewed/objects/c1/c11761654b5192227942084daf8584ec142a4f5a5c7bfe731b7d579fd9a842b0.jpg",
+        "destination": "Suitable Photos/Submariner Date 126610/c11761654b5192227942084daf8584ec142a4f5a5c7bfe731b7d579fd9a842b0.jpg",
+        "size": 585523,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "dd80b45a3636259554c65451bccb2e9ad3b01cf12c7764ba007bc8160f0a7070",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "e06e358d238bb51a92e2679a6666ef0d570b3e8c0ed34d0cee504930f29ea215",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "e1cf3398081bc4819aee59735ae6ac604befcbd5b6a068b3d55a37ec1e4ad0d3",
+        "model": "unknown",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, near face-on Rolex dial photograph. Model and provenance are absent from the catalogue; retained as unknown and authenticity is not inferred.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "copy",
+        "source": "unreviewed/objects/e1/e1cf3398081bc4819aee59735ae6ac604befcbd5b6a068b3d55a37ec1e4ad0d3.jpg",
+        "destination": "Suitable Photos/Unknown model/e1cf3398081bc4819aee59735ae6ac604befcbd5b6a068b3d55a37ec1e4ad0d3.jpg",
+        "size": 256606,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "e418538d0e9af0bf448c8224d11dcfc07bec579bb3a5bbbd397129a8d2f81555",
+        "model": "submariner_126610",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, reasonably face-on full-watch product photograph. Catalogue records established_dealer provenance; appearance alone does not certify genuine or replica status.",
+        "catalogue_families": [
+          "submariner_126610"
+        ],
+        "catalogue_provenance": [
+          "established_dealer",
+          "unknown"
+        ],
+        "action": "copy",
+        "source": "unreviewed/objects/e4/e418538d0e9af0bf448c8224d11dcfc07bec579bb3a5bbbd397129a8d2f81555.jpg",
+        "destination": "Suitable Photos/Submariner Date 126610/e418538d0e9af0bf448c8224d11dcfc07bec579bb3a5bbbd397129a8d2f81555.jpg",
+        "size": 2191534,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "ec8ccb6781a143bba1dc87204f942debcbf31b36431102d9b283479b001934df",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      },
+      {
+        "sha256": "ee07ceedbb6f0bd3548f7cef9bf8b5f23fa010f621982a648bba0d01349bd292",
+        "model": "submariner_126610",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, reasonably face-on full-watch product photograph. Catalogue records established_dealer provenance; appearance alone does not certify genuine or replica status.",
+        "catalogue_families": [
+          "submariner_126610"
+        ],
+        "catalogue_provenance": [
+          "established_dealer",
+          "unknown"
+        ],
+        "action": "copy",
+        "source": "unreviewed/objects/ee/ee07ceedbb6f0bd3548f7cef9bf8b5f23fa010f621982a648bba0d01349bd292.jpg",
+        "destination": "Suitable Photos/Submariner Date 126610/ee07ceedbb6f0bd3548f7cef9bf8b5f23fa010f621982a648bba0d01349bd292.jpg",
+        "size": 508558,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "f0a75452d44bd83ee7f7b43ceffaf507f6e6854d1517060904572fc9b3586c2f",
+        "model": "unknown",
+        "suitability": "suitable",
+        "reasons": [],
+        "comment": "Clear, near face-on Rolex dial photograph. Model and provenance are absent from the catalogue; retained as unknown and authenticity is not inferred.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "copy",
+        "source": "unreviewed/objects/f0/f0a75452d44bd83ee7f7b43ceffaf507f6e6854d1517060904572fc9b3586c2f.jpg",
+        "destination": "Suitable Photos/Unknown model/f0a75452d44bd83ee7f7b43ceffaf507f6e6854d1517060904572fc9b3586c2f.jpg",
+        "size": 343159,
+        "result": "would_copy_source_verified"
+      },
+      {
+        "sha256": "f250d015177bf133fe5338e5744ec64e7895da3c9bf50a72b6a4852f0ee5dae1",
+        "model": "unknown",
+        "suitability": "not_suitable",
+        "reasons": [
+          "not_a_photograph"
+        ],
+        "comment": "Contact-sheet review identifies a graphic, illustration, or marker-analysis output rather than a watch photograph.",
+        "catalogue_families": [],
+        "catalogue_provenance": [],
+        "action": "excluded"
+      }
+    ],
+    "finished": "2026-10-23T21:27:17+00:00",
+    "summary": {
+      "entries": 44,
+      "suitable": 22,
+      "excluded": 22,
+      "held": 0,
+      "copied": 0,
+      "already_present": 0,
+      "failed": 0,
+      "would_copy": 22,
+      "by_model": {
+        "Unknown model": 11,
+        "Submariner Date 126610": 10,
+        "GMT-Master II 126710": 1
+      }
+    },
+    "copy_status": "complete",
+    "audit_record": "not_written_dry_run",
+    "status": "dry_run"
+  }
+}

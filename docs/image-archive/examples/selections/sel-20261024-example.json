@@ -1,0 +1,16 @@
+{
+  "schema": "watch-align-suitable-selection/1",
+  "selection_id": "sel-20261024-example",
+  "reviewer": "chatgpt",
+  "reviewed_at": "2026-10-24T09:00:00Z",
+  "photos": [
+    {"sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "model": "gmt_126710",
+     "suitability": "suitable", "reasons": [], "comment": "Sharp and face-on; hands cover 10 and 2 (markers are assessed separately)."},
+    {"sha256": "1123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "model": "unknown",
+     "suitability": "suitable", "reasons": [], "comment": "Clear dial, but the catalogue does not say which model."},
+    {"sha256": "2123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "model": "submariner_124060",
+     "suitability": "not_suitable", "reasons": ["oblique", "heavy_glare"], "comment": ""},
+    {"sha256": "3123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "model": "submariner_126610",
+     "suitability": "uncertain", "reasons": [], "comment": "Possibly retouched; owner to decide."}
+  ]
+}
