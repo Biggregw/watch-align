@@ -1,0 +1,1 @@
+One-off offline production-route calibration evidence audit of user-reviewed Bob's photographs. Use current code and assets; no production changes. Three supported model routes. Yacht Master 126622 separately unsupported.
