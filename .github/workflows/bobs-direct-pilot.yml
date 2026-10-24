@@ -1,0 +1,25 @@
+name: Research selected direct image pilot
+
+on:
+  push:
+    branches: [research/dropbox-inbox-acquisition-20261024]
+    paths: [tools/research/bobs_direct_pilot.trigger]
+
+permissions:
+  contents: read
+
+jobs:
+  selected-photos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image download tools
+        run: python -m pip install -q 'requests>=2.32,<3' 'Pillow>=10,<12'
+      - name: Get two selected direct photos and verify private Dropbox copies
+        env:
+          DROPBOX_ACCESS_TOKEN: ${{ secrets.WATCHALIGN_DROPBOX_ACCESS_TOKEN }}
+        run: python tools/research/bobs_direct_intake.py
