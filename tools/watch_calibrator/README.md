@@ -100,3 +100,7 @@ GMT production thresholds are maintained separately from the 124060 calibrator, 
 same product rule. `docs/research/gmt_genuine_envelope_audit_2026-10-02.md` compares documented GMT
 genuine evidence with the production boundaries. Regression tests ensure the GMT CHECK boundaries
 sit outside the observed genuine values used by this project.
+
+## Dropbox-verified genuine marker variation (research only)
+
+See [DROPBOX_RESEARCH.md](DROPBOX_RESEARCH.md): per-marker genuine variation measured through the production app route from the curated Dropbox archive only. Separate from the calibrator above; writes nothing to calibration assets.

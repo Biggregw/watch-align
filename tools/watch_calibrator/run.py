@@ -176,6 +176,13 @@ def run(model: str, root: Path, fresh=False) -> dict:
 
 
 def main(argv=None):
+    argv=list(sys.argv[1:] if argv is None else argv)
+    if argv[:1]==["dropbox-research"]:
+        # Research-only mode: photographs come exclusively from the curated Dropbox archive. No discovery, scraping,
+        # acquisition or GitHub-hosted photographs, and nothing is written to calibration assets.
+        import dropbox_genuine
+        dropbox_genuine.main(argv[1:])
+        return 0
     ap=argparse.ArgumentParser();ap.add_argument("model");ap.add_argument("--root",type=Path,default=REPO/"datasets"/"watch_calibrator");ap.add_argument("--fresh",action="store_true");a=ap.parse_args(argv)
     print(json.dumps(run(a.model,a.root,a.fresh),indent=2));return 0
 
