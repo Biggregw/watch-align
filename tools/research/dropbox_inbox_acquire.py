@@ -75,12 +75,12 @@ def dbx(s,t,endpoint,**kw):
     return r
 
 def mkdir(s,t,path):
-    if not path.startswith(BASE+"/"): raise Blocked("unsafe_destination")
-    for d in (BASE,path):
-        r=dbx(s,t,"https://api.dropboxapi.com/2/files/create_folder_v2",
-              json={"path":d,"autorename":False})
-        if not r.ok and not (r.status_code==409 and "conflict" in r.text.lower()):
-            raise Blocked("dropbox_folder_error:"+str(r.status_code))
+    # The connected Dropbox account pre-creates the designated staging folders.
+    # This OAuth upload token only requires files.content.read/write; do not
+    # request team or metadata.write scopes to manage folders.
+    if not path.startswith(BASE+"/") or ".." in path.split("/"):
+        raise Blocked("unsafe_destination")
+
 
 def upload(s,t,path,content):
     r=dbx(s,t,"https://content.dropboxapi.com/2/files/upload",data=content,
