@@ -19,6 +19,10 @@ marking the intake successful. Everything is labelled UNREVIEWED / AUTHENTICITY 
 
 ### One-time prerequisite
 
+For an initial one-off trial, configure a single GitHub Actions secret
+`WATCHALIGN_DROPBOX_ACCESS_TOKEN` using a short-lived token from the Dropbox App Console.
+For recurring use, the refresh-token configuration below avoids expiry.
+
 GitHub cannot reuse the ChatGPT Dropbox connector's existing login.
 Create a scoped **Full Dropbox** OAuth app with files.content.read / files.content.write;
 authorise it with offline token access. Keep secrets out of chat and code. In the
