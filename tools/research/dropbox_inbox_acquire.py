@@ -58,6 +58,8 @@ def validate_photo(b):
     return w,h,{"JPEG":".jpg","PNG":".png","WEBP":".webp"}[fmt]
 
 def token(s, env):
+    if env.get("DROPBOX_ACCESS_TOKEN"):
+        return env["DROPBOX_ACCESS_TOKEN"]
     if not all(env.get("DROPBOX_"+x) for x in ("REFRESH_TOKEN","APP_KEY","APP_SECRET")):
         raise Blocked("missing_dropbox_oauth_secrets")
     r=s.post("https://api.dropboxapi.com/oauth2/token",
