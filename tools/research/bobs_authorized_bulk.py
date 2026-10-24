@@ -33,7 +33,7 @@ def stock_image(raw, base, stock):
     if raw.startswith("data:"):return ""
     u=urljoin(base,raw)
     p=urlparse(u)
-    if not dealer(u) or "/images/" not in p.path.lower():return ""
+    if not dealer(u) or not p.path.lower().startswith("/images/"):return ""
     if not IMAGE_SUFFIX.search(p.path):return ""
     if not re.search(r"(?<!\d)"+re.escape(stock)+r"(?!\d)",p.path):return ""
     # Preserve the original URL, including any service query parameters.
