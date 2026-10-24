@@ -22,4 +22,5 @@ jobs:
       - name: Get two selected direct photos and verify private Dropbox copies
         env:
           DROPBOX_ACCESS_TOKEN: ${{ secrets.WATCHALIGN_DROPBOX_ACCESS_TOKEN }}
+          WATCHALIGN_BOBS_MANIFEST: tools/research/bobs_direct_selected_second.csv
         run: python tools/research/bobs_direct_intake.py
