@@ -78,6 +78,8 @@ class InboxTests(unittest.TestCase):
         self.assertEqual(r["status"],"rights_metadata_checked")
         self.assertEqual(s.image_gets,0)
         self.assertEqual(s.saved,{})
+    def test_single_use_access_token(self):
+        self.assertEqual(a.token(FakeHTTP(),{"DROPBOX_ACCESS_TOKEN":"abc"}),"abc")
     def test_no_credentials(self):
         with self.assertRaisesRegex(a.Blocked,"missing_dropbox_oauth_secrets"):
             a.token(FakeHTTP(),{})
