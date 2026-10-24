@@ -27,8 +27,8 @@ jobs:
         run: |
           python -m unittest discover -s tools/research/tests -p 'test_bobs_authorized_bulk.py' -v
           python -m unittest discover -s tools/research/tests -p 'test_dropbox_inbox_acquire.py' -v
-      - name: Acquire 30 stock-identified watch galleries to private Dropbox staging
+      - name: Acquire 50 stock-identified watch galleries to private Dropbox staging
         env:
           DROPBOX_ACCESS_TOKEN: ${{ secrets.WATCHALIGN_DROPBOX_ACCESS_TOKEN }}
         run: |
-          python tools/research/bobs_authorized_bulk.py --max-listings 30 --max-images-per-watch 8 --delay 0.6
+          python tools/research/bobs_authorized_bulk.py --max-listings 50 --max-images-per-watch 12 --delay 0.6
