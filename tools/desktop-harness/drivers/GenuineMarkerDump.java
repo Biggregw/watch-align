@@ -37,7 +37,10 @@ public class GenuineMarkerDump {
             "se_pos_pct","se_rot_deg","cover","fit_rms_px","bad_frac",
             "side_limit_pct","inout_limit_pct","pos_limit_pct","tilt_limit_deg","gap_limit_pct",
             "replica_qc_state","strict_genuine_state","strict_side_limit_pct","strict_inout_limit_pct",
-            "strict_pos_limit_pct","strict_tilt_limit_deg","strict_gap_limit_pct","strict_pos_pct");
+            "strict_pos_limit_pct","strict_tilt_limit_deg","strict_gap_limit_pct","strict_pos_pct",
+            // production's own per-component decisions for THIS photo (its own limits incl. the resolution allowance)
+            "qc_side_off","qc_inout_off","qc_pos_off","qc_tilt_off","qc_gap_off",
+            "strict_side_off","strict_inout_off","strict_pos_off","strict_tilt_off","strict_gap_off");
 
     public static void main(String[] a) throws Exception {
         nu.pattern.OpenCV.loadLocally();
@@ -101,7 +104,9 @@ public class GenuineMarkerDump {
                 b(m.relativePositionUsed), f(m.sePosPct), f(m.seRotDeg), f(m.cover), f(m.fitRmsPx), f(m.badFrac),
                 f(m.sideLimitPct), f(m.inoutLimitPct), f(m.posLimitPct), f(m.tiltLimitDeg), f(m.gapLimitPct),
                 m.state.name(), s.state.name(), f(s.sideLimitPct), f(s.inoutLimitPct), f(s.posLimitPct),
-                f(s.tiltLimitDeg), f(s.gapLimitPct), f(s.posPct)));
+                f(s.tiltLimitDeg), f(s.gapLimitPct), f(s.posPct),
+                b(m.sideOff), b(m.inoutOff), b(m.posOff), b(m.tiltOff), b(m.gapOff),
+                b(s.sideOff), b(s.inoutOff), b(s.posOff), b(s.tiltOff), b(s.gapOff)));
         return String.join(",", v);
     }
 

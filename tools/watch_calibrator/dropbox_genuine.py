@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-"""Dropbox-verified genuine marker variation (RESEARCH ONLY; never changes production or the archive).
+"""Dropbox-verified genuine-candidate marker variation (RESEARCH ONLY; never changes production or the archive).
 
     # optional: make the offline cache of the approved selection (Dropbox read-only credentials in the environment)
     python tools/watch_calibrator/dropbox_genuine.py fetch-cache --cache /private/wa-cache
     # measure and report, from Dropbox or from the cache
-    python tools/watch_calibrator/dropbox_genuine.py run --dropbox --out research-output/dropbox-genuine-<date>
-    python tools/watch_calibrator/dropbox_genuine.py run --cache /private/wa-cache --out research-output/...
+    python tools/watch_calibrator/dropbox_genuine.py run --dropbox --out research-output/dropbox-genuine-<date> \
+        --expect tools/watch_calibrator/snapshots/dropbox_index_20261024.json
+    python tools/watch_calibrator/dropbox_genuine.py run --cache /private/wa-cache --out research-output/... --expect ...
+
+The measured population is the index's provenance_status "dealer_attributed_genuine_candidate": dealer-attributed
+genuine CANDIDATES, not independently authenticated watches. That designation is carried verbatim into every output.
 
 Photographs come ONLY from the curated archive's "Suitable Photos" after every gate in dropbox_inputs passes; each is
 measured by the production app route (desktop harness GenuineMarkerDump, parity-checked against the app entry point),
@@ -36,8 +40,11 @@ from dropbox_source import CacheSource, DropboxSource, DEFAULT_ROOT, cache_appro
 
 HARNESS = REPO / "tools" / "desktop-harness" / "run.sh"
 PROTECTED = ("android", "calibration", "datasets")
-FROZEN_NOTE = ("Production limits are quoted from the app's frozen ClearlyOff.Limits (replica QC defaults and the strict "
-               "genuine standard), as the production code applied them to each photo; nothing is changed.")
+FROZEN_NOTE = ("Each count is the production code's OWN decision for that photograph: its own reading against its own "
+               "frozen limit (ClearlyOff.Limits replica-QC defaults or the strict genuine standard), including that "
+               "photograph's resolution allowance. Limits are quoted as the range over photographs; nothing is "
+               "re-derived or changed. Watch counts are derived only from those photo decisions (a watch with at least "
+               "one photograph outside) and are not a watch-level threshold test.")
 
 
 def output_dir(path, extra_forbidden=()):
@@ -123,34 +130,50 @@ def g(x, nd=3):
 
 def report(audit, accepted, rejected, result, meta):
     from collections import Counter
-    L = ["# Dropbox-verified genuine marker variation — research report", "",
+    D = gates.CANDIDATE
+    L = [f"# Marker variation of {D} watches (Dropbox archive) — research report", "",
          "RESEARCH ONLY. Production measurement, reference geometry, tolerances, classifications, marker eligibility "
-         "and the Android app are unchanged. Photographic suitability is not evidence of authenticity; authenticity "
-         "comes only from the source and review index. Nothing here is approved for production calibration.", "",
-         f"Source: {meta['source']['mode']} · index `{audit['index_path']}` (SHA-256 {audit['index_sha256'][:16]}…) · "
-         f"selections applied: {', '.join(audit['selections_applied']) or 'none'} · harness parity: "
-         f"{meta.get('parity', 'run GenuineMarkerDumpParity separately')}", "",
+         "and the Android app are unchanged. Nothing here is approved for production calibration.", "",
+         f"**Population: provenance_status = `{D}`** — watches attributed as genuine by the dealer, NOT independently "
+         "authenticated. Photographic suitability is not evidence of authenticity. Every 'watch' below is such a "
+         "candidate.", "",
+         f"Source: {meta['source']['mode']} · index `{audit['index_path']}` (SHA-256 {audit['index_sha256']}) · "
+         f"{audit['index_rows']} rows · selections applied: {', '.join(audit['selections_applied']) or 'none'} · "
+         f"snapshot check: {meta.get('snapshot', 'not requested')} · parity: {meta.get('parity', 'not run')}", "",
          "## 1. Input audit", "",
-         f"Photographs in Suitable Photos: {audit['photos_in_suitable_folders']} · accepted: {len(accepted)} "
-         f"({audit['accepted_watches']} independent physical watches) · rejected: {len(rejected)}", "",
-         "| Reference | Accepted photos | Independent watches | Dealers | Provenance |", "|---|---:|---:|---|---|"]
+         f"In the Suitable Photos folders: {audit['in_suitable_folders']['photos']} photographs, "
+         f"{audit['in_suitable_folders']['watches']} watches · index initial_photo_suitability = suitable: "
+         f"{audit['suitable_in_index']['photos']} · accepted: {audit['accepted']['photos']} photographs "
+         f"({audit['accepted']['watches']} independent physical watches) · rejected: {len(rejected)}", "",
+         "| specific_model | In Suitable Photos (photos / watches) | Accepted (photos / watches) | Dealers (accepted) |",
+         "|---|---:|---:|---|"]
     by_ref = {}
     for a in accepted:
         by_ref.setdefault(a["reference"], []).append(a)
-    for ref, recs in sorted(by_ref.items()):
-        L.append(f"| {ref} | {len(recs)} | {len({r['physical_watch_id'] for r in recs})} | "
-                 f"{', '.join(f'{k} ({v})' for k, v in Counter(r['dealer'] for r in recs).most_common())} | "
-                 f"{', '.join(sorted({r['provenance'] for r in recs}))} |")
+    refs = sorted(set(audit["in_suitable_folders"]["by_reference"]) | set(audit["accepted"]["by_reference"]))
+    for ref in refs:
+        si = audit["in_suitable_folders"]["by_reference"].get(ref, {"photos": 0, "watches": 0})
+        ac = audit["accepted"]["by_reference"].get(ref, {"photos": 0, "watches": 0})
+        dealers = Counter(r["dealer"] for r in by_ref.get(ref, []))
+        L.append(f"| {ref} | {si['photos']} / {si['watches']} | {ac['photos']} / {ac['watches']} | "
+                 f"{', '.join(f'{k} ({v})' for k, v in dealers.most_common()) or '–'} |")
     L += ["", "Rejections by reason:", ""]
     for why, n in Counter(r["reason"] for r in rejected).most_common():
         L.append(f"- {n} × {why}")
+    L += ["", "### Unsupported or unspecific references (reported, not measured, not pooled)", "",
+          "| SHA-256 | specific_model | physical_watch_id | Actual folder | Gate result |", "|---|---|---|---|---|"]
+    for r in audit["unsupported_references"]:
+        L.append(f"| {r['sha256'][:16]}… | {r['specific_model'] or '(blank)'} | {r['physical_watch_id'] or '–'} | "
+                 f"{r['actual_paths'].rsplit('/', 1)[0] or '–'} | {r['gate_result']} |")
+    if not audit["unsupported_references"]:
+        L.append("| – | none | | | |")
     L += ["", "## 2. Individual markers measured and withheld", "",
           "| Reference | Hour | Shape | Credible photos | Withheld | Withheld because |", "|---|---:|---|---:|---:|---|"]
     for m in result["markers"]:
         L.append(f"| {m['reference']} | {m['hour']} | {m['shape']} | {m['credible_photos']} | {m['withheld_photos']} | "
                  f"{m['withheld_reasons'] or '–'} |")
     L += ["", "Per-photo, per-marker readings: `marker_measurements.csv`.", "",
-          "## 3. Genuine watch-to-watch distributions (unit: independent physical watch)", "",
+          f"## 3. Watch-to-watch distributions of {gates.CANDIDATE} watches (unit: independent physical watch)", "",
           "Each watch is represented by the median of its photographs. Ranges are given only from 3 or more watches; "
           "p5/p95 below about 20 watches are interpolated extremes, not stable percentiles. Unusual genuine readings "
           "are flagged and kept.", "",
@@ -177,35 +200,58 @@ def report(audit, accepted, rejected, result, meta):
           "- Desktop decoding uses OpenCV with the app's resampling rule; Android's decoder can differ by sub-pixel "
           "amounts (not measured here).",
           "- Readings are only those production treats as credible; withheld markers are listed in section 2.",
-          "", "## 6. Comparison with the frozen production calibration (unchanged)", "", FROZEN_NOTE, "",
-          "| Ref | Hour | Dimension | Watches | Replica-QC limit | Watches outside | Strict genuine limit | "
-          "Watches outside |", "|---|---:|---|---:|---:|---:|---:|---:|"]
+          "", "## 6. Frozen production decisions on these photographs (unchanged)", "", FROZEN_NOTE, "",
+          "| Ref | Hour | Dimension | Replica QC: photos outside / evaluated | limit range | watches with a photo "
+          "outside / watches | Strict genuine: photos outside / evaluated | limit range | watches with a photo "
+          "outside / watches | Re-derived disagreements |", "|---|---:|---|---:|---|---:|---:|---|---:|---:|"]
     for c in result["comparison"]:
-        L.append(f"| {c['reference']} | {c['hour']} | {c['dimension']} | {c['independent_watches']} | "
-                 f"{g(c['replica_qc_limit'])} | {c['replica_qc_watches_outside']} | {g(c['strict_genuine_limit'])} | "
-                 f"{c['strict_genuine_watches_outside']} |")
+        def cell(p):
+            if c[f"{p}_photos_evaluated"] == "":
+                return "–", "–", "–"
+            return (f"{c[f'{p}_photos_outside']} / {c[f'{p}_photos_evaluated']}",
+                    f"{g(c[f'{p}_limit_min'])}–{g(c[f'{p}_limit_max'])}",
+                    f"{c[f'{p}_watches_with_a_photo_outside']} / {c[f'{p}_watches_evaluated']}")
+        q, st = cell("replica_qc"), cell("strict_genuine")
+        dis = [c[f"{p}_recomputed_disagreements"] for p in ("replica_qc", "strict_genuine")
+               if c[f"{p}_recomputed_disagreements"] != ""]
+        L.append(f"| {c['reference']} | {c['hour']} | {c['dimension']} | {q[0]} | {q[1]} | {q[2]} | {st[0]} | {st[1]} | "
+                 f"{st[2]} | {sum(dis)} |")
     L += ["", "## 7. Recommendations", ""]
     ready = [d for d in result["distributions"] if d["evidence"].startswith("sufficient")]
     prelim = [d for d in result["distributions"] if d["evidence"].startswith("preliminary")]
     diag = [d for d in result["distributions"] if d["evidence"].startswith("measurement-quality")]
-    L.append(f"- {len(ready)} marker dimensions have enough independent genuine evidence (≥ 30 watches, ≥ 5 with repeat "
+    L.append(f"- {len(ready)} marker dimensions have enough independent genuine-candidate evidence (≥ 30 watches, ≥ 5 with repeat "
              "photographs, ≥ 2 dealers) to support a future, owner-approved calibration decision.")
     L.append(f"- {len(prelim)} are preliminary (10–29 watches, too few repeat photographs, or a single dealer); "
              f"{len(diag)} are measurement-quality or photo-level diagnostics; the rest are descriptive or insufficient.")
     for d in prelim:
         if "one dealer" in d["evidence"]:
-            L.append("- Single-dealer evidence: add genuine watches from other dealers before relying on these ranges.")
+            L.append("- Single-dealer evidence: add genuine-candidate watches from other dealers before relying on these ranges.")
             break
     L.append("- No tolerance should be derived from dimensions marked descriptive or insufficient; add independent "
-             "genuine watches (not more photographs of the same watches) first.")
+             "genuine-candidate watches (not more photographs of the same watches) first.")
     return "\n".join(L) + "\n"
 
 
 def run(args):
     source = CacheSource(args.cache) if args.cache else DropboxSource(args.root)
     out = output_dir(args.out, [args.cache] if args.cache else [])
-    cmap = json.loads(Path(args.column_map).read_text()) if args.column_map else None
-    accepted, rejected, audit, _ = gates.select_inputs(source, args.index, cmap)
+    accepted, rejected, audit, _ = gates.select_inputs(source, args.index)
+    write_csv(out / "input_accepted.csv", accepted)
+    write_csv(out / "input_rejected.csv", rejected)
+    (out / "input_audit.json").write_text(json.dumps(audit, indent=1) + "\n", encoding="utf-8")
+    snapshot = "not requested"
+    if args.expect:
+        problems = gates.check_snapshot(audit, json.loads(Path(args.expect).read_text()))
+        if problems:
+            (out / "FAILED.md").write_text("# Run stopped: the eligible population differs from the source snapshot\n\n"
+                                           + "\n".join(f"- {p}" for p in problems) + "\n", encoding="utf-8")
+            raise SystemExit("eligible population differs from the source snapshot: " + "; ".join(problems))
+        snapshot = f"matches {Path(args.expect).name}"
+    if not accepted:
+        (out / "FAILED.md").write_text("# Run stopped: no photograph passed the gates\n\nSee input_rejected.csv.\n",
+                                       encoding="utf-8")
+        raise SystemExit("no photograph passed the verification gates; nothing measured (see input_rejected.csv)")
     measure = (lambda *x: harness_measure(*x, parity=False)) if args.skip_parity else harness_measure
     with tempfile.TemporaryDirectory(prefix="wa-dropbox-research-") as work:
         rows, parity = measure_all(source, accepted, work, measure) if accepted else ([], {})
@@ -215,16 +261,15 @@ def run(args):
             "source": source.describe(), "git_commit": subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO,
                                                                       capture_output=True, text=True).stdout.strip(),
             "production_calibration_approved": False, "input_audit": audit,
+            "snapshot": snapshot, "provenance_designation": gates.CANDIDATE,
             "parity": "; ".join(f"{m}: {v}" for m, v in sorted(parity.items())) or "no photographs measured"}
     for r in rows:
         p = photos.get(r.get("sha256"), {})
-        r.update({k: p.get(k, "") for k in ("reference", "dial_generation", "physical_watch_id", "dealer",
-                                            "provenance", "archive_path", "selection_id")})
-    write_csv(out / "input_accepted.csv", accepted)
-    write_csv(out / "input_rejected.csv", rejected)
+        r.update({k: p.get(k, "") for k in ("reference", "physical_watch_id", "provenance_status", "dealer",
+                                            "archive_path", "selection_id")})
     write_csv(out / "marker_measurements.csv", rows)
     write_csv(out / "marker_withheld_summary.csv", result["markers"])
-    write_csv(out / "genuine_distributions.csv", result["distributions"])
+    write_csv(out / "marker_distributions.csv", result["distributions"])
     write_csv(out / "watch_representatives.csv", result["representatives"])
     write_csv(out / "within_watch_repeatability.csv", result["repeatability"])
     write_csv(out / "production_comparison.csv", result["comparison"])
@@ -236,8 +281,9 @@ def run(args):
 
 def fetch_cache(args):
     source = DropboxSource(args.root)
-    cmap = json.loads(Path(args.column_map).read_text()) if args.column_map else None
-    accepted, rejected, audit, index_raw = gates.select_inputs(source, args.index, cmap)
+    accepted, rejected, audit, index_raw = gates.select_inputs(source, args.index)
+    if not accepted:
+        raise SystemExit("no photograph passed the verification gates; cache not written")
     support = {args.index: index_raw}
     for sid, is_file, _ in source.list(gates.AUDIT):
         if not is_file:
@@ -254,12 +300,12 @@ def main(argv=None):
         p = sub.add_parser(name)
         p.add_argument("--root", default=DEFAULT_ROOT, help="Dropbox archive root (read-only)")
         p.add_argument("--index", default=gates.DEFAULT_INDEX, help="source and review index, relative to the root")
-        p.add_argument("--column-map", help="JSON {logical field: index column} when the index uses other headers")
     r = sub.choices["run"]
     src = r.add_mutually_exclusive_group(required=True)
     src.add_argument("--dropbox", action="store_true", help="read the archive from Dropbox (read-only)")
     src.add_argument("--cache", help="offline cache made by fetch-cache")
     r.add_argument("--out", required=True, help="new, separate research output directory")
+    r.add_argument("--expect", help="source snapshot JSON: the run stops unless the eligible population matches it")
     r.add_argument("--skip-parity", action="store_true", help="skip the per-photo production parity re-measurement")
     sub.choices["fetch-cache"].add_argument("--cache", required=True)
     a = ap.parse_args(argv)

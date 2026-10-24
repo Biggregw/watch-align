@@ -20,21 +20,27 @@ import statistics
 
 MIN_WATCHES_FOR_RANGE = 3
 ROBUST_Z_FLAG = 3.5
-# dimension -> (column, shapes, extra condition, replica-QC limit column, strict genuine limit column, limit sense)
+# dimension -> (column, shapes, extra condition, replica-QC limit column, strict genuine limit column, limit sense,
+#               production's replica-QC decision column, production's strict genuine decision column)
 DIMENSIONS = {
-    "sideways_pct": ("side_pct", None, None, "side_limit_pct", "strict_side_limit_pct", "abs_max"),
-    "radial_pct": ("inout_pct", ("round", "baton"), None, None, None, None),
+    "sideways_pct": ("side_pct", None, None, "side_limit_pct", "strict_side_limit_pct", "abs_max",
+                     "qc_side_off", "strict_side_off"),
+    "radial_pct": ("inout_pct", ("round", "baton"), None, None, None, None, None, None),
     "radial_top_edge_pct": ("inout_pct", ("triangle",), ("radial_from_top_edge", "1"), "inout_limit_pct",
-                            "strict_inout_limit_pct", "abs_max"),
+                            "strict_inout_limit_pct", "abs_max", "qc_inout_off", "strict_inout_off"),
     "radial_centre_fallback_pct": ("inout_pct", ("triangle",), ("radial_from_top_edge", "0"), "inout_limit_pct",
-                                   "strict_inout_limit_pct", "abs_max"),
-    "position_replica_qc_pct": ("pos_pct", ("round", "baton"), None, "pos_limit_pct", None, "abs_max"),
-    "position_strict_pct": ("strict_pos_pct", ("round", "baton"), None, None, "strict_pos_limit_pct", "abs_max"),
-    "rotation_deg": ("tilt_deg", ("baton", "triangle"), None, "tilt_limit_deg", "strict_tilt_limit_deg", "abs_max"),
-    "gap_pct": ("gap_pct", ("triangle",), ("gap_from_fit", "0"), "gap_limit_pct", "strict_gap_limit_pct", "min"),
-    "outline_fit_rms_px": ("fit_rms_px", None, ("source", "outer metal"), None, None, None),
-    "outline_inconsistent_share": ("bad_frac", None, ("source", "outer metal"), None, None, None),
-    "outline_seen_share": ("cover", None, ("source", "outer metal"), None, None, None),
+                                   "strict_inout_limit_pct", "abs_max", "qc_inout_off", "strict_inout_off"),
+    "position_replica_qc_pct": ("pos_pct", ("round", "baton"), None, "pos_limit_pct", None, "abs_max",
+                                "qc_pos_off", None),
+    "position_strict_pct": ("strict_pos_pct", ("round", "baton"), None, None, "strict_pos_limit_pct", "abs_max",
+                            None, "strict_pos_off"),
+    "rotation_deg": ("tilt_deg", ("baton", "triangle"), None, "tilt_limit_deg", "strict_tilt_limit_deg", "abs_max",
+                     "qc_tilt_off", "strict_tilt_off"),
+    "gap_pct": ("gap_pct", ("triangle",), ("gap_from_fit", "0"), "gap_limit_pct", "strict_gap_limit_pct", "min",
+                "qc_gap_off", "strict_gap_off"),
+    "outline_fit_rms_px": ("fit_rms_px", None, ("source", "outer metal"), None, None, None, None, None),
+    "outline_inconsistent_share": ("bad_frac", None, ("source", "outer metal"), None, None, None, None, None),
+    "outline_seen_share": ("cover", None, ("source", "outer metal"), None, None, None, None, None),
 }
 PHOTO_DIMENSIONS = {"minute_track_scale": "track_scale", "marker_ring_turn_pct": "ring_turn_pct",
                     "marker_ring_scale": "ring_scale"}
@@ -106,7 +112,7 @@ def evidence_level(watches, multi_photo_watches, dealers=MIN_DEALERS_FOR_SUFFICI
 
 
 def usable(row, dim):
-    col, shapes, cond, *_ = DIMENSIONS[dim]
+    col, shapes, cond = DIMENSIONS[dim][:3]
     if row.get("status") != "MEASURED" or row.get("credible") != "1":
         return math.nan
     if shapes and row.get("shape") not in shapes:
@@ -217,27 +223,40 @@ def analyse(rows, photos):
 
 
 def compare(groups):
-    """Independent watches whose representative reading lies outside the FROZEN production limits (unchanged)."""
+    """Production's OWN decision for each photograph (its own reading against its own limit, including that photo's
+    resolution allowance), exactly as the app made it, then - separately - how many physical watches had at least one
+    photograph outside. The frozen limits are only quoted (range over photographs), never re-derived or changed.
+
+    As a check, each decision is re-derived from the photograph's own value and own limit; disagreements are counted
+    (expected 0 apart from values within rounding of the limit)."""
     out = []
     for (ref, hour, shape, dim), by_watch in sorted(groups.items(), key=order):
         if dim not in DIMENSIONS:
             continue
-        _, _, _, qc_col, strict_col, sense = DIMENSIONS[dim]
-        if not sense or not any(math.isfinite(num(r.get(c))) for c in (qc_col, strict_col) if c
-                                for pts in by_watch.values() for _, r in pts):
+        col, _, _, qc_lim, st_lim, sense, qc_flag, st_flag = DIMENSIONS[dim]
+        if not sense:
             continue
-        reps = [statistics.median([x for x, _ in pts]) for pts in by_watch.values()]
-        row = {"reference": ref, "hour": hour, "shape": shape, "dimension": dim, "independent_watches": len(reps)}
-        for label, col in (("replica_qc", qc_col), ("strict_genuine", strict_col)):
-            limits = [num(r.get(col)) for pts in by_watch.values() for _, r in pts] if col else []
-            limits = [x for x in limits if math.isfinite(x)]
-            if not limits:
-                row[f"{label}_limit"] = math.nan
-                row[f"{label}_watches_outside"] = ""
+        row = {"reference": ref, "hour": hour, "shape": shape, "dimension": dim}
+        keep = False
+        for label, lim_col, flag_col in (("replica_qc", qc_lim, qc_flag), ("strict_genuine", st_lim, st_flag)):
+            pts = [(w, x, r) for w, ps in by_watch.items() for x, r in ps
+                   if lim_col and flag_col and math.isfinite(num(r.get(lim_col))) and r.get(flag_col) in ("0", "1")]
+            if not pts:
+                for k in ("photos_evaluated", "photos_outside", "limit_min", "limit_max", "watches_evaluated",
+                          "watches_with_a_photo_outside", "recomputed_disagreements"):
+                    row[f"{label}_{k}"] = ""
                 continue
-            lim = statistics.median(limits)
-            outside = sum((v < lim) if sense == "min" else (abs(v) > lim) for v in reps)
-            row[f"{label}_limit"] = lim
-            row[f"{label}_watches_outside"] = outside
-        out.append(row)
+            keep = True
+            limits = [num(r.get(lim_col)) for _, _, r in pts]
+            outside = [(w, r.get(flag_col) == "1") for w, _, r in pts]
+            recomputed = [((x < num(r.get(lim_col))) if sense == "min" else (abs(x) > num(r.get(lim_col))))
+                          for _, x, r in pts]
+            row.update({f"{label}_photos_evaluated": len(pts),
+                        f"{label}_photos_outside": sum(o for _, o in outside),
+                        f"{label}_limit_min": min(limits), f"{label}_limit_max": max(limits),
+                        f"{label}_watches_evaluated": len({w for w, _ in outside}),
+                        f"{label}_watches_with_a_photo_outside": len({w for w, o in outside if o}),
+                        f"{label}_recomputed_disagreements": sum(o != c for (_, o), c in zip(outside, recomputed))})
+        if keep:
+            out.append(row)
     return out

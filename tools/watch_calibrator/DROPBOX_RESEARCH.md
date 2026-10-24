@@ -32,30 +32,39 @@ photographic (measurement) variation separated from the physical (manufacturing)
 - `marker_variation.py` — statistics per exact reference, hour and dimension, with the physical watch as the unit.
 - `dropbox_genuine.py` — orchestration and outputs (`run`, `fetch-cache`).
 
-## Gates (fail closed; every exclusion has its reason in `input_rejected.csv`)
+## Population designation
 
-1. File present exactly once in `Suitable Photos/<model folder>/<sha256>.<ext>`.
-2. The latest applied selection in `Suitable Photos/_audit/` says `suitable`, and its complete, non-dry run verified that copy.
-3. Exactly one consistent record in the source and review index, saying the photograph is suitable.
-4. Index authenticity genuine (suitability is never taken as authenticity); no replica provenance; confirmed physical-watch identity.
-5. Selection model, folder and exact index reference agree. The exact reference must be explicitly mapped to supported app
-   geometry (`GEOMETRY` in `dropbox_inputs.py`: 124060, 126610LN, 126710BLNR/BLRO/GRNR). Statistics stay per exact reference.
-6. Bytes hash to the recorded SHA-256 (staging, cache and the Java driver all check).
+The index records these watches as `provenance_status = dealer_attributed_genuine_candidate`: attributed as genuine by
+the dealer, not independently authenticated. Only that exact value is measured, it is carried verbatim into every
+output and report heading, and no authenticity approval is invented. Photographic suitability is never authenticity.
 
-The index's column names are matched against known aliases; if a required field cannot be found the run stops and asks
-for `--column-map '{"identity_status": "<column>"}'` rather than guessing.
+## Gates (real index schema; fail closed; every exclusion has its reason in `input_rejected.csv`)
 
-## Statistics
+Index columns (all required): `sha256, original_path, bytes, initial_photo_suitability, initial_model_family,
+provenance_status, specific_model, physical_watch_id, source_name, original_source_url, association_count,
+identity_conflict, current_curated_location, calibration_approved, notes`. Another schema stops the run.
 
-- Only readings production treats as credible; the triangle gap only when measured (not placed from the outline); the 12
-  o'clock top-edge radial and its legacy centre fallback are separate dimensions.
-- Per watch: median of its photographs (representative). Within-watch SD from repeated photographs.
-- Across watches: n, median, MAD, min, max, p5, p95, distribution-free 95 % CI of the median. No range from fewer than 3
-  watches (individual values only). Unusual genuine readings (robust z > 3.5) are flagged and kept.
-- Estimated physical SD = sqrt(max(0, variance of watch means − within-watch variance / harmonic-mean photos per watch)).
-- Evidence: insufficient (< 3 watches), descriptive (< 10), preliminary (< 30, < 5 multi-photo watches, or one dealer),
-  sufficient (otherwise; owner review still required). Outline quality and photo-level geometry are diagnostics only.
-- Comparison with production uses the frozen limits exactly as the production code applied them to each photo.
+1. The file is in exactly one recognised curated folder (`Submariner 124060`, `Submariner Date 126610`,
+   `GMT-Master II 126710`, `Unknown model`) and `current_curated_location` (any root prefix; file or folder) points there.
+2. The latest applied selection in `Suitable Photos/_audit/` says `suitable` and a complete, non-dry run recorded
+   `copied_verified` / `already_present_verified` for it.
+3. Exactly one consistent index row; `initial_photo_suitability = suitable`; the file size equals `bytes`.
+4. `provenance_status = dealer_attributed_genuine_candidate` (replicas, unknown or blank provenance excluded).
+5. `physical_watch_id` present and `identity_conflict` explicitly false (true or blank excluded).
+6. The exact `specific_model` has supported geometry (`GEOMETRY`: 124060, 126610LN, 126710BLNR/BLRO/GRNR), that geometry
+   is the curated folder's model, and the selection's model agrees. A selection that said `unknown` and was later
+   refined by a curated move is accepted and marked `model_refined_after_selection`.
+7. SHA-256 re-verified at staging, in the cache and by the Java driver.
+
+Every photograph in the curated folders whose `specific_model` has no supported geometry is listed in the report's
+"Unsupported or unspecific references" table, whatever else it failed; none is measured or pooled.
+
+## Source snapshot and empty runs
+
+`--expect snapshots/dropbox_index_20261024.json` compares the eligible population with the reviewed snapshot (82
+photographs / 46 watches in Suitable Photos; accepted 124060 71/35, 126610LN 2/2, 126710BLNR 1/1; 8 unsupported) before
+anything is measured; any difference writes `FAILED.md` and exits non-zero. A run in which no photograph passes the
+gates also writes `FAILED.md` and exits non-zero; no report is produced in either case.
 
 ## Running
 
@@ -63,18 +72,23 @@ for `--column-map '{"identity_status": "<column>"}'` rather than guessing.
 # credentials for a scoped read-only Dropbox app (files.metadata.read, files.content.read), environment only
 export DROPBOX_REFRESH_TOKEN=… DROPBOX_APP_KEY=…            # or DROPBOX_ACCESS_TOKEN=…
 python tools/watch_calibrator/run.py dropbox-research fetch-cache --cache ~/private/wa-cache      # optional
-python tools/watch_calibrator/run.py dropbox-research run --cache ~/private/wa-cache --out research-output/dropbox-genuine-$(date +%Y%m%d)
-python tools/watch_calibrator/run.py dropbox-research run --dropbox --out research-output/...      # direct
+python tools/watch_calibrator/run.py dropbox-research run --cache ~/private/wa-cache --out research-output/dropbox-genuine-$(date +%Y%m%d) \
+    --expect tools/watch_calibrator/snapshots/dropbox_index_20261024.json
+python tools/watch_calibrator/run.py dropbox-research run --dropbox --out research-output/... --expect ...   # direct
 ```
 
 Outputs: `REPORT.md`, `results.json`, `input_accepted.csv`, `input_rejected.csv`, `marker_measurements.csv`,
-`marker_withheld_summary.csv`, `genuine_distributions.csv`, `watch_representatives.csv`,
+`marker_withheld_summary.csv`, `marker_distributions.csv`, `input_audit.json`, `watch_representatives.csv`,
 `within_watch_repeatability.csv`, `production_comparison.csv` — every row traceable to the SHA-256 and physical watch.
 The output directory must be new and may not be inside `android/`, `calibration/`, `datasets/` or the cache.
 
-## Verification on 24 Oct 2026 (offline; no Dropbox access in this session)
+## Verification (offline; no Dropbox access in this session)
 
-- Unit and offline integration tests: `python -m pytest tools/watch_calibrator/tests` — 75 passed (18 new).
-- Real-photograph fixture run (owner-uploaded genuine 124060 QC photographs, 48 photos / 31 watch ids from one dealer,
-  arranged in the archive layout with fixture index labels; not the Dropbox dataset): pipeline completed, 1 replica-labelled
-  photo rejected, parity 1,152 per-marker comparisons with 0 differences. Its numbers are a pipeline check, not findings.
+- `python -m pytest tools/watch_calibrator/tests` — 79 passed (22 for this mode): every gate on the real schema, folder /
+  location / model / reference correspondence, a curated move, real audit-record structure, a 417-row snapshot archive
+  matching the committed snapshot, snapshot mismatch and zero-accepted runs failing visibly, per-photo production
+  decisions with photo-specific limits, the read-only source and the cache.
+- Real-photograph fixture (owner-uploaded 124060 photographs arranged in the real schema; fixture labels, one dealer;
+  not the Dropbox archive): 48 accepted / 31 watch ids, 1 replica rejected; parity 1,152 per-marker comparisons with 0
+  differences (including the decision flags); re-derived decisions 0 disagreements. A pipeline check, not findings.
+- No measurement of the real Dropbox genuine-candidate photographs has been made; no variation findings exist yet.
