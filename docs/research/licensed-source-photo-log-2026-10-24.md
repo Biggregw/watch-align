@@ -37,7 +37,7 @@ All six listings identify the watches as Rolex Certified Pre-Owned and state tha
 
 ## Current placement and rights boundary
 
-The six images are locally staged as of this report; they have not been uploaded to OneDrive yet because account sign-in/device approval is pending. Existing archive originals and all 108 current Suitable Photos remain untouched. Once OneDrive access is available, the six images and the private source manifest will go under a separate research-only folder, not the Suitable Photos folders. The excluded near-duplicate and replica images will not be added.
+The six images are locally staged as of this report; they have not been uploaded to OneDrive. The Authenticator challenge was approved, but Microsoft then showed “Microsoft account is unavailable from this site,” and a fresh OneDrive visit returned the public sign-in landing page without a signed-in signal. OneDrive access and the private archive review therefore remain blocked in this browser. Existing archive originals and all 108 current Suitable Photos remain untouched. Once OneDrive access is available, the six images and the private source manifest will go under a separate research-only folder, not the Suitable Photos folders. The excluded near-duplicate and replica images will not be added.
 
 Private personal research is the scope supported by the retail terms. Permission for commercial use, inclusion in a distributed application or calibration dataset, public redistribution, or public GitHub image storage has not been obtained. Written permission from the rights holder would be needed before expanding use to those activities.
 
