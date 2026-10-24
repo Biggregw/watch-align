@@ -253,13 +253,32 @@ def run_args(cache, out, expect=None):
                           "out": str(out), "skip_parity": False, "expect": str(expect) if expect else None})
 
 
+def fixture_snapshot(tmpdir):
+    """The committed snapshot with its pinned real index hash removed: fixture archives have a synthetic index."""
+    snap = json.loads(SNAPSHOT.read_text())
+    snap.pop("index_sha256")
+    p = Path(tmpdir) / "fixture_snapshot.json"
+    p.write_text(json.dumps(snap))
+    return p
+
+
 class SnapshotTest(unittest.TestCase):
+    def test_the_snapshot_pins_the_verified_real_index(self):
+        snap = json.loads(SNAPSHOT.read_text())
+        self.assertEqual(snap["index_sha256"], "90bf132f31bb101cd689c64727303f7623ef18567aee45b7fbd21ec879df14b6")
+        with tempfile.TemporaryDirectory() as t:
+            a = snapshot_archive(Path(t) / "cache")
+            _, _, audit, _ = gates.select_inputs(ds.CacheSource(a.root))
+            problems = gates.check_snapshot(audit, snap)
+            self.assertEqual(len(problems), 1)
+            self.assertIn("index SHA-256", problems[0])
+
     def test_real_population_matches_the_committed_source_snapshot(self):
         with tempfile.TemporaryDirectory() as t:
             a = snapshot_archive(Path(t) / "cache")
             acc, rej, audit, _ = gates.select_inputs(ds.CacheSource(a.root))
             self.assertEqual(audit["index_rows"], 417)
-            self.assertEqual(gates.check_snapshot(audit, json.loads(SNAPSHOT.read_text())), [])
+            self.assertEqual(gates.check_snapshot(audit, json.loads(fixture_snapshot(t).read_text())), [])
             self.assertEqual(len(audit["unsupported_references"]), 8)
             self.assertEqual(audit["in_suitable_folders"], {"photos": 82, "watches": 46,
                                                             "by_reference": audit["in_suitable_folders"]["by_reference"]})
@@ -272,7 +291,7 @@ class SnapshotTest(unittest.TestCase):
             gone.unlink()                                     # the only 126710BLNR photograph has been removed
             out = Path(t) / "out"
             with self.assertRaisesRegex(SystemExit, "126710BLNR"):
-                dg.run(run_args(a.root, out, SNAPSHOT))
+                dg.run(run_args(a.root, out, fixture_snapshot(t)))
             self.assertTrue((out / "FAILED.md").exists())
             self.assertFalse((out / "REPORT.md").exists())
 
@@ -312,7 +331,7 @@ class EndToEndTest(unittest.TestCase):
             original = dg.harness_measure
             dg.harness_measure = fake_measure
             try:
-                out = dg.run(run_args(a.root, Path(t) / "research-out", SNAPSHOT))
+                out = dg.run(run_args(a.root, Path(t) / "research-out", fixture_snapshot(t)))
             finally:
                 dg.harness_measure = original
             self.assertEqual(sorted(models), ["gmt_126710", "submariner_124060", "submariner_126610"])
@@ -323,7 +342,7 @@ class EndToEndTest(unittest.TestCase):
             report = (out / "REPORT.md").read_text()
             self.assertIn("dealer_attributed_genuine_candidate", report)
             self.assertIn("NOT independently authenticated", report)
-            self.assertIn("matches dropbox_index_20261024.json", report)
+            self.assertIn("matches fixture_snapshot.json", report)
             unsupported = report[report.index("### Unsupported"):report.index("## 2.")]
             self.assertEqual(unsupported.count("| other-"), 8)
             self.assertNotIn("verified_genuine", report)
@@ -346,6 +365,87 @@ class EndToEndTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "SHA-256"):
                 dg.measure_all(ds.CacheSource(a.root), list(acc.values()), Path(t) / "work",
                                lambda *x: self.fail("measured a tampered photo"))
+
+
+def offline_cache(t):
+    """The real 82/74 split: a full archive mirror, then an offline cache holding image bytes of the 74 eligible
+    photographs only and a metadata-only inventory of all 82 Suitable Photos folder entries."""
+    a = snapshot_archive(Path(t) / "mirror")
+    src = ds.CacheSource(a.root)
+    acc, _, _, raw = gates.select_inputs(src)
+    support = {gates.DEFAULT_INDEX: raw}
+    for sid, _, _ in src.list(gates.AUDIT):
+        for name, f, _ in src.list(f"{gates.AUDIT}/{sid}"):
+            if f:
+                support[f"{gates.AUDIT}/{sid}/{name}"] = src.read(f"{gates.AUDIT}/{sid}/{name}")
+    cache = Path(t) / "cache"
+    report = ds.cache_approved(src, acc, support, cache)
+    return a, cache, report
+
+
+class OfflineCacheTest(unittest.TestCase):
+    def test_real_82_74_split_passes_the_snapshot_without_excluded_image_bytes(self):
+        with tempfile.TemporaryDirectory() as t:
+            a, cache, written = offline_cache(t)
+            self.assertEqual((written["cached_photos"], written["inventory_entries"], written["verified"]), (74, 82, True))
+            images = [p for p in cache.rglob("*") if p.suffix == ".jpg"]
+            self.assertEqual(len(images), 74)                      # no bytes of the 8 unsupported references
+            src = ds.CacheSource(cache)
+            self.assertEqual(src.describe()["mode"], "local_cache")
+            self.assertEqual(sum(1 for f, _, _ in src.list("Suitable Photos") if not f.startswith("_")), 4)
+            acc, rej, audit, _ = gates.select_inputs(src)
+            self.assertEqual((audit["in_suitable_folders"]["photos"], audit["in_suitable_folders"]["watches"]), (82, 46))
+            self.assertEqual((audit["accepted"]["photos"], audit["accepted"]["watches"]), (74, 38))
+            self.assertEqual(len(audit["unsupported_references"]), 8)
+            self.assertEqual(gates.check_snapshot(audit, json.loads(fixture_snapshot(t).read_text())), [])
+            unsupported = {u["sha256"] for u in audit["unsupported_references"]}
+            for h in unsupported:
+                with self.assertRaises(FileNotFoundError):
+                    src.read(f"Suitable Photos/Unknown model/{h}.jpg")
+            # the old behaviour (listing only retained bytes) would see 74 folder entries and fail the snapshot
+            self.assertEqual(len(images), 74)
+
+    def test_the_full_run_from_the_offline_cache_measures_exactly_the_74(self):
+        with tempfile.TemporaryDirectory() as t:
+            a, cache, _ = offline_cache(t)
+            seen = []
+
+            def fake_measure(model, manifest, root, out):
+                lines = list(csv.DictReader(open(manifest)))
+                seen.extend(r["sha256"] for r in lines)
+                with open(out, "w", newline="") as fh:
+                    w = csv.DictWriter(fh, fieldnames=list(row("x", 1, "round", side_pct=0)))
+                    w.writeheader()
+                    for r in lines:
+                        w.writerow(row(r["sha256"], 1, "round", side_pct=0.1))
+                return "PARITY compared=0 differences=0 (fixture)"
+
+            original = dg.harness_measure
+            dg.harness_measure = fake_measure
+            try:
+                dg.run(run_args(cache, Path(t) / "out", fixture_snapshot(t)))
+            finally:
+                dg.harness_measure = original
+            self.assertEqual(len(seen), 74)
+
+    def test_cache_integrity_failures_stop_before_anything_is_read(self):
+        cases = {
+            "inventory edited": lambda c: (c / ds.INVENTORY).write_text((c / ds.INVENTORY).read_text().replace(
+                '"size": ', '"size": 1', 1)),
+            "retained photo replaced": lambda c: next(c.rglob("*.jpg")).write_bytes(b"\xff\xd8\xffdifferent"),
+            "retained photo removed": lambda c: next(c.rglob("*.jpg")).unlink(),
+            "excluded image bytes added": lambda c: (c / json.loads((c / ds.INVENTORY).read_text())["entries"][
+                [e["bytes_retained"] for e in json.loads((c / ds.INVENTORY).read_text())["entries"]].index(False)][
+                "path"]).write_bytes(b"\xff\xd8\xff"),
+            "index edited": lambda c: (c / gates.DEFAULT_INDEX).write_text("sha256\n"),
+            "unexpected file": lambda c: (c / "Suitable Photos" / "notes.txt").write_text("x"),
+        }
+        for name, damage in cases.items():
+            with tempfile.TemporaryDirectory() as t:
+                _, cache, _ = offline_cache(t)
+                damage(cache)
+                with self.assertRaises(ds.SourceError, msg=name):
+                    ds.CacheSource(cache)
 
 
 class SourceTest(unittest.TestCase):

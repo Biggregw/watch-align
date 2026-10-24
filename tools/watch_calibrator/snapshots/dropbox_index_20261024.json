@@ -1,14 +1,26 @@
 {
-  "description": "Eligible population of the real Dropbox archive as reviewed on 24 Oct 2026 (owner's independent review of Research/WatchAlign_417_Source_And_Review_Index_20261024.csv and Suitable Photos). A run stops unless the current archive gives exactly these counts. index_sha256 is filled in when the exact file hash is recorded.",
-  "index_sha256": null,
-  "in_suitable_folders": {"photos": 82, "watches": 46},
+  "description": "Eligible population of the real Dropbox archive as reviewed on 24 Oct 2026: index Research/WatchAlign_417_Source_And_Review_Index_20261024.csv (SHA-256 pinned below, verified by the owner) and the Suitable Photos folders (82 entries; 74 eligible photographs of 38 watches retained in the offline cache, 8 unsupported references as metadata only). A run stops unless the archive or cache gives exactly these counts.",
+  "index_sha256": "90bf132f31bb101cd689c64727303f7623ef18567aee45b7fbd21ec879df14b6",
+  "in_suitable_folders": {
+    "photos": 82,
+    "watches": 46
+  },
   "accepted": {
     "photos": 74,
     "watches": 38,
     "by_reference": {
-      "124060": {"photos": 71, "watches": 35},
-      "126610LN": {"photos": 2, "watches": 2},
-      "126710BLNR": {"photos": 1, "watches": 1}
+      "124060": {
+        "photos": 71,
+        "watches": 35
+      },
+      "126610LN": {
+        "photos": 2,
+        "watches": 2
+      },
+      "126710BLNR": {
+        "photos": 1,
+        "watches": 1
+      }
     }
   },
   "unsupported_photos": 8

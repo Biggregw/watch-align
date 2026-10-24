@@ -293,10 +293,23 @@ def fetch_cache(args):
     print(json.dumps({**cache_approved(source, accepted, support, args.cache), **audit}, indent=1))
 
 
+def verify_cache(args):
+    """Open (and so fully verify) an offline cache, then apply the gates and the snapshot without measuring."""
+    source = CacheSource(args.cache)
+    accepted, rejected, audit, _ = gates.select_inputs(source, args.index)
+    problems = gates.check_snapshot(audit, json.loads(Path(args.expect).read_text())) if args.expect else []
+    print(json.dumps({"cache": source.describe(), "accepted": audit["accepted"],
+                      "in_suitable_folders": audit["in_suitable_folders"],
+                      "unsupported_references": len(audit["unsupported_references"]),
+                      "index_sha256": audit["index_sha256"], "snapshot_problems": problems}, indent=1))
+    if problems:
+        raise SystemExit("cache does not match the source snapshot")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("run", "fetch-cache"):
+    for name in ("run", "fetch-cache", "verify-cache"):
         p = sub.add_parser(name)
         p.add_argument("--root", default=DEFAULT_ROOT, help="Dropbox archive root (read-only)")
         p.add_argument("--index", default=gates.DEFAULT_INDEX, help="source and review index, relative to the root")
@@ -308,8 +321,10 @@ def main(argv=None):
     r.add_argument("--expect", help="source snapshot JSON: the run stops unless the eligible population matches it")
     r.add_argument("--skip-parity", action="store_true", help="skip the per-photo production parity re-measurement")
     sub.choices["fetch-cache"].add_argument("--cache", required=True)
+    sub.choices["verify-cache"].add_argument("--cache", required=True)
+    sub.choices["verify-cache"].add_argument("--expect")
     a = ap.parse_args(argv)
-    return run(a) if a.cmd == "run" else fetch_cache(a)
+    return {"run": run, "fetch-cache": fetch_cache, "verify-cache": verify_cache}[a.cmd](a)
 
 
 if __name__ == "__main__":

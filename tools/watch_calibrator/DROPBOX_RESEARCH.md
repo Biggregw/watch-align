@@ -59,6 +59,24 @@ identity_conflict, current_curated_location, calibration_approved, notes`. Anoth
 Every photograph in the curated folders whose `specific_model` has no supported geometry is listed in the report's
 "Unsupported or unspecific references" table, whatever else it failed; none is measured or pooled.
 
+## Offline cache format (schema watch-align-research-cache/2)
+
+```
+CACHE_MANIFEST.json      {"schema": "watch-align-research-cache/2", "retained_photos": [sha256...],
+                          "inventory_sha256": "...", "support_files": {"<relative path>": "<sha256>", ...}}
+FOLDER_INVENTORY.json    {"schema": "watch-align-folder-inventory/1", "root": "Suitable Photos",
+                          "entries": [{"path": "Suitable Photos/<folder>/<sha256>.jpg", "size": n, "bytes_retained": true|false}]}
+Research/WatchAlign_417_Source_And_Review_Index_20261024.csv
+Suitable Photos/_audit/<selection>/selection.json, run-*.json
+Suitable Photos/<folder>/<sha256>.jpg     image bytes of the eligible photographs ONLY
+```
+
+The inventory lists every Suitable Photos folder entry (82 on 24 Oct 2026), so the snapshot sees the archive's real
+curated population while the 8 unsupported references stay metadata-only (no image bytes). Opening the cache verifies
+everything: support-file and inventory hashes, retained photographs' SHA-256 and size, no bytes for metadata-only
+entries, no unexpected files. `dropbox_genuine.py verify-cache --cache DIR --expect SNAPSHOT` checks a cache without
+measuring. A manifest without a schema is a plain full mirror (all bytes present, listed from disk).
+
 ## Source snapshot and empty runs
 
 `--expect snapshots/dropbox_index_20261024.json` compares the eligible population with the reviewed snapshot (82
@@ -84,7 +102,8 @@ The output directory must be new and may not be inside `android/`, `calibration/
 
 ## Verification (offline; no Dropbox access in this session)
 
-- `python -m pytest tools/watch_calibrator/tests` — 79 passed (22 for this mode): every gate on the real schema, folder /
+- `python -m pytest tools/watch_calibrator/tests` — 83 passed (26 for this mode), including the real 82/74 offline-cache
+  split (74 image files, 82 inventory entries, snapshot match, the 74 measured) and six cache-integrity failures: every gate on the real schema, folder /
   location / model / reference correspondence, a curated move, real audit-record structure, a 417-row snapshot archive
   matching the committed snapshot, snapshot mismatch and zero-accepted runs failing visibly, per-photo production
   decisions with photo-specific limits, the read-only source and the cache.
@@ -92,3 +111,5 @@ The output directory must be new and may not be inside `android/`, `calibration/
   not the Dropbox archive): 48 accepted / 31 watch ids, 1 replica rejected; parity 1,152 per-marker comparisons with 0
   differences (including the decision flags); re-derived decisions 0 disagreements. A pipeline check, not findings.
 - No measurement of the real Dropbox genuine-candidate photographs has been made; no variation findings exist yet.
+  The supplied cache ZIPs (24 Oct 2026) arrived truncated (9,920 KiB and 11 MiB, no central directory): 29 of 74
+  photographs recoverable and verified, index / audit / snapshot / inventory missing, so the study was not run.
