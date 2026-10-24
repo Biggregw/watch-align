@@ -60,7 +60,7 @@ def one(s,t,row):
     return {"stock":stock,"status":"VERIFIED","file":name,"provenance":meta_path,"sha256":sha,"bytes":len(original),"dimensions":[width,height]}
 
 def main():
-    with open("tools/research/bobs_direct_selected.csv",newline="",encoding="utf-8") as f:
+    with open(os.environ.get("WATCHALIGN_BOBS_MANIFEST","tools/research/bobs_direct_selected.csv"),newline="",encoding="utf-8") as f:
         rows=list(csv.DictReader(f))
     if len(rows)>2:raise IntakeError("limit_two_sources")
     session=requests.Session()
