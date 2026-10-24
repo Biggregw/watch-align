@@ -79,13 +79,14 @@ def compare(rows, asset, title):
         for (sp,comp,hour,wid), photos in measured.items():
             if sp==shape and comp==component:
                 metric[wid].extend(abs(statistics.median(list(photos.values()))) for _ in [0])
-        values=[x for x in metric.values() for x in x]
+        values=[x for entries in metric.values() for x in entries]
+        watch_max=[max(entries) for entries in metric.values() if entries]
         suffix="rotation_limit_deg" if component=="rotation" else component+"_limit_R"
         existing=f(ref.get("shapes",{}).get(shape,{}).get(suffix))
         record={"shape":shape,"component":component,"watches_with_measurement":len(metric),
           "existing_production_limit":existing,"max_observed_abs_delta":max(values) if values else None,
           "p95_observed_abs_delta":pct(values,0.95),"median_observed_abs_delta":statistics.median(values) if values else None,
-          "watches_beyond_old_limit":sum(x>existing for x in values) if existing is not None else None}
+          "watches_beyond_old_limit":sum(x>existing for x in watch_max) if existing is not None else None}
         summary.append(record)
     return {"model_group":title,"app_asset":asset,"photo_rows":len(set(r.get("photo_id") for r in rows)),
        "watches_with_assessed_marker":len(contributing),"marker_outcomes":dict(counts),
