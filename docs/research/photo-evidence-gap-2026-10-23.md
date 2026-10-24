@@ -1,3 +1,5 @@
+> **Superseded rights and sourcing note (2026-10-24):** The report below incorrectly concluded that Watches of Switzerland and Goldsmiths terms barred all private photo retention. Their retail terms permit downloads for the user's own personal use, subject to the terms. Six CPO candidate images have since been individually downloaded, visually reviewed, hash-verified, and logged for private research staging. The older statements below are a 2026-10-23 snapshot; see [the corrected licensed-source photo log](licensed-source-photo-log-2026-10-24.md) for the current rights assessment, image hashes, provenance, exclusions, and placement status. No image binaries are in GitHub and no new image has entered the Suitable Photos collection or calibration.
+
 # Photo evidence gap assessment and sourcing log — 2026-10-23
 
 **Repository:** Biggregw/watch-align  
