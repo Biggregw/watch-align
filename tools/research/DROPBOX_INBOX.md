@@ -43,3 +43,12 @@ Only source classes whose automated retrieval and retention are allowed can be e
 Once a photo arrives, visually inspect and classify it in Dropbox; no code automatically
 promotes anything into Suitable Photos. This is not a claim of a completed live Dropbox
 upload until an actual run has succeeded and its readback has been checked.
+
+## One-time isolated branch pilot
+The two folders `/Watch Align/Incoming Photos` and
+`/Watch Align/Incoming Photos/GMT-Master-II-126713GRNR` were created through
+ChatGPT's connected Dropbox access. The GitHub uploader does not create folders,
+so its access token only needs files.content.read/write. One branch-specific push
+of `tools/research/dropbox_inbox_pilot.trigger` runs exactly one candidate;
+no production/default-branch merge is required. Do not repeat the trigger after
+one successful test. Remove this one-time push trigger before merging.
